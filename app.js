@@ -10,6 +10,9 @@ let supabaseClient;
 let session;
 let companies = [];
 let activeCompanyId = localStorage.getItem("maintainops.activeCompanyId");
+let locations = [];
+let locationsReady = true;
+let activeLocationId = localStorage.getItem("maintainops.activeLocationId") || "";
 let assets = [];
 let workOrders = [];
 let maintenanceRequests = [];
@@ -25,6 +28,7 @@ let procedureTemplates = [];
 let proceduresReady = false;
 let schedulesReady = false;
 let outcomesReady = true;
+let safetyChecksReady = true;
 let photosReady = true;
 let partsUsedByWorkOrder = {};
 let eventsByWorkOrder = {};
@@ -56,6 +60,7 @@ if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "
 let searchQuery = localStorage.getItem("maintainops.searchQuery") || "";
 let appError = "";
 let appNotice = "";
+let appNoticeTone = "success";
 let noticeTimer;
 
 init();
@@ -282,28 +287,30 @@ async function ensureProfileForActiveCompany() {
 }
 
 async function seedStarterAssets() {
+  const locationId = activeLocationDatabaseId();
   await supabaseClient.from("assets").insert([
-    { company_id: activeCompanyId, name: "Packaging Line 2", asset_code: "PKG-002", location: "Plant A / Floor 1", status: "running" },
-    { company_id: activeCompanyId, name: "Boiler Room Pump", asset_code: "BLR-P-014", location: "Utilities / Boiler Room", status: "watch" },
+    { company_id: activeCompanyId, location_id: locationId, name: "Packaging Line 2", asset_code: "PKG-002", location: "Plant A / Floor 1", status: "running" },
+    { company_id: activeCompanyId, location_id: locationId, name: "Boiler Room Pump", asset_code: "BLR-P-014", location: "Utilities / Boiler Room", status: "watch" },
   ]);
 }
 
 async function loadCompanyData() {
-  const [assetResponse, workOrderResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse] = await Promise.all([
+  let [locationResponse, assetResponse, workOrderResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse] = await Promise.all([
+    supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient
       .from("work_orders")
-      .select("*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)")
+      .select("*, assets(name, location_id), locations(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)")
       .eq("company_id", activeCompanyId)
       .order("created_at", { ascending: false }),
     supabaseClient
       .from("maintenance_requests")
-      .select("*, assets(name)")
+      .select("*, assets(name, location_id), locations(name)")
       .eq("company_id", activeCompanyId)
       .order("created_at", { ascending: false }),
     supabaseClient
       .from("preventive_schedules")
-      .select("*, assets(name)")
+      .select("*, assets(name, location_id)")
       .eq("company_id", activeCompanyId)
       .order("next_due_at", { ascending: true }),
     supabaseClient
@@ -318,6 +325,27 @@ async function loadCompanyData() {
       .order("name"),
   ]);
 
+  if (workOrderResponse.error && isColumnSchemaError(workOrderResponse.error, ["location_id", "locations"])) {
+    workOrderResponse = await supabaseClient
+      .from("work_orders")
+      .select("*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false });
+  }
+  if (requestResponse.error && isColumnSchemaError(requestResponse.error, ["location_id", "locations"])) {
+    requestResponse = await supabaseClient
+      .from("maintenance_requests")
+      .select("*, assets(name)")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false });
+  }
+
+  locationsReady = !locationResponse.error;
+  locations = locationResponse.error ? [] : (locationResponse.data || []);
+  if (!activeLocationId || !locations.some((location) => location.id === activeLocationId)) {
+    activeLocationId = locations[0]?.id || "";
+    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+  }
   assets = assetResponse.data || [];
   workOrders = workOrderResponse.data || [];
   requestsReady = !requestResponse.error;
@@ -328,6 +356,7 @@ async function loadCompanyData() {
     partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
     schedulesReady = !scheduleResponse.error;
     outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
+    safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
     proceduresReady = !procedureResponse.error;
   procedureTemplates = procedureResponse.error ? [] : (procedureResponse.data || []).map((template) => ({
     ...template,
@@ -537,6 +566,7 @@ async function addSignedPartDocumentUrls() {
 function renderWorkspace() {
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
+  const showWorkDashboard = activeSection === "work" && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleWorkOrders = filteredWorkOrders();
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrders.length / WORK_ORDERS_PER_PAGE));
   if (workOrderPage > totalWorkOrderPages) workOrderPage = totalWorkOrderPages;
@@ -568,6 +598,14 @@ function renderWorkspace() {
             ${companies.map((company) => `<option value="${company.id}" ${company.id === activeCompanyId ? "selected" : ""}>${company.name}</option>`).join("")}
           </select>
         </label>
+        <label class="company-switcher">
+          Location
+          <select id="location-select" ${locationsReady ? "" : "disabled"}>
+            ${locations.length ? "" : `<option value="">Run location setup</option>`}
+            ${locations.map((location) => `<option value="${location.id}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("")}
+          </select>
+        </label>
+        ${locationsReady ? "" : `<p class="warning-text">Run supabase/step-next-locations.sql to enable locations.</p>`}
         <button class="secondary-button" id="new-company" type="button">New Company</button>
         <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
         <nav class="section-nav" aria-label="Workspace sections">
@@ -593,9 +631,10 @@ function renderWorkspace() {
             <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
             <h1>${activeCompany?.name || "Company"}</h1>
             <div class="topbar-summary">
-              <span>${workOrders.length} work orders</span>
-              <span>${assets.length} assets</span>
-              <span>${openMaintenanceRequests().length} open requests</span>
+              <span>${escapeHtml(activeLocationName())}</span>
+              <span>${workOrders.filter(matchesActiveLocation).length} work orders</span>
+              <span>${assets.filter(matchesActiveLocation).length} assets</span>
+              <span>${openMaintenanceRequests().filter(matchesActiveLocation).length} open requests</span>
             </div>
           </div>
           <div class="topbar-actions">
@@ -611,8 +650,9 @@ function renderWorkspace() {
           </div>
         </header>
 
-        ${appNotice ? `<div class="app-notice">${escapeHtml(appNotice)}</div>` : ""}
-        ${appNotice ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+        ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
+        ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
 
         ${activeSection === "mywork" ? `
           <section class="tech-focus">
@@ -633,21 +673,21 @@ function renderWorkspace() {
           <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, assets, parts, people">
         </label>
 
-        ${isWorkArea ? "" : `
+        ${showWorkDashboard ? `
           <section class="metric-grid">
-            ${renderMetric("Pending", workOrders.filter((workOrder) => workOrder.status === "open").length, "open")}
-            ${renderMetric("In Progress", workOrders.filter((workOrder) => workOrder.status === "in_progress").length, "in_progress")}
-            ${renderMetric("Blocked", workOrders.filter((workOrder) => workOrder.status === "blocked").length, "blocked")}
-            ${renderMetric("Completed", workOrders.filter((workOrder) => workOrder.status === "completed").length, "completed")}
+            ${renderMetric("New", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "open").length, "open")}
+            ${renderMetric("In Progress", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "in_progress").length, "in_progress")}
+            ${renderMetric("Blocked", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "blocked").length, "blocked")}
+            ${renderMetric("Completed This Month", completedThisMonth().filter(matchesActiveLocation).length, "completed")}
           </section>
 
           <section class="insight-grid">
-            ${renderInsight("Overdue Work", overdueWorkOrders().length, "Past due and not completed", "overdue")}
-            ${renderInsight("Requests", requestsReady ? openMaintenanceRequests().length : workOrders.filter((workOrder) => workOrder.type === "request" && workOrder.status !== "completed").length, "Waiting for review", "request")}
-            ${renderInsight("Done This Week", completedThisWeek().length, "Completed in the last 7 days", "completed")}
-            ${renderInsight("Avg Completion", `${averageCompletionMinutes()} min`, "Actual minutes on completed work", "neutral")}
+            ${renderInsight("Overdue Work", overdueWorkOrders().filter(matchesActiveLocation).length, "Past due and not completed", "overdue")}
+            ${renderInsight("Requests", requestsReady ? openMaintenanceRequests().filter(matchesActiveLocation).length : workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.type === "request" && workOrder.status !== "completed").length, "Waiting for review", "request")}
+            ${renderInsight("Done This Week", completedThisWeek().filter(matchesActiveLocation).length, "Completed in the last 7 days", "completed")}
+            ${renderInsight("Avg Completion", `${averageCompletionMinutes(workOrders.filter(matchesActiveLocation))} min`, "Actual minutes on completed work", "neutral")}
           </section>
-        `}
+        ` : ""}
 
         <section class="layout-grid single-column">
           ${isWorkArea ? `
@@ -665,6 +705,7 @@ function renderWorkspace() {
                   <h2>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : workOrderFilter === "unassigned" ? "Unassigned Work Orders" : workOrderFilter === "vendor" ? "Outside Vendor Work" : workOrderFilter === "assigned" ? "Assigned Work Orders" : "All Work Orders"}</h2>
                   <span>${visibleWorkOrders.length} shown</span>
                 </div>
+                ${renderWorkloadStrip(visibleWorkOrders)}
                 ${activeSection === "mywork" ? `
                   <div class="segmented-control" aria-label="My work filter">
                     <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
@@ -738,6 +779,9 @@ function renderWorkspace() {
               <input name="name" required placeholder="Asset name">
               <input name="asset_code" placeholder="Asset code">
               <input name="location" placeholder="Location">
+              <select name="location_id" ${locations.length ? "required" : "disabled"}>
+                ${renderLocationOptions()}
+              </select>
               <button class="secondary-button asset-action-button" type="submit">Add Asset</button>
             </form>
             <div class="asset-health-grid">
@@ -762,7 +806,7 @@ function renderWorkspace() {
               <input name="title" required placeholder="Monthly compressor PM">
               <select name="asset_id" required>
                 <option value="">Asset</option>
-                ${assets.map((asset) => `<option value="${asset.id}">${escapeHtml(asset.name)}</option>`).join("")}
+                ${renderAssetOptions()}
               </select>
               <select name="frequency">
                 <option value="weekly">Weekly</option>
@@ -859,6 +903,14 @@ function renderWorkspace() {
               <label>Company name<input name="name" required value="${escapeHtml(activeCompany?.name || "")}"></label>
               <button class="secondary-button" type="submit">Save Company</button>
             </form>
+            <form class="form-grid settings-form" id="location-form">
+              <label>New location<input name="name" required placeholder="North Plant"></label>
+              <p class="error-text" id="location-error">${locationsReady ? "" : "Run supabase/step-next-locations.sql before adding locations."}</p>
+              <button class="secondary-button" type="submit" ${locationsReady ? "" : "disabled"}>Add Location</button>
+            </form>
+            <div class="settings-summary">
+              ${locations.map((location) => `<article><strong>${escapeHtml(location.name)}</strong><span>${location.id === activeLocationId ? "active location" : "available"}</span></article>`).join("") || `<article><strong>No locations yet</strong><span>Run the location setup SQL</span></article>`}
+            </div>
             <div class="settings-summary">
               <article><strong>Company ID</strong><span>${escapeHtml(activeCompanyId)}</span></article>
               <article><strong>Signed in as</strong><span>${escapeHtml(session.user.email || session.user.id)}</span></article>
@@ -886,6 +938,7 @@ function renderWorkspace() {
 
 function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
+    if (!matchesActiveLocation(workOrder)) return false;
     const statusMatch = activeStatusFilter === "all" || workOrder.status === activeStatusFilter;
     const queueMatch = activeSection === "mywork"
       ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
@@ -915,13 +968,49 @@ function resetPartsPage() {
   localStorage.setItem("maintainops.partsPage", String(partsPage));
 }
 
-function showNotice(message) {
+function activeLocationDatabaseId() {
+  return locationsReady && activeLocationId ? activeLocationId : null;
+}
+
+function recordLocationId(record) {
+  return record?.location_id || record?.assets?.location_id || null;
+}
+
+function locationIdForAsset(assetId) {
+  return assets.find((asset) => asset.id === assetId)?.location_id || activeLocationDatabaseId();
+}
+
+function matchesActiveLocation(record) {
+  if (!locationsReady || !activeLocationId) return true;
+  return recordLocationId(record) === activeLocationId;
+}
+
+function activeLocationName() {
+  return locations.find((location) => location.id === activeLocationId)?.name || "Location";
+}
+
+function renderLocationOptions(selectedId = activeLocationId) {
+  return locations.map((location) => `<option value="${location.id}" ${location.id === selectedId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("");
+}
+
+function renderAssetOptions(selectedId = "") {
+  const options = filteredAssets();
+  const selectedAsset = selectedId ? assets.find((asset) => asset.id === selectedId) : null;
+  const list = selectedAsset && !options.some((asset) => asset.id === selectedAsset.id)
+    ? [selectedAsset, ...options]
+    : options;
+  return list.map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("");
+}
+
+function showNotice(message, tone = "success") {
   appNotice = message;
+  appNoticeTone = tone;
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => {
     appNotice = "";
+    appNoticeTone = "success";
     renderWorkspace();
-  }, 2600);
+  }, tone === "warning" ? 4200 : 2600);
 }
 
 function bindAutoGrowTextareas() {
@@ -958,7 +1047,7 @@ function prioritySortValue(priority) {
 }
 
 function filteredRequests() {
-  return maintenanceRequests.filter((request) => matchesSearch([
+  return maintenanceRequests.filter((request) => matchesActiveLocation(request) && matchesSearch([
     request.title,
     request.description,
     request.status,
@@ -969,7 +1058,7 @@ function filteredRequests() {
 }
 
 function filteredAssets() {
-  return assets.filter((asset) => matchesSearch([
+  return assets.filter((asset) => matchesActiveLocation(asset) && matchesSearch([
     asset.name,
     asset.asset_code,
     asset.location,
@@ -978,7 +1067,7 @@ function filteredAssets() {
 }
 
 function filteredPreventiveSchedules() {
-  return preventiveSchedules.filter((schedule) => matchesSearch([
+  return preventiveSchedules.filter((schedule) => matchesActiveLocation(schedule) && matchesSearch([
     schedule.title,
     schedule.frequency,
     schedule.next_due_at,
@@ -995,7 +1084,7 @@ function filteredProcedureTemplates() {
 }
 
 function filteredParts() {
-  return parts.filter((part) => matchesSearch([
+  return parts.filter((part) => matchesActiveLocation(part) && matchesSearch([
     part.name,
     part.sku,
     part.supplier_name,
@@ -1005,7 +1094,7 @@ function filteredParts() {
 }
 
 function partSourceOptions() {
-  return [...new Set(parts
+  return [...new Set(parts.filter(matchesActiveLocation)
     .map((part) => String(part.supplier_name || "").trim())
     .filter(Boolean))]
     .sort((a, b) => a.localeCompare(b));
@@ -1069,6 +1158,23 @@ function matchesSearch(values) {
 
 function renderMetric(label, value, tone = "neutral") {
   return `<article class="metric dashboard-card tone-${tone}"><span>${label}</span><strong>${value}</strong></article>`;
+}
+
+function renderWorkloadStrip(items) {
+  const newWork = items.filter((workOrder) => workOrder.status === "open").length;
+  const inProgress = items.filter((workOrder) => workOrder.status === "in_progress").length;
+  const blocked = items.filter((workOrder) => workOrder.status === "blocked").length;
+  const active = newWork + inProgress + blocked;
+  const overdue = items.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
+  return `
+    <div class="workload-strip" aria-label="Active work summary">
+      <article class="workload-pill active"><span>Active Work</span><strong>${active}</strong></article>
+      <article class="workload-pill new"><span>New</span><strong>${newWork}</strong></article>
+      <article class="workload-pill in_progress"><span>In Progress</span><strong>${inProgress}</strong></article>
+      <article class="workload-pill blocked"><span>Blocked</span><strong>${blocked}</strong></article>
+      <article class="workload-pill overdue"><span>Overdue</span><strong>${overdue}</strong></article>
+    </div>
+  `;
 }
 
 function segmentIcon(type) {
@@ -1216,7 +1322,12 @@ function renderAssetDetail() {
       <form class="form-grid" id="edit-asset-form">
         <label>Asset name<input name="name" required value="${escapeHtml(asset.name)}"></label>
         <label>Asset code<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
-        <label>Location<input name="location" value="${escapeHtml(asset.location || "")}"></label>
+        <label>Location
+          <select name="location_id" ${locations.length ? "" : "disabled"}>
+            ${renderLocationOptions(asset.location_id || activeLocationId)}
+          </select>
+        </label>
+        <label>Area / spot<input name="location" value="${escapeHtml(asset.location || "")}"></label>
         <label>Status
           <select name="status">
             ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${status}</option>`).join("")}
@@ -1365,7 +1476,20 @@ async function insertWithOptionalProcedure(table, payload, options = {}) {
   let query = supabaseClient.from(table).insert(payload);
   if (options.returnSingle) query = query.select().single();
   const response = await query;
-  if (!response.error || !("procedure_template_id" in payload) || !isProcedureSchemaError(response.error)) return response;
+  if (!response.error) return response;
+  if ("location_id" in payload && isMissingColumnError(response.error, "location_id")) {
+    locationsReady = false;
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.location_id;
+    if ("procedure_template_id" in fallbackPayload && isProcedureSchemaError(response.error)) {
+      proceduresReady = false;
+      delete fallbackPayload.procedure_template_id;
+    }
+    query = supabaseClient.from(table).insert(fallbackPayload);
+    if (options.returnSingle) query = query.select().single();
+    return query;
+  }
+  if (!("procedure_template_id" in payload) || !isProcedureSchemaError(response.error)) return response;
 
   proceduresReady = false;
   const fallbackPayload = { ...payload };
@@ -1395,11 +1519,20 @@ async function updateWithOptionalProcedure(table, payload, id) {
 
 async function updateWorkOrderWithFallback(payload, id) {
   let response = await updateWithOptionalProcedure("work_orders", payload, id);
-  if (!response.error || !isColumnSchemaError(response.error, ["procedure_template_id", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
+  if (!response.error || !isColumnSchemaError(response.error, ["location_id", "procedure_template_id", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
     return response;
   }
 
   const fallbackPayload = { ...payload };
+  if (isMissingColumnError(response.error, "location_id")) {
+    locationsReady = false;
+    delete fallbackPayload.location_id;
+  }
+  if (isColumnSchemaError(response.error, ["safety_devices_checked", "safety_devices_checked_at"])) {
+    safetyChecksReady = false;
+    delete fallbackPayload.safety_devices_checked;
+    delete fallbackPayload.safety_devices_checked_at;
+  }
   delete fallbackPayload.procedure_template_id;
   delete fallbackPayload.actual_minutes;
   delete fallbackPayload.failure_cause;
@@ -1520,6 +1653,11 @@ function setupItems() {
       detail: outcomesReady ? "Cause/resolution/follow-up available" : "Run step-next-work-order-outcomes.sql",
     },
     {
+      name: "Safety checks",
+      ready: safetyChecksReady,
+      detail: safetyChecksReady ? "Asset safety check completion available" : "Run step-next-safety-checks.sql",
+    },
+    {
       name: "Photos",
       ready: photosReady,
       detail: photosReady ? "Photo records available" : "Check storage bucket and photo table policies",
@@ -1636,10 +1774,11 @@ function renderPartDetail() {
 }
 
 function renderPartsHealth() {
-  const lowCount = lowStockParts().length;
-  const totalUnits = parts.reduce((sum, part) => sum + (Number(part.quantity_on_hand) || 0), 0);
-  const reorderTracked = parts.filter((part) => Number(part.reorder_point) > 0).length;
-  const costsListed = parts.filter((part) => Number(part.unit_cost) > 0).length;
+  const locationParts = parts.filter(matchesActiveLocation);
+  const lowCount = locationParts.filter((part) => Number(part.quantity_on_hand) <= Number(part.reorder_point)).length;
+  const totalUnits = locationParts.reduce((sum, part) => sum + (Number(part.quantity_on_hand) || 0), 0);
+  const reorderTracked = locationParts.filter((part) => Number(part.reorder_point) > 0).length;
+  const costsListed = locationParts.filter((part) => Number(part.unit_cost) > 0).length;
   return [
     ["Low Stock", lowCount],
     ["Total Units", totalUnits],
@@ -1688,7 +1827,7 @@ function renderRequestFormContent() {
       <label>Asset
         <select name="asset_id">
           <option value="">Unknown or general location</option>
-          ${assets.map((asset) => `<option value="${asset.id}">${escapeHtml(asset.name)}</option>`).join("")}
+          ${renderAssetOptions()}
         </select>
       </label>
       <label>Priority
@@ -1822,7 +1961,7 @@ function renderCreateWorkOrder() {
       <label>Asset
         <select name="asset_id">
           <option value="">No asset / general area</option>
-          ${assets.map((asset) => `<option value="${asset.id}">${escapeHtml(asset.name)}</option>`).join("")}
+          ${renderAssetOptions()}
         </select>
       </label>
 
@@ -1876,6 +2015,7 @@ function renderCreateWorkOrder() {
           <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
           <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
           <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
+          <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="0"></label>
           <label>Completion notes<textarea name="completion_notes" rows="2" placeholder="Final notes if this is already complete."></textarea></label>
         </div>
@@ -1916,7 +2056,7 @@ function renderQuickFixForm() {
       <label>Asset
         <select name="asset_id">
           <option value="">No asset / general area</option>
-          ${assets.map((asset) => `<option value="${asset.id}" ${asset.id === (selectedAssetId || sourceRequest?.asset_id) ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("")}
+          ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
         </select>
         <small>Asset not listed? Add it below.</small>
       </label>
@@ -1924,6 +2064,7 @@ function renderQuickFixForm() {
       <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
       <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
       <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>
+      <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked if completing asset work: E-stops, sensors, guards, and interlocks</label>
       <details class="quick-fix-more">
         <summary>Optional details</summary>
         <div class="form-grid">
@@ -2054,6 +2195,7 @@ function renderWorkOrderDetail() {
         <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         ${renderRelationshipChips(workOrder)}
         ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
+        ${workOrder.asset_id && workOrder.safety_devices_checked ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
         ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
       </div>
 
@@ -2094,14 +2236,14 @@ function renderWorkOrderDetail() {
         `).join("")}
       </div>
 
-      <details class="quick-update-panel relationship-detail comment" open>
-        <summary>Quick Update View</summary>
+      <details class="quick-update-panel relationship-detail comment work-detail-section" open>
+        <summary>Quick Update</summary>
         <form class="form-grid" id="quick-update-work-order-form">
           <label>Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
           <label>Asset
             <select name="asset_id">
               <option value="">No asset / general area</option>
-              ${assets.map((asset) => `<option value="${asset.id}" ${asset.id === workOrder.asset_id ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("")}
+              ${renderAssetOptions(workOrder.asset_id || "")}
             </select>
           </label>
           <label>Current update<textarea name="description" rows="2">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
@@ -2124,6 +2266,7 @@ function renderWorkOrderDetail() {
             </select>
           </label>
           <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
+          <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>
           <p class="error-text" id="quick-update-error"></p>
           <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
         </form>
@@ -2140,6 +2283,8 @@ function renderWorkOrderDetail() {
         </div>
       </div>
 
+      <details class="work-detail-section relationship-detail asset">
+        <summary>Full Work Order Details</summary>
       <form class="form-grid" id="edit-work-order-form">
         <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
         <label>Description<textarea name="description" rows="3">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
@@ -2174,9 +2319,11 @@ function renderWorkOrderDetail() {
         <p class="error-text" id="work-order-save-error"></p>
         <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
       </form>
+      </details>
 
       ${procedure ? `
-        <section>
+        <details class="work-detail-section relationship-detail procedure" open>
+          <summary>Procedure Checklist</summary>
           <div class="panel-header compact-header">
             <h3>${escapeHtml(procedure.name)}</h3>
             <span>${progress.done} of ${progress.total} complete · required ${requiredProgress.done}/${requiredProgress.total}</span>
@@ -2184,10 +2331,12 @@ function renderWorkOrderDetail() {
           <div class="checklist-list">
             ${procedure.procedure_steps.map((step) => renderChecklistStep(workOrder, step)).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
           </div>
-        </section>
+        </details>
       ` : ""}
 
       ${workOrder.status !== "completed" ? `
+        <details class="work-detail-section completion-section" open>
+          <summary>Complete Work</summary>
         <form class="completion-box" id="complete-work-order-form">
           <h3>Complete Work</h3>
           ${requiredProgress?.total ? `<p class="${requiredProgress.done === requiredProgress.total ? "completion-note" : "warning-text"}">Required checklist: ${requiredProgress.done}/${requiredProgress.total}</p>` : ""}
@@ -2196,11 +2345,20 @@ function renderWorkOrderDetail() {
           <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
           <label>Completion notes<textarea name="completion_notes" rows="3" placeholder="What was fixed? Any follow-up needed?"></textarea></label>
+          ${workOrder.asset_id ? `
+            <label class="check-row safety-check-row">
+              <input name="safety_devices_checked" type="checkbox" required ${workOrder.safety_devices_checked ? "checked" : ""}>
+              Safety devices checked and functioning: E-stops, sensors, guards, and interlocks
+            </label>
+          ` : ""}
           <p class="error-text" id="completion-error"></p>
           <button class="primary-button" type="submit">Complete Work Order</button>
         </form>
+        </details>
       ` : ""}
 
+      <details class="work-detail-section relationship-detail parts">
+        <summary>Parts Used</summary>
       <form class="form-grid relationship-detail parts" id="parts-used-form">
         <h3>Parts Used</h3>
         <label>Part
@@ -2223,7 +2381,10 @@ function renderWorkOrderDetail() {
           </article>
         `).join("") || `<p class="muted">No parts used yet.</p>`}
       </div>
+      </details>
 
+      <details class="work-detail-section relationship-detail photo">
+        <summary>Photos</summary>
       <form class="form-grid relationship-detail photo" id="photo-form">
         <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Photos are optimized up to 2400px before upload.</small></label>
         <button class="secondary-button" type="submit">Upload Photo</button>
@@ -2244,17 +2405,24 @@ function renderWorkOrderDetail() {
           `).join("") || `<p class="muted">No photos uploaded yet.</p>`}
         </div>
       </div>
+      </details>
 
+      <details class="work-detail-section relationship-detail comment">
+        <summary>Comments</summary>
       <form class="form-grid relationship-detail comment" id="comment-form">
         <label>Comment<textarea name="body" rows="3" required></textarea></label>
         <p class="error-text" id="comment-error"></p>
         <button class="primary-button" type="submit">Add Comment</button>
       </form>
+      </details>
 
+      <details class="work-detail-section" open>
+        <summary>History</summary>
       <div class="timeline">
         ${commentsError ? `<p class="error-text">${escapeHtml(commentsError)}</p>` : ""}
         ${activity.map(renderActivityItem).join("") || `<p class="muted">No activity yet.</p>`}
       </div>
+      </details>
     </div>
   `;
 }
@@ -2262,11 +2430,27 @@ function renderWorkOrderDetail() {
 function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
+    activeLocationId = "";
     activeWorkOrderId = null;
     createWorkOrderMode = false;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
+    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
     await render();
   });
+
+  const locationSelect = document.querySelector("#location-select");
+  if (locationSelect) {
+    locationSelect.addEventListener("change", () => {
+      activeLocationId = locationSelect.value;
+      activeWorkOrderId = null;
+      activeAssetId = null;
+      activePartId = null;
+      resetWorkOrderPage();
+      resetPartsPage();
+      localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+      renderWorkspace();
+    });
+  }
 
   document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
@@ -2595,18 +2779,29 @@ function bindWorkspaceEvents() {
 
   const settingsForm = document.querySelector("#company-settings-form");
   if (settingsForm) settingsForm.addEventListener("submit", updateCompanySettings);
+
+  const locationForm = document.querySelector("#location-form");
+  if (locationForm) locationForm.addEventListener("submit", createLocation);
 }
 
 async function createAsset(event) {
   event.preventDefault();
   const form = new FormData(event.target);
-  const { error } = await supabaseClient.from("assets").insert({
+  const payload = {
     company_id: activeCompanyId,
+    location_id: form.get("location_id") || activeLocationDatabaseId(),
     name: form.get("name"),
     asset_code: form.get("asset_code") || null,
     location: form.get("location") || null,
     status: "running",
-  });
+  };
+  let { error } = await supabaseClient.from("assets").insert(payload);
+  if (error && isMissingColumnError(error, "location_id")) {
+    locationsReady = false;
+    delete payload.location_id;
+    const retry = await supabaseClient.from("assets").insert(payload);
+    error = retry.error;
+  }
   if (error) return alert(error.message);
   await render();
 }
@@ -2614,16 +2809,28 @@ async function createAsset(event) {
 async function updateAsset(event) {
   event.preventDefault();
   const form = new FormData(event.target);
-  const { error } = await supabaseClient
+  const payload = {
+    name: form.get("name"),
+    asset_code: form.get("asset_code") || null,
+    location_id: form.get("location_id") || activeLocationDatabaseId(),
+    location: form.get("location") || null,
+    status: form.get("status"),
+  };
+  let { error } = await supabaseClient
     .from("assets")
-    .update({
-      name: form.get("name"),
-      asset_code: form.get("asset_code") || null,
-      location: form.get("location") || null,
-      status: form.get("status"),
-    })
+    .update(payload)
     .eq("id", activeAssetId)
     .eq("company_id", activeCompanyId);
+  if (error && isMissingColumnError(error, "location_id")) {
+    locationsReady = false;
+    delete payload.location_id;
+    const retry = await supabaseClient
+      .from("assets")
+      .update(payload)
+      .eq("id", activeAssetId)
+      .eq("company_id", activeCompanyId);
+    error = retry.error;
+  }
   if (error) return alert(error.message);
   await render();
 }
@@ -2638,15 +2845,23 @@ async function updateAssetStatus(assetId, status) {
 }
 
 async function createQuickFixAsset(name, status = "running") {
-  return supabaseClient
+  const payload = {
+    company_id: activeCompanyId,
+    location_id: activeLocationDatabaseId(),
+    name,
+    status,
+  };
+  let response = await supabaseClient
     .from("assets")
-    .insert({
-      company_id: activeCompanyId,
-      name,
-      status,
-    })
+    .insert(payload)
     .select()
     .single();
+  if (response.error && isMissingColumnError(response.error, "location_id")) {
+    locationsReady = false;
+    delete payload.location_id;
+    response = await supabaseClient.from("assets").insert(payload).select().single();
+  }
+  return response;
 }
 
 async function createPreventiveSchedule(event) {
@@ -2654,6 +2869,7 @@ async function createPreventiveSchedule(event) {
   const form = new FormData(event.target);
   const { error } = await insertWithOptionalProcedure("preventive_schedules", {
     company_id: activeCompanyId,
+    location_id: locationIdForAsset(form.get("asset_id")),
     asset_id: form.get("asset_id"),
     title: form.get("title"),
     frequency: form.get("frequency"),
@@ -2756,6 +2972,32 @@ async function updateCompanySettings(event) {
   await render();
 }
 
+async function createLocation(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#location-error");
+  const name = String(new FormData(formElement).get("name") || "").trim();
+  if (!name) return;
+  if (errorElement) errorElement.textContent = "";
+
+  const { data, error } = await supabaseClient
+    .from("locations")
+    .insert({ company_id: activeCompanyId, name })
+    .select("id")
+    .single();
+
+  if (error) {
+    if (isColumnSchemaError(error, ["locations"])) locationsReady = false;
+    if (errorElement) errorElement.textContent = locationsReady ? error.message : "Run supabase/step-next-locations.sql before adding locations.";
+    return;
+  }
+
+  activeLocationId = data.id;
+  localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+  showNotice("Location added.");
+  await render();
+}
+
 async function createPart(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -2769,6 +3011,7 @@ async function createPart(event) {
   }
   const payload = {
     company_id: activeCompanyId,
+    location_id: activeLocationDatabaseId(),
     name: form.get("name"),
     sku: form.get("sku") || null,
     supplier_name: form.get("supplier_name") || null,
@@ -2777,6 +3020,13 @@ async function createPart(event) {
     unit_cost: Number(form.get("unit_cost")) || 0,
   };
   let { data, error } = await supabaseClient.from("parts").insert(payload).select("id").single();
+  if (error && isMissingColumnError(error, "location_id")) {
+    locationsReady = false;
+    delete payload.location_id;
+    const retry = await supabaseClient.from("parts").insert(payload).select("id").single();
+    data = retry.data;
+    error = retry.error;
+  }
   if (error && isMissingColumnError(error, "supplier_name")) {
     partSuppliersReady = false;
     delete payload.supplier_name;
@@ -3070,6 +3320,7 @@ async function generatePreventiveWorkOrder(scheduleId) {
 
   const { data, error } = await insertWithOptionalProcedure("work_orders", {
     company_id: activeCompanyId,
+    location_id: locationIdForAsset(schedule.asset_id),
     asset_id: schedule.asset_id,
     title: schedule.title,
     description: `Generated from preventive schedule: ${schedule.frequency}.`,
@@ -3099,6 +3350,7 @@ async function createFollowUpWorkOrder(sourceId) {
 
   const { data, error } = await insertWithOptionalProcedure("work_orders", {
     company_id: activeCompanyId,
+    location_id: source.location_id || locationIdForAsset(source.asset_id),
     asset_id: source.asset_id || null,
     assigned_to: source.assigned_to || null,
     title: `Follow-up: ${source.title}`,
@@ -3143,11 +3395,19 @@ async function createWorkOrder(event) {
 
   const form = new FormData(formElement);
   const status = form.get("status") || "open";
+  const assetId = form.get("asset_id") || null;
+  if (status === "completed" && assetId && form.get("safety_devices_checked") !== "on") {
+    submitButton.disabled = false;
+    submitButton.textContent = "Create Work Order";
+    if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to an asset.";
+    return;
+  }
   const payload = {
     company_id: activeCompanyId,
+    location_id: locationIdForAsset(assetId),
     title: form.get("title"),
     description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
-    asset_id: form.get("asset_id") || null,
+    asset_id: assetId,
     priority: form.get("priority"),
     type: form.get("type") || "reactive",
     due_at: form.get("due_at") || null,
@@ -3162,9 +3422,19 @@ async function createWorkOrder(event) {
     completion_notes: form.get("completion_notes") || null,
     completed_at: status === "completed" ? new Date().toISOString() : null,
   };
+  if (status === "completed") applySafetyCheckPayload(payload, Boolean(assetId));
   let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error && isColumnSchemaError(error, ["actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
+  if (error && isColumnSchemaError(error, ["location_id", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
     const fallbackPayload = { ...payload };
+    if (isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      delete fallbackPayload.location_id;
+    }
+    if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
+      safetyChecksReady = false;
+      delete fallbackPayload.safety_devices_checked;
+      delete fallbackPayload.safety_devices_checked_at;
+    }
     delete fallbackPayload.actual_minutes;
     delete fallbackPayload.failure_cause;
     delete fallbackPayload.resolution_summary;
@@ -3254,9 +3524,16 @@ async function createQuickFix(event) {
     }
     assetId = newAsset.id;
   }
+  if (markCompleted && assetId && form.get("safety_devices_checked") !== "on") {
+    submitButton.disabled = false;
+    submitButton.textContent = "Log Quick Fix";
+    if (errorTarget) errorTarget.textContent = "Check safety devices before marking asset work complete.";
+    return;
+  }
 
   const payload = {
     company_id: activeCompanyId,
+    location_id: locationIdForAsset(assetId),
     title,
     description: descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")),
     asset_id: assetId,
@@ -3274,10 +3551,20 @@ async function createQuickFix(event) {
     completion_notes: markCompleted ? quickFixSummary : null,
     completed_at: markCompleted ? new Date().toISOString() : null,
   };
+  if (markCompleted) applySafetyCheckPayload(payload, Boolean(assetId));
 
   let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error && isColumnSchemaError(error, ["assigned_to", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
+  if (error && isColumnSchemaError(error, ["location_id", "assigned_to", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
     const fallbackPayload = { ...payload };
+    if (isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      delete fallbackPayload.location_id;
+    }
+    if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
+      safetyChecksReady = false;
+      delete fallbackPayload.safety_devices_checked;
+      delete fallbackPayload.safety_devices_checked_at;
+    }
     delete fallbackPayload.assigned_to;
     delete fallbackPayload.actual_minutes;
     delete fallbackPayload.failure_cause;
@@ -3365,6 +3652,7 @@ async function updateWorkOrderDetails(event) {
       title: form.get("title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
       due_at: form.get("due_at") || null,
+      location_id: locationIdForAsset(form.get("asset_id") || null),
       priority: form.get("priority"),
       type: form.get("type"),
       assigned_to: assignedUserFromForm(form),
@@ -3408,12 +3696,22 @@ async function updateWorkOrderQuickView(event) {
       title: form.get("title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
       asset_id: form.get("asset_id") || null,
+      location_id: locationIdForAsset(form.get("asset_id") || null),
       due_at: form.get("due_at") || null,
       status: form.get("status"),
       priority: form.get("priority"),
       assigned_to: assignedUserFromForm(form),
     };
+    if (requiresSafetyDeviceCheck(payload)) {
+      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on");
+    }
     if (payload.status === "completed" && previous?.status !== "completed") {
+      if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Save Quick Update";
+        if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to an asset.";
+        return;
+      }
       payload.completed_at = new Date().toISOString();
     }
     if (payload.status !== "completed") {
@@ -3460,12 +3758,17 @@ async function completeWorkOrder(event) {
     if (errorTarget) errorTarget.textContent = `Complete required checklist steps first (${requiredProgress.done}/${requiredProgress.total}).`;
     return;
   }
+  const form = new FormData(event.target);
+  const safetyChecked = form.get("safety_devices_checked") === "on" || currentSafetyCheckboxCheckedForWorkOrder(activeWorkOrderId) || hasCompletedSafetyDeviceCheck(workOrder);
+  if (requiresSafetyDeviceCheck(workOrder) && !safetyChecked) {
+    if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to an asset.";
+    return;
+  }
 
   submitButton.disabled = true;
   submitButton.textContent = "Completing...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const form = new FormData(event.target);
   const payload = {
     status: "completed",
     actual_minutes: Number(form.get("actual_minutes")) || 0,
@@ -3475,6 +3778,7 @@ async function completeWorkOrder(event) {
     completion_notes: form.get("completion_notes") || null,
     completed_at: new Date().toISOString(),
   };
+  applySafetyCheckPayload(payload, safetyChecked);
   let { error } = await supabaseClient
     .from("work_orders")
     .update(payload)
@@ -3484,6 +3788,17 @@ async function completeWorkOrder(event) {
     delete payload.failure_cause;
     delete payload.resolution_summary;
     delete payload.follow_up_needed;
+    const retry = await supabaseClient
+      .from("work_orders")
+      .update(payload)
+      .eq("id", activeWorkOrderId)
+      .eq("company_id", activeCompanyId);
+    error = retry.error;
+  }
+  if (error && isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
+    safetyChecksReady = false;
+    delete payload.safety_devices_checked;
+    delete payload.safety_devices_checked_at;
     const retry = await supabaseClient
       .from("work_orders")
       .update(payload)
@@ -3512,6 +3827,7 @@ async function createRequest(event) {
   const form = new FormData(event.target);
   const requestPayload = {
     company_id: activeCompanyId,
+    location_id: locationIdForAsset(form.get("asset_id") || null),
     title: form.get("title"),
     description: form.get("description"),
     asset_id: form.get("asset_id") || null,
@@ -3521,7 +3837,13 @@ async function createRequest(event) {
   };
 
   if (requestsReady) {
-    const { error } = await supabaseClient.from("maintenance_requests").insert(requestPayload);
+    let { error } = await supabaseClient.from("maintenance_requests").insert(requestPayload);
+    if (error && isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      delete requestPayload.location_id;
+      const retry = await supabaseClient.from("maintenance_requests").insert(requestPayload);
+      error = retry.error;
+    }
     if (error) return alert(error.message);
     activeSection = "requests";
     localStorage.setItem("maintainops.activeSection", activeSection);
@@ -3549,6 +3871,7 @@ async function convertRequestToWorkOrder(requestId) {
 
   const { data, error } = await insertWithOptionalProcedure("work_orders", {
     company_id: activeCompanyId,
+    location_id: request.location_id || locationIdForAsset(request.asset_id),
     title: request.title,
     description: request.description,
     asset_id: request.asset_id || null,
@@ -3579,7 +3902,12 @@ async function convertRequestToWorkOrder(requestId) {
 }
 
 async function updateWorkOrderStatus(event) {
+  const previous = workOrders.find((item) => item.id === activeWorkOrderId);
+  const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(activeWorkOrderId);
   await setWorkOrderStatus(activeWorkOrderId, event.target.value);
+  if (event.target.value === "completed" && requiresSafetyDeviceCheck(previous) && !hasCompletedSafetyDeviceCheck(previous) && !safetyCheckedNow) {
+    event.target.value = previous?.status || "open";
+  }
 }
 
 async function saveStepResult(event) {
@@ -3601,9 +3929,25 @@ async function saveStepResult(event) {
 }
 
 async function setWorkOrderStatus(id, status) {
+  const workOrder = workOrders.find((item) => item.id === id);
+  const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(id);
+  const hasSafetyCheck = hasCompletedSafetyDeviceCheck(workOrder) || safetyCheckedNow;
+  if (status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasSafetyCheck) {
+    activeWorkOrderId = id;
+    showNotice("Safety devices must be checked before completing asset work. Open the work order and use Complete Work.", "warning");
+    await render();
+    return;
+  }
+  const payload = {
+    status,
+    completed_at: status === "completed" ? new Date().toISOString() : null,
+  };
+  if (status === "completed" && hasSafetyCheck) {
+    applySafetyCheckPayload(payload, true);
+  }
   const { error } = await supabaseClient
     .from("work_orders")
-    .update({ status })
+    .update(payload)
     .eq("id", id)
     .eq("company_id", activeCompanyId);
   if (error) return alert(error.message);
@@ -3780,7 +4124,7 @@ function safeFileName(fileName) {
 }
 
 function statusLabel(status) {
-  if (status === "open") return "Pending";
+  if (status === "open") return "New";
   return String(status || "").replace("_", " ");
 }
 
@@ -3791,6 +4135,25 @@ function assignedUserFromForm(form, defaultUserId = null) {
 
 function isVendorAssigned(workOrder) {
   return String(workOrder.description || "").includes(OUTSIDE_VENDOR_NOTE);
+}
+
+function requiresSafetyDeviceCheck(workOrderOrPayload) {
+  return Boolean(workOrderOrPayload?.asset_id);
+}
+
+function hasCompletedSafetyDeviceCheck(workOrderOrPayload) {
+  return Boolean(workOrderOrPayload?.safety_devices_checked);
+}
+
+function currentSafetyCheckboxCheckedForWorkOrder(id) {
+  if (activeWorkOrderId !== id) return false;
+  return Array.from(document.querySelectorAll('input[name="safety_devices_checked"]')).some((field) => field.checked);
+}
+
+function applySafetyCheckPayload(payload, checked) {
+  payload.safety_devices_checked = Boolean(checked);
+  payload.safety_devices_checked_at = checked ? new Date().toISOString() : null;
+  return payload;
 }
 
 function assignmentLabel(workOrder) {
@@ -3988,8 +4351,14 @@ function completedThisWeek() {
   return workOrders.filter((workOrder) => workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
 }
 
-function averageCompletionMinutes() {
-  const completed = workOrders.filter((workOrder) => workOrder.status === "completed" && Number(workOrder.actual_minutes) > 0);
+function completedThisMonth() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  return workOrders.filter((workOrder) => workOrder.completed_at && new Date(workOrder.completed_at) >= monthStart);
+}
+
+function averageCompletionMinutes(source = workOrders) {
+  const completed = source.filter((workOrder) => workOrder.status === "completed" && Number(workOrder.actual_minutes) > 0);
   if (!completed.length) return 0;
   const total = completed.reduce((sum, workOrder) => sum + Number(workOrder.actual_minutes || 0), 0);
   return Math.round(total / completed.length);
@@ -4012,6 +4381,7 @@ function planningItems(bucket = "all") {
   soon.setDate(soon.getDate() + 7);
 
   return workOrders
+    .filter(matchesActiveLocation)
     .filter((workOrder) => workOrder.status !== "completed" && workOrder.due_at)
     .filter((workOrder) => matchesSearch([
       workOrder.title,
@@ -4050,6 +4420,7 @@ function planningPmItems() {
   soon.setDate(soon.getDate() + 7);
 
   return preventiveSchedules
+    .filter(matchesActiveLocation)
     .filter((schedule) => {
       const due = new Date(`${schedule.next_due_at}T00:00:00`);
       return due >= today && due <= soon;
@@ -4073,6 +4444,7 @@ function planningPmItems() {
 
 function followUpItems() {
   return workOrders
+    .filter(matchesActiveLocation)
     .filter((workOrder) => workOrder.follow_up_needed)
     .filter((workOrder) => matchesSearch([
       workOrder.title,

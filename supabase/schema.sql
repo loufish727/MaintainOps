@@ -23,6 +23,14 @@ create table if not exists public.company_members (
   unique (company_id, user_id)
 );
 
+create table if not exists public.locations (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  unique (company_id, name)
+);
+
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -36,6 +44,7 @@ create table if not exists public.profiles (
 create table if not exists public.assets (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
+  location_id uuid references public.locations(id) on delete set null,
   name text not null,
   asset_code text,
   location text,
@@ -47,6 +56,7 @@ create table if not exists public.assets (
 create table if not exists public.work_orders (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
+  location_id uuid references public.locations(id) on delete set null,
   asset_id uuid references public.assets(id) on delete set null,
   assigned_to uuid references auth.users(id) on delete set null,
   title text not null,
@@ -62,6 +72,8 @@ create table if not exists public.work_orders (
   follow_up_needed boolean not null default false,
   completion_notes text,
   completed_at timestamptz,
+  safety_devices_checked boolean not null default false,
+  safety_devices_checked_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -92,6 +104,7 @@ create table if not exists public.work_order_photos (
 create table if not exists public.preventive_schedules (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
+  location_id uuid references public.locations(id) on delete set null,
   asset_id uuid not null references public.assets(id) on delete cascade,
   title text not null,
   frequency text not null default 'monthly' check (frequency in ('weekly', 'monthly', 'quarterly')),
@@ -105,6 +118,7 @@ create table if not exists public.preventive_schedules (
 create table if not exists public.parts (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
+  location_id uuid references public.locations(id) on delete set null,
   name text not null,
   sku text,
   supplier_name text,
@@ -149,6 +163,18 @@ create table if not exists public.work_order_events (
 alter table public.work_orders
 add column if not exists assigned_to uuid references auth.users(id) on delete set null;
 
+alter table public.assets
+add column if not exists location_id uuid references public.locations(id) on delete set null;
+
+alter table public.work_orders
+add column if not exists location_id uuid references public.locations(id) on delete set null;
+
+alter table public.preventive_schedules
+add column if not exists location_id uuid references public.locations(id) on delete set null;
+
+alter table public.parts
+add column if not exists location_id uuid references public.locations(id) on delete set null;
+
 alter table public.work_orders
 add column if not exists type text not null default 'reactive'
 check (type in ('request', 'reactive', 'preventive', 'inspection', 'corrective'));
@@ -162,6 +188,47 @@ add column if not exists completion_notes text;
 alter table public.work_orders
 add column if not exists completed_at timestamptz;
 
+alter table public.work_orders
+add column if not exists safety_devices_checked boolean not null default false;
+
+alter table public.work_orders
+add column if not exists safety_devices_checked_at timestamptz;
+
+insert into public.locations (company_id, name)
+select c.id, 'Main Location'
+from public.companies c
+where not exists (
+  select 1 from public.locations l where l.company_id = c.id
+);
+
+update public.assets a
+set location_id = l.id
+from public.locations l
+where a.company_id = l.company_id
+  and a.location_id is null
+  and l.name = 'Main Location';
+
+update public.work_orders wo
+set location_id = coalesce((select a.location_id from public.assets a where a.id = wo.asset_id), l.id)
+from public.locations l
+where wo.company_id = l.company_id
+  and wo.location_id is null
+  and l.name = 'Main Location';
+
+update public.preventive_schedules ps
+set location_id = coalesce((select a.location_id from public.assets a where a.id = ps.asset_id), l.id)
+from public.locations l
+where ps.company_id = l.company_id
+  and ps.location_id is null
+  and l.name = 'Main Location';
+
+update public.parts p
+set location_id = l.id
+from public.locations l
+where p.company_id = l.company_id
+  and p.location_id is null
+  and l.name = 'Main Location';
+
 alter table public.companies
 add column if not exists name_key text generated always as (lower(btrim(name))) stored;
 
@@ -170,6 +237,15 @@ on public.companies(created_by, name_key);
 
 do $$
 begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'work_orders_asset_completion_safety_check'
+  ) then
+    alter table public.work_orders
+      add constraint work_orders_asset_completion_safety_check
+      check (status <> 'completed' or asset_id is null or safety_devices_checked)
+      not valid;
+  end if;
+
   if not exists (
     select 1 from pg_constraint where conname = 'work_order_comments_company_author_profile_fkey'
   ) then
@@ -203,15 +279,20 @@ end $$;
 
 create index if not exists company_members_user_id_idx on public.company_members(user_id);
 create index if not exists company_members_company_id_idx on public.company_members(company_id);
+create index if not exists locations_company_id_idx on public.locations(company_id);
 create index if not exists profiles_company_id_idx on public.profiles(company_id);
 create index if not exists assets_company_id_idx on public.assets(company_id);
+create index if not exists assets_location_id_idx on public.assets(location_id);
 create index if not exists work_orders_company_id_idx on public.work_orders(company_id);
+create index if not exists work_orders_location_id_idx on public.work_orders(location_id);
 create index if not exists work_orders_assigned_to_idx on public.work_orders(assigned_to);
 create index if not exists work_order_comments_company_id_idx on public.work_order_comments(company_id);
 create index if not exists work_order_photos_company_id_idx on public.work_order_photos(company_id);
 create index if not exists preventive_schedules_company_id_idx on public.preventive_schedules(company_id);
+create index if not exists preventive_schedules_location_id_idx on public.preventive_schedules(location_id);
 create index if not exists preventive_schedules_asset_id_idx on public.preventive_schedules(asset_id);
 create index if not exists parts_company_id_idx on public.parts(company_id);
+create index if not exists parts_location_id_idx on public.parts(location_id);
 create index if not exists parts_company_supplier_name_idx on public.parts(company_id, supplier_name);
 create index if not exists work_order_parts_company_id_idx on public.work_order_parts(company_id);
 create index if not exists work_order_parts_work_order_id_idx on public.work_order_parts(work_order_id);
@@ -223,6 +304,7 @@ create index if not exists work_order_events_work_order_id_idx on public.work_or
 grant usage on schema public to authenticated;
 grant select, insert, update on public.companies to authenticated;
 grant select, insert, update on public.company_members to authenticated;
+grant select, insert, update on public.locations to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, update on public.assets to authenticated;
 grant select, insert, update on public.work_orders to authenticated;
@@ -266,6 +348,10 @@ begin
 
   insert into public.company_members (company_id, user_id, role)
   values (new_company_id, auth.uid(), 'admin');
+
+  insert into public.locations (company_id, name)
+  values (new_company_id, 'Main Location')
+  on conflict (company_id, name) do nothing;
 
   user_name := coalesce(auth.jwt() -> 'user_metadata' ->> 'full_name', split_part(coalesce(auth.jwt() ->> 'email', ''), '@', 1), '');
 
@@ -312,6 +398,7 @@ $$;
 
 alter table public.companies enable row level security;
 alter table public.company_members enable row level security;
+alter table public.locations enable row level security;
 alter table public.profiles enable row level security;
 alter table public.assets enable row level security;
 alter table public.work_orders enable row level security;
@@ -375,6 +462,25 @@ create policy "Members can read profiles"
 on public.profiles for select
 to authenticated
 using (private.is_company_member(company_id));
+
+drop policy if exists "Members can read locations" on public.locations;
+create policy "Members can read locations"
+on public.locations for select
+to authenticated
+using (private.is_company_member(company_id));
+
+drop policy if exists "Members can create locations" on public.locations;
+create policy "Members can create locations"
+on public.locations for insert
+to authenticated
+with check (private.is_company_member(company_id));
+
+drop policy if exists "Members can update locations" on public.locations;
+create policy "Members can update locations"
+on public.locations for update
+to authenticated
+using (private.is_company_member(company_id))
+with check (private.is_company_member(company_id));
 
 drop policy if exists "Members can create their profile" on public.profiles;
 create policy "Members can create their profile"
