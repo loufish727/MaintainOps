@@ -930,10 +930,6 @@ textarea {
   border-color: rgba(255, 255, 255, 0.42);
 }
 
-.theme-toggle {
-  text-align: left;
-}
-
 .work-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -2653,7 +2649,6 @@ textarea:focus {
     display: none;
   }
 
-  .theme-toggle,
   .text-button.inverse {
     justify-content: center;
     width: 100%;

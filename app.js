@@ -53,7 +53,6 @@ if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "
   localStorage.setItem("maintainops.activeSection", activeSection);
   localStorage.setItem("maintainops.sectionSplitDone", "true");
 }
-let theme = localStorage.getItem("maintainops.theme") || "light";
 let searchQuery = localStorage.getItem("maintainops.searchQuery") || "";
 let appError = "";
 let appNotice = "";
@@ -62,7 +61,6 @@ let noticeTimer;
 init();
 
 async function init() {
-  applyTheme();
   console.log("SUPABASE URL:", window.SUPABASE_URL);
   console.log("SUPABASE KEY:", window.SUPABASE_ANON_KEY);
 
@@ -537,7 +535,6 @@ async function addSignedPartDocumentUrls() {
 }
 
 function renderWorkspace() {
-  applyTheme();
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const visibleWorkOrders = filteredWorkOrders();
@@ -563,7 +560,7 @@ function renderWorkspace() {
       <aside class="sidebar">
         <div class="brand">
           <span class="brand-mark">MO</span>
-          <span><strong>MaintainOps</strong><small>Supabase MVP</small></span>
+          <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
         <label class="company-switcher">
           Company
@@ -572,7 +569,6 @@ function renderWorkspace() {
           </select>
         </label>
         <button class="secondary-button" id="new-company" type="button">New Company</button>
-        <button class="secondary-button theme-toggle" id="theme-toggle" type="button">${theme === "dark" ? "Light Mode" : "Dark Mode"}</button>
         <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
         <nav class="section-nav" aria-label="Workspace sections">
           ${[
@@ -2274,12 +2270,6 @@ function bindWorkspaceEvents() {
 
   document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
-  document.querySelector("#theme-toggle").addEventListener("click", () => {
-    theme = theme === "dark" ? "light" : "dark";
-    localStorage.setItem("maintainops.theme", theme);
-    applyTheme();
-    renderWorkspace();
-  });
   document.querySelectorAll("[data-section]").forEach((button) => {
     button.addEventListener("click", () => {
       activeSection = button.dataset.section;
@@ -4223,8 +4213,3 @@ function csvCell(value) {
   const text = String(value ?? "");
   return `"${text.replaceAll('"', '""')}"`;
 }
-
-function applyTheme() {
-  document.documentElement.dataset.theme = theme;
-}
-
