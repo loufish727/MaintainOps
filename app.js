@@ -592,22 +592,24 @@ function renderWorkspace() {
           <span class="brand-mark">MO</span>
           <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
-        <label class="company-switcher">
-          Company
-          <select id="company-select">
-            ${companies.map((company) => `<option value="${company.id}" ${company.id === activeCompanyId ? "selected" : ""}>${company.name}</option>`).join("")}
-          </select>
-        </label>
-        <label class="company-switcher">
-          Location
-          <select id="location-select" ${locationsReady ? "" : "disabled"}>
-            ${locations.length ? "" : `<option value="">Run location setup</option>`}
-            ${locations.map((location) => `<option value="${location.id}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("")}
-          </select>
-        </label>
-        ${locationsReady ? "" : `<p class="warning-text">Run supabase/step-next-locations.sql to enable locations.</p>`}
-        <button class="secondary-button" id="new-company" type="button">New Company</button>
-        <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
+        <div class="sidebar-controls">
+          <label class="company-switcher">
+            Company
+            <select id="company-select">
+              ${companies.map((company) => `<option value="${company.id}" ${company.id === activeCompanyId ? "selected" : ""}>${company.name}</option>`).join("")}
+            </select>
+          </label>
+          <label class="company-switcher">
+            Location
+            <select id="location-select" ${locationsReady ? "" : "disabled"}>
+              ${locations.length ? "" : `<option value="">Run location setup</option>`}
+              ${locations.map((location) => `<option value="${location.id}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("")}
+            </select>
+          </label>
+          ${locationsReady ? "" : `<p class="warning-text">Run supabase/step-next-locations.sql to enable locations.</p>`}
+          <button class="secondary-button" id="new-company" type="button">New Company</button>
+          <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
+        </div>
         <nav class="section-nav" aria-label="Workspace sections">
           ${[
             ["mywork", "My Work"],
