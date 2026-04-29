@@ -286,6 +286,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 
 .topbar {
   position: relative;
+  z-index: 15;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -358,7 +359,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 
 .topbar-actions {
   position: relative;
-  z-index: 1;
+  z-index: 20;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -464,6 +465,10 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   position: relative;
 }
 
+.topbar-more[open] {
+  z-index: 80;
+}
+
 .topbar-more summary {
   display: inline-flex;
   align-items: center;
@@ -490,7 +495,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  z-index: 10;
+  z-index: 90;
   display: grid;
   gap: 8px;
   min-width: 190px;
@@ -1045,6 +1050,12 @@ textarea {
   border-color: color-mix(in srgb, var(--yellow) 48%, var(--line));
   background: color-mix(in srgb, #fff0d9 82%, var(--surface));
   color: var(--on-light-highlight);
+}
+
+.status-segment.status-active {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
 }
 
 .status-segment.status-in_progress {
@@ -2794,6 +2805,12 @@ textarea:focus {
   color: var(--yellow);
 }
 
+.status-segment.status-active {
+  border-color: rgba(119, 215, 255, 0.42);
+  background: rgba(119, 215, 255, 0.11);
+  color: var(--accent);
+}
+
 .status-segment.status-in_progress {
   border-color: rgba(119, 215, 255, 0.42);
   background: rgba(119, 215, 255, 0.11);
@@ -3029,6 +3046,7 @@ textarea:focus {
     align-items: stretch;
     flex-direction: column;
     gap: 12px;
+    z-index: 45;
     border-radius: 14px;
     margin-bottom: 12px;
     padding: 14px;
@@ -3080,6 +3098,7 @@ textarea:focus {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 8px;
+    z-index: 60;
     width: 100%;
   }
 
@@ -3092,6 +3111,7 @@ textarea:focus {
   .topbar-more div {
     left: auto;
     right: 0;
+    z-index: 120;
     width: min(240px, calc(100vw - 32px));
   }
 
@@ -3375,5 +3395,18 @@ textarea:focus {
 
   .restock-form {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .section-nav button:not(.active):hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    border-left-color: color-mix(in srgb, var(--nav-ink) 72%, transparent);
+    background: rgba(255,255,255,0.04);
+    color: #dce7e2;
+  }
+
+  .section-nav button:not(.active):hover .nav-icon {
+    color: currentColor;
   }
 }

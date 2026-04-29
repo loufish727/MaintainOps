@@ -45,7 +45,7 @@ let createWorkOrderMode = false;
 let quickFixMode = false;
 let quickFixAssetId = null;
 let quickFixRequestId = null;
-let activeStatusFilter = "all";
+let activeStatusFilter = "active";
 let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
 let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
 let workSort = localStorage.getItem("maintainops.workSort") || "newest";
@@ -574,7 +574,7 @@ function renderWorkspace() {
   const pagedWorkOrders = visibleWorkOrders.slice((workOrderPage - 1) * WORK_ORDERS_PER_PAGE, workOrderPage * WORK_ORDERS_PER_PAGE);
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
-  const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id);
+  const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
   const visibleRequests = filteredRequests();
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
@@ -722,7 +722,7 @@ function renderWorkspace() {
                   </div>
                 `}
                 <div class="segmented-control" aria-label="Work order status filter">
-                  ${["all", ...STATUS_OPTIONS].map((status) => `
+                  ${["active", ...STATUS_OPTIONS].map((status) => `
                     <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
                       ${segmentIcon(status)}${statusLabel(status)}
                     </button>
@@ -941,7 +941,9 @@ function renderWorkspace() {
 function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
     if (!matchesActiveLocation(workOrder)) return false;
-    const statusMatch = activeStatusFilter === "all" || workOrder.status === activeStatusFilter;
+    const statusMatch = activeStatusFilter === "active" || activeStatusFilter === "all"
+      ? workOrder.status !== "completed"
+      : workOrder.status === activeStatusFilter;
     const queueMatch = activeSection === "mywork"
       ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
       : workOrderFilter === "all" ||
@@ -1181,6 +1183,7 @@ function renderWorkloadStrip(items) {
 
 function segmentIcon(type) {
   const icons = {
+    active: `<path d="M4 12h5l2-6 4 12 2-6h3"></path>`,
     all: `<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>`,
     mine: `<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M4 21a8 8 0 0 1 16 0"></path>`,
     created: `<path d="M5 4h10l4 4v12H5z"></path><path d="M15 4v5h5"></path><path d="M8 14h8"></path><path d="M8 17h5"></path>`,
@@ -4126,6 +4129,7 @@ function safeFileName(fileName) {
 }
 
 function statusLabel(status) {
+  if (status === "active" || status === "all") return "Active";
   if (status === "open") return "New";
   return String(status || "").replace("_", " ");
 }
