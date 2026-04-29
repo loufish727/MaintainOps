@@ -1,6 +1,6 @@
 # Maintenance Operations App
 
-This project is an early build plan for a maintenance operations app inspired by modern CMMS tools such as MaintainX, without copying their branding or proprietary interface.
+This project is an early build plan for MaintainOps, an original maintenance operations app for internal work order, asset, parts, and technician workflows.
 
 The first target is a focused MVP for small maintenance teams:
 

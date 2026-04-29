@@ -83,6 +83,9 @@ create table if not exists public.work_order_photos (
   storage_path text not null,
   file_name text not null,
   content_type text,
+  file_size_bytes bigint,
+  original_file_name text,
+  original_size_bytes bigint,
   created_at timestamptz not null default now()
 );
 
@@ -104,6 +107,7 @@ create table if not exists public.parts (
   company_id uuid not null references public.companies(id) on delete cascade,
   name text not null,
   sku text,
+  supplier_name text,
   quantity_on_hand integer not null default 0,
   reorder_point integer not null default 0,
   unit_cost numeric(12,2) not null default 0,
@@ -118,6 +122,17 @@ create table if not exists public.work_order_parts (
   part_id uuid not null references public.parts(id) on delete restrict,
   quantity_used integer not null check (quantity_used > 0),
   unit_cost_at_use numeric(12,2) not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.part_documents (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  part_id uuid not null references public.parts(id) on delete cascade,
+  uploaded_by uuid not null references auth.users(id) on delete restrict,
+  storage_path text not null,
+  file_name text not null,
+  content_type text,
   created_at timestamptz not null default now()
 );
 
@@ -197,8 +212,11 @@ create index if not exists work_order_photos_company_id_idx on public.work_order
 create index if not exists preventive_schedules_company_id_idx on public.preventive_schedules(company_id);
 create index if not exists preventive_schedules_asset_id_idx on public.preventive_schedules(asset_id);
 create index if not exists parts_company_id_idx on public.parts(company_id);
+create index if not exists parts_company_supplier_name_idx on public.parts(company_id, supplier_name);
 create index if not exists work_order_parts_company_id_idx on public.work_order_parts(company_id);
 create index if not exists work_order_parts_work_order_id_idx on public.work_order_parts(work_order_id);
+create index if not exists part_documents_company_id_idx on public.part_documents(company_id);
+create index if not exists part_documents_part_id_idx on public.part_documents(part_id);
 create index if not exists work_order_events_company_id_idx on public.work_order_events(company_id);
 create index if not exists work_order_events_work_order_id_idx on public.work_order_events(work_order_id);
 
@@ -213,6 +231,7 @@ grant select, insert on public.work_order_photos to authenticated;
 grant select, insert, update on public.preventive_schedules to authenticated;
 grant select, insert, update on public.parts to authenticated;
 grant select, insert on public.work_order_parts to authenticated;
+grant select, insert on public.part_documents to authenticated;
 grant select, insert on public.work_order_events to authenticated;
 grant execute on function public.create_company(text) to authenticated;
 grant execute on function public.ensure_company_profile(uuid) to authenticated;
@@ -301,6 +320,7 @@ alter table public.work_order_photos enable row level security;
 alter table public.preventive_schedules enable row level security;
 alter table public.parts enable row level security;
 alter table public.work_order_parts enable row level security;
+alter table public.part_documents enable row level security;
 alter table public.work_order_events enable row level security;
 
 drop policy if exists "Members can read companies" on public.companies;
@@ -561,6 +581,26 @@ with check (
   )
 );
 
+drop policy if exists "Members can read part documents" on public.part_documents;
+create policy "Members can read part documents"
+on public.part_documents for select
+to authenticated
+using (private.is_company_member(company_id));
+
+drop policy if exists "Members can create part documents" on public.part_documents;
+create policy "Members can create part documents"
+on public.part_documents for insert
+to authenticated
+with check (
+  private.is_company_member(company_id)
+  and uploaded_by = auth.uid()
+  and exists (
+    select 1 from public.parts p
+    where p.id = part_id
+      and p.company_id = part_documents.company_id
+  )
+);
+
 drop policy if exists "Members can read work order events" on public.work_order_events;
 create policy "Members can read work order events"
 on public.work_order_events for select
@@ -585,6 +625,10 @@ insert into storage.buckets (id, name, public)
 values ('work-order-photos', 'work-order-photos', false)
 on conflict (id) do nothing;
 
+insert into storage.buckets (id, name, public)
+values ('part-documents', 'part-documents', false)
+on conflict (id) do nothing;
+
 drop policy if exists "Members can upload work order photos" on storage.objects;
 create policy "Members can upload work order photos"
 on storage.objects for insert
@@ -600,6 +644,24 @@ on storage.objects for select
 to authenticated
 using (
   bucket_id = 'work-order-photos'
+  and private.is_company_member((storage.foldername(name))[1]::uuid)
+);
+
+drop policy if exists "Members can upload part documents" on storage.objects;
+create policy "Members can upload part documents"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'part-documents'
+  and private.is_company_member((storage.foldername(name))[1]::uuid)
+);
+
+drop policy if exists "Members can read part documents storage" on storage.objects;
+create policy "Members can read part documents storage"
+on storage.objects for select
+to authenticated
+using (
+  bucket_id = 'part-documents'
   and private.is_company_member((storage.foldername(name))[1]::uuid)
 );
 

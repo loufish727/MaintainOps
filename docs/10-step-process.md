@@ -2,7 +2,7 @@
 
 ## 1. Product Foundation
 
-Define the target users, core workflows, MVP scope, data model, and first release boundaries. Keep the product similar in category to MaintainX-style CMMS software, but build an original app with its own language, information architecture, and visual design.
+Define the target users, core workflows, MVP scope, data model, and first release boundaries. Build an original maintenance operations app with its own language, information architecture, and visual design.
 
 ## 2. Technical Foundation
 

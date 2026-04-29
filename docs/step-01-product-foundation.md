@@ -4,7 +4,7 @@
 
 MaintainOps
 
-This is a placeholder name for planning only. Before launch, pick a distinctive brand that does not resemble MaintainX or another CMMS vendor too closely.
+This is the working product name for the prototype. Before launch, confirm the final brand is distinctive and clear for the intended market.
 
 ## Product Thesis
 
