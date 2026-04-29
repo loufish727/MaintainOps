@@ -2,6 +2,10 @@ const app = document.querySelector("#app");
 
 const STATUS_OPTIONS = ["open", "in_progress", "blocked", "completed"];
 const TYPE_OPTIONS = ["request", "reactive", "preventive", "inspection", "corrective"];
+const WORK_ORDERS_PER_PAGE = 12;
+const PARTS_PER_PAGE = 12;
+const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
+const OUTSIDE_VENDOR_NOTE = "[Assignment: Outside vendor]";
 let supabaseClient;
 let session;
 let companies = [];
@@ -14,8 +18,14 @@ let preventiveSchedules = [];
 let companyMembers = [];
 let parts = [];
 let partCostsReady = true;
+let partSuppliersReady = true;
+let partDocumentsReady = true;
+let partDocumentsByPartId = {};
 let procedureTemplates = [];
 let proceduresReady = false;
+let schedulesReady = false;
+let outcomesReady = true;
+let photosReady = true;
 let partsUsedByWorkOrder = {};
 let eventsByWorkOrder = {};
 let commentsByWorkOrder = {};
@@ -25,16 +35,29 @@ let profilesByUserId = {};
 let commentsError = "";
 let activeWorkOrderId = null;
 let activeAssetId = null;
+let activePartId = null;
+let showPartSourceManager = false;
+let createWorkOrderMode = false;
 let quickFixMode = false;
 let quickFixAssetId = null;
 let quickFixRequestId = null;
 let activeStatusFilter = "all";
-let queueFilter = "all";
+let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
+let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
 let workSort = localStorage.getItem("maintainops.workSort") || "newest";
-let activeSection = localStorage.getItem("maintainops.activeSection") || "work";
+let workOrderPage = Number(localStorage.getItem("maintainops.workOrderPage")) || 1;
+let partsPage = Number(localStorage.getItem("maintainops.partsPage")) || 1;
+let activeSection = localStorage.getItem("maintainops.activeSection") || "mywork";
+if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "work") {
+  activeSection = "mywork";
+  localStorage.setItem("maintainops.activeSection", activeSection);
+  localStorage.setItem("maintainops.sectionSplitDone", "true");
+}
 let theme = localStorage.getItem("maintainops.theme") || "light";
 let searchQuery = localStorage.getItem("maintainops.searchQuery") || "";
 let appError = "";
+let appNotice = "";
+let noticeTimer;
 
 init();
 
@@ -301,15 +324,18 @@ async function loadCompanyData() {
   workOrders = workOrderResponse.data || [];
   requestsReady = !requestResponse.error;
   maintenanceRequests = requestResponse.error ? [] : (requestResponse.data || []);
-  preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
-  parts = partsResponse.error ? [] : (partsResponse.data || []);
-  partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
-  proceduresReady = !procedureResponse.error;
+    preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
+    parts = partsResponse.error ? [] : (partsResponse.data || []);
+    partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
+    partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
+    schedulesReady = !scheduleResponse.error;
+    outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
+    proceduresReady = !procedureResponse.error;
   procedureTemplates = procedureResponse.error ? [] : (procedureResponse.data || []).map((template) => ({
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
-  await Promise.all([loadProfiles(), loadMembers(), loadComments(), loadPhotos(), loadPartsUsed(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function loadProfiles() {
@@ -369,12 +395,19 @@ async function loadPhotos() {
   }
 
   const ids = workOrders.map((workOrder) => workOrder.id);
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("work_order_photos")
     .select("*")
     .eq("company_id", activeCompanyId)
     .in("work_order_id", ids)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    photosReady = false;
+    photosByWorkOrder = {};
+    return;
+  }
+  photosReady = true;
 
   photosByWorkOrder = (data || []).reduce((groups, photo) => {
     groups[photo.work_order_id] ||= [];
@@ -404,6 +437,37 @@ async function loadPartsUsed() {
     groups[row.work_order_id].push(row);
     return groups;
   }, {});
+}
+
+async function loadPartDocuments() {
+  if (!parts.length) {
+    partDocumentsByPartId = {};
+    partDocumentsReady = true;
+    return;
+  }
+
+  const ids = parts.map((part) => part.id);
+  const { data, error } = await supabaseClient
+    .from("part_documents")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("part_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    partDocumentsReady = false;
+    partDocumentsByPartId = {};
+    return;
+  }
+
+  partDocumentsReady = true;
+  partDocumentsByPartId = (data || []).reduce((groups, document) => {
+    groups[document.part_id] ||= [];
+    groups[document.part_id].push(document);
+    return groups;
+  }, {});
+
+  await addSignedPartDocumentUrls();
 }
 
 async function loadWorkOrderEvents() {
@@ -462,15 +526,37 @@ async function addSignedPhotoUrls() {
   }));
 }
 
+async function addSignedPartDocumentUrls() {
+  const documents = Object.values(partDocumentsByPartId).flat();
+  await Promise.all(documents.map(async (document) => {
+    const { data } = await supabaseClient.storage
+      .from("part-documents")
+      .createSignedUrl(document.storage_path, 60 * 10);
+    document.signedUrl = data?.signedUrl || "";
+  }));
+}
+
 function renderWorkspace() {
   applyTheme();
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
+  const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const visibleWorkOrders = filteredWorkOrders();
+  const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrders.length / WORK_ORDERS_PER_PAGE));
+  if (workOrderPage > totalWorkOrderPages) workOrderPage = totalWorkOrderPages;
+  if (workOrderPage < 1) workOrderPage = 1;
+  const pagedWorkOrders = visibleWorkOrders.slice((workOrderPage - 1) * WORK_ORDERS_PER_PAGE, workOrderPage * WORK_ORDERS_PER_PAGE);
+  const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
+  const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
+  const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id);
   const visibleRequests = filteredRequests();
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
   const visibleParts = filteredParts();
+  const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
+  if (partsPage > totalPartsPages) partsPage = totalPartsPages;
+  if (partsPage < 1) partsPage = 1;
+  const pagedParts = visibleParts.slice((partsPage - 1) * PARTS_PER_PAGE, partsPage * PARTS_PER_PAGE);
   const visibleMembers = filteredMembers();
   app.innerHTML = `
     <div class="app-shell">
@@ -490,7 +576,8 @@ function renderWorkspace() {
         <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
         <nav class="section-nav" aria-label="Workspace sections">
           ${[
-            ["work", "Work"],
+            ["mywork", "My Work"],
+            ["work", "Work Orders"],
             ["planning", "Planning"],
             ["requests", "Requests"],
             ["assets", "Assets"],
@@ -498,81 +585,125 @@ function renderWorkspace() {
             ["procedures", "Procedures"],
             ["parts", "Parts"],
             ["team", "Team"],
+            ["setup", "Admin Setup"],
             ["settings", "Settings"],
-          ].map(([id, label]) => `<button class="${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${label}</button>`).join("")}
+          ].map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}${label}</button>`).join("")}
         </nav>
       </aside>
 
       <main class="workspace">
         <header class="topbar">
-          <div>
+          <div class="topbar-main">
             <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
             <h1>${activeCompany?.name || "Company"}</h1>
+            <div class="topbar-summary">
+              <span>${workOrders.length} work orders</span>
+              <span>${assets.length} assets</span>
+              <span>${openMaintenanceRequests().length} open requests</span>
+            </div>
           </div>
-          <button class="primary-button quick-fix-button" id="show-quick-fix" type="button">Quick Fix</button>
-          <button class="primary-button" id="show-create-work-order" type="button">New Work Order</button>
-          <button class="secondary-button" id="show-request" type="button">Submit Request</button>
-          <button class="secondary-button" id="export-csv" type="button">Export CSV</button>
+          <div class="topbar-actions">
+            <button class="primary-button quick-fix-button" id="show-quick-fix" type="button">Quick Fix</button>
+            <details class="topbar-more">
+              <summary>More</summary>
+              <div>
+                <button class="primary-button work-action-button" id="show-create-work-order" type="button">New Work Order</button>
+                <button class="secondary-button request-action-button" id="show-request" type="button">Submit Request</button>
+                <button class="secondary-button export-action-button" id="export-csv" type="button">Export CSV</button>
+              </div>
+            </details>
+          </div>
         </header>
+
+        ${appNotice ? `<div class="app-notice">${escapeHtml(appNotice)}</div>` : ""}
+        ${appNotice ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+
+        ${activeSection === "mywork" ? `
+          <section class="tech-focus">
+            <div>
+              <span class="focus-label">Technician Focus</span>
+              <h2>${myWorkFilter === "created" ? "Created By Me" : "Assigned To Me"}</h2>
+              <p>${myWorkFilter === "created" ? "Work orders you opened, kept separate from your assigned queue." : "Only work orders assigned to you."}</p>
+            </div>
+            <div class="focus-stats">
+              <article><strong>${myOpenWork.length}</strong><span>active mine</span></article>
+              <article><strong>${createdByMe.length}</strong><span>created by me</span></article>
+            </div>
+          </section>
+        ` : ""}
 
         <label class="search-bar">
           Search workspace
           <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, assets, parts, people">
         </label>
 
-        <section class="metric-grid">
-          ${renderMetric("Open", workOrders.filter((workOrder) => workOrder.status === "open").length)}
-          ${renderMetric("In Progress", workOrders.filter((workOrder) => workOrder.status === "in_progress").length)}
-          ${renderMetric("Blocked", workOrders.filter((workOrder) => workOrder.status === "blocked").length)}
-          ${renderMetric("Completed", workOrders.filter((workOrder) => workOrder.status === "completed").length)}
-        </section>
-
-        <section class="insight-grid">
-          ${renderInsight("Overdue Work", overdueWorkOrders().length, "Past due and not completed")}
-          ${renderInsight("Requests", requestsReady ? openMaintenanceRequests().length : workOrders.filter((workOrder) => workOrder.type === "request" && workOrder.status !== "completed").length, "Waiting for review")}
-          ${renderInsight("Done This Week", completedThisWeek().length, "Completed in the last 7 days")}
-          ${renderInsight("Avg Completion", `${averageCompletionMinutes()} min`, "Actual minutes on completed work")}
-        </section>
-
-        <section class="layout-grid ${activeSection === "work" ? "" : "single-column"}">
-          ${activeSection === "work" ? `
-          <section class="panel">
-            <div class="panel-header">
-              <h2>Work Orders</h2>
-              <span>${visibleWorkOrders.length} shown</span>
-            </div>
-            <div class="segmented-control" aria-label="Queue filter">
-              <button class="segment ${queueFilter === "all" ? "active" : ""}" data-queue-filter="all" type="button">All Work</button>
-              <button class="segment ${queueFilter === "mine" ? "active" : ""}" data-queue-filter="mine" type="button">My Queue</button>
-              <button class="segment ${queueFilter === "unassigned" ? "active" : ""}" data-queue-filter="unassigned" type="button">Unassigned</button>
-            </div>
-            <div class="segmented-control" aria-label="Work order status filter">
-              ${["all", ...STATUS_OPTIONS].map((status) => `
-                <button class="segment ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
-                  ${status.replace("_", " ")}
-                </button>
-              `).join("")}
-            </div>
-            <div class="segmented-control" aria-label="Work order sort">
-              ${[
-                ["newest", "Newest"],
-                ["due", "Due First"],
-                ["priority", "Priority"],
-              ].map(([id, label]) => `
-                <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${label}</button>
-              `).join("")}
-            </div>
-            <div class="work-list" id="work-order-list">
-              ${visibleWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
-            </div>
+        ${isWorkArea ? "" : `
+          <section class="metric-grid">
+            ${renderMetric("Pending", workOrders.filter((workOrder) => workOrder.status === "open").length, "open")}
+            ${renderMetric("In Progress", workOrders.filter((workOrder) => workOrder.status === "in_progress").length, "in_progress")}
+            ${renderMetric("Blocked", workOrders.filter((workOrder) => workOrder.status === "blocked").length, "blocked")}
+            ${renderMetric("Completed", workOrders.filter((workOrder) => workOrder.status === "completed").length, "completed")}
           </section>
 
-          <section class="panel">
-            <div class="panel-header">
-              <h2>${activeAssetId ? "Asset Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
-            </div>
-            <div id="detail-panel">${activeAssetId ? renderAssetDetail() : activeWorkOrderId ? renderWorkOrderDetail() : quickFixMode ? renderQuickFixForm() : renderCreateWorkOrder()}</div>
+          <section class="insight-grid">
+            ${renderInsight("Overdue Work", overdueWorkOrders().length, "Past due and not completed", "overdue")}
+            ${renderInsight("Requests", requestsReady ? openMaintenanceRequests().length : workOrders.filter((workOrder) => workOrder.type === "request" && workOrder.status !== "completed").length, "Waiting for review", "request")}
+            ${renderInsight("Done This Week", completedThisWeek().length, "Completed in the last 7 days", "completed")}
+            ${renderInsight("Avg Completion", `${averageCompletionMinutes()} min`, "Actual minutes on completed work", "neutral")}
           </section>
+        `}
+
+        <section class="layout-grid single-column">
+          ${isWorkArea ? `
+            ${activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode ? `
+              <section class="panel full-width focus-panel">
+                <div class="panel-header">
+                  <h2>${activeAssetId ? "Asset Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
+                  <button class="secondary-button back-action-button" id="back-to-my-work" type="button">Back to ${activeSection === "work" ? "Work Orders" : "My Work"}</button>
+                </div>
+                <div id="detail-panel">${activeAssetId ? renderAssetDetail() : activeWorkOrderId ? renderWorkOrderDetail() : quickFixMode ? renderQuickFixForm() : renderCreateWorkOrder()}</div>
+              </section>
+            ` : `
+              <section class="panel full-width my-work-panel queue-panel">
+                <div class="panel-header">
+                  <h2>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : workOrderFilter === "unassigned" ? "Unassigned Work Orders" : workOrderFilter === "vendor" ? "Outside Vendor Work" : workOrderFilter === "assigned" ? "Assigned Work Orders" : "All Work Orders"}</h2>
+                  <span>${visibleWorkOrders.length} shown</span>
+                </div>
+                ${activeSection === "mywork" ? `
+                  <div class="segmented-control" aria-label="My work filter">
+                    <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
+                    <button class="segment ${myWorkFilter === "created" ? "active" : ""}" data-my-work-filter="created" type="button">${segmentIcon("created")}Created By Me</button>
+                  </div>
+                ` : `
+                  <div class="segmented-control" aria-label="Work order filter">
+                    <button class="segment ${workOrderFilter === "all" ? "active" : ""}" data-work-order-filter="all" type="button">${segmentIcon("all")}All Work Orders</button>
+                    <button class="segment ${workOrderFilter === "assigned" ? "active" : ""}" data-work-order-filter="assigned" type="button">${segmentIcon("mine")}Assigned</button>
+                    <button class="segment ${workOrderFilter === "vendor" ? "active" : ""}" data-work-order-filter="vendor" type="button">${segmentIcon("vendor")}Vendor</button>
+                    <button class="segment ${workOrderFilter === "unassigned" ? "active" : ""}" data-work-order-filter="unassigned" type="button">${segmentIcon("unassigned")}Unassigned</button>
+                  </div>
+                `}
+                <div class="segmented-control" aria-label="Work order status filter">
+                  ${["all", ...STATUS_OPTIONS].map((status) => `
+                    <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
+                      ${segmentIcon(status)}${statusLabel(status)}
+                    </button>
+                  `).join("")}
+                </div>
+                <div class="segmented-control" aria-label="Work order sort">
+                  ${[
+                    ["newest", "Newest"],
+                    ["due", "Due First"],
+                    ["priority", "Priority"],
+                  ].map(([id, label]) => `
+                    <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
+                  `).join("")}
+                </div>
+                <div class="work-list" id="work-order-list">
+                  ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
+                </div>
+                ${renderWorkPagination(visibleWorkOrders.length, totalWorkOrderPages)}
+              </section>
+            `}
           ` : ""}
 
           <section class="panel full-width ${activeSection === "planning" ? "" : "hidden-section"}">
@@ -611,7 +742,7 @@ function renderWorkspace() {
               <input name="name" required placeholder="Asset name">
               <input name="asset_code" placeholder="Asset code">
               <input name="location" placeholder="Location">
-              <button class="secondary-button" type="submit">Add Asset</button>
+              <button class="secondary-button asset-action-button" type="submit">Add Asset</button>
             </form>
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
@@ -693,24 +824,34 @@ function renderWorkspace() {
 
           <section class="panel full-width ${activeSection === "parts" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>Parts Inventory</h2>
-              <span>${visibleParts.length} shown</span>
+              <h2>${activePartId ? "Part Detail" : "Parts Inventory"}</h2>
+              <span>${activePartId ? "editing" : `${visibleParts.length} shown`}</span>
             </div>
-            <div class="parts-health-grid">
-              ${renderPartsHealth()}
-            </div>
-            <form class="inline-form parts-form relationship-detail parts" id="create-part-form">
-              <label>Part name<input name="name" required placeholder="Motor bearing"></label>
-              <label>SKU<input name="sku" placeholder="BRG-204"></label>
-              <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="0"></label>
-              <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="0"></label>
-              <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="0"></label>
-              <p class="error-text" id="part-create-error">${partCostsReady ? "" : "Run supabase/step-next-part-costs.sql before saving unit costs."}</p>
-              <button class="secondary-button" type="submit">Add Part</button>
-            </form>
-            <div class="parts-list">
-              ${visibleParts.map(renderPart).join("") || `<p class="muted">No parts match this search.</p>`}
-            </div>
+            ${activePartId ? renderPartDetail() : `
+              <div class="parts-health-grid">
+                ${renderPartsHealth()}
+              </div>
+              ${renderPartSourceOptions()}
+              <form class="inline-form parts-form relationship-detail parts" id="create-part-form">
+                <div class="parts-form-header">
+                  <h3>Add Part</h3>
+                  <button class="text-button danger-link source-edit-button" data-toggle-part-sources type="button">Edit sources</button>
+                </div>
+                <label>Part name<input name="name" required placeholder="Motor bearing"></label>
+                <label>SKU<input name="sku" placeholder="BRG-204"></label>
+                <label>Source / vendor<input name="supplier_name" list="part-source-options" placeholder="Grainger, McMaster, local supplier"></label>
+                <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="0"></label>
+                <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="0"></label>
+                <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="0"></label>
+                <p class="error-text" id="part-create-error">${partSetupMessage()}</p>
+                <button class="secondary-button add-part-button" type="submit">Add Part</button>
+              </form>
+              ${showPartSourceManager ? renderPartSourceManager() : ""}
+              <div class="parts-list">
+                ${pagedParts.map(renderPart).join("") || `<p class="muted">No parts match this search.</p>`}
+              </div>
+              ${renderPartsPagination(visibleParts.length, totalPartsPages)}
+            `}
           </section>
 
           <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
@@ -728,6 +869,17 @@ function renderWorkspace() {
               <article><strong>Active section</strong><span>${escapeHtml(activeSection)}</span></article>
             </div>
           </section>
+
+          <section class="panel full-width ${activeSection === "setup" ? "" : "hidden-section"}">
+            <div class="panel-header">
+              <h2>Admin Setup</h2>
+              <span>${setupItems().filter((item) => item.ready).length}/${setupItems().length} ready</span>
+            </div>
+            <p class="muted setup-note">Builder diagnostic area. Use this to confirm Supabase tables, columns, storage, and config are ready before demos or deployment.</p>
+            <div class="setup-list">
+              ${setupItems().map(renderSetupItem).join("")}
+            </div>
+          </section>
         </section>
       </main>
     </div>
@@ -739,10 +891,12 @@ function renderWorkspace() {
 function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
     const statusMatch = activeStatusFilter === "all" || workOrder.status === activeStatusFilter;
-    const queueMatch =
-      queueFilter === "all" ||
-      (queueFilter === "mine" && workOrder.assigned_to === session.user.id) ||
-      (queueFilter === "unassigned" && !workOrder.assigned_to);
+    const queueMatch = activeSection === "mywork"
+      ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
+      : workOrderFilter === "all" ||
+        (workOrderFilter === "assigned" && Boolean(workOrder.assigned_to)) ||
+        (workOrderFilter === "vendor" && isVendorAssigned(workOrder)) ||
+        (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
     return statusMatch && queueMatch && matchesSearch([
       workOrder.title,
       workOrder.description,
@@ -750,9 +904,40 @@ function filteredWorkOrders() {
       workOrder.priority,
       workOrder.type,
       workOrder.assets?.name,
-      workOrder.assigned_profile?.full_name,
+      assignmentLabel(workOrder),
     ]);
   }).sort(compareWorkOrders);
+}
+
+function resetWorkOrderPage() {
+  workOrderPage = 1;
+  localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+}
+
+function resetPartsPage() {
+  partsPage = 1;
+  localStorage.setItem("maintainops.partsPage", String(partsPage));
+}
+
+function showNotice(message) {
+  appNotice = message;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => {
+    appNotice = "";
+    renderWorkspace();
+  }, 2600);
+}
+
+function bindAutoGrowTextareas() {
+  document.querySelectorAll("textarea").forEach((field) => {
+    autoGrowTextarea(field);
+    field.addEventListener("input", () => autoGrowTextarea(field));
+  });
+}
+
+function autoGrowTextarea(field) {
+  field.style.height = "auto";
+  field.style.height = `${field.scrollHeight}px`;
 }
 
 function compareWorkOrders(a, b) {
@@ -817,9 +1002,59 @@ function filteredParts() {
   return parts.filter((part) => matchesSearch([
     part.name,
     part.sku,
+    part.supplier_name,
     part.quantity_on_hand,
     part.reorder_point,
   ]));
+}
+
+function partSourceOptions() {
+  return [...new Set(parts
+    .map((part) => String(part.supplier_name || "").trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function renderPartSourceOptions() {
+  const options = partSourceOptions();
+  return `
+    <datalist id="part-source-options">
+      ${options.map((source) => `<option value="${escapeHtml(source)}"></option>`).join("")}
+    </datalist>
+  `;
+}
+
+function renderPartSourceManager() {
+  const sources = partSourceOptions();
+  return `
+    <section class="part-source-manager relationship-detail parts">
+      <div class="panel-header compact">
+        <h3>Edit Sources</h3>
+        <button class="text-button" data-toggle-part-sources type="button">Close</button>
+      </div>
+      ${partSuppliersReady ? `
+        <p class="muted">Rename a source to correct spelling or merge duplicates across every part using that exact name.</p>
+        <div class="part-source-list">
+          ${sources.map((source) => `
+            <form class="part-source-row" data-rename-part-source>
+              <input name="old_source" type="hidden" value="${escapeHtml(source)}">
+              <span>${escapeHtml(source)}</span>
+              <input name="new_source" list="part-source-options" value="${escapeHtml(source)}" aria-label="New source name for ${escapeHtml(source)}">
+              <button class="secondary-button" type="submit">Rename</button>
+            </form>
+          `).join("") || `<p class="muted">No sources have been added yet.</p>`}
+        </div>
+        <p class="error-text" id="part-source-error"></p>
+      ` : `<p class="error-text">Run supabase/step-next-part-suppliers.sql before editing sources.</p>`}
+    </section>
+  `;
+}
+
+function partSetupMessage() {
+  const messages = [];
+  if (!partCostsReady) messages.push("Run supabase/step-next-part-costs.sql before saving unit costs.");
+  if (!partSuppliersReady) messages.push("Run supabase/step-next-part-suppliers.sql before saving source/vendor names.");
+  return messages.join(" ");
 }
 
 function filteredMembers() {
@@ -836,13 +1071,48 @@ function matchesSearch(values) {
   return values.some((value) => String(value ?? "").toLowerCase().includes(query));
 }
 
-function renderMetric(label, value) {
-  return `<article class="metric"><span>${label}</span><strong>${value}</strong></article>`;
+function renderMetric(label, value, tone = "neutral") {
+  return `<article class="metric dashboard-card tone-${tone}"><span>${label}</span><strong>${value}</strong></article>`;
 }
 
-function renderInsight(label, value, description) {
+function segmentIcon(type) {
+  const icons = {
+    all: `<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>`,
+    mine: `<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M4 21a8 8 0 0 1 16 0"></path>`,
+    created: `<path d="M5 4h10l4 4v12H5z"></path><path d="M15 4v5h5"></path><path d="M8 14h8"></path><path d="M8 17h5"></path>`,
+    vendor: `<path d="M3 16h2l3-7h8l3 7h2"></path><path d="M7 16h10"></path><path d="M8 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path><path d="M16 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>`,
+    unassigned: `<path d="M12 5v14"></path><path d="M5 12h14"></path>`,
+    open: `<path d="M5 7h14v12H5z"></path><path d="M8 7V5h8v2"></path>`,
+    in_progress: `<path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M4.2 7.5l3.5 2"></path><path d="M16.3 14.5l3.5 2"></path><path d="M19.8 7.5l-3.5 2"></path><path d="M7.7 14.5l-3.5 2"></path>`,
+    blocked: `<path d="M5 5l14 14"></path><circle cx="12" cy="12" r="8"></circle>`,
+    completed: `<path d="M4 12l5 5L20 6"></path>`,
+    newest: `<path d="M12 5v7l4 2"></path><circle cx="12" cy="12" r="8"></circle>`,
+    due: `<path d="M7 3v4"></path><path d="M17 3v4"></path><path d="M4 8h16"></path><path d="M5 5h14v15H5z"></path>`,
+    priority: `<path d="M12 3l8 18H4z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path>`,
+  };
+  return `<svg class="segment-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[type] || icons.all}</svg>`;
+}
+
+function navIcon(type) {
+  const icons = {
+    mywork: `<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M4 21a8 8 0 0 1 16 0"></path>`,
+    work: `<path d="M5 7h14v12H5z"></path><path d="M8 7V5h8v2"></path>`,
+    planning: `<path d="M7 3v4"></path><path d="M17 3v4"></path><path d="M4 8h16"></path><path d="M5 5h14v15H5z"></path>`,
+    requests: `<path d="M5 5h14v10H8l-3 3V5z"></path>`,
+    assets: `<path d="M4 7l8-4 8 4-8 4-8-4z"></path><path d="M4 7v10l8 4 8-4V7"></path><path d="M12 11v10"></path>`,
+    pm: `<path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M4.2 7.5l3.5 2"></path><path d="M16.3 14.5l3.5 2"></path><path d="M19.8 7.5l-3.5 2"></path><path d="M7.7 14.5l-3.5 2"></path>`,
+    procedures: `<path d="M9 6h11"></path><path d="M9 12h11"></path><path d="M9 18h11"></path><path d="M4 6l1 1 2-2"></path><path d="M4 12l1 1 2-2"></path><path d="M4 18l1 1 2-2"></path>`,
+    parts: `<path d="M14 7l3 3"></path><path d="M5 19l8-8"></path><path d="M15 5l4 4-4 4-4-4 4-4z"></path>`,
+    team: `<path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M3 21a5 5 0 0 1 10 0"></path><path d="M11 21a5 5 0 0 1 10 0"></path>`,
+    setup: `<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a8 8 0 0 0 .1-2l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L4.5 13a8 8 0 0 0 .1 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5z"></path>`,
+    settings: `<path d="M4 7h16"></path><path d="M4 17h16"></path><path d="M8 7v10"></path><path d="M16 7v10"></path>`,
+  };
+  return `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[type] || icons.work}</svg>`;
+}
+
+function renderInsight(label, value, description, tone = "neutral") {
   return `
-    <article class="insight">
+    <article class="insight dashboard-card tone-${tone}">
       <span>${label}</span>
       <strong>${value}</strong>
       <p>${description}</p>
@@ -895,7 +1165,7 @@ function renderPlanningItem(item) {
   return `
     <article class="planning-item mini-work-order" data-mini-work-order="${item.id}">
       <div>
-        <span class="eyebrow">${escapeHtml(item.priority)} ${escapeHtml(item.status.replace("_", " "))}</span>
+        <span class="eyebrow">${escapeHtml(item.priority)} ${escapeHtml(statusLabel(item.status))}</span>
         <strong>${escapeHtml(item.title)}</strong>
         <p>${escapeHtml(item.assetName)} - due ${escapeHtml(item.dueAt)}</p>
       </div>
@@ -956,7 +1226,7 @@ function renderAssetDetail() {
             ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
-        <button class="secondary-button" type="submit">Save Asset</button>
+        <button class="secondary-button asset-action-button" type="submit">Save Asset</button>
       </form>
 
       <section>
@@ -994,7 +1264,7 @@ function renderMiniWorkOrder(workOrder) {
   return `
     <article class="mini-work-order" data-mini-work-order="${workOrder.id}">
       <strong>${escapeHtml(workOrder.title)}</strong>
-      <span>${workOrder.status.replace("_", " ")} · ${workOrder.due_at || "no due date"}</span>
+      <span>${statusLabel(workOrder.status)} · ${workOrder.due_at || "no due date"}</span>
     </article>
   `;
 }
@@ -1007,7 +1277,7 @@ function renderAssetMiniWorkOrder(workOrder) {
   return `
     <article class="mini-work-order ${workOrder.status === "completed" ? "completed-history" : ""}" data-mini-work-order="${workOrder.id}">
       <div class="chip-row">
-        <span class="chip ${workOrder.status}">${workOrder.status.replace("_", " ")}</span>
+        <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
         ${workOrder.follow_up_needed ? `<span class="chip blocked">follow-up</span>` : ""}
         ${partsCount ? `<span class="relationship-chip parts">${relationshipIcon("parts")}<span>${partsCount}</span></span>` : ""}
         ${photosCount ? `<span class="relationship-chip photo">${relationshipIcon("photo")}<span>${photosCount}</span></span>` : ""}
@@ -1206,10 +1476,78 @@ function renderMember(member) {
   `;
 }
 
+function setupItems() {
+  return [
+    {
+      name: "Supabase config",
+      ready: Boolean(window.SUPABASE_URL && window.SUPABASE_ANON_KEY),
+      detail: window.SUPABASE_URL || "Missing supabase-config.js",
+    },
+    {
+      name: "Company data",
+      ready: Boolean(activeCompanyId),
+      detail: activeCompanyId ? "Active tenant selected" : "Create or select a company",
+    },
+    {
+      name: "Requests",
+      ready: requestsReady,
+      detail: requestsReady ? "Stored in maintenance_requests" : "Run step-next-maintenance-requests.sql",
+    },
+    {
+      name: "Preventive schedules",
+      ready: schedulesReady,
+      detail: schedulesReady ? "PM schedules available" : "Run step-next-preventive-schedules.sql",
+    },
+    {
+      name: "Procedures",
+      ready: proceduresReady,
+      detail: proceduresReady ? "Procedure templates available" : "Run step-next-procedures.sql",
+    },
+    {
+      name: "Part costs",
+      ready: partCostsReady,
+      detail: partCostsReady ? "Unit costs available" : "Run step-next-part-costs.sql",
+    },
+    {
+      name: "Part sources",
+      ready: partSuppliersReady,
+      detail: partSuppliersReady ? "Vendor/source names available" : "Run step-next-part-suppliers.sql",
+    },
+    {
+      name: "Part files",
+      ready: partDocumentsReady,
+      detail: partDocumentsReady ? "Receipts and invoices can be filed with parts" : "Run step-next-part-documents.sql",
+    },
+    {
+      name: "Work outcomes",
+      ready: outcomesReady,
+      detail: outcomesReady ? "Cause/resolution/follow-up available" : "Run step-next-work-order-outcomes.sql",
+    },
+    {
+      name: "Photos",
+      ready: photosReady,
+      detail: photosReady ? "Photo records available" : "Check storage bucket and photo table policies",
+    },
+  ];
+}
+
+function renderSetupItem(item) {
+  return `
+    <article class="setup-item ${item.ready ? "ready" : "needs-work"}">
+      <div>
+        <strong>${escapeHtml(item.name)}</strong>
+        <span>${escapeHtml(item.detail)}</span>
+      </div>
+      <span class="chip ${item.ready ? "completed" : "blocked"}">${item.ready ? "ready" : "setup"}</span>
+    </article>
+  `;
+}
+
 function renderPart(part) {
   const quantity = Number(part.quantity_on_hand) || 0;
   const reorderPoint = Number(part.reorder_point) || 0;
   const unitCost = Number(part.unit_cost) || 0;
+  const documents = partDocumentsByPartId[part.id] || [];
   const low = quantity <= reorderPoint;
   const restockNeed = Math.max(0, reorderPoint - quantity);
   return `
@@ -1217,43 +1555,100 @@ function renderPart(part) {
       <div>
         <div class="chip-row">
           ${part.sku ? `<span class="chip">${escapeHtml(part.sku)}</span>` : ""}
+          ${part.supplier_name ? `<span class="chip part-source-chip">${escapeHtml(part.supplier_name)}</span>` : ""}
           ${low ? `<span class="chip overdue">low stock</span>` : `<span class="chip open">stocked</span>`}
         </div>
         <h3>${escapeHtml(part.name)}</h3>
         <p>${quantity} on hand - reorder at ${reorderPoint}</p>
-        <p>${money(unitCost)} each - ${money(quantity * unitCost)} stocked value</p>
+        <p>${partCostsReady ? `${money(unitCost)} listed cost` : "Cost reference not active yet"}</p>
         ${low && reorderPoint > 0 ? `<small>Need ${restockNeed} to reach reorder point.</small>` : ""}
       </div>
       <form class="restock-form" data-restock-part="${part.id}">
         <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Restock quantity for ${escapeHtml(part.name)}">
         <button class="secondary-button" type="submit">Restock</button>
       </form>
-      <details class="part-edit">
-        <summary>Edit part</summary>
-        <form class="part-edit-form" data-edit-part="${part.id}">
-          <label>Name<input name="name" required value="${escapeHtml(part.name)}"></label>
-          <label>SKU<input name="sku" value="${escapeHtml(part.sku || "")}"></label>
-          <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="${quantity}"></label>
-          <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="${reorderPoint}"></label>
-          <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="${unitCost}"></label>
-          <p class="error-text" data-part-edit-error="${part.id}"></p>
-          <button class="secondary-button" type="submit">Save Part</button>
-        </form>
-      </details>
+      <p class="part-file-count">${documents.length} filed receipt${documents.length === 1 ? "" : "s"} / invoice${documents.length === 1 ? "" : "s"}</p>
+      <button class="secondary-button part-edit-button" data-open-part="${part.id}" type="button">Edit Part</button>
     </article>
+  `;
+}
+
+function renderPartDetail() {
+  const part = parts.find((item) => item.id === activePartId);
+  if (!part) {
+    activePartId = null;
+    return `<p class="muted">Part not found.</p>`;
+  }
+  const quantity = Number(part.quantity_on_hand) || 0;
+  const reorderPoint = Number(part.reorder_point) || 0;
+  const unitCost = Number(part.unit_cost) || 0;
+  const documents = partDocumentsByPartId[part.id] || [];
+  return `
+    <section class="part-detail-shell">
+      ${renderPartSourceOptions()}
+      <div class="part-detail-summary relationship-detail parts">
+        <button class="secondary-button part-back-button" data-close-part-detail type="button">Back to parts</button>
+        <div>
+          <div class="chip-row">
+            ${part.sku ? `<span class="chip">${escapeHtml(part.sku)}</span>` : ""}
+            ${part.supplier_name ? `<span class="chip part-source-chip">${escapeHtml(part.supplier_name)}</span>` : ""}
+            <span class="chip ${quantity <= reorderPoint ? "overdue" : "open"}">${quantity <= reorderPoint ? "low stock" : "stocked"}</span>
+          </div>
+          <h3>${escapeHtml(part.name)}</h3>
+          <p>${quantity} on hand - reorder at ${reorderPoint}</p>
+        </div>
+      </div>
+
+      <form class="part-detail-form relationship-detail parts" data-edit-part="${part.id}">
+        <label>Name<input name="name" required value="${escapeHtml(part.name)}"></label>
+        <label>SKU<input name="sku" value="${escapeHtml(part.sku || "")}"></label>
+        <label>Source / vendor<input name="supplier_name" list="part-source-options" value="${escapeHtml(part.supplier_name || "")}" placeholder="Where this part usually comes from"><button class="text-button danger-link inline-label-action" data-toggle-part-sources type="button">Edit sources</button></label>
+        <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="${quantity}"></label>
+        <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="${reorderPoint}"></label>
+        <label>Listed unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="${unitCost}"></label>
+        <p class="error-text" data-part-edit-error="${part.id}"></p>
+        <div class="button-row">
+          <button class="secondary-button" type="submit">Save Part</button>
+          <button class="text-button" data-close-part-detail type="button">Cancel</button>
+        </div>
+      </form>
+
+      ${showPartSourceManager ? renderPartSourceManager() : ""}
+
+      <section class="part-detail-files relationship-detail parts">
+        <div class="panel-header compact">
+          <h3>Filed Receipts / Invoices</h3>
+          <span>${documents.length} file${documents.length === 1 ? "" : "s"}</span>
+        </div>
+        <form class="part-document-form" data-part-document="${part.id}">
+          <label>Attach file<input name="document" type="file" accept="image/*,.pdf"></label>
+          <p class="error-text" data-part-document-error="${part.id}">${partDocumentsReady ? "" : "Run supabase/step-next-part-documents.sql before attaching files."}</p>
+          <button class="secondary-button" type="submit" ${partDocumentsReady ? "" : "disabled"}>Attach File</button>
+        </form>
+        <div class="mini-list part-document-list">
+          ${documents.map((document) => `
+            <article>
+              <strong>${escapeHtml(document.file_name)}</strong>
+              <span>${new Date(document.created_at).toLocaleString()}</span>
+              ${document.signedUrl ? `<a href="${document.signedUrl}" target="_blank" rel="noreferrer">Open file</a>` : ""}
+            </article>
+          `).join("") || `<p class="muted">No receipts or invoices filed with this part.</p>`}
+        </div>
+      </section>
+    </section>
   `;
 }
 
 function renderPartsHealth() {
   const lowCount = lowStockParts().length;
   const totalUnits = parts.reduce((sum, part) => sum + (Number(part.quantity_on_hand) || 0), 0);
-  const stockedValue = parts.reduce((sum, part) => sum + ((Number(part.quantity_on_hand) || 0) * (Number(part.unit_cost) || 0)), 0);
   const reorderTracked = parts.filter((part) => Number(part.reorder_point) > 0).length;
+  const costsListed = parts.filter((part) => Number(part.unit_cost) > 0).length;
   return [
     ["Low Stock", lowCount],
     ["Total Units", totalUnits],
-    ["Stock Value", money(stockedValue)],
-    ["Part Types", parts.length],
+    ["Reorder Tracked", reorderTracked],
+    ["Costs Listed", costsListed],
   ].map(([label, value]) => `
     <article class="parts-health ${label === "Low Stock" && value ? "attention" : ""}">
       <span>${label}</span>
@@ -1281,8 +1676,8 @@ function renderMaintenanceRequest(request) {
       </div>
       ${request.status === "submitted" ? `
         <div class="request-actions">
-          <button class="secondary-button" data-quick-fix-request="${request.id}" type="button">Quick Fix</button>
-          <button class="secondary-button" data-convert-request="${request.id}" type="button">Convert to Work Order</button>
+          <button class="secondary-button request-action-button" data-quick-fix-request="${request.id}" type="button">Quick Fix</button>
+          <button class="secondary-button work-action-button" data-convert-request="${request.id}" type="button">Convert to Work Order</button>
         </div>
       ` : ""}
     </article>
@@ -1308,7 +1703,7 @@ function renderRequestFormContent() {
           <option>low</option>
         </select>
       </label>
-      <button class="primary-button" type="submit">Submit Request</button>
+      <button class="primary-button request-action-button" type="submit">Submit Request</button>
     </form>
   `;
 }
@@ -1328,7 +1723,7 @@ function renderActivityItem(item) {
     return `
       <article class="relationship-detail photo">
         <strong>Photo uploaded</strong>
-        <span>${new Date(item.created_at).toLocaleString()}</span>
+        <span>${photoMetaText(item)}</span>
         <p>${escapeHtml(item.file_name)}</p>
         ${item.signedUrl ? `<a href="${item.signedUrl}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
       </article>
@@ -1357,73 +1752,156 @@ function renderActivityItem(item) {
 }
 
 function renderWorkOrderCard(workOrder) {
-  const dueState = getDueState(workOrder);
-  const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
-  return `
-    <article class="work-card ${workOrder.id === activeWorkOrderId ? "selected" : ""}" data-id="${workOrder.id}" tabindex="0">
-      <div class="chip-row">
-        <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
-        <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
-        <span class="chip ${workOrder.status}">${workOrder.status.replace("_", " ")}</span>
-        ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
-      </div>
-      <h3>${escapeHtml(workOrder.title)}</h3>
-      <p>${escapeHtml(workOrder.description || "No description.")}</p>
-      <div class="meta-row">
-        <span>${escapeHtml(workOrder.assets?.name || "No asset")}</span>
-        <span>${escapeHtml(workOrder.assigned_profile?.full_name || "Unassigned")}</span>
-        ${procedure ? `<span>${escapeHtml(procedure.name)}</span>` : ""}
-        <span>Due ${workOrder.due_at || "unset"}</span>
-        ${workOrder.completed_at ? `<span>Completed ${new Date(workOrder.completed_at).toLocaleDateString()}</span>` : ""}
-      </div>
-      ${renderRelationshipChips(workOrder)}
-      <div class="quick-actions">
-        ${!workOrder.assigned_to ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
+    const dueState = getDueState(workOrder);
+    const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
+    return `
+      <article class="work-card status-card status-${workOrder.status} ${workOrder.id === activeWorkOrderId ? "selected" : ""}" data-id="${workOrder.id}" tabindex="0">
+        <div class="work-card-header">
+          <div class="chip-row">
+            <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
+            <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
+            <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
+            ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
+          </div>
+        </div>
+        <div class="work-card-body">
+          <h3>${escapeHtml(workOrder.title)}</h3>
+          <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
+        </div>
+        <div class="work-card-meta meta-row">
+          <span>${relationshipIcon("asset")}${escapeHtml(workOrder.assets?.name || "No asset")}</span>
+          <span>${segmentIcon(isVendorAssigned(workOrder) ? "vendor" : "mine")}${escapeHtml(assignmentLabel(workOrder))}</span>
+          ${procedure ? `<span>${relationshipIcon("procedure")}${escapeHtml(procedure.name)}</span>` : ""}
+          <span>${segmentIcon("due")}Due ${workOrder.due_at || "unset"}</span>
+          ${workOrder.completed_at ? `<span>${segmentIcon("completed")}Completed ${new Date(workOrder.completed_at).toLocaleDateString()}</span>` : ""}
+        </div>
+        ${renderRelationshipChips(workOrder)}
+        <div class="quick-actions work-card-actions">
+          ${!workOrder.assigned_to ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
         ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
-          <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${status.replace("_", " ")}</button>
+          <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
         `).join("")}
       </div>
     </article>
   `;
 }
 
+function renderWorkPagination(totalCount, totalPages) {
+  if (totalCount <= WORK_ORDERS_PER_PAGE) return "";
+  const firstShown = ((workOrderPage - 1) * WORK_ORDERS_PER_PAGE) + 1;
+  const lastShown = Math.min(totalCount, workOrderPage * WORK_ORDERS_PER_PAGE);
+  return `
+    <div class="pagination-bar">
+      <button class="secondary-button page-action-button" data-work-page="prev" type="button" ${workOrderPage <= 1 ? "disabled" : ""}>Previous</button>
+      <span>Showing ${firstShown}-${lastShown} of ${totalCount} - Page ${workOrderPage} of ${totalPages}</span>
+      <button class="secondary-button page-action-button" data-work-page="next" type="button" ${workOrderPage >= totalPages ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+}
+
+function renderPartsPagination(totalCount, totalPages) {
+  if (totalCount <= PARTS_PER_PAGE) return "";
+  const firstShown = ((partsPage - 1) * PARTS_PER_PAGE) + 1;
+  const lastShown = Math.min(totalCount, partsPage * PARTS_PER_PAGE);
+  return `
+    <div class="pagination-bar">
+      <button class="secondary-button page-action-button" data-parts-page="prev" type="button" ${partsPage <= 1 ? "disabled" : ""}>Previous</button>
+      <span>Showing ${firstShown}-${lastShown} of ${totalCount} - Page ${partsPage} of ${totalPages}</span>
+      <button class="secondary-button page-action-button" data-parts-page="next" type="button" ${partsPage >= totalPages ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+}
+
 function renderCreateWorkOrder() {
   return `
-    <form class="form-grid" id="create-work-order-form">
+    <form class="form-grid create-work-order-template relationship-detail asset" id="create-work-order-form">
+      <div>
+        <h3>Create Work Order</h3>
+        <p class="muted">Build a complete work order step by step.</p>
+      </div>
+
+      <div class="form-section-title">1. What needs attention?</div>
       <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
-      <label>Description<textarea name="description" rows="3"></textarea></label>
+      <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
       <label>Asset
         <select name="asset_id">
-          <option value="">No asset</option>
+          <option value="">No asset / general area</option>
           ${assets.map((asset) => `<option value="${asset.id}">${escapeHtml(asset.name)}</option>`).join("")}
         </select>
       </label>
-      <label>Priority
-        <select name="priority">
-          <option>medium</option>
-          <option>high</option>
-          <option>critical</option>
-          <option>low</option>
-        </select>
-      </label>
-      <label>Type
-        <select name="type">
-          ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
-        </select>
-      </label>
-      <label>Due date<input name="due_at" type="date"></label>
-      <label>Assign to
-        <select name="assigned_to">
-          <option value="">Unassigned</option>
-          ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}">${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
-        </select>
-      </label>
-      <label>Procedure
-        <select name="procedure_template_id">
-          ${renderProcedureOptions()}
-        </select>
-      </label>
-      <button class="primary-button" type="submit">Create Work Order</button>
+
+      <details class="quick-fix-more" open>
+        <summary>2. Priority and timing</summary>
+        <div class="form-grid">
+          <label>Status
+            <select name="status">
+              ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === "open" ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Priority
+            <select name="priority">
+              <option>medium</option>
+              <option>high</option>
+              <option>critical</option>
+              <option>low</option>
+            </select>
+          </label>
+          <label>Type
+            <select name="type">
+              ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
+            </select>
+          </label>
+          <label>Expected back up / due date<input name="due_at" type="date"></label>
+        </div>
+      </details>
+
+      <details class="quick-fix-more">
+        <summary>3. People and procedure</summary>
+        <div class="form-grid">
+          <label>Assign to
+            <select name="assigned_to">
+              <option value="">Unassigned</option>
+              <option value="${OUTSIDE_VENDOR_VALUE}">Outside vendor</option>
+              <option value="${session.user.id}">Assign to me</option>
+              ${Object.entries(profilesByUserId).filter(([userId]) => userId !== session.user.id).map(([userId, profile]) => `<option value="${userId}">${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+            </select>
+          </label>
+          <label>Procedure
+            <select name="procedure_template_id">
+              ${renderProcedureOptions()}
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details class="quick-fix-more">
+        <summary>4. Internal notes and completion</summary>
+        <div class="form-grid">
+          <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
+          <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
+          <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
+          <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="0"></label>
+          <label>Completion notes<textarea name="completion_notes" rows="2" placeholder="Final notes if this is already complete."></textarea></label>
+        </div>
+      </details>
+
+      <details class="quick-fix-more">
+        <summary>5. Parts, photo, and first comment</summary>
+        <div class="form-grid">
+          <label>Part used
+            <select name="part_id">
+              <option value="">No part used</option>
+              ${parts.map((part) => `<option value="${part.id}">${escapeHtml(part.name)} (${part.quantity_on_hand} on hand)</option>`).join("")}
+            </select>
+          </label>
+          <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
+          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
+          <label>First comment<textarea name="initial_comment" rows="2" placeholder="Add the first update or note for the record."></textarea></label>
+        </div>
+      </details>
+
+      <p class="error-text" id="create-work-order-error"></p>
+      <button class="primary-button work-action-button quick-fix-submit" type="submit">Create Work Order</button>
     </form>
   `;
 }
@@ -1435,35 +1913,70 @@ function renderQuickFixForm() {
     <form class="form-grid quick-fix-form relationship-detail comment" id="quick-fix-form">
       <div>
         <h3>Quick Fix</h3>
-        <p class="muted">Fast record for work already handled.</p>
+        <p class="muted">Log the issue now. Details can be added later.</p>
       </div>
       ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
-      <label>What happened?<input name="title" required placeholder="Replaced loose guard switch" value="${escapeHtml(sourceRequest?.title || "")}"></label>
+      <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
       <label>Asset
         <select name="asset_id">
           <option value="">No asset / general area</option>
           ${assets.map((asset) => `<option value="${asset.id}" ${asset.id === (selectedAssetId || sourceRequest?.asset_id) ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("")}
         </select>
+        <small>Asset not listed? Add it below.</small>
       </label>
-      <label>What did you do?<textarea name="resolution_summary" rows="3" required placeholder="Tightened mount, tested switch, line returned to normal."></textarea></label>
-      <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown...">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
-      <label>Asset status after fix
-        <select name="asset_status">
-          <option value="">Leave unchanged</option>
-          ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}">${status}</option>`).join("")}
-        </select>
-      </label>
-      <label>Part used
-        <select name="part_id">
-          <option value="">No part used</option>
-          ${parts.map((part) => `<option value="${part.id}">${escapeHtml(part.name)} (${part.quantity_on_hand} on hand)</option>`).join("")}
-        </select>
-      </label>
-      <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
-      <label>Photo<input name="photo" type="file" accept="image/*"></label>
-      <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
+      <label>New asset name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
+      <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
+      <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
+      <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>
+      <details class="quick-fix-more">
+        <summary>Optional details</summary>
+        <div class="form-grid">
+          <div class="form-section-title">Work Order Info</div>
+          <label>Expected back up / due date<input name="due_at" type="date"></label>
+          <label>Priority
+            <select name="priority">
+              ${["medium", "high", "critical", "low"].map((priority) => `<option value="${priority}">${priority}</option>`).join("")}
+            </select>
+          </label>
+          <label>Type
+            <select name="type">
+              ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}" ${type === "corrective" ? "selected" : ""}>${type}</option>`).join("")}
+            </select>
+          </label>
+          <label>Assign to
+            <select name="assigned_to">
+              <option value="${session.user.id}">Assign to me</option>
+              <option value="${OUTSIDE_VENDOR_VALUE}">Outside vendor</option>
+              <option value="">Unassigned</option>
+              ${Object.entries(profilesByUserId).filter(([userId]) => userId !== session.user.id).map(([userId, profile]) => `<option value="${userId}">${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+            </select>
+          </label>
+          <label>Procedure
+            <select name="procedure_template_id">
+              ${renderProcedureOptions()}
+            </select>
+          </label>
+          <div class="form-section-title">Outcome / Notes</div>
+          <label>What did you do?<textarea name="resolution_summary" rows="2" placeholder="Tightened mount, tested switch, line returned to normal."></textarea></label>
+          <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown...">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
+          <label>Asset status after fix
+            <select name="asset_status">
+              <option value="">Leave unchanged</option>
+              ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}">${status}</option>`).join("")}
+            </select>
+          </label>
+          <label>Part used
+            <select name="part_id">
+              <option value="">No part used</option>
+              ${parts.map((part) => `<option value="${part.id}">${escapeHtml(part.name)} (${part.quantity_on_hand} on hand)</option>`).join("")}
+            </select>
+          </label>
+          <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
+          <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
+        </div>
+      </details>
       <p class="error-text" id="quick-fix-error"></p>
-      <button class="primary-button" type="submit">Save Quick Fix</button>
+      <button class="primary-button quick-fix-submit" type="submit">Log Quick Fix</button>
     </form>
   `;
 }
@@ -1539,10 +2052,10 @@ function renderWorkOrderDetail() {
         <div class="chip-row">
           <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
           <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
-          <span class="chip ${workOrder.status}">${workOrder.status.replace("_", " ")}</span>
+          <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
         </div>
         <h2>${escapeHtml(workOrder.title)}</h2>
-        <p>${escapeHtml(workOrder.description || "No description.")}</p>
+        <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         ${renderRelationshipChips(workOrder)}
         ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
         ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
@@ -1574,20 +2087,66 @@ function renderWorkOrderDetail() {
 
       <label>Status
         <select id="status-select">
-          ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${status.replace("_", " ")}</option>`).join("")}
+          ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
         </select>
       </label>
 
       <div class="quick-actions detail-quick-actions">
         ${workOrder.assigned_to !== session.user.id ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
         ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).map((status) => `
-          <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${status.replace("_", " ")}</button>
+          <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
         `).join("")}
+      </div>
+
+      <details class="quick-update-panel relationship-detail comment" open>
+        <summary>Quick Update View</summary>
+        <form class="form-grid" id="quick-update-work-order-form">
+          <label>Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
+          <label>Asset
+            <select name="asset_id">
+              <option value="">No asset / general area</option>
+              ${assets.map((asset) => `<option value="${asset.id}" ${asset.id === workOrder.asset_id ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Current update<textarea name="description" rows="2">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
+          <label>Expected back up / due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
+          <label>Status
+            <select name="status">
+              ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Priority
+            <select name="priority">
+              ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
+            </select>
+          </label>
+          <label>Assign to
+            <select name="assigned_to">
+              <option value="">Unassigned</option>
+              <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
+              ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${!isVendorAssigned(workOrder) && userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+            </select>
+          </label>
+          <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
+          <p class="error-text" id="quick-update-error"></p>
+          <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
+        </form>
+      </details>
+
+      <div class="downtime-copy relationship-detail asset">
+        <div>
+          <h3>Downtime Email Helper</h3>
+          <p class="muted">Copy a human update for email when this asset is down or needs attention.</p>
+        </div>
+        <div class="quick-actions">
+          <button class="secondary-button" data-copy-downtime="subject" data-id="${workOrder.id}" type="button">Copy Subject</button>
+          <button class="secondary-button" data-copy-downtime="body" data-id="${workOrder.id}" type="button">Copy Email Body</button>
+        </div>
       </div>
 
       <form class="form-grid" id="edit-work-order-form">
         <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
-        <label>Description<textarea name="description" rows="3">${escapeHtml(workOrder.description || "")}</textarea></label>
+        <label>Description<textarea name="description" rows="3">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
         <label>Due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
         <label>Priority
           <select name="priority">
@@ -1602,7 +2161,8 @@ function renderWorkOrderDetail() {
         <label>Assign to
           <select name="assigned_to">
             <option value="">Unassigned</option>
-            ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+            <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
+            ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${!isVendorAssigned(workOrder) && userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
           </select>
         </label>
         <label>Procedure
@@ -1669,7 +2229,7 @@ function renderWorkOrderDetail() {
       </div>
 
       <form class="form-grid relationship-detail photo" id="photo-form">
-        <label>Upload photo<input name="photo" type="file" accept="image/*"></label>
+        <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Photos are optimized up to 2400px before upload.</small></label>
         <button class="secondary-button" type="submit">Upload Photo</button>
       </form>
 
@@ -1682,7 +2242,7 @@ function renderWorkOrderDetail() {
                 ? `<img class="photo-thumb" src="${photo.signedUrl}" alt="${escapeHtml(photo.file_name)}">`
                 : ""}
               <strong>${escapeHtml(photo.file_name)}</strong>
-              <span>${new Date(photo.created_at).toLocaleString()}</span>
+              <span>${photoMetaText(photo)}</span>
               ${photo.signedUrl ? `<a href="${photo.signedUrl}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
             </article>
           `).join("") || `<p class="muted">No photos uploaded yet.</p>`}
@@ -1707,6 +2267,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
     activeWorkOrderId = null;
+    createWorkOrderMode = false;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
     await render();
   });
@@ -1724,9 +2285,13 @@ function bindWorkspaceEvents() {
       activeSection = button.dataset.section;
       activeWorkOrderId = null;
       activeAssetId = null;
+      activePartId = null;
+      showPartSourceManager = false;
+      createWorkOrderMode = false;
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
+      resetWorkOrderPage();
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
     });
@@ -1734,16 +2299,18 @@ function bindWorkspaceEvents() {
   document.querySelector("#show-quick-fix").addEventListener("click", () => {
     activeWorkOrderId = null;
     activeAssetId = null;
+    createWorkOrderMode = false;
     quickFixMode = true;
     quickFixAssetId = null;
     quickFixRequestId = null;
-    activeSection = "work";
+    activeSection = "mywork";
     localStorage.setItem("maintainops.activeSection", activeSection);
     renderWorkspace();
   });
   document.querySelector("#show-create-work-order").addEventListener("click", () => {
     activeWorkOrderId = null;
     activeAssetId = null;
+    createWorkOrderMode = true;
     quickFixMode = false;
     quickFixAssetId = null;
     quickFixRequestId = null;
@@ -1754,6 +2321,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#show-request").addEventListener("click", () => {
     activeWorkOrderId = null;
     activeAssetId = null;
+    createWorkOrderMode = false;
     quickFixMode = false;
     quickFixAssetId = null;
     quickFixRequestId = null;
@@ -1763,10 +2331,25 @@ function bindWorkspaceEvents() {
   });
   document.querySelector("#export-csv").addEventListener("click", exportActiveSectionCsv);
 
+  const backToMyWork = document.querySelector("#back-to-my-work");
+  if (backToMyWork) {
+    backToMyWork.addEventListener("click", () => {
+      activeWorkOrderId = null;
+      activeAssetId = null;
+      createWorkOrderMode = false;
+      quickFixMode = false;
+      quickFixAssetId = null;
+      quickFixRequestId = null;
+      renderWorkspace();
+    });
+  }
+
   const searchInput = document.querySelector("#workspace-search");
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
     localStorage.setItem("maintainops.searchQuery", searchQuery);
+    resetWorkOrderPage();
+    resetPartsPage();
     renderWorkspace();
     const nextSearchInput = document.querySelector("#workspace-search");
     nextSearchInput.focus();
@@ -1777,6 +2360,7 @@ function bindWorkspaceEvents() {
     card.addEventListener("click", () => {
       activeWorkOrderId = card.dataset.id;
       activeAssetId = null;
+      createWorkOrderMode = false;
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
@@ -1788,6 +2372,7 @@ function bindWorkspaceEvents() {
     card.addEventListener("click", () => {
       activeAssetId = card.dataset.assetId;
       activeWorkOrderId = null;
+      createWorkOrderMode = false;
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
@@ -1801,6 +2386,7 @@ function bindWorkspaceEvents() {
     item.addEventListener("click", () => {
       activeWorkOrderId = item.dataset.miniWorkOrder;
       activeAssetId = null;
+      createWorkOrderMode = false;
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
@@ -1814,8 +2400,9 @@ function bindWorkspaceEvents() {
       quickFixRequestId = null;
       activeAssetId = null;
       activeWorkOrderId = null;
+      createWorkOrderMode = false;
       quickFixMode = true;
-      activeSection = "work";
+      activeSection = "mywork";
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
     });
@@ -1838,13 +2425,25 @@ function bindWorkspaceEvents() {
   document.querySelectorAll("[data-status-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       activeStatusFilter = button.dataset.statusFilter;
+      resetWorkOrderPage();
       renderWorkspace();
     });
   });
 
-  document.querySelectorAll("[data-queue-filter]").forEach((button) => {
+  document.querySelectorAll("[data-my-work-filter]").forEach((button) => {
     button.addEventListener("click", () => {
-      queueFilter = button.dataset.queueFilter;
+      myWorkFilter = button.dataset.myWorkFilter;
+      localStorage.setItem("maintainops.myWorkFilter", myWorkFilter);
+      resetWorkOrderPage();
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-work-order-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workOrderFilter = button.dataset.workOrderFilter;
+      localStorage.setItem("maintainops.workOrderFilter", workOrderFilter);
+      resetWorkOrderPage();
       renderWorkspace();
     });
   });
@@ -1853,9 +2452,43 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => {
       workSort = button.dataset.workSort;
       localStorage.setItem("maintainops.workSort", workSort);
+      resetWorkOrderPage();
       renderWorkspace();
     });
   });
+
+  document.querySelectorAll("[data-work-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workOrderPage += button.dataset.workPage === "next" ? 1 : -1;
+      localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-parts-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      partsPage += button.dataset.partsPage === "next" ? 1 : -1;
+      localStorage.setItem("maintainops.partsPage", String(partsPage));
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-copy-downtime]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const workOrder = workOrders.find((item) => item.id === button.dataset.id);
+      if (!workOrder) return;
+      const text = button.dataset.copyDowntime === "subject"
+        ? downtimeEmailSubject(workOrder)
+        : downtimeEmailBody(workOrder);
+      const copied = await copyTextToClipboard(text);
+      button.textContent = copied ? "Copied" : "Copy failed";
+      setTimeout(() => {
+        button.textContent = button.dataset.copyDowntime === "subject" ? "Copy Subject" : "Copy Email Body";
+      }, 1600);
+    });
+  });
+
+  bindAutoGrowTextareas();
 
   const createForm = document.querySelector("#create-work-order-form");
   if (createForm) createForm.addEventListener("submit", createWorkOrder);
@@ -1876,6 +2509,9 @@ function bindWorkspaceEvents() {
 
   const editForm = document.querySelector("#edit-work-order-form");
   if (editForm) editForm.addEventListener("submit", updateWorkOrderDetails);
+
+  const quickUpdateForm = document.querySelector("#quick-update-work-order-form");
+  if (quickUpdateForm) quickUpdateForm.addEventListener("submit", updateWorkOrderQuickView);
 
   const completionForm = document.querySelector("#complete-work-order-form");
   if (completionForm) completionForm.addEventListener("submit", completeWorkOrder);
@@ -1934,6 +2570,36 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", updatePart);
   });
 
+  document.querySelectorAll("[data-open-part]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activePartId = button.dataset.openPart;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-close-part-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activePartId = null;
+      showPartSourceManager = false;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-toggle-part-sources]").forEach((button) => {
+    button.addEventListener("click", () => {
+      showPartSourceManager = !showPartSourceManager;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-rename-part-source]").forEach((form) => {
+    form.addEventListener("submit", renamePartSource);
+  });
+
+  document.querySelectorAll("[data-part-document]").forEach((form) => {
+    form.addEventListener("submit", uploadPartDocument);
+  });
+
   const partsUsedForm = document.querySelector("#parts-used-form");
   if (partsUsedForm) partsUsedForm.addEventListener("submit", recordPartUsed);
 
@@ -1979,6 +2645,18 @@ async function updateAssetStatus(assetId, status) {
     .eq("id", assetId)
     .eq("company_id", activeCompanyId);
   return error || null;
+}
+
+async function createQuickFixAsset(name, status = "running") {
+  return supabaseClient
+    .from("assets")
+    .insert({
+      company_id: activeCompanyId,
+      name,
+      status,
+    })
+    .select()
+    .single();
 }
 
 async function createPreventiveSchedule(event) {
@@ -2092,28 +2770,52 @@ async function createPart(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
   const errorElement = document.querySelector("#part-create-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
   const form = new FormData(formElement);
   if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
   const payload = {
     company_id: activeCompanyId,
     name: form.get("name"),
     sku: form.get("sku") || null,
+    supplier_name: form.get("supplier_name") || null,
     quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
     reorder_point: Number(form.get("reorder_point")) || 0,
     unit_cost: Number(form.get("unit_cost")) || 0,
   };
-  let { error } = await supabaseClient.from("parts").insert(payload);
+  let { data, error } = await supabaseClient.from("parts").insert(payload).select("id").single();
+  if (error && isMissingColumnError(error, "supplier_name")) {
+    partSuppliersReady = false;
+    delete payload.supplier_name;
+    const retry = await supabaseClient.from("parts").insert(payload).select("id").single();
+    data = retry.data;
+    error = retry.error;
+  }
   if (error && isMissingColumnError(error, "unit_cost")) {
     partCostsReady = false;
     if (errorElement) {
       errorElement.textContent = "Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then add the part again.";
     }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Part";
+    }
     return;
   }
   if (error) {
     if (errorElement) errorElement.textContent = error.message;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Part";
+    }
     return;
   }
+  activePartId = data?.id || null;
+  resetPartsPage();
+  showNotice("Part added.");
   await render();
 }
 
@@ -2144,6 +2846,7 @@ async function updatePart(event) {
   const payload = {
     name: form.get("name"),
     sku: form.get("sku") || null,
+    supplier_name: form.get("supplier_name") || null,
     quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
     reorder_point: Number(form.get("reorder_point")) || 0,
     unit_cost: Number(form.get("unit_cost")) || 0,
@@ -2154,6 +2857,17 @@ async function updatePart(event) {
     .update(payload)
     .eq("id", partId)
     .eq("company_id", activeCompanyId);
+
+  if (error && isMissingColumnError(error, "supplier_name")) {
+    partSuppliersReady = false;
+    delete payload.supplier_name;
+    const retry = await supabaseClient
+      .from("parts")
+      .update(payload)
+      .eq("id", partId)
+      .eq("company_id", activeCompanyId);
+    error = retry.error;
+  }
 
   if (error && isMissingColumnError(error, "unit_cost")) {
     partCostsReady = false;
@@ -2168,6 +2882,123 @@ async function updatePart(event) {
     return;
   }
 
+  activePartId = null;
+  showNotice("Part saved.");
+  await render();
+}
+
+async function renamePartSource(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#part-source-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  const oldSource = String(form.get("old_source") || "").trim();
+  const newSource = String(form.get("new_source") || "").trim();
+
+  if (errorElement) errorElement.textContent = "";
+  if (!oldSource) return;
+  if (!partSuppliersReady) {
+    if (errorElement) errorElement.textContent = "Run supabase/step-next-part-suppliers.sql before editing sources.";
+    return;
+  }
+  if (oldSource === newSource) {
+    if (errorElement) errorElement.textContent = "Change the source name before saving.";
+    return;
+  }
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Renaming...";
+  }
+
+  const { error } = await supabaseClient
+    .from("parts")
+    .update({ supplier_name: newSource || null })
+    .eq("company_id", activeCompanyId)
+    .eq("supplier_name", oldSource);
+
+  if (error) {
+    if (isMissingColumnError(error, "supplier_name")) partSuppliersReady = false;
+    if (errorElement) {
+      errorElement.textContent = partSuppliersReady
+        ? error.message
+        : "Run supabase/step-next-part-suppliers.sql before editing sources.";
+    }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Rename";
+    }
+    return;
+  }
+
+  showNotice("Part source updated.");
+  await render();
+}
+
+async function uploadPartDocument(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const partId = formElement.dataset.partDocument;
+  const errorElement = document.querySelector(`[data-part-document-error="${partId}"]`);
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const file = new FormData(formElement).get("document");
+
+  if (errorElement) errorElement.textContent = "";
+  if (!partDocumentsReady) {
+    if (errorElement) errorElement.textContent = "Run supabase/step-next-part-documents.sql before attaching files.";
+    return;
+  }
+  if (!file || !file.name) {
+    if (errorElement) errorElement.textContent = "Choose a receipt, invoice, photo, or PDF first.";
+    return;
+  }
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Attaching...";
+  }
+
+  const fileName = safeFileName(file.name || "part-file");
+  const path = `${activeCompanyId}/${partId}/${crypto.randomUUID()}-${fileName}`;
+  const upload = await supabaseClient.storage.from("part-documents").upload(path, file, {
+    contentType: file.type || "application/octet-stream",
+    upsert: false,
+  });
+
+  if (upload.error) {
+    if (errorElement) errorElement.textContent = upload.error.message;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Attach File";
+    }
+    return;
+  }
+
+  const { error } = await supabaseClient.from("part_documents").insert({
+    company_id: activeCompanyId,
+    part_id: partId,
+    uploaded_by: session.user.id,
+    storage_path: path,
+    file_name: fileName,
+    content_type: file.type || null,
+  });
+
+  if (error) {
+    if (isColumnSchemaError(error, ["part_documents"])) partDocumentsReady = false;
+    if (errorElement) {
+      errorElement.textContent = partDocumentsReady
+        ? error.message
+        : "Run supabase/step-next-part-documents.sql before attaching files.";
+    }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Attach File";
+    }
+    return;
+  }
+
+  showNotice("Part file attached.");
   await render();
 }
 
@@ -2313,23 +3144,82 @@ function nextDueDate(value, frequency) {
 
 async function createWorkOrder(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
+  const formElement = event.target;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorTarget = document.querySelector("#create-work-order-error");
+  submitButton.disabled = true;
+  submitButton.textContent = "Creating...";
+  if (errorTarget) errorTarget.textContent = "";
+
+  const form = new FormData(formElement);
+  const status = form.get("status") || "open";
   const payload = {
     company_id: activeCompanyId,
     title: form.get("title"),
-    description: form.get("description"),
+    description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
     asset_id: form.get("asset_id") || null,
     priority: form.get("priority"),
     type: form.get("type") || "reactive",
     due_at: form.get("due_at") || null,
-    assigned_to: form.get("assigned_to") || null,
+    assigned_to: assignedUserFromForm(form),
     ...procedureColumn(form.get("procedure_template_id")),
-    status: "open",
+    status,
     created_by: session.user.id,
+    actual_minutes: Number(form.get("actual_minutes")) || 0,
+    failure_cause: form.get("failure_cause") || null,
+    resolution_summary: form.get("resolution_summary") || null,
+    follow_up_needed: form.get("follow_up_needed") === "on",
+    completion_notes: form.get("completion_notes") || null,
+    completed_at: status === "completed" ? new Date().toISOString() : null,
   };
-  const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error) return alert(error.message);
+  let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+  if (error && isColumnSchemaError(error, ["actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.actual_minutes;
+    delete fallbackPayload.failure_cause;
+    delete fallbackPayload.resolution_summary;
+    delete fallbackPayload.follow_up_needed;
+    delete fallbackPayload.completion_notes;
+    delete fallbackPayload.completed_at;
+    const retry = await insertWithOptionalProcedure("work_orders", fallbackPayload, { returnSingle: true });
+    data = retry.data;
+    error = retry.error;
+  }
+  if (error) {
+    submitButton.disabled = false;
+    submitButton.textContent = "Create Work Order";
+    if (errorTarget) errorTarget.textContent = `Could not create work order: ${friendlyWorkOrderSaveError(error)}`;
+    return;
+  }
+  await recordWorkOrderEvent(data.id, "created", "Work order created.");
+
+  const warnings = [];
+  const partId = form.get("part_id");
+  if (partId) {
+    const part = parts.find((item) => item.id === partId);
+    const partError = await addPartUsageToWorkOrder(data.id, part, Number(form.get("quantity_used")) || 1);
+    if (partError) warnings.push(`part usage failed: ${partError.message}`);
+    else await recordWorkOrderEvent(data.id, "part_used", `Part recorded: ${part?.name || "Part"}.`);
+  }
+
+  const photo = form.get("photo");
+  if (photo && photo.name) {
+    const photoError = await addPhotoToWorkOrder(data.id, photo);
+    if (photoError) warnings.push(`photo upload failed: ${photoError.message}`);
+    else await recordWorkOrderEvent(data.id, "photo_uploaded", `Photo uploaded: ${photo.name}.`);
+  }
+
+  const initialComment = String(form.get("initial_comment") || "").trim();
+  if (initialComment) {
+    const commentError = await addCommentToWorkOrder(data.id, initialComment);
+    if (commentError) warnings.push(`comment failed: ${commentError.message}`);
+    else await recordWorkOrderEvent(data.id, "comment_added", "Initial comment added.");
+  }
+
   activeWorkOrderId = data.id;
+  createWorkOrderMode = false;
+  showNotice("Work order created.");
+  if (warnings.length) alert(`Work order created, but ${warnings.join("; ")}.`);
   await render();
 }
 
@@ -2341,7 +3231,8 @@ function openQuickFixForRequest(requestId) {
   quickFixMode = true;
   activeWorkOrderId = null;
   activeAssetId = null;
-  activeSection = "work";
+  createWorkOrderMode = false;
+  activeSection = "mywork";
   localStorage.setItem("maintainops.activeSection", activeSection);
   renderWorkspace();
 }
@@ -2356,26 +3247,48 @@ async function createQuickFix(event) {
   submitButton.textContent = "Saving...";
 
   const form = new FormData(formElement);
+  const title = String(form.get("title") || "").trim();
+  const resolutionSummary = String(form.get("resolution_summary") || "").trim();
+  const quickFixSummary = resolutionSummary || title;
+  const markCompleted = form.get("mark_completed") === "on";
+  const machineDown = form.get("machine_down") === "on";
+  let assetId = form.get("asset_id") || null;
+  const newAssetName = String(form.get("new_asset_name") || "").trim();
+  if (newAssetName) {
+    const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, machineDown ? "offline" : "running");
+    if (assetError) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Log Quick Fix";
+      if (errorTarget) errorTarget.textContent = assetError.message;
+      return;
+    }
+    assetId = newAsset.id;
+  }
+
   const payload = {
     company_id: activeCompanyId,
-    title: form.get("title"),
-    description: form.get("resolution_summary"),
-    asset_id: form.get("asset_id") || null,
-    priority: "medium",
-    type: "corrective",
-    status: "completed",
+    title,
+    description: descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")),
+    asset_id: assetId,
+    assigned_to: assignedUserFromForm(form, session.user.id),
+    priority: form.get("priority") || "medium",
+    type: form.get("type") || "corrective",
+    status: markCompleted ? "completed" : "open",
+    due_at: form.get("due_at") || null,
     created_by: session.user.id,
+    ...procedureColumn(form.get("procedure_template_id")),
     actual_minutes: 0,
     failure_cause: form.get("failure_cause") || null,
-    resolution_summary: form.get("resolution_summary"),
+    resolution_summary: markCompleted ? quickFixSummary : (resolutionSummary || null),
     follow_up_needed: form.get("follow_up_needed") === "on",
-    completion_notes: form.get("resolution_summary"),
-    completed_at: new Date().toISOString(),
+    completion_notes: markCompleted ? quickFixSummary : null,
+    completed_at: markCompleted ? new Date().toISOString() : null,
   };
 
   let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error && isColumnSchemaError(error, ["actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
+  if (error && isColumnSchemaError(error, ["assigned_to", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed"])) {
     const fallbackPayload = { ...payload };
+    delete fallbackPayload.assigned_to;
     delete fallbackPayload.actual_minutes;
     delete fallbackPayload.failure_cause;
     delete fallbackPayload.resolution_summary;
@@ -2387,7 +3300,7 @@ async function createQuickFix(event) {
 
   if (error) {
     submitButton.disabled = false;
-    submitButton.textContent = "Save Quick Fix";
+    submitButton.textContent = "Log Quick Fix";
     if (errorTarget) errorTarget.textContent = error.message;
     return;
   }
@@ -2410,17 +3323,20 @@ async function createQuickFix(event) {
     }
   }
 
-  const assetStatus = form.get("asset_status");
-  if (payload.asset_id && assetStatus) {
+  const assetStatus = machineDown ? "offline" : form.get("asset_status");
+  if (payload.asset_id && !newAssetName && (machineDown || (markCompleted && assetStatus))) {
     const assetError = await updateAssetStatus(payload.asset_id, assetStatus);
     if (assetError && errorTarget) {
       errorTarget.textContent = `Quick fix saved, but asset status did not update: ${assetError.message}`;
     } else {
-      await recordWorkOrderEvent(data.id, "asset_status_updated", `Asset status set to ${assetStatus}.`);
+      await recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Asset marked down/offline." : `Asset status set to ${assetStatus}.`);
     }
   }
 
-  await recordWorkOrderEvent(data.id, "quick_fix", "Quick fix recorded.");
+  await recordWorkOrderEvent(data.id, "quick_fix", markCompleted ? "Quick fix recorded as completed." : "Quick fix logged and assigned to creator.");
+  if (newAssetName) {
+    await recordWorkOrderEvent(data.id, "asset_created", `Asset created from Quick Fix: ${newAssetName}.`);
+  }
   if (quickFixRequestId && requestsReady) {
     await supabaseClient
       .from("maintenance_requests")
@@ -2432,10 +3348,11 @@ async function createQuickFix(event) {
       })
       .eq("id", quickFixRequestId)
       .eq("company_id", activeCompanyId);
-    await recordWorkOrderEvent(data.id, "request_quick_fixed", "Request resolved through Quick Fix.");
+    await recordWorkOrderEvent(data.id, "request_quick_fixed", markCompleted ? "Request resolved through Quick Fix." : "Request converted to a Quick Fix work order.");
   }
   activeWorkOrderId = data.id;
   activeAssetId = null;
+  createWorkOrderMode = false;
   quickFixMode = false;
   quickFixAssetId = null;
   quickFixRequestId = null;
@@ -2451,30 +3368,94 @@ async function updateWorkOrderDetails(event) {
   submitButton.textContent = "Saving...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const form = new FormData(event.target);
-  const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
-  const payload = {
-    title: form.get("title"),
-    description: form.get("description"),
-    due_at: form.get("due_at") || null,
-    priority: form.get("priority"),
-    type: form.get("type"),
-    assigned_to: form.get("assigned_to") || null,
-    ...procedureColumn(form.get("procedure_template_id")),
-    failure_cause: form.get("failure_cause") || null,
-    resolution_summary: form.get("resolution_summary") || null,
-    follow_up_needed: form.get("follow_up_needed") === "on",
-    actual_minutes: Number(form.get("actual_minutes")) || 0,
-  };
-  const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
-  if (error) {
+  try {
+    const form = new FormData(event.target);
+    const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
+    const payload = {
+      title: form.get("title"),
+      description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
+      due_at: form.get("due_at") || null,
+      priority: form.get("priority"),
+      type: form.get("type"),
+      assigned_to: assignedUserFromForm(form),
+      ...procedureColumn(form.get("procedure_template_id")),
+      failure_cause: form.get("failure_cause") || null,
+      resolution_summary: form.get("resolution_summary") || null,
+      follow_up_needed: form.get("follow_up_needed") === "on",
+      actual_minutes: Number(form.get("actual_minutes")) || 0,
+    };
+    const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
+    if (error) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Work Order";
+      if (errorTarget) errorTarget.textContent = `Could not save work order: ${friendlyWorkOrderSaveError(error)}`;
+      return;
+    }
+    await recordWorkOrderEvent(activeWorkOrderId, "updated", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
+    showNotice("Work order saved.");
+    await render();
+  } catch (error) {
+    console.error("Work order save failed", error);
     submitButton.disabled = false;
     submitButton.textContent = "Save Work Order";
-    if (errorTarget) errorTarget.textContent = `Could not save work order: ${friendlyWorkOrderSaveError(error)}`;
-    return;
+    if (errorTarget) errorTarget.textContent = `Could not save work order: ${error.message || error}`;
   }
-  await recordWorkOrderEvent(activeWorkOrderId, "updated", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
-  await render();
+}
+
+async function updateWorkOrderQuickView(event) {
+  event.preventDefault();
+  const formElement = event.target;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorTarget = document.querySelector("#quick-update-error");
+  const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
+  const form = new FormData(formElement);
+  submitButton.disabled = true;
+  submitButton.textContent = "Saving...";
+  if (errorTarget) errorTarget.textContent = "";
+
+  try {
+    const payload = {
+      title: form.get("title"),
+      description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
+      asset_id: form.get("asset_id") || null,
+      due_at: form.get("due_at") || null,
+      status: form.get("status"),
+      priority: form.get("priority"),
+      assigned_to: assignedUserFromForm(form),
+    };
+    if (payload.status === "completed" && previous?.status !== "completed") {
+      payload.completed_at = new Date().toISOString();
+    }
+    if (payload.status !== "completed") {
+      payload.completed_at = null;
+    }
+
+    const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
+    if (error) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Quick Update";
+      if (errorTarget) errorTarget.textContent = `Could not save update: ${friendlyWorkOrderSaveError(error)}`;
+      return;
+    }
+
+    if (payload.asset_id && form.get("machine_down") === "on") {
+      const assetError = await updateAssetStatus(payload.asset_id, "offline");
+      if (assetError && errorTarget) {
+        errorTarget.textContent = `Saved work order, but asset status did not update: ${assetError.message}`;
+      } else {
+        await recordWorkOrderEvent(activeWorkOrderId, "asset_status_updated", "Asset marked down/offline.");
+      }
+    }
+
+    await recordWorkOrderEvent(activeWorkOrderId, "quick_update", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
+    showNotice("Quick update saved.");
+    await render();
+  } catch (error) {
+    console.error("Quick update save failed", error);
+    submitButton.disabled = false;
+    submitButton.textContent = "Save Quick Update";
+    if (errorTarget) errorTarget.textContent = `Could not save update: ${error.message || error}`;
+  }
 }
 
 async function completeWorkOrder(event) {
@@ -2637,17 +3618,21 @@ async function setWorkOrderStatus(id, status) {
     .eq("company_id", activeCompanyId);
   if (error) return alert(error.message);
   activeWorkOrderId = id;
-  await recordWorkOrderEvent(id, "status_changed", `Status changed to ${status.replace("_", " ")}.`);
+  await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
   await render();
 }
 
 async function assignWorkOrderToMe(id) {
   const hasProfile = await ensureProfileForActiveCompany();
   if (!hasProfile) return alert(appError);
+  const workOrder = workOrders.find((item) => item.id === id);
 
   const { error } = await supabaseClient
     .from("work_orders")
-    .update({ assigned_to: session.user.id })
+    .update({
+      assigned_to: session.user.id,
+      description: cleanWorkOrderDescription(workOrder?.description) || null,
+    })
     .eq("id", id)
     .eq("company_id", activeCompanyId);
 
@@ -2670,17 +3655,26 @@ async function createComment(event) {
   submitButton.textContent = "Adding...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const hasProfile = await ensureProfileForActiveCompany();
-  if (!hasProfile) {
+  const error = await addCommentToWorkOrder(activeWorkOrderId, body);
+
+  if (error) {
     submitButton.disabled = false;
     submitButton.textContent = "Add Comment";
-    if (errorTarget) errorTarget.textContent = appError;
+    if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
     return;
   }
 
+  await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
+  await render();
+}
+
+async function addCommentToWorkOrder(workOrderId, body) {
+  const hasProfile = await ensureProfileForActiveCompany();
+  if (!hasProfile) return new Error(appError);
+
   const payload = {
     company_id: activeCompanyId,
-    work_order_id: activeWorkOrderId,
+    work_order_id: workOrderId,
     author_id: session.user.id,
     body,
   };
@@ -2691,16 +3685,7 @@ async function createComment(event) {
     const retry = await supabaseClient.from("work_order_comments").insert(payload);
     error = retry.error;
   }
-
-  if (error) {
-    submitButton.disabled = false;
-    submitButton.textContent = "Add Comment";
-    if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message}`;
-    return;
-  }
-
-  await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
-  await render();
+  return error || null;
 }
 
 async function uploadPhoto(event) {
@@ -2720,19 +3705,197 @@ async function addPhotoToWorkOrder(workOrderId, file) {
   const hasProfile = await ensureProfileForActiveCompany();
   if (!hasProfile) return new Error(appError);
 
-  const path = `${activeCompanyId}/${workOrderId}/${crypto.randomUUID()}-${file.name}`;
-  const upload = await supabaseClient.storage.from("work-order-photos").upload(path, file);
+  const optimized = await optimizePhoto(file);
+  const path = `${activeCompanyId}/${workOrderId}/${crypto.randomUUID()}-${optimized.fileName}`;
+  const upload = await supabaseClient.storage.from("work-order-photos").upload(path, optimized.blob, {
+    contentType: optimized.contentType,
+    upsert: false,
+  });
   if (upload.error) return upload.error;
 
-  const { error } = await supabaseClient.from("work_order_photos").insert({
+  const photoRecord = {
     company_id: activeCompanyId,
     work_order_id: workOrderId,
     uploaded_by: session.user.id,
     storage_path: path,
-    file_name: file.name,
-    content_type: file.type,
-  });
+    file_name: optimized.fileName,
+    content_type: optimized.contentType,
+    file_size_bytes: optimized.blob.size || null,
+    original_file_name: safeFileName(file.name || "photo"),
+    original_size_bytes: file.size || null,
+  };
+
+  let { error } = await supabaseClient.from("work_order_photos").insert(photoRecord);
+  if (error && isColumnSchemaError(error, ["file_size_bytes", "original_file_name", "original_size_bytes"])) {
+    delete photoRecord.file_size_bytes;
+    delete photoRecord.original_file_name;
+    delete photoRecord.original_size_bytes;
+    const retry = await supabaseClient.from("work_order_photos").insert(photoRecord);
+    error = retry.error;
+  }
   return error || null;
+}
+
+async function optimizePhoto(file) {
+  const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!imageTypes.includes(file.type)) {
+    return {
+      blob: file,
+      fileName: safeFileName(file.name || "photo"),
+      contentType: file.type || "application/octet-stream",
+    };
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDimension = 2400;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: false });
+    context.drawImage(bitmap, 0, 0, width, height);
+    if (bitmap.close) bitmap.close();
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+    if (!blob) throw new Error("Browser could not optimize this image.");
+
+    return {
+      blob,
+      fileName: `${fileBaseName(file.name || "photo")}.jpg`,
+      contentType: "image/jpeg",
+    };
+  } catch (error) {
+    console.warn("Photo optimization failed; uploading original.", error);
+    return {
+      blob: file,
+      fileName: safeFileName(file.name || "photo"),
+      contentType: file.type || "application/octet-stream",
+    };
+  }
+}
+
+function fileBaseName(fileName) {
+  return safeFileName(fileName).replace(/\.[^/.]+$/, "") || "photo";
+}
+
+function safeFileName(fileName) {
+  return String(fileName || "photo")
+    .replace(/[^a-z0-9._-]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "photo";
+}
+
+function statusLabel(status) {
+  if (status === "open") return "Pending";
+  return String(status || "").replace("_", " ");
+}
+
+function assignedUserFromForm(form, defaultUserId = null) {
+  const value = form.has("assigned_to") ? form.get("assigned_to") : (defaultUserId || "");
+  return value === OUTSIDE_VENDOR_VALUE ? null : value || null;
+}
+
+function isVendorAssigned(workOrder) {
+  return String(workOrder.description || "").includes(OUTSIDE_VENDOR_NOTE);
+}
+
+function assignmentLabel(workOrder) {
+  if (isVendorAssigned(workOrder)) return "Outside vendor";
+  return workOrder.assigned_profile?.full_name || "Unassigned";
+}
+
+function cleanWorkOrderDescription(description) {
+  return String(description || "")
+    .replace(OUTSIDE_VENDOR_NOTE, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function descriptionWithAssignmentNote(description, assignmentValue) {
+  const cleanDescription = cleanWorkOrderDescription(description);
+  if (assignmentValue !== OUTSIDE_VENDOR_VALUE) return cleanDescription || null;
+  return [cleanDescription, OUTSIDE_VENDOR_NOTE].filter(Boolean).join("\n\n");
+}
+
+function downtimeEmailSubject(workOrder) {
+  return `Machine Down Update - ${assetNameForWorkOrder(workOrder)} - ${new Date().toLocaleString()}`;
+}
+
+function downtimeEmailBody(workOrder) {
+  const assetName = assetNameForWorkOrder(workOrder);
+  const eta = workOrder.due_at ? `known, target ${formatDate(workOrder.due_at)}` : "unknown at this time";
+  const assignedTo = assignmentLabel(workOrder);
+  const issue = cleanWorkOrderDescription(workOrder.description) || workOrder.title;
+  const currentUpdate = workOrder.resolution_summary || workOrder.failure_cause || workOrder.completion_notes || "No additional update has been entered yet.";
+
+  return [
+    `${assetName} is down or needs maintenance attention. At this time, the expected downtime is ${eta}. We will update the team as more information becomes available.`,
+    "",
+    "Technical details:",
+    `Issue: ${issue}`,
+    `Work order: ${workOrder.title}`,
+    `Asset: ${assetName}`,
+    `Current update: ${currentUpdate}`,
+    `Assigned to: ${assignedTo}`,
+    `Priority: ${workOrder.priority || "medium"}`,
+    `ETA / due date: ${workOrder.due_at ? formatDate(workOrder.due_at) : "Unknown"}`,
+  ].join("\n");
+}
+
+function assetNameForWorkOrder(workOrder) {
+  return workOrder.assets?.name || "Asset";
+}
+
+function formatDate(value) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString();
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Clipboard API failed; using fallback.", error);
+  }
+
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.left = "-9999px";
+  document.body.appendChild(field);
+  field.select();
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch (error) {
+    console.warn("Clipboard fallback failed.", error);
+  }
+  field.remove();
+  return copied;
+}
+
+function photoMetaText(photo) {
+  const parts = [new Date(photo.created_at).toLocaleString()];
+  if (photo.file_size_bytes) parts.push(formatBytes(photo.file_size_bytes));
+  if (photo.original_size_bytes && photo.file_size_bytes && photo.original_size_bytes !== photo.file_size_bytes) {
+    parts.push(`optimized from ${formatBytes(photo.original_size_bytes)}`);
+  }
+  return parts.join(" - ");
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (!value) return "";
+  if (value < 1024) return `${value} B`;
+  if (value < 1048576) return `${Math.round(value / 1024)} KB`;
+  return `${(value / 1048576).toFixed(value >= 10485760 ? 0 : 1)} MB`;
 }
 
 function escapeHtml(value) {
@@ -2866,7 +4029,7 @@ function planningItems(bucket = "all") {
       workOrder.priority,
       workOrder.status,
       workOrder.assets?.name,
-      workOrder.assigned_profile?.full_name,
+      assignmentLabel(workOrder),
     ]))
     .map((workOrder) => {
       const due = new Date(`${workOrder.due_at}T00:00:00`);
@@ -2965,7 +4128,7 @@ function exportActiveSectionCsv() {
         priority: workOrder.priority,
         type: workOrder.type || "reactive",
         asset: workOrder.assets?.name || "",
-        assigned_to: workOrder.assigned_profile?.full_name || "",
+        assigned_to: assignmentLabel(workOrder),
         due_at: workOrder.due_at || "",
         completed_at: workOrder.completed_at || "",
         actual_minutes: workOrder.actual_minutes || 0,
@@ -3010,10 +4173,10 @@ function exportActiveSectionCsv() {
       rows: parts.map((part) => ({
         name: part.name,
         sku: part.sku || "",
+        supplier_name: part.supplier_name || "",
         quantity_on_hand: part.quantity_on_hand,
         reorder_point: part.reorder_point,
         unit_cost: part.unit_cost || 0,
-        stocked_value: (Number(part.quantity_on_hand) || 0) * (Number(part.unit_cost) || 0),
       })),
     },
     procedures: {
@@ -3064,3 +4227,4 @@ function csvCell(value) {
 function applyTheme() {
   document.documentElement.dataset.theme = theme;
 }
+
