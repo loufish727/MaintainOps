@@ -635,6 +635,14 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
     inset 0 -18px 24px rgba(0,0,0,0.08),
     0 10px 22px rgba(0,0,0,0.12);
   padding: 82px 12px 12px;
+  width: 100%;
+}
+
+button.gauge-readout {
+  appearance: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
 }
 
 .gauge-readout::after {
@@ -647,6 +655,24 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
     linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent) top / 100% 1px no-repeat,
     linear-gradient(90deg, color-mix(in srgb, var(--gauge-ink) 60%, transparent), transparent 44%, transparent 56%, color-mix(in srgb, var(--gauge-ink) 34%, transparent)) bottom / 100% 2px no-repeat;
   pointer-events: none;
+}
+
+.gauge-readout:hover,
+.gauge-readout:focus-visible,
+.gauge-readout.selected {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--gauge-ink) 58%, var(--line));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 0 0 1px color-mix(in srgb, var(--gauge-ink) 24%, rgba(0,0,0,0.22)),
+    inset 0 -18px 24px rgba(0,0,0,0.08),
+    0 12px 26px rgba(0,0,0,0.22);
+}
+
+.gauge-readout.selected::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent) top / 100% 1px no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--gauge-ink) 82%, transparent), transparent 44%, transparent 56%, color-mix(in srgb, var(--gauge-ink) 58%, transparent)) bottom / 100% 3px no-repeat;
 }
 
 .gauge-readout::before {

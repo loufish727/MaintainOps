@@ -714,8 +714,13 @@ function renderWorkspace() {
     localStorage.setItem("maintainops.activeSection", activeSection);
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
+  const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue"];
+  if (activeSection === "mywork" && !myWorkGaugeFilters.includes(activeStatusFilter)) {
+    activeStatusFilter = "active";
+  }
   const showWorkDashboard = activeSection === "work" && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleWorkOrders = filteredWorkOrders();
+  const myWorkGaugeOrders = activeSection === "mywork" ? myWorkQueueOrders() : [];
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrders.length / WORK_ORDERS_PER_PAGE));
   if (workOrderPage > totalWorkOrderPages) workOrderPage = totalWorkOrderPages;
   if (workOrderPage < 1) workOrderPage = 1;
@@ -837,7 +842,7 @@ function renderWorkspace() {
                   <h2>${activeSection === "mywork" ? "My Work" : workOrdersPanelTitle()}</h2>
                   <span>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : `${visibleWorkOrders.length} shown`}</span>
                 </div>
-                ${activeSection === "mywork" ? renderWorkloadStrip(visibleWorkOrders) : ""}
+                ${activeSection === "mywork" ? renderWorkloadStrip(myWorkGaugeOrders) : ""}
                 ${activeSection === "mywork" ? `
                   <div class="segmented-control" aria-label="My work filter">
                     <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
@@ -857,13 +862,15 @@ function renderWorkspace() {
                     </div>
                   ` : ""}
                 `}
-                <div class="segmented-control" aria-label="Work order status filter">
-                  ${["active", "overdue", ...STATUS_OPTIONS].map((status) => `
-                    <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
-                      ${segmentIcon(status)}${statusLabel(status)}
-                    </button>
-                  `).join("")}
-                </div>
+                ${activeSection !== "mywork" ? `
+                  <div class="segmented-control" aria-label="Work order status filter">
+                    ${["active", "overdue", ...STATUS_OPTIONS].map((status) => `
+                      <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
+                        ${segmentIcon(status)}${statusLabel(status)}
+                      </button>
+                    `).join("")}
+                  </div>
+                ` : ""}
                 <div class="segmented-control" aria-label="Work order sort">
                   ${[
                     ["newest", "Newest"],
@@ -1124,6 +1131,16 @@ function filteredWorkOrders() {
           (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
     return statusMatch && queueMatch && matchesSearch(workOrderSearchValues(workOrder));
   }).sort(compareWorkOrders);
+}
+
+function myWorkQueueOrders() {
+  return workOrders.filter((workOrder) => {
+    if (!matchesActiveLocation(workOrder)) return false;
+    const queueMatch = myWorkFilter === "created"
+      ? workOrder.created_by === session.user.id
+      : workOrder.assigned_to === session.user.id;
+    return queueMatch && matchesSearch(workOrderSearchValues(workOrder));
+  });
 }
 
 function resetWorkOrderPage() {
@@ -1542,9 +1559,14 @@ function renderMetric(label, value, tone = "neutral") {
   return `<article class="metric dashboard-card tone-${tone}"><span>${label}</span><strong>${value}</strong></article>`;
 }
 
-function renderGaugeReadout(label, value, tone = "active") {
+function renderGaugeReadout(label, value, tone = "active", options = {}) {
+  const tag = options.filter ? "button" : "article";
+  const activeClass = options.filter && activeStatusFilter === options.filter ? " selected" : "";
+  const attributes = options.filter
+    ? ` type="button" data-status-filter="${options.filter}" aria-pressed="${activeStatusFilter === options.filter}"`
+    : "";
   return `
-    <article class="gauge-readout ${tone}">
+    <${tag} class="gauge-readout ${tone}${activeClass}"${attributes}>
       <div class="gauge-visual" aria-hidden="true">
         <span class="gauge-arc"></span>
         <span class="gauge-cut one"></span>
@@ -1556,7 +1578,7 @@ function renderGaugeReadout(label, value, tone = "active") {
       </div>
       <strong>${value}</strong>
       <span>${escapeHtml(label)}</span>
-    </article>
+    </${tag}>
   `;
 }
 
@@ -1568,11 +1590,11 @@ function renderWorkloadStrip(items) {
   const overdue = items.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
   return `
     <div class="workload-strip" aria-label="Active work summary">
-      ${renderGaugeReadout("Active Work", active, "active workload-pill")}
-      ${renderGaugeReadout("New", newWork, "new workload-pill")}
-      ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill")}
-      ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill")}
-      ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill")}
+      ${renderGaugeReadout("Active Work", active, "active workload-pill", { filter: "active" })}
+      ${renderGaugeReadout("New", newWork, "new workload-pill", { filter: "open" })}
+      ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill", { filter: "in_progress" })}
+      ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill", { filter: "blocked" })}
+      ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill", { filter: "overdue" })}
     </div>
   `;
 }
