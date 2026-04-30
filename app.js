@@ -19,6 +19,19 @@ let maintenanceRequests = [];
 let requestsReady = false;
 let preventiveSchedules = [];
 let companyMembers = [];
+let teamInvites = [];
+let teamInvitesReady = true;
+let messageThreads = [];
+let messageThreadMembers = [];
+let messagesByThreadId = {};
+let messageReadsByThreadId = {};
+let messagesReady = true;
+let messageWorkOrderLinksReady = true;
+let activeMessageThreadId = localStorage.getItem("maintainops.activeMessageThreadId") || "";
+let messageThreadFilter = localStorage.getItem("maintainops.messageThreadFilter") || "all";
+let messageSearchQuery = localStorage.getItem("maintainops.messageSearchQuery") || "";
+let messageComposerWorkOrderId = localStorage.getItem("maintainops.messageComposerWorkOrderId") || "";
+let messageComposerOpen = false;
 let parts = [];
 let partCostsReady = true;
 let partSuppliersReady = true;
@@ -30,6 +43,7 @@ let schedulesReady = false;
 let outcomesReady = true;
 let safetyChecksReady = true;
 let photosReady = true;
+let adminDeleteSqlConfirmed = localStorage.getItem("maintainops.adminDeleteSqlConfirmed") === "true";
 let partsUsedByWorkOrder = {};
 let eventsByWorkOrder = {};
 let commentsByWorkOrder = {};
@@ -40,6 +54,7 @@ let commentsError = "";
 let activeWorkOrderId = null;
 let activeAssetId = null;
 let activePartId = null;
+let pendingDeleteWorkOrderId = null;
 let showPartSourceManager = false;
 let createWorkOrderMode = false;
 let quickFixMode = false;
@@ -48,9 +63,11 @@ let quickFixRequestId = null;
 let activeStatusFilter = "active";
 let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
 let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
+let workOrderAssigneeFilter = localStorage.getItem("maintainops.workOrderAssigneeFilter") || "";
 let workSort = localStorage.getItem("maintainops.workSort") || "newest";
 let workOrderPage = Number(localStorage.getItem("maintainops.workOrderPage")) || 1;
 let partsPage = Number(localStorage.getItem("maintainops.partsPage")) || 1;
+let partInventoryFilter = localStorage.getItem("maintainops.partInventoryFilter") || "all";
 let activeSection = localStorage.getItem("maintainops.activeSection") || "mywork";
 if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "work") {
   activeSection = "mywork";
@@ -103,6 +120,7 @@ async function render() {
     return;
   }
 
+  await acceptTeamInvites();
   await loadCompanies();
 
   if (!companies.length || appError) {
@@ -189,11 +207,21 @@ async function loadCompanies() {
   }
 
   const ids = memberships.map((membership) => membership.company_id);
-  const { data: companyRows, error: companyError } = await supabaseClient
+  let { data: companyRows, error: companyError } = await supabaseClient
     .from("companies")
-    .select("id, name")
+    .select("id, name, logo_path, created_at")
     .in("id", ids)
     .order("created_at", { ascending: true });
+
+  if (companyError && isColumnSchemaError(companyError, ["logo_path"])) {
+    const retry = await supabaseClient
+      .from("companies")
+      .select("id, name, created_at")
+      .in("id", ids)
+      .order("created_at", { ascending: true });
+    companyRows = retry.data;
+    companyError = retry.error;
+  }
 
   if (companyError) {
     appError = `Could not load companies: ${companyError.message}`;
@@ -213,6 +241,20 @@ async function loadCompanies() {
       ...company,
       role: memberships.find((membership) => membership.company_id === company.id)?.role || "member",
     }));
+
+  await Promise.all(companies.map(async (company) => {
+    company.logoUrl = "";
+    company.logoError = "";
+    if (!company.logo_path) return;
+    const { data, error } = await supabaseClient.storage
+      .from("company-logos")
+      .createSignedUrl(company.logo_path, 60 * 10);
+    if (error) {
+      company.logoError = error.message;
+      return;
+    }
+    company.logoUrl = data?.signedUrl || "";
+  }));
 }
 
 function renderCompanyCreate() {
@@ -284,6 +326,14 @@ async function ensureProfileForActiveCompany() {
     return false;
   }
   return true;
+}
+
+async function acceptTeamInvites() {
+  if (!teamInvitesReady) return;
+  const { error } = await supabaseClient.rpc("accept_company_invites");
+  if (error && (error.message.includes("accept_company_invites") || isColumnSchemaError(error, ["company_invites"]))) {
+    teamInvitesReady = false;
+  }
 }
 
 async function seedStarterAssets() {
@@ -362,7 +412,7 @@ async function loadCompanyData() {
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
-  await Promise.all([loadProfiles(), loadMembers(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function loadProfiles() {
@@ -385,6 +435,99 @@ async function loadMembers() {
     .order("created_at", { ascending: true });
 
   companyMembers = data || [];
+  await loadTeamInvites();
+}
+
+async function loadTeamInvites() {
+  if (!teamInvitesReady) {
+    teamInvites = [];
+    return;
+  }
+  const { data, error } = await supabaseClient
+    .from("company_invites")
+    .select("id, email, role, invited_by, accepted_at, created_at")
+    .eq("company_id", activeCompanyId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (isColumnSchemaError(error, ["company_invites"]) || error.message.includes("company_invites")) {
+      teamInvitesReady = false;
+      teamInvites = [];
+      return;
+    }
+    teamInvites = [];
+    return;
+  }
+
+  teamInvites = data || [];
+}
+
+async function loadMessageCenter() {
+  messagesReady = true;
+  messageThreads = [];
+  messageThreadMembers = [];
+  messagesByThreadId = {};
+  messageReadsByThreadId = {};
+
+  const { data: threads, error: threadError } = await supabaseClient
+    .from("message_threads")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .order("updated_at", { ascending: false });
+
+  if (threadError) {
+    messagesReady = false;
+    return;
+  }
+
+  messageThreads = threads || [];
+  if (!messageThreads.length) {
+    activeMessageThreadId = "";
+    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+    return;
+  }
+
+  const threadIds = messageThreads.map((thread) => thread.id);
+  const [memberResponse, messageResponse, readResponse] = await Promise.all([
+    supabaseClient
+      .from("message_thread_members")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .in("thread_id", threadIds),
+    supabaseClient
+      .from("messages")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .in("thread_id", threadIds)
+      .order("created_at", { ascending: true }),
+    supabaseClient
+      .from("message_reads")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .eq("user_id", session.user.id)
+      .in("thread_id", threadIds),
+  ]);
+
+  if (memberResponse.error || messageResponse.error || readResponse.error) {
+    messagesReady = false;
+    return;
+  }
+
+  messageThreadMembers = memberResponse.data || [];
+  messagesByThreadId = (messageResponse.data || []).reduce((groups, message) => {
+    if (!groups[message.thread_id]) groups[message.thread_id] = [];
+    groups[message.thread_id].push(message);
+    return groups;
+  }, {});
+  messageReadsByThreadId = (readResponse.data || []).reduce((reads, read) => {
+    reads[read.thread_id] = read;
+    return reads;
+  }, {});
+
+  if (!activeMessageThreadId || !messageThreads.some((thread) => thread.id === activeMessageThreadId)) {
+    activeMessageThreadId = messageThreads[0]?.id || "";
+    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+  }
 }
 
 async function loadComments() {
@@ -565,6 +708,11 @@ async function addSignedPartDocumentUrls() {
 
 function renderWorkspace() {
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
+  const navItems = visibleNavItems();
+  if (!navItems.some(([id]) => id === activeSection)) {
+    activeSection = "mywork";
+    localStorage.setItem("maintainops.activeSection", activeSection);
+  }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const showWorkDashboard = activeSection === "work" && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleWorkOrders = filteredWorkOrders();
@@ -580,6 +728,8 @@ function renderWorkspace() {
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
   const visibleParts = filteredParts();
+  const showGlobalSearch = Boolean(searchQuery.trim()) && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
+  const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
   if (partsPage > totalPartsPages) partsPage = totalPartsPages;
   if (partsPage < 1) partsPage = 1;
@@ -592,7 +742,8 @@ function renderWorkspace() {
           <span class="brand-mark">MO</span>
           <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
-        <div class="sidebar-controls">
+        <details class="sidebar-controls" open>
+          <summary>Workspace</summary>
           <label class="company-switcher">
             Company
             <select id="company-select">
@@ -609,21 +760,9 @@ function renderWorkspace() {
           ${locationsReady ? "" : `<p class="warning-text">Run supabase/step-next-locations.sql to enable locations.</p>`}
           <button class="secondary-button" id="new-company" type="button">New Company</button>
           <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
-        </div>
+        </details>
         <nav class="section-nav" aria-label="Workspace sections">
-          ${[
-            ["mywork", "My Work"],
-            ["work", "Work Orders"],
-            ["planning", "Planning"],
-            ["requests", "Requests"],
-            ["assets", "Assets"],
-            ["pm", "PM"],
-            ["procedures", "Procedures"],
-            ["parts", "Parts"],
-            ["team", "Team"],
-            ["setup", "Admin Setup"],
-            ["settings", "Settings"],
-          ].map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}${label}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" && totalUnreadMessages() ? `<b class="nav-badge">${totalUnreadMessages()}</b>` : ""}</button>`).join("")}
         </nav>
       </aside>
 
@@ -631,12 +770,12 @@ function renderWorkspace() {
         <header class="topbar">
           <div class="topbar-main">
             <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
-            <h1>${activeCompany?.name || "Company"}</h1>
-            <div class="topbar-summary">
-              <span>${escapeHtml(activeLocationName())}</span>
-              <span>${workOrders.filter(matchesActiveLocation).length} work orders</span>
-              <span>${assets.filter(matchesActiveLocation).length} assets</span>
-              <span>${openMaintenanceRequests().filter(matchesActiveLocation).length} open requests</span>
+            <div class="company-banner-title">
+              ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${activeCompany.logoUrl}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
+              <div>
+                <h1>${activeCompany?.name || "Company"}</h1>
+                <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
+              </div>
             </div>
           </div>
           <div class="topbar-actions">
@@ -656,47 +795,38 @@ function renderWorkspace() {
         ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
         ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
 
-        ${activeSection === "mywork" ? `
-          <section class="tech-focus">
-            <div>
-              <span class="focus-label">Technician Focus</span>
-              <h2>${myWorkFilter === "created" ? "Created By Me" : "Assigned To Me"}</h2>
-              <p>${myWorkFilter === "created" ? "Work orders you opened, kept separate from your assigned queue." : "Only work orders assigned to you."}</p>
-            </div>
-            <div class="focus-stats">
-              <article><strong>${myOpenWork.length}</strong><span>active mine</span></article>
-              <article><strong>${createdByMe.length}</strong><span>created by me</span></article>
-            </div>
-          </section>
-        ` : ""}
-
         <label class="search-bar">
           Search workspace
-          <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, assets, parts, people">
+          <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
         </label>
 
-        ${showWorkDashboard ? `
-          <section class="metric-grid">
-            ${renderMetric("New", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "open").length, "open")}
-            ${renderMetric("In Progress", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "in_progress").length, "in_progress")}
-            ${renderMetric("Blocked", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "blocked").length, "blocked")}
-            ${renderMetric("Completed This Month", completedThisMonth().filter(matchesActiveLocation).length, "completed")}
-          </section>
+        ${showGlobalSearch ? renderGlobalSearchResults(globalResults) : ""}
 
-          <section class="insight-grid">
-            ${renderInsight("Overdue Work", overdueWorkOrders().filter(matchesActiveLocation).length, "Past due and not completed", "overdue")}
-            ${renderInsight("Requests", requestsReady ? openMaintenanceRequests().filter(matchesActiveLocation).length : workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.type === "request" && workOrder.status !== "completed").length, "Waiting for review", "request")}
-            ${renderInsight("Done This Week", completedThisWeek().filter(matchesActiveLocation).length, "Completed in the last 7 days", "completed")}
-            ${renderInsight("Avg Completion", `${averageCompletionMinutes(workOrders.filter(matchesActiveLocation))} min`, "Actual minutes on completed work", "neutral")}
+        ${showWorkDashboard ? `
+          <section class="panel full-width screen-gauge-panel">
+            <div class="panel-header">
+              <h2>Work Orders</h2>
+              <span>${escapeHtml(activeLocationName())}</span>
+            </div>
+            <div class="summary-gauge-grid">
+              ${renderGaugeReadout("New", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "open").length, "new")}
+              ${renderGaugeReadout("In Progress", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "in_progress").length, "in_progress")}
+              ${renderGaugeReadout("Blocked", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "blocked").length, "blocked")}
+              ${renderGaugeReadout("Completed Month", completedThisMonth().filter(matchesActiveLocation).length, "completed")}
+              ${renderGaugeReadout("Overdue", overdueWorkOrders().filter(matchesActiveLocation).length, "overdue")}
+              ${renderGaugeReadout("Requests", requestsReady ? openMaintenanceRequests().filter(matchesActiveLocation).length : workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.type === "request" && workOrder.status !== "completed").length, "request")}
+              ${renderGaugeReadout("Done This Week", completedThisWeek().filter(matchesActiveLocation).length, "completed")}
+              ${renderGaugeReadout("Avg Completion", `${averageCompletionMinutes(workOrders.filter(matchesActiveLocation))} min`, "neutral")}
+            </div>
           </section>
         ` : ""}
 
-        <section class="layout-grid single-column">
+        <section class="layout-grid single-column ${showGlobalSearch ? "hidden-section" : ""}">
           ${isWorkArea ? `
             ${activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode ? `
               <section class="panel full-width focus-panel">
                 <div class="panel-header">
-                  <h2>${activeAssetId ? "Asset Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
+                  <h2>${activeAssetId ? "Equipment Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
                   <button class="secondary-button back-action-button" id="back-to-my-work" type="button">Back to ${activeSection === "work" ? "Work Orders" : "My Work"}</button>
                 </div>
                 <div id="detail-panel">${activeAssetId ? renderAssetDetail() : activeWorkOrderId ? renderWorkOrderDetail() : quickFixMode ? renderQuickFixForm() : renderCreateWorkOrder()}</div>
@@ -704,10 +834,10 @@ function renderWorkspace() {
             ` : `
               <section class="panel full-width my-work-panel queue-panel">
                 <div class="panel-header">
-                  <h2>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : workOrderFilter === "unassigned" ? "Unassigned Work Orders" : workOrderFilter === "vendor" ? "Outside Vendor Work" : workOrderFilter === "assigned" ? "Assigned Work Orders" : "All Work Orders"}</h2>
-                  <span>${visibleWorkOrders.length} shown</span>
+                  <h2>${activeSection === "mywork" ? "My Work" : workOrdersPanelTitle()}</h2>
+                  <span>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : `${visibleWorkOrders.length} shown`}</span>
                 </div>
-                ${renderWorkloadStrip(visibleWorkOrders)}
+                ${activeSection === "mywork" ? renderWorkloadStrip(visibleWorkOrders) : ""}
                 ${activeSection === "mywork" ? `
                   <div class="segmented-control" aria-label="My work filter">
                     <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
@@ -720,9 +850,15 @@ function renderWorkspace() {
                     <button class="segment ${workOrderFilter === "vendor" ? "active" : ""}" data-work-order-filter="vendor" type="button">${segmentIcon("vendor")}Vendor</button>
                     <button class="segment ${workOrderFilter === "unassigned" ? "active" : ""}" data-work-order-filter="unassigned" type="button">${segmentIcon("unassigned")}Unassigned</button>
                   </div>
+                  ${workOrderAssigneeFilter ? `
+                    <div class="active-team-filter">
+                      <span>Assigned to ${escapeHtml(teamMemberName(workOrderAssigneeFilter))}</span>
+                      <button class="text-button" data-clear-assignee-filter type="button">Clear</button>
+                    </div>
+                  ` : ""}
                 `}
                 <div class="segmented-control" aria-label="Work order status filter">
-                  ${["active", ...STATUS_OPTIONS].map((status) => `
+                  ${["active", "overdue", ...STATUS_OPTIONS].map((status) => `
                     <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
                       ${segmentIcon(status)}${statusLabel(status)}
                     </button>
@@ -737,6 +873,9 @@ function renderWorkspace() {
                     <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
                   `).join("")}
                 </div>
+                ${activeStatusFilter === "completed" ? `
+                  <p class="completion-note completed-history-note">Completed history is paged ${WORK_ORDERS_PER_PAGE} at a time and sorted by most recently completed.</p>
+                ` : ""}
                 <div class="work-list" id="work-order-list">
                   ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
                 </div>
@@ -774,28 +913,28 @@ function renderWorkspace() {
 
           <section class="panel full-width ${activeSection === "assets" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>Assets</h2>
+              <h2>Equipment</h2>
               <span>${visibleAssets.length} shown</span>
             </div>
             <form class="inline-form" id="create-asset-form">
-              <input name="name" required placeholder="Asset name">
-              <input name="asset_code" placeholder="Asset code">
-              <input name="location" placeholder="Location">
+              <input name="name" required placeholder="Machine or equipment name">
+              <input name="asset_code" placeholder="Equipment ID">
+              <input name="location" placeholder="Area / line">
               <select name="location_id" ${locations.length ? "required" : "disabled"}>
                 ${renderLocationOptions()}
               </select>
-              <button class="secondary-button asset-action-button" type="submit">Add Asset</button>
+              <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
             </form>
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
                 <article class="asset-health ${status}">
                   <span>${status}</span>
-                  <strong>${assets.filter((asset) => asset.status === status).length}</strong>
+                  <strong>${filteredAssets().filter((asset) => asset.status === status).length}</strong>
                 </article>
               `).join("")}
             </div>
             <div class="asset-list">
-              ${visibleAssets.map(renderAssetCard).join("") || `<p class="muted">No assets match this search.</p>`}
+              ${visibleAssets.map(renderAssetCard).join("") || `<p class="muted">No equipment matches this search.</p>`}
             </div>
           </section>
 
@@ -807,7 +946,7 @@ function renderWorkspace() {
             <form class="inline-form pm-form" id="create-pm-form">
               <input name="title" required placeholder="Monthly compressor PM">
               <select name="asset_id" required>
-                <option value="">Asset</option>
+                <option value="">Machine / equipment</option>
                 ${renderAssetOptions()}
               </select>
               <select name="frequency">
@@ -844,21 +983,38 @@ function renderWorkspace() {
             ` : `<p class="muted">Run supabase/step-next-procedures.sql to turn on procedure templates.</p>`}
           </section>
 
+          <section class="panel full-width ${activeSection === "messages" ? "" : "hidden-section"}">
+            <div class="panel-header">
+              <h2>Messages</h2>
+              <span>${messagesReady ? `${messageThreads.length} threads` : "setup needed"}</span>
+            </div>
+            ${renderMessageCenter()}
+          </section>
+
           <section class="panel full-width ${activeSection === "team" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Team</h2>
               <span>${visibleMembers.length} shown</span>
             </div>
-            <form class="inline-form team-form" id="add-member-form">
-              <input name="user_id" required placeholder="User UUID">
-              <select name="role">
-                <option value="technician">Technician</option>
-                <option value="manager">Manager</option>
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button class="secondary-button" type="submit">Add Member</button>
-            </form>
+            ${renderMyProfileForm()}
+            ${renderRoleGuide()}
+            ${canManageTeam() ? `
+              ${renderTeamInviteForm()}
+              ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-team-invites.sql to invite teammates by email.</p>`}
+              <details class="developer-details">
+                <summary>Developer add by User UUID</summary>
+                <form class="inline-form team-form" id="add-member-form">
+                  <input name="user_id" required placeholder="User UUID">
+                  <select name="role">
+                    <option value="technician">Technician</option>
+                    <option value="manager">Manager</option>
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <button class="secondary-button" type="submit">Add Member</button>
+                </form>
+              </details>
+            ` : `<p class="muted team-permission-note">Admins and managers can invite teammates and change roles.</p>`}
             <div class="member-list">
               ${visibleMembers.map(renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
             </div>
@@ -905,6 +1061,18 @@ function renderWorkspace() {
               <label>Company name<input name="name" required value="${escapeHtml(activeCompany?.name || "")}"></label>
               <button class="secondary-button" type="submit">Save Company</button>
             </form>
+            <form class="form-grid settings-form logo-form" id="company-logo-form">
+              <div class="company-logo-preview">
+                ${activeCompany?.logoUrl ? `<img src="${activeCompany.logoUrl}" alt="${escapeHtml(activeCompany?.name || "Company")} logo preview">` : `<span>MO</span>`}
+              </div>
+              <label>Company logo<input name="logo" type="file" accept="image/*"><small>Optional. Logos are optimized before upload.</small></label>
+              <p class="error-text" id="company-logo-error">${escapeHtml(activeCompany?.logoError || "")}</p>
+              <button class="secondary-button" type="submit">Upload Logo</button>
+            </form>
+            <div class="settings-summary logo-status">
+              <article><strong>Logo status</strong><span>${activeCompany?.logo_path ? (activeCompany?.logoUrl ? "loaded" : "saved, cannot display") : "none uploaded"}</span></article>
+              ${activeCompany?.logo_path ? `<article><strong>Logo path</strong><span>${escapeHtml(activeCompany.logo_path)}</span></article>` : ""}
+            </div>
             <form class="form-grid settings-form" id="location-form">
               <label>New location<input name="name" required placeholder="North Plant"></label>
               <p class="error-text" id="location-error">${locationsReady ? "" : "Run supabase/step-next-locations.sql before adding locations."}</p>
@@ -941,24 +1109,20 @@ function renderWorkspace() {
 function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
     if (!matchesActiveLocation(workOrder)) return false;
-    const statusMatch = activeStatusFilter === "active" || activeStatusFilter === "all"
-      ? workOrder.status !== "completed"
-      : workOrder.status === activeStatusFilter;
+    const statusMatch = activeStatusFilter === "overdue"
+      ? getDueState(workOrder)?.className === "overdue"
+      : activeStatusFilter === "active" || activeStatusFilter === "all"
+        ? workOrder.status !== "completed"
+        : workOrder.status === activeStatusFilter;
     const queueMatch = activeSection === "mywork"
       ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
-      : workOrderFilter === "all" ||
-        (workOrderFilter === "assigned" && Boolean(workOrder.assigned_to)) ||
-        (workOrderFilter === "vendor" && isVendorAssigned(workOrder)) ||
-        (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
-    return statusMatch && queueMatch && matchesSearch([
-      workOrder.title,
-      workOrder.description,
-      workOrder.status,
-      workOrder.priority,
-      workOrder.type,
-      workOrder.assets?.name,
-      assignmentLabel(workOrder),
-    ]);
+      : workOrderAssigneeFilter
+        ? workOrder.assigned_to === workOrderAssigneeFilter
+        : workOrderFilter === "all" ||
+          (workOrderFilter === "assigned" && Boolean(workOrder.assigned_to)) ||
+          (workOrderFilter === "vendor" && isVendorAssigned(workOrder)) ||
+          (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
+    return statusMatch && queueMatch && matchesSearch(workOrderSearchValues(workOrder));
   }).sort(compareWorkOrders);
 }
 
@@ -1030,6 +1194,10 @@ function autoGrowTextarea(field) {
 }
 
 function compareWorkOrders(a, b) {
+  if (activeStatusFilter === "completed") {
+    return completedSortValue(b) - completedSortValue(a) || new Date(b.created_at) - new Date(a.created_at);
+  }
+
   if (workSort === "due") {
     return dueSortValue(a) - dueSortValue(b) || new Date(b.created_at) - new Date(a.created_at);
   }
@@ -1048,6 +1216,10 @@ function dueSortValue(workOrder) {
 
 function prioritySortValue(priority) {
   return { low: 1, medium: 2, high: 3, critical: 4 }[priority] || 0;
+}
+
+function completedSortValue(workOrder) {
+  return workOrder.completed_at ? new Date(workOrder.completed_at).getTime() : 0;
 }
 
 function filteredRequests() {
@@ -1088,13 +1260,17 @@ function filteredProcedureTemplates() {
 }
 
 function filteredParts() {
-  return parts.filter((part) => matchesActiveLocation(part) && matchesSearch([
-    part.name,
-    part.sku,
-    part.supplier_name,
-    part.quantity_on_hand,
-    part.reorder_point,
-  ]));
+  return parts.filter((part) => {
+    if (!matchesActiveLocation(part)) return false;
+    if (partInventoryFilter === "low" && !isLowStockPart(part)) return false;
+    return matchesSearch([
+      part.name,
+      part.sku,
+      part.supplier_name,
+      part.quantity_on_hand,
+      part.reorder_point,
+    ]);
+  });
 }
 
 function partSourceOptions() {
@@ -1139,6 +1315,95 @@ function renderPartSourceManager() {
   `;
 }
 
+function renderGlobalSearchResults(results) {
+  const total = globalResultCount(results);
+  return `
+    <section class="panel full-width global-search-panel">
+      <div class="panel-header">
+        <h2>Search Results</h2>
+        <span>${total} found in ${escapeHtml(activeLocationName())}</span>
+      </div>
+      <div class="global-search-grid">
+        ${renderGlobalResultGroup("Work Orders", results.work, renderGlobalWorkResult, "work")}
+        ${renderGlobalResultGroup("Equipment", results.assets, renderGlobalAssetResult, "asset")}
+        ${renderGlobalResultGroup("Parts", results.parts, renderGlobalPartResult, "parts")}
+        ${renderGlobalResultGroup("Requests", results.requests, renderGlobalRequestResult, "comment")}
+        ${renderGlobalResultGroup("PM", results.pm, renderGlobalPmResult, "procedure")}
+        ${renderGlobalResultGroup("Procedures", results.procedures, renderGlobalProcedureResult, "procedure")}
+      </div>
+    </section>
+  `;
+}
+
+function renderGlobalResultGroup(title, items, renderer, tone) {
+  return `
+    <section class="global-result-group relationship-detail ${tone}">
+      <div class="panel-header compact">
+        <h3>${escapeHtml(title)}</h3>
+        <span class="chip">${items.length}</span>
+      </div>
+      <div class="global-result-list">
+        ${items.map(renderer).join("") || `<p class="muted">No matches.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderGlobalWorkResult(workOrder) {
+  return `
+    <button class="global-result-item" data-search-work-order="${workOrder.id}" type="button">
+      <strong>${escapeHtml(workOrder.title)}</strong>
+      <span>${statusLabel(workOrder.status)} - ${escapeHtml(workOrder.assets?.name || "No equipment")} - ${escapeHtml(assignmentLabel(workOrder))}</span>
+    </button>
+  `;
+}
+
+function renderGlobalAssetResult(asset) {
+  return `
+    <button class="global-result-item" data-search-asset="${asset.id}" type="button">
+      <strong>${escapeHtml(asset.name)}</strong>
+      <span>${escapeHtml(asset.asset_code || "No ID")} - ${escapeHtml(asset.status)} - ${escapeHtml(asset.location || activeLocationName())}</span>
+    </button>
+  `;
+}
+
+function renderGlobalPartResult(part) {
+  const quantity = Number(part.quantity_on_hand) || 0;
+  return `
+    <button class="global-result-item" data-search-part="${part.id}" type="button">
+      <strong>${escapeHtml(part.name)}</strong>
+      <span>${escapeHtml(part.sku || "No SKU")} - ${quantity} on hand${part.supplier_name ? ` - ${escapeHtml(part.supplier_name)}` : ""}</span>
+    </button>
+  `;
+}
+
+function renderGlobalRequestResult(request) {
+  return `
+    <button class="global-result-item" data-search-request="${request.id}" type="button">
+      <strong>${escapeHtml(request.title)}</strong>
+      <span>${escapeHtml(request.status)} - ${escapeHtml(request.assets?.name || "No equipment")}</span>
+    </button>
+  `;
+}
+
+function renderGlobalPmResult(schedule) {
+  return `
+    <button class="global-result-item" data-search-section="pm" data-search-label="${escapeHtml(schedule.title)}" type="button">
+      <strong>${escapeHtml(schedule.title)}</strong>
+      <span>${escapeHtml(schedule.assets?.name || "No equipment")} - due ${escapeHtml(schedule.next_due_at || "unset")}</span>
+    </button>
+  `;
+}
+
+function renderGlobalProcedureResult(template) {
+  return `
+    <button class="global-result-item" data-search-section="procedures" data-search-label="${escapeHtml(template.name)}" type="button">
+      <strong>${escapeHtml(template.name)}</strong>
+      <span>${(template.procedure_steps || []).length} steps</span>
+    </button>
+  `;
+}
+
 function partSetupMessage() {
   const messages = [];
   if (!partCostsReady) messages.push("Run supabase/step-next-part-costs.sql before saving unit costs.");
@@ -1160,8 +1425,139 @@ function matchesSearch(values) {
   return values.some((value) => String(value ?? "").toLowerCase().includes(query));
 }
 
+function matchesQuery(values, query = searchQuery) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+  return values.some((value) => String(value ?? "").toLowerCase().includes(normalized));
+}
+
+function workOrderSearchValues(workOrder) {
+  const usedParts = partsUsedByWorkOrder[workOrder.id] || [];
+  const comments = commentsByWorkOrder[workOrder.id] || [];
+  const events = eventsByWorkOrder[workOrder.id] || [];
+  const photos = photosByWorkOrder[workOrder.id] || [];
+  const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
+  const stepResults = Object.values(stepResultsByWorkOrder[workOrder.id] || {});
+
+  return [
+    workOrder.title,
+    workOrder.description,
+    workOrder.status,
+    statusLabel(workOrder.status),
+    workOrder.priority,
+    workOrder.type,
+    workOrder.assets?.name,
+    assignmentLabel(workOrder),
+    workOrder.failure_cause,
+    workOrder.resolution_summary,
+    workOrder.completion_notes,
+    workOrder.current_update,
+    procedure?.name,
+    procedure?.description,
+    ...(procedure?.procedure_steps || []).flatMap((step) => [step.prompt, step.step_type]),
+    ...usedParts.flatMap((row) => [
+      row.parts?.name,
+      row.parts?.sku,
+      row.parts?.supplier_name,
+      row.quantity_used,
+      row.unit_cost,
+    ]),
+    ...comments.flatMap((comment) => [
+      comment.body,
+      profilesByUserId[comment.author_id]?.full_name,
+    ]),
+    ...events.flatMap((event) => [
+      event.event_type,
+      event.summary,
+      profilesByUserId[event.actor_id]?.full_name,
+    ]),
+    ...photos.flatMap((photo) => [
+      photo.file_name,
+      photo.original_file_name,
+      photo.content_type,
+    ]),
+    ...stepResults.flatMap((result) => [
+      result.value,
+      result.notes,
+    ]),
+  ];
+}
+
+function globalSearchResults() {
+  const query = searchQuery.trim();
+  const work = workOrders
+    .filter(matchesActiveLocation)
+    .filter((workOrder) => matchesQuery(workOrderSearchValues(workOrder), query))
+    .sort(compareWorkOrders)
+    .slice(0, 6);
+
+  const assetResults = assets
+    .filter(matchesActiveLocation)
+    .filter((asset) => matchesQuery([asset.name, asset.asset_code, asset.location, asset.status], query))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 6);
+
+  const partResults = parts
+    .filter(matchesActiveLocation)
+    .filter((part) => matchesQuery([part.name, part.sku, part.supplier_name, part.quantity_on_hand, part.reorder_point], query))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 6);
+
+  const requestResults = maintenanceRequests
+    .filter(matchesActiveLocation)
+    .filter((request) => matchesQuery([
+      request.title,
+      request.description,
+      request.status,
+      request.priority,
+      request.assets?.name,
+      profilesByUserId[request.requested_by]?.full_name,
+    ], query))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 6);
+
+  const pmResults = preventiveSchedules
+    .filter(matchesActiveLocation)
+    .filter((schedule) => matchesQuery([schedule.title, schedule.frequency, schedule.next_due_at, schedule.assets?.name], query))
+    .sort((a, b) => String(a.next_due_at || "").localeCompare(String(b.next_due_at || "")))
+    .slice(0, 6);
+
+  const procedureResults = procedureTemplates
+    .filter((template) => matchesQuery([
+      template.name,
+      template.description,
+      ...(template.procedure_steps || []).map((step) => step.prompt),
+    ], query))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 6);
+
+  return { work, assets: assetResults, parts: partResults, requests: requestResults, pm: pmResults, procedures: procedureResults };
+}
+
+function globalResultCount(results) {
+  return Object.values(results).reduce((sum, list) => sum + list.length, 0);
+}
+
 function renderMetric(label, value, tone = "neutral") {
   return `<article class="metric dashboard-card tone-${tone}"><span>${label}</span><strong>${value}</strong></article>`;
+}
+
+function renderGaugeReadout(label, value, tone = "active") {
+  return `
+    <article class="gauge-readout ${tone}">
+      <div class="gauge-visual" aria-hidden="true">
+        <span class="gauge-arc"></span>
+        <span class="gauge-cut one"></span>
+        <span class="gauge-cut two"></span>
+        <span class="gauge-cut three"></span>
+        <span class="gauge-cut four"></span>
+        <span class="gauge-needle"></span>
+        <span class="gauge-hub"></span>
+      </div>
+      <strong>${value}</strong>
+      <span>${escapeHtml(label)}</span>
+    </article>
+  `;
 }
 
 function renderWorkloadStrip(items) {
@@ -1172,11 +1568,11 @@ function renderWorkloadStrip(items) {
   const overdue = items.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
   return `
     <div class="workload-strip" aria-label="Active work summary">
-      <article class="workload-pill active"><span>Active Work</span><strong>${active}</strong></article>
-      <article class="workload-pill new"><span>New</span><strong>${newWork}</strong></article>
-      <article class="workload-pill in_progress"><span>In Progress</span><strong>${inProgress}</strong></article>
-      <article class="workload-pill blocked"><span>Blocked</span><strong>${blocked}</strong></article>
-      <article class="workload-pill overdue"><span>Overdue</span><strong>${overdue}</strong></article>
+      ${renderGaugeReadout("Active Work", active, "active workload-pill")}
+      ${renderGaugeReadout("New", newWork, "new workload-pill")}
+      ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill")}
+      ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill")}
+      ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill")}
     </div>
   `;
 }
@@ -1193,6 +1589,7 @@ function segmentIcon(type) {
     in_progress: `<path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M4.2 7.5l3.5 2"></path><path d="M16.3 14.5l3.5 2"></path><path d="M19.8 7.5l-3.5 2"></path><path d="M7.7 14.5l-3.5 2"></path>`,
     blocked: `<path d="M5 5l14 14"></path><circle cx="12" cy="12" r="8"></circle>`,
     completed: `<path d="M4 12l5 5L20 6"></path>`,
+    overdue: `<path d="M12 8v5"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle>`,
     newest: `<path d="M12 5v7l4 2"></path><circle cx="12" cy="12" r="8"></circle>`,
     due: `<path d="M7 3v4"></path><path d="M17 3v4"></path><path d="M4 8h16"></path><path d="M5 5h14v15H5z"></path>`,
     priority: `<path d="M12 3l8 18H4z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path>`,
@@ -1210,6 +1607,7 @@ function navIcon(type) {
     pm: `<path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M4.2 7.5l3.5 2"></path><path d="M16.3 14.5l3.5 2"></path><path d="M19.8 7.5l-3.5 2"></path><path d="M7.7 14.5l-3.5 2"></path>`,
     procedures: `<path d="M9 6h11"></path><path d="M9 12h11"></path><path d="M9 18h11"></path><path d="M4 6l1 1 2-2"></path><path d="M4 12l1 1 2-2"></path><path d="M4 18l1 1 2-2"></path>`,
     parts: `<path d="M14 7l3 3"></path><path d="M5 19l8-8"></path><path d="M15 5l4 4-4 4-4-4 4-4z"></path>`,
+    messages: `<path d="M4 5h16v11H7l-3 3V5z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path>`,
     team: `<path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M3 21a5 5 0 0 1 10 0"></path><path d="M11 21a5 5 0 0 1 10 0"></path>`,
     setup: `<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a8 8 0 0 0 .1-2l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L4.5 13a8 8 0 0 0 .1 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5z"></path>`,
     settings: `<path d="M4 7h16"></path><path d="M4 17h16"></path><path d="M8 7v10"></path><path d="M16 7v10"></path>`,
@@ -1225,6 +1623,20 @@ function renderInsight(label, value, description, tone = "neutral") {
       <p>${description}</p>
     </article>
   `;
+}
+
+function workOrdersPanelTitle() {
+  if (workOrderAssigneeFilter) return `${teamMemberName(workOrderAssigneeFilter)} Work`;
+  if (workOrderFilter === "unassigned") return "Unassigned Work Orders";
+  if (workOrderFilter === "vendor") return "Outside Vendor Work";
+  if (workOrderFilter === "assigned") return "Assigned Work Orders";
+  return "All Work Orders";
+}
+
+function teamMemberName(userId) {
+  const profile = profilesByUserId[userId];
+  if (userId === session.user.id) return profile?.full_name || session.user.email || "Me";
+  return profile?.full_name || userId;
 }
 
 function renderPlanningGroup(title, items, chipClass) {
@@ -1321,12 +1733,12 @@ function renderAssetDetail() {
       </div>
 
       <div class="quick-actions detail-quick-actions">
-        <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this asset</button>
+        <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
       </div>
 
       <form class="form-grid" id="edit-asset-form">
-        <label>Asset name<input name="name" required value="${escapeHtml(asset.name)}"></label>
-        <label>Asset code<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
+        <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
+        <label>Equipment ID<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
         <label>Location
           <select name="location_id" ${locations.length ? "" : "disabled"}>
             ${renderLocationOptions(asset.location_id || activeLocationId)}
@@ -1338,13 +1750,13 @@ function renderAssetDetail() {
             ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
-        <button class="secondary-button asset-action-button" type="submit">Save Asset</button>
+        <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
       </form>
 
       <section>
         <h3>Open Work</h3>
         <div class="mini-list">
-          ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this asset.</p>`}
+          ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`}
         </div>
       </section>
 
@@ -1358,7 +1770,7 @@ function renderAssetDetail() {
       <section>
         <h3>PM Schedules</h3>
         <div class="mini-list">
-          ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this asset.</p>`}
+          ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
         </div>
       </section>
 
@@ -1412,7 +1824,7 @@ function renderPreventiveSchedule(schedule) {
           ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
         </div>
         <h3>${escapeHtml(schedule.title)}</h3>
-        <p>${escapeHtml(schedule.assets?.name || "No asset")} - Next due ${schedule.next_due_at}</p>
+        <p>${escapeHtml(schedule.assets?.name || "No equipment")} - Next due ${schedule.next_due_at}</p>
       </div>
       <button class="secondary-button" data-generate-pm="${schedule.id}" type="button">Generate Work</button>
     </article>
@@ -1599,15 +2011,356 @@ function requiredChecklistProgress(workOrder, procedure) {
 
 function renderMember(member) {
   const profile = profilesByUserId[member.user_id];
+  const isCurrentUser = member.user_id === session.user.id;
+  const canEditRole = canManageTeam() && !isCurrentUser;
+  const workload = teamMemberWorkload(member.user_id);
   return `
     <article class="member-card">
       <div>
-        <strong>${escapeHtml(profile?.full_name || member.user_id)}</strong>
-        <p>${escapeHtml(member.user_id)}</p>
+        <strong>${escapeHtml(profile?.full_name || (isCurrentUser ? session.user.email : member.user_id))}</strong>
+        <p>${escapeHtml(roleDescription(member.role))}</p>
+        <p>${isCurrentUser ? escapeHtml(session.user.email || member.user_id) : escapeHtml(member.user_id)}</p>
+        <div class="member-workload">
+          <span class="chip open">${workload.newWork} New</span>
+          <span class="chip in_progress">${workload.inProgress} In Progress</span>
+          <span class="chip blocked">${workload.blocked} Blocked</span>
+          ${workload.overdue ? `<span class="chip overdue">${workload.overdue} Overdue</span>` : ""}
+        </div>
       </div>
-      <span class="chip">${escapeHtml(member.role)}</span>
+      <div class="member-card-actions">
+        <button class="secondary-button view-member-work-button" data-view-member-work="${member.user_id}" type="button">View Work</button>
+        ${canEditRole ? `
+          <form class="member-role-form" data-member-role="${member.user_id}">
+            <select name="role" aria-label="Role for ${escapeHtml(profile?.full_name || member.user_id)}">
+              ${["technician", "manager", "member", "admin"].map((role) => `<option value="${role}" ${role === member.role ? "selected" : ""}>${roleLabel(role)}</option>`).join("")}
+            </select>
+            <button class="secondary-button" type="submit">Save Role</button>
+          </form>
+        ` : `<span class="chip">${escapeHtml(roleLabel(member.role))}</span>`}
+      </div>
     </article>
   `;
+}
+
+function teamMemberWorkload(userId) {
+  const assigned = workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.assigned_to === userId);
+  return {
+    newWork: assigned.filter((workOrder) => workOrder.status === "open").length,
+    inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,
+    blocked: assigned.filter((workOrder) => workOrder.status === "blocked").length,
+    overdue: assigned.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length,
+  };
+}
+
+function renderMyProfileForm() {
+  const profile = profilesByUserId[session.user.id] || {};
+  return `
+    <form class="team-profile-form relationship-detail comment" id="profile-form">
+      <div>
+        <h3>My Profile</h3>
+        <p class="muted">${escapeHtml(session.user.email || "Signed in user")}</p>
+      </div>
+      <label>Display name<input name="full_name" value="${escapeHtml(profile.full_name || "")}" placeholder="Name shown on work orders"></label>
+      <p class="error-text" id="profile-error"></p>
+      <button class="secondary-button" type="submit">Save Profile</button>
+    </form>
+  `;
+}
+
+function renderRoleGuide() {
+  return `
+    <section class="team-role-guide">
+      ${["technician", "manager", "member", "admin"].map((role) => `
+        <article>
+          <strong>${roleLabel(role)}</strong>
+          <span>${escapeHtml(roleDescription(role))}</span>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
+function renderTeamInviteForm() {
+  return `
+    <form class="team-invite-form relationship-detail comment" id="team-invite-form">
+      <div>
+        <h3>Invite Teammate</h3>
+        <p class="muted">They sign up with this email, then the app adds them to this company automatically.</p>
+      </div>
+      <label>Email<input name="email" type="email" required placeholder="tech@company.com" ${teamInvitesReady ? "" : "disabled"}></label>
+      <label>Role
+        <select name="role" ${teamInvitesReady ? "" : "disabled"}>
+          <option value="technician">Technician</option>
+          <option value="manager">Manager</option>
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <p class="error-text" id="team-invite-error">${teamInvitesReady ? "" : "Run supabase/step-next-team-invites.sql before inviting by email."}</p>
+      <button class="secondary-button" type="submit" ${teamInvitesReady ? "" : "disabled"}>Create Invite</button>
+    </form>
+  `;
+}
+
+function renderTeamInvites() {
+  const pending = teamInvites.filter((invite) => !invite.accepted_at);
+  return `
+    <section class="team-invites">
+      <div class="panel-header compact">
+        <h3>Pending Invites</h3>
+        <span>${pending.length}</span>
+      </div>
+      <div class="member-list">
+        ${pending.map((invite) => `
+          <article class="member-card invite-card">
+            <div>
+              <strong>${escapeHtml(invite.email)}</strong>
+              <p>Sent ${new Date(invite.created_at).toLocaleString()}</p>
+            </div>
+            <span class="chip">${escapeHtml(invite.role)}</span>
+          </article>
+        `).join("") || `<p class="muted">No pending invites.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderMessageCenter() {
+  if (!messagesReady) {
+    return `<p class="muted">Run supabase/step-next-message-center.sql to enable company, location, and direct message threads.</p>`;
+  }
+
+  const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
+  const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
+  const visibleThreads = filteredMessageThreads();
+  const linkedDraftWorkOrder = workOrders.find((workOrder) => workOrder.id === messageComposerWorkOrderId);
+
+  return `
+    <section class="message-center">
+      <div class="message-layout">
+        <aside class="message-thread-rail">
+          <div class="message-rail-header">
+            <div>
+              <h3>Messages</h3>
+              <p>${totalUnreadMessages()} unread</p>
+            </div>
+          </div>
+          <form class="message-thread-form" id="message-thread-form">
+            <details ${messageComposerOpen || linkedDraftWorkOrder ? "open" : ""}>
+              <summary>New message</summary>
+              <div class="message-thread-fields">
+                <label>Send to
+                  <select name="thread_type" id="message-thread-type">
+                    <option value="company">Whole company</option>
+                    <option value="location">Current location</option>
+                    <option value="direct">Direct message</option>
+                  </select>
+                </label>
+                <label class="message-direct-field">Person
+                  <select name="direct_user_id">
+                    ${companyMembers.filter((member) => member.user_id !== session.user.id).map((member) => `<option value="${member.user_id}">${escapeHtml(teamMemberName(member.user_id))}</option>`).join("") || `<option value="">No teammates yet</option>`}
+                  </select>
+                </label>
+                <div class="message-scope-note" id="message-scope-note">${messageComposerScopeNote("company")}</div>
+                <label>Subject<input name="title" required placeholder="Thread subject" value="${linkedDraftWorkOrder ? `Work order: ${escapeHtml(linkedDraftWorkOrder.title)}` : ""}"></label>
+                ${linkedDraftWorkOrder ? `
+                  <input name="work_order_id" type="hidden" value="${linkedDraftWorkOrder.id}">
+                  <div class="message-linked-draft">
+                    <span>Linked work order</span>
+                    <strong>${escapeHtml(linkedDraftWorkOrder.title)}</strong>
+                    <button class="text-button" data-clear-message-work-link type="button">Clear</button>
+                  </div>
+                ` : `
+                  <label>Recent work order
+                    <select name="work_order_id" ${messageWorkOrderLinksReady ? "" : "disabled"}>
+                      <option value="">No work order</option>
+                      ${recentMessageLinkWorkOrders().map((workOrder) => `<option value="${workOrder.id}">${escapeHtml(workOrder.title)} - ${statusLabel(workOrder.status)}</option>`).join("")}
+                    </select>
+                  </label>
+                `}
+                <label>Message<textarea name="body" rows="3" required placeholder="Type the first message..."></textarea></label>
+                <p class="error-text" id="message-thread-error">${messageWorkOrderLinksReady ? "" : "Run supabase/step-next-message-work-order-links.sql before linking threads to work orders."}</p>
+                <button class="secondary-button message-action-button" type="submit">Start Thread</button>
+              </div>
+            </details>
+          </form>
+          <label class="message-search">
+            <input id="message-search" type="search" value="${escapeHtml(messageSearchQuery)}" placeholder="Search messages">
+          </label>
+          <div class="message-filter-bar" aria-label="Message thread filter">
+            ${[
+              ["all", "All"],
+              ["unread", "Unread"],
+              ["company", "Company"],
+              ["location", "Location"],
+              ["direct", "Direct"],
+            ].map(([id, label]) => `<button class="${messageThreadFilter === id ? "active" : ""}" data-message-filter="${id}" type="button">${label}</button>`).join("")}
+          </div>
+          <div class="message-thread-list">
+            ${visibleThreads.map(renderMessageThreadButton).join("") || `<p class="muted">No threads match this filter.</p>`}
+          </div>
+        </aside>
+        <section class="message-thread-detail">
+          ${activeThread ? `
+            <div class="message-chat-header">
+              <div>
+                <h3>${escapeHtml(activeThread.title)}</h3>
+                <p class="muted">${messageThreadScopeLabel(activeThread)}</p>
+              </div>
+              <div class="message-header-actions">
+                ${activeThread.work_order_id ? `<button class="secondary-button message-linked-work-button" data-open-linked-work-order="${activeThread.work_order_id}" type="button">Open Work Order</button>` : ""}
+                <span class="chip comment">${threadMessages.length} message${threadMessages.length === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+            <div class="message-list">
+              ${renderMessageList(threadMessages)}
+            </div>
+            <form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
+              <div class="message-quick-replies">
+                ${["On it", "Need more info", "Waiting on parts", "Complete"].map((reply) => `<button data-quick-reply="${escapeHtml(reply)}" type="button">${escapeHtml(reply)}</button>`).join("")}
+              </div>
+              <textarea name="body" rows="2" required placeholder="Reply to this thread..."></textarea>
+              <p class="error-text" id="message-reply-error"></p>
+              <button class="secondary-button message-action-button" type="submit">Send Reply</button>
+            </form>
+          ` : `<p class="muted">Choose or start a thread.</p>`}
+        </section>
+      </div>
+    </section>
+  `;
+}
+
+function renderMessageThreadButton(thread) {
+  const messages = messagesByThreadId[thread.id] || [];
+  const lastMessage = messages[messages.length - 1];
+  return `
+    <button class="message-thread-button ${thread.id === activeMessageThreadId ? "active" : ""}" data-message-thread="${thread.id}" type="button">
+      <strong>${escapeHtml(thread.title)}${unreadMessageCount(thread.id) ? `<span class="message-unread-pill">${unreadMessageCount(thread.id)}</span>` : ""}</strong>
+      <span>${escapeHtml(messageThreadScopeLabel(thread))}</span>
+      <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)} · ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
+    </button>
+  `;
+}
+
+function renderMessageBubble(message) {
+  const mine = message.sender_id === session.user.id;
+  const senderName = teamMemberName(message.sender_id);
+  return `
+    <article class="message-bubble ${mine ? "mine" : ""}">
+      <span class="message-avatar" aria-hidden="true">${escapeHtml(initials(senderName))}</span>
+      <div>
+        <strong>${escapeHtml(senderName)}</strong>
+        <span>${escapeHtml(formatMessageTime(message.created_at))}</span>
+      </div>
+      <p>${escapeHtml(message.body)}</p>
+    </article>
+  `;
+}
+
+function renderMessageList(messages) {
+  if (!messages.length) return `<p class="muted">No messages yet.</p>`;
+  let lastDay = "";
+  return messages.map((message) => {
+    const day = formatMessageDay(message.created_at);
+    const divider = day !== lastDay ? `<div class="message-day-divider"><span>${escapeHtml(day)}</span></div>` : "";
+    lastDay = day;
+    return `${divider}${renderMessageBubble(message)}`;
+  }).join("");
+}
+
+function messageThreadScopeLabel(thread) {
+  if (thread.thread_type === "direct") return directThreadNames(thread);
+  if (thread.thread_type === "location") return locations.find((location) => location.id === thread.location_id)?.name || "Location thread";
+  return "Whole company";
+}
+
+function directThreadNames(thread) {
+  const members = messageThreadMembers
+    .filter((member) => member.thread_id === thread.id)
+    .map((member) => teamMemberName(member.user_id));
+  return members.length ? members.join(", ") : "Direct message";
+}
+
+function messageThreadMembersForType(threadType, directUserId) {
+  if (threadType === "direct") return [session.user.id, directUserId].filter(Boolean);
+  return companyMembers.map((member) => member.user_id);
+}
+
+function recentMessageLinkWorkOrders() {
+  return workOrders
+    .filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status !== "completed")
+    .slice(0, 8);
+}
+
+function filteredMessageThreads() {
+  return messageThreads.filter((thread) => {
+    const filterMatch =
+      messageThreadFilter === "all" ||
+      (messageThreadFilter === "unread" && unreadMessageCount(thread.id) > 0) ||
+      thread.thread_type === messageThreadFilter;
+    return filterMatch && matchesQuery(messageThreadSearchValues(thread), messageSearchQuery);
+  });
+}
+
+function messageThreadSearchValues(thread) {
+  const messages = messagesByThreadId[thread.id] || [];
+  const participants = messageThreadMembers
+    .filter((member) => member.thread_id === thread.id)
+    .map((member) => teamMemberName(member.user_id));
+  return [
+    thread.title,
+    messageThreadScopeLabel(thread),
+    ...participants,
+    ...messages.map((message) => message.body),
+  ];
+}
+
+function formatMessageTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const time = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (messageDay === today) return `Today ${time}`;
+  if (messageDay === today - 86400000) return `Yesterday ${time}`;
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function formatMessageDay(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  if (messageDay === today) return "Today";
+  if (messageDay === today - 86400000) return "Yesterday";
+  return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+
+function initials(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "MO";
+  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+function messageComposerScopeNote(threadType) {
+  if (threadType === "direct") return "Only you and the selected teammate will see this thread.";
+  if (threadType === "location") return `Visible to company members. Tagged to ${activeLocationName()}.`;
+  return "Visible to everyone in this company.";
+}
+
+function unreadMessageCount(threadId) {
+  const lastReadAt = messageReadsByThreadId[threadId]?.last_read_at;
+  const lastReadTime = lastReadAt ? new Date(lastReadAt).getTime() : 0;
+  return (messagesByThreadId[threadId] || []).filter((message) => {
+    if (message.sender_id === session.user.id) return false;
+    return new Date(message.created_at).getTime() > lastReadTime;
+  }).length;
+}
+
+function totalUnreadMessages() {
+  return messageThreads.reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
 }
 
 function setupItems() {
@@ -1653,6 +2406,16 @@ function setupItems() {
       detail: partDocumentsReady ? "Receipts and invoices can be filed with parts" : "Run step-next-part-documents.sql",
     },
     {
+      name: "Message center",
+      ready: messagesReady,
+      detail: messagesReady ? "Company, location, and direct message threads available" : "Run step-next-message-center.sql",
+    },
+    {
+      name: "Message work links",
+      ready: messageWorkOrderLinksReady,
+      detail: messageWorkOrderLinksReady ? "Message threads can link back to work orders" : "Run step-next-message-work-order-links.sql",
+    },
+    {
       name: "Work outcomes",
       ready: outcomesReady,
       detail: outcomesReady ? "Cause/resolution/follow-up available" : "Run step-next-work-order-outcomes.sql",
@@ -1661,6 +2424,15 @@ function setupItems() {
       name: "Safety checks",
       ready: safetyChecksReady,
       detail: safetyChecksReady ? "Asset safety check completion available" : "Run step-next-safety-checks.sql",
+    },
+    {
+      name: "Admin delete protection",
+      ready: adminDeleteSqlConfirmed,
+      detail: adminDeleteSqlConfirmed
+        ? "Admin-only delete SQL marked applied"
+        : "Run step-next-admin-delete-work-orders.sql, then mark it applied",
+      action: adminDeleteSqlConfirmed ? "" : "confirm-admin-delete-sql",
+      actionLabel: "Mark SQL Applied",
     },
     {
       name: "Photos",
@@ -1676,6 +2448,7 @@ function renderSetupItem(item) {
       <div>
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(item.detail)}</span>
+        ${item.action ? `<button class="secondary-button setup-action-button" data-setup-action="${escapeHtml(item.action)}" type="button">${escapeHtml(item.actionLabel)}</button>` : ""}
       </div>
       <span class="chip ${item.ready ? "completed" : "blocked"}">${item.ready ? "ready" : "setup"}</span>
     </article>
@@ -1702,10 +2475,16 @@ function renderPart(part) {
         <p>${partCostsReady ? `${money(unitCost)} listed cost` : "Cost reference not active yet"}</p>
         ${low && reorderPoint > 0 ? `<small>Need ${restockNeed} to reach reorder point.</small>` : ""}
       </div>
-      <form class="restock-form" data-restock-part="${part.id}">
-        <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Restock quantity for ${escapeHtml(part.name)}">
-        <button class="secondary-button" type="submit">Restock</button>
-      </form>
+      <div class="part-card-actions">
+        <form class="part-quantity-form use-part-form" data-use-part="${part.id}">
+          <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Use quantity for ${escapeHtml(part.name)}">
+          <button class="secondary-button use-part-button" type="submit">Use</button>
+        </form>
+        <form class="part-quantity-form restock-form" data-restock-part="${part.id}">
+          <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Restock quantity for ${escapeHtml(part.name)}">
+          <button class="secondary-button" type="submit">Restock</button>
+        </form>
+      </div>
       <p class="part-file-count">${documents.length} filed receipt${documents.length === 1 ? "" : "s"} / invoice${documents.length === 1 ? "" : "s"}</p>
       <button class="secondary-button part-edit-button" data-open-part="${part.id}" type="button">Edit Part</button>
     </article>
@@ -1780,20 +2559,15 @@ function renderPartDetail() {
 
 function renderPartsHealth() {
   const locationParts = parts.filter(matchesActiveLocation);
-  const lowCount = locationParts.filter((part) => Number(part.quantity_on_hand) <= Number(part.reorder_point)).length;
-  const totalUnits = locationParts.reduce((sum, part) => sum + (Number(part.quantity_on_hand) || 0), 0);
-  const reorderTracked = locationParts.filter((part) => Number(part.reorder_point) > 0).length;
-  const costsListed = locationParts.filter((part) => Number(part.unit_cost) > 0).length;
+  const lowCount = locationParts.filter(isLowStockPart).length;
   return [
-    ["Low Stock", lowCount],
-    ["Total Units", totalUnits],
-    ["Reorder Tracked", reorderTracked],
-    ["Costs Listed", costsListed],
-  ].map(([label, value]) => `
-    <article class="parts-health ${label === "Low Stock" && value ? "attention" : ""}">
+    ["All Parts", locationParts.length, "all"],
+    ["Low Stock", lowCount, "low"],
+  ].map(([label, value, filter]) => `
+    <button class="parts-health ${filter === "low" && value ? "attention" : ""} ${partInventoryFilter === filter ? "active" : ""}" data-part-inventory-filter="${filter}" type="button">
       <span>${label}</span>
       <strong>${value}</strong>
-    </article>
+    </button>
   `).join("");
 }
 
@@ -1809,7 +2583,7 @@ function renderMaintenanceRequest(request) {
         <h3>${escapeHtml(request.title)}</h3>
         <p>${escapeHtml(request.description || "No description.")}</p>
         <div class="meta-row">
-          <span>${escapeHtml(request.assets?.name || "No asset")}</span>
+      <span>${escapeHtml(request.assets?.name || "No equipment")}</span>
           <span>${escapeHtml(profilesByUserId[request.requested_by]?.full_name || "Requester")}</span>
           <span>${new Date(request.created_at).toLocaleString()}</span>
         </div>
@@ -1829,7 +2603,7 @@ function renderRequestFormContent() {
     <form class="form-grid" id="request-form">
       <label>Request title<input name="title" required placeholder="Cold room door not sealing"></label>
       <label>What is happening?<textarea name="description" rows="4" required></textarea></label>
-      <label>Asset
+      <label>Machine / equipment
         <select name="asset_id">
           <option value="">Unknown or general location</option>
           ${renderAssetOptions()}
@@ -1909,7 +2683,7 @@ function renderWorkOrderCard(workOrder) {
           <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         </div>
         <div class="work-card-meta meta-row">
-          <span>${relationshipIcon("asset")}${escapeHtml(workOrder.assets?.name || "No asset")}</span>
+          <span>${relationshipIcon("asset")}${escapeHtml(workOrder.assets?.name || "General item / area")}</span>
           <span>${segmentIcon(isVendorAssigned(workOrder) ? "vendor" : "mine")}${escapeHtml(assignmentLabel(workOrder))}</span>
           ${procedure ? `<span>${relationshipIcon("procedure")}${escapeHtml(procedure.name)}</span>` : ""}
           <span>${segmentIcon("due")}Due ${workOrder.due_at || "unset"}</span>
@@ -1918,11 +2692,25 @@ function renderWorkOrderCard(workOrder) {
         ${renderRelationshipChips(workOrder)}
         <div class="quick-actions work-card-actions">
           ${!workOrder.assigned_to ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
+          ${canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
         ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
           <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
         `).join("")}
       </div>
     </article>
+  `;
+}
+
+function renderCardAssignmentControl(workOrder) {
+  return `
+    <form class="card-assign-form" data-card-assign="${workOrder.id}">
+      <select name="assigned_to" aria-label="Assign ${escapeHtml(workOrder.title)}">
+        <option value="">Unassigned</option>
+        <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
+        ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${!isVendorAssigned(workOrder) && userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || teamMemberName(userId))}</option>`).join("")}
+      </select>
+      <button type="submit">Assign</button>
+    </form>
   `;
 }
 
@@ -1963,12 +2751,16 @@ function renderCreateWorkOrder() {
       <div class="form-section-title">1. What needs attention?</div>
       <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
       <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
-      <label>Asset
-        <select name="asset_id">
-          <option value="">No asset / general area</option>
-          ${renderAssetOptions()}
-        </select>
-      </label>
+      <div class="equipment-choice">
+        <label>Machine / equipment
+          <select name="asset_id">
+            <option value="">No machine / equipment - general item or area</option>
+            ${renderAssetOptions()}
+          </select>
+        </label>
+        <span>or</span>
+        <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
+      </div>
 
       <details class="quick-fix-more" open>
         <summary>2. Priority and timing</summary>
@@ -2058,18 +2850,18 @@ function renderQuickFixForm() {
       </div>
       ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
       <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
-      <label>Asset
+      <label>Machine / equipment
         <select name="asset_id">
-          <option value="">No asset / general area</option>
+          <option value="">No machine / equipment - general item or area</option>
           ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
         </select>
-        <small>Asset not listed? Add it below.</small>
+        <small>Machine or equipment not listed? Add it below.</small>
       </label>
-      <label>New asset name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
+      <label>New machine / equipment name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
       <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
       <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
       <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>
-      <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked if completing asset work: E-stops, sensors, guards, and interlocks</label>
+      <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked if completing equipment work: E-stops, sensors, guards, and interlocks</label>
       <details class="quick-fix-more">
         <summary>Optional details</summary>
         <div class="form-grid">
@@ -2101,7 +2893,7 @@ function renderQuickFixForm() {
           <div class="form-section-title">Outcome / Notes</div>
           <label>What did you do?<textarea name="resolution_summary" rows="2" placeholder="Tightened mount, tested switch, line returned to normal."></textarea></label>
           <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown...">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
-          <label>Asset status after fix
+          <label>Equipment status after fix
             <select name="asset_status">
               <option value="">Leave unchanged</option>
               ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}">${status}</option>`).join("")}
@@ -2129,10 +2921,11 @@ function renderRelationshipChips(workOrder) {
   const partsCount = (partsUsedByWorkOrder[workOrder.id] || []).length;
   const commentsCount = (commentsByWorkOrder[workOrder.id] || []).length;
   const photosCount = (photosByWorkOrder[workOrder.id] || []).length;
+  const messageCount = messageThreads.filter((thread) => thread.work_order_id === workOrder.id).length;
   const chips = [];
 
   if (workOrder.asset_id) {
-    chips.push(relationshipChip("asset", "Asset", workOrder.assets?.name || "Linked"));
+    chips.push(relationshipChip("asset", "Equipment", workOrder.assets?.name || "Linked"));
   }
 
   if (procedure && progress) {
@@ -2145,6 +2938,10 @@ function renderRelationshipChips(workOrder) {
 
   if (commentsCount) {
     chips.push(relationshipChip("comment", "Comments", String(commentsCount)));
+  }
+
+  if (messageCount) {
+    chips.push(relationshipChip("message", "Messages", String(messageCount)));
   }
 
   if (photosCount) {
@@ -2169,6 +2966,7 @@ function relationshipIcon(type) {
     procedure: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11"></path><path d="M9 12h11"></path><path d="M9 18h11"></path><path d="M4 6l1 1 2-2"></path><path d="M4 12l1 1 2-2"></path><path d="M4 18l1 1 2-2"></path></svg>`,
     parts: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 7l3 3"></path><path d="M5 19l8-8"></path><path d="M15 5l4 4-4 4-4-4 4-4z"></path></svg>`,
     comment: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H8l-3 3V5z"></path></svg>`,
+    message: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H7l-3 3V5z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path></svg>`,
     photo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4V6z"></path><path d="M8 14l3-3 2 2 2-3 3 4"></path><path d="M8 9h.01"></path></svg>`,
   };
   return icons[type] || "";
@@ -2200,9 +2998,12 @@ function renderWorkOrderDetail() {
         <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         ${renderRelationshipChips(workOrder)}
         ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
-        ${workOrder.asset_id && workOrder.safety_devices_checked ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
+        ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
         ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
       </div>
+
+      ${renderWorkOrderCommandSummary(workOrder)}
+      ${renderWorkOrderRecommendation(workOrder)}
 
       ${workOrder.completed_at && (workOrder.failure_cause || workOrder.resolution_summary || workOrder.follow_up_needed) ? `
         <div class="outcome-summary">
@@ -2212,21 +3013,6 @@ function renderWorkOrderDetail() {
           ${workOrder.follow_up_needed ? `<article class="follow-up"><span>Follow-up</span><strong>Needed</strong></article>` : ""}
         </div>
       ` : ""}
-
-      <div class="work-cost-grid">
-        <article class="work-cost-card labor">
-          <span>Labor time</span>
-          <strong>${Number(workOrder.actual_minutes) || 0} min</strong>
-        </article>
-        <article class="work-cost-card parts">
-          <span>Parts estimate</span>
-          <strong>${money(partsCost)}</strong>
-        </article>
-        <article class="work-cost-card parts">
-          <span>Parts used</span>
-          <strong>${partsQuantity}</strong>
-        </article>
-      </div>
 
       <label>Status
         <select id="status-select">
@@ -2244,16 +3030,20 @@ function renderWorkOrderDetail() {
       <details class="quick-update-panel relationship-detail comment work-detail-section" open>
         <summary>Quick Update</summary>
         <form class="form-grid" id="quick-update-work-order-form">
-          <label>Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
-          <label>Asset
-            <select name="asset_id">
-              <option value="">No asset / general area</option>
-              ${renderAssetOptions(workOrder.asset_id || "")}
-            </select>
-          </label>
-          <label>Current update<textarea name="description" rows="2">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
-          <label>Expected back up / due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
-          <label>Status
+          <label id="quick-update-issue-field">Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
+          <div class="equipment-choice" id="quick-update-equipment-field">
+            <label>Machine / equipment
+              <select name="asset_id">
+                <option value="">No machine / equipment - general item or area</option>
+                ${renderAssetOptions(workOrder.asset_id || "")}
+              </select>
+            </label>
+            <span>or</span>
+            <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
+          </div>
+          <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
+          <label id="quick-update-due-field">Expected back up / due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
+          <label id="quick-update-status-field">Status
             <select name="status">
               ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
             </select>
@@ -2263,7 +3053,7 @@ function renderWorkOrderDetail() {
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
             </select>
           </label>
-          <label>Assign to
+          <label id="quick-update-owner-field">Assign to
             <select name="assigned_to">
               <option value="">Unassigned</option>
               <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
@@ -2271,22 +3061,28 @@ function renderWorkOrderDetail() {
             </select>
           </label>
           <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
-          <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>
+          ${requiresSafetyDeviceCheck(workOrder) ? (
+            workOrder.status === "completed"
+              ? `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
+              : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>Complete Work will require E-stops, sensors, guards, and interlocks to be checked.</span></div>`
+          ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>No machine / equipment selected, so no equipment safety check is required.</span></div>`}
           <p class="error-text" id="quick-update-error"></p>
           <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
         </form>
       </details>
 
-      <div class="downtime-copy relationship-detail asset">
+      <div class="downtime-copy relationship-detail asset" id="work-order-email-helper-target">
         <div>
-          <h3>Downtime Email Helper</h3>
-          <p class="muted">Copy a human update for email when this asset is down or needs attention.</p>
+          <h3>Email Helper</h3>
+          <p class="muted">Copy a human update for email when this machine/equipment is down or needs attention.</p>
         </div>
         <div class="quick-actions">
           <button class="secondary-button" data-copy-downtime="subject" data-id="${workOrder.id}" type="button">Copy Subject</button>
           <button class="secondary-button" data-copy-downtime="body" data-id="${workOrder.id}" type="button">Copy Email Body</button>
         </div>
       </div>
+
+      ${renderWorkOrderMessages(workOrder)}
 
       <details class="work-detail-section relationship-detail asset">
         <summary>Full Work Order Details</summary>
@@ -2320,6 +3116,12 @@ function renderWorkOrderDetail() {
         <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?">${escapeHtml(workOrder.failure_cause || "")}</textarea></label>
         <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
         <label class="check-row"><input name="follow_up_needed" type="checkbox" ${workOrder.follow_up_needed ? "checked" : ""}> Follow-up needed</label>
+        ${workOrder.status === "completed" && requiresSafetyDeviceCheck(workOrder) ? `
+          <label class="check-row safety-check-row">
+            <input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}>
+            Safety devices checked: E-stops, sensors, guards, and interlocks
+          </label>
+        ` : ""}
         <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
         <p class="error-text" id="work-order-save-error"></p>
         <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
@@ -2340,7 +3142,7 @@ function renderWorkOrderDetail() {
       ` : ""}
 
       ${workOrder.status !== "completed" ? `
-        <details class="work-detail-section completion-section" open>
+        <details class="work-detail-section completion-section" id="work-order-complete-target" open>
           <summary>Complete Work</summary>
         <form class="completion-box" id="complete-work-order-form">
           <h3>Complete Work</h3>
@@ -2350,9 +3152,9 @@ function renderWorkOrderDetail() {
           <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
           <label>Completion notes<textarea name="completion_notes" rows="3" placeholder="What was fixed? Any follow-up needed?"></textarea></label>
-          ${workOrder.asset_id ? `
+          ${requiresSafetyDeviceCheck(workOrder) ? `
             <label class="check-row safety-check-row">
-              <input name="safety_devices_checked" type="checkbox" required ${workOrder.safety_devices_checked ? "checked" : ""}>
+              <input name="safety_devices_checked" type="checkbox" required ${hasCompletedSafetyDeviceCheck(workOrder) ? "checked" : ""}>
               Safety devices checked and functioning: E-stops, sensors, guards, and interlocks
             </label>
           ` : ""}
@@ -2362,7 +3164,7 @@ function renderWorkOrderDetail() {
         </details>
       ` : ""}
 
-      <details class="work-detail-section relationship-detail parts">
+      <details class="work-detail-section relationship-detail parts" id="work-order-parts-target">
         <summary>Parts Used</summary>
       <form class="form-grid relationship-detail parts" id="parts-used-form">
         <h3>Parts Used</h3>
@@ -2388,7 +3190,7 @@ function renderWorkOrderDetail() {
       </div>
       </details>
 
-      <details class="work-detail-section relationship-detail photo">
+      <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
         <summary>Photos</summary>
       <form class="form-grid relationship-detail photo" id="photo-form">
         <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Photos are optimized up to 2400px before upload.</small></label>
@@ -2412,7 +3214,7 @@ function renderWorkOrderDetail() {
       </div>
       </details>
 
-      <details class="work-detail-section relationship-detail comment">
+      <details class="work-detail-section relationship-detail comment" id="work-order-comments-target">
         <summary>Comments</summary>
       <form class="form-grid relationship-detail comment" id="comment-form">
         <label>Comment<textarea name="body" rows="3" required></textarea></label>
@@ -2421,14 +3223,206 @@ function renderWorkOrderDetail() {
       </form>
       </details>
 
-      <details class="work-detail-section" open>
+      <details class="work-detail-section" id="work-order-history-target" open>
         <summary>History</summary>
       <div class="timeline">
         ${commentsError ? `<p class="error-text">${escapeHtml(commentsError)}</p>` : ""}
         ${activity.map(renderActivityItem).join("") || `<p class="muted">No activity yet.</p>`}
       </div>
       </details>
+
+      ${canDeleteWorkOrders() ? renderWorkOrderDangerZone(workOrder) : ""}
     </div>
+  `;
+}
+
+function renderWorkOrderDangerZone(workOrder) {
+  const confirming = pendingDeleteWorkOrderId === workOrder.id;
+  return `
+    <section class="delete-zone">
+      <div>
+        <h3>Delete Work Order</h3>
+        <p>This removes the work order and its linked comments, history, parts used, and photo records.</p>
+      </div>
+      ${confirming ? `
+        <div class="delete-warning-panel">
+          <strong>Permanent Delete Warning</strong>
+          <p>You are about to permanently delete "${escapeHtml(workOrder.title)}". This cannot be undone.</p>
+          <div class="button-row">
+            <button class="secondary-button" data-cancel-delete-work-order type="button">Cancel</button>
+            <button class="danger-action-button confirm-delete-button" data-confirm-delete-work-order="${workOrder.id}" type="button">Permanently Delete</button>
+          </div>
+        </div>
+      ` : `
+        <button class="danger-action-button large-delete-button" data-delete-work-order="${workOrder.id}" type="button">Delete Work Order</button>
+      `}
+    </section>
+  `;
+}
+
+function renderWorkOrderMessages(workOrder) {
+  const linkedThreads = messageThreads.filter((thread) => thread.work_order_id === workOrder.id);
+  return `
+    <details class="work-detail-section relationship-detail comment work-message-section" id="work-order-messages-target" open>
+      <summary>Messages</summary>
+      <div class="work-message-panel">
+        <div>
+          <h3>Work Order Conversation</h3>
+          <p class="muted">Start or open team conversations tied to this work order.</p>
+        </div>
+        <button class="secondary-button message-action-button" data-start-work-message="${workOrder.id}" type="button">Message Team</button>
+        ${messageWorkOrderLinksReady ? `
+          <div class="work-linked-thread-list">
+            ${linkedThreads.map(renderLinkedWorkMessageThread).join("") || `<p class="muted">No message threads linked yet.</p>`}
+          </div>
+        ` : `<p class="error-text">Run supabase/step-next-message-work-order-links.sql before linking message threads to work orders.</p>`}
+      </div>
+    </details>
+  `;
+}
+
+function renderWorkOrderRecommendation(workOrder) {
+  const recommendation = recommendedWorkOrderStep(workOrder);
+  if (!recommendation) return "";
+
+  return `
+    <section class="work-recommendation ${recommendation.tone || ""}" aria-label="Recommended next step">
+      <div>
+        <span>Recommended Next Step</span>
+        <strong>${escapeHtml(recommendation.title)}</strong>
+        <p>${escapeHtml(recommendation.helper)}</p>
+      </div>
+      <button class="recommendation-button" data-jump-work-section="${recommendation.target}" type="button">${escapeHtml(recommendation.action)}</button>
+    </section>
+  `;
+}
+
+function recommendedWorkOrderStep(workOrder) {
+  const orderedFields = [
+    {
+      isMissing: () => !String(workOrder.title || "").trim(),
+      title: "Issue",
+      target: "quick-update-issue-field",
+    },
+    {
+      isMissing: () => !workOrder.asset_id,
+      title: "Machine / Equipment",
+      target: "quick-update-equipment-field",
+    },
+    {
+      isMissing: () => !workOrder.assigned_to && !isVendorAssigned(workOrder),
+      title: "Assign To",
+      target: "quick-update-owner-field",
+    },
+    {
+      isMissing: () => !workOrder.due_at,
+      title: "Expected Back Up / Due Date",
+      target: "quick-update-due-field",
+    },
+    {
+      isMissing: () => !String(workOrder.resolution_summary || workOrder.completion_notes || "").trim(),
+      title: "Resolution",
+      target: "quick-update-resolution-field",
+    },
+    {
+      isMissing: () => workOrder.status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasCompletedSafetyDeviceCheck(workOrder),
+      title: "Safety Devices",
+      target: "quick-update-safety-field",
+      tone: "warning",
+    },
+  ];
+  const nextField = orderedFields.find((field) => field.isMissing());
+  if (nextField) {
+    return {
+      title: nextField.title,
+      helper: "Want to update this next? Skip it if it does not apply.",
+      action: "Go To Field",
+      target: nextField.target,
+      tone: nextField.tone || "",
+    };
+  }
+
+  if (workOrder.status !== "completed") {
+    return {
+      title: "Complete Work",
+      helper: "The quick update fields are filled in. When the work is done, complete the order.",
+      action: "Go To Completion",
+      target: "work-order-complete-target",
+    };
+  }
+
+  return "";
+}
+
+function renderWorkOrderCommandSummary(workOrder) {
+  const linkedMessages = messageThreads.filter((thread) => thread.work_order_id === workOrder.id).length;
+  const partsCount = (partsUsedByWorkOrder[workOrder.id] || []).reduce((sum, row) => sum + (Number(row.quantity_used) || 0), 0);
+  const safetyState = !workOrder.asset_id
+    ? ["General", "No equipment safety check required", "neutral"]
+    : hasCompletedSafetyDeviceCheck(workOrder)
+      ? ["Checked", "Safety devices confirmed", "safe"]
+      : ["Required", "Check E-stops, sensors, guards, and interlocks before completion", "danger"];
+  const nextAction = workOrder.status === "completed"
+    ? "Review history or create follow-up if needed"
+    : workOrder.status === "blocked"
+      ? "Resolve blocker or add current update"
+      : workOrder.status === "in_progress"
+        ? "Add update, parts, photos, or complete work"
+        : "Assign owner or start work";
+
+  return `
+    <section class="work-command-summary">
+      <button class="command-card status-${workOrder.status}" data-jump-work-section="quick-update-status-field" type="button">
+        <span>Status</span>
+        <strong>${statusLabel(workOrder.status)}</strong>
+        <small>${escapeHtml(nextAction)}</small>
+      </button>
+      <button class="command-card command-equipment" data-jump-work-section="quick-update-equipment-field" type="button">
+        <span>Equipment</span>
+        <strong>${escapeHtml(workOrder.assets?.name || "General item / area")}</strong>
+        <small>${escapeHtml(workOrder.due_at ? `Due ${workOrder.due_at}` : "Due date unset")}</small>
+      </button>
+      <button class="command-card command-owner" data-jump-work-section="quick-update-owner-field" type="button">
+        <span>Owner</span>
+        <strong>${escapeHtml(assignmentLabel(workOrder))}</strong>
+        <small>${isVendorAssigned(workOrder) ? "Outside vendor" : "Internal assignment"}</small>
+      </button>
+      <button class="command-card safety-${safetyState[2]}" data-jump-work-section="quick-update-safety-field" type="button">
+        <span>Safety</span>
+        <strong>${safetyState[0]}</strong>
+        <small>${escapeHtml(safetyState[1])}</small>
+      </button>
+      ${renderEmailHelperCommandCard(workOrder)}
+    </section>
+  `;
+}
+
+function renderEmailHelperCommandCard(workOrder) {
+  if (!workOrder.asset_id) return "";
+  return commandShortcut("Email Helper", "Copy", "work-order-email-helper-target", "Copy to paste an email update", "email");
+}
+
+function commandShortcut(label, count, targetId, helper, tone) {
+  return `
+    <button class="command-card command-${tone} ${count ? "" : "empty"}" data-jump-work-section="${targetId}" type="button">
+      <span>${escapeHtml(label)}</span>
+      <strong>${count}</strong>
+      <small>${escapeHtml(helper)}</small>
+    </button>
+  `;
+}
+
+function renderLinkedWorkMessageThread(thread) {
+  const messages = messagesByThreadId[thread.id] || [];
+  const lastMessage = messages[messages.length - 1];
+  return `
+    <article class="work-linked-thread">
+      <div>
+        <strong>${escapeHtml(thread.title)}</strong>
+        <span>${escapeHtml(messageThreadScopeLabel(thread))}${lastMessage ? ` - ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : ""}</span>
+      </div>
+      <button class="secondary-button" data-open-work-message-thread="${thread.id}" type="button">Open Thread</button>
+    </article>
   `;
 }
 
@@ -2461,6 +3455,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   document.querySelectorAll("[data-section]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (!visibleNavItems().some(([id]) => id === button.dataset.section)) return;
       activeSection = button.dataset.section;
       activeWorkOrderId = null;
       activeAssetId = null;
@@ -2509,6 +3504,139 @@ function bindWorkspaceEvents() {
     renderWorkspace();
   });
   document.querySelector("#export-csv").addEventListener("click", exportActiveSectionCsv);
+
+  document.querySelectorAll("[data-setup-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.setupAction !== "confirm-admin-delete-sql") return;
+      adminDeleteSqlConfirmed = true;
+      localStorage.setItem("maintainops.adminDeleteSqlConfirmed", "true");
+      showNotice("Admin delete SQL marked as applied.");
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-message-thread]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      activeMessageThreadId = button.dataset.messageThread;
+      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+      await markMessageThreadRead(activeMessageThreadId);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-message-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      messageThreadFilter = button.dataset.messageFilter;
+      localStorage.setItem("maintainops.messageThreadFilter", messageThreadFilter);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-open-linked-work-order]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeWorkOrderId = button.dataset.openLinkedWorkOrder;
+      activeAssetId = null;
+      activePartId = null;
+      quickFixMode = false;
+      createWorkOrderMode = false;
+      activeSection = "work";
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-jump-work-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = document.querySelector(`#${button.dataset.jumpWorkSection}`);
+      if (!target) return;
+      const detailSection = target.closest("details");
+      if (detailSection) detailSection.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      const highlightTarget = target;
+      highlightTarget.classList.add("jump-highlight", "field-jump-highlight");
+      setTimeout(() => highlightTarget.classList.remove("jump-highlight"), 1400);
+      setTimeout(() => highlightTarget.classList.remove("field-jump-highlight"), 1400);
+    });
+  });
+
+  document.querySelectorAll("[data-start-work-message]").forEach((button) => {
+    button.addEventListener("click", () => {
+      messageComposerWorkOrderId = button.dataset.startWorkMessage;
+      messageComposerOpen = true;
+      activeMessageThreadId = "";
+      activeSection = "messages";
+      localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-open-work-message-thread]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      activeMessageThreadId = button.dataset.openWorkMessageThread;
+      messageComposerOpen = false;
+      activeSection = "messages";
+      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      await markMessageThreadRead(activeMessageThreadId);
+      renderWorkspace();
+    });
+  });
+
+  const clearMessageWorkLink = document.querySelector("[data-clear-message-work-link]");
+  if (clearMessageWorkLink) {
+    clearMessageWorkLink.addEventListener("click", () => {
+      messageComposerWorkOrderId = "";
+      localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
+      renderWorkspace();
+    });
+  }
+
+  const messageSearch = document.querySelector("#message-search");
+  if (messageSearch) {
+    messageSearch.addEventListener("input", () => {
+      messageSearchQuery = messageSearch.value;
+      localStorage.setItem("maintainops.messageSearchQuery", messageSearchQuery);
+      renderWorkspace();
+      const nextSearch = document.querySelector("#message-search");
+      nextSearch.focus();
+      nextSearch.setSelectionRange(messageSearchQuery.length, messageSearchQuery.length);
+    });
+  }
+
+  const messageThreadForm = document.querySelector("#message-thread-form");
+  if (messageThreadForm) {
+    messageThreadForm.addEventListener("submit", createMessageThread);
+    const typeSelect = messageThreadForm.querySelector("#message-thread-type");
+    const directField = messageThreadForm.querySelector(".message-direct-field");
+    const scopeNote = messageThreadForm.querySelector("#message-scope-note");
+    const syncMessageComposer = () => {
+      const isDirect = typeSelect.value === "direct";
+      directField.classList.toggle("hidden-section", !isDirect);
+      directField.querySelector("select").disabled = !isDirect;
+      scopeNote.textContent = messageComposerScopeNote(typeSelect.value);
+    };
+    typeSelect.addEventListener("change", syncMessageComposer);
+    syncMessageComposer();
+  }
+
+  const messageReplyForm = document.querySelector("#message-reply-form");
+  if (messageReplyForm) {
+    messageReplyForm.addEventListener("submit", sendThreadReply);
+  }
+
+  document.querySelectorAll("[data-quick-reply]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const replyForm = document.querySelector("#message-reply-form");
+      const field = replyForm?.querySelector("textarea[name='body']");
+      if (!field) return;
+      const prefix = field.value.trim();
+      field.value = prefix ? `${prefix}\n${button.dataset.quickReply}` : button.dataset.quickReply;
+      field.focus();
+      autoGrowTextarea(field);
+    });
+  });
 
   const backToMyWork = document.querySelector("#back-to-my-work");
   if (backToMyWork) {
@@ -2573,6 +3701,66 @@ function bindWorkspaceEvents() {
     });
   });
 
+  document.querySelectorAll("[data-search-work-order]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeWorkOrderId = button.dataset.searchWorkOrder;
+      activeAssetId = null;
+      activePartId = null;
+      activeSection = "work";
+      searchQuery = "";
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-search-asset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeAssetId = button.dataset.searchAsset;
+      activeWorkOrderId = null;
+      activePartId = null;
+      activeSection = "work";
+      searchQuery = "";
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-search-part]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activePartId = button.dataset.searchPart;
+      activeAssetId = null;
+      activeWorkOrderId = null;
+      activeSection = "parts";
+      searchQuery = "";
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-search-request]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeSection = "requests";
+      const request = maintenanceRequests.find((item) => item.id === button.dataset.searchRequest);
+      searchQuery = request?.title || "";
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-search-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeSection = button.dataset.searchSection;
+      searchQuery = button.dataset.searchLabel || "";
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
   document.querySelectorAll("[data-quick-fix-asset]").forEach((button) => {
     button.addEventListener("click", () => {
       quickFixAssetId = button.dataset.quickFixAsset;
@@ -2601,6 +3789,33 @@ function bindWorkspaceEvents() {
     });
   });
 
+  document.querySelectorAll("[data-delete-work-order]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      requestDeleteWorkOrder(button.dataset.deleteWorkOrder);
+    });
+  });
+
+  document.querySelectorAll("[data-cancel-delete-work-order]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      pendingDeleteWorkOrderId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-work-order]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      await deleteWorkOrder(button.dataset.confirmDeleteWorkOrder);
+    });
+  });
+
+  document.querySelectorAll("[data-card-assign]").forEach((form) => {
+    form.addEventListener("submit", assignWorkOrderFromCard);
+    form.addEventListener("click", (event) => event.stopPropagation());
+  });
+
   document.querySelectorAll("[data-status-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       activeStatusFilter = button.dataset.statusFilter;
@@ -2621,7 +3836,18 @@ function bindWorkspaceEvents() {
   document.querySelectorAll("[data-work-order-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       workOrderFilter = button.dataset.workOrderFilter;
+      workOrderAssigneeFilter = "";
       localStorage.setItem("maintainops.workOrderFilter", workOrderFilter);
+      localStorage.removeItem("maintainops.workOrderAssigneeFilter");
+      resetWorkOrderPage();
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workOrderAssigneeFilter = "";
+      localStorage.removeItem("maintainops.workOrderAssigneeFilter");
       resetWorkOrderPage();
       renderWorkspace();
     });
@@ -2695,6 +3921,10 @@ function bindWorkspaceEvents() {
   const completionForm = document.querySelector("#complete-work-order-form");
   if (completionForm) completionForm.addEventListener("submit", completeWorkOrder);
 
+  document.querySelectorAll('input[name="safety_devices_checked"]').forEach((field) => {
+    field.addEventListener("change", syncSafetyDeviceChecks);
+  });
+
   const statusSelect = document.querySelector("#status-select");
   if (statusSelect) statusSelect.addEventListener("change", updateWorkOrderStatus);
 
@@ -2738,11 +3968,50 @@ function bindWorkspaceEvents() {
   const memberForm = document.querySelector("#add-member-form");
   if (memberForm) memberForm.addEventListener("submit", addCompanyMember);
 
+  document.querySelectorAll("[data-member-role]").forEach((form) => {
+    form.addEventListener("submit", updateCompanyMemberRole);
+  });
+
+  document.querySelectorAll("[data-view-member-work]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workOrderAssigneeFilter = button.dataset.viewMemberWork;
+      activeSection = "work";
+      activeStatusFilter = "active";
+      activeWorkOrderId = null;
+      activeAssetId = null;
+      createWorkOrderMode = false;
+      quickFixMode = false;
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      localStorage.setItem("maintainops.workOrderAssigneeFilter", workOrderAssigneeFilter);
+      resetWorkOrderPage();
+      renderWorkspace();
+    });
+  });
+
+  const profileForm = document.querySelector("#profile-form");
+  if (profileForm) profileForm.addEventListener("submit", updateMyProfile);
+
+  const inviteForm = document.querySelector("#team-invite-form");
+  if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
+
   const partForm = document.querySelector("#create-part-form");
   if (partForm) partForm.addEventListener("submit", createPart);
 
+  document.querySelectorAll("[data-part-inventory-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      partInventoryFilter = button.dataset.partInventoryFilter;
+      localStorage.setItem("maintainops.partInventoryFilter", partInventoryFilter);
+      resetPartsPage();
+      renderWorkspace();
+    });
+  });
+
   document.querySelectorAll("[data-restock-part]").forEach((form) => {
     form.addEventListener("submit", restockPart);
+  });
+
+  document.querySelectorAll("[data-use-part]").forEach((form) => {
+    form.addEventListener("submit", usePartFromInventory);
   });
 
   document.querySelectorAll("[data-edit-part]").forEach((form) => {
@@ -2784,6 +4053,9 @@ function bindWorkspaceEvents() {
 
   const settingsForm = document.querySelector("#company-settings-form");
   if (settingsForm) settingsForm.addEventListener("submit", updateCompanySettings);
+
+  const logoForm = document.querySelector("#company-logo-form");
+  if (logoForm) logoForm.addEventListener("submit", uploadCompanyLogo);
 
   const locationForm = document.querySelector("#location-form");
   if (locationForm) locationForm.addEventListener("submit", createLocation);
@@ -2966,6 +4238,262 @@ async function addCompanyMember(event) {
   await render();
 }
 
+async function updateCompanyMemberRole(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submitButton = formElement.querySelector("button[type='submit']");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
+
+  const { error } = await supabaseClient.rpc("update_company_member_role", {
+    target_company_id: activeCompanyId,
+    target_user_id: formElement.dataset.memberRole,
+    new_role: form.get("role"),
+  });
+
+  if (error) {
+    alert(error.message.includes("update_company_member_role")
+      ? "Run supabase/step-next-team-roles.sql before editing roles."
+      : error.message);
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Role";
+    }
+    return;
+  }
+
+  showNotice("Role saved.");
+  await render();
+}
+
+async function updateMyProfile(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#profile-error");
+  const form = new FormData(formElement);
+  const fullName = String(form.get("full_name") || "").trim();
+  if (errorElement) errorElement.textContent = "";
+
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert({
+      company_id: activeCompanyId,
+      user_id: session.user.id,
+      full_name: fullName,
+    }, { onConflict: "company_id,user_id" });
+
+  if (error) {
+    if (errorElement) errorElement.textContent = error.message;
+    return;
+  }
+
+  showNotice("Profile saved.");
+  await render();
+}
+
+async function createTeamInvite(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#team-invite-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  if (errorElement) errorElement.textContent = "";
+  if (!teamInvitesReady) {
+    if (errorElement) errorElement.textContent = "Run supabase/step-next-team-invites.sql before inviting by email.";
+    return;
+  }
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Inviting...";
+  }
+
+  const { error } = await supabaseClient.rpc("create_company_invite", {
+    target_company_id: activeCompanyId,
+    invite_email: String(form.get("email") || "").trim(),
+    invite_role: form.get("role"),
+  });
+
+  if (error) {
+    if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
+      teamInvitesReady = false;
+      if (errorElement) errorElement.textContent = "Run supabase/step-next-team-invites.sql before inviting by email.";
+    } else if (errorElement) {
+      errorElement.textContent = error.message;
+    }
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Create Invite";
+    }
+    return;
+  }
+
+  showNotice("Invite created.");
+  await render();
+}
+
+async function createMessageThread(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#message-thread-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  if (errorElement) errorElement.textContent = "";
+  if (!messagesReady) {
+    if (errorElement) errorElement.textContent = "Run supabase/step-next-message-center.sql before creating threads.";
+    return;
+  }
+
+  const threadType = form.get("thread_type");
+  const directUserId = form.get("direct_user_id");
+  const memberIds = messageThreadMembersForType(threadType, directUserId);
+  const title = String(form.get("title") || "").trim();
+  const body = String(form.get("body") || "").trim();
+  if (threadType === "direct" && !directUserId) {
+    if (errorElement) errorElement.textContent = "Choose a teammate for a direct message.";
+    return;
+  }
+  if (!title || !body) {
+    if (errorElement) errorElement.textContent = "Add a subject and message before starting the thread.";
+    return;
+  }
+  if (!memberIds.includes(session.user.id)) memberIds.push(session.user.id);
+
+  submitButton.disabled = true;
+  submitButton.textContent = "Starting...";
+
+  const workOrderId = form.get("work_order_id") || null;
+  const threadPayload = {
+    company_id: activeCompanyId,
+    location_id: threadType === "location" ? activeLocationDatabaseId() : null,
+    thread_type: threadType,
+    title,
+    created_by: session.user.id,
+  };
+  if (workOrderId && messageWorkOrderLinksReady) {
+    threadPayload.work_order_id = workOrderId;
+  }
+
+  const { data: thread, error: threadError } = await supabaseClient
+    .from("message_threads")
+    .insert(threadPayload)
+    .select("*")
+    .single();
+
+  if (threadError) {
+    if (isMissingColumnError(threadError, "work_order_id")) {
+      messageWorkOrderLinksReady = false;
+    }
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(threadError);
+    submitButton.disabled = false;
+    submitButton.textContent = "Start Thread";
+    return;
+  }
+
+  const memberRows = [...new Set(memberIds)].map((userId) => ({
+    company_id: activeCompanyId,
+    thread_id: thread.id,
+    user_id: userId,
+  }));
+  const { error: memberError } = await supabaseClient.from("message_thread_members").insert(memberRows);
+  if (memberError) {
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(memberError);
+    submitButton.disabled = false;
+    submitButton.textContent = "Start Thread";
+    return;
+  }
+
+  const { error: messageError } = await insertThreadMessage(thread.id, body);
+  if (messageError) {
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(messageError);
+    submitButton.disabled = false;
+    submitButton.textContent = "Start Thread";
+    return;
+  }
+
+  activeMessageThreadId = thread.id;
+  messageComposerWorkOrderId = "";
+  messageComposerOpen = false;
+  localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+  localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
+  await markMessageThreadRead(thread.id);
+  showNotice("Thread started.");
+  await render();
+}
+
+async function sendThreadReply(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#message-reply-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const body = String(new FormData(formElement).get("body") || "").trim();
+  if (!body) return;
+  if (errorElement) errorElement.textContent = "";
+  submitButton.disabled = true;
+  submitButton.textContent = "Sending...";
+
+  const { error } = await insertThreadMessage(formElement.dataset.threadId, body);
+  if (error) {
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
+    submitButton.disabled = false;
+    submitButton.textContent = "Send Reply";
+    return;
+  }
+
+  showNotice("Message sent.");
+  await markMessageThreadRead(formElement.dataset.threadId);
+  await render();
+}
+
+async function markMessageThreadRead(threadId) {
+  if (!messagesReady || !threadId) return;
+  const readAt = new Date().toISOString();
+  messageReadsByThreadId[threadId] = {
+    company_id: activeCompanyId,
+    thread_id: threadId,
+    user_id: session.user.id,
+    last_read_at: readAt,
+  };
+  const { error } = await supabaseClient
+    .from("message_reads")
+    .upsert(messageReadsByThreadId[threadId], { onConflict: "thread_id,user_id" });
+  if (error) console.warn("Could not mark message thread read", error);
+}
+
+async function insertThreadMessage(threadId, body) {
+  const message = await supabaseClient
+    .from("messages")
+    .insert({
+      company_id: activeCompanyId,
+      thread_id: threadId,
+      sender_id: session.user.id,
+      body,
+    });
+
+  if (message.error) return { error: message.error };
+
+  const thread = await supabaseClient
+    .from("message_threads")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", threadId)
+    .eq("company_id", activeCompanyId);
+
+  return { error: thread.error };
+}
+
+function friendlyMessageCenterError(error) {
+  if (isMissingColumnError(error, "work_order_id")) {
+    return "Run supabase/step-next-message-work-order-links.sql before linking message threads to work orders.";
+  }
+  if (isColumnSchemaError(error, ["message_threads", "message_thread_members", "messages"]) || error.message.includes("message_threads")) {
+    messagesReady = false;
+    return "Run supabase/step-next-message-center.sql before using Messages.";
+  }
+  return error.message;
+}
+
 async function updateCompanySettings(event) {
   event.preventDefault();
   const form = new FormData(event.target);
@@ -2974,6 +4502,69 @@ async function updateCompanySettings(event) {
     .update({ name: form.get("name") })
     .eq("id", activeCompanyId);
   if (error) return alert(error.message);
+  await render();
+}
+
+async function uploadCompanyLogo(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#company-logo-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const file = new FormData(formElement).get("logo");
+  if (errorElement) errorElement.textContent = "";
+  if (!file || !file.name) {
+    if (errorElement) errorElement.textContent = "Choose a logo image first.";
+    return;
+  }
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Uploading...";
+  }
+
+  const optimized = await optimizeLogo(file);
+  const path = `${activeCompanyId}/logo-${crypto.randomUUID()}-${optimized.fileName}`;
+  const upload = await supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
+    contentType: optimized.contentType,
+    upsert: false,
+  });
+
+  if (upload.error) {
+    if (errorElement) errorElement.textContent = upload.error.message.includes("Bucket not found")
+      ? "Run supabase/step-next-company-logo.sql before uploading a logo."
+      : upload.error.message;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Upload Logo";
+    }
+    return;
+  }
+
+  const { error } = await supabaseClient.rpc("set_company_logo", {
+    target_company_id: activeCompanyId,
+    new_logo_path: path,
+  });
+
+  if (error) {
+    if (errorElement) errorElement.textContent = isColumnSchemaError(error, ["logo_path"])
+      ? "Run supabase/step-next-company-logo.sql before saving a company logo."
+      : error.message.includes("set_company_logo")
+        ? "Run supabase/step-next-company-logo.sql, then try uploading the logo again."
+        : error.message;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Upload Logo";
+    }
+    return;
+  }
+
+  const activeCompany = companies.find((company) => company.id === activeCompanyId);
+  if (activeCompany) {
+    activeCompany.logo_path = path;
+    activeCompany.logoUrl = URL.createObjectURL(optimized.blob);
+  }
+
+  showNotice("Company logo uploaded.");
   await render();
 }
 
@@ -3077,6 +4668,26 @@ async function restockPart(event) {
     .eq("id", part.id)
     .eq("company_id", activeCompanyId);
   if (error) return alert(error.message);
+  showNotice("Part restocked.");
+  await render();
+}
+
+async function usePartFromInventory(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const part = parts.find((item) => item.id === formElement.dataset.usePart);
+  const quantity = Number(new FormData(formElement).get("quantity")) || 0;
+  if (!part || quantity <= 0) return;
+
+  const currentQuantity = Number(part.quantity_on_hand) || 0;
+  const nextQuantity = Math.max(0, currentQuantity - quantity);
+  const { error } = await supabaseClient
+    .from("parts")
+    .update({ quantity_on_hand: nextQuantity })
+    .eq("id", part.id)
+    .eq("company_id", activeCompanyId);
+  if (error) return alert(error.message);
+  showNotice("Part used.");
   await render();
 }
 
@@ -3400,11 +5011,22 @@ async function createWorkOrder(event) {
 
   const form = new FormData(formElement);
   const status = form.get("status") || "open";
-  const assetId = form.get("asset_id") || null;
+  let assetId = form.get("asset_id") || null;
+  const newAssetName = String(form.get("new_asset_name") || "").trim();
+  if (newAssetName) {
+    const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, "running");
+    if (assetError) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Create Work Order";
+      if (errorTarget) errorTarget.textContent = `Could not add equipment: ${assetError.message}`;
+      return;
+    }
+    assetId = newAsset.id;
+  }
   if (status === "completed" && assetId && form.get("safety_devices_checked") !== "on") {
     submitButton.disabled = false;
     submitButton.textContent = "Create Work Order";
-    if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to an asset.";
+    if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to equipment.";
     return;
   }
   const payload = {
@@ -3457,6 +5079,9 @@ async function createWorkOrder(event) {
     return;
   }
   await recordWorkOrderEvent(data.id, "created", "Work order created.");
+  if (newAssetName) {
+    await recordWorkOrderEvent(data.id, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
+  }
 
   const warnings = [];
   const partId = form.get("part_id");
@@ -3532,7 +5157,7 @@ async function createQuickFix(event) {
   if (markCompleted && assetId && form.get("safety_devices_checked") !== "on") {
     submitButton.disabled = false;
     submitButton.textContent = "Log Quick Fix";
-    if (errorTarget) errorTarget.textContent = "Check safety devices before marking asset work complete.";
+    if (errorTarget) errorTarget.textContent = "Check safety devices before marking equipment work complete.";
     return;
   }
 
@@ -3609,9 +5234,9 @@ async function createQuickFix(event) {
   if (payload.asset_id && !newAssetName && (machineDown || (markCompleted && assetStatus))) {
     const assetError = await updateAssetStatus(payload.asset_id, assetStatus);
     if (assetError && errorTarget) {
-      errorTarget.textContent = `Quick fix saved, but asset status did not update: ${assetError.message}`;
+      errorTarget.textContent = `Quick fix saved, but equipment status did not update: ${assetError.message}`;
     } else {
-      await recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Asset marked down/offline." : `Asset status set to ${assetStatus}.`);
+      await recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Equipment marked down/offline." : `Equipment status set to ${assetStatus}.`);
     }
   }
 
@@ -3657,7 +5282,7 @@ async function updateWorkOrderDetails(event) {
       title: form.get("title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
       due_at: form.get("due_at") || null,
-      location_id: locationIdForAsset(form.get("asset_id") || null),
+      location_id: locationIdForAsset(previous?.asset_id || null),
       priority: form.get("priority"),
       type: form.get("type"),
       assigned_to: assignedUserFromForm(form),
@@ -3667,6 +5292,11 @@ async function updateWorkOrderDetails(event) {
       follow_up_needed: form.get("follow_up_needed") === "on",
       actual_minutes: Number(form.get("actual_minutes")) || 0,
     };
+    if (previous?.status === "completed" && requiresSafetyDeviceCheck(previous) && form.has("safety_devices_checked")) {
+      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
+    } else if (previous?.status !== "completed") {
+      applySafetyCheckPayload(payload, false);
+    }
     const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
     if (error) {
       submitButton.disabled = false;
@@ -3697,30 +5327,44 @@ async function updateWorkOrderQuickView(event) {
   if (errorTarget) errorTarget.textContent = "";
 
   try {
+    let assetId = form.get("asset_id") || null;
+    const newAssetName = String(form.get("new_asset_name") || "").trim();
+    if (newAssetName) {
+      const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, "running");
+      if (assetError) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Save Quick Update";
+        if (errorTarget) errorTarget.textContent = `Could not add equipment: ${assetError.message}`;
+        return;
+      }
+      assetId = newAsset.id;
+    }
     const payload = {
       title: form.get("title"),
-      description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
-      asset_id: form.get("asset_id") || null,
-      location_id: locationIdForAsset(form.get("asset_id") || null),
+      description: descriptionWithAssignmentNote(previous?.description || "", form.get("assigned_to")),
+      asset_id: assetId,
+      location_id: locationIdForAsset(assetId),
       due_at: form.get("due_at") || null,
       status: form.get("status"),
       priority: form.get("priority"),
       assigned_to: assignedUserFromForm(form),
+      resolution_summary: form.get("resolution_summary") || null,
     };
-    if (requiresSafetyDeviceCheck(payload)) {
-      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on");
-    }
     if (payload.status === "completed" && previous?.status !== "completed") {
+      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on");
       if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
         submitButton.disabled = false;
         submitButton.textContent = "Save Quick Update";
-        if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to an asset.";
+        if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to equipment.";
         return;
       }
       payload.completed_at = new Date().toISOString();
     }
     if (payload.status !== "completed") {
       payload.completed_at = null;
+      applySafetyCheckPayload(payload, false);
+    } else if (previous?.status === "completed" && requiresSafetyDeviceCheck(payload)) {
+      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
     }
 
     const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
@@ -3734,13 +5378,16 @@ async function updateWorkOrderQuickView(event) {
     if (payload.asset_id && form.get("machine_down") === "on") {
       const assetError = await updateAssetStatus(payload.asset_id, "offline");
       if (assetError && errorTarget) {
-        errorTarget.textContent = `Saved work order, but asset status did not update: ${assetError.message}`;
+        errorTarget.textContent = `Saved work order, but equipment status did not update: ${assetError.message}`;
       } else {
-        await recordWorkOrderEvent(activeWorkOrderId, "asset_status_updated", "Asset marked down/offline.");
+        await recordWorkOrderEvent(activeWorkOrderId, "asset_status_updated", "Equipment marked down/offline.");
       }
     }
 
     await recordWorkOrderEvent(activeWorkOrderId, "quick_update", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
+    if (newAssetName) {
+      await recordWorkOrderEvent(activeWorkOrderId, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
+    }
     showNotice("Quick update saved.");
     await render();
   } catch (error) {
@@ -3766,7 +5413,7 @@ async function completeWorkOrder(event) {
   const form = new FormData(event.target);
   const safetyChecked = form.get("safety_devices_checked") === "on" || currentSafetyCheckboxCheckedForWorkOrder(activeWorkOrderId) || hasCompletedSafetyDeviceCheck(workOrder);
   if (requiresSafetyDeviceCheck(workOrder) && !safetyChecked) {
-    if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to an asset.";
+    if (errorTarget) errorTarget.textContent = "Check safety devices before completing equipment work.";
     return;
   }
 
@@ -3783,7 +5430,9 @@ async function completeWorkOrder(event) {
     completion_notes: form.get("completion_notes") || null,
     completed_at: new Date().toISOString(),
   };
-  applySafetyCheckPayload(payload, safetyChecked);
+  if (requiresSafetyDeviceCheck(workOrder) || safetyChecked) {
+    applySafetyCheckPayload(payload, safetyChecked);
+  }
   let { error } = await supabaseClient
     .from("work_orders")
     .update(payload)
@@ -3939,7 +5588,7 @@ async function setWorkOrderStatus(id, status) {
   const hasSafetyCheck = hasCompletedSafetyDeviceCheck(workOrder) || safetyCheckedNow;
   if (status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasSafetyCheck) {
     activeWorkOrderId = id;
-    showNotice("Safety devices must be checked before completing asset work. Open the work order and use Complete Work.", "warning");
+    showNotice("Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.", "warning");
     await render();
     return;
   }
@@ -3949,6 +5598,8 @@ async function setWorkOrderStatus(id, status) {
   };
   if (status === "completed" && hasSafetyCheck) {
     applySafetyCheckPayload(payload, true);
+  } else if (status !== "completed") {
+    applySafetyCheckPayload(payload, false);
   }
   const { error } = await supabaseClient
     .from("work_orders")
@@ -3958,6 +5609,50 @@ async function setWorkOrderStatus(id, status) {
   if (error) return alert(error.message);
   activeWorkOrderId = id;
   await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
+  await render();
+}
+
+function requestDeleteWorkOrder(id) {
+  if (!canDeleteWorkOrders()) {
+    alert("Only company admins can delete work orders.");
+    return;
+  }
+
+  pendingDeleteWorkOrderId = id;
+  renderWorkspace();
+}
+
+async function deleteWorkOrder(id) {
+  if (!canDeleteWorkOrders()) {
+    alert("Only company admins can delete work orders.");
+    return;
+  }
+
+  const photoPaths = (photosByWorkOrder[id] || [])
+    .map((photo) => photo.storage_path)
+    .filter(Boolean);
+  if (photoPaths.length) {
+    const storageDelete = await supabaseClient.storage.from("work-order-photos").remove(photoPaths);
+    if (storageDelete.error) {
+      console.warn("Work order photo storage cleanup failed", storageDelete.error);
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from("work_orders")
+    .delete()
+    .eq("id", id)
+    .eq("company_id", activeCompanyId);
+
+  if (error) {
+    alert(`Could not delete work order: ${friendlyWorkOrderSaveError(error)}`);
+    return;
+  }
+
+  activeWorkOrderId = null;
+  activeAssetId = null;
+  pendingDeleteWorkOrderId = null;
+  showNotice("Work order deleted.");
   await render();
 }
 
@@ -3979,6 +5674,35 @@ async function assignWorkOrderToMe(id) {
   activeWorkOrderId = id;
   activeAssetId = null;
   await recordWorkOrderEvent(id, "assigned", "Assigned to self.");
+  await render();
+}
+
+async function assignWorkOrderFromCard(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const formElement = event.currentTarget;
+  const workOrder = workOrders.find((item) => item.id === formElement.dataset.cardAssign);
+  const form = new FormData(formElement);
+  if (!workOrder) return;
+
+  const assignmentValue = form.get("assigned_to") || "";
+  const { error } = await supabaseClient
+    .from("work_orders")
+    .update({
+      assigned_to: assignmentValue === OUTSIDE_VENDOR_VALUE ? null : assignmentValue || null,
+      description: descriptionWithAssignmentNote(workOrder.description, assignmentValue),
+    })
+    .eq("id", workOrder.id)
+    .eq("company_id", activeCompanyId);
+
+  if (error) return alert(friendlyWorkOrderSaveError(error));
+  const summary = assignmentValue === OUTSIDE_VENDOR_VALUE
+    ? "Assigned to outside vendor."
+    : assignmentValue
+      ? `Assigned to ${teamMemberName(assignmentValue)}.`
+      : "Assignment cleared.";
+  await recordWorkOrderEvent(workOrder.id, "assigned", summary);
+  showNotice("Assignment saved.");
   await render();
 }
 
@@ -4116,6 +5840,48 @@ async function optimizePhoto(file) {
   }
 }
 
+async function optimizeLogo(file) {
+  const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!imageTypes.includes(file.type)) {
+    return {
+      blob: file,
+      fileName: safeFileName(file.name || "logo"),
+      contentType: file.type || "application/octet-stream",
+    };
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDimension = 1200;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: true });
+    context.clearRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+    if (bitmap.close) bitmap.close();
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Browser could not optimize this logo.");
+
+    return {
+      blob,
+      fileName: `${fileBaseName(file.name || "logo")}.png`,
+      contentType: "image/png",
+    };
+  } catch (error) {
+    console.warn("Logo optimization failed; uploading original.", error);
+    return {
+      blob: file,
+      fileName: safeFileName(file.name || "logo"),
+      contentType: file.type || "application/octet-stream",
+    };
+  }
+}
+
 function fileBaseName(fileName) {
   return safeFileName(fileName).replace(/\.[^/.]+$/, "") || "photo";
 }
@@ -4130,8 +5896,60 @@ function safeFileName(fileName) {
 
 function statusLabel(status) {
   if (status === "active" || status === "all") return "Active";
+  if (status === "overdue") return "Overdue";
   if (status === "open") return "New";
   return String(status || "").replace("_", " ");
+}
+
+function activeCompanyRole() {
+  return companies.find((company) => company.id === activeCompanyId)?.role || "member";
+}
+
+function canManageTeam() {
+  return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canDeleteWorkOrders() {
+  return activeCompanyRole() === "admin";
+}
+
+function visibleNavItems() {
+  const items = [
+    ["mywork", "My Work"],
+    ["work", "Work Orders"],
+    ["planning", "Planning"],
+    ["requests", "Requests"],
+    ["assets", "Equipment"],
+    ["pm", "PM"],
+    ["procedures", "Procedures"],
+    ["parts", "Parts"],
+    ["messages", "Messages"],
+    ["team", "Team"],
+  ];
+  if (canManageTeam()) {
+    items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
+  }
+  return items;
+}
+
+function roleLabel(role) {
+  const labels = {
+    admin: "Admin",
+    manager: "Manager",
+    technician: "Technician",
+    member: "Member",
+  };
+  return labels[role] || String(role || "Member");
+}
+
+function roleDescription(role) {
+  const descriptions = {
+    admin: "Full company setup, team, and work access.",
+    manager: "Can manage work, settings, and teammates.",
+    technician: "Focused on assigned work, Quick Fix, and updates.",
+    member: "General company access.",
+  };
+  return descriptions[role] || "General company access.";
 }
 
 function assignedUserFromForm(form, defaultUserId = null) {
@@ -4144,16 +5962,22 @@ function isVendorAssigned(workOrder) {
 }
 
 function requiresSafetyDeviceCheck(workOrderOrPayload) {
-  return Boolean(workOrderOrPayload?.asset_id);
+  return Boolean(workOrderOrPayload?.asset_id || workOrderOrPayload?.assets?.name);
 }
 
 function hasCompletedSafetyDeviceCheck(workOrderOrPayload) {
-  return Boolean(workOrderOrPayload?.safety_devices_checked);
+  return workOrderOrPayload?.status === "completed" && Boolean(workOrderOrPayload?.safety_devices_checked);
 }
 
 function currentSafetyCheckboxCheckedForWorkOrder(id) {
   if (activeWorkOrderId !== id) return false;
-  return Array.from(document.querySelectorAll('input[name="safety_devices_checked"]')).some((field) => field.checked);
+  return Array.from(document.querySelectorAll('#complete-work-order-form input[name="safety_devices_checked"], #quick-update-work-order-form input[name="safety_devices_checked"]')).some((field) => field.checked);
+}
+
+function syncSafetyDeviceChecks(event) {
+  document.querySelectorAll('input[name="safety_devices_checked"]').forEach((field) => {
+    field.checked = event.target.checked;
+  });
 }
 
 function applySafetyCheckPayload(payload, checked) {
@@ -4197,7 +6021,7 @@ function downtimeEmailBody(workOrder) {
     "Technical details:",
     `Issue: ${issue}`,
     `Work order: ${workOrder.title}`,
-    `Asset: ${assetName}`,
+    `Equipment: ${assetName}`,
     `Current update: ${currentUpdate}`,
     `Assigned to: ${assignedTo}`,
     `Priority: ${workOrder.priority || "medium"}`,
@@ -4206,7 +6030,7 @@ function downtimeEmailBody(workOrder) {
 }
 
 function assetNameForWorkOrder(workOrder) {
-  return workOrder.assets?.name || "Asset";
+  return workOrder.assets?.name || "Equipment";
 }
 
 function formatDate(value) {
@@ -4405,7 +6229,7 @@ function planningItems(bucket = "all") {
         title: workOrder.title,
         priority: workOrder.priority,
         status: workOrder.status,
-        assetName: workOrder.assets?.name || "No asset",
+        assetName: workOrder.assets?.name || "No equipment",
         dueAt: workOrder.due_at,
         due,
         workOrder,
@@ -4441,7 +6265,7 @@ function planningPmItems() {
       kind: "pm",
       id: schedule.id,
       title: schedule.title,
-      assetName: schedule.assets?.name || "No asset",
+      assetName: schedule.assets?.name || "No equipment",
       dueAt: schedule.next_due_at,
       due: new Date(`${schedule.next_due_at}T00:00:00`),
     }))
@@ -4464,7 +6288,7 @@ function followUpItems() {
       kind: "follow_up",
       id: workOrder.id,
       title: workOrder.title,
-      assetName: workOrder.assets?.name || "No asset",
+      assetName: workOrder.assets?.name || "No equipment",
       completedAt: workOrder.completed_at ? new Date(workOrder.completed_at).toLocaleDateString() : "not completed",
       resolution: workOrder.resolution_summary || workOrder.completion_notes || "",
       workOrder,
@@ -4479,7 +6303,11 @@ function startOfToday() {
 }
 
 function lowStockParts() {
-  return parts.filter((part) => Number(part.quantity_on_hand) <= Number(part.reorder_point));
+  return parts.filter(isLowStockPart);
+}
+
+function isLowStockPart(part) {
+  return Number(part.quantity_on_hand) <= Number(part.reorder_point);
 }
 
 function openMaintenanceRequests() {
@@ -4495,7 +6323,7 @@ function exportActiveSectionCsv() {
         status: workOrder.status,
         priority: workOrder.priority,
         type: workOrder.type || "reactive",
-        asset: workOrder.assets?.name || "",
+        equipment: workOrder.assets?.name || "",
         assigned_to: assignmentLabel(workOrder),
         due_at: workOrder.due_at || "",
         completed_at: workOrder.completed_at || "",
@@ -4506,10 +6334,10 @@ function exportActiveSectionCsv() {
       })),
     },
     assets: {
-      filename: "assets.csv",
+      filename: "equipment.csv",
       rows: assets.map((asset) => ({
         name: asset.name,
-        asset_code: asset.asset_code || "",
+        equipment_id: asset.asset_code || "",
         location: asset.location || "",
         status: asset.status,
       })),
@@ -4520,7 +6348,7 @@ function exportActiveSectionCsv() {
         title: request.title,
         status: request.status,
         priority: request.priority,
-        asset: request.assets?.name || "",
+        equipment: request.assets?.name || "",
         requested_by: profilesByUserId[request.requested_by]?.full_name || "",
         created_at: request.created_at || "",
         converted_work_order_id: request.converted_work_order_id || "",
@@ -4530,7 +6358,7 @@ function exportActiveSectionCsv() {
       filename: "preventive-schedules.csv",
       rows: preventiveSchedules.map((schedule) => ({
         title: schedule.title,
-        asset: schedule.assets?.name || "",
+        equipment: schedule.assets?.name || "",
         frequency: schedule.frequency,
         next_due_at: schedule.next_due_at,
         active: schedule.active,

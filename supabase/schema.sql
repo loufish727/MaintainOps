@@ -9,6 +9,7 @@ create table if not exists public.companies (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   name_key text generated always as (lower(btrim(name))) stored,
+  logo_path text,
   created_by uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   unique (created_by, name_key)
@@ -246,6 +247,21 @@ begin
       not valid;
   end if;
 
+  update public.work_orders
+  set safety_devices_checked = false,
+      safety_devices_checked_at = null
+  where status <> 'completed'
+    and safety_devices_checked = true;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'work_orders_safety_check_completion_only'
+  ) then
+    alter table public.work_orders
+      add constraint work_orders_safety_check_completion_only
+      check (status = 'completed' or safety_devices_checked = false)
+      not valid;
+  end if;
+
   if not exists (
     select 1 from pg_constraint where conname = 'work_order_comments_company_author_profile_fkey'
   ) then
@@ -307,7 +323,7 @@ grant select, insert, update on public.company_members to authenticated;
 grant select, insert, update on public.locations to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, update on public.assets to authenticated;
-grant select, insert, update on public.work_orders to authenticated;
+grant select, insert, update, delete on public.work_orders to authenticated;
 grant select, insert on public.work_order_comments to authenticated;
 grant select, insert on public.work_order_photos to authenticated;
 grant select, insert, update on public.preventive_schedules to authenticated;
@@ -570,6 +586,20 @@ with check (
   )
 );
 
+drop policy if exists "Admins can delete work orders" on public.work_orders;
+create policy "Admins can delete work orders"
+on public.work_orders for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = work_orders.company_id
+      and cm.user_id = auth.uid()
+      and cm.role = 'admin'
+  )
+);
+
 drop policy if exists "Members can read comments" on public.work_order_comments;
 create policy "Members can read comments"
 on public.work_order_comments for select
@@ -735,6 +765,10 @@ insert into storage.buckets (id, name, public)
 values ('part-documents', 'part-documents', false)
 on conflict (id) do nothing;
 
+insert into storage.buckets (id, name, public)
+values ('company-logos', 'company-logos', false)
+on conflict (id) do nothing;
+
 drop policy if exists "Members can upload work order photos" on storage.objects;
 create policy "Members can upload work order photos"
 on storage.objects for insert
@@ -751,6 +785,21 @@ to authenticated
 using (
   bucket_id = 'work-order-photos'
   and private.is_company_member((storage.foldername(name))[1]::uuid)
+);
+
+drop policy if exists "Admins can delete work order photos" on storage.objects;
+create policy "Admins can delete work order photos"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'work-order-photos'
+  and exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = (storage.foldername(name))[1]::uuid
+      and cm.user_id = auth.uid()
+      and cm.role = 'admin'
+  )
 );
 
 drop policy if exists "Members can upload part documents" on storage.objects;
@@ -770,5 +819,52 @@ using (
   bucket_id = 'part-documents'
   and private.is_company_member((storage.foldername(name))[1]::uuid)
 );
+
+drop policy if exists "Admins can upload company logos" on storage.objects;
+create policy "Admins can upload company logos"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'company-logos'
+  and exists (
+    select 1 from public.company_members cm
+    where cm.company_id = (storage.foldername(name))[1]::uuid
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Members can read company logos" on storage.objects;
+create policy "Members can read company logos"
+on storage.objects for select
+to authenticated
+using (
+  bucket_id = 'company-logos'
+  and private.is_company_member((storage.foldername(name))[1]::uuid)
+);
+
+create or replace function public.set_company_logo(target_company_id uuid, new_logo_path text)
+returns void
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+begin
+  if not exists (
+    select 1 from public.company_members cm
+    where cm.company_id = target_company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager')
+  ) then
+    raise exception 'Only company admins or managers can update the company logo.';
+  end if;
+
+  update public.companies
+  set logo_path = new_logo_path
+  where id = target_company_id;
+end;
+$$;
+
+grant execute on function public.set_company_logo(uuid, text) to authenticated;
 
 notify pgrst, 'reload schema';
