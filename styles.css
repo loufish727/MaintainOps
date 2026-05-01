@@ -205,6 +205,14 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   padding: 0 5px;
 }
 
+.nav-alert-badge {
+  min-width: 26px;
+  background: linear-gradient(180deg, #ff4b4b, #b90918);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14), 0 0 18px rgba(255, 31, 47, 0.55);
+  font-weight: 800;
+}
+
 .nav-icon {
   width: 17px;
   height: 17px;
@@ -3956,6 +3964,11 @@ textarea {
   margin: 0;
   color: var(--red);
   font-weight: 650;
+}
+
+.auth-status {
+  min-height: 1.2em;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 920px) {

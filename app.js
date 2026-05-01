@@ -128,9 +128,15 @@ async function init() {
     return;
   }
 
-  supabaseClient.auth.onAuthStateChange(async (_event, nextSession) => {
+  supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
     session = nextSession;
-    await render();
+    setTimeout(() => {
+      render().catch((error) => {
+        appError = `Could not load workspace: ${error.message || error}`;
+        if (session) renderWorkspaceLoadError(appError);
+        else renderAuth("login", appError);
+      });
+    }, 0);
   });
 
   await render();
@@ -142,8 +148,29 @@ async function render() {
     return;
   }
 
-  await acceptTeamInvites();
-  await loadCompanies();
+  try {
+    renderWorkspaceLoading("Checking team access...");
+    const inviteError = await withOperationTimeout(
+      acceptTeamInvites(),
+      "Team invite check timed out.",
+      5000
+    ).catch((error) => error);
+    if (inviteError) {
+      appNotice = `Team invite check skipped: ${inviteError.message || inviteError}`;
+      appNoticeTone = "warning";
+    }
+
+    renderWorkspaceLoading("Loading companies...");
+    await withOperationTimeout(
+      loadCompanies(),
+      "Company membership load timed out. Supabase may be slow or blocking the request.",
+      16000
+    );
+  } catch (error) {
+    appError = error.message || String(error);
+    renderWorkspaceLoadError(appError);
+    return;
+  }
 
   if (!companies.length || appError) {
     renderCompanyCreate();
@@ -155,9 +182,66 @@ async function render() {
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
   }
 
-  await ensureProfileForActiveCompany();
-  await loadCompanyData();
-  renderWorkspace();
+  try {
+    renderWorkspaceLoading("Preparing your company profile...");
+    const profileReady = await withOperationTimeout(
+      ensureProfileForActiveCompany(),
+      "Company profile setup timed out. Refresh and try again.",
+      12000
+    );
+    if (!profileReady) throw new Error(appError || "Could not prepare your company profile.");
+
+    renderWorkspaceLoading("Loading workspace data...");
+    await withOperationTimeout(
+      loadCompanyData(),
+      "Workspace data load timed out. One of the Supabase data requests is not returning.",
+      22000
+    );
+    renderWorkspace();
+  } catch (error) {
+    appError = error.message || String(error);
+    renderWorkspaceLoadError(appError);
+  }
+}
+
+function renderWorkspaceLoading(message) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <div class="auth-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Loading Workspace</h1>
+            <p>${escapeHtml(message)}</p>
+          </div>
+        </div>
+        <p class="muted auth-status">Your login was accepted. We are loading company data now.</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderWorkspaceLoadError(message) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <div class="auth-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Workspace Load Stopped</h1>
+            <p>Login worked, but the workspace did not finish loading.</p>
+          </div>
+        </div>
+        <p class="error-text">${escapeHtml(message)}</p>
+        <button class="primary-button" id="retry-workspace-load" type="button">Try Again</button>
+        <button class="text-button" id="auth-reset" type="button">Reset login on this browser</button>
+      </div>
+    </section>
+  `;
+  document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
+  document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
 }
 
 function renderAuth(mode, initialError = "") {
@@ -179,13 +263,16 @@ function renderAuth(mode, initialError = "") {
           <label>Password<input name="password" type="password" minlength="6" required autocomplete="${isSignup ? "new-password" : "current-password"}"></label>
         </div>
         <p class="error-text" id="auth-error">${escapeHtml(initialError)}</p>
+        <p class="muted auth-status" id="auth-status"></p>
         <button class="primary-button" type="submit">${isSignup ? "Sign Up" : "Log In"}</button>
         <button class="text-button" id="auth-mode" type="button">${isSignup ? "I already have an account" : "Create an account"}</button>
+        <button class="text-button" id="auth-reset" type="button">Reset login on this browser</button>
       </form>
     </section>
   `;
 
   document.querySelector("#auth-mode").addEventListener("click", () => renderAuth(isSignup ? "login" : "signup"));
+  document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
   document.querySelector("#auth-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const formElement = event.target;
@@ -196,7 +283,9 @@ function renderAuth(mode, initialError = "") {
     const password = form.get("password");
     const fullName = form.get("fullName");
     const errorTarget = document.querySelector("#auth-error");
+    const statusTarget = document.querySelector("#auth-status");
     errorTarget.textContent = "";
+    if (statusTarget) statusTarget.textContent = "Connecting to Supabase...";
 
     if (submitButton) {
       submitButton.disabled = true;
@@ -217,20 +306,27 @@ function renderAuth(mode, initialError = "") {
         );
 
       if (response.error) {
+        if (statusTarget) statusTarget.textContent = "";
         errorTarget.textContent = response.error.message;
         return;
       }
 
       if (isSignup && !response.data.session) {
+        if (statusTarget) statusTarget.textContent = "";
         errorTarget.textContent = "Check your email to confirm your account, then log in.";
         return;
       }
 
       if (response.data.session) {
+        if (statusTarget) statusTarget.textContent = "Login accepted. Loading workspace...";
         session = response.data.session;
         await render();
+        return;
       }
+      if (statusTarget) statusTarget.textContent = "";
+      errorTarget.textContent = "Supabase did not return a login session. Check that email confirmation is complete, then try again.";
     } catch (error) {
+      if (statusTarget) statusTarget.textContent = "";
       errorTarget.textContent = error.message || "Login failed. Please try again.";
     } finally {
       if (submitButton && document.body.contains(submitButton)) {
@@ -239,6 +335,30 @@ function renderAuth(mode, initialError = "") {
       }
     }
   });
+}
+
+async function resetLoginState() {
+  const statusTarget = document.querySelector("#auth-status");
+  const errorTarget = document.querySelector("#auth-error");
+  if (errorTarget) errorTarget.textContent = "";
+  if (statusTarget) statusTarget.textContent = "Clearing saved login state...";
+
+  try {
+    if (supabaseClient) await supabaseClient.auth.signOut({ scope: "local" });
+  } catch (error) {
+    console.warn("Could not sign out before reset", error);
+  }
+
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("maintainops.") || key.startsWith("sb-"))
+    .forEach((key) => localStorage.removeItem(key));
+
+  session = null;
+  activeCompanyId = "";
+  activeLocationId = "";
+  appError = "";
+  if (statusTarget) statusTarget.textContent = "Login reset. Try signing in again.";
+  renderAuth("login", "Login reset. Try signing in again.");
 }
 
 function publicRequestTokenFromUrl() {
@@ -431,6 +551,34 @@ async function submitPublicRequest(event, token, intake) {
 
 async function loadCompanies() {
   appError = "";
+  const companyRpc = await supabaseClient.rpc("get_my_companies");
+  if (!companyRpc.error) {
+    const seenCompanies = new Set();
+    companies = (companyRpc.data || [])
+      .filter((company) => {
+        const key = String(company.name || "").trim().toLowerCase();
+        if (seenCompanies.has(key)) return false;
+        seenCompanies.add(key);
+        return true;
+      })
+      .map((company) => ({
+        id: company.id,
+        name: company.name,
+        logo_path: company.logo_path,
+        created_at: company.created_at,
+        role: company.role || "member",
+      }));
+
+    await loadCompanyLogoUrls();
+    return;
+  }
+
+  if (!String(companyRpc.error.message || "").includes("get_my_companies")) {
+    appError = `Could not load companies: ${companyRpc.error.message}`;
+    companies = [];
+    return;
+  }
+
   const { data: memberships, error: membershipError } = await supabaseClient
     .from("company_members")
     .select("company_id, role")
@@ -484,6 +632,10 @@ async function loadCompanies() {
       role: memberships.find((membership) => membership.company_id === company.id)?.role || "member",
     }));
 
+  await loadCompanyLogoUrls();
+}
+
+async function loadCompanyLogoUrls() {
   await Promise.all(companies.map(async (company) => {
     company.logoUrl = "";
     company.logoError = "";
@@ -1090,7 +1242,7 @@ function renderWorkspace() {
         </details>
         ${renderCommandStack("mobile")}
         <nav class="section-nav" aria-label="Workspace sections">
-          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" && totalUnreadMessages() ? `<b class="nav-badge">${totalUnreadMessages()}</b>` : ""}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" ? renderMessageNavBadge() : ""}</button>`).join("")}
         </nav>
       </aside>
 
@@ -2899,6 +3051,19 @@ function unreadMessageCount(threadId) {
 
 function totalUnreadMessages() {
   return messageThreads.reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
+}
+
+function directUnreadMessages() {
+  return messageThreads
+    .filter((thread) => thread.thread_type === "direct")
+    .reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
+}
+
+function renderMessageNavBadge() {
+  const directUnread = directUnreadMessages();
+  if (directUnread > 0) return `<b class="nav-badge nav-alert-badge">${directUnread}!</b>`;
+  const unread = totalUnreadMessages();
+  return unread > 0 ? `<b class="nav-badge">${unread}</b>` : "";
 }
 
 function setupItems() {
@@ -6705,11 +6870,13 @@ async function updateWorkOrderDetails(event) {
   try {
     const form = new FormData(event.target);
     const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
+    const currentStatus = document.querySelector("#status-select")?.value || previous?.status || "open";
     const payload = {
       title: form.get("title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
       due_at: form.get("due_at") || null,
       location_id: locationIdForAsset(previous?.asset_id || null),
+      status: currentStatus,
       priority: form.get("priority"),
       type: form.get("type"),
       assigned_to: assignedUserFromForm(form),
@@ -6720,28 +6887,52 @@ async function updateWorkOrderDetails(event) {
       actual_minutes: Number(form.get("actual_minutes")) || 0,
     };
     payload.safety_check_required = assetRequiresSafety(previous?.asset_id || null);
-    if (previous?.status === "completed" && payload.safety_check_required && form.has("safety_devices_checked")) {
+    if (payload.status === "completed" && previous?.status !== "completed" && payload.safety_check_required && !hasCompletedSafetyDeviceCheck(previous) && form.get("safety_devices_checked") !== "on") {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Work Order";
+      if (errorTarget) errorTarget.textContent = "Use Complete Work and check safety devices before completing equipment work.";
+      return;
+    }
+    if (payload.status === "completed" && previous?.status !== "completed") {
+      payload.completed_at = new Date().toISOString();
+      applySafetyCheckPayload(payload, payload.safety_check_required && (form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous)));
+    } else if (payload.status !== "completed") {
+      payload.completed_at = null;
+      applySafetyCheckPayload(payload, false);
+    } else if (previous?.status === "completed" && payload.safety_check_required && form.has("safety_devices_checked")) {
       applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
     } else if (previous?.status === "completed" && !payload.safety_check_required) {
       applySafetyCheckPayload(payload, false);
-    } else if (previous?.status !== "completed") {
-      applySafetyCheckPayload(payload, false);
     }
-    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
+    const { error } = await withOperationTimeout(
+      updateWorkOrderSafely(payload, activeWorkOrderId),
+      "Work order save timed out. Check your connection and try again.",
+      20000
+    );
     if (error) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Work Order";
       if (errorTarget) errorTarget.textContent = `Could not save work order: ${friendlyWorkOrderSaveError(error)}`;
       return;
     }
-    await recordWorkOrderEvent(activeWorkOrderId, "updated", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
-    showNotice("Work order saved.");
+    const changeSnapshot = { ...Object.fromEntries(form.entries()), status: currentStatus };
+    const logError = await withOperationTimeout(
+      recordWorkOrderEvent(activeWorkOrderId, "updated", describeWorkOrderChanges(previous, changeSnapshot)),
+      "Activity log timed out.",
+      8000
+    ).catch((error) => error);
+    showNotice(logError ? `Work order saved, but history did not update: ${logError.message}` : "Work order saved.", logError ? "warning" : "success");
     await render();
   } catch (error) {
     console.error("Work order save failed", error);
     submitButton.disabled = false;
     submitButton.textContent = "Save Work Order";
     if (errorTarget) errorTarget.textContent = `Could not save work order: ${error.message || error}`;
+  } finally {
+    if (submitButton && submitButton.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Work Order";
+    }
   }
 }
 
