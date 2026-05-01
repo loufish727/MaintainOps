@@ -299,6 +299,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 
 .workspace { min-width: 0; padding: 26px; }
 
+.workspace > .command-stack,
 .workspace > .topbar,
 .workspace > .tech-focus,
 .workspace > .search-bar,
@@ -331,6 +332,11 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   overflow: visible;
   padding: 20px 22px;
   flex-wrap: wrap;
+}
+
+.command-stack {
+  position: relative;
+  z-index: 16;
 }
 
 .topbar::after {
@@ -4424,8 +4430,7 @@ textarea:focus {
   }
 
   .sidebar {
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 20;
     gap: 8px;
     border-right: 0;
@@ -4605,6 +4610,7 @@ textarea:focus {
     padding: 12px 10px 20px;
   }
 
+  .workspace > .command-stack,
   .workspace > .topbar,
   .workspace > .tech-focus,
   .workspace > .search-bar,
@@ -4612,6 +4618,17 @@ textarea:focus {
   .workspace > .layout-grid {
     width: 100%;
     max-width: none;
+  }
+
+  .command-stack {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    margin: -12px -10px 12px;
+    padding: 10px 10px 1px;
+    background:
+      linear-gradient(180deg, var(--bg) 0%, var(--bg) 78%, color-mix(in srgb, var(--bg) 0%, transparent) 100%);
+    box-shadow: 0 16px 28px rgba(0,0,0,0.18);
   }
 
   .topbar {

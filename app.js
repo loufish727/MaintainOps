@@ -994,38 +994,40 @@ function renderWorkspace() {
       </aside>
 
       <main class="workspace">
-        <header class="topbar">
-          <div class="topbar-main">
-            <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
-            <div class="company-banner-title">
-              ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
-              <div>
-                <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
-                <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
+        <div class="command-stack">
+          <header class="topbar">
+            <div class="topbar-main">
+              <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
+              <div class="company-banner-title">
+                ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
+                <div>
+                  <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
+                  <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="topbar-actions">
-            <button class="primary-button quick-fix-button" id="show-quick-fix" type="button">Quick Fix</button>
-            <details class="topbar-more">
-              <summary>More</summary>
-              <div>
-                <button class="primary-button work-action-button" id="show-create-work-order" type="button">New Work Order</button>
-                <button class="secondary-button request-action-button" id="show-request" type="button">Submit Request</button>
-                <button class="secondary-button export-action-button" id="export-csv" type="button">Export CSV</button>
-              </div>
-            </details>
-          </div>
-        </header>
+            <div class="topbar-actions">
+              <button class="primary-button quick-fix-button" id="show-quick-fix" type="button">Quick Fix</button>
+              <details class="topbar-more">
+                <summary>More</summary>
+                <div>
+                  <button class="primary-button work-action-button" id="show-create-work-order" type="button">New Work Order</button>
+                  <button class="secondary-button request-action-button" id="show-request" type="button">Submit Request</button>
+                  <button class="secondary-button export-action-button" id="export-csv" type="button">Export CSV</button>
+                </div>
+              </details>
+            </div>
+          </header>
 
-        ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
-        ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
-        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
+          ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
+          ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+          ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
 
-        <label class="search-bar">
-          Search workspace
-          <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
-        </label>
+          <label class="search-bar">
+            Search workspace
+            <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
+          </label>
+        </div>
 
         ${showGlobalSearch ? renderGlobalSearchResults(globalResults) : ""}
 
