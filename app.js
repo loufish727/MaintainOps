@@ -969,7 +969,7 @@ function renderWorkspace() {
           <span class="brand-mark">MO</span>
           <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
-        <details class="sidebar-controls" open>
+        <details class="sidebar-controls">
           <summary>Workspace</summary>
           <label class="company-switcher">
             Company
