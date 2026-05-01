@@ -2,6 +2,7 @@ const app = document.querySelector("#app");
 
 const STATUS_OPTIONS = ["open", "in_progress", "blocked", "completed"];
 const TYPE_OPTIONS = ["request", "reactive", "preventive", "inspection", "corrective"];
+const ASSET_TYPE_OPTIONS = ["machine", "secondary_machine", "component", "shop_item"];
 const WORK_ORDERS_PER_PAGE = 12;
 const PARTS_PER_PAGE = 12;
 const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
@@ -17,6 +18,8 @@ let assets = [];
 let workOrders = [];
 let maintenanceRequests = [];
 let requestsReady = false;
+let publicRequestLinks = [];
+let publicRequestLinksReady = true;
 let preventiveSchedules = [];
 let companyMembers = [];
 let teamInvites = [];
@@ -55,11 +58,14 @@ let activeWorkOrderId = null;
 let activeAssetId = null;
 let activePartId = null;
 let pendingDeleteWorkOrderId = null;
+let pendingDeletePartId = null;
+let pendingDeleteAssetId = null;
 let showPartSourceManager = false;
 let createWorkOrderMode = false;
 let quickFixMode = false;
 let quickFixAssetId = null;
 let quickFixRequestId = null;
+let publicAppUrlOverride = localStorage.getItem("maintainops.publicAppUrl") || "";
 let activeStatusFilter = "active";
 let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
 let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
@@ -83,9 +89,6 @@ let noticeTimer;
 init();
 
 async function init() {
-  console.log("SUPABASE URL:", window.SUPABASE_URL);
-  console.log("SUPABASE KEY:", window.SUPABASE_ANON_KEY);
-
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     renderAuth("login", "Supabase config is missing. Add your project URL and publishable anon key to supabase-config.js.");
     return;
@@ -98,6 +101,16 @@ async function init() {
 
   try {
     supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    const qrToken = publicRequestQrTokenFromUrl();
+    if (qrToken) {
+      await renderPublicRequestQrPage(qrToken);
+      return;
+    }
+    const requestToken = publicRequestTokenFromUrl();
+    if (requestToken) {
+      await renderPublicRequestIntake(requestToken);
+      return;
+    }
     renderAuth("login");
     const { data } = await supabaseClient.auth.getSession();
     session = data.session;
@@ -139,6 +152,7 @@ async function render() {
 }
 
 function renderAuth(mode, initialError = "") {
+  document.body.classList.remove("public-qr-mode");
   const isSignup = mode === "signup";
   app.innerHTML = `
     <section class="auth-shell">
@@ -185,6 +199,194 @@ function renderAuth(mode, initialError = "") {
       errorTarget.textContent = "Check your email to confirm your account, then log in.";
     }
   });
+}
+
+function publicRequestTokenFromUrl() {
+  const url = new URL(window.location.href);
+  return String(url.searchParams.get("request") || url.searchParams.get("public_request") || "").trim();
+}
+
+function publicRequestQrTokenFromUrl() {
+  const url = new URL(window.location.href);
+  return String(url.searchParams.get("qr") || "").trim();
+}
+
+async function renderPublicRequestQrPage(token) {
+  document.body.classList.add("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell public-request-shell qr-page-shell">
+      <div class="auth-card public-qr-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Maintenance Request QR</h1>
+            <p>Loading QR code...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  const { data, error } = await supabaseClient.rpc("get_public_request_intake", { request_token: token });
+  const intake = Array.isArray(data) ? data[0] : data;
+  if (error || !intake) {
+    renderPublicRequestError("This QR code link is inactive or invalid.");
+    return;
+  }
+
+  const requestUrl = publicRequestUrl(token);
+  app.innerHTML = `
+    <section class="auth-shell public-request-shell qr-page-shell">
+      <article class="auth-card public-qr-card">
+        <div class="public-qr-heading">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>${escapeHtml(intake.location_name)}</h1>
+            <p>${escapeHtml(intake.company_name)}</p>
+          </div>
+        </div>
+        <div class="public-qr-code">${qrSvgFor(requestUrl, 8)}</div>
+        <div class="public-qr-instructions">
+          <h2>Scan To Request Maintenance</h2>
+          <p>Point your phone camera at this code and describe what needs attention.</p>
+        </div>
+        <p class="public-qr-url">${escapeHtml(requestUrl)}</p>
+        <div class="button-row no-print">
+          <button class="primary-button request-action-button" id="print-public-qr" type="button">Print / Save PDF</button>
+          <a class="secondary-button" href="${escapeHtml(requestUrl)}" target="_blank" rel="noreferrer">Test Form</a>
+        </div>
+      </article>
+    </section>
+  `;
+
+  document.querySelector("#print-public-qr").addEventListener("click", () => window.print());
+}
+
+async function renderPublicRequestIntake(token) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell public-request-shell">
+      <div class="auth-card public-request-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Maintenance Request</h1>
+            <p>Loading request form...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  const { data, error } = await supabaseClient.rpc("get_public_request_intake", { request_token: token });
+  const intake = Array.isArray(data) ? data[0] : data;
+  if (error) {
+    renderPublicRequestError("This request link is not ready yet. The company needs to run the public request link setup in Supabase.");
+    return;
+  }
+  if (!intake) {
+    renderPublicRequestError("This request link is inactive or invalid.");
+    return;
+  }
+
+  app.innerHTML = `
+    <section class="auth-shell public-request-shell">
+      <form class="auth-card public-request-card" id="public-request-form">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>${escapeHtml(intake.company_name)}</h1>
+            <p>${escapeHtml(intake.location_name)} maintenance request</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label>What needs attention?<input name="title" required maxlength="140" placeholder="Short issue description"></label>
+          <label>Machine / area<input name="equipment_note" maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+          <label>Details<textarea name="description" rows="4" maxlength="1000" placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
+          <label>Your name<input name="requester_name" maxlength="120" placeholder="Optional"></label>
+          <label>Contact<input name="requester_contact" maxlength="160" placeholder="Optional phone, radio, or email"></label>
+          <label>Urgency
+            <select name="priority">
+              <option value="medium">Normal</option>
+              <option value="high">High</option>
+              <option value="critical">Critical / down</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+        </div>
+        <p class="error-text" id="public-request-error"></p>
+        <button class="primary-button request-action-button" type="submit">Send Request</button>
+      </form>
+    </section>
+  `;
+
+  document.querySelector("#public-request-form").addEventListener("submit", (event) => submitPublicRequest(event, token, intake));
+}
+
+function renderPublicRequestError(message) {
+  app.innerHTML = `
+    <section class="auth-shell public-request-shell">
+      <div class="auth-card public-request-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Request Link Unavailable</h1>
+            <p>${escapeHtml(message)}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+async function submitPublicRequest(event, token, intake) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const errorElement = document.querySelector("#public-request-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending...";
+  }
+
+  try {
+    const { error } = await supabaseClient.rpc("submit_public_location_request", {
+      request_token: token,
+      request_title: String(form.get("title") || "").trim(),
+      equipment_note: String(form.get("equipment_note") || "").trim() || null,
+      request_description: String(form.get("description") || "").trim() || null,
+      requester_name: String(form.get("requester_name") || "").trim() || null,
+      requester_contact: String(form.get("requester_contact") || "").trim() || null,
+      request_priority: form.get("priority") || "medium",
+    });
+
+    if (error) throw error;
+
+    app.innerHTML = `
+      <section class="auth-shell public-request-shell">
+        <div class="auth-card public-request-card">
+          <div class="brand-row">
+            <span class="brand-mark">MO</span>
+            <div>
+              <h1>Request Sent</h1>
+              <p>${escapeHtml(intake.location_name)} maintenance has received it.</p>
+            </div>
+          </div>
+          <button class="secondary-button request-action-button" id="public-request-another" type="button">Send Another Request</button>
+        </div>
+      </section>
+    `;
+    document.querySelector("#public-request-another").addEventListener("click", () => renderPublicRequestIntake(token));
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not send the request.";
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Send Request";
+    }
+  }
 }
 
 async function loadCompanies() {
@@ -412,7 +614,7 @@ async function loadCompanyData() {
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
-  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function loadProfiles() {
@@ -528,6 +730,26 @@ async function loadMessageCenter() {
     activeMessageThreadId = messageThreads[0]?.id || "";
     localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
   }
+}
+
+async function loadPublicRequestLinks() {
+  publicRequestLinks = [];
+  publicRequestLinksReady = true;
+  if (!requestsReady || !locationsReady) return;
+
+  const { data, error } = await supabaseClient
+    .from("public_request_links")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    publicRequestLinksReady = false;
+    publicRequestLinks = [];
+    return;
+  }
+
+  publicRequestLinks = data || [];
 }
 
 async function loadComments() {
@@ -714,7 +936,7 @@ function renderWorkspace() {
     localStorage.setItem("maintainops.activeSection", activeSection);
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
-  const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue"];
+  const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed_month", "completed_week"];
   if (activeSection === "mywork" && !myWorkGaugeFilters.includes(activeStatusFilter)) {
     activeStatusFilter = "active";
   }
@@ -752,7 +974,7 @@ function renderWorkspace() {
           <label class="company-switcher">
             Company
             <select id="company-select">
-              ${companies.map((company) => `<option value="${company.id}" ${company.id === activeCompanyId ? "selected" : ""}>${company.name}</option>`).join("")}
+              ${companies.map((company) => `<option value="${escapeHtml(company.id)}" ${company.id === activeCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("")}
             </select>
           </label>
           <label class="company-switcher">
@@ -776,9 +998,9 @@ function renderWorkspace() {
           <div class="topbar-main">
             <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
             <div class="company-banner-title">
-              ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${activeCompany.logoUrl}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
+              ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
               <div>
-                <h1>${activeCompany?.name || "Company"}</h1>
+                <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
                 <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
               </div>
             </div>
@@ -813,22 +1035,13 @@ function renderWorkspace() {
               <h2>Work Orders</h2>
               <span>${escapeHtml(activeLocationName())}</span>
             </div>
-            <div class="summary-gauge-grid">
-              ${renderGaugeReadout("New", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "open").length, "new")}
-              ${renderGaugeReadout("In Progress", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "in_progress").length, "in_progress")}
-              ${renderGaugeReadout("Blocked", workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status === "blocked").length, "blocked")}
-              ${renderGaugeReadout("Completed Month", completedThisMonth().filter(matchesActiveLocation).length, "completed")}
-              ${renderGaugeReadout("Overdue", overdueWorkOrders().filter(matchesActiveLocation).length, "overdue")}
-              ${renderGaugeReadout("Requests", requestsReady ? openMaintenanceRequests().filter(matchesActiveLocation).length : workOrders.filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.type === "request" && workOrder.status !== "completed").length, "request")}
-              ${renderGaugeReadout("Done This Week", completedThisWeek().filter(matchesActiveLocation).length, "completed")}
-              ${renderGaugeReadout("Avg Completion", `${averageCompletionMinutes(workOrders.filter(matchesActiveLocation))} min`, "neutral")}
-            </div>
+            ${renderWorkOrderGaugeDashboard()}
           </section>
         ` : ""}
 
         <section class="layout-grid single-column ${showGlobalSearch ? "hidden-section" : ""}">
           ${isWorkArea ? `
-            ${activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode ? `
+            ${activeSection !== "assets" && (activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode) ? `
               <section class="panel full-width focus-panel">
                 <div class="panel-header">
                   <h2>${activeAssetId ? "Equipment Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
@@ -839,8 +1052,8 @@ function renderWorkspace() {
             ` : `
               <section class="panel full-width my-work-panel queue-panel">
                 <div class="panel-header">
-                  <h2>${activeSection === "mywork" ? "My Work" : workOrdersPanelTitle()}</h2>
-                  <span>${activeSection === "mywork" ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me") : `${visibleWorkOrders.length} shown`}</span>
+                  <h2>${workQueuePanelTitle()}</h2>
+                  <span>${workQueuePanelSubtitle(visibleWorkOrders.length)}</span>
                 </div>
                 ${activeSection === "mywork" ? renderWorkloadStrip(myWorkGaugeOrders) : ""}
                 ${activeSection === "mywork" ? `
@@ -862,15 +1075,6 @@ function renderWorkspace() {
                     </div>
                   ` : ""}
                 `}
-                ${activeSection !== "mywork" ? `
-                  <div class="segmented-control" aria-label="Work order status filter">
-                    ${["active", "overdue", ...STATUS_OPTIONS].map((status) => `
-                      <button class="segment status-segment status-${status} ${activeStatusFilter === status ? "active" : ""}" data-status-filter="${status}" type="button">
-                        ${segmentIcon(status)}${statusLabel(status)}
-                      </button>
-                    `).join("")}
-                  </div>
-                ` : ""}
                 <div class="segmented-control" aria-label="Work order sort">
                   ${[
                     ["newest", "Newest"],
@@ -880,7 +1084,7 @@ function renderWorkspace() {
                     <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
                   `).join("")}
                 </div>
-                ${activeStatusFilter === "completed" ? `
+                ${["completed", "completed_month", "completed_week"].includes(activeStatusFilter) ? `
                   <p class="completion-note completed-history-note">Completed history is paged ${WORK_ORDERS_PER_PAGE} at a time and sorted by most recently completed.</p>
                 ` : ""}
                 <div class="work-list" id="work-order-list">
@@ -915,23 +1119,33 @@ function renderWorkspace() {
               <div class="request-list">
                 ${visibleRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">No requests match this search.</p>`}
               </div>
-            ` : `<p class="muted">Run supabase/step-next-maintenance-requests.sql to store requests separately from work orders. Until then, submitted requests will use the old work order fallback.</p>`}
+            ` : `<p class="muted">Run supabase/step-next-maintenance-requests.sql before submitting and reviewing requests.</p>`}
           </section>
 
           <section class="panel full-width ${activeSection === "assets" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>Equipment</h2>
-              <span>${visibleAssets.length} shown</span>
+              <h2>${activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
+              ${activeAssetId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : `<span>${visibleAssets.length} shown</span>`}
             </div>
+            ${activeAssetId ? renderAssetDetail() : `
             <form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
               <input name="asset_code" placeholder="Equipment ID">
               <input name="location" placeholder="Area / line">
+              <select name="asset_type" aria-label="Equipment type">
+                ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}
+              </select>
+              <select name="parent_asset_id" aria-label="Part of equipment">
+                <option value="">Top level equipment</option>
+                ${renderParentAssetOptions()}
+              </select>
               <select name="location_id" ${locations.length ? "required" : "disabled"}>
                 ${renderLocationOptions()}
               </select>
+              <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety devices</label>
               <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
             </form>
+            <p class="error-text" id="asset-create-error"></p>
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
                 <article class="asset-health ${status}">
@@ -943,6 +1157,7 @@ function renderWorkspace() {
             <div class="asset-list">
               ${visibleAssets.map(renderAssetCard).join("") || `<p class="muted">No equipment matches this search.</p>`}
             </div>
+            `}
           </section>
 
           <section class="panel full-width ${activeSection === "pm" ? "" : "hidden-section"}">
@@ -965,6 +1180,7 @@ function renderWorkspace() {
                 ${renderProcedureOptions()}
               </select>
               <input name="next_due_at" type="date" required>
+              <p class="error-text" id="pm-error"></p>
               <button class="secondary-button" type="submit">Add Schedule</button>
             </form>
             <div class="pm-list">
@@ -981,6 +1197,7 @@ function renderWorkspace() {
             <form class="form-grid procedure-form relationship-detail procedure" id="create-procedure-form">
               <label>Procedure name<input name="name" required placeholder="Monthly compressor inspection"></label>
               <label>Description<textarea name="description" rows="3" placeholder="Use this checklist when creating repeat work."></textarea></label>
+              <p class="error-text" id="procedure-error"></p>
               <button class="secondary-button" type="submit">Add Procedure</button>
             </form>
             <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection procedure</button>
@@ -1070,7 +1287,7 @@ function renderWorkspace() {
             </form>
             <form class="form-grid settings-form logo-form" id="company-logo-form">
               <div class="company-logo-preview">
-                ${activeCompany?.logoUrl ? `<img src="${activeCompany.logoUrl}" alt="${escapeHtml(activeCompany?.name || "Company")} logo preview">` : `<span>MO</span>`}
+                ${activeCompany?.logoUrl ? `<img src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo preview">` : `<span>MO</span>`}
               </div>
               <label>Company logo<input name="logo" type="file" accept="image/*"><small>Optional. Logos are optimized before upload.</small></label>
               <p class="error-text" id="company-logo-error">${escapeHtml(activeCompany?.logoError || "")}</p>
@@ -1088,6 +1305,7 @@ function renderWorkspace() {
             <div class="settings-summary">
               ${locations.map((location) => `<article><strong>${escapeHtml(location.name)}</strong><span>${location.id === activeLocationId ? "active location" : "available"}</span></article>`).join("") || `<article><strong>No locations yet</strong><span>Run the location setup SQL</span></article>`}
             </div>
+            ${renderPublicRequestLinkManager()}
             <div class="settings-summary">
               <article><strong>Company ID</strong><span>${escapeHtml(activeCompanyId)}</span></article>
               <article><strong>Signed in as</strong><span>${escapeHtml(session.user.email || session.user.id)}</span></article>
@@ -1116,11 +1334,7 @@ function renderWorkspace() {
 function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
     if (!matchesActiveLocation(workOrder)) return false;
-    const statusMatch = activeStatusFilter === "overdue"
-      ? getDueState(workOrder)?.className === "overdue"
-      : activeStatusFilter === "active" || activeStatusFilter === "all"
-        ? workOrder.status !== "completed"
-        : workOrder.status === activeStatusFilter;
+    const statusMatch = workOrderMatchesStatusFilter(workOrder);
     const queueMatch = activeSection === "mywork"
       ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
       : workOrderAssigneeFilter
@@ -1131,6 +1345,14 @@ function filteredWorkOrders() {
           (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
     return statusMatch && queueMatch && matchesSearch(workOrderSearchValues(workOrder));
   }).sort(compareWorkOrders);
+}
+
+function workOrderMatchesStatusFilter(workOrder) {
+  if (activeStatusFilter === "overdue") return getDueState(workOrder)?.className === "overdue";
+  if (activeStatusFilter === "completed_month") return isCompletedThisMonth(workOrder);
+  if (activeStatusFilter === "completed_week") return isCompletedThisWeek(workOrder);
+  if (activeStatusFilter === "active" || activeStatusFilter === "all") return workOrder.status !== "completed";
+  return workOrder.status === activeStatusFilter;
 }
 
 function myWorkQueueOrders() {
@@ -1184,7 +1406,21 @@ function renderAssetOptions(selectedId = "") {
   const list = selectedAsset && !options.some((asset) => asset.id === selectedAsset.id)
     ? [selectedAsset, ...options]
     : options;
-  return list.map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(asset.name)}</option>`).join("");
+  return list.map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(assetOptionLabel(asset))}</option>`).join("");
+}
+
+function renderParentAssetOptions(selectedId = "", currentAssetId = "") {
+  return assets
+    .filter(matchesActiveLocation)
+    .filter((asset) => asset.id !== currentAssetId && !isAssetDescendantOf(asset.id, currentAssetId))
+    .sort((a, b) => assetOptionLabel(a).localeCompare(assetOptionLabel(b)))
+    .map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(assetOptionLabel(asset))}</option>`)
+    .join("");
+}
+
+function assetOptionLabel(asset) {
+  const parent = parentAssetFor(asset);
+  return parent ? `${asset.name} - part of ${parent.name}` : asset.name;
 }
 
 function showNotice(message, tone = "success") {
@@ -1211,7 +1447,7 @@ function autoGrowTextarea(field) {
 }
 
 function compareWorkOrders(a, b) {
-  if (activeStatusFilter === "completed") {
+  if (["completed", "completed_month", "completed_week"].includes(activeStatusFilter)) {
     return completedSortValue(b) - completedSortValue(a) || new Date(b.created_at) - new Date(a.created_at);
   }
 
@@ -1256,7 +1492,37 @@ function filteredAssets() {
     asset.asset_code,
     asset.location,
     asset.status,
+    asset.asset_type,
+    parentAssetFor(asset)?.name,
   ]));
+}
+
+function parentAssetFor(asset) {
+  return assets.find((item) => item.id === asset?.parent_asset_id) || null;
+}
+
+function childAssetsFor(assetId) {
+  return assets
+    .filter((asset) => asset.parent_asset_id === assetId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isAssetDescendantOf(assetId, ancestorId) {
+  if (!assetId || !ancestorId) return false;
+  let current = assets.find((asset) => asset.id === assetId);
+  const seen = new Set();
+  while (current?.parent_asset_id && !seen.has(current.id)) {
+    if (current.parent_asset_id === ancestorId) return true;
+    seen.add(current.id);
+    current = assets.find((asset) => asset.id === current.parent_asset_id);
+  }
+  return false;
+}
+
+function assetTypeLabel(type) {
+  return String(type || "machine")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function filteredPreventiveSchedules() {
@@ -1560,13 +1826,17 @@ function renderMetric(label, value, tone = "neutral") {
 }
 
 function renderGaugeReadout(label, value, tone = "active", options = {}) {
-  const tag = options.filter ? "button" : "article";
+  const isAction = options.filter || options.section;
+  const tag = isAction ? "button" : "article";
   const activeClass = options.filter && activeStatusFilter === options.filter ? " selected" : "";
-  const attributes = options.filter
-    ? ` type="button" data-status-filter="${options.filter}" aria-pressed="${activeStatusFilter === options.filter}"`
-    : "";
+  const attributes = [
+    isAction ? `type="button"` : "",
+    options.filter ? `data-status-filter="${options.filter}" aria-pressed="${activeStatusFilter === options.filter}"` : "",
+    options.section ? `data-section="${options.section}"` : "",
+  ].filter(Boolean).join(" ");
+  const attrText = attributes ? ` ${attributes}` : "";
   return `
-    <${tag} class="gauge-readout ${tone}${activeClass}"${attributes}>
+    <${tag} class="gauge-readout ${tone}${activeClass}"${attrText}>
       <div class="gauge-visual" aria-hidden="true">
         <span class="gauge-arc"></span>
         <span class="gauge-cut one"></span>
@@ -1582,12 +1852,40 @@ function renderGaugeReadout(label, value, tone = "active", options = {}) {
   `;
 }
 
+function renderWorkOrderGaugeDashboard() {
+  const locationWorkOrders = workOrders.filter(matchesActiveLocation);
+  const activeWork = locationWorkOrders.filter((workOrder) => workOrder.status !== "completed").length;
+  const newWork = locationWorkOrders.filter((workOrder) => workOrder.status === "open").length;
+  const inProgress = locationWorkOrders.filter((workOrder) => workOrder.status === "in_progress").length;
+  const blocked = locationWorkOrders.filter((workOrder) => workOrder.status === "blocked").length;
+  const overdue = locationWorkOrders.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
+  const completedMonth = completedThisMonth().filter(matchesActiveLocation).length;
+  const completedWeek = completedThisWeek().filter(matchesActiveLocation).length;
+  const requestCount = requestsReady
+    ? openMaintenanceRequests().filter(matchesActiveLocation).length
+    : locationWorkOrders.filter((workOrder) => workOrder.type === "request" && workOrder.status !== "completed").length;
+  return `
+    <div class="summary-gauge-grid">
+      ${renderGaugeReadout("Active Work", activeWork, "active", { filter: "active" })}
+      ${renderGaugeReadout("New", newWork, "new", { filter: "open" })}
+      ${renderGaugeReadout("In Progress", inProgress, "in_progress", { filter: "in_progress" })}
+      ${renderGaugeReadout("Blocked", blocked, "blocked", { filter: "blocked" })}
+      ${renderGaugeReadout("Overdue", overdue, "overdue", { filter: "overdue" })}
+      ${renderGaugeReadout("Completed Month", completedMonth, "completed", { filter: "completed_month" })}
+      ${renderGaugeReadout("Done This Week", completedWeek, "completed", { filter: "completed_week" })}
+      ${renderGaugeReadout("Requests", requestCount, "request", { section: "requests" })}
+    </div>
+  `;
+}
+
 function renderWorkloadStrip(items) {
   const newWork = items.filter((workOrder) => workOrder.status === "open").length;
   const inProgress = items.filter((workOrder) => workOrder.status === "in_progress").length;
   const blocked = items.filter((workOrder) => workOrder.status === "blocked").length;
   const active = newWork + inProgress + blocked;
   const overdue = items.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
+  const completedMonth = items.filter(isCompletedThisMonth).length;
+  const completedWeek = items.filter(isCompletedThisWeek).length;
   return `
     <div class="workload-strip" aria-label="Active work summary">
       ${renderGaugeReadout("Active Work", active, "active workload-pill", { filter: "active" })}
@@ -1595,6 +1893,8 @@ function renderWorkloadStrip(items) {
       ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill", { filter: "in_progress" })}
       ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill", { filter: "blocked" })}
       ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill", { filter: "overdue" })}
+      ${renderGaugeReadout("Completed Month", completedMonth, "completed workload-pill", { filter: "completed_month" })}
+      ${renderGaugeReadout("Done This Week", completedWeek, "completed workload-pill", { filter: "completed_week" })}
     </div>
   `;
 }
@@ -1648,11 +1948,34 @@ function renderInsight(label, value, description, tone = "neutral") {
 }
 
 function workOrdersPanelTitle() {
-  if (workOrderAssigneeFilter) return `${teamMemberName(workOrderAssigneeFilter)} Work`;
-  if (workOrderFilter === "unassigned") return "Unassigned Work Orders";
-  if (workOrderFilter === "vendor") return "Outside Vendor Work";
-  if (workOrderFilter === "assigned") return "Assigned Work Orders";
-  return "All Work Orders";
+  const baseTitle = workOrderAssigneeFilter
+    ? `${teamMemberName(workOrderAssigneeFilter)} Work`
+    : workOrderFilter === "unassigned"
+      ? "Unassigned Work Orders"
+      : workOrderFilter === "vendor"
+        ? "Outside Vendor Work"
+        : workOrderFilter === "assigned"
+          ? "Assigned Work Orders"
+          : "All Work Orders";
+  if (activeStatusFilter === "active" || activeStatusFilter === "all") return baseTitle;
+  return `${statusLabel(activeStatusFilter)} - ${baseTitle}`;
+}
+
+function myWorkPanelTitle() {
+  const baseTitle = myWorkFilter === "created" ? "Created By Me" : "Assigned To Me";
+  if (activeStatusFilter === "active" || activeStatusFilter === "all") return "My Work";
+  return `${statusLabel(activeStatusFilter)} - My Work`;
+}
+
+function workQueuePanelTitle() {
+  return activeSection === "mywork" ? myWorkPanelTitle() : workOrdersPanelTitle();
+}
+
+function workQueuePanelSubtitle(count) {
+  const context = activeSection === "mywork"
+    ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me")
+    : "shown";
+  return activeSection === "mywork" ? `${count} shown - ${context}` : `${count} shown`;
 }
 
 function teamMemberName(userId) {
@@ -1717,15 +2040,21 @@ function renderPlanningItem(item) {
 
 function renderAssetCard(asset) {
   const openWork = workOrders.filter((workOrder) => workOrder.asset_id === asset.id && workOrder.status !== "completed").length;
+  const parent = parentAssetFor(asset);
+  const children = childAssetsFor(asset.id);
   return `
     <article class="asset-card asset-state-${asset.status} ${asset.id === activeAssetId ? "selected" : ""}" data-asset-id="${asset.id}" tabindex="0">
       <div>
         <div class="chip-row">
           <span class="chip asset-${asset.status}">${escapeHtml(asset.status)}</span>
+          <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
           ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+          ${asset.safety_devices_required === false ? `<span class="chip">no safety check</span>` : `<span class="chip overdue">safety check</span>`}
         </div>
         <h3>${escapeHtml(asset.name)}</h3>
         <p>${escapeHtml(asset.location || "No location set")}</p>
+        ${parent ? `<p>Part of ${escapeHtml(parent.name)}</p>` : ""}
+        ${children.length ? `<p>${children.length} linked item${children.length === 1 ? "" : "s"}</p>` : ""}
       </div>
       <span class="muted">${openWork} open work</span>
     </article>
@@ -1735,6 +2064,8 @@ function renderAssetCard(asset) {
 function renderAssetDetail() {
   const asset = assets.find((item) => item.id === activeAssetId);
   if (!asset) return renderCreateWorkOrder();
+  const parent = parentAssetFor(asset);
+  const children = childAssetsFor(asset.id);
   const assetWorkOrders = workOrders.filter((workOrder) => workOrder.asset_id === asset.id);
   const openWork = assetWorkOrders.filter((workOrder) => workOrder.status !== "completed");
   const completedWork = assetWorkOrders.filter((workOrder) => workOrder.status === "completed");
@@ -1748,10 +2079,13 @@ function renderAssetDetail() {
       <div>
         <div class="chip-row">
           <span class="chip asset-${asset.status}">${escapeHtml(asset.status)}</span>
+          <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
           ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+          ${asset.safety_devices_required === false ? `<span class="chip">no safety check</span>` : `<span class="chip overdue">safety check required</span>`}
         </div>
         <h2>${escapeHtml(asset.name)}</h2>
         <p>${escapeHtml(asset.location || "No location set")}</p>
+        ${parent ? `<p>Part of <button class="text-button inline-link-button" data-open-asset="${escapeHtml(parent.id)}" type="button">${escapeHtml(parent.name)}</button></p>` : ""}
       </div>
 
       <div class="quick-actions detail-quick-actions">
@@ -1761,6 +2095,17 @@ function renderAssetDetail() {
       <form class="form-grid" id="edit-asset-form">
         <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
         <label>Equipment ID<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
+        <label>Type
+          <select name="asset_type">
+            ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (asset.asset_type || "machine") ? "selected" : ""}>${assetTypeLabel(type)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Part of
+          <select name="parent_asset_id">
+            <option value="">Top level equipment</option>
+            ${renderParentAssetOptions(asset.parent_asset_id || "", asset.id)}
+          </select>
+        </label>
         <label>Location
           <select name="location_id" ${locations.length ? "" : "disabled"}>
             ${renderLocationOptions(asset.location_id || activeLocationId)}
@@ -1772,8 +2117,22 @@ function renderAssetDetail() {
             ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
+        <label class="check-row safety-check-toggle"><input name="safety_devices_required" type="checkbox" ${asset.safety_devices_required === false ? "" : "checked"}> Safety devices required before completion</label>
+        <p class="error-text" id="asset-edit-error"></p>
         <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
       </form>
+
+      <section>
+        <h3>Linked Equipment</h3>
+        <div class="mini-list asset-link-list">
+          ${children.map((child) => `
+            <article class="mini-work-order" data-open-asset="${escapeHtml(child.id)}">
+              <strong>${escapeHtml(child.name)}</strong>
+              <span>${escapeHtml(assetTypeLabel(child.asset_type))} - ${escapeHtml(child.status || "running")}</span>
+            </article>
+          `).join("") || `<p class="muted">No equipment is linked under this item yet.</p>`}
+        </div>
+      </section>
 
       <section>
         <h3>Open Work</h3>
@@ -1802,7 +2161,52 @@ function renderAssetDetail() {
           ${usedParts.map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`}
         </div>
       </section>
+
+      ${renderAssetDangerZone(asset)}
     </div>
+  `;
+}
+
+function renderAssetDangerZone(asset) {
+  const workCount = workOrders.filter((workOrder) => workOrder.asset_id === asset.id).length;
+  const childCount = childAssetsFor(asset.id).length;
+  const scheduleCount = preventiveSchedules.filter((schedule) => schedule.asset_id === asset.id).length;
+  const requestCount = maintenanceRequests.filter((request) => request.asset_id === asset.id).length;
+  const blockers = [
+    workCount ? `${workCount} work order${workCount === 1 ? "" : "s"}` : "",
+    childCount ? `${childCount} linked equipment item${childCount === 1 ? "" : "s"}` : "",
+    scheduleCount ? `${scheduleCount} PM schedule${scheduleCount === 1 ? "" : "s"}` : "",
+    requestCount ? `${requestCount} request${requestCount === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
+  const confirming = pendingDeleteAssetId === asset.id;
+  if (!canDeleteEquipment()) {
+    return `<p class="muted">Admins and managers can delete unused equipment.</p>`;
+  }
+
+  return `
+    <section class="delete-zone asset-delete-zone">
+      <div>
+        <h3>Delete Equipment</h3>
+        <p>${blockers.length
+          ? `This equipment is kept for traceability because it has ${blockers.join(", ")}.`
+          : `This permanently removes "${escapeHtml(asset.name)}" from the equipment list.`}</p>
+      </div>
+      <p class="error-text" id="asset-delete-error"></p>
+      ${blockers.length ? `
+        <button class="danger-action-button large-delete-button" type="button" disabled>Kept For Traceability</button>
+      ` : confirming ? `
+        <div class="delete-warning-panel">
+          <strong>Permanent Delete Warning</strong>
+          <p>You are about to permanently delete "${escapeHtml(asset.name)}". This cannot be undone.</p>
+          <div class="button-row">
+            <button class="secondary-button" data-cancel-delete-asset type="button">Cancel</button>
+            <button class="danger-action-button confirm-delete-button" data-confirm-delete-asset="${escapeHtml(asset.id)}" type="button">Permanently Delete</button>
+          </div>
+        </div>
+      ` : `
+        <button class="danger-action-button large-delete-button" data-delete-asset="${escapeHtml(asset.id)}" type="button">Delete Equipment</button>
+      `}
+    </section>
   `;
 }
 
@@ -1884,6 +2288,7 @@ function renderProcedureTemplate(template) {
           <option value="true">Required</option>
           <option value="false">Optional</option>
         </select>
+        <p class="error-text" data-step-error="${template.id}"></p>
         <button class="secondary-button" type="submit">Add Step</button>
       </form>
     </article>
@@ -1903,85 +2308,96 @@ function procedureColumn(value) {
 }
 
 function isProcedureSchemaError(error) {
-  return Boolean(error?.message?.includes("procedure_template_id") || error?.message?.includes("schema cache"));
+  const message = error?.message || "";
+  return Boolean(message.includes("procedure_template_id") || message.includes("procedure_templates") || message.includes("procedure_steps"));
+}
+
+function isAssetHierarchySchemaError(error) {
+  return isColumnSchemaError(error, ["parent_asset_id", "asset_type", "safety_devices_required", "safety_check_required"]);
+}
+
+function equipmentSchemaMessage(error) {
+  const message = error?.message || "";
+  if (message.includes("assets_asset_type_check") || message.includes("asset_type")) {
+    return "Run supabase/step-next-asset-type-shop-item.sql before saving Shop Item equipment.";
+  }
+  return "Run supabase/step-next-asset-hierarchy.sql before saving equipment hierarchy.";
 }
 
 function isColumnSchemaError(error, columns) {
   const message = error?.message || "";
-  return message.includes("schema cache") || columns.some((column) => message.includes(column));
+  return columns.some((column) => message.includes(column));
 }
+
+function withSetupError(response, message) {
+  return {
+    ...response,
+    error: {
+      ...(response.error || {}),
+      message,
+      originalMessage: response.error?.message || "",
+    },
+  };
+}
+
+function markSchemaReadiness(error) {
+  if (isMissingColumnError(error, "location_id") || error?.message?.includes("locations")) locationsReady = false;
+  if (isProcedureSchemaError(error)) proceduresReady = false;
+  if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at", "safety_check_required"])) safetyChecksReady = false;
+}
+
+function databaseSetupRequiredMessage(area = "this save") {
+  return `Database update required before ${area}. Run the current Supabase SQL steps from docs/supabase-architecture.md, then refresh and try again.`;
+}
+
+const WORK_ORDER_SCHEMA_FIELDS = [
+  "location_id",
+  "assigned_to",
+  "procedure_template_id",
+  "actual_minutes",
+  "failure_cause",
+  "resolution_summary",
+  "follow_up_needed",
+  "completion_notes",
+  "completed_at",
+  "safety_devices_checked",
+  "safety_devices_checked_at",
+  "safety_check_required",
+];
 
 async function insertWithOptionalProcedure(table, payload, options = {}) {
   let query = supabaseClient.from(table).insert(payload);
   if (options.returnSingle) query = query.select().single();
   const response = await query;
   if (!response.error) return response;
-  if ("location_id" in payload && isMissingColumnError(response.error, "location_id")) {
-    locationsReady = false;
-    const fallbackPayload = { ...payload };
-    delete fallbackPayload.location_id;
-    if ("procedure_template_id" in fallbackPayload && isProcedureSchemaError(response.error)) {
-      proceduresReady = false;
-      delete fallbackPayload.procedure_template_id;
-    }
-    query = supabaseClient.from(table).insert(fallbackPayload);
-    if (options.returnSingle) query = query.select().single();
-    return query;
+  const setupColumns = table === "work_orders" ? WORK_ORDER_SCHEMA_FIELDS : ["location_id", "procedure_template_id"];
+  if (isColumnSchemaError(response.error, setupColumns)) {
+    markSchemaReadiness(response.error);
+    return withSetupError(response, databaseSetupRequiredMessage(`saving ${table.replaceAll("_", " ")}`));
   }
-  if (!("procedure_template_id" in payload) || !isProcedureSchemaError(response.error)) return response;
-
-  proceduresReady = false;
-  const fallbackPayload = { ...payload };
-  delete fallbackPayload.procedure_template_id;
-  query = supabaseClient.from(table).insert(fallbackPayload);
-  if (options.returnSingle) query = query.select().single();
-  return query;
+  return response;
 }
 
 async function updateWithOptionalProcedure(table, payload, id) {
-  let response = await supabaseClient
+  const response = await supabaseClient
     .from(table)
     .update(payload)
     .eq("id", id)
     .eq("company_id", activeCompanyId);
-  if (!response.error || !("procedure_template_id" in payload) || !isProcedureSchemaError(response.error)) return response;
-
-  proceduresReady = false;
-  const fallbackPayload = { ...payload };
-  delete fallbackPayload.procedure_template_id;
-  return supabaseClient
-    .from(table)
-    .update(fallbackPayload)
-    .eq("id", id)
-    .eq("company_id", activeCompanyId);
+  if (response.error && isColumnSchemaError(response.error, ["location_id", "procedure_template_id"])) {
+    markSchemaReadiness(response.error);
+    return withSetupError(response, databaseSetupRequiredMessage(`saving ${table.replaceAll("_", " ")}`));
+  }
+  return response;
 }
 
-async function updateWorkOrderWithFallback(payload, id) {
-  let response = await updateWithOptionalProcedure("work_orders", payload, id);
-  if (!response.error || !isColumnSchemaError(response.error, ["location_id", "procedure_template_id", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
-    return response;
+async function updateWorkOrderSafely(payload, id) {
+  const response = await updateWithOptionalProcedure("work_orders", payload, id);
+  if (response.error && isColumnSchemaError(response.error, WORK_ORDER_SCHEMA_FIELDS)) {
+    markSchemaReadiness(response.error);
+    return withSetupError(response, databaseSetupRequiredMessage("saving work order details"));
   }
-
-  const fallbackPayload = { ...payload };
-  if (isMissingColumnError(response.error, "location_id")) {
-    locationsReady = false;
-    delete fallbackPayload.location_id;
-  }
-  if (isColumnSchemaError(response.error, ["safety_devices_checked", "safety_devices_checked_at"])) {
-    safetyChecksReady = false;
-    delete fallbackPayload.safety_devices_checked;
-    delete fallbackPayload.safety_devices_checked_at;
-  }
-  delete fallbackPayload.procedure_template_id;
-  delete fallbackPayload.actual_minutes;
-  delete fallbackPayload.failure_cause;
-  delete fallbackPayload.resolution_summary;
-  delete fallbackPayload.follow_up_needed;
-  return supabaseClient
-    .from("work_orders")
-    .update(fallbackPayload)
-    .eq("id", id)
-    .eq("company_id", activeCompanyId);
+  return response;
 }
 
 function renderChecklistStep(workOrder, step) {
@@ -2403,6 +2819,11 @@ function setupItems() {
       detail: requestsReady ? "Stored in maintenance_requests" : "Run step-next-maintenance-requests.sql",
     },
     {
+      name: "Public request QR links",
+      ready: publicRequestLinksReady,
+      detail: publicRequestLinksReady ? "External location intake is available" : "Run step-next-public-request-links.sql",
+    },
+    {
       name: "Preventive schedules",
       ready: schedulesReady,
       detail: schedulesReady ? "PM schedules available" : "Run step-next-preventive-schedules.sql",
@@ -2575,6 +2996,43 @@ function renderPartDetail() {
           `).join("") || `<p class="muted">No receipts or invoices filed with this part.</p>`}
         </div>
       </section>
+
+      ${renderPartDangerZone(part)}
+    </section>
+  `;
+}
+
+function renderPartDangerZone(part) {
+  const usageCount = partUsageRows(part.id).length;
+  const documents = partDocumentsByPartId[part.id] || [];
+  const confirming = pendingDeletePartId === part.id;
+  if (!canDeleteParts()) {
+    return `<p class="muted">Admins and managers can delete unused parts.</p>`;
+  }
+
+  return `
+    <section class="delete-zone part-delete-zone">
+      <div>
+        <h3>Delete Part</h3>
+        <p>${usageCount
+          ? `This part has ${usageCount} usage record${usageCount === 1 ? "" : "s"} tied to work order history, so it cannot be deleted.`
+          : `This permanently removes the part${documents.length ? ` and ${documents.length} filed receipt/invoice record${documents.length === 1 ? "" : "s"}` : ""}.`}</p>
+      </div>
+      <p class="error-text" id="part-delete-error"></p>
+      ${usageCount ? `
+        <button class="danger-action-button large-delete-button" type="button" disabled>Kept For Traceability</button>
+      ` : confirming ? `
+        <div class="delete-warning-panel">
+          <strong>Permanent Delete Warning</strong>
+          <p>You are about to permanently delete "${escapeHtml(part.name)}". This cannot be undone.</p>
+          <div class="button-row">
+            <button class="secondary-button" data-cancel-delete-part type="button">Cancel</button>
+            <button class="danger-action-button confirm-delete-button" data-confirm-delete-part="${escapeHtml(part.id)}" type="button">Permanently Delete</button>
+          </div>
+        </div>
+      ` : `
+        <button class="danger-action-button large-delete-button" data-delete-part="${escapeHtml(part.id)}" type="button">Delete Part</button>
+      `}
     </section>
   `;
 }
@@ -2593,6 +3051,118 @@ function renderPartsHealth() {
   `).join("");
 }
 
+function renderPublicRequestLinkManager() {
+  if (!canManageTeam()) return "";
+  const publicBaseUrl = publicAppBaseUrl();
+  return `
+    <section class="settings-summary public-request-links">
+      <div class="settings-section-heading">
+        <h3>Location Request QR Links</h3>
+        <p class="muted">Post these QR codes so operators can submit a location-specific request without app access.</p>
+      </div>
+      <form class="form-grid settings-form public-app-url-form" id="public-app-url-form">
+        <label>Public MaintainOps URL
+          <input name="public_app_url" value="${escapeHtml(publicAppUrlOverride || String(window.PUBLIC_APP_URL || ""))}" placeholder="https://loufish727.github.io/your-maintainops-repo/">
+        </label>
+        <button class="secondary-button request-action-button" type="submit">Save URL</button>
+      </form>
+      <p class="muted">Use the exact GitHub Pages URL where MaintainOps opens. Do not use the root URL if that opens another app.</p>
+      ${publicBaseUrl ? `<p class="muted">QR codes will point to ${escapeHtml(publicBaseUrl)}</p>` : `<p class="warning-text">Set the public MaintainOps URL before copying or printing QR codes from this local app.</p>`}
+      <p class="error-text" id="public-request-link-error">${publicRequestLinksReady ? "" : "Run supabase/step-next-public-request-links.sql before creating QR request links."}</p>
+      <div class="public-request-link-grid">
+        ${locations.map(renderPublicRequestLocationCard).join("") || `<article><strong>No locations yet</strong><span>Add a location before creating request QR codes.</span></article>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderPublicRequestLocationCard(location) {
+  const link = publicRequestLinks.find((item) => item.location_id === location.id);
+  const linkActive = Boolean(link && link.is_active !== false);
+  const requestUrl = linkActive ? publicRequestUrl(link.token) : "";
+  const qrUrl = linkActive ? publicRequestQrUrl(link.token) : "";
+  const hasUsableUrl = Boolean(requestUrl && qrUrl);
+  return `
+    <article class="public-request-link-card">
+      <div>
+        <strong>${escapeHtml(location.name)}</strong>
+        <span>${linkActive ? "External request link active" : link ? "Request link disabled" : "No request link yet"}</span>
+        ${link?.last_used_at ? `<span>Last used ${new Date(link.last_used_at).toLocaleString()}</span>` : ""}
+      </div>
+      ${linkActive ? `
+        <div class="qr-preview">${hasUsableUrl ? qrSvgFor(requestUrl) : `<div class="qr-fallback">Set URL</div>`}</div>
+        <input class="copy-field" value="${escapeHtml(qrUrl || "Set the public MaintainOps URL first")}" readonly>
+        <div class="button-row">
+          <a class="primary-button request-action-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Open QR Code</a>
+          <button class="secondary-button request-action-button" data-copy-public-request-link="${escapeHtml(qrUrl)}" type="button" ${hasUsableUrl ? "" : "disabled"}>Copy QR Link</button>
+          <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">Test Form</a>
+          <button class="secondary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+          <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
+        </div>
+      ` : link ? `
+        <div class="qr-preview inactive-qr-preview"><div class="qr-fallback">Off</div></div>
+        <div class="button-row">
+          <button class="secondary-button request-action-button" data-enable-public-request-link="${escapeHtml(link.id)}" type="button">Reactivate Same QR</button>
+          <button class="primary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+        </div>
+      ` : `
+        <button class="secondary-button request-action-button" data-create-public-request-link="${escapeHtml(location.id)}" type="button" ${publicRequestLinksReady ? "" : "disabled"}>Create QR Link</button>
+      `}
+    </article>
+  `;
+}
+
+function publicRequestUrl(token) {
+  return publicAppUrlWithSearch(`?request=${encodeURIComponent(token)}`);
+}
+
+function publicRequestQrUrl(token) {
+  return publicAppUrlWithSearch(`?qr=${encodeURIComponent(token)}`);
+}
+
+function publicAppUrlWithSearch(search) {
+  const base = publicAppBaseUrl();
+  if (!base) return "";
+  const url = new URL(base);
+  url.search = search;
+  url.hash = "";
+  return url.toString();
+}
+
+function publicAppBaseUrl() {
+  const configured = publicAppUrlOverride || String(window.PUBLIC_APP_URL || "").trim();
+  const candidate = configured || (["http:", "https:"].includes(window.location.protocol) ? window.location.href : "");
+  if (!candidate) return "";
+  return normalizePublicAppUrl(candidate);
+}
+
+function normalizePublicAppUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim(), window.location.href);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    url.search = "";
+    url.hash = "";
+    if (url.pathname && url.pathname !== "/" && !url.pathname.endsWith("/") && !url.pathname.endsWith(".html")) {
+      url.pathname = `${url.pathname}/`;
+    }
+    return url.toString();
+  } catch (error) {
+    return "";
+  }
+}
+
+function qrSvgFor(value, cellSize = 4) {
+  if (!window.qrcode || !value) return `<div class="qr-fallback">QR</div>`;
+  try {
+    const qr = window.qrcode(0, "M");
+    qr.addData(value);
+    qr.make();
+    return qr.createSvgTag(cellSize, 0).replace("<svg", "<svg class=\"qr-code\"");
+  } catch (error) {
+    return `<div class="qr-fallback">QR</div>`;
+  }
+}
+
 function renderMaintenanceRequest(request) {
   return `
     <article class="request-card">
@@ -2605,8 +3175,8 @@ function renderMaintenanceRequest(request) {
         <h3>${escapeHtml(request.title)}</h3>
         <p>${escapeHtml(request.description || "No description.")}</p>
         <div class="meta-row">
-      <span>${escapeHtml(request.assets?.name || "No equipment")}</span>
-          <span>${escapeHtml(profilesByUserId[request.requested_by]?.full_name || "Requester")}</span>
+          <span>${escapeHtml(request.assets?.name || request.locations?.name || "No equipment")}</span>
+          <span>${escapeHtml(request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester")}</span>
           <span>${new Date(request.created_at).toLocaleString()}</span>
         </div>
       </div>
@@ -2639,6 +3209,7 @@ function renderRequestFormContent() {
           <option>low</option>
         </select>
       </label>
+      <p class="error-text" id="request-error"></p>
       <button class="primary-button request-action-button" type="submit">Submit Request</button>
     </form>
   `;
@@ -3216,6 +3787,7 @@ function renderWorkOrderDetail() {
         <summary>Photos</summary>
       <form class="form-grid relationship-detail photo" id="photo-form">
         <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Photos are optimized up to 2400px before upload.</small></label>
+        <p class="error-text" id="photo-error"></p>
         <button class="secondary-button" type="submit">Upload Photo</button>
       </form>
 
@@ -3673,6 +4245,15 @@ function bindWorkspaceEvents() {
     });
   }
 
+  const backToEquipment = document.querySelector("#back-to-equipment");
+  if (backToEquipment) {
+    backToEquipment.addEventListener("click", () => {
+      activeAssetId = null;
+      pendingDeleteAssetId = null;
+      renderWorkspace();
+    });
+  }
+
   const searchInput = document.querySelector("#workspace-search");
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
@@ -3705,7 +4286,22 @@ function bindWorkspaceEvents() {
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
-      activeSection = "work";
+      activeSection = "assets";
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-open-asset]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      activeAssetId = button.dataset.openAsset;
+      activeWorkOrderId = null;
+      createWorkOrderMode = false;
+      quickFixMode = false;
+      quickFixAssetId = null;
+      quickFixRequestId = null;
+      if (activeSection !== "assets") activeSection = "work";
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
     });
@@ -3741,7 +4337,7 @@ function bindWorkspaceEvents() {
       activeAssetId = button.dataset.searchAsset;
       activeWorkOrderId = null;
       activePartId = null;
-      activeSection = "work";
+      activeSection = "assets";
       searchQuery = "";
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
@@ -3800,7 +4396,14 @@ function bindWorkspaceEvents() {
   document.querySelectorAll("[data-quick-status]").forEach((button) => {
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
-      await setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Saving...";
+      const saved = await setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
+      if (!saved) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
     });
   });
 
@@ -3830,6 +4433,28 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
       await deleteWorkOrder(button.dataset.confirmDeleteWorkOrder);
+    });
+  });
+
+  document.querySelectorAll("[data-delete-asset]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      requestDeleteAsset(button.dataset.deleteAsset);
+    });
+  });
+
+  document.querySelectorAll("[data-cancel-delete-asset]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      pendingDeleteAssetId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-asset]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      await deleteAsset(button.dataset.confirmDeleteAsset);
     });
   });
 
@@ -3925,6 +4550,32 @@ function bindWorkspaceEvents() {
 
   const requestForm = document.querySelector("#request-form");
   if (requestForm) requestForm.addEventListener("submit", createRequest);
+
+  document.querySelectorAll("[data-create-public-request-link]").forEach((button) => {
+    button.addEventListener("click", () => createPublicRequestLink(button.dataset.createPublicRequestLink));
+  });
+
+  document.querySelectorAll("[data-disable-public-request-link]").forEach((button) => {
+    button.addEventListener("click", () => disablePublicRequestLink(button.dataset.disablePublicRequestLink));
+  });
+
+  document.querySelectorAll("[data-enable-public-request-link]").forEach((button) => {
+    button.addEventListener("click", () => setPublicRequestLinkActive(button.dataset.enablePublicRequestLink, true));
+  });
+
+  document.querySelectorAll("[data-regenerate-public-request-link]").forEach((button) => {
+    button.addEventListener("click", () => regeneratePublicRequestLink(button.dataset.regeneratePublicRequestLink));
+  });
+
+  document.querySelectorAll("[data-copy-public-request-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const copied = await copyTextToClipboard(button.dataset.copyPublicRequestLink);
+      button.textContent = copied ? "Copied" : "Copy failed";
+      setTimeout(() => {
+        button.textContent = "Copy QR Link";
+      }, 1600);
+    });
+  });
 
   document.querySelectorAll("[data-convert-request]").forEach((button) => {
     button.addEventListener("click", () => convertRequestToWorkOrder(button.dataset.convertRequest));
@@ -4040,6 +4691,21 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", updatePart);
   });
 
+  document.querySelectorAll("[data-delete-part]").forEach((button) => {
+    button.addEventListener("click", () => requestDeletePart(button.dataset.deletePart));
+  });
+
+  document.querySelectorAll("[data-cancel-delete-part]").forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingDeletePartId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-part]").forEach((button) => {
+    button.addEventListener("click", () => deletePart(button.dataset.confirmDeletePart));
+  });
+
   document.querySelectorAll("[data-open-part]").forEach((button) => {
     button.addEventListener("click", () => {
       activePartId = button.dataset.openPart;
@@ -4081,57 +4747,104 @@ function bindWorkspaceEvents() {
 
   const locationForm = document.querySelector("#location-form");
   if (locationForm) locationForm.addEventListener("submit", createLocation);
+
+  const publicAppUrlForm = document.querySelector("#public-app-url-form");
+  if (publicAppUrlForm) publicAppUrlForm.addEventListener("submit", savePublicAppUrl);
 }
 
 async function createAsset(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#asset-create-error");
+  if (errorElement) errorElement.textContent = "";
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const originalButtonText = submitButton?.textContent || "Add Equipment";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
+  const form = new FormData(formElement);
   const payload = {
     company_id: activeCompanyId,
     location_id: form.get("location_id") || activeLocationDatabaseId(),
     name: form.get("name"),
     asset_code: form.get("asset_code") || null,
     location: form.get("location") || null,
+    parent_asset_id: form.get("parent_asset_id") || null,
+    asset_type: form.get("asset_type") || "machine",
+    safety_devices_required: form.get("safety_devices_required") === "on",
     status: "running",
   };
-  let { error } = await supabaseClient.from("assets").insert(payload);
-  if (error && isMissingColumnError(error, "location_id")) {
-    locationsReady = false;
-    delete payload.location_id;
-    const retry = await supabaseClient.from("assets").insert(payload);
-    error = retry.error;
+  try {
+    const { error } = await supabaseClient.from("assets").insert(payload);
+    if (error && isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      throw new Error(databaseSetupRequiredMessage("saving equipment locations"));
+    }
+    if (error && isAssetHierarchySchemaError(error)) {
+      throw new Error(equipmentSchemaMessage(error));
+    }
+    if (error) throw error;
+    showNotice("Equipment added.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message;
+    else alert(error.message);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalButtonText;
+    }
   }
-  if (error) return alert(error.message);
-  await render();
 }
 
 async function updateAsset(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#asset-edit-error");
+  if (errorElement) errorElement.textContent = "";
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const originalButtonText = submitButton?.textContent || "Save Equipment";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
+  const form = new FormData(formElement);
   const payload = {
     name: form.get("name"),
     asset_code: form.get("asset_code") || null,
     location_id: form.get("location_id") || activeLocationDatabaseId(),
     location: form.get("location") || null,
+    parent_asset_id: form.get("parent_asset_id") || null,
+    asset_type: form.get("asset_type") || "machine",
+    safety_devices_required: form.get("safety_devices_required") === "on",
     status: form.get("status"),
   };
-  let { error } = await supabaseClient
-    .from("assets")
-    .update(payload)
-    .eq("id", activeAssetId)
-    .eq("company_id", activeCompanyId);
-  if (error && isMissingColumnError(error, "location_id")) {
-    locationsReady = false;
-    delete payload.location_id;
-    const retry = await supabaseClient
+  try {
+    const { error } = await supabaseClient
       .from("assets")
       .update(payload)
       .eq("id", activeAssetId)
       .eq("company_id", activeCompanyId);
-    error = retry.error;
+    if (error && isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      throw new Error(databaseSetupRequiredMessage("saving equipment locations"));
+    }
+    if (error && isAssetHierarchySchemaError(error)) {
+      throw new Error(equipmentSchemaMessage(error));
+    }
+    if (error) throw error;
+    showNotice("Equipment saved.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message;
+    else alert(error.message);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalButtonText;
+    }
   }
-  if (error) return alert(error.message);
-  await render();
 }
 
 async function updateAssetStatus(assetId, status) {
@@ -4143,11 +4856,83 @@ async function updateAssetStatus(assetId, status) {
   return error || null;
 }
 
+function assetDeleteBlockers(assetId) {
+  return {
+    workOrders: workOrders.filter((workOrder) => workOrder.asset_id === assetId).length,
+    children: childAssetsFor(assetId).length,
+    schedules: preventiveSchedules.filter((schedule) => schedule.asset_id === assetId).length,
+    requests: maintenanceRequests.filter((request) => request.asset_id === assetId).length,
+  };
+}
+
+function assetHasDeleteBlockers(assetId) {
+  const blockers = assetDeleteBlockers(assetId);
+  return Object.values(blockers).some(Boolean);
+}
+
+function requestDeleteAsset(id) {
+  if (!canDeleteEquipment()) {
+    alert("Only company admins and managers can delete equipment.");
+    return;
+  }
+  if (assetHasDeleteBlockers(id)) {
+    const errorElement = document.querySelector("#asset-delete-error");
+    if (errorElement) errorElement.textContent = "This equipment has history or linked records and is kept for traceability.";
+    return;
+  }
+  pendingDeleteAssetId = id;
+  renderWorkspace();
+}
+
+async function deleteAsset(id) {
+  if (!canDeleteEquipment()) {
+    alert("Only company admins and managers can delete equipment.");
+    return;
+  }
+  const errorElement = document.querySelector("#asset-delete-error");
+  if (errorElement) errorElement.textContent = "";
+  if (assetHasDeleteBlockers(id)) {
+    if (errorElement) errorElement.textContent = "This equipment has history or linked records and is kept for traceability.";
+    return;
+  }
+  const confirmButton = document.querySelector(`[data-confirm-delete-asset="${CSS.escape(id)}"]`);
+  if (confirmButton) {
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Deleting...";
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from("assets")
+      .delete()
+      .eq("id", id)
+      .eq("company_id", activeCompanyId);
+    if (error) {
+      throw new Error(error.message.includes("violates foreign key constraint")
+        ? "This equipment is linked to records and cannot be deleted."
+        : error.message);
+    }
+    activeAssetId = null;
+    pendingDeleteAssetId = null;
+    activeSection = "assets";
+    showNotice("Equipment deleted.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not delete equipment.";
+    if (confirmButton) {
+      confirmButton.disabled = false;
+      confirmButton.textContent = "Permanently Delete";
+    }
+  }
+}
+
 async function createQuickFixAsset(name, status = "running") {
   const payload = {
     company_id: activeCompanyId,
     location_id: activeLocationDatabaseId(),
     name,
+    asset_type: "machine",
+    safety_devices_required: true,
     status,
   };
   let response = await supabaseClient
@@ -4157,95 +4942,171 @@ async function createQuickFixAsset(name, status = "running") {
     .single();
   if (response.error && isMissingColumnError(response.error, "location_id")) {
     locationsReady = false;
-    delete payload.location_id;
-    response = await supabaseClient.from("assets").insert(payload).select().single();
+    return withSetupError(response, databaseSetupRequiredMessage("adding equipment in this location"));
+  }
+  if (response.error && isAssetHierarchySchemaError(response.error)) {
+    return withSetupError(response, equipmentSchemaMessage(response.error).replace("saving", "adding"));
   }
   return response;
 }
 
 async function createPreventiveSchedule(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const { error } = await insertWithOptionalProcedure("preventive_schedules", {
-    company_id: activeCompanyId,
-    location_id: locationIdForAsset(form.get("asset_id")),
-    asset_id: form.get("asset_id"),
-    title: form.get("title"),
-    frequency: form.get("frequency"),
-    next_due_at: form.get("next_due_at"),
-    ...procedureColumn(form.get("procedure_template_id")),
-    active: true,
-    created_by: session.user.id,
-  });
-  if (error) return alert(error.message);
-  await render();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorElement = document.querySelector("#pm-error");
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
+
+  try {
+    const form = new FormData(formElement);
+    const { error } = await insertWithOptionalProcedure("preventive_schedules", {
+      company_id: activeCompanyId,
+      location_id: locationIdForAsset(form.get("asset_id")),
+      asset_id: form.get("asset_id"),
+      title: form.get("title"),
+      frequency: form.get("frequency"),
+      next_due_at: form.get("next_due_at"),
+      ...procedureColumn(form.get("procedure_template_id")),
+      active: true,
+      created_by: session.user.id,
+    });
+    if (error) throw error;
+    showNotice("PM schedule added.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not add PM schedule.";
+    else alert(error.message || error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Schedule";
+    }
+  }
 }
 
 async function createProcedureTemplate(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const { error } = await supabaseClient.from("procedure_templates").insert({
-    company_id: activeCompanyId,
-    name: form.get("name"),
-    description: form.get("description") || null,
-    created_by: session.user.id,
-  });
-  if (error) return alert(error.message);
-  await render();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorElement = document.querySelector("#procedure-error");
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
+
+  try {
+    const form = new FormData(formElement);
+    const { error } = await supabaseClient.from("procedure_templates").insert({
+      company_id: activeCompanyId,
+      name: form.get("name"),
+      description: form.get("description") || null,
+      created_by: session.user.id,
+    });
+    if (error) throw error;
+    showNotice("Procedure added.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not add procedure.";
+    else alert(error.message || error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Procedure";
+    }
+  }
 }
 
 async function seedSampleProcedure() {
+  const button = document.querySelector("#seed-sample-procedure");
   const existing = procedureTemplates.find((template) => template.name.toLowerCase() === "basic equipment inspection");
   if (existing) {
-    alert("Sample inspection procedure already exists.");
+    showNotice("Sample inspection procedure already exists.", "warning");
     return;
   }
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Adding sample...";
+  }
 
-  const { data: template, error: templateError } = await supabaseClient
-    .from("procedure_templates")
-    .insert({
+  try {
+    const { data: template, error: templateError } = await supabaseClient
+      .from("procedure_templates")
+      .insert({
+        company_id: activeCompanyId,
+        name: "Basic Equipment Inspection",
+        description: "A simple starter checklist for visual checks, readings, and final pass/fail.",
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+
+    if (templateError) throw templateError;
+
+    const steps = [
+      { position: 1, prompt: "Confirm lockout or safe operating condition", response_type: "checkbox", required: true },
+      { position: 2, prompt: "Inspect for leaks, loose guards, or visible damage", response_type: "pass_fail", required: true },
+      { position: 3, prompt: "Record operating reading", response_type: "number", required: false },
+      { position: 4, prompt: "Add technician notes", response_type: "text", required: false },
+    ].map((step) => ({
+      ...step,
       company_id: activeCompanyId,
-      name: "Basic Equipment Inspection",
-      description: "A simple starter checklist for visual checks, readings, and final pass/fail.",
-      created_by: session.user.id,
-    })
-    .select()
-    .single();
+      procedure_template_id: template.id,
+    }));
 
-  if (templateError) return alert(templateError.message);
-
-  const steps = [
-    { position: 1, prompt: "Confirm lockout or safe operating condition", response_type: "checkbox", required: true },
-    { position: 2, prompt: "Inspect for leaks, loose guards, or visible damage", response_type: "pass_fail", required: true },
-    { position: 3, prompt: "Record operating reading", response_type: "number", required: false },
-    { position: 4, prompt: "Add technician notes", response_type: "text", required: false },
-  ].map((step) => ({
-    ...step,
-    company_id: activeCompanyId,
-    procedure_template_id: template.id,
-  }));
-
-  const { error: stepsError } = await supabaseClient.from("procedure_steps").insert(steps);
-  if (stepsError) return alert(stepsError.message);
-  await render();
+    const { error: stepsError } = await supabaseClient.from("procedure_steps").insert(steps);
+    if (stepsError) throw stepsError;
+    showNotice("Sample procedure added.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not add sample procedure: ${error.message || error}`, "warning");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Add sample inspection procedure";
+    }
+  }
 }
 
 async function createProcedureStep(event) {
   event.preventDefault();
-  const formElement = event.target;
-  const form = new FormData(formElement);
-  const template = procedureTemplates.find((item) => item.id === formElement.dataset.addStep);
-  const nextPosition = (template?.procedure_steps?.length || 0) + 1;
-  const { error } = await supabaseClient.from("procedure_steps").insert({
-    company_id: activeCompanyId,
-    procedure_template_id: formElement.dataset.addStep,
-    position: nextPosition,
-    prompt: form.get("prompt"),
-    response_type: form.get("response_type"),
-    required: form.get("required") === "true",
-  });
-  if (error) return alert(error.message);
-  await render();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorElement = document.querySelector(`[data-step-error="${formElement.dataset.addStep}"]`);
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
+
+  try {
+    const form = new FormData(formElement);
+    const template = procedureTemplates.find((item) => item.id === formElement.dataset.addStep);
+    const nextPosition = (template?.procedure_steps?.length || 0) + 1;
+    const { error } = await supabaseClient.from("procedure_steps").insert({
+      company_id: activeCompanyId,
+      procedure_template_id: formElement.dataset.addStep,
+      position: nextPosition,
+      prompt: form.get("prompt"),
+      response_type: form.get("response_type"),
+      required: form.get("required") === "true",
+    });
+    if (error) throw error;
+    showNotice("Procedure step added.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not add procedure step.";
+    else alert(error.message || error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Step";
+    }
+  }
 }
 
 async function addCompanyMember(event) {
@@ -4295,25 +5156,36 @@ async function updateMyProfile(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
   const errorElement = document.querySelector("#profile-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
   const form = new FormData(formElement);
   const fullName = String(form.get("full_name") || "").trim();
   if (errorElement) errorElement.textContent = "";
-
-  const { error } = await supabaseClient
-    .from("profiles")
-    .upsert({
-      company_id: activeCompanyId,
-      user_id: session.user.id,
-      full_name: fullName,
-    }, { onConflict: "company_id,user_id" });
-
-  if (error) {
-    if (errorElement) errorElement.textContent = error.message;
-    return;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
   }
 
-  showNotice("Profile saved.");
-  await render();
+  try {
+    const { error } = await supabaseClient
+      .from("profiles")
+      .upsert({
+        company_id: activeCompanyId,
+        user_id: session.user.id,
+        full_name: fullName,
+      }, { onConflict: "company_id,user_id" });
+
+    if (error) throw error;
+
+    showNotice("Profile saved.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not save profile.";
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Profile";
+    }
+  }
 }
 
 async function createTeamInvite(event) {
@@ -4332,28 +5204,31 @@ async function createTeamInvite(event) {
     submitButton.textContent = "Inviting...";
   }
 
-  const { error } = await supabaseClient.rpc("create_company_invite", {
-    target_company_id: activeCompanyId,
-    invite_email: String(form.get("email") || "").trim(),
-    invite_role: form.get("role"),
-  });
+  try {
+    const { error } = await supabaseClient.rpc("create_company_invite", {
+      target_company_id: activeCompanyId,
+      invite_email: String(form.get("email") || "").trim(),
+      invite_role: form.get("role"),
+    });
 
-  if (error) {
-    if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
-      teamInvitesReady = false;
-      if (errorElement) errorElement.textContent = "Run supabase/step-next-team-invites.sql before inviting by email.";
-    } else if (errorElement) {
-      errorElement.textContent = error.message;
+    if (error) {
+      if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
+        teamInvitesReady = false;
+        throw new Error("Run supabase/step-next-team-invites.sql before inviting by email.");
+      }
+      throw error;
     }
+
+    showNotice("Invite created.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not create invite.";
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Create Invite";
     }
-    return;
   }
-
-  showNotice("Invite created.");
-  await render();
 }
 
 async function createMessageThread(event) {
@@ -4383,66 +5258,66 @@ async function createMessageThread(event) {
   }
   if (!memberIds.includes(session.user.id)) memberIds.push(session.user.id);
 
-  submitButton.disabled = true;
-  submitButton.textContent = "Starting...";
-
-  const workOrderId = form.get("work_order_id") || null;
-  const threadPayload = {
-    company_id: activeCompanyId,
-    location_id: threadType === "location" ? activeLocationDatabaseId() : null,
-    thread_type: threadType,
-    title,
-    created_by: session.user.id,
-  };
-  if (workOrderId && messageWorkOrderLinksReady) {
-    threadPayload.work_order_id = workOrderId;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Starting...";
   }
 
-  const { data: thread, error: threadError } = await supabaseClient
-    .from("message_threads")
-    .insert(threadPayload)
-    .select("*")
-    .single();
-
-  if (threadError) {
-    if (isMissingColumnError(threadError, "work_order_id")) {
-      messageWorkOrderLinksReady = false;
+  let threadStarted = false;
+  try {
+    const workOrderId = form.get("work_order_id") || null;
+    const threadPayload = {
+      company_id: activeCompanyId,
+      location_id: threadType === "location" ? activeLocationDatabaseId() : null,
+      thread_type: threadType,
+      title,
+      created_by: session.user.id,
+    };
+    if (workOrderId && messageWorkOrderLinksReady) {
+      threadPayload.work_order_id = workOrderId;
     }
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(threadError);
-    submitButton.disabled = false;
-    submitButton.textContent = "Start Thread";
-    return;
-  }
 
-  const memberRows = [...new Set(memberIds)].map((userId) => ({
-    company_id: activeCompanyId,
-    thread_id: thread.id,
-    user_id: userId,
-  }));
-  const { error: memberError } = await supabaseClient.from("message_thread_members").insert(memberRows);
-  if (memberError) {
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(memberError);
-    submitButton.disabled = false;
-    submitButton.textContent = "Start Thread";
-    return;
-  }
+    const { data: thread, error: threadError } = await supabaseClient
+      .from("message_threads")
+      .insert(threadPayload)
+      .select("*")
+      .single();
 
-  const { error: messageError } = await insertThreadMessage(thread.id, body);
-  if (messageError) {
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(messageError);
-    submitButton.disabled = false;
-    submitButton.textContent = "Start Thread";
-    return;
-  }
+    if (threadError) {
+      if (isMissingColumnError(threadError, "work_order_id")) {
+        messageWorkOrderLinksReady = false;
+      }
+      throw threadError;
+    }
 
-  activeMessageThreadId = thread.id;
-  messageComposerWorkOrderId = "";
-  messageComposerOpen = false;
-  localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-  localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
-  await markMessageThreadRead(thread.id);
-  showNotice("Thread started.");
-  await render();
+    const memberRows = [...new Set(memberIds)].map((userId) => ({
+      company_id: activeCompanyId,
+      thread_id: thread.id,
+      user_id: userId,
+    }));
+    const { error: memberError } = await supabaseClient.from("message_thread_members").insert(memberRows);
+    if (memberError) throw memberError;
+
+    const { error: messageError } = await insertThreadMessage(thread.id, body);
+    if (messageError) throw messageError;
+
+    activeMessageThreadId = thread.id;
+    messageComposerWorkOrderId = "";
+    messageComposerOpen = false;
+    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
+    localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
+    await markMessageThreadRead(thread.id);
+    showNotice("Thread started.");
+    threadStarted = true;
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
+  } finally {
+    if (!threadStarted && submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Start Thread";
+    }
+  }
 }
 
 async function sendThreadReply(event) {
@@ -4453,20 +5328,28 @@ async function sendThreadReply(event) {
   const body = String(new FormData(formElement).get("body") || "").trim();
   if (!body) return;
   if (errorElement) errorElement.textContent = "";
-  submitButton.disabled = true;
-  submitButton.textContent = "Sending...";
-
-  const { error } = await insertThreadMessage(formElement.dataset.threadId, body);
-  if (error) {
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
-    submitButton.disabled = false;
-    submitButton.textContent = "Send Reply";
-    return;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending...";
   }
 
-  showNotice("Message sent.");
-  await markMessageThreadRead(formElement.dataset.threadId);
-  await render();
+  let replySent = false;
+  try {
+    const { error } = await insertThreadMessage(formElement.dataset.threadId, body);
+    if (error) throw error;
+
+    showNotice("Message sent.");
+    await markMessageThreadRead(formElement.dataset.threadId);
+    replySent = true;
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
+  } finally {
+    if (!replySent && submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Send Reply";
+    }
+  }
 }
 
 async function markMessageThreadRead(threadId) {
@@ -4518,13 +5401,29 @@ function friendlyMessageCenterError(error) {
 
 async function updateCompanySettings(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const { error } = await supabaseClient
-    .from("companies")
-    .update({ name: form.get("name") })
-    .eq("id", activeCompanyId);
-  if (error) return alert(error.message);
-  await render();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
+  try {
+    const { error } = await supabaseClient
+      .from("companies")
+      .update({ name: form.get("name") })
+      .eq("id", activeCompanyId);
+    if (error) throw error;
+    showNotice("Company saved.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not save company: ${error.message || error}`, "warning");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Company";
+    }
+  }
 }
 
 async function uploadCompanyLogo(event) {
@@ -4544,76 +5443,221 @@ async function uploadCompanyLogo(event) {
     submitButton.textContent = "Uploading...";
   }
 
-  const optimized = await optimizeLogo(file);
-  const path = `${activeCompanyId}/logo-${crypto.randomUUID()}-${optimized.fileName}`;
-  const upload = await supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
-    contentType: optimized.contentType,
-    upsert: false,
-  });
+  try {
+    const optimized = await optimizeLogo(file);
+    const path = `${activeCompanyId}/logo-${crypto.randomUUID()}-${optimized.fileName}`;
+    const upload = await supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
+      contentType: optimized.contentType,
+      upsert: false,
+    });
 
-  if (upload.error) {
-    if (errorElement) errorElement.textContent = upload.error.message.includes("Bucket not found")
-      ? "Run supabase/step-next-company-logo.sql before uploading a logo."
-      : upload.error.message;
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Upload Logo";
+    if (upload.error) {
+      throw new Error(upload.error.message.includes("Bucket not found")
+        ? "Run supabase/step-next-company-logo.sql before uploading a logo."
+        : upload.error.message);
     }
-    return;
-  }
 
-  const { error } = await supabaseClient.rpc("set_company_logo", {
-    target_company_id: activeCompanyId,
-    new_logo_path: path,
-  });
+    const { error } = await supabaseClient.rpc("set_company_logo", {
+      target_company_id: activeCompanyId,
+      new_logo_path: path,
+    });
 
-  if (error) {
-    if (errorElement) errorElement.textContent = isColumnSchemaError(error, ["logo_path"])
-      ? "Run supabase/step-next-company-logo.sql before saving a company logo."
-      : error.message.includes("set_company_logo")
+    if (error) {
+      await removeUploadedObject("company-logos", path);
+      throw new Error(isColumnSchemaError(error, ["logo_path"])
+        ? "Run supabase/step-next-company-logo.sql before saving a company logo."
+        : error.message.includes("set_company_logo")
         ? "Run supabase/step-next-company-logo.sql, then try uploading the logo again."
-        : error.message;
+        : error.message);
+    }
+
+    const activeCompany = companies.find((company) => company.id === activeCompanyId);
+    if (activeCompany) {
+      activeCompany.logo_path = path;
+      activeCompany.logoUrl = URL.createObjectURL(optimized.blob);
+    }
+
+    showNotice("Company logo uploaded.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not upload logo.";
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Upload Logo";
     }
-    return;
   }
-
-  const activeCompany = companies.find((company) => company.id === activeCompanyId);
-  if (activeCompany) {
-    activeCompany.logo_path = path;
-    activeCompany.logoUrl = URL.createObjectURL(optimized.blob);
-  }
-
-  showNotice("Company logo uploaded.");
-  await render();
 }
 
 async function createLocation(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
   const errorElement = document.querySelector("#location-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
   const name = String(new FormData(formElement).get("name") || "").trim();
   if (!name) return;
   if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
 
-  const { data, error } = await supabaseClient
-    .from("locations")
-    .insert({ company_id: activeCompanyId, name })
-    .select("id")
-    .single();
+  try {
+    const { data, error } = await supabaseClient
+      .from("locations")
+      .insert({ company_id: activeCompanyId, name })
+      .select("id")
+      .single();
 
-  if (error) {
-    if (isColumnSchemaError(error, ["locations"])) locationsReady = false;
-    if (errorElement) errorElement.textContent = locationsReady ? error.message : "Run supabase/step-next-locations.sql before adding locations.";
+    if (error) {
+      if (isColumnSchemaError(error, ["locations"])) locationsReady = false;
+      throw new Error(locationsReady ? error.message : "Run supabase/step-next-locations.sql before adding locations.");
+    }
+
+    activeLocationId = data.id;
+    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+    showNotice("Location added.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not add location.";
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Location";
+    }
+  }
+}
+
+async function createPublicRequestLink(locationId) {
+  const errorElement = document.querySelector("#public-request-link-error");
+  const button = document.querySelector(`[data-create-public-request-link="${CSS.escape(locationId)}"]`);
+  if (errorElement) errorElement.textContent = "";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Creating...";
+  }
+
+  try {
+    const { error } = await supabaseClient.rpc("ensure_location_request_link", {
+      target_location_id: locationId,
+    });
+
+    if (error) {
+      publicRequestLinksReady = false;
+      throw new Error(error.message.includes("ensure_location_request_link")
+        ? "Run supabase/step-next-public-request-links.sql before creating QR request links."
+        : error.message);
+    }
+
+    showNotice("Location request QR link ready.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not create QR request link.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Create QR Link";
+    }
+  }
+}
+
+async function disablePublicRequestLink(linkId) {
+  const confirmed = window.confirm("Disable this public request QR link? Posted codes for this location will stop accepting requests until you reactivate it.");
+  if (!confirmed) return;
+  await setPublicRequestLinkActive(linkId, false);
+}
+
+async function setPublicRequestLinkActive(linkId, isActive) {
+  await updatePublicRequestLink(
+    linkId,
+    { is_active: Boolean(isActive) },
+    isActive ? "Request link reactivated." : "Request link disabled.",
+  );
+}
+
+async function regeneratePublicRequestLink(linkId) {
+  const confirmed = window.confirm("Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
+  if (!confirmed) return;
+
+  await updatePublicRequestLink(
+    linkId,
+    {
+      token: generatePublicRequestToken(),
+      is_active: true,
+    },
+    "Request QR regenerated.",
+  );
+}
+
+async function updatePublicRequestLink(linkId, patch, successMessage) {
+  const errorElement = document.querySelector("#public-request-link-error");
+  if (errorElement) errorElement.textContent = "";
+
+  if (!linkId || !activeCompanyId) {
+    if (errorElement) errorElement.textContent = "Select a company before updating request links.";
     return;
   }
 
-  activeLocationId = data.id;
-  localStorage.setItem("maintainops.activeLocationId", activeLocationId);
-  showNotice("Location added.");
+  const { data, error } = await supabaseClient
+    .from("public_request_links")
+    .update({
+      ...patch,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", linkId)
+    .eq("company_id", activeCompanyId)
+    .select("id");
+
+  if (error) {
+    if (errorElement) errorElement.textContent = error.message;
+    return;
+  }
+
+  if (!data?.length) {
+    if (errorElement) {
+      errorElement.textContent = "Could not update the request link. Check that your company role is admin or manager.";
+    }
+    return;
+  }
+
+  showNotice(successMessage);
   await render();
+}
+
+function generatePublicRequestToken() {
+  if (window.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(18);
+    window.crypto.getRandomValues(bytes);
+    return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  }
+
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
+function savePublicAppUrl(event) {
+  event.preventDefault();
+  const errorElement = document.querySelector("#public-request-link-error");
+  const rawUrl = String(new FormData(event.currentTarget).get("public_app_url") || "").trim();
+  if (errorElement) errorElement.textContent = "";
+
+  if (!rawUrl) {
+    publicAppUrlOverride = "";
+    localStorage.removeItem("maintainops.publicAppUrl");
+    showNotice("Public app URL cleared.");
+    renderWorkspace();
+    return;
+  }
+
+  const normalizedUrl = normalizePublicAppUrl(rawUrl);
+  if (!normalizedUrl) {
+    if (errorElement) errorElement.textContent = "Enter the full https:// GitHub Pages URL where MaintainOps opens.";
+    return;
+  }
+
+  publicAppUrlOverride = normalizedUrl;
+  localStorage.setItem("maintainops.publicAppUrl", publicAppUrlOverride);
+  showNotice("Public app URL saved.");
+  renderWorkspace();
 }
 
 async function createPart(event) {
@@ -4627,90 +5671,132 @@ async function createPart(event) {
     submitButton.disabled = true;
     submitButton.textContent = "Adding...";
   }
-  const payload = {
-    company_id: activeCompanyId,
-    location_id: activeLocationDatabaseId(),
-    name: form.get("name"),
-    sku: form.get("sku") || null,
-    supplier_name: form.get("supplier_name") || null,
-    quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
-    reorder_point: Number(form.get("reorder_point")) || 0,
-    unit_cost: Number(form.get("unit_cost")) || 0,
-  };
-  let { data, error } = await supabaseClient.from("parts").insert(payload).select("id").single();
-  if (error && isMissingColumnError(error, "location_id")) {
-    locationsReady = false;
-    delete payload.location_id;
-    const retry = await supabaseClient.from("parts").insert(payload).select("id").single();
-    data = retry.data;
-    error = retry.error;
-  }
-  if (error && isMissingColumnError(error, "supplier_name")) {
-    partSuppliersReady = false;
-    delete payload.supplier_name;
-    const retry = await supabaseClient.from("parts").insert(payload).select("id").single();
-    data = retry.data;
-    error = retry.error;
-  }
-  if (error && isMissingColumnError(error, "unit_cost")) {
-    partCostsReady = false;
-    if (errorElement) {
-      errorElement.textContent = "Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then add the part again.";
+  let saveTimeoutId;
+
+  try {
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: activeLocationDatabaseId(),
+      name: String(form.get("name") || "").trim(),
+      sku: String(form.get("sku") || "").trim() || null,
+      supplier_name: String(form.get("supplier_name") || "").trim() || null,
+      quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
+      reorder_point: Number(form.get("reorder_point")) || 0,
+      unit_cost: Number(form.get("unit_cost")) || 0,
+    };
+
+    if (!payload.company_id) {
+      throw new Error("Choose a company before adding parts.");
     }
-    if (submitButton) {
+    if (!payload.name) {
+      throw new Error("Part name is required.");
+    }
+
+    const saveTimeout = new Promise((_, reject) => {
+      saveTimeoutId = setTimeout(() => reject(new Error("Part save timed out. Check your connection and try again.")), 20000);
+    });
+    const { data, error } = await Promise.race([
+      supabaseClient.from("parts").insert(payload).select("id").single(),
+      saveTimeout,
+    ]);
+    clearTimeout(saveTimeoutId);
+
+    if (error && isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      throw new Error(databaseSetupRequiredMessage("saving parts by location"));
+    }
+    if (error && isMissingColumnError(error, "supplier_name")) {
+      partSuppliersReady = false;
+      throw new Error("Source/vendor is not active in Supabase yet. Run supabase/step-next-part-suppliers.sql, then add the part again.");
+    }
+    if (error && isMissingColumnError(error, "unit_cost")) {
+      partCostsReady = false;
+      throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then add the part again.");
+    }
+    if (error) {
+      throw error;
+    }
+
+    activePartId = data?.id || null;
+    resetPartsPage();
+    showNotice("Part added.");
+    formElement.reset();
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not add part.";
+  } finally {
+    if (saveTimeoutId) clearTimeout(saveTimeoutId);
+    if (submitButton && submitButton.isConnected) {
       submitButton.disabled = false;
       submitButton.textContent = "Add Part";
     }
-    return;
   }
-  if (error) {
-    if (errorElement) errorElement.textContent = error.message;
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Add Part";
-    }
-    return;
-  }
-  activePartId = data?.id || null;
-  resetPartsPage();
-  showNotice("Part added.");
-  await render();
 }
 
 async function restockPart(event) {
   event.preventDefault();
   const formElement = event.target;
+  const submitButton = formElement.querySelector("button[type='submit']");
   const part = parts.find((item) => item.id === formElement.dataset.restockPart);
   const quantity = Number(new FormData(formElement).get("quantity")) || 0;
   if (!part || quantity <= 0) return;
+  const originalText = submitButton?.textContent || "Restock";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
 
-  const { error } = await supabaseClient
-    .from("parts")
-    .update({ quantity_on_hand: (Number(part.quantity_on_hand) || 0) + quantity })
-    .eq("id", part.id)
-    .eq("company_id", activeCompanyId);
-  if (error) return alert(error.message);
-  showNotice("Part restocked.");
-  await render();
+  try {
+    const { error } = await supabaseClient
+      .from("parts")
+      .update({ quantity_on_hand: (Number(part.quantity_on_hand) || 0) + quantity })
+      .eq("id", part.id)
+      .eq("company_id", activeCompanyId);
+    if (error) throw error;
+    showNotice("Part restocked.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not restock part: ${error.message || error}`, "warning");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  }
 }
 
 async function usePartFromInventory(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
   const part = parts.find((item) => item.id === formElement.dataset.usePart);
   const quantity = Number(new FormData(formElement).get("quantity")) || 0;
   if (!part || quantity <= 0) return;
+  const originalText = submitButton?.textContent || "Use";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
 
-  const currentQuantity = Number(part.quantity_on_hand) || 0;
-  const nextQuantity = Math.max(0, currentQuantity - quantity);
-  const { error } = await supabaseClient
-    .from("parts")
-    .update({ quantity_on_hand: nextQuantity })
-    .eq("id", part.id)
-    .eq("company_id", activeCompanyId);
-  if (error) return alert(error.message);
-  showNotice("Part used.");
-  await render();
+  try {
+    const currentQuantity = Number(part.quantity_on_hand) || 0;
+    const nextQuantity = Math.max(0, currentQuantity - quantity);
+    const { error } = await supabaseClient
+      .from("parts")
+      .update({ quantity_on_hand: nextQuantity })
+      .eq("id", part.id)
+      .eq("company_id", activeCompanyId);
+    if (error) throw error;
+    showNotice("Part used.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not use part: ${error.message || error}`, "warning");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  }
 }
 
 async function updatePart(event) {
@@ -4718,8 +5804,14 @@ async function updatePart(event) {
   const formElement = event.currentTarget;
   const partId = formElement.dataset.editPart;
   const errorElement = document.querySelector(`[data-part-edit-error="${partId}"]`);
+  const submitButton = formElement.querySelector("button[type='submit']");
   const form = new FormData(formElement);
   if (errorElement) errorElement.textContent = "";
+  const originalText = submitButton?.textContent || "Save Part";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
 
   const payload = {
     name: form.get("name"),
@@ -4730,39 +5822,112 @@ async function updatePart(event) {
     unit_cost: Number(form.get("unit_cost")) || 0,
   };
 
-  let { error } = await supabaseClient
-    .from("parts")
-    .update(payload)
-    .eq("id", partId)
-    .eq("company_id", activeCompanyId);
-
-  if (error && isMissingColumnError(error, "supplier_name")) {
-    partSuppliersReady = false;
-    delete payload.supplier_name;
-    const retry = await supabaseClient
+  try {
+    const { error } = await supabaseClient
       .from("parts")
       .update(payload)
       .eq("id", partId)
       .eq("company_id", activeCompanyId);
-    error = retry.error;
-  }
 
-  if (error && isMissingColumnError(error, "unit_cost")) {
-    partCostsReady = false;
-    if (errorElement) {
-      errorElement.textContent = "Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then save again.";
+    if (error && isMissingColumnError(error, "supplier_name")) {
+      partSuppliersReady = false;
+      throw new Error("Source/vendor is not active in Supabase yet. Run supabase/step-next-part-suppliers.sql, then save again.");
     }
+
+    if (error && isMissingColumnError(error, "unit_cost")) {
+      partCostsReady = false;
+      throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then save again.");
+    }
+
+    if (error) throw error;
+
+    activePartId = null;
+    showNotice("Part saved.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not save part.";
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  }
+}
+
+function requestDeletePart(id) {
+  if (!canDeleteParts()) {
+    alert("Only company admins and managers can delete parts.");
     return;
   }
 
-  if (error) {
-    if (errorElement) errorElement.textContent = error.message;
+  const part = parts.find((item) => item.id === id);
+  if (!part) return;
+  if (partUsageRows(id).length) {
+    alert("This part has work order usage history and is kept for traceability.");
     return;
   }
 
-  activePartId = null;
-  showNotice("Part saved.");
-  await render();
+  pendingDeletePartId = id;
+  renderWorkspace();
+}
+
+async function deletePart(id) {
+  if (!canDeleteParts()) {
+    alert("Only company admins and managers can delete parts.");
+    return;
+  }
+
+  const part = parts.find((item) => item.id === id);
+  const errorElement = document.querySelector("#part-delete-error");
+  if (errorElement) errorElement.textContent = "";
+  if (!part) return;
+
+  if (partUsageRows(id).length) {
+    if (errorElement) errorElement.textContent = "This part has work order usage history and is kept for traceability.";
+    return;
+  }
+  const confirmButton = document.querySelector(`[data-confirm-delete-part="${CSS.escape(id)}"]`);
+  if (confirmButton) {
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Deleting...";
+  }
+
+  try {
+    const documentPaths = (partDocumentsByPartId[id] || [])
+      .map((document) => document.storage_path)
+      .filter(Boolean);
+    if (documentPaths.length) {
+      const storageDelete = await supabaseClient.storage.from("part-documents").remove(documentPaths);
+      if (storageDelete.error) {
+        throw new Error(`Could not remove filed receipts/invoices: ${storageDelete.error.message}`);
+      }
+    }
+
+    const { error } = await supabaseClient
+      .from("parts")
+      .delete()
+      .eq("id", id)
+      .eq("company_id", activeCompanyId);
+
+    if (error) {
+      throw new Error(error.message.includes("violates foreign key constraint")
+        ? "This part is used on a work order and cannot be deleted."
+        : error.message);
+    }
+
+    activePartId = null;
+    pendingDeletePartId = null;
+    showNotice("Part deleted.");
+    await render();
+  } catch (error) {
+    if (errorElement) {
+      errorElement.textContent = error.message || "Could not delete part.";
+    }
+    if (confirmButton) {
+      confirmButton.disabled = false;
+      confirmButton.textContent = "Permanently Delete";
+    }
+  }
 }
 
 async function renamePartSource(event) {
@@ -4790,28 +5955,30 @@ async function renamePartSource(event) {
     submitButton.textContent = "Renaming...";
   }
 
-  const { error } = await supabaseClient
-    .from("parts")
-    .update({ supplier_name: newSource || null })
-    .eq("company_id", activeCompanyId)
-    .eq("supplier_name", oldSource);
+  try {
+    const { error } = await supabaseClient
+      .from("parts")
+      .update({ supplier_name: newSource || null })
+      .eq("company_id", activeCompanyId)
+      .eq("supplier_name", oldSource);
 
-  if (error) {
-    if (isMissingColumnError(error, "supplier_name")) partSuppliersReady = false;
-    if (errorElement) {
-      errorElement.textContent = partSuppliersReady
+    if (error) {
+      if (isMissingColumnError(error, "supplier_name")) partSuppliersReady = false;
+      throw new Error(partSuppliersReady
         ? error.message
-        : "Run supabase/step-next-part-suppliers.sql before editing sources.";
+        : "Run supabase/step-next-part-suppliers.sql before editing sources.");
     }
+
+    showNotice("Part source updated.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not update part source.";
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Rename";
     }
-    return;
   }
-
-  showNotice("Part source updated.");
-  await render();
 }
 
 async function uploadPartDocument(event) {
@@ -4839,45 +6006,41 @@ async function uploadPartDocument(event) {
 
   const fileName = safeFileName(file.name || "part-file");
   const path = `${activeCompanyId}/${partId}/${crypto.randomUUID()}-${fileName}`;
-  const upload = await supabaseClient.storage.from("part-documents").upload(path, file, {
-    contentType: file.type || "application/octet-stream",
-    upsert: false,
-  });
+  try {
+    const upload = await supabaseClient.storage.from("part-documents").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
 
-  if (upload.error) {
-    if (errorElement) errorElement.textContent = upload.error.message;
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Attach File";
-    }
-    return;
-  }
+    if (upload.error) throw upload.error;
 
-  const { error } = await supabaseClient.from("part_documents").insert({
-    company_id: activeCompanyId,
-    part_id: partId,
-    uploaded_by: session.user.id,
-    storage_path: path,
-    file_name: fileName,
-    content_type: file.type || null,
-  });
+    const { error } = await supabaseClient.from("part_documents").insert({
+      company_id: activeCompanyId,
+      part_id: partId,
+      uploaded_by: session.user.id,
+      storage_path: path,
+      file_name: fileName,
+      content_type: file.type || null,
+    });
 
-  if (error) {
-    if (isColumnSchemaError(error, ["part_documents"])) partDocumentsReady = false;
-    if (errorElement) {
-      errorElement.textContent = partDocumentsReady
+    if (error) {
+      await removeUploadedObject("part-documents", path);
+      if (isColumnSchemaError(error, ["part_documents"])) partDocumentsReady = false;
+      throw new Error(partDocumentsReady
         ? error.message
-        : "Run supabase/step-next-part-documents.sql before attaching files.";
+        : "Run supabase/step-next-part-documents.sql before attaching files.");
     }
+
+    showNotice("Part file attached.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not attach file.";
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Attach File";
     }
-    return;
   }
-
-  showNotice("Part file attached.");
-  await render();
 }
 
 async function recordPartUsed(event) {
@@ -4891,40 +6054,28 @@ async function recordPartUsed(event) {
     submitButton.textContent = "Recording...";
   }
 
-  const form = new FormData(formElement);
-  const partId = form.get("part_id");
-  const quantity = Number(form.get("quantity_used")) || 1;
-  const part = parts.find((item) => item.id === partId);
-  if (!activeWorkOrderId) {
-    if (errorElement) errorElement.textContent = "Open a work order before recording parts.";
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Record Part Used";
-    }
-    return;
-  }
-  if (!part) {
-    if (errorElement) errorElement.textContent = "Choose a part first.";
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Record Part Used";
-    }
-    return;
-  }
+  try {
+    const form = new FormData(formElement);
+    const partId = form.get("part_id");
+    const quantity = Number(form.get("quantity_used")) || 1;
+    const part = parts.find((item) => item.id === partId);
+    if (!activeWorkOrderId) throw new Error("Open a work order before recording parts.");
+    if (!part) throw new Error("Choose a part first.");
 
-  const usageError = await addPartUsageToWorkOrder(activeWorkOrderId, part, quantity);
-  if (usageError) {
-    if (errorElement) errorElement.textContent = usageError.message;
+    const usageError = await addPartUsageToWorkOrder(activeWorkOrderId, part, quantity);
+    if (usageError) throw usageError;
+
+    showNotice("Part recorded on work order.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not record part used.";
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Record Part Used";
     }
-    return;
   }
-
-  await render();
 }
-
 async function addPartUsageToWorkOrder(workOrderId, part, quantity) {
   if (!part) return new Error("Choose a part first.");
 
@@ -4955,38 +6106,60 @@ async function addPartUsageToWorkOrder(workOrderId, part, quantity) {
 async function generatePreventiveWorkOrder(scheduleId) {
   const schedule = preventiveSchedules.find((item) => item.id === scheduleId);
   if (!schedule) return;
+  const button = document.querySelector(`[data-generate-pm="${CSS.escape(scheduleId)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Generating...";
+  }
 
-  const { data, error } = await insertWithOptionalProcedure("work_orders", {
-    company_id: activeCompanyId,
-    location_id: locationIdForAsset(schedule.asset_id),
-    asset_id: schedule.asset_id,
-    title: schedule.title,
-    description: `Generated from preventive schedule: ${schedule.frequency}.`,
-    priority: "medium",
-    type: "preventive",
-    status: "open",
-    due_at: schedule.next_due_at,
-    ...procedureColumn(schedule.procedure_template_id),
-    created_by: session.user.id,
-  }, { returnSingle: true });
+  try {
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: locationIdForAsset(schedule.asset_id),
+      asset_id: schedule.asset_id,
+      title: schedule.title,
+      description: `Generated from preventive schedule: ${schedule.frequency}.`,
+      priority: "medium",
+      type: "preventive",
+      status: "open",
+      due_at: schedule.next_due_at,
+      ...procedureColumn(schedule.procedure_template_id),
+      created_by: session.user.id,
+    };
+    applySafetyRequirementPayload(payload);
+    applySafetyCheckPayload(payload, false);
+    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
 
-  if (error) return alert(error.message);
+    if (error) throw error;
 
-  await supabaseClient
-    .from("preventive_schedules")
-    .update({ next_due_at: nextDueDate(schedule.next_due_at, schedule.frequency) })
-    .eq("id", schedule.id)
-    .eq("company_id", activeCompanyId);
+    const scheduleUpdate = await supabaseClient
+      .from("preventive_schedules")
+      .update({ next_due_at: nextDueDate(schedule.next_due_at, schedule.frequency) })
+      .eq("id", schedule.id)
+      .eq("company_id", activeCompanyId);
 
-  activeWorkOrderId = data.id;
-  await render();
+    activeWorkOrderId = data.id;
+    activeSection = "work";
+    if (scheduleUpdate.error) {
+      showNotice(`PM work generated, but next due date did not update: ${scheduleUpdate.error.message}`, "warning");
+    } else {
+      showNotice("PM work order generated.");
+    }
+    await render();
+  } catch (error) {
+    showNotice(`Could not generate PM work: ${error.message || error}`, "warning");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Generate Work";
+    }
+  }
 }
 
 async function createFollowUpWorkOrder(sourceId) {
   const source = workOrders.find((item) => item.id === sourceId);
   if (!source) return;
 
-  const { data, error } = await insertWithOptionalProcedure("work_orders", {
+  const payload = {
     company_id: activeCompanyId,
     location_id: source.location_id || locationIdForAsset(source.asset_id),
     asset_id: source.asset_id || null,
@@ -5002,10 +6175,13 @@ async function createFollowUpWorkOrder(sourceId) {
     status: "open",
     due_at: null,
     created_by: session.user.id,
-  }, { returnSingle: true });
+  };
+  applySafetyRequirementPayload(payload);
+  applySafetyCheckPayload(payload, false);
+  const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
   if (error) return alert(error.message);
 
-  await updateWorkOrderWithFallback({ follow_up_needed: false }, source.id);
+  await updateWorkOrderSafely({ follow_up_needed: false }, source.id);
   await recordWorkOrderEvent(source.id, "follow_up_created", `Follow-up work order created: ${data.title}.`);
   await recordWorkOrderEvent(data.id, "created", `Created as follow-up from ${source.title}.`);
   activeSection = "work";
@@ -5031,108 +6207,89 @@ async function createWorkOrder(event) {
   submitButton.textContent = "Creating...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const form = new FormData(formElement);
-  const status = form.get("status") || "open";
-  let assetId = form.get("asset_id") || null;
-  const newAssetName = String(form.get("new_asset_name") || "").trim();
-  if (newAssetName) {
-    const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, "running");
-    if (assetError) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Create Work Order";
-      if (errorTarget) errorTarget.textContent = `Could not add equipment: ${assetError.message}`;
+  try {
+    const form = new FormData(formElement);
+    const status = form.get("status") || "open";
+    let assetId = form.get("asset_id") || null;
+    const newAssetName = String(form.get("new_asset_name") || "").trim();
+    if (newAssetName) {
+      const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, "running");
+      if (assetError) {
+        if (errorTarget) errorTarget.textContent = `Could not add equipment: ${assetError.message}`;
+        return;
+      }
+      assetId = newAsset.id;
+    }
+    if (status === "completed" && assetRequiresSafety(assetId) && form.get("safety_devices_checked") !== "on") {
+      if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to equipment.";
       return;
     }
-    assetId = newAsset.id;
-  }
-  if (status === "completed" && assetId && form.get("safety_devices_checked") !== "on") {
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: locationIdForAsset(assetId),
+      title: form.get("title"),
+      description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
+      asset_id: assetId,
+      priority: form.get("priority"),
+      type: form.get("type") || "reactive",
+      due_at: form.get("due_at") || null,
+      assigned_to: assignedUserFromForm(form),
+      ...procedureColumn(form.get("procedure_template_id")),
+      status,
+      created_by: session.user.id,
+      actual_minutes: Number(form.get("actual_minutes")) || 0,
+      failure_cause: form.get("failure_cause") || null,
+      resolution_summary: form.get("resolution_summary") || null,
+      follow_up_needed: form.get("follow_up_needed") === "on",
+      completion_notes: form.get("completion_notes") || null,
+      completed_at: status === "completed" ? new Date().toISOString() : null,
+    };
+    applySafetyRequirementPayload(payload);
+    applySafetyCheckPayload(payload, status === "completed" && payload.safety_check_required && form.get("safety_devices_checked") === "on");
+    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+    if (error) {
+      if (errorTarget) errorTarget.textContent = `Could not create work order: ${friendlyWorkOrderSaveError(error)}`;
+      return;
+    }
+    await recordWorkOrderEvent(data.id, "created", "Work order created.");
+    if (newAssetName) {
+      await recordWorkOrderEvent(data.id, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
+    }
+
+    const warnings = [];
+    const partId = form.get("part_id");
+    if (partId) {
+      const part = parts.find((item) => item.id === partId);
+      const partError = await addPartUsageToWorkOrder(data.id, part, Number(form.get("quantity_used")) || 1);
+      if (partError) warnings.push(`part usage failed: ${partError.message}`);
+      else await recordWorkOrderEvent(data.id, "part_used", `Part recorded: ${part?.name || "Part"}.`);
+    }
+
+    const photo = form.get("photo");
+    if (photo && photo.name) {
+      const photoError = await addPhotoToWorkOrder(data.id, photo);
+      if (photoError) warnings.push(`photo upload failed: ${photoError.message}`);
+      else await recordWorkOrderEvent(data.id, "photo_uploaded", `Photo uploaded: ${photo.name}.`);
+    }
+
+    const initialComment = String(form.get("initial_comment") || "").trim();
+    if (initialComment) {
+      const commentError = await addCommentToWorkOrder(data.id, initialComment);
+      if (commentError) warnings.push(`comment failed: ${commentError.message}`);
+      else await recordWorkOrderEvent(data.id, "comment_added", "Initial comment added.");
+    }
+
+    activeWorkOrderId = data.id;
+    createWorkOrderMode = false;
+    showNotice(warnings.length ? `Work order created with warning: ${warnings[0]}` : "Work order created.", warnings.length ? "warning" : "success");
+    await render();
+  } catch (error) {
+    if (errorTarget) errorTarget.textContent = `Could not create work order: ${error.message || error}`;
+    else alert(error.message || error);
+  } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Create Work Order";
-    if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to equipment.";
-    return;
   }
-  const payload = {
-    company_id: activeCompanyId,
-    location_id: locationIdForAsset(assetId),
-    title: form.get("title"),
-    description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
-    asset_id: assetId,
-    priority: form.get("priority"),
-    type: form.get("type") || "reactive",
-    due_at: form.get("due_at") || null,
-    assigned_to: assignedUserFromForm(form),
-    ...procedureColumn(form.get("procedure_template_id")),
-    status,
-    created_by: session.user.id,
-    actual_minutes: Number(form.get("actual_minutes")) || 0,
-    failure_cause: form.get("failure_cause") || null,
-    resolution_summary: form.get("resolution_summary") || null,
-    follow_up_needed: form.get("follow_up_needed") === "on",
-    completion_notes: form.get("completion_notes") || null,
-    completed_at: status === "completed" ? new Date().toISOString() : null,
-  };
-  if (status === "completed") applySafetyCheckPayload(payload, Boolean(assetId));
-  let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error && isColumnSchemaError(error, ["location_id", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
-    const fallbackPayload = { ...payload };
-    if (isMissingColumnError(error, "location_id")) {
-      locationsReady = false;
-      delete fallbackPayload.location_id;
-    }
-    if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
-      safetyChecksReady = false;
-      delete fallbackPayload.safety_devices_checked;
-      delete fallbackPayload.safety_devices_checked_at;
-    }
-    delete fallbackPayload.actual_minutes;
-    delete fallbackPayload.failure_cause;
-    delete fallbackPayload.resolution_summary;
-    delete fallbackPayload.follow_up_needed;
-    delete fallbackPayload.completion_notes;
-    delete fallbackPayload.completed_at;
-    const retry = await insertWithOptionalProcedure("work_orders", fallbackPayload, { returnSingle: true });
-    data = retry.data;
-    error = retry.error;
-  }
-  if (error) {
-    submitButton.disabled = false;
-    submitButton.textContent = "Create Work Order";
-    if (errorTarget) errorTarget.textContent = `Could not create work order: ${friendlyWorkOrderSaveError(error)}`;
-    return;
-  }
-  await recordWorkOrderEvent(data.id, "created", "Work order created.");
-  if (newAssetName) {
-    await recordWorkOrderEvent(data.id, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
-  }
-
-  const warnings = [];
-  const partId = form.get("part_id");
-  if (partId) {
-    const part = parts.find((item) => item.id === partId);
-    const partError = await addPartUsageToWorkOrder(data.id, part, Number(form.get("quantity_used")) || 1);
-    if (partError) warnings.push(`part usage failed: ${partError.message}`);
-    else await recordWorkOrderEvent(data.id, "part_used", `Part recorded: ${part?.name || "Part"}.`);
-  }
-
-  const photo = form.get("photo");
-  if (photo && photo.name) {
-    const photoError = await addPhotoToWorkOrder(data.id, photo);
-    if (photoError) warnings.push(`photo upload failed: ${photoError.message}`);
-    else await recordWorkOrderEvent(data.id, "photo_uploaded", `Photo uploaded: ${photo.name}.`);
-  }
-
-  const initialComment = String(form.get("initial_comment") || "").trim();
-  if (initialComment) {
-    const commentError = await addCommentToWorkOrder(data.id, initialComment);
-    if (commentError) warnings.push(`comment failed: ${commentError.message}`);
-    else await recordWorkOrderEvent(data.id, "comment_added", "Initial comment added.");
-  }
-
-  activeWorkOrderId = data.id;
-  createWorkOrderMode = false;
-  showNotice("Work order created.");
-  if (warnings.length) alert(`Work order created, but ${warnings.join("; ")}.`);
-  await render();
 }
 
 function openQuickFixForRequest(requestId) {
@@ -5158,134 +6315,119 @@ async function createQuickFix(event) {
   submitButton.disabled = true;
   submitButton.textContent = "Saving...";
 
-  const form = new FormData(formElement);
-  const title = String(form.get("title") || "").trim();
-  const resolutionSummary = String(form.get("resolution_summary") || "").trim();
-  const quickFixSummary = resolutionSummary || title;
-  const markCompleted = form.get("mark_completed") === "on";
-  const machineDown = form.get("machine_down") === "on";
-  let assetId = form.get("asset_id") || null;
-  const newAssetName = String(form.get("new_asset_name") || "").trim();
-  if (newAssetName) {
-    const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, machineDown ? "offline" : "running");
-    if (assetError) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Log Quick Fix";
-      if (errorTarget) errorTarget.textContent = assetError.message;
+  try {
+    const form = new FormData(formElement);
+    const title = String(form.get("title") || "").trim();
+    const resolutionSummary = String(form.get("resolution_summary") || "").trim();
+    const quickFixSummary = resolutionSummary || title;
+    const markCompleted = form.get("mark_completed") === "on";
+    const machineDown = form.get("machine_down") === "on";
+    let assetId = form.get("asset_id") || null;
+    const newAssetName = String(form.get("new_asset_name") || "").trim();
+    if (newAssetName) {
+      const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, machineDown ? "offline" : "running");
+      if (assetError) {
+        if (errorTarget) errorTarget.textContent = assetError.message;
+        return;
+      }
+      assetId = newAsset.id;
+    }
+    if (markCompleted && assetRequiresSafety(assetId) && form.get("safety_devices_checked") !== "on") {
+      if (errorTarget) errorTarget.textContent = "Check safety devices before marking equipment work complete.";
       return;
     }
-    assetId = newAsset.id;
-  }
-  if (markCompleted && assetId && form.get("safety_devices_checked") !== "on") {
+
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: locationIdForAsset(assetId),
+      title,
+      description: descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")),
+      asset_id: assetId,
+      assigned_to: assignedUserFromForm(form, session.user.id),
+      priority: form.get("priority") || "medium",
+      type: form.get("type") || "corrective",
+      status: markCompleted ? "completed" : "open",
+      due_at: form.get("due_at") || null,
+      created_by: session.user.id,
+      ...procedureColumn(form.get("procedure_template_id")),
+      actual_minutes: 0,
+      failure_cause: form.get("failure_cause") || null,
+      resolution_summary: markCompleted ? quickFixSummary : (resolutionSummary || null),
+      follow_up_needed: form.get("follow_up_needed") === "on",
+      completion_notes: markCompleted ? quickFixSummary : null,
+      completed_at: markCompleted ? new Date().toISOString() : null,
+    };
+    applySafetyRequirementPayload(payload);
+    applySafetyCheckPayload(payload, markCompleted && payload.safety_check_required && form.get("safety_devices_checked") === "on");
+
+    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+
+    if (error) {
+      if (errorTarget) errorTarget.textContent = `Could not log quick fix: ${friendlyWorkOrderSaveError(error)}`;
+      return;
+    }
+
+    const warnings = [];
+    const partId = form.get("part_id");
+    const quantity = Number(form.get("quantity_used")) || 1;
+    if (partId) {
+      const part = parts.find((item) => item.id === partId);
+      const partError = await addPartUsageToWorkOrder(data.id, part, quantity);
+      if (partError) warnings.push(`part usage failed: ${partError.message}`);
+    }
+
+    const photo = form.get("photo");
+    if (photo && photo.name) {
+      const photoError = await addPhotoToWorkOrder(data.id, photo);
+      if (photoError) warnings.push(`photo upload failed: ${photoError.message}`);
+    }
+
+    const assetStatus = machineDown ? "offline" : form.get("asset_status");
+    if (payload.asset_id && !newAssetName && (machineDown || (markCompleted && assetStatus))) {
+      const assetError = await updateAssetStatus(payload.asset_id, assetStatus);
+      if (assetError) {
+        warnings.push(`equipment status did not update: ${assetError.message}`);
+      } else {
+        await recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Equipment marked down/offline." : `Equipment status set to ${assetStatus}.`);
+      }
+    }
+
+    await recordWorkOrderEvent(data.id, "quick_fix", markCompleted ? "Quick fix recorded as completed." : "Quick fix logged and assigned to creator.");
+    if (newAssetName) {
+      await recordWorkOrderEvent(data.id, "equipment_created", `Equipment created from Quick Fix: ${newAssetName}.`);
+    }
+    if (quickFixRequestId && requestsReady) {
+      const requestUpdate = await supabaseClient
+        .from("maintenance_requests")
+        .update({
+          status: "converted",
+          reviewed_by: session.user.id,
+          reviewed_at: new Date().toISOString(),
+          converted_work_order_id: data.id,
+        })
+        .eq("id", quickFixRequestId)
+        .eq("company_id", activeCompanyId);
+      if (requestUpdate.error) {
+        warnings.push(`request status did not update: ${requestUpdate.error.message}`);
+      } else {
+        await recordWorkOrderEvent(data.id, "request_quick_fixed", markCompleted ? "Request resolved through Quick Fix." : "Request converted to a Quick Fix work order.");
+      }
+    }
+    activeWorkOrderId = data.id;
+    activeAssetId = null;
+    createWorkOrderMode = false;
+    quickFixMode = false;
+    quickFixAssetId = null;
+    quickFixRequestId = null;
+    showNotice(warnings.length ? `Quick Fix saved with warning: ${warnings[0]}` : "Quick Fix saved.", warnings.length ? "warning" : "success");
+    await render();
+  } catch (error) {
+    if (errorTarget) errorTarget.textContent = `Could not log quick fix: ${error.message || error}`;
+    else alert(error.message || error);
+  } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Log Quick Fix";
-    if (errorTarget) errorTarget.textContent = "Check safety devices before marking equipment work complete.";
-    return;
   }
-
-  const payload = {
-    company_id: activeCompanyId,
-    location_id: locationIdForAsset(assetId),
-    title,
-    description: descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")),
-    asset_id: assetId,
-    assigned_to: assignedUserFromForm(form, session.user.id),
-    priority: form.get("priority") || "medium",
-    type: form.get("type") || "corrective",
-    status: markCompleted ? "completed" : "open",
-    due_at: form.get("due_at") || null,
-    created_by: session.user.id,
-    ...procedureColumn(form.get("procedure_template_id")),
-    actual_minutes: 0,
-    failure_cause: form.get("failure_cause") || null,
-    resolution_summary: markCompleted ? quickFixSummary : (resolutionSummary || null),
-    follow_up_needed: form.get("follow_up_needed") === "on",
-    completion_notes: markCompleted ? quickFixSummary : null,
-    completed_at: markCompleted ? new Date().toISOString() : null,
-  };
-  if (markCompleted) applySafetyCheckPayload(payload, Boolean(assetId));
-
-  let { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error && isColumnSchemaError(error, ["location_id", "assigned_to", "actual_minutes", "failure_cause", "resolution_summary", "follow_up_needed", "safety_devices_checked", "safety_devices_checked_at"])) {
-    const fallbackPayload = { ...payload };
-    if (isMissingColumnError(error, "location_id")) {
-      locationsReady = false;
-      delete fallbackPayload.location_id;
-    }
-    if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
-      safetyChecksReady = false;
-      delete fallbackPayload.safety_devices_checked;
-      delete fallbackPayload.safety_devices_checked_at;
-    }
-    delete fallbackPayload.assigned_to;
-    delete fallbackPayload.actual_minutes;
-    delete fallbackPayload.failure_cause;
-    delete fallbackPayload.resolution_summary;
-    delete fallbackPayload.follow_up_needed;
-    const retry = await insertWithOptionalProcedure("work_orders", fallbackPayload, { returnSingle: true });
-    data = retry.data;
-    error = retry.error;
-  }
-
-  if (error) {
-    submitButton.disabled = false;
-    submitButton.textContent = "Log Quick Fix";
-    if (errorTarget) errorTarget.textContent = error.message;
-    return;
-  }
-
-  const partId = form.get("part_id");
-  const quantity = Number(form.get("quantity_used")) || 1;
-  if (partId) {
-    const part = parts.find((item) => item.id === partId);
-    const partError = await addPartUsageToWorkOrder(data.id, part, quantity);
-    if (partError && errorTarget) {
-      errorTarget.textContent = `Quick fix saved, but part usage failed: ${partError.message}`;
-    }
-  }
-
-  const photo = form.get("photo");
-  if (photo && photo.name) {
-    const photoError = await addPhotoToWorkOrder(data.id, photo);
-    if (photoError && errorTarget) {
-      errorTarget.textContent = `Quick fix saved, but photo upload failed: ${photoError.message}`;
-    }
-  }
-
-  const assetStatus = machineDown ? "offline" : form.get("asset_status");
-  if (payload.asset_id && !newAssetName && (machineDown || (markCompleted && assetStatus))) {
-    const assetError = await updateAssetStatus(payload.asset_id, assetStatus);
-    if (assetError && errorTarget) {
-      errorTarget.textContent = `Quick fix saved, but equipment status did not update: ${assetError.message}`;
-    } else {
-      await recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Equipment marked down/offline." : `Equipment status set to ${assetStatus}.`);
-    }
-  }
-
-  await recordWorkOrderEvent(data.id, "quick_fix", markCompleted ? "Quick fix recorded as completed." : "Quick fix logged and assigned to creator.");
-  if (newAssetName) {
-    await recordWorkOrderEvent(data.id, "asset_created", `Asset created from Quick Fix: ${newAssetName}.`);
-  }
-  if (quickFixRequestId && requestsReady) {
-    await supabaseClient
-      .from("maintenance_requests")
-      .update({
-        status: "converted",
-        reviewed_by: session.user.id,
-        reviewed_at: new Date().toISOString(),
-        converted_work_order_id: data.id,
-      })
-      .eq("id", quickFixRequestId)
-      .eq("company_id", activeCompanyId);
-    await recordWorkOrderEvent(data.id, "request_quick_fixed", markCompleted ? "Request resolved through Quick Fix." : "Request converted to a Quick Fix work order.");
-  }
-  activeWorkOrderId = data.id;
-  activeAssetId = null;
-  createWorkOrderMode = false;
-  quickFixMode = false;
-  quickFixAssetId = null;
-  quickFixRequestId = null;
-  await render();
 }
 
 async function updateWorkOrderDetails(event) {
@@ -5314,12 +6456,15 @@ async function updateWorkOrderDetails(event) {
       follow_up_needed: form.get("follow_up_needed") === "on",
       actual_minutes: Number(form.get("actual_minutes")) || 0,
     };
-    if (previous?.status === "completed" && requiresSafetyDeviceCheck(previous) && form.has("safety_devices_checked")) {
+    payload.safety_check_required = assetRequiresSafety(previous?.asset_id || null);
+    if (previous?.status === "completed" && payload.safety_check_required && form.has("safety_devices_checked")) {
       applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
+    } else if (previous?.status === "completed" && !payload.safety_check_required) {
+      applySafetyCheckPayload(payload, false);
     } else if (previous?.status !== "completed") {
       applySafetyCheckPayload(payload, false);
     }
-    const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
+    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
     if (error) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Work Order";
@@ -5372,6 +6517,7 @@ async function updateWorkOrderQuickView(event) {
       assigned_to: assignedUserFromForm(form),
       resolution_summary: form.get("resolution_summary") || null,
     };
+    applySafetyRequirementPayload(payload);
     if (payload.status === "completed" && previous?.status !== "completed") {
       applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on");
       if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
@@ -5385,11 +6531,11 @@ async function updateWorkOrderQuickView(event) {
     if (payload.status !== "completed") {
       payload.completed_at = null;
       applySafetyCheckPayload(payload, false);
-    } else if (previous?.status === "completed" && requiresSafetyDeviceCheck(payload)) {
-      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
+    } else if (previous?.status === "completed") {
+      applySafetyCheckPayload(payload, payload.safety_check_required && (form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous)));
     }
 
-    const { error } = await updateWorkOrderWithFallback(payload, activeWorkOrderId);
+    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
     if (error) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Quick Update";
@@ -5397,10 +6543,11 @@ async function updateWorkOrderQuickView(event) {
       return;
     }
 
+    const warnings = [];
     if (payload.asset_id && form.get("machine_down") === "on") {
       const assetError = await updateAssetStatus(payload.asset_id, "offline");
-      if (assetError && errorTarget) {
-        errorTarget.textContent = `Saved work order, but equipment status did not update: ${assetError.message}`;
+      if (assetError) {
+        warnings.push(`equipment status did not update: ${assetError.message}`);
       } else {
         await recordWorkOrderEvent(activeWorkOrderId, "asset_status_updated", "Equipment marked down/offline.");
       }
@@ -5410,7 +6557,7 @@ async function updateWorkOrderQuickView(event) {
     if (newAssetName) {
       await recordWorkOrderEvent(activeWorkOrderId, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
     }
-    showNotice("Quick update saved.");
+    showNotice(warnings.length ? `Quick update saved with warning: ${warnings[0]}` : "Quick update saved.", warnings.length ? "warning" : "success");
     await render();
   } catch (error) {
     console.error("Quick update save failed", error);
@@ -5443,53 +6590,35 @@ async function completeWorkOrder(event) {
   submitButton.textContent = "Completing...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const payload = {
-    status: "completed",
-    actual_minutes: Number(form.get("actual_minutes")) || 0,
-    failure_cause: form.get("failure_cause") || null,
-    resolution_summary: form.get("resolution_summary") || null,
-    follow_up_needed: form.get("follow_up_needed") === "on",
-    completion_notes: form.get("completion_notes") || null,
-    completed_at: new Date().toISOString(),
-  };
-  if (requiresSafetyDeviceCheck(workOrder) || safetyChecked) {
-    applySafetyCheckPayload(payload, safetyChecked);
-  }
-  let { error } = await supabaseClient
-    .from("work_orders")
-    .update(payload)
-    .eq("id", activeWorkOrderId)
-    .eq("company_id", activeCompanyId);
-  if (error && isColumnSchemaError(error, ["failure_cause", "resolution_summary", "follow_up_needed"])) {
-    delete payload.failure_cause;
-    delete payload.resolution_summary;
-    delete payload.follow_up_needed;
-    const retry = await supabaseClient
-      .from("work_orders")
-      .update(payload)
-      .eq("id", activeWorkOrderId)
-      .eq("company_id", activeCompanyId);
-    error = retry.error;
-  }
-  if (error && isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at"])) {
-    safetyChecksReady = false;
-    delete payload.safety_devices_checked;
-    delete payload.safety_devices_checked_at;
-    const retry = await supabaseClient
-      .from("work_orders")
-      .update(payload)
-      .eq("id", activeWorkOrderId)
-      .eq("company_id", activeCompanyId);
-    error = retry.error;
-  }
-  if (error) {
+  try {
+    const payload = {
+      status: "completed",
+      asset_id: workOrder?.asset_id || null,
+      actual_minutes: Number(form.get("actual_minutes")) || 0,
+      failure_cause: form.get("failure_cause") || null,
+      resolution_summary: form.get("resolution_summary") || null,
+      follow_up_needed: form.get("follow_up_needed") === "on",
+      completion_notes: form.get("completion_notes") || null,
+      completed_at: new Date().toISOString(),
+    };
+    applySafetyRequirementPayload(payload);
+    applySafetyCheckPayload(payload, payload.safety_check_required && safetyChecked);
+    delete payload.asset_id;
+    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
+    if (error) {
+      if (errorTarget) errorTarget.textContent = `Could not complete work order: ${friendlyWorkOrderSaveError(error)}`;
+      return;
+    }
+    await recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed.");
+    showNotice("Work order completed.");
+    await render();
+  } catch (error) {
+    if (errorTarget) errorTarget.textContent = `Could not complete work order: ${error.message || error}`;
+    else alert(error.message || error);
+  } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Complete Work Order";
-    if (errorTarget) errorTarget.textContent = `Could not complete work order: ${friendlyWorkOrderSaveError(error)}`;
-    return;
   }
-  await recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed.");
-  await render();
 }
 
 function renderRequestForm() {
@@ -5500,108 +6629,135 @@ function renderRequestForm() {
 
 async function createRequest(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const requestPayload = {
-    company_id: activeCompanyId,
-    location_id: locationIdForAsset(form.get("asset_id") || null),
-    title: form.get("title"),
-    description: form.get("description"),
-    asset_id: form.get("asset_id") || null,
-    priority: form.get("priority"),
-    status: "submitted",
-    requested_by: session.user.id,
-  };
-
-  if (requestsReady) {
-    let { error } = await supabaseClient.from("maintenance_requests").insert(requestPayload);
-    if (error && isMissingColumnError(error, "location_id")) {
-      locationsReady = false;
-      delete requestPayload.location_id;
-      const retry = await supabaseClient.from("maintenance_requests").insert(requestPayload);
-      error = retry.error;
-    }
-    if (error) return alert(error.message);
-    activeSection = "requests";
-    localStorage.setItem("maintainops.activeSection", activeSection);
-    await render();
-    return;
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#request-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
   }
 
-  const fallbackPayload = {
-    ...requestPayload,
-    type: "request",
-    status: "open",
-    created_by: session.user.id,
-  };
-  delete fallbackPayload.requested_by;
-  const { data, error } = await supabaseClient.from("work_orders").insert(fallbackPayload).select().single();
-  if (error) return alert(error.message);
-  activeWorkOrderId = data.id;
-  await recordWorkOrderEvent(data.id, "request_created", "Request submitted.");
-  await render();
+  try {
+    const form = new FormData(formElement);
+    const requestPayload = {
+      company_id: activeCompanyId,
+      location_id: locationIdForAsset(form.get("asset_id") || null),
+      title: form.get("title"),
+      description: form.get("description"),
+      asset_id: form.get("asset_id") || null,
+      priority: form.get("priority"),
+      status: "submitted",
+      requested_by: session.user.id,
+    };
+
+    if (!requestsReady) {
+      throw new Error("Run supabase/step-next-maintenance-requests.sql before submitting requests.");
+    }
+    const { error } = await supabaseClient.from("maintenance_requests").insert(requestPayload);
+    if (error && isMissingColumnError(error, "location_id")) {
+      locationsReady = false;
+      throw new Error(databaseSetupRequiredMessage("saving requests by location"));
+    }
+    if (error) throw error;
+    activeSection = "requests";
+    localStorage.setItem("maintainops.activeSection", activeSection);
+    showNotice("Request submitted.");
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not submit request.";
+    else alert(error.message || error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit Request";
+    }
+  }
 }
 
 async function convertRequestToWorkOrder(requestId) {
   const request = maintenanceRequests.find((item) => item.id === requestId);
   if (!request) return;
+  const button = document.querySelector(`[data-convert-request="${CSS.escape(requestId)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Converting...";
+  }
 
-  const { data, error } = await insertWithOptionalProcedure("work_orders", {
-    company_id: activeCompanyId,
-    location_id: request.location_id || locationIdForAsset(request.asset_id),
-    title: request.title,
-    description: request.description,
-    asset_id: request.asset_id || null,
-    priority: request.priority || "medium",
-    type: "reactive",
-    status: "open",
-    created_by: session.user.id,
-  }, { returnSingle: true });
-  if (error) return alert(error.message);
+  try {
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: request.location_id || locationIdForAsset(request.asset_id),
+      title: request.title,
+      description: request.description,
+      asset_id: request.asset_id || null,
+      priority: request.priority || "medium",
+      type: "reactive",
+      status: "open",
+      created_by: session.user.id,
+    };
+    applySafetyRequirementPayload(payload);
+    applySafetyCheckPayload(payload, false);
+    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+    if (error) throw error;
 
-  const { error: updateError } = await supabaseClient
-    .from("maintenance_requests")
-    .update({
-      status: "converted",
-      reviewed_by: session.user.id,
-      reviewed_at: new Date().toISOString(),
-      converted_work_order_id: data.id,
-    })
-    .eq("id", requestId)
-    .eq("company_id", activeCompanyId);
-  if (updateError) return alert(updateError.message);
+    const { error: updateError } = await supabaseClient
+      .from("maintenance_requests")
+      .update({
+        status: "converted",
+        reviewed_by: session.user.id,
+        reviewed_at: new Date().toISOString(),
+        converted_work_order_id: data.id,
+      })
+      .eq("id", requestId)
+      .eq("company_id", activeCompanyId);
+    if (updateError) throw updateError;
 
-  activeSection = "work";
-  activeWorkOrderId = data.id;
-  localStorage.setItem("maintainops.activeSection", activeSection);
-  await recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order.");
-  await render();
+    activeSection = "work";
+    activeWorkOrderId = data.id;
+    localStorage.setItem("maintainops.activeSection", activeSection);
+    await recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order.");
+    showNotice("Request converted to work order.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not convert request: ${error.message || error}`, "warning");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Convert to Work Order";
+    }
+  }
 }
 
 async function updateWorkOrderStatus(event) {
   const previous = workOrders.find((item) => item.id === activeWorkOrderId);
-  const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(activeWorkOrderId);
-  await setWorkOrderStatus(activeWorkOrderId, event.target.value);
-  if (event.target.value === "completed" && requiresSafetyDeviceCheck(previous) && !hasCompletedSafetyDeviceCheck(previous) && !safetyCheckedNow) {
-    event.target.value = previous?.status || "open";
-  }
+  event.target.disabled = true;
+  const saved = await setWorkOrderStatus(activeWorkOrderId, event.target.value);
+  if (!saved) event.target.value = previous?.status || "open";
+  event.target.disabled = false;
 }
 
 async function saveStepResult(event) {
   const field = event.target;
   const value = field.type === "checkbox" ? (field.checked ? "checked" : "") : field.value;
-  const { error } = await supabaseClient.from("work_order_step_results").upsert({
-    company_id: activeCompanyId,
-    work_order_id: field.dataset.workOrderId,
-    procedure_step_id: field.dataset.stepResult,
-    completed_by: value ? session.user.id : null,
-    value,
-    completed_at: value ? new Date().toISOString() : null,
-  }, { onConflict: "work_order_id,procedure_step_id" });
+  field.disabled = true;
+  try {
+    const { error } = await supabaseClient.from("work_order_step_results").upsert({
+      company_id: activeCompanyId,
+      work_order_id: field.dataset.workOrderId,
+      procedure_step_id: field.dataset.stepResult,
+      completed_by: value ? session.user.id : null,
+      value,
+      completed_at: value ? new Date().toISOString() : null,
+    }, { onConflict: "work_order_id,procedure_step_id" });
 
-  if (error) return alert(error.message);
-  await recordWorkOrderEvent(field.dataset.workOrderId, "checklist_updated", "Procedure checklist updated.");
-  await loadStepResults();
-  renderWorkspace();
+    if (error) throw error;
+    await recordWorkOrderEvent(field.dataset.workOrderId, "checklist_updated", "Procedure checklist updated.");
+    await loadStepResults();
+    renderWorkspace();
+  } catch (error) {
+    showNotice(`Could not save checklist step: ${error.message || error}`, "warning");
+    field.disabled = false;
+  }
 }
 
 async function setWorkOrderStatus(id, status) {
@@ -5612,26 +6768,30 @@ async function setWorkOrderStatus(id, status) {
     activeWorkOrderId = id;
     showNotice("Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.", "warning");
     await render();
-    return;
+    return false;
   }
   const payload = {
     status,
+    asset_id: workOrder?.asset_id || null,
     completed_at: status === "completed" ? new Date().toISOString() : null,
   };
-  if (status === "completed" && hasSafetyCheck) {
-    applySafetyCheckPayload(payload, true);
+  applySafetyRequirementPayload(payload);
+  if (status === "completed") {
+    applySafetyCheckPayload(payload, payload.safety_check_required && hasSafetyCheck);
   } else if (status !== "completed") {
     applySafetyCheckPayload(payload, false);
   }
-  const { error } = await supabaseClient
-    .from("work_orders")
-    .update(payload)
-    .eq("id", id)
-    .eq("company_id", activeCompanyId);
-  if (error) return alert(error.message);
+  delete payload.asset_id;
+  const { error } = await updateWorkOrderSafely(payload, id);
+  if (error) {
+    showNotice(`Could not update status: ${friendlyWorkOrderSaveError(error)}`, "warning");
+    return false;
+  }
   activeWorkOrderId = id;
   await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
+  showNotice(`Status changed to ${statusLabel(status)}.`);
   await render();
+  return true;
 }
 
 function requestDeleteWorkOrder(id) {
@@ -5740,17 +6900,23 @@ async function createComment(event) {
   submitButton.textContent = "Adding...";
   if (errorTarget) errorTarget.textContent = "";
 
-  const error = await addCommentToWorkOrder(activeWorkOrderId, body);
+  try {
+    const error = await addCommentToWorkOrder(activeWorkOrderId, body);
 
-  if (error) {
+    if (error) {
+      if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
+      return;
+    }
+
+    await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
+    showNotice("Comment added.");
+    await render();
+  } catch (error) {
+    if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
+  } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Add Comment";
-    if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
-    return;
   }
-
-  await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
-  await render();
 }
 
 async function addCommentToWorkOrder(workOrderId, body) {
@@ -5775,15 +6941,43 @@ async function addCommentToWorkOrder(workOrderId, body) {
 
 async function uploadPhoto(event) {
   event.preventDefault();
-  const hasProfile = await ensureProfileForActiveCompany();
-  if (!hasProfile) return alert(appError);
-  const file = new FormData(event.target).get("photo");
-  if (!file || !file.name) return;
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const errorTarget = document.querySelector("#photo-error");
+  if (errorTarget) errorTarget.textContent = "";
+  const file = new FormData(formElement).get("photo");
+  if (!file || !file.name) {
+    if (errorTarget) errorTarget.textContent = "Choose a photo first.";
+    return;
+  }
 
-  const error = await addPhotoToWorkOrder(activeWorkOrderId, file);
-  if (error) return alert(error.message);
-  await recordWorkOrderEvent(activeWorkOrderId, "photo_uploaded", `Photo uploaded: ${file.name}.`);
-  await render();
+  submitButton.disabled = true;
+  submitButton.textContent = "Uploading...";
+  try {
+    const hasProfile = await ensureProfileForActiveCompany();
+    if (!hasProfile) throw new Error(appError);
+
+    const error = await addPhotoToWorkOrder(activeWorkOrderId, file);
+    if (error) throw error;
+    await recordWorkOrderEvent(activeWorkOrderId, "photo_uploaded", `Photo uploaded: ${file.name}.`);
+    showNotice("Photo uploaded.");
+    await render();
+  } catch (error) {
+    if (errorTarget) errorTarget.textContent = `Could not upload photo: ${error.message || error}`;
+    else alert(error.message || error);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Upload Photo";
+  }
+}
+
+async function removeUploadedObject(bucket, path) {
+  try {
+    const { error } = await supabaseClient.storage.from(bucket).remove([path]);
+    if (error) console.warn(`Could not remove uploaded ${bucket} object`, error);
+  } catch (error) {
+    console.warn(`Could not remove uploaded ${bucket} object`, error);
+  }
 }
 
 async function addPhotoToWorkOrder(workOrderId, file) {
@@ -5818,6 +7012,7 @@ async function addPhotoToWorkOrder(workOrderId, file) {
     const retry = await supabaseClient.from("work_order_photos").insert(photoRecord);
     error = retry.error;
   }
+  if (error) await removeUploadedObject("work-order-photos", path);
   return error || null;
 }
 
@@ -5919,8 +7114,12 @@ function safeFileName(fileName) {
 function statusLabel(status) {
   if (status === "active" || status === "all") return "Active";
   if (status === "overdue") return "Overdue";
+  if (status === "completed_month") return "Completed Month";
+  if (status === "completed_week") return "Done This Week";
   if (status === "open") return "New";
-  return String(status || "").replace("_", " ");
+  return String(status || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function activeCompanyRole() {
@@ -5933,6 +7132,14 @@ function canManageTeam() {
 
 function canDeleteWorkOrders() {
   return activeCompanyRole() === "admin";
+}
+
+function canDeleteParts() {
+  return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canDeleteEquipment() {
+  return ["admin", "manager"].includes(activeCompanyRole());
 }
 
 function visibleNavItems() {
@@ -5984,7 +7191,15 @@ function isVendorAssigned(workOrder) {
 }
 
 function requiresSafetyDeviceCheck(workOrderOrPayload) {
-  return Boolean(workOrderOrPayload?.asset_id || workOrderOrPayload?.assets?.name);
+  if (!workOrderOrPayload) return false;
+  if (Object.prototype.hasOwnProperty.call(workOrderOrPayload, "safety_check_required")) {
+    return Boolean(workOrderOrPayload.safety_check_required);
+  }
+  if (workOrderOrPayload.asset_id) return assetRequiresSafety(workOrderOrPayload.asset_id);
+  if (Object.prototype.hasOwnProperty.call(workOrderOrPayload.assets || {}, "safety_devices_required")) {
+    return workOrderOrPayload.assets.safety_devices_required !== false;
+  }
+  return Boolean(workOrderOrPayload.assets?.name);
 }
 
 function hasCompletedSafetyDeviceCheck(workOrderOrPayload) {
@@ -6005,6 +7220,17 @@ function syncSafetyDeviceChecks(event) {
 function applySafetyCheckPayload(payload, checked) {
   payload.safety_devices_checked = Boolean(checked);
   payload.safety_devices_checked_at = checked ? new Date().toISOString() : null;
+  return payload;
+}
+
+function assetRequiresSafety(assetId) {
+  if (!assetId) return false;
+  const asset = assets.find((item) => item.id === assetId);
+  return asset ? asset.safety_devices_required !== false : true;
+}
+
+function applySafetyRequirementPayload(payload) {
+  payload.safety_check_required = assetRequiresSafety(payload.asset_id);
   return payload;
 }
 
@@ -6198,15 +7424,23 @@ function overdueWorkOrders() {
 }
 
 function completedThisWeek() {
+  return workOrders.filter(isCompletedThisWeek);
+}
+
+function isCompletedThisWeek(workOrder) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 7);
-  return workOrders.filter((workOrder) => workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
+  return Boolean(workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
 }
 
 function completedThisMonth() {
+  return workOrders.filter(isCompletedThisMonth);
+}
+
+function isCompletedThisMonth(workOrder) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  return workOrders.filter((workOrder) => workOrder.completed_at && new Date(workOrder.completed_at) >= monthStart);
+  return Boolean(workOrder.completed_at && new Date(workOrder.completed_at) >= monthStart);
 }
 
 function averageCompletionMinutes(source = workOrders) {
@@ -6326,6 +7560,12 @@ function startOfToday() {
 
 function lowStockParts() {
   return parts.filter(isLowStockPart);
+}
+
+function partUsageRows(partId) {
+  return Object.values(partsUsedByWorkOrder)
+    .flat()
+    .filter((row) => row.part_id === partId);
 }
 
 function isLowStockPart(part) {

@@ -113,15 +113,26 @@ with check (
   private.is_company_member(company_id)
   and exists (
     select 1
-    from public.message_threads mt
-    where mt.id = message_thread_members.thread_id
-      and mt.company_id = message_thread_members.company_id
+    from public.company_members target_member
+    where target_member.company_id = message_thread_members.company_id
+      and target_member.user_id = message_thread_members.user_id
   )
   and exists (
     select 1
-    from public.company_members cm
-    where cm.company_id = message_thread_members.company_id
-      and cm.user_id = message_thread_members.user_id
+    from public.message_threads mt
+    where mt.id = message_thread_members.thread_id
+      and mt.company_id = message_thread_members.company_id
+      and (
+        mt.created_by = auth.uid()
+        or private.is_message_thread_member(mt.id, mt.company_id)
+        or exists (
+          select 1
+          from public.company_members actor_member
+          where actor_member.company_id = message_thread_members.company_id
+            and actor_member.user_id = auth.uid()
+            and actor_member.role in ('admin', 'manager')
+        )
+      )
   )
 );
 

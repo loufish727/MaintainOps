@@ -13,7 +13,7 @@ The first target is a focused MVP for small maintenance teams:
 
 Open [index.html](index.html) in a browser to run the current prototype.
 
-The current app is now Supabase-backed. Before running it, execute [supabase/schema.sql](supabase/schema.sql) in Supabase and add your project credentials to [supabase-config.js](supabase-config.js).
+The current app is Supabase-backed. Before running it, execute [supabase/schema.sql](supabase/schema.sql), then the current `supabase/step-next-*.sql` files in order, and add your project credentials to [supabase-config.js](supabase-config.js). The current setup order is listed in [docs/supabase-architecture.md](docs/supabase-architecture.md).
 
 Start with [docs/10-step-process.md](docs/10-step-process.md), then see:
 

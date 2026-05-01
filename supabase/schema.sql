@@ -29,6 +29,7 @@ create table if not exists public.locations (
   company_id uuid not null references public.companies(id) on delete cascade,
   name text not null,
   created_at timestamptz not null default now(),
+  unique (company_id, id),
   unique (company_id, name)
 );
 
@@ -46,8 +47,11 @@ create table if not exists public.assets (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
   location_id uuid references public.locations(id) on delete set null,
+  parent_asset_id uuid references public.assets(id) on delete set null,
   name text not null,
   asset_code text,
+  asset_type text not null default 'machine' check (asset_type in ('machine', 'secondary_machine', 'component', 'shop_item')),
+  safety_devices_required boolean not null default true,
   location text,
   status text not null default 'running' check (status in ('running', 'watch', 'degraded', 'offline')),
   created_at timestamptz not null default now(),
@@ -75,6 +79,7 @@ create table if not exists public.work_orders (
   completed_at timestamptz,
   safety_devices_checked boolean not null default false,
   safety_devices_checked_at timestamptz,
+  safety_check_required boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -167,6 +172,30 @@ add column if not exists assigned_to uuid references auth.users(id) on delete se
 alter table public.assets
 add column if not exists location_id uuid references public.locations(id) on delete set null;
 
+alter table public.assets
+add column if not exists parent_asset_id uuid references public.assets(id) on delete set null;
+
+alter table public.assets
+add column if not exists asset_type text not null default 'machine';
+
+alter table public.assets
+add column if not exists safety_devices_required boolean not null default true;
+
+alter table public.assets
+drop constraint if exists assets_asset_type_check;
+
+update public.assets
+set asset_type = 'secondary_machine'
+where asset_type = 'attachment';
+
+update public.assets
+set asset_type = 'component'
+where asset_type = 'tooling';
+
+update public.assets
+set asset_type = 'shop_item'
+where asset_type = 'support';
+
 alter table public.work_orders
 add column if not exists location_id uuid references public.locations(id) on delete set null;
 
@@ -175,6 +204,67 @@ add column if not exists location_id uuid references public.locations(id) on del
 
 alter table public.parts
 add column if not exists location_id uuid references public.locations(id) on delete set null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'locations_company_id_id_key'
+      and conrelid = 'public.locations'::regclass
+  ) then
+    alter table public.locations
+    add constraint locations_company_id_id_key unique (company_id, id);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'assets_company_location_fkey'
+      and conrelid = 'public.assets'::regclass
+  ) then
+    alter table public.assets
+    add constraint assets_company_location_fkey
+    foreign key (company_id, location_id)
+    references public.locations(company_id, id)
+    not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'work_orders_company_location_fkey'
+      and conrelid = 'public.work_orders'::regclass
+  ) then
+    alter table public.work_orders
+    add constraint work_orders_company_location_fkey
+    foreign key (company_id, location_id)
+    references public.locations(company_id, id)
+    not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'preventive_schedules_company_location_fkey'
+      and conrelid = 'public.preventive_schedules'::regclass
+  ) then
+    alter table public.preventive_schedules
+    add constraint preventive_schedules_company_location_fkey
+    foreign key (company_id, location_id)
+    references public.locations(company_id, id)
+    not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'parts_company_location_fkey'
+      and conrelid = 'public.parts'::regclass
+  ) then
+    alter table public.parts
+    add constraint parts_company_location_fkey
+    foreign key (company_id, location_id)
+    references public.locations(company_id, id)
+    not valid;
+  end if;
+end;
+$$;
 
 alter table public.work_orders
 add column if not exists type text not null default 'reactive'
@@ -194,6 +284,12 @@ add column if not exists safety_devices_checked boolean not null default false;
 
 alter table public.work_orders
 add column if not exists safety_devices_checked_at timestamptz;
+
+alter table public.work_orders
+add column if not exists safety_check_required boolean not null default false;
+
+alter table public.work_orders
+drop constraint if exists work_orders_asset_completion_safety_check;
 
 insert into public.locations (company_id, name)
 select c.id, 'Main Location'
@@ -238,12 +334,17 @@ on public.companies(created_by, name_key);
 
 do $$
 begin
+  alter table public.assets
+    add constraint assets_asset_type_check
+    check (asset_type in ('machine', 'secondary_machine', 'component', 'shop_item'))
+    not valid;
+
   if not exists (
-    select 1 from pg_constraint where conname = 'work_orders_asset_completion_safety_check'
+    select 1 from pg_constraint where conname = 'assets_not_own_parent_check'
   ) then
-    alter table public.work_orders
-      add constraint work_orders_asset_completion_safety_check
-      check (status <> 'completed' or asset_id is null or safety_devices_checked)
+    alter table public.assets
+      add constraint assets_not_own_parent_check
+      check (parent_asset_id is null or parent_asset_id <> id)
       not valid;
   end if;
 
@@ -293,15 +394,37 @@ begin
   end if;
 end $$;
 
+update public.work_orders wo
+set safety_check_required = coalesce(a.safety_devices_required, true)
+from public.assets a
+where wo.asset_id = a.id
+  and wo.company_id = a.company_id;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'work_orders_required_safety_completion_check'
+  ) then
+    alter table public.work_orders
+      add constraint work_orders_required_safety_completion_check
+      check (status <> 'completed' or safety_check_required = false or safety_devices_checked)
+      not valid;
+  end if;
+end $$;
+
 create index if not exists company_members_user_id_idx on public.company_members(user_id);
 create index if not exists company_members_company_id_idx on public.company_members(company_id);
 create index if not exists locations_company_id_idx on public.locations(company_id);
 create index if not exists profiles_company_id_idx on public.profiles(company_id);
 create index if not exists assets_company_id_idx on public.assets(company_id);
 create index if not exists assets_location_id_idx on public.assets(location_id);
+create index if not exists assets_parent_asset_id_idx on public.assets(parent_asset_id);
+create index if not exists assets_company_parent_asset_id_idx on public.assets(company_id, parent_asset_id);
+create index if not exists assets_company_asset_type_idx on public.assets(company_id, asset_type);
 create index if not exists work_orders_company_id_idx on public.work_orders(company_id);
 create index if not exists work_orders_location_id_idx on public.work_orders(location_id);
 create index if not exists work_orders_assigned_to_idx on public.work_orders(assigned_to);
+create index if not exists work_orders_safety_check_required_idx on public.work_orders(company_id, safety_check_required);
 create index if not exists work_order_comments_company_id_idx on public.work_order_comments(company_id);
 create index if not exists work_order_photos_company_id_idx on public.work_order_photos(company_id);
 create index if not exists preventive_schedules_company_id_idx on public.preventive_schedules(company_id);
@@ -322,12 +445,12 @@ grant select, insert, update on public.companies to authenticated;
 grant select, insert, update on public.company_members to authenticated;
 grant select, insert, update on public.locations to authenticated;
 grant select, insert, update on public.profiles to authenticated;
-grant select, insert, update on public.assets to authenticated;
+grant select, insert, update, delete on public.assets to authenticated;
 grant select, insert, update, delete on public.work_orders to authenticated;
 grant select, insert on public.work_order_comments to authenticated;
 grant select, insert on public.work_order_photos to authenticated;
 grant select, insert, update on public.preventive_schedules to authenticated;
-grant select, insert, update on public.parts to authenticated;
+grant select, insert, update, delete on public.parts to authenticated;
 grant select, insert on public.work_order_parts to authenticated;
 grant select, insert on public.part_documents to authenticated;
 grant select, insert on public.work_order_events to authenticated;
@@ -349,10 +472,43 @@ as $$
   );
 $$;
 
+create or replace function private.location_belongs_to_company(target_company_id uuid, target_location_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select target_location_id is null
+    or exists (
+      select 1
+      from public.locations l
+      where l.id = target_location_id
+        and l.company_id = target_company_id
+    );
+$$;
+
+create or replace function private.asset_belongs_to_company(target_company_id uuid, target_asset_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select target_asset_id is null
+    or exists (
+      select 1
+      from public.assets a
+      where a.id = target_asset_id
+        and a.company_id = target_company_id
+    );
+$$;
+
 create or replace function public.create_company(company_name text)
 returns uuid
 language plpgsql
 security definer
+set search_path = public, private
 as $$
 declare
   new_company_id uuid;
@@ -385,6 +541,7 @@ create or replace function public.ensure_company_profile(target_company_id uuid)
 returns void
 language plpgsql
 security definer
+set search_path = public, private
 as $$
 declare
   user_name text;
@@ -521,14 +678,37 @@ drop policy if exists "Members can create assets" on public.assets;
 create policy "Members can create assets"
 on public.assets for insert
 to authenticated
-with check (private.is_company_member(company_id));
+with check (
+  private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
+  and private.asset_belongs_to_company(company_id, parent_asset_id)
+);
 
 drop policy if exists "Members can update assets" on public.assets;
 create policy "Members can update assets"
 on public.assets for update
 to authenticated
 using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+with check (
+  private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
+  and private.asset_belongs_to_company(company_id, parent_asset_id)
+);
+
+drop policy if exists "Managers can delete unused assets" on public.assets;
+create policy "Managers can delete unused assets"
+on public.assets for delete
+to authenticated
+using (
+  private.is_company_member(company_id)
+  and exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = assets.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager')
+  )
+);
 
 drop policy if exists "Members can read work orders" on public.work_orders;
 create policy "Members can read work orders"
@@ -542,6 +722,7 @@ on public.work_orders for insert
 to authenticated
 with check (
   private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
   and created_by = auth.uid()
   and (
     assigned_to is null
@@ -568,6 +749,7 @@ to authenticated
 using (private.is_company_member(company_id))
 with check (
   private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
   and (
     assigned_to is null
     or exists (
@@ -652,6 +834,7 @@ on public.preventive_schedules for insert
 to authenticated
 with check (
   private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
   and created_by = auth.uid()
   and exists (
     select 1 from public.assets a
@@ -667,6 +850,7 @@ to authenticated
 using (private.is_company_member(company_id))
 with check (
   private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
   and exists (
     select 1 from public.assets a
     where a.id = asset_id
@@ -684,14 +868,41 @@ drop policy if exists "Members can create parts" on public.parts;
 create policy "Members can create parts"
 on public.parts for insert
 to authenticated
-with check (private.is_company_member(company_id));
+with check (
+  private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
+);
 
 drop policy if exists "Members can update parts" on public.parts;
 create policy "Members can update parts"
 on public.parts for update
 to authenticated
 using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+with check (
+  private.is_company_member(company_id)
+  and private.location_belongs_to_company(company_id, location_id)
+);
+
+drop policy if exists "Managers can delete unused parts" on public.parts;
+create policy "Managers can delete unused parts"
+on public.parts for delete
+to authenticated
+using (
+  private.is_company_member(company_id)
+  and exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = parts.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager')
+  )
+  and not exists (
+    select 1
+    from public.work_order_parts wop
+    where wop.part_id = parts.id
+      and wop.company_id = parts.company_id
+  )
+);
 
 drop policy if exists "Members can read work order parts" on public.work_order_parts;
 create policy "Members can read work order parts"
@@ -787,6 +998,16 @@ using (
   and private.is_company_member((storage.foldername(name))[1]::uuid)
 );
 
+drop policy if exists "Upload owners can delete work order photos" on storage.objects;
+create policy "Upload owners can delete work order photos"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'work-order-photos'
+  and private.is_company_member((storage.foldername(name))[1]::uuid)
+  and owner_id = (select auth.uid()::text)
+);
+
 drop policy if exists "Admins can delete work order photos" on storage.objects;
 create policy "Admins can delete work order photos"
 on storage.objects for delete
@@ -818,6 +1039,16 @@ to authenticated
 using (
   bucket_id = 'part-documents'
   and private.is_company_member((storage.foldername(name))[1]::uuid)
+);
+
+drop policy if exists "Upload owners can delete part documents" on storage.objects;
+create policy "Upload owners can delete part documents"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'part-documents'
+  and private.is_company_member((storage.foldername(name))[1]::uuid)
+  and owner_id = (select auth.uid()::text)
 );
 
 drop policy if exists "Admins can upload company logos" on storage.objects;
