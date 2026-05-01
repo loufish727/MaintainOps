@@ -962,6 +962,46 @@ function renderWorkspace() {
   if (partsPage < 1) partsPage = 1;
   const pagedParts = visibleParts.slice((partsPage - 1) * PARTS_PER_PAGE, partsPage * PARTS_PER_PAGE);
   const visibleMembers = filteredMembers();
+  const renderCommandStack = (variant = "desktop") => {
+    const isMobile = variant === "mobile";
+    const suffix = isMobile ? "-mobile" : "";
+    return `
+      <div class="command-stack ${isMobile ? "mobile-command-stack" : "desktop-command-stack"}">
+        <header class="topbar">
+          <div class="topbar-main">
+            <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
+            <div class="company-banner-title">
+              ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
+              <div>
+                <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
+                <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
+              </div>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>
+            <details class="topbar-more">
+              <summary>More</summary>
+              <div>
+                <button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>
+                <button class="secondary-button request-action-button" id="show-request${suffix}" data-command-action="request" type="button">Submit Request</button>
+                <button class="secondary-button export-action-button" id="export-csv${suffix}" data-command-action="export-csv" type="button">Export CSV</button>
+              </div>
+            </details>
+          </div>
+        </header>
+
+        ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
+        ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
+
+        <label class="search-bar">
+          Search workspace
+          <input id="workspace-search${suffix}" class="workspace-search-input" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
+        </label>
+      </div>
+    `;
+  };
   app.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
@@ -988,46 +1028,14 @@ function renderWorkspace() {
           <button class="secondary-button" id="new-company" type="button">New Company</button>
           <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
         </details>
+        ${renderCommandStack("mobile")}
         <nav class="section-nav" aria-label="Workspace sections">
           ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" && totalUnreadMessages() ? `<b class="nav-badge">${totalUnreadMessages()}</b>` : ""}</button>`).join("")}
         </nav>
       </aside>
 
       <main class="workspace">
-        <div class="command-stack">
-          <header class="topbar">
-            <div class="topbar-main">
-              <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
-              <div class="company-banner-title">
-                ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
-                <div>
-                  <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
-                  <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
-                </div>
-              </div>
-            </div>
-            <div class="topbar-actions">
-              <button class="primary-button quick-fix-button" id="show-quick-fix" type="button">Quick Fix</button>
-              <details class="topbar-more">
-                <summary>More</summary>
-                <div>
-                  <button class="primary-button work-action-button" id="show-create-work-order" type="button">New Work Order</button>
-                  <button class="secondary-button request-action-button" id="show-request" type="button">Submit Request</button>
-                  <button class="secondary-button export-action-button" id="export-csv" type="button">Export CSV</button>
-                </div>
-              </details>
-            </div>
-          </header>
-
-          ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
-          ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
-          ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
-
-          <label class="search-bar">
-            Search workspace
-            <input id="workspace-search" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
-          </label>
-        </div>
+        ${renderCommandStack("desktop")}
 
         ${showGlobalSearch ? renderGlobalSearchResults(globalResults) : ""}
 
@@ -4066,40 +4074,49 @@ function bindWorkspaceEvents() {
       renderWorkspace();
     });
   });
-  document.querySelector("#show-quick-fix").addEventListener("click", () => {
-    activeWorkOrderId = null;
-    activeAssetId = null;
-    createWorkOrderMode = false;
-    quickFixMode = true;
-    quickFixAssetId = null;
-    quickFixRequestId = null;
-    activeSection = "mywork";
-    localStorage.setItem("maintainops.activeSection", activeSection);
-    renderWorkspace();
+  document.querySelectorAll("[data-command-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.commandAction === "quick-fix") {
+        activeWorkOrderId = null;
+        activeAssetId = null;
+        createWorkOrderMode = false;
+        quickFixMode = true;
+        quickFixAssetId = null;
+        quickFixRequestId = null;
+        activeSection = "mywork";
+        localStorage.setItem("maintainops.activeSection", activeSection);
+        renderWorkspace();
+        return;
+      }
+      if (button.dataset.commandAction === "create-work-order") {
+        activeWorkOrderId = null;
+        activeAssetId = null;
+        createWorkOrderMode = true;
+        quickFixMode = false;
+        quickFixAssetId = null;
+        quickFixRequestId = null;
+        activeSection = "work";
+        localStorage.setItem("maintainops.activeSection", activeSection);
+        renderWorkspace();
+        return;
+      }
+      if (button.dataset.commandAction === "request") {
+        activeWorkOrderId = null;
+        activeAssetId = null;
+        createWorkOrderMode = false;
+        quickFixMode = false;
+        quickFixAssetId = null;
+        quickFixRequestId = null;
+        activeSection = "requests";
+        localStorage.setItem("maintainops.activeSection", activeSection);
+        renderWorkspace();
+        return;
+      }
+      if (button.dataset.commandAction === "export-csv") {
+        exportActiveSectionCsv();
+      }
+    });
   });
-  document.querySelector("#show-create-work-order").addEventListener("click", () => {
-    activeWorkOrderId = null;
-    activeAssetId = null;
-    createWorkOrderMode = true;
-    quickFixMode = false;
-    quickFixAssetId = null;
-    quickFixRequestId = null;
-    activeSection = "work";
-    localStorage.setItem("maintainops.activeSection", activeSection);
-    renderWorkspace();
-  });
-  document.querySelector("#show-request").addEventListener("click", () => {
-    activeWorkOrderId = null;
-    activeAssetId = null;
-    createWorkOrderMode = false;
-    quickFixMode = false;
-    quickFixAssetId = null;
-    quickFixRequestId = null;
-    activeSection = "requests";
-    localStorage.setItem("maintainops.activeSection", activeSection);
-    renderWorkspace();
-  });
-  document.querySelector("#export-csv").addEventListener("click", exportActiveSectionCsv);
 
   document.querySelectorAll("[data-setup-action]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -4256,16 +4273,19 @@ function bindWorkspaceEvents() {
     });
   }
 
-  const searchInput = document.querySelector("#workspace-search");
-  searchInput.addEventListener("input", () => {
-    searchQuery = searchInput.value;
-    localStorage.setItem("maintainops.searchQuery", searchQuery);
-    resetWorkOrderPage();
-    resetPartsPage();
-    renderWorkspace();
-    const nextSearchInput = document.querySelector("#workspace-search");
-    nextSearchInput.focus();
-    nextSearchInput.setSelectionRange(searchQuery.length, searchQuery.length);
+  document.querySelectorAll(".workspace-search-input").forEach((searchInput) => {
+    searchInput.addEventListener("input", () => {
+      const activeSearchId = searchInput.id;
+      searchQuery = searchInput.value;
+      localStorage.setItem("maintainops.searchQuery", searchQuery);
+      resetWorkOrderPage();
+      resetPartsPage();
+      renderWorkspace();
+      const nextSearchInput = document.querySelector(`#${activeSearchId}`);
+      if (!nextSearchInput) return;
+      nextSearchInput.focus();
+      nextSearchInput.setSelectionRange(searchQuery.length, searchQuery.length);
+    });
   });
 
   document.querySelectorAll(".work-card").forEach((card) => {
