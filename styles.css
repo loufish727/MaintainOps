@@ -881,6 +881,41 @@ button.gauge-readout {
     0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.part-search-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 34%, var(--line));
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--rel-parts-ink) 10%, transparent), transparent 64%),
+    var(--surface-2);
+  color: var(--rel-parts-ink);
+  font-size: 0.78rem;
+  font-weight: 560;
+  margin: 0 0 12px;
+  padding: 9px 10px 10px;
+}
+
+.part-search-bar label {
+  display: grid;
+  gap: 5px;
+}
+
+.part-search-bar input {
+  min-height: 42px;
+  border-color: color-mix(in srgb, var(--rel-parts-ink) 38%, var(--line));
+  background: rgba(0,0,0,0.2);
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
+.part-search-bar button {
+  min-height: 42px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   text-transform: uppercase;
@@ -1792,6 +1827,12 @@ textarea {
   font-size: 0.78rem;
 }
 
+.card-assign-form.is-saving select,
+.card-assign-form.is-saving button {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .pagination-bar {
   display: flex;
   align-items: center;
@@ -1952,6 +1993,11 @@ textarea {
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   overflow: hidden;
+  padding: 0;
+}
+
+.work-detail-section:not([open]) {
+  min-height: 46px;
 }
 
 .work-detail-section > summary {
@@ -1963,8 +2009,13 @@ textarea {
   padding: 10px 12px;
   cursor: pointer;
   color: var(--ink);
-  font-weight: 850;
+  font-weight: 620;
+  line-height: 1.2;
   list-style: none;
+}
+
+.work-detail-section:not([open]) > summary {
+  height: 44px;
 }
 
 .work-detail-section > summary::-webkit-details-marker {
@@ -1986,6 +2037,23 @@ textarea {
 
 .work-detail-section[open] > summary::after {
   content: "-";
+}
+
+.work-detail-section.relationship-detail:not([open]) {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.work-detail-section.relationship-detail:not([open]) > summary {
+  margin: 0;
+  background: transparent;
+}
+
+.work-detail-section[open].relationship-detail {
+  padding: 12px;
+}
+
+.work-detail-section[open].relationship-detail > summary {
+  margin: -12px -12px 12px;
 }
 
 .work-detail-section > form,
@@ -2455,7 +2523,21 @@ textarea {
   border-left: 4px solid transparent;
   border-radius: 8px;
   background: var(--surface-3);
+  color: var(--ink);
+  cursor: pointer;
   padding: 10px;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.asset-health:hover,
+.asset-health.active {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    var(--surface-3);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+  transform: translateY(-1px);
 }
 
 .asset-health span {
@@ -3156,7 +3238,7 @@ textarea {
 
 .parts-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -3253,6 +3335,34 @@ textarea {
     var(--surface);
   padding: 14px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+}
+
+.part-tile {
+  grid-template-rows: 1fr auto;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  cursor: pointer;
+}
+
+.part-tile:hover,
+.part-tile:focus {
+  border-color: color-mix(in srgb, var(--rel-parts-ink) 58%, var(--line));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    0 0 0 3px color-mix(in srgb, var(--rel-parts-ink) 16%, transparent);
+  outline: none;
+}
+
+.part-tile-open {
+  align-self: end;
+  justify-self: start;
+  border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 34%, transparent);
+  border-radius: 999px;
+  background: var(--rel-parts-bg);
+  color: var(--rel-parts-ink);
+  padding: 4px 9px;
+  font-size: 0.76rem;
+  font-weight: 560;
 }
 
 .part-card.low-stock {
@@ -3367,6 +3477,12 @@ textarea {
 
 .part-card p {
   margin-bottom: 0;
+  color: var(--muted);
+}
+
+.part-card-meta {
+  display: grid;
+  gap: 3px;
   color: var(--muted);
 }
 
@@ -5055,6 +5171,14 @@ textarea:focus {
     font-weight: 520;
   }
 
+  .work-detail-section:not([open]) {
+    min-height: 40px;
+  }
+
+  .work-detail-section:not([open]) > summary {
+    height: 38px;
+  }
+
   .work-detail-section > summary::after {
     width: 22px;
     height: 22px;
@@ -5126,12 +5250,102 @@ textarea:focus {
     font-size: 1.05rem;
   }
 
+  .parts-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .part-search-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-bottom: 8px;
+    padding: 7px 8px 8px;
+    font-size: 0.72rem;
+  }
+
+  .part-search-bar input {
+    min-height: 36px;
+    font-size: 0.88rem;
+  }
+
+  .part-card {
+    grid-template-rows: 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    padding: 7px 8px;
+    border-left-width: 3px;
+  }
+
+  .part-card .chip-row {
+    gap: 3px;
+    max-height: 22px;
+    overflow: hidden;
+  }
+
+  .part-card .chip {
+    min-height: 19px;
+    padding: 2px 6px;
+    font-size: 0.62rem;
+  }
+
+  .part-card h3 {
+    margin: 2px 0 1px;
+    font-size: 0.84rem;
+    line-height: 1.15;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .part-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 7px;
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+
+  .part-card-meta span:nth-child(3),
   .part-file-count {
-    font-size: 0.8rem;
+    display: none;
+  }
+
+  .part-card small {
+    margin-top: 2px;
+    font-size: 0.7rem;
+  }
+
+  .part-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .part-quantity-form {
-    grid-template-columns: 1fr auto;
+    align-items: center;
+    grid-template-columns: 44px 1fr;
+    gap: 4px;
+  }
+
+  .part-quantity-form input,
+  .part-quantity-form button,
+  .part-edit-button {
+    min-height: 29px;
+    padding: 4px 7px;
+    border-radius: 7px;
+    font-size: 0.74rem;
+  }
+
+  .part-card > .part-edit-button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .part-tile-open {
+    padding: 3px 8px;
+    font-size: 0.7rem;
   }
 
   .part-detail-shell {
