@@ -95,6 +95,13 @@ let appNotice = "";
 let appNoticeTone = "success";
 let noticeTimer;
 
+document.addEventListener("click", (event) => {
+  const confirmPartDeleteButton = event.target.closest("[data-confirm-delete-part]");
+  if (!confirmPartDeleteButton) return;
+  event.preventDefault();
+  deletePart(confirmPartDeleteButton.dataset.confirmDeletePart);
+});
+
 init();
 
 async function init() {
@@ -387,9 +394,18 @@ async function renderPublicRequestQrPage(token) {
     </section>
   `;
 
-  const { data, error } = await supabaseClient.rpc("get_public_request_intake", { request_token: token });
-  const intake = Array.isArray(data) ? data[0] : data;
-  if (error || !intake) {
+  let intake = null;
+  try {
+    const { data, error } = await withOperationTimeout(
+      supabaseClient.rpc("get_public_request_intake", { request_token: token }),
+      "Request QR lookup timed out."
+    );
+    intake = Array.isArray(data) ? data[0] : data;
+    if (error || !intake) {
+      renderPublicRequestError("This QR code link is inactive or invalid.");
+      return;
+    }
+  } catch (error) {
     renderPublicRequestError("This QR code link is inactive or invalid.");
     return;
   }
@@ -438,10 +454,19 @@ async function renderPublicRequestIntake(token) {
     </section>
   `;
 
-  const { data, error } = await supabaseClient.rpc("get_public_request_intake", { request_token: token });
-  const intake = Array.isArray(data) ? data[0] : data;
-  if (error) {
-    renderPublicRequestError("This request link is not ready yet. The company needs to run the public request link setup in Supabase.");
+  let intake = null;
+  try {
+    const { data, error } = await withOperationTimeout(
+      supabaseClient.rpc("get_public_request_intake", { request_token: token }),
+      "Request form lookup timed out."
+    );
+    if (error) {
+      renderPublicRequestError("This request link is not ready yet. The company needs to run the public request link setup in Supabase.");
+      return;
+    }
+    intake = Array.isArray(data) ? data[0] : data;
+  } catch (error) {
+    renderPublicRequestError(error.message || "This request link could not be loaded.");
     return;
   }
   if (!intake) {
@@ -512,15 +537,18 @@ async function submitPublicRequest(event, token, intake) {
   }
 
   try {
-    const { error } = await supabaseClient.rpc("submit_public_location_request", {
-      request_token: token,
-      request_title: String(form.get("title") || "").trim(),
-      equipment_note: String(form.get("equipment_note") || "").trim() || null,
-      request_description: String(form.get("description") || "").trim() || null,
-      requester_name: String(form.get("requester_name") || "").trim() || null,
-      requester_contact: String(form.get("requester_contact") || "").trim() || null,
-      request_priority: form.get("priority") || "medium",
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("submit_public_location_request", {
+        request_token: token,
+        request_title: requiredText(form.get("title"), "Request title"),
+        equipment_note: String(form.get("equipment_note") || "").trim() || null,
+        request_description: String(form.get("description") || "").trim() || null,
+        requester_name: String(form.get("requester_name") || "").trim() || null,
+        requester_contact: String(form.get("requester_contact") || "").trim() || null,
+        request_priority: form.get("priority") || "medium",
+      }),
+      "Request send timed out."
+    );
 
     if (error) throw error;
 
@@ -679,41 +707,56 @@ async function createCompany(event) {
   const formElement = event.target;
   const submitButton = formElement.querySelector("button[type='submit']");
   const errorTarget = document.querySelector("#company-error");
-  const name = new FormData(formElement).get("name");
+  const name = String(new FormData(formElement).get("name") || "").trim();
   submitButton.disabled = true;
   submitButton.textContent = "Creating...";
   errorTarget.textContent = "";
 
-  const existing = companies.find((company) => company.name.trim().toLowerCase() === name.trim().toLowerCase());
-  if (existing) {
-    activeCompanyId = existing.id;
+  try {
+    if (!name) throw new Error("Company name is required.");
+    const existing = companies.find((company) => company.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (existing) {
+      activeCompanyId = existing.id;
+      localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
+      await render();
+      return;
+    }
+
+    const { data, error } = await withOperationTimeout(
+      supabaseClient.rpc("create_company", { company_name: name }),
+      "Company creation timed out."
+    );
+
+    if (error) {
+      errorTarget.textContent = error.message.includes("create_company")
+        ? "Database setup is not finished. Run supabase/schema.sql in the Supabase SQL editor, then wait a few seconds and try again."
+        : error.message;
+      return;
+    }
+
+    activeCompanyId = data;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
+    const profileReady = await ensureProfileForActiveCompany(name);
+    if (!profileReady) throw new Error(appError || "Could not create your company profile.");
+    await seedStarterAssets();
     await render();
-    return;
+  } catch (error) {
+    errorTarget.textContent = error.message || "Could not create company.";
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Create Company";
+    }
   }
-
-  const { data, error } = await supabaseClient.rpc("create_company", { company_name: name });
-
-  if (error) {
-    submitButton.disabled = false;
-    submitButton.textContent = "Create Company";
-    errorTarget.textContent = error.message.includes("create_company")
-      ? "Database setup is not finished. Run supabase/schema.sql in the Supabase SQL editor, then wait a few seconds and try again."
-      : error.message;
-    return;
-  }
-
-  activeCompanyId = data;
-  localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
-  await ensureProfileForActiveCompany(name);
-  await seedStarterAssets();
-  await render();
 }
 
 async function ensureProfileForActiveCompany() {
-  const { error } = await supabaseClient.rpc("ensure_company_profile", {
-    target_company_id: activeCompanyId,
-  });
+  const { error } = await withOperationTimeout(
+    supabaseClient.rpc("ensure_company_profile", {
+      target_company_id: activeCompanyId,
+    }),
+    "Profile setup timed out."
+  );
 
   if (error) {
     appError = `Could not create your company profile: ${error.message}`;
@@ -732,10 +775,13 @@ async function acceptTeamInvites() {
 
 async function seedStarterAssets() {
   const locationId = activeLocationDatabaseId();
-  await supabaseClient.from("assets").insert([
-    { company_id: activeCompanyId, location_id: locationId, name: "Packaging Line 2", asset_code: "PKG-002", location: "Plant A / Floor 1", status: "running" },
-    { company_id: activeCompanyId, location_id: locationId, name: "Boiler Room Pump", asset_code: "BLR-P-014", location: "Utilities / Boiler Room", status: "watch" },
-  ]);
+  await withOperationTimeout(
+    supabaseClient.from("assets").insert([
+      { company_id: activeCompanyId, location_id: locationId, name: "Packaging Line 2", asset_code: "PKG-002", location: "Plant A / Floor 1", status: "running" },
+      { company_id: activeCompanyId, location_id: locationId, name: "Boiler Room Pump", asset_code: "BLR-P-014", location: "Utilities / Boiler Room", status: "watch" },
+    ]),
+    "Starter equipment setup timed out."
+  );
 }
 
 async function loadCompanyData() {
@@ -2602,6 +2648,29 @@ function withOperationTimeout(promise, message, timeoutMs = 20000) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
+function workOrderDateValue(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parsed = new Date(`${trimmed}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) throw new Error("Enter a real expected back up / due date as YYYY-MM-DD.");
+    const parsedIso = parsed.toISOString().slice(0, 10);
+    if (parsedIso === trimmed) return trimmed;
+    throw new Error("Enter a real expected back up / due date as YYYY-MM-DD.");
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Enter the expected back up / due date as YYYY-MM-DD.");
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function requiredText(value, label) {
+  const text = String(value || "").trim();
+  if (!text) throw new Error(`${label} is required.`);
+  return text;
+}
+
 const WORK_ORDER_SCHEMA_FIELDS = [
   "location_id",
   "assigned_to",
@@ -3264,7 +3333,7 @@ function renderPartDetail() {
             <article>
               <strong>${escapeHtml(document.file_name)}</strong>
               <span>${new Date(document.created_at).toLocaleString()}</span>
-              ${document.signedUrl ? `<a href="${document.signedUrl}" target="_blank" rel="noreferrer">Open file</a>` : ""}
+              ${document.signedUrl ? `<a href="${escapeHtml(document.signedUrl)}" target="_blank" rel="noreferrer">Open file</a>` : ""}
             </article>
           `).join("") || `<p class="muted">No receipts or invoices filed with this part.</p>`}
         </div>
@@ -3300,7 +3369,7 @@ function renderPartDangerZone(part) {
           <p>You are about to permanently delete "${escapeHtml(part.name)}". This cannot be undone.</p>
           <div class="button-row">
             <button class="secondary-button" data-cancel-delete-part type="button">Cancel</button>
-            <button class="danger-action-button confirm-delete-button" data-confirm-delete-part="${escapeHtml(part.id)}" type="button">Permanently Delete</button>
+            <button class="danger-action-button large-delete-button permanent-delete-button" data-delete-part="${escapeHtml(part.id)}" type="button">Permanently Delete</button>
           </div>
         </div>
       ` : `
@@ -3517,7 +3586,7 @@ function renderActivityItem(item) {
         <strong>Photo uploaded</strong>
         <span>${photoMetaText(item)}</span>
         <p>${escapeHtml(item.file_name)}</p>
-        ${item.signedUrl ? `<a href="${item.signedUrl}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
+        ${item.signedUrl ? `<a href="${escapeHtml(item.signedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
       </article>
     `;
   }
@@ -3687,7 +3756,7 @@ function renderCreateWorkOrder() {
               ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
             </select>
           </label>
-          <label>Expected back up / due date<input name="due_at" type="date"></label>
+          <label>Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD"></label>
         </div>
       </details>
 
@@ -3770,7 +3839,7 @@ function renderQuickFixForm() {
         <summary>Optional details</summary>
         <div class="form-grid">
           <div class="form-section-title">Work Order Info</div>
-          <label>Expected back up / due date<input name="due_at" type="date"></label>
+          <label>Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD"></label>
           <label>Priority
             <select name="priority">
               ${["medium", "high", "critical", "low"].map((priority) => `<option value="${priority}">${priority}</option>`).join("")}
@@ -3946,7 +4015,7 @@ function renderWorkOrderDetail() {
             <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
           </div>
           <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
-          <label id="quick-update-due-field">Expected back up / due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
+          <label id="quick-update-due-field">Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${escapeHtml(workOrder.due_at || "")}"></label>
           <label id="quick-update-status-field">Status
             <select name="status">
               ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
@@ -3966,9 +4035,7 @@ function renderWorkOrderDetail() {
           </label>
           <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
           ${requiresSafetyDeviceCheck(workOrder) ? (
-            workOrder.status === "completed"
-              ? `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
-              : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>Complete Work will require E-stops, sensors, guards, and interlocks to be checked.</span></div>`
+            `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
           ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>No machine / equipment selected, so no equipment safety check is required.</span></div>`}
           <p class="error-text" id="quick-update-error"></p>
           <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
@@ -3993,7 +4060,7 @@ function renderWorkOrderDetail() {
       <form class="form-grid" id="edit-work-order-form">
         <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
         <label>Description<textarea name="description" rows="3">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
-        <label>Due date<input name="due_at" type="date" value="${workOrder.due_at || ""}"></label>
+        <label>Due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${escapeHtml(workOrder.due_at || "")}"></label>
         <label>Priority
           <select name="priority">
             ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
@@ -4020,10 +4087,10 @@ function renderWorkOrderDetail() {
         <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?">${escapeHtml(workOrder.failure_cause || "")}</textarea></label>
         <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
         <label class="check-row"><input name="follow_up_needed" type="checkbox" ${workOrder.follow_up_needed ? "checked" : ""}> Follow-up needed</label>
-        ${workOrder.status === "completed" && requiresSafetyDeviceCheck(workOrder) ? `
+        ${requiresSafetyDeviceCheck(workOrder) ? `
           <label class="check-row safety-check-row">
             <input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}>
-            Safety devices checked: E-stops, sensors, guards, and interlocks
+            Safety devices checked before completion: E-stops, sensors, guards, and interlocks
           </label>
         ` : ""}
         <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
@@ -4108,11 +4175,11 @@ function renderWorkOrderDetail() {
           ${photos.map((photo) => `
             <article class="relationship-detail photo">
               ${photo.signedUrl && photo.content_type?.startsWith("image/")
-                ? `<img class="photo-thumb" src="${photo.signedUrl}" alt="${escapeHtml(photo.file_name)}">`
+                ? `<img class="photo-thumb" src="${escapeHtml(photo.signedUrl)}" alt="${escapeHtml(photo.file_name)}">`
                 : ""}
               <strong>${escapeHtml(photo.file_name)}</strong>
               <span>${photoMetaText(photo)}</span>
-              ${photo.signedUrl ? `<a href="${photo.signedUrl}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
+              ${photo.signedUrl ? `<a href="${escapeHtml(photo.signedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
             </article>
           `).join("") || `<p class="muted">No photos uploaded yet.</p>`}
         </div>
@@ -4126,6 +4193,15 @@ function renderWorkOrderDetail() {
         <p class="error-text" id="comment-error"></p>
         <button class="primary-button" type="submit">Add Comment</button>
       </form>
+      <div class="comment-list">
+        ${comments.map((comment) => `
+          <article class="relationship-detail comment">
+            <strong>${escapeHtml(profilesByUserId[comment.author_id]?.full_name || "Team member")}</strong>
+            <span>${comment.created_at ? new Date(comment.created_at).toLocaleString() : ""}</span>
+            <p>${escapeHtml(comment.body)}</p>
+          </article>
+        `).join("") || `<p class="muted">No comments yet.</p>`}
+      </div>
       </details>
 
       <details class="work-detail-section" id="work-order-history-target">
@@ -4579,6 +4655,15 @@ function bindWorkspaceEvents() {
     searchInput.addEventListener("input", () => {
       const activeSearchId = searchInput.id;
       searchQuery = searchInput.value;
+      if (searchQuery.trim()) {
+        activeWorkOrderId = null;
+        activeAssetId = null;
+        activePartId = null;
+        quickFixMode = false;
+        createWorkOrderMode = false;
+        quickFixAssetId = null;
+        quickFixRequestId = null;
+      }
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       resetWorkOrderPage();
       resetPartsPage();
@@ -4685,8 +4770,7 @@ function bindWorkspaceEvents() {
   document.querySelectorAll("[data-search-request]").forEach((button) => {
     button.addEventListener("click", () => {
       activeSection = "requests";
-      const request = maintenanceRequests.find((item) => item.id === button.dataset.searchRequest);
-      searchQuery = request?.title || "";
+      searchQuery = "";
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4696,7 +4780,7 @@ function bindWorkspaceEvents() {
   document.querySelectorAll("[data-search-section]").forEach((button) => {
     button.addEventListener("click", () => {
       activeSection = button.dataset.searchSection;
-      searchQuery = button.dataset.searchLabel || "";
+      searchQuery = "";
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4723,8 +4807,20 @@ function bindWorkspaceEvents() {
       const originalText = button.textContent;
       button.disabled = true;
       button.textContent = "Saving...";
-      const saved = await setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
-      if (!saved) {
+      try {
+        const saved = await setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
+        if (!saved && button.isConnected) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      } catch (error) {
+        showNotice(`Could not update status: ${error.message || error}`, "warning");
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+      if (button.isConnected) {
         button.disabled = false;
         button.textContent = originalText;
       }
@@ -5082,10 +5178,6 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-confirm-delete-part]").forEach((button) => {
-    button.addEventListener("click", () => deletePart(button.dataset.confirmDeletePart));
-  });
-
   document.querySelectorAll("[data-open-part]").forEach((button) => {
     button.addEventListener("click", () => {
       activePartId = button.dataset.openPart;
@@ -5149,20 +5241,24 @@ async function createAsset(event) {
     submitButton.disabled = true;
     submitButton.textContent = "Saving...";
   }
-  const form = new FormData(formElement);
-  const payload = {
-    company_id: activeCompanyId,
-    location_id: form.get("location_id") || activeLocationDatabaseId(),
-    name: form.get("name"),
-    asset_code: form.get("asset_code") || null,
-    location: form.get("location") || null,
-    parent_asset_id: form.get("parent_asset_id") || null,
-    asset_type: form.get("asset_type") || "machine",
-    safety_devices_required: form.get("safety_devices_required") === "on",
-    status: "running",
-  };
   try {
-    const { error } = await supabaseClient.from("assets").insert(payload);
+    const form = new FormData(formElement);
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: form.get("location_id") || activeLocationDatabaseId(),
+      name: requiredText(form.get("name"), "Equipment name"),
+      asset_code: String(form.get("asset_code") || "").trim() || null,
+      location: String(form.get("location") || "").trim() || null,
+      parent_asset_id: form.get("parent_asset_id") || null,
+      asset_type: form.get("asset_type") || "machine",
+      safety_devices_required: form.get("safety_devices_required") === "on",
+      status: "running",
+    };
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("assets").insert(payload),
+      "Equipment save timed out. Check your connection and try again.",
+      15000
+    );
     if (error && isMissingColumnError(error, "location_id")) {
       locationsReady = false;
       throw new Error(databaseSetupRequiredMessage("saving equipment locations"));
@@ -5195,23 +5291,27 @@ async function updateAsset(event) {
     submitButton.disabled = true;
     submitButton.textContent = "Saving...";
   }
-  const form = new FormData(formElement);
-  const payload = {
-    name: form.get("name"),
-    asset_code: form.get("asset_code") || null,
-    location_id: form.get("location_id") || activeLocationDatabaseId(),
-    location: form.get("location") || null,
-    parent_asset_id: form.get("parent_asset_id") || null,
-    asset_type: form.get("asset_type") || "machine",
-    safety_devices_required: form.get("safety_devices_required") === "on",
-    status: form.get("status"),
-  };
   try {
-    const { error } = await supabaseClient
-      .from("assets")
-      .update(payload)
-      .eq("id", activeAssetId)
-      .eq("company_id", activeCompanyId);
+    const form = new FormData(formElement);
+    const payload = {
+      name: requiredText(form.get("name"), "Equipment name"),
+      asset_code: String(form.get("asset_code") || "").trim() || null,
+      location_id: form.get("location_id") || activeLocationDatabaseId(),
+      location: String(form.get("location") || "").trim() || null,
+      parent_asset_id: form.get("parent_asset_id") || null,
+      asset_type: form.get("asset_type") || "machine",
+      safety_devices_required: form.get("safety_devices_required") === "on",
+      status: form.get("status"),
+    };
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("assets")
+        .update(payload)
+        .eq("id", activeAssetId)
+        .eq("company_id", activeCompanyId),
+      "Equipment save timed out. Check your connection and try again.",
+      15000
+    );
     if (error && isMissingColumnError(error, "location_id")) {
       locationsReady = false;
       throw new Error(databaseSetupRequiredMessage("saving equipment locations"));
@@ -5234,11 +5334,15 @@ async function updateAsset(event) {
 }
 
 async function updateAssetStatus(assetId, status) {
-  const { error } = await supabaseClient
-    .from("assets")
-    .update({ status })
-    .eq("id", assetId)
-    .eq("company_id", activeCompanyId);
+  const { error } = await withOperationTimeout(
+    supabaseClient
+      .from("assets")
+      .update({ status })
+      .eq("id", assetId)
+      .eq("company_id", activeCompanyId),
+    "Equipment status save timed out. Check your connection and try again.",
+    12000
+  );
   return error || null;
 }
 
@@ -5288,11 +5392,15 @@ async function deleteAsset(id) {
   }
 
   try {
-    const { error } = await supabaseClient
-      .from("assets")
-      .delete()
-      .eq("id", id)
-      .eq("company_id", activeCompanyId);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("assets")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId),
+      "Equipment delete timed out. Check your connection and try again.",
+      15000
+    );
     if (error) {
       throw new Error(error.message.includes("violates foreign key constraint")
         ? "This equipment is linked to records and cannot be deleted."
@@ -5321,11 +5429,15 @@ async function createQuickFixAsset(name, status = "running") {
     safety_devices_required: true,
     status,
   };
-  let response = await supabaseClient
-    .from("assets")
-    .insert(payload)
-    .select()
-    .single();
+  let response = await withOperationTimeout(
+    supabaseClient
+      .from("assets")
+      .insert(payload)
+      .select()
+      .single(),
+    "Equipment save timed out. Check your connection and try again.",
+    15000
+  );
   if (response.error && isMissingColumnError(response.error, "location_id")) {
     locationsReady = false;
     return withSetupError(response, databaseSetupRequiredMessage("adding equipment in this location"));
@@ -5349,17 +5461,21 @@ async function createPreventiveSchedule(event) {
 
   try {
     const form = new FormData(formElement);
-    const { error } = await insertWithOptionalProcedure("preventive_schedules", {
-      company_id: activeCompanyId,
-      location_id: locationIdForAsset(form.get("asset_id")),
-      asset_id: form.get("asset_id"),
-      title: form.get("title"),
-      frequency: form.get("frequency"),
-      next_due_at: form.get("next_due_at"),
-      ...procedureColumn(form.get("procedure_template_id")),
-      active: true,
-      created_by: session.user.id,
-    });
+    const { error } = await withOperationTimeout(
+      insertWithOptionalProcedure("preventive_schedules", {
+        company_id: activeCompanyId,
+        location_id: locationIdForAsset(form.get("asset_id")),
+        asset_id: form.get("asset_id"),
+        title: requiredText(form.get("title"), "PM title"),
+        frequency: form.get("frequency"),
+        next_due_at: form.get("next_due_at"),
+        ...procedureColumn(form.get("procedure_template_id")),
+        active: true,
+        created_by: session.user.id,
+      }),
+      "PM schedule save timed out. Check your connection and try again.",
+      15000
+    );
     if (error) throw error;
     showNotice("PM schedule added.");
     await render();
@@ -5387,12 +5503,15 @@ async function createProcedureTemplate(event) {
 
   try {
     const form = new FormData(formElement);
-    const { error } = await supabaseClient.from("procedure_templates").insert({
-      company_id: activeCompanyId,
-      name: form.get("name"),
-      description: form.get("description") || null,
-      created_by: session.user.id,
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("procedure_templates").insert({
+        company_id: activeCompanyId,
+        name: requiredText(form.get("name"), "Procedure name"),
+        description: String(form.get("description") || "").trim() || null,
+        created_by: session.user.id,
+      }),
+      "Procedure save timed out."
+    );
     if (error) throw error;
     showNotice("Procedure added.");
     await render();
@@ -5420,16 +5539,19 @@ async function seedSampleProcedure() {
   }
 
   try {
-    const { data: template, error: templateError } = await supabaseClient
-      .from("procedure_templates")
-      .insert({
-        company_id: activeCompanyId,
-        name: "Basic Equipment Inspection",
-        description: "A simple starter checklist for visual checks, readings, and final pass/fail.",
-        created_by: session.user.id,
-      })
-      .select()
-      .single();
+    const { data: template, error: templateError } = await withOperationTimeout(
+      supabaseClient
+        .from("procedure_templates")
+        .insert({
+          company_id: activeCompanyId,
+          name: "Basic Equipment Inspection",
+          description: "A simple starter checklist for visual checks, readings, and final pass/fail.",
+          created_by: session.user.id,
+        })
+        .select()
+        .single(),
+      "Sample procedure save timed out."
+    );
 
     if (templateError) throw templateError;
 
@@ -5444,7 +5566,10 @@ async function seedSampleProcedure() {
       procedure_template_id: template.id,
     }));
 
-    const { error: stepsError } = await supabaseClient.from("procedure_steps").insert(steps);
+    const { error: stepsError } = await withOperationTimeout(
+      supabaseClient.from("procedure_steps").insert(steps),
+      "Sample procedure steps save timed out."
+    );
     if (stepsError) throw stepsError;
     showNotice("Sample procedure added.");
     await render();
@@ -5473,14 +5598,17 @@ async function createProcedureStep(event) {
     const form = new FormData(formElement);
     const template = procedureTemplates.find((item) => item.id === formElement.dataset.addStep);
     const nextPosition = (template?.procedure_steps?.length || 0) + 1;
-    const { error } = await supabaseClient.from("procedure_steps").insert({
-      company_id: activeCompanyId,
-      procedure_template_id: formElement.dataset.addStep,
-      position: nextPosition,
-      prompt: form.get("prompt"),
-      response_type: form.get("response_type"),
-      required: form.get("required") === "true",
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("procedure_steps").insert({
+        company_id: activeCompanyId,
+        procedure_template_id: formElement.dataset.addStep,
+        position: nextPosition,
+        prompt: requiredText(form.get("prompt"), "Procedure step"),
+        response_type: form.get("response_type"),
+        required: form.get("required") === "true",
+      }),
+      "Procedure step save timed out."
+    );
     if (error) throw error;
     showNotice("Procedure step added.");
     await render();
@@ -5497,14 +5625,32 @@ async function createProcedureStep(event) {
 
 async function addCompanyMember(event) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const { error } = await supabaseClient.from("company_members").insert({
-    company_id: activeCompanyId,
-    user_id: form.get("user_id"),
-    role: form.get("role"),
-  });
-  if (error) return alert(error.message);
-  await render();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submitButton = formElement.querySelector("button[type='submit']");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Adding...";
+  }
+  try {
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("company_members").insert({
+        company_id: activeCompanyId,
+        user_id: form.get("user_id"),
+        role: form.get("role"),
+      }),
+      "Team member save timed out."
+    );
+    if (error) throw error;
+    await render();
+  } catch (error) {
+    alert(error.message || error);
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Add Member";
+    }
+  }
 }
 
 async function updateCompanyMemberRole(event) {
@@ -5517,25 +5663,33 @@ async function updateCompanyMemberRole(event) {
     submitButton.textContent = "Saving...";
   }
 
-  const { error } = await supabaseClient.rpc("update_company_member_role", {
-    target_company_id: activeCompanyId,
-    target_user_id: formElement.dataset.memberRole,
-    new_role: form.get("role"),
-  });
+  try {
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("update_company_member_role", {
+        target_company_id: activeCompanyId,
+        target_user_id: formElement.dataset.memberRole,
+        new_role: form.get("role"),
+      }),
+      "Role save timed out. Check your connection and try again.",
+      15000
+    );
 
-  if (error) {
-    alert(error.message.includes("update_company_member_role")
-      ? "Run supabase/step-next-team-roles.sql before editing roles."
-      : error.message);
+    if (error) {
+      throw new Error(error.message.includes("update_company_member_role")
+        ? "Run supabase/step-next-team-roles.sql before editing roles."
+        : error.message);
+    }
+
+    showNotice("Role saved.");
+    await render();
+  } catch (error) {
+    showNotice(`Could not save role: ${error.message || error}`, "warning");
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Role";
     }
-    return;
   }
-
-  showNotice("Role saved.");
-  await render();
 }
 
 async function updateMyProfile(event) {
@@ -5552,13 +5706,17 @@ async function updateMyProfile(event) {
   }
 
   try {
-    const { error } = await supabaseClient
-      .from("profiles")
-      .upsert({
-        company_id: activeCompanyId,
-        user_id: session.user.id,
-        full_name: fullName,
-      }, { onConflict: "company_id,user_id" });
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("profiles")
+        .upsert({
+          company_id: activeCompanyId,
+          user_id: session.user.id,
+          full_name: fullName,
+        }, { onConflict: "company_id,user_id" }),
+      "Profile save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) throw error;
 
@@ -5591,11 +5749,15 @@ async function createTeamInvite(event) {
   }
 
   try {
-    const { error } = await supabaseClient.rpc("create_company_invite", {
-      target_company_id: activeCompanyId,
-      invite_email: String(form.get("email") || "").trim(),
-      invite_role: form.get("role"),
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("create_company_invite", {
+        target_company_id: activeCompanyId,
+        invite_email: String(form.get("email") || "").trim(),
+        invite_role: form.get("role"),
+      }),
+      "Invite save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
@@ -5663,11 +5825,15 @@ async function createMessageThread(event) {
       threadPayload.work_order_id = workOrderId;
     }
 
-    const { data: thread, error: threadError } = await supabaseClient
-      .from("message_threads")
-      .insert(threadPayload)
-      .select("*")
-      .single();
+    const { data: thread, error: threadError } = await withOperationTimeout(
+      supabaseClient
+        .from("message_threads")
+        .insert(threadPayload)
+        .select("*")
+        .single(),
+      "Message thread save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (threadError) {
       if (isMissingColumnError(threadError, "work_order_id")) {
@@ -5681,7 +5847,11 @@ async function createMessageThread(event) {
       thread_id: thread.id,
       user_id: userId,
     }));
-    const { error: memberError } = await supabaseClient.from("message_thread_members").insert(memberRows);
+    const { error: memberError } = await withOperationTimeout(
+      supabaseClient.from("message_thread_members").insert(memberRows),
+      "Message member save timed out. Check your connection and try again.",
+      15000
+    );
     if (memberError) throw memberError;
 
     const { error: messageError } = await insertThreadMessage(thread.id, body);
@@ -5747,29 +5917,41 @@ async function markMessageThreadRead(threadId) {
     user_id: session.user.id,
     last_read_at: readAt,
   };
-  const { error } = await supabaseClient
-    .from("message_reads")
-    .upsert(messageReadsByThreadId[threadId], { onConflict: "thread_id,user_id" });
+  const { error } = await withOperationTimeout(
+    supabaseClient
+      .from("message_reads")
+      .upsert(messageReadsByThreadId[threadId], { onConflict: "thread_id,user_id" }),
+    "Message read marker timed out.",
+    8000
+  ).catch((error) => ({ error }));
   if (error) console.warn("Could not mark message thread read", error);
 }
 
 async function insertThreadMessage(threadId, body) {
-  const message = await supabaseClient
-    .from("messages")
-    .insert({
-      company_id: activeCompanyId,
-      thread_id: threadId,
-      sender_id: session.user.id,
-      body,
-    });
+  const message = await withOperationTimeout(
+    supabaseClient
+      .from("messages")
+      .insert({
+        company_id: activeCompanyId,
+        thread_id: threadId,
+        sender_id: session.user.id,
+        body,
+      }),
+    "Message save timed out. Check your connection and try again.",
+    15000
+  );
 
   if (message.error) return { error: message.error };
 
-  const thread = await supabaseClient
-    .from("message_threads")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", threadId)
-    .eq("company_id", activeCompanyId);
+  const thread = await withOperationTimeout(
+    supabaseClient
+      .from("message_threads")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", threadId)
+      .eq("company_id", activeCompanyId),
+    "Message thread timestamp save timed out.",
+    8000
+  ).catch((error) => ({ error }));
 
   return { error: thread.error };
 }
@@ -5795,10 +5977,14 @@ async function updateCompanySettings(event) {
     submitButton.textContent = "Saving...";
   }
   try {
-    const { error } = await supabaseClient
-      .from("companies")
-      .update({ name: form.get("name") })
-      .eq("id", activeCompanyId);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("companies")
+        .update({ name: requiredText(form.get("name"), "Company name") })
+        .eq("id", activeCompanyId),
+      "Company save timed out. Check your connection and try again.",
+      15000
+    );
     if (error) throw error;
     showNotice("Company saved.");
     await render();
@@ -5832,10 +6018,14 @@ async function uploadCompanyLogo(event) {
   try {
     const optimized = await optimizeLogo(file);
     const path = `${activeCompanyId}/logo-${crypto.randomUUID()}-${optimized.fileName}`;
-    const upload = await supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
-      contentType: optimized.contentType,
-      upsert: false,
-    });
+    const upload = await withOperationTimeout(
+      supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
+        contentType: optimized.contentType,
+        upsert: false,
+      }),
+      "Company logo upload timed out. Check your connection and try again.",
+      25000
+    );
 
     if (upload.error) {
       throw new Error(upload.error.message.includes("Bucket not found")
@@ -5843,10 +6033,14 @@ async function uploadCompanyLogo(event) {
         : upload.error.message);
     }
 
-    const { error } = await supabaseClient.rpc("set_company_logo", {
-      target_company_id: activeCompanyId,
-      new_logo_path: path,
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("set_company_logo", {
+        target_company_id: activeCompanyId,
+        new_logo_path: path,
+      }),
+      "Company logo record save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       await removeUploadedObject("company-logos", path);
@@ -5889,11 +6083,15 @@ async function createLocation(event) {
   }
 
   try {
-    const { data, error } = await supabaseClient
-      .from("locations")
-      .insert({ company_id: activeCompanyId, name })
-      .select("id")
-      .single();
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("locations")
+        .insert({ company_id: activeCompanyId, name })
+        .select("id")
+        .single(),
+      "Location save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       if (isColumnSchemaError(error, ["locations"])) locationsReady = false;
@@ -5924,9 +6122,13 @@ async function createPublicRequestLink(locationId) {
   }
 
   try {
-    const { error } = await supabaseClient.rpc("ensure_location_request_link", {
-      target_location_id: locationId,
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("ensure_location_request_link", {
+        target_location_id: locationId,
+      }),
+      "QR link save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       publicRequestLinksReady = false;
@@ -5984,30 +6186,38 @@ async function updatePublicRequestLink(linkId, patch, successMessage) {
     return;
   }
 
-  const { data, error } = await supabaseClient
-    .from("public_request_links")
-    .update({
-      ...patch,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", linkId)
-    .eq("company_id", activeCompanyId)
-    .select("id");
+  try {
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("public_request_links")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", linkId)
+        .eq("company_id", activeCompanyId)
+        .select("id"),
+      "Request link update timed out. Check your connection and try again.",
+      15000
+    );
 
-  if (error) {
-    if (errorElement) errorElement.textContent = error.message;
-    return;
-  }
-
-  if (!data?.length) {
-    if (errorElement) {
-      errorElement.textContent = "Could not update the request link. Check that your company role is admin or manager.";
+    if (error) {
+      if (errorElement) errorElement.textContent = error.message;
+      return;
     }
-    return;
-  }
 
-  showNotice(successMessage);
-  await render();
+    if (!data?.length) {
+      if (errorElement) {
+        errorElement.textContent = "Could not update the request link. Check that your company role is admin or manager.";
+      }
+      return;
+    }
+
+    showNotice(successMessage);
+    await render();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not update the request link.";
+  }
 }
 
 function generatePublicRequestToken() {
@@ -6133,11 +6343,15 @@ async function restockPart(event) {
   }
 
   try {
-    const { error } = await supabaseClient
-      .from("parts")
-      .update({ quantity_on_hand: (Number(part.quantity_on_hand) || 0) + quantity })
-      .eq("id", part.id)
-      .eq("company_id", activeCompanyId);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .update({ quantity_on_hand: (Number(part.quantity_on_hand) || 0) + quantity })
+        .eq("id", part.id)
+        .eq("company_id", activeCompanyId),
+      "Part restock timed out. Check your connection and try again.",
+      15000
+    );
     if (error) throw error;
     showNotice("Part restocked.");
     await render();
@@ -6167,11 +6381,15 @@ async function usePartFromInventory(event) {
   try {
     const currentQuantity = Number(part.quantity_on_hand) || 0;
     const nextQuantity = Math.max(0, currentQuantity - quantity);
-    const { error } = await supabaseClient
-      .from("parts")
-      .update({ quantity_on_hand: nextQuantity })
-      .eq("id", part.id)
-      .eq("company_id", activeCompanyId);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .update({ quantity_on_hand: nextQuantity })
+        .eq("id", part.id)
+        .eq("company_id", activeCompanyId),
+      "Part use save timed out. Check your connection and try again.",
+      15000
+    );
     if (error) throw error;
     showNotice("Part used.");
     await render();
@@ -6200,7 +6418,7 @@ async function updatePart(event) {
   }
 
   const payload = {
-    name: form.get("name"),
+    name: String(form.get("name") || "").trim(),
     sku: form.get("sku") || null,
     supplier_name: form.get("supplier_name") || null,
     quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
@@ -6209,11 +6427,17 @@ async function updatePart(event) {
   };
 
   try {
-    const { error } = await supabaseClient
-      .from("parts")
-      .update(payload)
-      .eq("id", partId)
-      .eq("company_id", activeCompanyId);
+    if (!payload.name) throw new Error("Part name is required.");
+
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .update(payload)
+        .eq("id", partId)
+        .eq("company_id", activeCompanyId),
+      "Part save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error && isMissingColumnError(error, "supplier_name")) {
       partSuppliersReady = false;
@@ -6253,6 +6477,12 @@ function requestDeletePart(id) {
     return;
   }
 
+  const confirmButtonVisible = Boolean(document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`));
+  if (pendingDeletePartId === id || confirmButtonVisible) {
+    deletePart(id);
+    return;
+  }
+
   pendingDeletePartId = id;
   renderWorkspace();
 }
@@ -6272,7 +6502,7 @@ async function deletePart(id) {
     if (errorElement) errorElement.textContent = "This part has work order usage history and is kept for traceability.";
     return;
   }
-  const confirmButton = document.querySelector(`[data-confirm-delete-part="${CSS.escape(id)}"]`);
+  const confirmButton = document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`);
   if (confirmButton) {
     confirmButton.disabled = true;
     confirmButton.textContent = "Deleting...";
@@ -6283,17 +6513,26 @@ async function deletePart(id) {
       .map((document) => document.storage_path)
       .filter(Boolean);
     if (documentPaths.length) {
-      const storageDelete = await supabaseClient.storage.from("part-documents").remove(documentPaths);
+      const storageDelete = await withOperationTimeout(
+        supabaseClient.storage.from("part-documents").remove(documentPaths),
+        "Part document cleanup timed out. Try deleting again.",
+        15000
+      );
       if (storageDelete.error) {
         throw new Error(`Could not remove filed receipts/invoices: ${storageDelete.error.message}`);
       }
     }
 
-    const { error } = await supabaseClient
-      .from("parts")
-      .delete()
-      .eq("id", id)
-      .eq("company_id", activeCompanyId);
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .select("id"),
+      "Part delete timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       throw new Error(error.message.includes("violates foreign key constraint")
@@ -6301,11 +6540,35 @@ async function deletePart(id) {
         : error.message);
     }
 
+    if (!data?.length) {
+      throw new Error("Part was not deleted. Check that your company role is admin or manager and that supabase/step-next-part-delete.sql has been run.");
+    }
+
+    const verification = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .select("id")
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .maybeSingle(),
+      "Part delete verification timed out. Refresh and check the part list.",
+      15000
+    );
+
+    if (verification.error) {
+      throw new Error(`Part delete verification failed: ${verification.error.message}`);
+    }
+
+    if (verification.data) {
+      throw new Error("Part delete did not persist in Supabase. Run supabase/step-next-part-delete.sql, then try again.");
+    }
+
     activePartId = null;
     pendingDeletePartId = null;
     showNotice("Part deleted.");
     await render();
   } catch (error) {
+    showNotice(error.message || "Could not delete part.", "warning");
     if (errorElement) {
       errorElement.textContent = error.message || "Could not delete part.";
     }
@@ -6342,11 +6605,15 @@ async function renamePartSource(event) {
   }
 
   try {
-    const { error } = await supabaseClient
-      .from("parts")
-      .update({ supplier_name: newSource || null })
-      .eq("company_id", activeCompanyId)
-      .eq("supplier_name", oldSource);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("parts")
+        .update({ supplier_name: newSource || null })
+        .eq("company_id", activeCompanyId)
+        .eq("supplier_name", oldSource),
+      "Part source rename timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       if (isMissingColumnError(error, "supplier_name")) partSuppliersReady = false;
@@ -6393,21 +6660,29 @@ async function uploadPartDocument(event) {
   const fileName = safeFileName(file.name || "part-file");
   const path = `${activeCompanyId}/${partId}/${crypto.randomUUID()}-${fileName}`;
   try {
-    const upload = await supabaseClient.storage.from("part-documents").upload(path, file, {
-      contentType: file.type || "application/octet-stream",
-      upsert: false,
-    });
+    const upload = await withOperationTimeout(
+      supabaseClient.storage.from("part-documents").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      }),
+      "Part file upload timed out. Check your connection and try again.",
+      25000
+    );
 
     if (upload.error) throw upload.error;
 
-    const { error } = await supabaseClient.from("part_documents").insert({
-      company_id: activeCompanyId,
-      part_id: partId,
-      uploaded_by: session.user.id,
-      storage_path: path,
-      file_name: fileName,
-      content_type: file.type || null,
-    });
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("part_documents").insert({
+        company_id: activeCompanyId,
+        part_id: partId,
+        uploaded_by: session.user.id,
+        storage_path: path,
+        file_name: fileName,
+        content_type: file.type || null,
+      }),
+      "Part file record save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) {
       await removeUploadedObject("part-documents", path);
@@ -6472,19 +6747,28 @@ async function addPartUsageToWorkOrder(workOrderId, part, quantity) {
     quantity_used: quantity,
     unit_cost_at_use: Number(part.unit_cost) || 0,
   };
-  let { error: usageError } = await supabaseClient.from("work_order_parts").insert(usagePayload);
+  let { error: usageError } = await withOperationTimeout(
+    supabaseClient.from("work_order_parts").insert(usagePayload),
+    "Part usage save timed out."
+  );
   if (usageError && isMissingColumnError(usageError, "unit_cost_at_use")) {
     delete usagePayload.unit_cost_at_use;
-    const retry = await supabaseClient.from("work_order_parts").insert(usagePayload);
+    const retry = await withOperationTimeout(
+      supabaseClient.from("work_order_parts").insert(usagePayload),
+      "Part usage save timed out."
+    );
     usageError = retry.error;
   }
   if (usageError) return usageError;
 
-  const { error: stockError } = await supabaseClient
-    .from("parts")
-    .update({ quantity_on_hand: Math.max(0, Number(part.quantity_on_hand) - quantity) })
-    .eq("id", part.id)
-    .eq("company_id", activeCompanyId);
+  const { error: stockError } = await withOperationTimeout(
+    supabaseClient
+      .from("parts")
+      .update({ quantity_on_hand: Math.max(0, Number(part.quantity_on_hand) - quantity) })
+      .eq("id", part.id)
+      .eq("company_id", activeCompanyId),
+    "Part stock update timed out."
+  );
   if (stockError) return new Error(`Part was recorded, but stock did not update: ${stockError.message}`);
   return null;
 }
@@ -6514,23 +6798,33 @@ async function generatePreventiveWorkOrder(scheduleId) {
     };
     applySafetyRequirementPayload(payload);
     applySafetyCheckPayload(payload, false);
-    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+    const { data, error } = await withOperationTimeout(
+      insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
+      "PM work order generation timed out."
+    );
 
     if (error) throw error;
 
-    const scheduleUpdate = await supabaseClient
-      .from("preventive_schedules")
-      .update({ next_due_at: nextDueDate(schedule.next_due_at, schedule.frequency) })
-      .eq("id", schedule.id)
-      .eq("company_id", activeCompanyId);
-
     activeWorkOrderId = data.id;
     activeSection = "work";
-    if (scheduleUpdate.error) {
-      showNotice(`PM work generated, but next due date did not update: ${scheduleUpdate.error.message}`, "warning");
-    } else {
-      showNotice("PM work order generated.");
+    let scheduleWarning = "";
+    try {
+      const scheduleUpdate = await withOperationTimeout(
+        supabaseClient
+          .from("preventive_schedules")
+          .update({ next_due_at: nextDueDate(schedule.next_due_at, schedule.frequency) })
+          .eq("id", schedule.id)
+          .eq("company_id", activeCompanyId),
+        "PM next due date update timed out."
+      );
+      if (scheduleUpdate.error) scheduleWarning = scheduleUpdate.error.message;
+    } catch (updateError) {
+      scheduleWarning = updateError.message || String(updateError);
     }
+    showNotice(
+      scheduleWarning ? `PM work generated, but next due date did not update: ${scheduleWarning}` : "PM work order generated.",
+      scheduleWarning ? "warning" : "success"
+    );
     await render();
   } catch (error) {
     showNotice(`Could not generate PM work: ${error.message || error}`, "warning");
@@ -6564,16 +6858,33 @@ async function createFollowUpWorkOrder(sourceId) {
   };
   applySafetyRequirementPayload(payload);
   applySafetyCheckPayload(payload, false);
-  const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
-  if (error) return alert(error.message);
+  try {
+    const { data, error } = await withOperationTimeout(
+      insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
+      "Follow-up work order save timed out."
+    );
+    if (error) throw error;
 
-  await updateWorkOrderSafely({ follow_up_needed: false }, source.id);
-  await recordWorkOrderEvent(source.id, "follow_up_created", `Follow-up work order created: ${data.title}.`);
-  await recordWorkOrderEvent(data.id, "created", `Created as follow-up from ${source.title}.`);
-  activeSection = "work";
-  activeWorkOrderId = data.id;
-  localStorage.setItem("maintainops.activeSection", activeSection);
-  await render();
+    let sourceWarning = "";
+    try {
+      const sourceUpdate = await withOperationTimeout(
+        updateWorkOrderSafely({ follow_up_needed: false }, source.id),
+        "Follow-up source update timed out."
+      );
+      if (sourceUpdate.error) sourceWarning = sourceUpdate.error.message;
+    } catch (updateError) {
+      sourceWarning = updateError.message || String(updateError);
+    }
+    if (sourceWarning) showNotice(`Follow-up created, but source order did not update: ${sourceWarning}`, "warning");
+    await recordWorkOrderEvent(source.id, "follow_up_created", `Follow-up work order created: ${data.title}.`);
+    await recordWorkOrderEvent(data.id, "created", `Created as follow-up from ${source.title}.`);
+    activeSection = "work";
+    activeWorkOrderId = data.id;
+    localStorage.setItem("maintainops.activeSection", activeSection);
+    await render();
+  } catch (error) {
+    showNotice(`Could not create follow-up work: ${error.message || error}`, "warning");
+  }
 }
 
 function nextDueDate(value, frequency) {
@@ -6613,12 +6924,12 @@ async function createWorkOrder(event) {
     const payload = {
       company_id: activeCompanyId,
       location_id: locationIdForAsset(assetId),
-      title: form.get("title"),
+      title: requiredText(form.get("title"), "Work order title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
       asset_id: assetId,
       priority: form.get("priority"),
       type: form.get("type") || "reactive",
-      due_at: form.get("due_at") || null,
+      due_at: workOrderDateValue(form.get("due_at")),
       assigned_to: assignedUserFromForm(form),
       ...procedureColumn(form.get("procedure_template_id")),
       status,
@@ -6632,7 +6943,10 @@ async function createWorkOrder(event) {
     };
     applySafetyRequirementPayload(payload);
     applySafetyCheckPayload(payload, status === "completed" && payload.safety_check_required && form.get("safety_devices_checked") === "on");
-    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+    const { data, error } = await withOperationTimeout(
+      insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
+      "Work order creation timed out. Check your connection and try again."
+    );
     if (error) {
       if (errorTarget) errorTarget.textContent = `Could not create work order: ${friendlyWorkOrderSaveError(error)}`;
       return;
@@ -6706,6 +7020,7 @@ async function createQuickFix(event) {
   try {
     const form = new FormData(formElement);
     const title = String(form.get("title") || "").trim();
+    if (!title) throw new Error("Quick Fix issue is required.");
     const resolutionSummary = String(form.get("resolution_summary") || "").trim();
     const quickFixSummary = resolutionSummary || title;
     const markCompleted = form.get("mark_completed") === "on";
@@ -6738,7 +7053,7 @@ async function createQuickFix(event) {
       priority: form.get("priority") || "medium",
       type: form.get("type") || "corrective",
       status: markCompleted ? "completed" : "open",
-      due_at: form.get("due_at") || null,
+      due_at: workOrderDateValue(form.get("due_at")),
       created_by: session.user.id,
       ...procedureColumn(form.get("procedure_template_id")),
       actual_minutes: 0,
@@ -6872,9 +7187,9 @@ async function updateWorkOrderDetails(event) {
     const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
     const currentStatus = document.querySelector("#status-select")?.value || previous?.status || "open";
     const payload = {
-      title: form.get("title"),
+      title: requiredText(form.get("title"), "Work order title"),
       description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
-      due_at: form.get("due_at") || null,
+      due_at: workOrderDateValue(form.get("due_at")),
       location_id: locationIdForAsset(previous?.asset_id || null),
       status: currentStatus,
       priority: form.get("priority"),
@@ -6961,19 +7276,20 @@ async function updateWorkOrderQuickView(event) {
       assetId = newAsset.id;
     }
     const payload = {
-      title: form.get("title"),
+      title: requiredText(form.get("title"), "Issue"),
       description: descriptionWithAssignmentNote(previous?.description || "", form.get("assigned_to")),
       asset_id: assetId,
       location_id: locationIdForAsset(assetId),
-      due_at: form.get("due_at") || null,
+      due_at: workOrderDateValue(form.get("due_at")),
       status: form.get("status"),
       priority: form.get("priority"),
       assigned_to: assignedUserFromForm(form),
       resolution_summary: form.get("resolution_summary") || null,
     };
     applySafetyRequirementPayload(payload);
+    const safetyChecked = form.get("safety_devices_checked") === "on";
     if (payload.status === "completed" && previous?.status !== "completed") {
-      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on");
+      applySafetyCheckPayload(payload, safetyChecked);
       if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
         submitButton.disabled = false;
         submitButton.textContent = "Save Quick Update";
@@ -6986,10 +7302,14 @@ async function updateWorkOrderQuickView(event) {
       payload.completed_at = null;
       applySafetyCheckPayload(payload, false);
     } else if (previous?.status === "completed") {
-      applySafetyCheckPayload(payload, payload.safety_check_required && (form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous)));
+      applySafetyCheckPayload(payload, payload.safety_check_required && (safetyChecked || hasCompletedSafetyDeviceCheck(previous)));
     }
 
-    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
+    const { error } = await withOperationTimeout(
+      updateWorkOrderSafely(payload, activeWorkOrderId),
+      "Quick update save timed out. Check your connection and try again.",
+      20000
+    );
     if (error) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Quick Update";
@@ -7007,10 +7327,19 @@ async function updateWorkOrderQuickView(event) {
       }
     }
 
-    await recordWorkOrderEvent(activeWorkOrderId, "quick_update", describeWorkOrderChanges(previous, Object.fromEntries(form.entries())));
+    const logError = await withOperationTimeout(
+      recordWorkOrderEvent(activeWorkOrderId, "quick_update", describeWorkOrderChanges(previous, Object.fromEntries(form.entries()))),
+      "Activity log timed out.",
+      8000
+    ).catch((error) => error);
     if (newAssetName) {
-      await recordWorkOrderEvent(activeWorkOrderId, "equipment_created", `Equipment created from work order: ${newAssetName}.`);
+      await withOperationTimeout(
+        recordWorkOrderEvent(activeWorkOrderId, "equipment_created", `Equipment created from work order: ${newAssetName}.`),
+        "Activity log timed out.",
+        8000
+      ).catch(() => null);
     }
+    if (logError) warnings.push(`history did not update: ${logError.message}`);
     showNotice(warnings.length ? `Quick update saved with warning: ${warnings[0]}` : "Quick update saved.", warnings.length ? "warning" : "success");
     await render();
   } catch (error) {
@@ -7058,13 +7387,21 @@ async function completeWorkOrder(event) {
     applySafetyRequirementPayload(payload);
     applySafetyCheckPayload(payload, payload.safety_check_required && safetyChecked);
     delete payload.asset_id;
-    const { error } = await updateWorkOrderSafely(payload, activeWorkOrderId);
+    const { error } = await withOperationTimeout(
+      updateWorkOrderSafely(payload, activeWorkOrderId),
+      "Complete work save timed out. Check your connection and try again.",
+      20000
+    );
     if (error) {
       if (errorTarget) errorTarget.textContent = `Could not complete work order: ${friendlyWorkOrderSaveError(error)}`;
       return;
     }
-    await recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed.");
-    showNotice("Work order completed.");
+    const logError = await withOperationTimeout(
+      recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed."),
+      "Activity log timed out.",
+      8000
+    ).catch((error) => error);
+    showNotice(logError ? `Work order completed, but history did not update: ${logError.message}` : "Work order completed.", logError ? "warning" : "success");
     await render();
   } catch (error) {
     if (errorTarget) errorTarget.textContent = `Could not complete work order: ${error.message || error}`;
@@ -7097,8 +7434,8 @@ async function createRequest(event) {
     const requestPayload = {
       company_id: activeCompanyId,
       location_id: locationIdForAsset(form.get("asset_id") || null),
-      title: form.get("title"),
-      description: form.get("description"),
+      title: requiredText(form.get("title"), "Request title"),
+      description: requiredText(form.get("description"), "Request description"),
       asset_id: form.get("asset_id") || null,
       priority: form.get("priority"),
       status: "submitted",
@@ -7108,7 +7445,11 @@ async function createRequest(event) {
     if (!requestsReady) {
       throw new Error("Run supabase/step-next-maintenance-requests.sql before submitting requests.");
     }
-    const { error } = await supabaseClient.from("maintenance_requests").insert(requestPayload);
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("maintenance_requests").insert(requestPayload),
+      "Request save timed out. Check your connection and try again.",
+      15000
+    );
     if (error && isMissingColumnError(error, "location_id")) {
       locationsReady = false;
       throw new Error(databaseSetupRequiredMessage("saving requests by location"));
@@ -7152,25 +7493,37 @@ async function convertRequestToWorkOrder(requestId) {
     };
     applySafetyRequirementPayload(payload);
     applySafetyCheckPayload(payload, false);
-    const { data, error } = await insertWithOptionalProcedure("work_orders", payload, { returnSingle: true });
+    const { data, error } = await withOperationTimeout(
+      insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
+      "Request conversion timed out. Check your connection and try again.",
+      15000
+    );
     if (error) throw error;
 
-    const { error: updateError } = await supabaseClient
-      .from("maintenance_requests")
-      .update({
-        status: "converted",
-        reviewed_by: session.user.id,
-        reviewed_at: new Date().toISOString(),
-        converted_work_order_id: data.id,
-      })
-      .eq("id", requestId)
-      .eq("company_id", activeCompanyId);
+    const { error: updateError } = await withOperationTimeout(
+      supabaseClient
+        .from("maintenance_requests")
+        .update({
+          status: "converted",
+          reviewed_by: session.user.id,
+          reviewed_at: new Date().toISOString(),
+          converted_work_order_id: data.id,
+        })
+        .eq("id", requestId)
+        .eq("company_id", activeCompanyId),
+      "Request status update timed out. Check your connection and try again.",
+      15000
+    );
     if (updateError) throw updateError;
 
     activeSection = "work";
     activeWorkOrderId = data.id;
     localStorage.setItem("maintainops.activeSection", activeSection);
-    await recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order.");
+    await withOperationTimeout(
+      recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order."),
+      "Activity log timed out.",
+      8000
+    ).catch(() => null);
     showNotice("Request converted to work order.");
     await render();
   } catch (error) {
@@ -7185,9 +7538,15 @@ async function convertRequestToWorkOrder(requestId) {
 async function updateWorkOrderStatus(event) {
   const previous = workOrders.find((item) => item.id === activeWorkOrderId);
   event.target.disabled = true;
-  const saved = await setWorkOrderStatus(activeWorkOrderId, event.target.value);
-  if (!saved) event.target.value = previous?.status || "open";
-  event.target.disabled = false;
+  try {
+    const saved = await setWorkOrderStatus(activeWorkOrderId, event.target.value);
+    if (!saved) event.target.value = previous?.status || "open";
+  } catch (error) {
+    event.target.value = previous?.status || "open";
+    showNotice(`Could not update status: ${error.message || error}`, "warning");
+  } finally {
+    event.target.disabled = false;
+  }
 }
 
 async function saveStepResult(event) {
@@ -7195,18 +7554,35 @@ async function saveStepResult(event) {
   const value = field.type === "checkbox" ? (field.checked ? "checked" : "") : field.value;
   field.disabled = true;
   try {
-    const { error } = await supabaseClient.from("work_order_step_results").upsert({
-      company_id: activeCompanyId,
-      work_order_id: field.dataset.workOrderId,
-      procedure_step_id: field.dataset.stepResult,
-      completed_by: value ? session.user.id : null,
-      value,
-      completed_at: value ? new Date().toISOString() : null,
-    }, { onConflict: "work_order_id,procedure_step_id" });
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("work_order_step_results").upsert({
+        company_id: activeCompanyId,
+        work_order_id: field.dataset.workOrderId,
+        procedure_step_id: field.dataset.stepResult,
+        completed_by: value ? session.user.id : null,
+        value,
+        completed_at: value ? new Date().toISOString() : null,
+      }, { onConflict: "work_order_id,procedure_step_id" }),
+      "Checklist save timed out. Check your connection and try again.",
+      15000
+    );
 
     if (error) throw error;
-    await recordWorkOrderEvent(field.dataset.workOrderId, "checklist_updated", "Procedure checklist updated.");
-    await loadStepResults();
+    await withOperationTimeout(
+      recordWorkOrderEvent(field.dataset.workOrderId, "checklist_updated", "Procedure checklist updated."),
+      "Activity log timed out.",
+      8000
+    ).catch(() => null);
+    const reloadError = await withOperationTimeout(
+      loadStepResults(),
+      "Checklist refresh timed out. Refresh the workspace to confirm the latest checklist state.",
+      10000
+    ).catch((error) => error);
+    if (reloadError) {
+      showNotice(`Checklist saved, but refresh did not finish: ${reloadError.message || reloadError}`, "warning");
+      field.disabled = false;
+      return;
+    }
     renderWorkspace();
   } catch (error) {
     showNotice(`Could not save checklist step: ${error.message || error}`, "warning");
@@ -7236,7 +7612,11 @@ async function setWorkOrderStatus(id, status) {
     applySafetyCheckPayload(payload, false);
   }
   delete payload.asset_id;
-  const { error } = await updateWorkOrderSafely(payload, id);
+  const { error } = await withOperationTimeout(
+    updateWorkOrderSafely(payload, id),
+    "Status save timed out. Check your connection and try again.",
+    15000
+  );
   if (error) {
     showNotice(`Could not update status: ${friendlyWorkOrderSaveError(error)}`, "warning");
     return false;
@@ -7264,53 +7644,73 @@ async function deleteWorkOrder(id) {
     return;
   }
 
-  const photoPaths = (photosByWorkOrder[id] || [])
-    .map((photo) => photo.storage_path)
-    .filter(Boolean);
-  if (photoPaths.length) {
-    const storageDelete = await supabaseClient.storage.from("work-order-photos").remove(photoPaths);
-    if (storageDelete.error) {
-      console.warn("Work order photo storage cleanup failed", storageDelete.error);
+  try {
+    const photoPaths = (photosByWorkOrder[id] || [])
+      .map((photo) => photo.storage_path)
+      .filter(Boolean);
+    if (photoPaths.length) {
+      const storageDelete = await withOperationTimeout(
+        supabaseClient.storage.from("work-order-photos").remove(photoPaths),
+        "Work order photo cleanup timed out.",
+        15000
+      );
+      if (storageDelete.error) {
+        console.warn("Work order photo storage cleanup failed", storageDelete.error);
+      }
     }
+
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("work_orders")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId),
+      "Work order delete timed out. Check your connection and try again.",
+      15000
+    );
+
+    if (error) {
+      alert(`Could not delete work order: ${friendlyWorkOrderSaveError(error)}`);
+      return;
+    }
+
+    activeWorkOrderId = null;
+    activeAssetId = null;
+    pendingDeleteWorkOrderId = null;
+    showNotice("Work order deleted.");
+    await render();
+  } catch (error) {
+    alert(`Could not delete work order: ${error.message || error}`);
   }
-
-  const { error } = await supabaseClient
-    .from("work_orders")
-    .delete()
-    .eq("id", id)
-    .eq("company_id", activeCompanyId);
-
-  if (error) {
-    alert(`Could not delete work order: ${friendlyWorkOrderSaveError(error)}`);
-    return;
-  }
-
-  activeWorkOrderId = null;
-  activeAssetId = null;
-  pendingDeleteWorkOrderId = null;
-  showNotice("Work order deleted.");
-  await render();
 }
 
 async function assignWorkOrderToMe(id) {
-  const hasProfile = await ensureProfileForActiveCompany();
-  if (!hasProfile) return alert(appError);
-  const workOrder = workOrders.find((item) => item.id === id);
+  try {
+    const hasProfile = await ensureProfileForActiveCompany();
+    if (!hasProfile) return alert(appError);
+    const workOrder = workOrders.find((item) => item.id === id);
 
-  const { error } = await supabaseClient
-    .from("work_orders")
-    .update({
-      assigned_to: session.user.id,
-      description: cleanWorkOrderDescription(workOrder?.description) || null,
-    })
-    .eq("id", id)
-    .eq("company_id", activeCompanyId);
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("work_orders")
+        .update({
+          assigned_to: session.user.id,
+          description: cleanWorkOrderDescription(workOrder?.description) || null,
+        })
+        .eq("id", id)
+        .eq("company_id", activeCompanyId),
+      "Assignment save timed out. Check your connection and try again.",
+      15000
+    );
 
-  if (error) return alert(friendlyWorkOrderSaveError(error));
-  activeWorkOrderId = id;
-  activeAssetId = null;
-  await recordWorkOrderEvent(id, "assigned", "Assigned to self.");
-  await render();
+    if (error) return alert(friendlyWorkOrderSaveError(error));
+    activeWorkOrderId = id;
+    activeAssetId = null;
+    await recordWorkOrderEvent(id, "assigned", "Assigned to self.");
+    await render();
+  } catch (error) {
+    alert(error.message || error);
+  }
 }
 
 async function assignWorkOrderFromCard(event) {
@@ -7421,11 +7821,19 @@ async function addCommentToWorkOrder(workOrderId, body) {
     author_id: session.user.id,
     body,
   };
-  let { error } = await supabaseClient.from("work_order_comments").insert(payload);
+  let { error } = await withOperationTimeout(
+    supabaseClient.from("work_order_comments").insert(payload),
+    "Comment save timed out. Check your connection and try again.",
+    15000
+  );
 
   if (error && isProfileMissingError(error)) {
     await ensureProfileForActiveCompany();
-    const retry = await supabaseClient.from("work_order_comments").insert(payload);
+    const retry = await withOperationTimeout(
+      supabaseClient.from("work_order_comments").insert(payload),
+      "Comment retry timed out. Check your connection and try again.",
+      15000
+    );
     error = retry.error;
   }
   return error || null;
@@ -7451,7 +7859,11 @@ async function uploadPhoto(event) {
 
     const error = await addPhotoToWorkOrder(activeWorkOrderId, file);
     if (error) throw error;
-    await recordWorkOrderEvent(activeWorkOrderId, "photo_uploaded", `Photo uploaded: ${file.name}.`);
+    await withOperationTimeout(
+      recordWorkOrderEvent(activeWorkOrderId, "photo_uploaded", `Photo uploaded: ${file.name}.`),
+      "Activity log timed out.",
+      8000
+    ).catch(() => null);
     showNotice("Photo uploaded.");
     await render();
   } catch (error) {
@@ -7465,7 +7877,11 @@ async function uploadPhoto(event) {
 
 async function removeUploadedObject(bucket, path) {
   try {
-    const { error } = await supabaseClient.storage.from(bucket).remove([path]);
+    const { error } = await withOperationTimeout(
+      supabaseClient.storage.from(bucket).remove([path]),
+      "Uploaded file cleanup timed out.",
+      10000
+    );
     if (error) console.warn(`Could not remove uploaded ${bucket} object`, error);
   } catch (error) {
     console.warn(`Could not remove uploaded ${bucket} object`, error);
@@ -7478,10 +7894,14 @@ async function addPhotoToWorkOrder(workOrderId, file) {
 
   const optimized = await optimizePhoto(file);
   const path = `${activeCompanyId}/${workOrderId}/${crypto.randomUUID()}-${optimized.fileName}`;
-  const upload = await supabaseClient.storage.from("work-order-photos").upload(path, optimized.blob, {
-    contentType: optimized.contentType,
-    upsert: false,
-  });
+  const upload = await withOperationTimeout(
+    supabaseClient.storage.from("work-order-photos").upload(path, optimized.blob, {
+      contentType: optimized.contentType,
+      upsert: false,
+    }),
+    "Photo upload timed out. Check your connection and try again.",
+    25000
+  );
   if (upload.error) return upload.error;
 
   const photoRecord = {
@@ -7496,12 +7916,20 @@ async function addPhotoToWorkOrder(workOrderId, file) {
     original_size_bytes: file.size || null,
   };
 
-  let { error } = await supabaseClient.from("work_order_photos").insert(photoRecord);
+  let { error } = await withOperationTimeout(
+    supabaseClient.from("work_order_photos").insert(photoRecord),
+    "Photo record save timed out. Check your connection and try again.",
+    15000
+  );
   if (error && isColumnSchemaError(error, ["file_size_bytes", "original_file_name", "original_size_bytes"])) {
     delete photoRecord.file_size_bytes;
     delete photoRecord.original_file_name;
     delete photoRecord.original_size_bytes;
-    const retry = await supabaseClient.from("work_order_photos").insert(photoRecord);
+    const retry = await withOperationTimeout(
+      supabaseClient.from("work_order_photos").insert(photoRecord),
+      "Photo record retry timed out. Check your connection and try again.",
+      15000
+    );
     error = retry.error;
   }
   if (error) await removeUploadedObject("work-order-photos", path);
@@ -7876,13 +8304,17 @@ function friendlyWorkOrderSaveError(error) {
 
 async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   try {
-    await supabaseClient.from("work_order_events").insert({
-      company_id: activeCompanyId,
-      work_order_id: workOrderId,
-      actor_id: session.user.id,
-      event_type: eventType,
-      summary,
-    });
+    await withOperationTimeout(
+      supabaseClient.from("work_order_events").insert({
+        company_id: activeCompanyId,
+        work_order_id: workOrderId,
+        actor_id: session.user.id,
+        event_type: eventType,
+        summary,
+      }),
+      "Activity log timed out.",
+      8000
+    );
   } catch (error) {
     console.warn("Could not record work order event", error);
   }
