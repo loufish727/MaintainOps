@@ -594,7 +594,7 @@ async function loadCompanies() {
         name: company.name,
         logo_path: company.logo_path,
         created_at: company.created_at,
-        role: company.role || "member",
+        role: normalizeRole(company.role),
       }));
 
     await loadCompanyLogoUrls();
@@ -657,7 +657,7 @@ async function loadCompanies() {
     })
     .map((company) => ({
       ...company,
-      role: memberships.find((membership) => membership.company_id === company.id)?.role || "member",
+      role: normalizeRole(memberships.find((membership) => membership.company_id === company.id)?.role),
     }));
 
   await loadCompanyLogoUrls();
@@ -5145,6 +5145,20 @@ function bindWorkspaceEvents() {
 
   const partSearchForm = document.querySelector("#part-search-form");
   if (partSearchForm) {
+    const partSearchInput = partSearchForm.querySelector("input[name='part_search']");
+    if (partSearchInput) {
+      partSearchInput.addEventListener("input", () => {
+        partSearchQuery = partSearchInput.value || "";
+        localStorage.setItem("maintainops.partSearchQuery", partSearchQuery);
+        resetPartsPage();
+        renderWorkspace();
+        const nextPartSearchInput = document.querySelector("#part-search");
+        if (!nextPartSearchInput) return;
+        nextPartSearchInput.focus();
+        const cursorPosition = nextPartSearchInput.value.length;
+        nextPartSearchInput.setSelectionRange(cursorPosition, cursorPosition);
+      });
+    }
     partSearchForm.addEventListener("submit", (event) => {
       event.preventDefault();
       partSearchQuery = new FormData(partSearchForm).get("part_search") || "";
@@ -7801,6 +7815,8 @@ async function createComment(event) {
     }
 
     await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
+    await loadComments();
+    await loadWorkOrderEvents();
     showNotice("Comment added.");
     await render();
   } catch (error) {
@@ -8043,7 +8059,16 @@ function statusLabel(status) {
 }
 
 function activeCompanyRole() {
-  return companies.find((company) => company.id === activeCompanyId)?.role || "member";
+  const activeMembership = companyMembers.find((member) =>
+    member.company_id === activeCompanyId && member.user_id === session?.user?.id
+  );
+  if (activeMembership?.role) return normalizeRole(activeMembership.role);
+  return normalizeRole(companies.find((company) => company.id === activeCompanyId)?.role);
+}
+
+function normalizeRole(role) {
+  const normalized = String(role || "member").trim().toLowerCase();
+  return normalized || "member";
 }
 
 function canManageTeam() {
