@@ -1418,7 +1418,7 @@ function renderWorkspace() {
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
                 <button class="asset-health ${status} ${assetStatusFilter === status ? "active" : ""}" data-asset-status-filter="${status}" type="button">
-                  <span>${status}</span>
+                  <span>${assetStatusLabel(status)}</span>
                   <strong>${assets.filter((asset) => matchesActiveLocation(asset) && asset.status === status).length}</strong>
                 </button>
               `).join("")}
@@ -1808,6 +1808,12 @@ function assetTypeLabel(type) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function assetStatusLabel(status) {
+  return String(status || "running")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function filteredPreventiveSchedules() {
   return preventiveSchedules.filter((schedule) => matchesActiveLocation(schedule) && matchesSearch([
     schedule.title,
@@ -2161,9 +2167,9 @@ function renderWorkOrderGaugeDashboard() {
       ${renderGaugeReadout("In Progress", inProgress, "in_progress", { filter: "in_progress" })}
       ${renderGaugeReadout("Blocked", blocked, "blocked", { filter: "blocked" })}
       ${renderGaugeReadout("Overdue", overdue, "overdue", { filter: "overdue" })}
+      ${renderGaugeReadout("Requests", requestCount, "request", { section: "requests" })}
       ${renderGaugeReadout("Completed Month", completedMonth, "completed", { filter: "completed_month" })}
       ${renderGaugeReadout("Done This Week", completedWeek, "completed", { filter: "completed_week" })}
-      ${renderGaugeReadout("Requests", requestCount, "request", { section: "requests" })}
     </div>
   `;
 }
@@ -2404,7 +2410,7 @@ function renderAssetDetail() {
         <label>Area / spot<input name="location" value="${escapeHtml(asset.location || "")}"></label>
         <label>Status
           <select name="status">
-            ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${status}</option>`).join("")}
+            ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${assetStatusLabel(status)}</option>`).join("")}
           </select>
         </label>
         <label class="check-row safety-check-toggle"><input name="safety_devices_required" type="checkbox" ${asset.safety_devices_required === false ? "" : "checked"}> Safety devices required before completion</label>
@@ -2418,7 +2424,7 @@ function renderAssetDetail() {
           ${children.map((child) => `
             <article class="mini-work-order" data-open-asset="${escapeHtml(child.id)}">
               <strong>${escapeHtml(child.name)}</strong>
-              <span>${escapeHtml(assetTypeLabel(child.asset_type))} - ${escapeHtml(child.status || "running")}</span>
+              <span>${escapeHtml(assetTypeLabel(child.asset_type))} - ${escapeHtml(assetStatusLabel(child.status))}</span>
             </article>
           `).join("") || `<p class="muted">No equipment is linked under this item yet.</p>`}
         </div>
@@ -3866,12 +3872,12 @@ function renderQuickFixForm() {
           <div class="form-section-title">Outcome / Notes</div>
           <label>What did you do?<textarea name="resolution_summary" rows="2" placeholder="Tightened mount, tested switch, line returned to normal."></textarea></label>
           <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown...">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
-          <label>Equipment status after fix
-            <select name="asset_status">
-              <option value="">Leave unchanged</option>
-              ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}">${status}</option>`).join("")}
-            </select>
-          </label>
+        <label>Equipment status after fix
+          <select name="asset_status">
+            <option value="">Leave unchanged</option>
+              ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}">${assetStatusLabel(status)}</option>`).join("")}
+          </select>
+        </label>
           <label>Part used
             <select name="part_id">
               <option value="">No part used</option>
