@@ -1817,6 +1817,17 @@ textarea {
   color: var(--rel-comment-ink);
 }
 
+.report-issue-button {
+  border-color: color-mix(in srgb, var(--amber) 62%, var(--line));
+  background: color-mix(in srgb, var(--amber) 16%, var(--control-bg));
+  color: var(--amber);
+}
+
+.report-issue-button:hover {
+  background: color-mix(in srgb, var(--amber) 26%, var(--control-bg));
+  color: var(--ink);
+}
+
 .asset-action-button {
   border-color: var(--rel-asset-ink);
   background: var(--rel-asset-bg);
@@ -1873,6 +1884,67 @@ textarea {
     color-mix(in srgb, var(--red) 8%, var(--surface));
   margin-top: 14px;
   padding: 16px;
+}
+
+.app-issue-report-panel {
+  border-left: 5px solid var(--amber);
+}
+
+.app-issue-report-form textarea {
+  min-height: 96px;
+}
+
+.app-issue-report-list {
+  display: grid;
+  gap: 12px;
+}
+
+.issue-report-list {
+  display: grid;
+  gap: 10px;
+}
+
+.issue-report-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border: 1px solid color-mix(in srgb, var(--amber) 26%, var(--line));
+  border-left: 5px solid var(--amber);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--amber) 8%, transparent), transparent 60%),
+    var(--surface);
+  padding: 12px;
+}
+
+.issue-report-card strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.issue-report-card p {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.issue-report-card small {
+  color: var(--muted);
+}
+
+.issue-report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.issue-status-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .delete-zone h3 {
@@ -4485,6 +4557,16 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .issue-report-card,
+  .issue-status-form {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .issue-status-form {
+    display: grid;
+  }
+
   .auth-shell {
     justify-items: stretch;
     align-items: start;

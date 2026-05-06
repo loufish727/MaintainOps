@@ -40,6 +40,9 @@ let messagesByThreadId = {};
 let messageReadsByThreadId = {};
 let messagesReady = true;
 let messageWorkOrderLinksReady = true;
+let appIssueReports = [];
+let appIssueReportsReady = true;
+let reportIssueMode = false;
 let activeMessageThreadId = localStorage.getItem("maintainops.activeMessageThreadId") || "";
 let messageThreadFilter = localStorage.getItem("maintainops.messageThreadFilter") || "all";
 let messageSearchQuery = localStorage.getItem("maintainops.messageSearchQuery") || "";
@@ -1299,7 +1302,7 @@ function monthStartDate() {
 }
 
 async function loadCompanyData() {
-  let [locationResponse, assetResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse] = await Promise.all([
+  let [locationResponse, assetResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
     supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient
@@ -1322,6 +1325,11 @@ async function loadCompanyData() {
       .select("*, procedure_steps(*)")
       .eq("company_id", activeCompanyId)
       .order("name"),
+    supabaseClient
+      .from("app_issue_reports")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false }),
   ]);
   if (requestResponse.error && isColumnSchemaError(requestResponse.error, ["location_id", "locations"])) {
     requestResponse = await supabaseClient
@@ -1341,6 +1349,8 @@ async function loadCompanyData() {
   maintenanceRequests = requestResponse.error ? [] : (requestResponse.data || []);
   preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
   parts = partsResponse.error ? [] : (partsResponse.data || []);
+  appIssueReportsReady = !issueReportResponse.error;
+  appIssueReports = issueReportResponse.error ? [] : (issueReportResponse.data || []);
   procedureTemplates = procedureResponse.error ? [] : (procedureResponse.data || []).map((template) => ({
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
@@ -1712,6 +1722,7 @@ function renderWorkspace() {
     ? (canSwitchLocation ? "Changing this moves your active workspace." : "Enable Mobile tech in Team to switch locations.")
     : "Run location setup to enable locations.";
   const showWorkDashboard = activeSection === "work" && !isViewingWorkOrderSearch && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
+  const showIssueReportPanel = reportIssueMode && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleRequests = filteredRequests();
   const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
   const visibleWorkOrders = workOrders;
@@ -1779,6 +1790,7 @@ function renderWorkspace() {
           </div>
           <div class="topbar-actions">
             <button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>
+            <button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>
             <details class="topbar-more">
               <summary>More</summary>
               <div>
@@ -1837,6 +1849,8 @@ function renderWorkspace() {
         ${renderCommandStack("desktop")}
 
         ${showGlobalSearch ? renderGlobalSearchResults(globalResults) : ""}
+
+        ${showIssueReportPanel ? renderAppIssueReportForm() : ""}
 
         ${showWorkDashboard ? `
           <section class="panel full-width screen-gauge-panel">
@@ -1981,7 +1995,7 @@ function renderWorkspace() {
               `).join("")}
             </div>
             <div class="asset-list">
-              ${pagedAssets.map(renderAssetCard).join("") || `<p class="muted">No equipment matches this search.</p>`}
+              ${pagedAssets.map(renderAssetCard).join("") || `<p class="muted">${assetEmptyStateText()}</p>`}
             </div>
             ${renderAssetsPagination(visibleAssets.length, totalAssetPages)}
             `}
@@ -2101,7 +2115,7 @@ function renderWorkspace() {
               </form>
               ${showPartSourceManager ? renderPartSourceManager() : ""}
               <div class="parts-list" id="parts-list">
-                ${pagedParts.map(renderPart).join("") || `<p class="muted">No parts match this search.</p>`}
+                ${pagedParts.map(renderPart).join("") || `<p class="muted">${partEmptyStateText()}</p>`}
               </div>
               ${renderPartsPagination(visibleParts.length, totalPartsPages)}
             `}
@@ -2155,6 +2169,7 @@ function renderWorkspace() {
             <div class="setup-list">
               ${setupItems().map(renderSetupItem).join("")}
             </div>
+            ${renderAppIssueReportsPanel()}
           </section>
         </section>
       </main>
@@ -2219,6 +2234,12 @@ function invalidateExactWorkOrderSearchCache() {
 function resetPartsPage() {
   partsPage = 1;
   localStorage.setItem("maintainops.partsPage", String(partsPage));
+}
+
+function clearPartSearchState() {
+  partSearchQuery = "";
+  localStorage.setItem("maintainops.partSearchQuery", "");
+  resetPartsPage();
 }
 
 function resetAssetsPage() {
@@ -2357,6 +2378,12 @@ function filteredAssets() {
   });
 }
 
+function assetEmptyStateText() {
+  if (searchQuery.trim()) return "No equipment matches this search.";
+  if (assetStatusFilter !== "all") return `No ${assetStatusLabel(assetStatusFilter).toLowerCase()} equipment found.`;
+  return "No equipment added yet.";
+}
+
 function parentAssetFor(asset) {
   return assets.find((item) => item.id === asset?.parent_asset_id) || null;
 }
@@ -2427,6 +2454,12 @@ function matchesPartSearch(values) {
   const query = partSearchQuery.trim().toLowerCase();
   if (!query) return true;
   return values.some((value) => String(value ?? "").toLowerCase().includes(query));
+}
+
+function partEmptyStateText() {
+  if (partSearchQuery.trim()) return "No parts match this search.";
+  if (partInventoryFilter === "low") return "No low stock parts right now.";
+  return "No parts added yet.";
 }
 
 function partSourceOptions() {
@@ -3741,6 +3774,77 @@ function renderMessageNavBadge() {
   return unread > 0 ? `<b class="nav-badge">${unread}</b>` : "";
 }
 
+function renderAppIssueReportForm() {
+  return `
+    <section class="panel full-width focus-panel app-issue-report-panel">
+      <div class="panel-header">
+        <h2>Report App Issue</h2>
+        <button class="secondary-button back-action-button" data-cancel-app-issue-report type="button">Cancel</button>
+      </div>
+      <form class="form-grid app-issue-report-form" id="app-issue-report-form">
+        <label>Short title<input name="title" required maxlength="140" placeholder="What broke or felt confusing?"></label>
+        <label>Details<textarea name="details" rows="4" required placeholder="What were you trying to do, what happened, and what device were you on?"></textarea></label>
+        <label>Severity
+          <select name="severity">
+            <option value="normal">Normal</option>
+            <option value="blocking">Blocking</option>
+            <option value="minor">Minor</option>
+          </select>
+        </label>
+        <input name="screen" type="hidden" value="${escapeHtml(activeSection)}">
+        <p class="muted">This sends the current company, location, screen, and signed-in user with the report.</p>
+        <p class="error-text" id="app-issue-report-error">${appIssueReportsReady ? "" : "Run supabase/step-next-app-issue-reports.sql before saving app issue reports."}</p>
+        <button class="primary-button" type="submit" ${appIssueReportsReady ? "" : "disabled"}>Send Report</button>
+      </form>
+    </section>
+  `;
+}
+
+function renderAppIssueReportsPanel() {
+  if (!canManageTeam()) return "";
+  return `
+    <section class="settings-summary app-issue-report-list">
+      <div class="settings-section-heading">
+        <div>
+          <strong>Reported App Issues</strong>
+          <span>${appIssueReportsReady ? `${appIssueReports.length} captured` : "setup needed"}</span>
+        </div>
+      </div>
+      ${appIssueReportsReady ? `
+        <div class="issue-report-list">
+          ${appIssueReports.map(renderAppIssueReport).join("") || `<p class="muted">No app issues reported yet.</p>`}
+        </div>
+      ` : `<p class="warning-text">Run supabase/step-next-app-issue-reports.sql to capture tester feedback inside the app.</p>`}
+    </section>
+  `;
+}
+
+function renderAppIssueReport(report) {
+  const reporter = profilesByUserId[report.reporter_id]?.full_name || "Team member";
+  const location = locations.find((item) => item.id === report.location_id)?.name || "No location";
+  return `
+    <article class="issue-report-card issue-${report.status || "open"}">
+      <div>
+        <div class="issue-report-meta">
+          <span class="chip ${report.severity === "blocking" ? "critical" : report.severity === "minor" ? "completed" : "open"}">${escapeHtml(report.severity || "normal")}</span>
+          <span class="chip">${escapeHtml(report.status || "open")}</span>
+          <span>${escapeHtml(location)}</span>
+          <span>${report.created_at ? new Date(report.created_at).toLocaleString() : ""}</span>
+        </div>
+        <strong>${escapeHtml(report.title)}</strong>
+        <p>${escapeHtml(report.details || "")}</p>
+        <small>${escapeHtml(reporter)} · ${escapeHtml(report.screen || "workspace")}</small>
+      </div>
+      <form class="inline-form issue-status-form" data-app-issue-status="${escapeHtml(report.id)}">
+        <select name="status" aria-label="Issue status">
+          ${["open", "reviewing", "resolved"].map((status) => `<option value="${status}" ${status === (report.status || "open") ? "selected" : ""}>${status}</option>`).join("")}
+        </select>
+        <button class="secondary-button" type="submit">Save</button>
+      </form>
+    </article>
+  `;
+}
+
 function setupItems() {
   return [
     {
@@ -3787,6 +3891,11 @@ function setupItems() {
       name: "Part files",
       ready: partDocumentsReady,
       detail: partDocumentsReady ? "Receipts and invoices can be filed with parts" : "Run step-next-part-documents.sql",
+    },
+    {
+      name: "App issue reports",
+      ready: appIssueReportsReady,
+      detail: appIssueReportsReady ? "Live tester feedback can be captured" : "Run step-next-app-issue-reports.sql",
     },
     {
       name: "Message center",
@@ -5045,6 +5154,7 @@ function bindWorkspaceEvents() {
     activeLocationId = "";
     activeWorkOrderId = null;
     createWorkOrderMode = false;
+    reportIssueMode = false;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
     localStorage.setItem("maintainops.activeLocationId", activeLocationId);
     await render();
@@ -5055,6 +5165,7 @@ function bindWorkspaceEvents() {
       activeWorkOrderId = null;
       activeAssetId = null;
       activePartId = null;
+      reportIssueMode = false;
       resetWorkOrderPage();
       resetPartsPage();
       resetAssetsPage();
@@ -5088,6 +5199,7 @@ function bindWorkspaceEvents() {
       showPartSourceManager = false;
       createWorkOrderMode = false;
       quickFixMode = false;
+      reportIssueMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
       if (activeSection !== "work") setWorkOrderSearchMode(false);
@@ -5103,6 +5215,7 @@ function bindWorkspaceEvents() {
         activeAssetId = null;
         createWorkOrderMode = false;
         quickFixMode = true;
+        reportIssueMode = false;
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "mywork";
@@ -5116,6 +5229,7 @@ function bindWorkspaceEvents() {
         activeAssetId = null;
         createWorkOrderMode = true;
         quickFixMode = false;
+        reportIssueMode = false;
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "work";
@@ -5129,6 +5243,7 @@ function bindWorkspaceEvents() {
         activeAssetId = null;
         createWorkOrderMode = false;
         quickFixMode = false;
+        reportIssueMode = false;
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "requests";
@@ -5137,10 +5252,34 @@ function bindWorkspaceEvents() {
         renderWorkspace();
         return;
       }
+      if (button.dataset.commandAction === "report-issue") {
+        activeWorkOrderId = null;
+        activeAssetId = null;
+        activePartId = null;
+        createWorkOrderMode = false;
+        quickFixMode = false;
+        reportIssueMode = true;
+        renderWorkspace();
+        return;
+      }
       if (button.dataset.commandAction === "export-csv") {
         exportActiveSectionCsv();
       }
     });
+  });
+
+  const appIssueReportForm = document.querySelector("#app-issue-report-form");
+  if (appIssueReportForm) appIssueReportForm.addEventListener("submit", createAppIssueReport);
+
+  document.querySelectorAll("[data-cancel-app-issue-report]").forEach((button) => {
+    button.addEventListener("click", () => {
+      reportIssueMode = false;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-app-issue-status]").forEach((form) => {
+    form.addEventListener("submit", updateAppIssueReportStatus);
   });
 
   document.querySelectorAll("[data-setup-action]").forEach((button) => {
@@ -6818,6 +6957,115 @@ async function createLocation(event) {
   }
 }
 
+async function reloadAppIssueReports() {
+  const { data, error } = await withOperationTimeout(
+    supabaseClient
+      .from("app_issue_reports")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false }),
+    "App issue report load timed out. Check your connection and try again.",
+    12000
+  );
+  appIssueReportsReady = !error;
+  appIssueReports = error ? [] : (data || []);
+  if (error) throw error;
+}
+
+function appIssueReportError(error) {
+  if (isColumnSchemaError(error, ["app_issue_reports"]) || String(error.message || "").includes("app_issue_reports")) {
+    appIssueReportsReady = false;
+    return "Run supabase/step-next-app-issue-reports.sql before saving app issue reports.";
+  }
+  return error.message || String(error);
+}
+
+async function createAppIssueReport(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const errorElement = document.querySelector("#app-issue-report-error");
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  if (errorElement) errorElement.textContent = "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending...";
+  }
+
+  try {
+    const payload = {
+      company_id: activeCompanyId,
+      location_id: activeLocationDatabaseId(),
+      reporter_id: session.user.id,
+      screen: String(form.get("screen") || activeSection || "workspace").slice(0, 80),
+      page_url: window.location.href,
+      severity: String(form.get("severity") || "normal"),
+      title: requiredText(form.get("title"), "Short title").slice(0, 140),
+      details: requiredText(form.get("details"), "Details"),
+      status: "open",
+    };
+
+    const { error } = await withOperationTimeout(
+      supabaseClient.from("app_issue_reports").insert(payload),
+      "App issue report save timed out. Check your connection and try again.",
+      15000
+    );
+    if (error) throw error;
+
+    reportIssueMode = false;
+    showNotice("Issue report sent.");
+    await reloadAppIssueReports();
+    renderWorkspace();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = appIssueReportError(error);
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Send Report";
+    }
+  }
+}
+
+async function updateAppIssueReportStatus(event) {
+  event.preventDefault();
+  if (!canManageTeam()) return;
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector("button[type='submit']");
+  const form = new FormData(formElement);
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+  }
+
+  try {
+    const nextStatus = String(form.get("status") || "open");
+    const { error } = await withOperationTimeout(
+      supabaseClient
+        .from("app_issue_reports")
+        .update({
+          status: nextStatus,
+          resolved_at: nextStatus === "resolved" ? new Date().toISOString() : null,
+        })
+        .eq("company_id", activeCompanyId)
+        .eq("id", formElement.dataset.appIssueStatus),
+      "Issue report status save timed out. Check your connection and try again.",
+      12000
+    );
+    if (error) throw error;
+
+    showNotice("Issue report updated.");
+    await reloadAppIssueReports();
+    renderWorkspace();
+  } catch (error) {
+    showNotice(`Could not update issue report: ${appIssueReportError(error)}`, "warning");
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Save";
+    }
+  }
+}
+
 async function createPublicRequestLink(locationId) {
   const errorElement = document.querySelector("#public-request-link-error");
   const button = document.querySelector(`[data-create-public-request-link="${CSS.escape(locationId)}"]`);
@@ -7040,7 +7288,7 @@ async function createPart(event) {
     }
 
     activePartId = data?.id || null;
-    resetPartsPage();
+    clearPartSearchState();
     showNotice("Part added.");
     formElement.reset();
     await render();
@@ -7178,6 +7426,7 @@ async function updatePart(event) {
     if (error) throw error;
 
     activePartId = null;
+    clearPartSearchState();
     showNotice("Part saved.");
     await render();
   } catch (error) {
