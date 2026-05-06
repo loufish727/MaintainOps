@@ -38,6 +38,7 @@ create table if not exists public.profiles (
   company_id uuid not null references public.companies(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   full_name text not null default '',
+  mobile_tech boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (company_id, user_id)

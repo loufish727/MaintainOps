@@ -1384,7 +1384,7 @@ async function reloadWorkOrderQueue() {
 async function loadProfiles() {
   const { data } = await supabaseClient
     .from("profiles")
-    .select("user_id, full_name")
+    .select("user_id, full_name, mobile_tech")
     .eq("company_id", activeCompanyId);
 
   profilesByUserId = (data || []).reduce((profiles, profile) => {
@@ -1705,6 +1705,12 @@ function renderWorkspace() {
     activeStatusFilter = "active";
   }
   const isViewingWorkOrderSearch = activeSection === "work" && workOrderSearchMode && Boolean(searchQuery.trim());
+  const profile = profilesByUserId[session.user.id] || {};
+  const canSwitchLocation = canSwitchLocations();
+  const locationSwitchDisabled = locationsReady && canSwitchLocation ? "" : "disabled";
+  const locationSwitchNote = locationsReady
+    ? (canSwitchLocation ? "Changing this moves your active workspace." : "Enable Mobile tech in Team to switch locations.")
+    : "Run location setup to enable locations.";
   const showWorkDashboard = activeSection === "work" && !isViewingWorkOrderSearch && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleRequests = filteredRequests();
   const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
@@ -1760,7 +1766,14 @@ function renderWorkspace() {
               ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
               <div>
                 <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
-                <p class="company-location-name">${escapeHtml(activeLocationName())}</p>
+                <label class="topbar-location-switcher">
+                  <span>Location</span>
+                  <select class="location-select-control" data-location-select ${locationSwitchDisabled} title="${escapeHtml(locationSwitchNote)}">
+                    ${locations.length ? "" : `<option value="">Run location setup</option>`}
+                    ${locations.map((location) => `<option value="${location.id}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("")}
+                  </select>
+                  <small>${escapeHtml(locationSwitchNote)}</small>
+                </label>
               </div>
             </div>
           </div>
@@ -1805,7 +1818,7 @@ function renderWorkspace() {
           </label>
           <label class="company-switcher">
             Location
-            <select id="location-select" ${locationsReady ? "" : "disabled"}>
+            <select id="location-select" ${locationSwitchDisabled}>
               ${locations.length ? "" : `<option value="">Run location setup</option>`}
               ${locations.map((location) => `<option value="${location.id}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("")}
             </select>
@@ -2099,36 +2112,38 @@ function renderWorkspace() {
               <h2>Company Settings</h2>
               <span>${escapeHtml(activeCompany?.role || "member")}</span>
             </div>
-            <form class="form-grid settings-form" id="company-settings-form">
-              <label>Company name<input name="name" required value="${escapeHtml(activeCompany?.name || "")}"></label>
-              <button class="secondary-button" type="submit">Save Company</button>
-            </form>
-            <form class="form-grid settings-form logo-form" id="company-logo-form">
-              <div class="company-logo-preview">
-                ${activeCompany?.logoUrl ? `<img src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo preview">` : `<span>MO</span>`}
+            ${canManageTeam() ? `
+              <form class="form-grid settings-form" id="company-settings-form">
+                <label>Company name<input name="name" required value="${escapeHtml(activeCompany?.name || "")}"></label>
+                <button class="secondary-button" type="submit">Save Company</button>
+              </form>
+              <form class="form-grid settings-form logo-form" id="company-logo-form">
+                <div class="company-logo-preview">
+                  ${activeCompany?.logoUrl ? `<img src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo preview">` : `<span>MO</span>`}
+                </div>
+                <label>Company logo<input name="logo" type="file" accept="image/*"><small>Optional. Logos are optimized before upload.</small></label>
+                <p class="error-text" id="company-logo-error">${escapeHtml(activeCompany?.logoError || "")}</p>
+                <button class="secondary-button" type="submit">Upload Logo</button>
+              </form>
+              <div class="settings-summary logo-status">
+                <article><strong>Logo status</strong><span>${activeCompany?.logo_path ? (activeCompany?.logoUrl ? "loaded" : "saved, cannot display") : "none uploaded"}</span></article>
+                ${activeCompany?.logo_path ? `<article><strong>Logo path</strong><span>${escapeHtml(activeCompany.logo_path)}</span></article>` : ""}
               </div>
-              <label>Company logo<input name="logo" type="file" accept="image/*"><small>Optional. Logos are optimized before upload.</small></label>
-              <p class="error-text" id="company-logo-error">${escapeHtml(activeCompany?.logoError || "")}</p>
-              <button class="secondary-button" type="submit">Upload Logo</button>
-            </form>
-            <div class="settings-summary logo-status">
-              <article><strong>Logo status</strong><span>${activeCompany?.logo_path ? (activeCompany?.logoUrl ? "loaded" : "saved, cannot display") : "none uploaded"}</span></article>
-              ${activeCompany?.logo_path ? `<article><strong>Logo path</strong><span>${escapeHtml(activeCompany.logo_path)}</span></article>` : ""}
-            </div>
-            <form class="form-grid settings-form" id="location-form">
-              <label>New location<input name="name" required placeholder="North Plant"></label>
-              <p class="error-text" id="location-error">${locationsReady ? "" : "Run supabase/step-next-locations.sql before adding locations."}</p>
-              <button class="secondary-button" type="submit" ${locationsReady ? "" : "disabled"}>Add Location</button>
-            </form>
-            <div class="settings-summary">
-              ${locations.map((location) => `<article><strong>${escapeHtml(location.name)}</strong><span>${location.id === activeLocationId ? "active location" : "available"}</span></article>`).join("") || `<article><strong>No locations yet</strong><span>Run the location setup SQL</span></article>`}
-            </div>
-            ${renderPublicRequestLinkManager()}
-            <div class="settings-summary">
-              <article><strong>Company ID</strong><span>${escapeHtml(activeCompanyId)}</span></article>
-              <article><strong>Signed in as</strong><span>${escapeHtml(session.user.email || session.user.id)}</span></article>
-              <article><strong>Active section</strong><span>${escapeHtml(activeSection)}</span></article>
-            </div>
+              <form class="form-grid settings-form" id="location-form">
+                <label>New location<input name="name" required placeholder="North Plant"></label>
+                <p class="error-text" id="location-error">${locationsReady ? "" : "Run supabase/step-next-locations.sql before adding locations."}</p>
+                <button class="secondary-button" type="submit" ${locationsReady ? "" : "disabled"}>Add Location</button>
+              </form>
+              <div class="settings-summary">
+                ${locations.map((location) => `<article><strong>${escapeHtml(location.name)}</strong><span>${location.id === activeLocationId ? "active location" : "available"}</span></article>`).join("") || `<article><strong>No locations yet</strong><span>Run the location setup SQL</span></article>`}
+              </div>
+              ${renderPublicRequestLinkManager()}
+              <div class="settings-summary">
+                <article><strong>Company ID</strong><span>${escapeHtml(activeCompanyId)}</span></article>
+                <article><strong>Signed in as</strong><span>${escapeHtml(session.user.email || session.user.id)}</span></article>
+                <article><strong>Active section</strong><span>${escapeHtml(activeSection)}</span></article>
+              </div>
+            ` : `<p class="muted">Company settings are available to managers and admins.</p>`}
           </section>
 
           <section class="panel full-width ${activeSection === "setup" ? "" : "hidden-section"}">
@@ -3409,8 +3424,10 @@ function renderMyProfileForm() {
         <p class="muted">${escapeHtml(session.user.email || "Signed in user")}</p>
       </div>
       <label>Display name<input name="full_name" value="${escapeHtml(profile.full_name || "")}" placeholder="Name shown on work orders"></label>
+      <label class="check-row mobile-tech-setting"><input name="mobile_tech" type="checkbox" ${profile.mobile_tech ? "checked" : ""}> Mobile tech - I intentionally work across locations</label>
+      <p class="muted">When Mobile tech is off, your location is locked so work does not accidentally land in the wrong branch.</p>
       <p class="error-text" id="profile-error"></p>
-      <button class="secondary-button" type="submit">Save Profile</button>
+      <button class="secondary-button" type="submit">Save My Settings</button>
     </form>
   `;
 }
@@ -4074,7 +4091,7 @@ function publicAppUrlWithSearch(search) {
 
 function publicAppBaseUrl() {
   const configured = publicAppUrlOverride || String(window.PUBLIC_APP_URL || "").trim();
-  const candidate = configured || (["http:", "https:"].includes(window.location.protocol) ? window.location.href : "");
+  const candidate = configured || (window.location.protocol === "https:" ? window.location.href : "");
   if (!candidate) return "";
   return normalizePublicAppUrl(candidate);
 }
@@ -4082,7 +4099,8 @@ function publicAppBaseUrl() {
 function normalizePublicAppUrl(value) {
   try {
     const url = new URL(String(value || "").trim(), window.location.href);
-    if (!["http:", "https:"].includes(url.protocol)) return "";
+    if (url.protocol !== "https:") return "";
+    if (!isPublicAppHost(url.hostname)) return "";
     url.search = "";
     url.hash = "";
     if (url.pathname && url.pathname !== "/" && !url.pathname.endsWith("/") && !url.pathname.endsWith(".html")) {
@@ -4092,6 +4110,15 @@ function normalizePublicAppUrl(value) {
   } catch (error) {
     return "";
   }
+}
+
+function isPublicAppHost(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  if (!host || host === "localhost" || host.endsWith(".localhost")) return false;
+  if (host === "127.0.0.1" || host === "::1" || host === "[::1]") return false;
+  if (/^10\./.test(host) || /^192\.168\./.test(host)) return false;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return false;
+  return true;
 }
 
 function qrSvgFor(value, cellSize = 4) {
@@ -5018,10 +5045,8 @@ function bindWorkspaceEvents() {
     await render();
   });
 
-  const locationSelect = document.querySelector("#location-select");
-  if (locationSelect) {
-    locationSelect.addEventListener("change", () => {
-      activeLocationId = locationSelect.value;
+  const switchLocation = async (nextLocationId) => {
+      activeLocationId = nextLocationId;
       activeWorkOrderId = null;
       activeAssetId = null;
       activePartId = null;
@@ -5030,9 +5055,21 @@ function bindWorkspaceEvents() {
       resetAssetsPage();
       invalidateExactWorkOrderSearchCache();
       localStorage.setItem("maintainops.activeLocationId", activeLocationId);
-      renderWorkspace();
+      await reloadWorkOrderQueue();
+  };
+
+  const locationSelect = document.querySelector("#location-select");
+  if (locationSelect) {
+    locationSelect.addEventListener("change", async () => {
+      await switchLocation(locationSelect.value);
     });
   }
+
+  document.querySelectorAll("[data-location-select]").forEach((select) => {
+    select.addEventListener("change", async () => {
+      await switchLocation(select.value);
+    });
+  });
 
   document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
@@ -6355,6 +6392,8 @@ async function updateMyProfile(event) {
   const submitButton = formElement.querySelector("button[type='submit']");
   const form = new FormData(formElement);
   const fullName = String(form.get("full_name") || "").trim();
+  const mobileTechField = formElement.querySelector('input[name="mobile_tech"]');
+  const mobileTech = mobileTechField ? mobileTechField.checked : Boolean(profilesByUserId[session.user.id]?.mobile_tech);
   if (errorElement) errorElement.textContent = "";
   if (submitButton) {
     submitButton.disabled = true;
@@ -6369,12 +6408,18 @@ async function updateMyProfile(event) {
           company_id: activeCompanyId,
           user_id: session.user.id,
           full_name: fullName,
+          mobile_tech: mobileTech,
         }, { onConflict: "company_id,user_id" }),
       "Profile save timed out. Check your connection and try again.",
       15000
     );
 
-    if (error) throw error;
+    if (error) {
+      if (isMissingColumnError(error, "mobile_tech")) {
+        throw new Error("Run supabase/step-next-mobile-tech-setting.sql before saving Mobile tech settings.");
+      }
+      throw error;
+    }
 
     showNotice("Profile saved.");
     await render();
@@ -6902,7 +6947,7 @@ function savePublicAppUrl(event) {
 
   const normalizedUrl = normalizePublicAppUrl(rawUrl);
   if (!normalizedUrl) {
-    if (errorElement) errorElement.textContent = "Enter the full https:// GitHub Pages URL where MaintainOps opens.";
+    if (errorElement) errorElement.textContent = "Enter the public https:// URL where MaintainOps opens. Localhost, file paths, and private network addresses cannot be used for posted QR codes.";
     return;
   }
 
@@ -8770,6 +8815,10 @@ function normalizeRole(role) {
 
 function canManageTeam() {
   return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canSwitchLocations() {
+  return canManageTeam() || Boolean(profilesByUserId[session.user.id]?.mobile_tech);
 }
 
 function canDeleteWorkOrders() {

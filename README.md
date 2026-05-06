@@ -15,7 +15,17 @@ Open [index.html](index.html) in a browser to run the current prototype.
 
 The current app is Supabase-backed. Before running it, execute [supabase/schema.sql](supabase/schema.sql), then the current `supabase/step-next-*.sql` files in order, and add your project credentials to [supabase-config.js](supabase-config.js). The current setup order is listed in [docs/supabase-architecture.md](docs/supabase-architecture.md).
 
-Start with [docs/10-step-process.md](docs/10-step-process.md), then see:
+For current project handoff, start with:
+
+- [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md)
+- [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
+- [docs/QA_LOG.md](docs/QA_LOG.md)
+- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
+- [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
+
+Original planning docs:
 
 - [docs/step-01-product-foundation.md](docs/step-01-product-foundation.md)
 - [docs/step-02-technical-foundation.md](docs/step-02-technical-foundation.md)
