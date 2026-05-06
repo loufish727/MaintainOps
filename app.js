@@ -1179,6 +1179,8 @@ function renderWorkspace() {
     activeStatusFilter = "active";
   }
   const showWorkDashboard = activeSection === "work" && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
+  const visibleRequests = filteredRequests();
+  const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
   const visibleWorkOrders = filteredWorkOrders();
   const myWorkGaugeOrders = activeSection === "mywork" ? myWorkQueueOrders() : [];
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrders.length / WORK_ORDERS_PER_PAGE));
@@ -1188,7 +1190,6 @@ function renderWorkspace() {
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
   const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
-  const visibleRequests = filteredRequests();
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
@@ -1320,8 +1321,8 @@ function renderWorkspace() {
             ` : `
               <section class="panel full-width my-work-panel queue-panel">
                 <div class="panel-header">
-                  <h2>${workQueuePanelTitle()}</h2>
-                  <span>${workQueuePanelSubtitle(visibleWorkOrders.length)}</span>
+                  <h2>${showingRequestsInWorkQueue ? "Requests" : workQueuePanelTitle()}</h2>
+                  <span>${showingRequestsInWorkQueue ? `${visibleRequests.length} shown` : workQueuePanelSubtitle(visibleWorkOrders.length)}</span>
                 </div>
                 ${activeSection === "mywork" ? renderWorkloadStrip(myWorkGaugeOrders) : ""}
                 ${activeSection === "mywork" ? `
@@ -1329,6 +1330,8 @@ function renderWorkspace() {
                     <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
                     <button class="segment ${myWorkFilter === "created" ? "active" : ""}" data-my-work-filter="created" type="button">${segmentIcon("created")}Created By Me</button>
                   </div>
+                ` : showingRequestsInWorkQueue ? `
+                  <p class="muted inline-request-note">Requests waiting for review at this location.</p>
                 ` : `
                   <div class="segmented-control" aria-label="Work order filter">
                     <button class="segment ${workOrderFilter === "all" ? "active" : ""}" data-work-order-filter="all" type="button">${segmentIcon("all")}All Work Orders</button>
@@ -1343,22 +1346,31 @@ function renderWorkspace() {
                     </div>
                   ` : ""}
                 `}
-                <div class="segmented-control" aria-label="Work order sort">
-                  ${[
-                    ["newest", "Newest"],
-                    ["due", "Due First"],
-                    ["priority", "Priority"],
-                  ].map(([id, label]) => `
-                    <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
-                  `).join("")}
-                </div>
-                ${["completed", "completed_month", "completed_week"].includes(activeStatusFilter) ? `
+                ${showingRequestsInWorkQueue ? "" : `
+                  <div class="segmented-control" aria-label="Work order sort">
+                    ${[
+                      ["newest", "Newest"],
+                      ["due", "Due First"],
+                      ["priority", "Priority"],
+                    ].map(([id, label]) => `
+                      <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
+                    `).join("")}
+                  </div>
+                `}
+                ${!showingRequestsInWorkQueue && ["completed", "completed_month", "completed_week"].includes(activeStatusFilter) ? `
                   <p class="completion-note completed-history-note">Completed history is paged ${WORK_ORDERS_PER_PAGE} at a time and sorted by most recently completed.</p>
                 ` : ""}
-                <div class="work-list" id="work-order-list">
-                  ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
-                </div>
-                ${renderWorkPagination(visibleWorkOrders.length, totalWorkOrderPages)}
+                ${showingRequestsInWorkQueue ? `
+                  <div class="request-list">
+                    ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">No requests match this location.</p>`}
+                  </div>
+                  ${renderListPagination("requests", visibleRequests.length, requestsPage, totalRequestPages)}
+                ` : `
+                  <div class="work-list" id="work-order-list">
+                    ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
+                  </div>
+                  ${renderWorkPagination(visibleWorkOrders.length, totalWorkOrderPages)}
+                `}
               </section>
             `}
           ` : ""}
@@ -2125,6 +2137,8 @@ function renderGaugeReadout(label, value, tone = "active", options = {}) {
   const isAction = options.filter || options.section;
   const tag = isAction ? "button" : "article";
   const activeClass = options.filter && activeStatusFilter === options.filter ? " selected" : "";
+  const isOverdueAlert = tone.includes("overdue") && Number(value) >= 3;
+  const alertClass = isOverdueAlert ? " alert-blink" : "";
   const attributes = [
     isAction ? `type="button"` : "",
     options.filter ? `data-status-filter="${options.filter}" aria-pressed="${activeStatusFilter === options.filter}"` : "",
@@ -2132,7 +2146,8 @@ function renderGaugeReadout(label, value, tone = "active", options = {}) {
   ].filter(Boolean).join(" ");
   const attrText = attributes ? ` ${attributes}` : "";
   return `
-    <${tag} class="gauge-readout ${tone}${activeClass}"${attrText}>
+    <${tag} class="gauge-readout ${tone}${activeClass}${alertClass}"${attrText}>
+      ${isOverdueAlert ? `<span class="gauge-alert-badge" aria-hidden="true">!</span>` : ""}
       <div class="gauge-visual" aria-hidden="true">
         <span class="gauge-arc"></span>
         <span class="gauge-cut one"></span>
@@ -2167,7 +2182,7 @@ function renderWorkOrderGaugeDashboard() {
       ${renderGaugeReadout("In Progress", inProgress, "in_progress", { filter: "in_progress" })}
       ${renderGaugeReadout("Blocked", blocked, "blocked", { filter: "blocked" })}
       ${renderGaugeReadout("Overdue", overdue, "overdue", { filter: "overdue" })}
-      ${renderGaugeReadout("Requests", requestCount, "request", { section: "requests" })}
+      ${renderGaugeReadout("Requests", requestCount, "request", { filter: "requests" })}
       ${renderGaugeReadout("Completed Month", completedMonth, "completed", { filter: "completed_month" })}
       ${renderGaugeReadout("Done This Week", completedWeek, "completed", { filter: "completed_week" })}
     </div>
@@ -4897,6 +4912,10 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => {
       activeStatusFilter = button.dataset.statusFilter;
       resetWorkOrderPage();
+      if (activeStatusFilter === "requests") {
+        requestsPage = 1;
+        localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+      }
       renderWorkspace();
     });
   });

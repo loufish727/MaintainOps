@@ -19,6 +19,7 @@
   --yellow: #a06b19;
   --green: #2e7b4f;
   --blue: #2868a8;
+  --request-gauge: #0b7f91;
   --rel-asset-bg: #edf4f7;
   --rel-asset-ink: #2c6270;
   --rel-procedure-bg: #eef4f0;
@@ -62,6 +63,7 @@
   --yellow: #e2aa4c;
   --green: #76c892;
   --blue: #7eb1ef;
+  --request-gauge: #2dd4bf;
   --rel-asset-bg: #1c3035;
   --rel-asset-ink: #93d1df;
   --rel-procedure-bg: #1d352f;
@@ -182,13 +184,17 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   gap: 9px;
   position: relative;
   min-height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid color-mix(in srgb, var(--nav-ink, var(--accent)) 30%, rgba(255, 255, 255, 0.14));
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-ink, var(--accent)) 13%, transparent), rgba(255, 255, 255, 0.035));
   color: #dce7e2;
   padding: 9px 11px;
   text-align: left;
   font-weight: 500;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 4px 0 0 color-mix(in srgb, var(--nav-ink, var(--accent)) 64%, transparent);
 }
 
 .nav-badge {
@@ -263,7 +269,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 }
 
 .section-nav .nav-requests {
-  --nav-ink: var(--rel-comment-ink);
+  --nav-ink: var(--request-gauge);
 }
 
 .section-nav .nav-pm,
@@ -290,6 +296,11 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 
 .section-nav button {
   border-left: 4px solid color-mix(in srgb, var(--nav-ink) 72%, transparent);
+}
+
+.section-nav button .nav-icon {
+  color: var(--nav-ink);
+  opacity: 1;
 }
 
 .section-nav button.active,
@@ -755,6 +766,87 @@ button.gauge-readout {
     drop-shadow(0 0 28px color-mix(in srgb, var(--gauge-ink) 28%, transparent));
 }
 
+.gauge-readout.alert-blink {
+  --overdue-alarm: #b9151c;
+  --overdue-alarm-hot: #ff3038;
+  animation: overdueGaugeBlink 1.15s ease-in-out infinite;
+}
+
+.gauge-readout.alert-blink .gauge-visual {
+  animation: overdueGaugeFaceBlink 1.15s ease-in-out infinite;
+}
+
+@keyframes overdueGaugeBlink {
+  0%, 100% {
+    border-color: color-mix(in srgb, var(--overdue-alarm) 62%, var(--line));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.20),
+      inset 0 0 0 1px rgba(0,0,0,0.54),
+      inset 0 -24px 30px rgba(0,0,0,0.28),
+      inset 0 0 26px color-mix(in srgb, var(--overdue-alarm) 12%, transparent),
+      0 10px 24px rgba(0,0,0,0.22);
+  }
+  45% {
+    border-color: color-mix(in srgb, var(--overdue-alarm-hot) 76%, #4d0004);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.30),
+      inset 0 0 0 2px color-mix(in srgb, var(--overdue-alarm) 56%, rgba(255,255,255,0.10)),
+      inset 0 -18px 28px rgba(0,0,0,0.24),
+      inset 0 0 46px color-mix(in srgb, var(--overdue-alarm) 26%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--overdue-alarm) 58%, transparent),
+      0 0 24px color-mix(in srgb, var(--overdue-alarm) 44%, transparent),
+      0 0 50px color-mix(in srgb, var(--overdue-alarm) 30%, transparent);
+  }
+}
+
+@keyframes overdueGaugeFaceBlink {
+  0%, 100% {
+    filter:
+      drop-shadow(0 10px 14px rgba(0,0,0,0.48))
+      drop-shadow(0 0 12px color-mix(in srgb, var(--overdue-alarm) 28%, transparent));
+  }
+  45% {
+    filter:
+      drop-shadow(0 12px 16px rgba(0,0,0,0.54))
+      drop-shadow(0 0 18px color-mix(in srgb, var(--overdue-alarm-hot) 46%, transparent))
+      drop-shadow(0 0 34px color-mix(in srgb, var(--overdue-alarm) 42%, transparent));
+  }
+}
+
+@keyframes overdueMarkPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.30),
+      0 0 10px rgba(255, 122, 24, 0.56),
+      0 0 18px rgba(255, 122, 24, 0.26);
+  }
+  45% {
+    transform: scale(1.13);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.42),
+      0 0 14px rgba(255, 154, 36, 0.82),
+      0 0 28px rgba(255, 122, 24, 0.42);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauge-readout.alert-blink,
+  .gauge-readout.alert-blink .gauge-visual,
+  .gauge-readout.alert-blink .gauge-alert-badge {
+    animation: none;
+  }
+
+  .gauge-readout.alert-blink {
+    border-color: color-mix(in srgb, #ff3038 76%, #4d0004);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.30),
+      inset 0 0 0 2px color-mix(in srgb, #b9151c 56%, rgba(255,255,255,0.10)),
+      0 0 0 2px color-mix(in srgb, #b9151c 58%, transparent),
+      0 0 32px color-mix(in srgb, #b9151c 34%, transparent);
+  }
+}
+
 .focus-stats .gauge-readout.created {
   --gauge-ink: var(--accent);
 }
@@ -786,6 +878,37 @@ button.gauge-readout {
     0 1px 8px rgba(0,0,0,0.58);
 }
 
+.gauge-alert-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 42% 30%, rgba(255,255,255,0.42), transparent 34%),
+    linear-gradient(180deg, #ffba4a, #ff7a18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.30),
+    0 0 10px rgba(255, 122, 24, 0.62),
+    0 0 18px rgba(255, 122, 24, 0.30);
+  color: #231004;
+  font-size: 0.86rem;
+  font-weight: 820;
+  line-height: 1;
+  text-shadow: none;
+  transform: none;
+}
+
+.gauge-readout.alert-blink .gauge-alert-badge {
+  animation: overdueMarkPulse 1.15s ease-in-out infinite;
+}
+
 .gauge-readout > span {
   position: relative;
   z-index: 3;
@@ -795,6 +918,17 @@ button.gauge-readout {
   letter-spacing: 0.01em;
   text-align: center;
   text-shadow: 0 1px 7px rgba(0,0,0,0.52);
+}
+
+.gauge-readout > .gauge-alert-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  color: #231004;
+  font-size: 0.86rem;
+  font-weight: 820;
+  text-shadow: none;
 }
 
 .gauge-visual {
@@ -1019,28 +1153,31 @@ button.gauge-readout {
 .search-bar::before {
   content: "";
   position: absolute;
-  right: 16px;
-  top: 14px;
-  width: 22px;
-  height: 22px;
-  border: 2px solid color-mix(in srgb, var(--accent) 76%, #ffffff);
+  right: 26px;
+  bottom: 24px;
+  width: 17px;
+  height: 17px;
+  border: 2px solid color-mix(in srgb, var(--accent) 70%, #ffffff);
   border-radius: 50%;
   opacity: 0.75;
   pointer-events: none;
+  z-index: 2;
 }
 
 .search-bar::after {
   content: "";
   position: absolute;
-  right: 11px;
-  top: 34px;
-  width: 13px;
+  right: 19px;
+  bottom: 21px;
+  width: 10px;
   height: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 76%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 70%, #ffffff);
   opacity: 0.75;
   pointer-events: none;
   transform: rotate(45deg);
+  transform-origin: left center;
+  z-index: 2;
 }
 
 .search-bar input {
@@ -1050,7 +1187,7 @@ button.gauge-readout {
   color: var(--ink);
   font-size: 1.12rem;
   font-weight: 500;
-  padding: 11px 46px 11px 13px;
+  padding: 11px 58px 11px 13px;
   text-transform: none;
 }
 
@@ -1850,9 +1987,12 @@ textarea {
 }
 
 .gauge-readout.active,
-.gauge-readout.neutral,
-.gauge-readout.request {
+.gauge-readout.neutral {
   --gauge-ink: var(--accent);
+}
+
+.gauge-readout.request {
+  --gauge-ink: var(--request-gauge);
 }
 
 .gauge-readout.in_progress {
@@ -4379,9 +4519,12 @@ body {
 
 .section-nav button,
 .sidebar .secondary-button {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255,255,255,0.04);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: color-mix(in srgb, var(--nav-ink, var(--accent)) 34%, rgba(255, 255, 255, 0.14));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-ink, var(--accent)) 16%, transparent), rgba(255,255,255,0.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 4px 0 0 color-mix(in srgb, var(--nav-ink, var(--accent)) 56%, transparent);
 }
 
 .section-nav button.active,
@@ -6231,21 +6374,23 @@ textarea:focus {
   }
 
   .search-bar input {
-    padding-right: 38px;
+    padding-right: 52px;
   }
 
   .search-bar::before {
-    right: 14px;
-    top: 36px;
-    width: 18px;
-    height: 18px;
+    right: 24px;
+    top: auto;
+    bottom: 24px;
+    width: 16px;
+    height: 16px;
     border-width: 2px;
   }
 
   .search-bar::after {
-    right: 10px;
-    top: 53px;
-    width: 10px;
+    right: 18px;
+    top: auto;
+    bottom: 21px;
+    width: 9px;
   }
 
   .panel {
