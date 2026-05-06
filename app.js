@@ -4039,6 +4039,7 @@ function renderPublicRequestLinkManager() {
 function renderPublicRequestLocationCard(location) {
   const link = publicRequestLinks.find((item) => item.location_id === location.id);
   const linkActive = Boolean(link && link.is_active !== false);
+  const canAdministerLinks = canAdministerPublicRequestLinks();
   const requestUrl = linkActive ? publicRequestUrl(link.token) : "";
   const qrUrl = linkActive ? publicRequestQrUrl(link.token) : "";
   const hasUsableUrl = Boolean(requestUrl && qrUrl);
@@ -4056,14 +4057,18 @@ function renderPublicRequestLocationCard(location) {
           <a class="primary-button request-action-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Open QR Code</a>
           <button class="secondary-button request-action-button" data-copy-public-request-link="${escapeHtml(qrUrl)}" type="button" ${hasUsableUrl ? "" : "disabled"}>Copy QR Link</button>
           <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">Test Form</a>
-          <button class="secondary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
-          <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
+          ${canAdministerLinks ? `
+            <button class="secondary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+            <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
+          ` : `<span class="muted">Only admins can replace or disable posted QR codes.</span>`}
         </div>
       ` : link ? `
         <div class="qr-preview inactive-qr-preview"><div class="qr-fallback">Off</div></div>
         <div class="button-row">
-          <button class="secondary-button request-action-button" data-enable-public-request-link="${escapeHtml(link.id)}" type="button">Reactivate Same QR</button>
-          <button class="primary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+          ${canAdministerLinks ? `
+            <button class="secondary-button request-action-button" data-enable-public-request-link="${escapeHtml(link.id)}" type="button">Reactivate Same QR</button>
+            <button class="primary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+          ` : `<span class="muted">Only admins can reactivate or replace this QR code.</span>`}
         </div>
       ` : `
         <button class="secondary-button request-action-button" data-create-public-request-link="${escapeHtml(location.id)}" type="button" ${publicRequestLinksReady ? "" : "disabled"}>Create QR Link</button>
@@ -6851,12 +6856,22 @@ async function createPublicRequestLink(locationId) {
 }
 
 async function disablePublicRequestLink(linkId) {
+  if (!canAdministerPublicRequestLinks()) {
+    const errorElement = document.querySelector("#public-request-link-error");
+    if (errorElement) errorElement.textContent = "Only admins can disable posted QR request links.";
+    return;
+  }
   const confirmed = window.confirm("Disable this public request QR link? Posted codes for this location will stop accepting requests until you reactivate it.");
   if (!confirmed) return;
   await setPublicRequestLinkActive(linkId, false);
 }
 
 async function setPublicRequestLinkActive(linkId, isActive) {
+  if (!canAdministerPublicRequestLinks()) {
+    const errorElement = document.querySelector("#public-request-link-error");
+    if (errorElement) errorElement.textContent = "Only admins can reactivate or disable posted QR request links.";
+    return;
+  }
   await updatePublicRequestLink(
     linkId,
     { is_active: Boolean(isActive) },
@@ -6865,6 +6880,11 @@ async function setPublicRequestLinkActive(linkId, isActive) {
 }
 
 async function regeneratePublicRequestLink(linkId) {
+  if (!canAdministerPublicRequestLinks()) {
+    const errorElement = document.querySelector("#public-request-link-error");
+    if (errorElement) errorElement.textContent = "Only admins can replace posted QR request links.";
+    return;
+  }
   const confirmed = window.confirm("Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
   if (!confirmed) return;
 
@@ -6881,6 +6901,11 @@ async function regeneratePublicRequestLink(linkId) {
 async function updatePublicRequestLink(linkId, patch, successMessage) {
   const errorElement = document.querySelector("#public-request-link-error");
   if (errorElement) errorElement.textContent = "";
+
+  if (!canAdministerPublicRequestLinks()) {
+    if (errorElement) errorElement.textContent = "Only admins can replace, disable, or reactivate posted QR request links.";
+    return;
+  }
 
   if (!linkId || !activeCompanyId) {
     if (errorElement) errorElement.textContent = "Select a company before updating request links.";
@@ -8815,6 +8840,10 @@ function normalizeRole(role) {
 
 function canManageTeam() {
   return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canAdministerPublicRequestLinks() {
+  return activeCompanyRole() === "admin";
 }
 
 function canSwitchLocations() {

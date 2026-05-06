@@ -52,7 +52,8 @@ with check (
 );
 
 drop policy if exists "Managers can update public request links" on public.public_request_links;
-create policy "Managers can update public request links"
+drop policy if exists "Admins can update public request links" on public.public_request_links;
+create policy "Admins can update public request links"
 on public.public_request_links for update
 to authenticated
 using (
@@ -62,7 +63,7 @@ using (
     from public.company_members cm
     where cm.company_id = public_request_links.company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager')
+      and cm.role = 'admin'
   )
 )
 with check (
@@ -72,7 +73,7 @@ with check (
     from public.company_members cm
     where cm.company_id = public_request_links.company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager')
+      and cm.role = 'admin'
   )
 );
 
@@ -119,9 +120,7 @@ begin
 
   insert into public.public_request_links (company_id, location_id, token, label, created_by, is_active, updated_at)
   values (location_row.company_id, location_row.id, private.new_public_request_token(), location_row.name, auth.uid(), true, now())
-  on conflict (company_id, location_id) do update
-  set is_active = true,
-      updated_at = now();
+  on conflict (company_id, location_id) do nothing;
 end;
 $$;
 
