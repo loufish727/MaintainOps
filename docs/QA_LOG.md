@@ -92,6 +92,10 @@ Recent change needing fresh QA:
 - Public form showed `Request Sent`.
 - Manager reloaded MaintainOps and confirmed the request appears under Riverside, CA Requests with outside requester name/contact and Convert/Quick Fix actions.
 - Before printing real QR codes, set Public MaintainOps URL to the deployed MaintainOps URL rather than the local test URL.
+- GitHub Pages URL confirmed as `https://loufish727.github.io/MaintainOps/`.
+- Local `supabase-config.js` now sets `window.PUBLIC_APP_URL` to the GitHub Pages URL for QR generation after upload.
+- Direct GitHub asset check confirmed hosted `app.js` contains the public request flow and public URL guard.
+- Anonymous Supabase intake RPC confirmed Riverside, CA / Taylor Metal Products for the active Riverside token.
 
 Current next QA sequence:
 
