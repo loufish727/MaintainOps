@@ -90,12 +90,15 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
   font-weight: 400;
@@ -117,6 +120,14 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
+  min-height: 100svh;
+}
+
+@supports (min-height: 100dvh) {
+  body,
+  .app-shell {
+    min-height: 100dvh;
+  }
 }
 
 .sidebar {
@@ -5067,12 +5078,21 @@ textarea:focus {
   body {
     min-width: 0;
     font-size: 15px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    min-height: 100svh;
+    padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
   }
 
   .app-shell {
     display: block;
-    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  @supports (min-height: 100dvh) {
+    body,
+    .app-shell {
+      min-height: 100dvh;
+    }
   }
 
   .sidebar {
@@ -5183,9 +5203,9 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
     margin: 0;
-    max-height: min(44vh, 430px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
     padding: 9px 2px 4px;
     border-top: 1px solid rgba(255,255,255,0.1);
     background:
@@ -5253,7 +5273,7 @@ textarea:focus {
   }
 
   .workspace {
-    padding: 12px 10px 20px;
+    padding: 12px 10px calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
   .workspace > .command-stack,
@@ -5275,14 +5295,13 @@ textarea:focus {
   }
 
   .command-stack {
-    position: sticky;
-    top: 0;
+    position: relative;
+    top: auto;
     z-index: 35;
-    margin: -12px -10px 12px;
-    padding: 10px 10px 1px;
-    background:
-      linear-gradient(180deg, var(--bg) 0%, var(--bg) 78%, color-mix(in srgb, var(--bg) 0%, transparent) 100%);
-    box-shadow: 0 16px 28px rgba(0,0,0,0.18);
+    margin: 0 0 12px;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .sidebar .command-stack {
@@ -5409,6 +5428,12 @@ textarea:focus {
     right: 0;
     z-index: 120;
     width: min(240px, calc(100vw - 32px));
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   .search-bar {
@@ -6548,6 +6573,7 @@ textarea:focus {
 @media (max-width: 760px) {
   body {
     font-size: 14px;
+    padding-bottom: calc(46px + env(safe-area-inset-bottom, 0px));
   }
 
   .sidebar {
@@ -6570,7 +6596,7 @@ textarea:focus {
   }
 
   .workspace {
-    padding: 10px 10px 18px;
+    padding: 10px 10px calc(78px + env(safe-area-inset-bottom, 0px));
   }
 
   .command-stack {
@@ -6605,7 +6631,7 @@ textarea:focus {
   .search-bar input,
   .part-search-bar input {
     min-height: 42px;
-    font-size: 0.9rem;
+    font-size: 16px;
   }
 
   .search-bar input {
@@ -6696,6 +6722,7 @@ textarea:focus {
   select,
   textarea {
     min-height: 40px;
+    font-size: 16px;
   }
 
   textarea {
