@@ -7,6 +7,9 @@ const WORK_ORDERS_PER_PAGE = 12;
 const PARTS_PER_PAGE = 12;
 const ASSETS_PER_PAGE = 12;
 const LIST_ITEMS_PER_PAGE = 12;
+const SEARCH_ID_PAGE_SIZE = 1000;
+const SEARCH_ID_CHUNK_SIZE = 100;
+const SEARCH_PREVIEW_LIMIT = 6;
 const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
 const OUTSIDE_VENDOR_NOTE = "[Assignment: Outside vendor]";
 let supabaseClient;
@@ -18,6 +21,11 @@ let locationsReady = true;
 let activeLocationId = localStorage.getItem("maintainops.activeLocationId") || "";
 let assets = [];
 let workOrders = [];
+let workOrderServerTotal = 0;
+let workOrderDashboardCounts = null;
+let myWorkDashboardCounts = null;
+let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
+let exactWorkOrderSearchCache = { key: "", rows: [] };
 let maintenanceRequests = [];
 let requestsReady = false;
 let publicRequestLinks = [];
@@ -90,10 +98,13 @@ if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "
   localStorage.setItem("maintainops.sectionSplitDone", "true");
 }
 let searchQuery = localStorage.getItem("maintainops.searchQuery") || "";
+let workOrderSearchMode = localStorage.getItem("maintainops.workOrderSearchMode") === "true";
 let appError = "";
 let appNotice = "";
 let appNoticeTone = "success";
 let noticeTimer;
+let workOrderActionWarningId = "";
+let workOrderActionWarning = "";
 
 document.addEventListener("click", (event) => {
   const confirmPartDeleteButton = event.target.closest("[data-confirm-delete-part]");
@@ -784,15 +795,513 @@ async function seedStarterAssets() {
   );
 }
 
-async function loadCompanyData() {
-  let [locationResponse, assetResponse, workOrderResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse] = await Promise.all([
-    supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
-    supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
+const WORK_ORDER_RELATION_SELECT = "*, assets(name, location_id), locations!work_orders_company_location_fkey(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
+const WORK_ORDER_FALLBACK_SELECT = "*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
+
+async function loadServerWorkOrderSlice() {
+  await refreshWorkOrderRelatedSearch();
+  const [pageResponse, dashboardCounts, myCounts] = await Promise.all([
+    fetchWorkOrderPage(),
+    loadWorkOrderDashboardCounts(),
+    loadMyWorkDashboardCounts(),
+  ]);
+
+  if (pageResponse.error && isColumnSchemaError(pageResponse.error, ["location_id", "locations"])) {
+    const fallbackResponse = await fetchWorkOrderPage({ includeLocationRelation: false });
+    workOrders = fallbackResponse.data || [];
+    workOrderServerTotal = fallbackResponse.count ?? workOrders.length;
+    workOrderDashboardCounts = dashboardCounts;
+    myWorkDashboardCounts = myCounts;
+    return fallbackResponse;
+  }
+
+  workOrders = pageResponse.data || [];
+  workOrderServerTotal = pageResponse.count ?? workOrders.length;
+  workOrderDashboardCounts = dashboardCounts;
+  myWorkDashboardCounts = myCounts;
+  return pageResponse;
+}
+
+async function refreshWorkOrderRelatedSearch() {
+  const query = searchQuery.trim();
+  if (!query || workOrderSearchMode) {
+    workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
+    return;
+  }
+
+  const matchedAssets = assets
+    .filter(matchesActiveLocation)
+    .filter((asset) => matchesQuery([
+      asset.name,
+      asset.asset_code,
+      asset.location,
+      asset.status,
+      asset.asset_type,
+      parentAssetFor(asset)?.name,
+    ], query))
+    .map((asset) => asset.id);
+
+  const matchedProcedures = procedureTemplates
+    .filter((template) => matchesQuery([
+      template.name,
+      template.description,
+      ...(template.procedure_steps || []).map((step) => step.prompt),
+    ], query))
+    .map((template) => template.id);
+
+  const matchedPartIds = parts
+    .filter(matchesActiveLocation)
+    .filter((part) => matchesQuery([
+      part.name,
+      part.sku,
+      part.supplier_name,
+      part.quantity_on_hand,
+      part.reorder_point,
+      part.unit_cost,
+    ], query))
+    .map((part) => part.id);
+
+  const workOrderIds = new Set();
+  await Promise.all([
+    addRelatedWorkOrderIdsFromParts(workOrderIds, matchedPartIds),
+    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_comments", ["body"], query),
+    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_events", ["event_type", "summary"], query),
+    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_photos", ["file_name"], query),
+    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_step_results", ["value"], query),
+  ]);
+
+  workOrderRelatedSearch = {
+    assetIds: matchedAssets.slice(0, 200),
+    procedureIds: matchedProcedures.slice(0, 200),
+    workOrderIds: [...workOrderIds].slice(0, 300),
+  };
+}
+
+async function addRelatedWorkOrderIdsFromParts(target, partIds, options = {}) {
+  if (!partIds.length) return;
+  const maxRows = options.maxRows ?? 300;
+  let remaining = maxRows;
+  for (const chunk of chunkArray(partIds, SEARCH_ID_CHUNK_SIZE)) {
+    if (remaining <= 0) break;
+    try {
+      await fetchPagedSearchRows(
+        () => supabaseClient
+          .from("work_order_parts")
+          .select("work_order_id")
+          .eq("company_id", activeCompanyId)
+          .in("part_id", chunk),
+        (rows) => {
+          rows.forEach((row) => {
+            if (row.work_order_id) target.add(row.work_order_id);
+          });
+          remaining -= rows.length;
+        },
+        remaining
+      );
+    } catch (error) {
+      console.warn("Part-linked work order search failed", error);
+      return;
+    }
+  }
+}
+
+async function addRelatedWorkOrderIdsFromTable(target, tableName, columns, query, options = {}) {
+  const term = postgrestSearchTerm(query);
+  if (!term) return;
+  const orClause = columns.map((column) => `${column}.ilike.%${term}%`).join(",");
+  const maxRows = options.maxRows ?? 300;
+  try {
+    await fetchPagedSearchRows(
+      () => supabaseClient
+        .from(tableName)
+        .select("work_order_id")
+        .eq("company_id", activeCompanyId)
+        .or(orClause),
+      (rows) => {
+        rows.forEach((row) => {
+          if (row.work_order_id) target.add(row.work_order_id);
+        });
+      },
+      maxRows
+    );
+  } catch (error) {
+    console.warn(`${tableName} work order search failed`, error);
+  }
+}
+
+async function fetchWorkOrderPage(options = {}) {
+  if (workOrderSearchMode && searchQuery.trim()) {
+    return fetchExactSearchedWorkOrderPage(options);
+  }
+
+  const page = Math.max(1, workOrderPage);
+  const from = (page - 1) * WORK_ORDERS_PER_PAGE;
+  const to = from + WORK_ORDERS_PER_PAGE - 1;
+  const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
+  const response = await applyWorkOrderListFilters(
     supabaseClient
       .from("work_orders")
-      .select("*, assets(name, location_id), locations(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false }),
+      .select(selectClause, { count: "exact" })
+  )
+    .range(from, to);
+
+  if (!response.error && response.count && page > 1 && from >= response.count) {
+    workOrderPage = Math.max(1, Math.ceil(response.count / WORK_ORDERS_PER_PAGE));
+    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+    return fetchWorkOrderPage(options);
+  }
+
+  return response;
+}
+
+async function fetchExactSearchedWorkOrderPage(options = {}) {
+  const rows = await exactWorkOrderSearchRows();
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / WORK_ORDERS_PER_PAGE));
+  if (workOrderPage > totalPages) {
+    workOrderPage = totalPages;
+    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+  }
+  if (workOrderPage < 1) {
+    workOrderPage = 1;
+    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+  }
+
+  const from = (workOrderPage - 1) * WORK_ORDERS_PER_PAGE;
+  const pageIds = rows.slice(from, from + WORK_ORDERS_PER_PAGE).map((row) => row.id);
+  if (!pageIds.length) return { data: [], error: null, count: total };
+
+  const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
+  let query = supabaseClient
+    .from("work_orders")
+    .select(selectClause)
+    .eq("company_id", activeCompanyId)
+    .in("id", pageIds);
+  if (locationsReady && activeLocationId) query = query.eq("location_id", activeLocationId);
+
+  const response = await query;
+  if (response.error) return response;
+  const byId = new Map((response.data || []).map((workOrder) => [workOrder.id, workOrder]));
+  return {
+    ...response,
+    data: pageIds.map((id) => byId.get(id)).filter(Boolean),
+    count: total,
+  };
+}
+
+async function exactWorkOrderSearchRows() {
+  const key = [
+    activeCompanyId || "",
+    locationsReady ? activeLocationId || "" : "all-locations",
+    workSort,
+    searchQuery.trim().toLowerCase(),
+  ].join("|");
+  if (exactWorkOrderSearchCache.key === key) return exactWorkOrderSearchCache.rows;
+
+  const query = searchQuery.trim();
+  const rowMap = new Map();
+  await addDirectWorkOrderSearchRows(rowMap, query);
+
+  const matchedAssets = assets
+    .filter(matchesActiveLocation)
+    .filter((asset) => matchesQuery([
+      asset.name,
+      asset.asset_code,
+      asset.location,
+      asset.status,
+      asset.asset_type,
+      parentAssetFor(asset)?.name,
+    ], query))
+    .map((asset) => asset.id);
+
+  const matchedProcedures = procedureTemplates
+    .filter((template) => matchesQuery([
+      template.name,
+      template.description,
+      ...(template.procedure_steps || []).map((step) => step.prompt),
+    ], query))
+    .map((template) => template.id);
+
+  const matchedPartIds = parts
+    .filter(matchesActiveLocation)
+    .filter((part) => matchesQuery([
+      part.name,
+      part.sku,
+      part.supplier_name,
+      part.quantity_on_hand,
+      part.reorder_point,
+      part.unit_cost,
+    ], query))
+    .map((part) => part.id);
+
+  await Promise.all([
+    addWorkOrderSearchRowsByColumn(rowMap, "asset_id", matchedAssets),
+    addWorkOrderSearchRowsByColumn(rowMap, "procedure_template_id", matchedProcedures),
+  ]);
+
+  const relatedIds = new Set();
+  await Promise.all([
+    addRelatedWorkOrderIdsFromParts(relatedIds, matchedPartIds, { maxRows: Infinity }),
+    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_comments", ["body"], query, { maxRows: Infinity }),
+    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_events", ["event_type", "summary"], query, { maxRows: Infinity }),
+    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_photos", ["file_name"], query, { maxRows: Infinity }),
+    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_step_results", ["value"], query, { maxRows: Infinity }),
+  ]);
+  await addWorkOrderSearchRowsByIds(rowMap, [...relatedIds]);
+
+  const rows = [...rowMap.values()].sort(compareWorkOrders);
+  exactWorkOrderSearchCache = { key, rows };
+  return rows;
+}
+
+async function addDirectWorkOrderSearchRows(target, query) {
+  const term = postgrestSearchTerm(query);
+  if (!term) return;
+  const orClause = [
+    "title",
+    "description",
+    "priority",
+    "type",
+    "status",
+    "failure_cause",
+    "resolution_summary",
+    "completion_notes",
+  ].map((column) => `${column}.ilike.%${term}%`).join(",");
+
+  await fetchPagedSearchRows(
+    () => scopedWorkOrderSearchQuery().or(orClause),
+    (rows) => addWorkOrderSearchRows(target, rows)
+  );
+}
+
+async function addWorkOrderSearchRowsByColumn(target, column, values) {
+  if (!values.length) return;
+  for (const chunk of chunkArray(values, SEARCH_ID_CHUNK_SIZE)) {
+    await fetchPagedSearchRows(
+      () => scopedWorkOrderSearchQuery().in(column, chunk),
+      (rows) => addWorkOrderSearchRows(target, rows)
+    );
+  }
+}
+
+async function addWorkOrderSearchRowsByIds(target, ids) {
+  if (!ids.length) return;
+  for (const chunk of chunkArray(ids, SEARCH_ID_CHUNK_SIZE)) {
+    await fetchPagedSearchRows(
+      () => scopedWorkOrderSearchQuery().in("id", chunk),
+      (rows) => addWorkOrderSearchRows(target, rows)
+    );
+  }
+}
+
+function scopedWorkOrderSearchQuery() {
+  let query = supabaseClient
+    .from("work_orders")
+    .select("id, created_at, due_at, completed_at, priority, status")
+    .eq("company_id", activeCompanyId);
+  if (locationsReady && activeLocationId) query = query.eq("location_id", activeLocationId);
+  return query;
+}
+
+function addWorkOrderSearchRows(target, rows) {
+  (rows || []).forEach((row) => {
+    if (!row?.id) return;
+    target.set(row.id, { ...(target.get(row.id) || {}), ...row });
+  });
+}
+
+async function fetchPagedSearchRows(buildQuery, onRows, maxRows = Infinity) {
+  let from = 0;
+  let fetched = 0;
+  while (fetched < maxRows) {
+    const pageSize = Math.min(SEARCH_ID_PAGE_SIZE, maxRows - fetched);
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data || [];
+    onRows(rows);
+    fetched += rows.length;
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function loadWorkOrderDashboardCounts() {
+  const [activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek] = await Promise.all([
+    countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false }),
+    countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false }),
+  ]);
+  return { activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek };
+}
+
+async function loadMyWorkDashboardCounts() {
+  const [activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek] = await Promise.all([
+    countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true }),
+    countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true }),
+  ]);
+  return { activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek };
+}
+
+async function countWorkOrders(options = {}) {
+  const response = await applyWorkOrderFilters(
+    supabaseClient
+      .from("work_orders")
+      .select("id", { count: "exact", head: true }),
+    options
+  );
+  if (response.error) {
+    console.warn("Work order count failed", response.error);
+    return 0;
+  }
+  return response.count || 0;
+}
+
+function applyWorkOrderListFilters(query) {
+  const isGlobalSearch = Boolean(searchQuery.trim());
+  const statusFilter = isGlobalSearch
+    ? "__any__"
+    : activeSection === "work" && activeStatusFilter === "requests"
+      ? "__none__"
+      : activeStatusFilter;
+  return applyWorkOrderSort(applyWorkOrderFilters(query, {
+    statusFilter,
+    section: activeSection,
+    includeQueue: !isGlobalSearch,
+    includeSearch: true,
+  }));
+}
+
+function applyWorkOrderFilters(query, options = {}) {
+  let nextQuery = query.eq("company_id", activeCompanyId);
+  if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
+
+  if (options.includeQueue !== false) {
+    nextQuery = applyWorkOrderQueueFilters(nextQuery, options.section || activeSection);
+  }
+
+  nextQuery = applyWorkOrderStatusFilter(nextQuery, options.statusFilter || activeStatusFilter);
+
+  if (options.includeSearch !== false) {
+    const term = postgrestSearchTerm(searchQuery);
+    if (term) {
+      const searchClauses = [
+        `title.ilike.%${term}%`,
+        `description.ilike.%${term}%`,
+        `priority.ilike.%${term}%`,
+        `type.ilike.%${term}%`,
+        `status.ilike.%${term}%`,
+        ...(workOrderRelatedSearch.assetIds.length ? [`asset_id.in.(${workOrderRelatedSearch.assetIds.join(",")})`] : []),
+        ...(workOrderRelatedSearch.procedureIds.length ? [`procedure_template_id.in.(${workOrderRelatedSearch.procedureIds.join(",")})`] : []),
+        ...(workOrderRelatedSearch.workOrderIds.length ? [`id.in.(${workOrderRelatedSearch.workOrderIds.join(",")})`] : []),
+      ];
+      nextQuery = nextQuery.or(searchClauses.join(","));
+    }
+  }
+
+  return nextQuery;
+}
+
+function applyWorkOrderQueueFilters(query, section) {
+  if (section === "mywork") {
+    return myWorkFilter === "created"
+      ? query.eq("created_by", session.user.id)
+      : query.eq("assigned_to", session.user.id);
+  }
+
+  if (section !== "work") return query;
+  if (workOrderAssigneeFilter) return query.eq("assigned_to", workOrderAssigneeFilter);
+  if (workOrderFilter === "assigned") return query.not("assigned_to", "is", null);
+  if (workOrderFilter === "vendor") return query.ilike("description", `%${OUTSIDE_VENDOR_NOTE}%`);
+  if (workOrderFilter === "unassigned") {
+    return query
+      .is("assigned_to", null)
+      .not("description", "ilike", `%${OUTSIDE_VENDOR_NOTE}%`);
+  }
+  return query;
+}
+
+function applyWorkOrderStatusFilter(query, statusFilter) {
+  const today = isoDate(startOfToday());
+  if (statusFilter === "__any__") return query;
+  if (statusFilter === "__none__") return query.eq("id", "00000000-0000-0000-0000-000000000000");
+  if (statusFilter === "overdue") return query.neq("status", "completed").lt("due_at", today);
+  if (statusFilter === "completed_month") return query.gte("completed_at", isoDateTime(monthStartDate()));
+  if (statusFilter === "completed_week") return query.gte("completed_at", isoDateTime(daysAgoDate(7)));
+  if (statusFilter === "active" || statusFilter === "all") return query.neq("status", "completed");
+  return query.eq("status", statusFilter);
+}
+
+function applyWorkOrderSort(query) {
+  if (["completed", "completed_month", "completed_week"].includes(activeStatusFilter)) {
+    return query
+      .order("completed_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  if (workSort === "due") {
+    return query
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  if (workSort === "priority") {
+    return query
+      .order("priority", { ascending: true })
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  return query.order("created_at", { ascending: false });
+}
+
+function postgrestSearchTerm(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[,%()]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function isoDateTime(date) {
+  return date.toISOString();
+}
+
+function daysAgoDate(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+function monthStartDate() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+async function loadCompanyData() {
+  let [locationResponse, assetResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse] = await Promise.all([
+    supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
+    supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient
       .from("maintenance_requests")
       .select("*, assets(name, location_id), locations(name)")
@@ -814,14 +1323,6 @@ async function loadCompanyData() {
       .eq("company_id", activeCompanyId)
       .order("name"),
   ]);
-
-  if (workOrderResponse.error && isColumnSchemaError(workOrderResponse.error, ["location_id", "locations"])) {
-    workOrderResponse = await supabaseClient
-      .from("work_orders")
-      .select("*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false });
-  }
   if (requestResponse.error && isColumnSchemaError(requestResponse.error, ["location_id", "locations"])) {
     requestResponse = await supabaseClient
       .from("maintenance_requests")
@@ -837,22 +1338,47 @@ async function loadCompanyData() {
     localStorage.setItem("maintainops.activeLocationId", activeLocationId);
   }
   assets = assetResponse.data || [];
-  workOrders = workOrderResponse.data || [];
-  requestsReady = !requestResponse.error;
   maintenanceRequests = requestResponse.error ? [] : (requestResponse.data || []);
-    preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
-    parts = partsResponse.error ? [] : (partsResponse.data || []);
-    partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
-    partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
-    schedulesReady = !scheduleResponse.error;
-    outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
-    safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
-    proceduresReady = !procedureResponse.error;
+  preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
+  parts = partsResponse.error ? [] : (partsResponse.data || []);
   procedureTemplates = procedureResponse.error ? [] : (procedureResponse.data || []).map((template) => ({
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
+  const workOrderResponse = await loadServerWorkOrderSlice();
+  if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
+    const activeResponse = await supabaseClient
+      .from("work_orders")
+      .select(WORK_ORDER_RELATION_SELECT)
+      .eq("company_id", activeCompanyId)
+      .eq("id", activeWorkOrderId)
+      .maybeSingle();
+    if (!activeResponse.error && activeResponse.data) {
+      workOrders = [activeResponse.data, ...workOrders];
+    }
+  }
+  requestsReady = !requestResponse.error;
+  partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
+  partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
+  schedulesReady = !scheduleResponse.error;
+  outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
+  safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
+  proceduresReady = !procedureResponse.error;
   await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+}
+
+async function reloadWorkOrderQueue() {
+  try {
+    const response = await loadServerWorkOrderSlice();
+    if (response.error) {
+      showNotice(`Could not load work orders: ${response.error.message}`, "warning");
+      return;
+    }
+    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadStepResults(), loadWorkOrderEvents()]);
+    renderWorkspace();
+  } catch (error) {
+    showNotice(`Could not load work orders: ${error.message || error}`, "warning");
+  }
 }
 
 async function loadProfiles() {
@@ -1178,15 +1704,16 @@ function renderWorkspace() {
   if (activeSection === "mywork" && !myWorkGaugeFilters.includes(activeStatusFilter)) {
     activeStatusFilter = "active";
   }
-  const showWorkDashboard = activeSection === "work" && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
+  const isViewingWorkOrderSearch = activeSection === "work" && workOrderSearchMode && Boolean(searchQuery.trim());
+  const showWorkDashboard = activeSection === "work" && !isViewingWorkOrderSearch && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const visibleRequests = filteredRequests();
   const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
-  const visibleWorkOrders = filteredWorkOrders();
-  const myWorkGaugeOrders = activeSection === "mywork" ? myWorkQueueOrders() : [];
-  const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrders.length / WORK_ORDERS_PER_PAGE));
+  const visibleWorkOrders = workOrders;
+  const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
+  const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
   if (workOrderPage > totalWorkOrderPages) workOrderPage = totalWorkOrderPages;
   if (workOrderPage < 1) workOrderPage = 1;
-  const pagedWorkOrders = visibleWorkOrders.slice((workOrderPage - 1) * WORK_ORDERS_PER_PAGE, workOrderPage * WORK_ORDERS_PER_PAGE);
+  const pagedWorkOrders = visibleWorkOrders;
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
   const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
@@ -1194,7 +1721,7 @@ function renderWorkspace() {
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
   const visibleParts = filteredParts();
-  const showGlobalSearch = Boolean(searchQuery.trim()) && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
+  const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
   if (partsPage > totalPartsPages) partsPage = totalPartsPages;
@@ -1252,7 +1779,7 @@ function renderWorkspace() {
 
         ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
         ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
-        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">SAFETY CHECK REQUIRED</div>` : ""}
+        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">ACTION NEEDED</div>` : ""}
 
         <label class="search-bar">
           Search workspace
@@ -1321,10 +1848,10 @@ function renderWorkspace() {
             ` : `
               <section class="panel full-width my-work-panel queue-panel">
                 <div class="panel-header">
-                  <h2>${showingRequestsInWorkQueue ? "Requests" : workQueuePanelTitle()}</h2>
-                  <span>${showingRequestsInWorkQueue ? `${visibleRequests.length} shown` : workQueuePanelSubtitle(visibleWorkOrders.length)}</span>
+                  <h2>${isViewingWorkOrderSearch ? "Matching Work Orders" : showingRequestsInWorkQueue ? "Requests" : workQueuePanelTitle()}</h2>
+                  <span>${isViewingWorkOrderSearch ? `${visibleWorkOrderCount} found for "${escapeHtml(searchQuery.trim())}"` : showingRequestsInWorkQueue ? `${visibleRequests.length} shown` : workQueuePanelSubtitle(visibleWorkOrderCount)}</span>
                 </div>
-                ${activeSection === "mywork" ? renderWorkloadStrip(myWorkGaugeOrders) : ""}
+                ${activeSection === "mywork" ? renderWorkloadStrip(myWorkDashboardCounts) : ""}
                 ${activeSection === "mywork" ? `
                   <div class="segmented-control" aria-label="My work filter">
                     <button class="segment ${myWorkFilter === "assigned" ? "active" : ""}" data-my-work-filter="assigned" type="button">${segmentIcon("mine")}Assigned To Me</button>
@@ -1332,6 +1859,11 @@ function renderWorkspace() {
                   </div>
                 ` : showingRequestsInWorkQueue ? `
                   <p class="muted inline-request-note">Requests waiting for review at this location.</p>
+                ` : isViewingWorkOrderSearch ? `
+                  <div class="active-team-filter search-mode-filter">
+                    <span>Showing exact paged work order matches at this location.</span>
+                    <button class="text-button" data-close-work-search type="button">Back to search preview</button>
+                  </div>
                 ` : `
                   <div class="segmented-control" aria-label="Work order filter">
                     <button class="segment ${workOrderFilter === "all" ? "active" : ""}" data-work-order-filter="all" type="button">${segmentIcon("all")}All Work Orders</button>
@@ -1369,7 +1901,7 @@ function renderWorkspace() {
                   <div class="work-list" id="work-order-list">
                     ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
                   </div>
-                  ${renderWorkPagination(visibleWorkOrders.length, totalWorkOrderPages)}
+                  ${renderWorkPagination(visibleWorkOrderCount, totalWorkOrderPages)}
                 `}
               </section>
             `}
@@ -1656,6 +2188,19 @@ function resetWorkOrderPage() {
   localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
 }
 
+function setWorkOrderSearchMode(enabled) {
+  workOrderSearchMode = Boolean(enabled && searchQuery.trim());
+  if (workOrderSearchMode) {
+    localStorage.setItem("maintainops.workOrderSearchMode", "true");
+  } else {
+    localStorage.removeItem("maintainops.workOrderSearchMode");
+  }
+}
+
+function invalidateExactWorkOrderSearchCache() {
+  exactWorkOrderSearchCache = { key: "", rows: [] };
+}
+
 function resetPartsPage() {
   partsPage = 1;
   localStorage.setItem("maintainops.partsPage", String(partsPage));
@@ -1723,6 +2268,11 @@ function showNotice(message, tone = "success") {
     appNoticeTone = "success";
     renderWorkspace();
   }, tone === "warning" ? 4200 : 2600);
+}
+
+function setWorkOrderActionWarning(id, message) {
+  workOrderActionWarningId = id || "";
+  workOrderActionWarning = message || "";
 }
 
 function bindAutoGrowTextareas() {
@@ -1912,10 +2462,10 @@ function renderGlobalSearchResults(results) {
     <section class="panel full-width global-search-panel">
       <div class="panel-header">
         <h2>Search Results</h2>
-        <span>${total} found in ${escapeHtml(activeLocationName())}</span>
+        <span>${total} previewed in ${escapeHtml(activeLocationName())}</span>
       </div>
       <div class="global-search-grid">
-        ${renderGlobalResultGroup("Work Orders", results.work, renderGlobalWorkResult, "work")}
+        ${renderGlobalResultGroup("Work Orders", results.work, renderGlobalWorkResult, "work", { showWorkSearchAction: Boolean(searchQuery.trim()) })}
         ${renderGlobalResultGroup("Equipment", results.assets, renderGlobalAssetResult, "asset")}
         ${renderGlobalResultGroup("Parts", results.parts, renderGlobalPartResult, "parts")}
         ${renderGlobalResultGroup("Requests", results.requests, renderGlobalRequestResult, "comment")}
@@ -1926,7 +2476,7 @@ function renderGlobalSearchResults(results) {
   `;
 }
 
-function renderGlobalResultGroup(title, items, renderer, tone) {
+function renderGlobalResultGroup(title, items, renderer, tone, options = {}) {
   return `
     <section class="global-result-group relationship-detail ${tone}">
       <div class="panel-header compact">
@@ -1935,6 +2485,7 @@ function renderGlobalResultGroup(title, items, renderer, tone) {
       </div>
       <div class="global-result-list">
         ${items.map(renderer).join("") || `<p class="muted">No matches.</p>`}
+        ${options.showWorkSearchAction ? `<button class="secondary-button global-result-action" data-view-work-search type="button">Page through all matching work orders</button>` : ""}
       </div>
     </section>
   `;
@@ -2078,21 +2629,20 @@ function globalSearchResults() {
   const query = searchQuery.trim();
   const work = workOrders
     .filter(matchesActiveLocation)
-    .filter((workOrder) => matchesQuery(workOrderSearchValues(workOrder), query))
     .sort(compareWorkOrders)
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   const assetResults = assets
     .filter(matchesActiveLocation)
     .filter((asset) => matchesQuery([asset.name, asset.asset_code, asset.location, asset.status], query))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   const partResults = parts
     .filter(matchesActiveLocation)
     .filter((part) => matchesQuery([part.name, part.sku, part.supplier_name, part.quantity_on_hand, part.reorder_point], query))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   const requestResults = maintenanceRequests
     .filter(matchesActiveLocation)
@@ -2105,13 +2655,13 @@ function globalSearchResults() {
       profilesByUserId[request.requested_by]?.full_name,
     ], query))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   const pmResults = preventiveSchedules
     .filter(matchesActiveLocation)
     .filter((schedule) => matchesQuery([schedule.title, schedule.frequency, schedule.next_due_at, schedule.assets?.name], query))
     .sort((a, b) => String(a.next_due_at || "").localeCompare(String(b.next_due_at || "")))
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   const procedureResults = procedureTemplates
     .filter((template) => matchesQuery([
@@ -2120,7 +2670,7 @@ function globalSearchResults() {
       ...(template.procedure_steps || []).map((step) => step.prompt),
     ], query))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 6);
+    .slice(0, SEARCH_PREVIEW_LIMIT);
 
   return { work, assets: assetResults, parts: partResults, requests: requestResults, pm: pmResults, procedures: procedureResults };
 }
@@ -2164,17 +2714,17 @@ function renderGaugeReadout(label, value, tone = "active", options = {}) {
 }
 
 function renderWorkOrderGaugeDashboard() {
-  const locationWorkOrders = workOrders.filter(matchesActiveLocation);
-  const activeWork = locationWorkOrders.filter((workOrder) => workOrder.status !== "completed").length;
-  const newWork = locationWorkOrders.filter((workOrder) => workOrder.status === "open").length;
-  const inProgress = locationWorkOrders.filter((workOrder) => workOrder.status === "in_progress").length;
-  const blocked = locationWorkOrders.filter((workOrder) => workOrder.status === "blocked").length;
-  const overdue = locationWorkOrders.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
-  const completedMonth = completedThisMonth().filter(matchesActiveLocation).length;
-  const completedWeek = completedThisWeek().filter(matchesActiveLocation).length;
+  const counts = workOrderDashboardCounts || {};
+  const activeWork = counts.activeWork || 0;
+  const newWork = counts.newWork || 0;
+  const inProgress = counts.inProgress || 0;
+  const blocked = counts.blocked || 0;
+  const overdue = counts.overdue || 0;
+  const completedMonth = counts.completedMonth || 0;
+  const completedWeek = counts.completedWeek || 0;
   const requestCount = requestsReady
     ? openMaintenanceRequests().filter(matchesActiveLocation).length
-    : locationWorkOrders.filter((workOrder) => workOrder.type === "request" && workOrder.status !== "completed").length;
+    : 0;
   return `
     <div class="summary-gauge-grid">
       ${renderGaugeReadout("Active Work", activeWork, "active", { filter: "active" })}
@@ -2190,13 +2740,14 @@ function renderWorkOrderGaugeDashboard() {
 }
 
 function renderWorkloadStrip(items) {
-  const newWork = items.filter((workOrder) => workOrder.status === "open").length;
-  const inProgress = items.filter((workOrder) => workOrder.status === "in_progress").length;
-  const blocked = items.filter((workOrder) => workOrder.status === "blocked").length;
-  const active = newWork + inProgress + blocked;
-  const overdue = items.filter((workOrder) => getDueState(workOrder)?.className === "overdue").length;
-  const completedMonth = items.filter(isCompletedThisMonth).length;
-  const completedWeek = items.filter(isCompletedThisWeek).length;
+  const counts = items || {};
+  const newWork = counts.newWork || 0;
+  const inProgress = counts.inProgress || 0;
+  const blocked = counts.blocked || 0;
+  const active = counts.activeWork ?? (newWork + inProgress + blocked);
+  const overdue = counts.overdue || 0;
+  const completedMonth = counts.completedMonth || 0;
+  const completedWeek = counts.completedWeek || 0;
   return `
     <div class="workload-strip" aria-label="Active work summary">
       ${renderGaugeReadout("Active Work", active, "active workload-pill", { filter: "active" })}
@@ -2787,6 +3338,23 @@ function requiredChecklistProgress(workOrder, procedure) {
   const results = stepResultsByWorkOrder[workOrder.id] || {};
   const done = steps.filter((step) => Boolean(results[step.id]?.value)).length;
   return { done, total: steps.length };
+}
+
+function requiredChecklistProgressFor(workOrder, procedureTemplateId = workOrder?.procedure_template_id) {
+  const procedure = procedureTemplates.find((template) => template.id === procedureTemplateId);
+  if (!procedure) return { done: 0, total: 0 };
+  if (!workOrder?.id) return { done: 0, total: (procedure.procedure_steps || []).filter((step) => step.required).length };
+  return requiredChecklistProgress(workOrder, procedure);
+}
+
+function requiredChecklistCompletionMessage(workOrder, procedureTemplateId = workOrder?.procedure_template_id) {
+  const progress = requiredChecklistProgressFor(workOrder, procedureTemplateId);
+  if (progress.done >= progress.total) return "";
+  return `Complete required procedure checklist steps first (${progress.done}/${progress.total}).`;
+}
+
+function blocksProcedureCompletion(workOrder, procedureTemplateId = workOrder?.procedure_template_id) {
+  return requiredChecklistCompletionMessage(workOrder, procedureTemplateId);
 }
 
 function renderMember(member) {
@@ -3833,6 +4401,16 @@ function renderCreateWorkOrder() {
   `;
 }
 
+function renderMissingWorkOrderDetail() {
+  return `
+    <div class="empty-state warning-state">
+      <h3>Work order not loaded</h3>
+      <p>This order may be outside the current filter, location, or page. Go back to the work order list and search for it again.</p>
+      <button class="secondary-button back-action-button" id="back-to-my-work" type="button">Back to Work Orders</button>
+    </div>
+  `;
+}
+
 function renderQuickFixForm() {
   const selectedAssetId = quickFixAssetId || "";
   const sourceRequest = maintenanceRequests.find((request) => request.id === quickFixRequestId);
@@ -3968,7 +4546,7 @@ function relationshipIcon(type) {
 
 function renderWorkOrderDetail() {
   const workOrder = workOrders.find((item) => item.id === activeWorkOrderId);
-  if (!workOrder) return renderCreateWorkOrder();
+  if (!workOrder) return renderMissingWorkOrderDetail();
   const comments = commentsByWorkOrder[workOrder.id] || [];
   const photos = photosByWorkOrder[workOrder.id] || [];
   const events = eventsByWorkOrder[workOrder.id] || [];
@@ -4020,6 +4598,7 @@ function renderWorkOrderDetail() {
           <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
         `).join("")}
       </div>
+      ${workOrderActionWarningId === workOrder.id && workOrderActionWarning ? `<p class="error-text action-warning">${escapeHtml(workOrderActionWarning)}</p>` : ""}
 
       <details class="quick-update-panel relationship-detail comment work-detail-section" open>
         <summary>Quick Update</summary>
@@ -4449,6 +5028,7 @@ function bindWorkspaceEvents() {
       resetWorkOrderPage();
       resetPartsPage();
       resetAssetsPage();
+      invalidateExactWorkOrderSearchCache();
       localStorage.setItem("maintainops.activeLocationId", activeLocationId);
       renderWorkspace();
     });
@@ -4457,7 +5037,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   document.querySelectorAll("[data-section]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       if (!visibleNavItems().some(([id]) => id === button.dataset.section)) return;
       activeSection = button.dataset.section;
       activeWorkOrderId = null;
@@ -4468,9 +5048,10 @@ function bindWorkspaceEvents() {
       quickFixMode = false;
       quickFixAssetId = null;
       quickFixRequestId = null;
+      if (activeSection !== "work") setWorkOrderSearchMode(false);
       resetWorkOrderPage();
       localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
   document.querySelectorAll("[data-command-action]").forEach((button) => {
@@ -4483,6 +5064,7 @@ function bindWorkspaceEvents() {
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "mywork";
+        setWorkOrderSearchMode(false);
         localStorage.setItem("maintainops.activeSection", activeSection);
         renderWorkspace();
         return;
@@ -4495,6 +5077,7 @@ function bindWorkspaceEvents() {
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "work";
+        setWorkOrderSearchMode(false);
         localStorage.setItem("maintainops.activeSection", activeSection);
         renderWorkspace();
         return;
@@ -4507,6 +5090,7 @@ function bindWorkspaceEvents() {
         quickFixAssetId = null;
         quickFixRequestId = null;
         activeSection = "requests";
+        setWorkOrderSearchMode(false);
         localStorage.setItem("maintainops.activeSection", activeSection);
         renderWorkspace();
         return;
@@ -4673,9 +5257,11 @@ function bindWorkspaceEvents() {
   }
 
   document.querySelectorAll(".workspace-search-input").forEach((searchInput) => {
-    searchInput.addEventListener("input", () => {
+    searchInput.addEventListener("input", async () => {
       const activeSearchId = searchInput.id;
       searchQuery = searchInput.value;
+      invalidateExactWorkOrderSearchCache();
+      if (!searchQuery.trim()) setWorkOrderSearchMode(false);
       if (searchQuery.trim()) {
         activeWorkOrderId = null;
         activeAssetId = null;
@@ -4688,11 +5274,36 @@ function bindWorkspaceEvents() {
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       resetWorkOrderPage();
       resetPartsPage();
-      renderWorkspace();
+      await reloadWorkOrderQueue();
       const nextSearchInput = document.querySelector(`#${activeSearchId}`);
       if (!nextSearchInput) return;
       nextSearchInput.focus();
       nextSearchInput.setSelectionRange(searchQuery.length, searchQuery.length);
+    });
+  });
+
+  document.querySelectorAll("[data-view-work-search]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      activeSection = "work";
+      activeWorkOrderId = null;
+      activeAssetId = null;
+      activePartId = null;
+      createWorkOrderMode = false;
+      quickFixMode = false;
+      setWorkOrderSearchMode(true);
+      invalidateExactWorkOrderSearchCache();
+      resetWorkOrderPage();
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      await reloadWorkOrderQueue();
+    });
+  });
+
+  document.querySelectorAll("[data-close-work-search]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      setWorkOrderSearchMode(false);
+      invalidateExactWorkOrderSearchCache();
+      resetWorkOrderPage();
+      await reloadWorkOrderQueue();
     });
   });
 
@@ -4756,6 +5367,7 @@ function bindWorkspaceEvents() {
       activePartId = null;
       activeSection = "work";
       searchQuery = "";
+      setWorkOrderSearchMode(false);
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4769,6 +5381,7 @@ function bindWorkspaceEvents() {
       activePartId = null;
       activeSection = "assets";
       searchQuery = "";
+      setWorkOrderSearchMode(false);
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4782,6 +5395,7 @@ function bindWorkspaceEvents() {
       activeWorkOrderId = null;
       activeSection = "parts";
       searchQuery = "";
+      setWorkOrderSearchMode(false);
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4792,6 +5406,7 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => {
       activeSection = "requests";
       searchQuery = "";
+      setWorkOrderSearchMode(false);
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4802,6 +5417,7 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => {
       activeSection = button.dataset.searchSection;
       searchQuery = "";
+      setWorkOrderSearchMode(false);
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
@@ -4909,60 +5525,61 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-status-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       activeStatusFilter = button.dataset.statusFilter;
       resetWorkOrderPage();
       if (activeStatusFilter === "requests") {
         requestsPage = 1;
         localStorage.setItem("maintainops.requestsPage", String(requestsPage));
       }
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
   document.querySelectorAll("[data-my-work-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       myWorkFilter = button.dataset.myWorkFilter;
       localStorage.setItem("maintainops.myWorkFilter", myWorkFilter);
       resetWorkOrderPage();
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
   document.querySelectorAll("[data-work-order-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       workOrderFilter = button.dataset.workOrderFilter;
       workOrderAssigneeFilter = "";
       localStorage.setItem("maintainops.workOrderFilter", workOrderFilter);
       localStorage.removeItem("maintainops.workOrderAssigneeFilter");
       resetWorkOrderPage();
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
   document.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       workOrderAssigneeFilter = "";
       localStorage.removeItem("maintainops.workOrderAssigneeFilter");
       resetWorkOrderPage();
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
   document.querySelectorAll("[data-work-sort]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       workSort = button.dataset.workSort;
       localStorage.setItem("maintainops.workSort", workSort);
+      invalidateExactWorkOrderSearchCache();
       resetWorkOrderPage();
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
   document.querySelectorAll("[data-work-page]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       workOrderPage += button.dataset.workPage === "next" ? 1 : -1;
       localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
-      renderWorkspace();
+      await reloadWorkOrderQueue();
     });
   });
 
@@ -6960,6 +7577,14 @@ async function createWorkOrder(event) {
       if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to equipment.";
       return;
     }
+    const procedureCompletionMessage = status === "completed"
+      ? blocksProcedureCompletion(null, form.get("procedure_template_id") || null)
+      : "";
+    if (procedureCompletionMessage) {
+      setWorkOrderActionWarning("", "");
+      if (errorTarget) errorTarget.textContent = `${procedureCompletionMessage} Create the work order first, then complete the checklist before marking it complete.`;
+      return;
+    }
     const payload = {
       company_id: activeCompanyId,
       location_id: locationIdForAsset(assetId),
@@ -7079,6 +7704,14 @@ async function createQuickFix(event) {
     }
     if (markCompleted && assetRequiresSafety(assetId) && form.get("safety_devices_checked") !== "on") {
       if (errorTarget) errorTarget.textContent = "Check safety devices before marking equipment work complete.";
+      return;
+    }
+    const procedureCompletionMessage = markCompleted
+      ? blocksProcedureCompletion(null, form.get("procedure_template_id") || null)
+      : "";
+    if (procedureCompletionMessage) {
+      setWorkOrderActionWarning("", "");
+      if (errorTarget) errorTarget.textContent = `${procedureCompletionMessage} Log it first, then complete the checklist before marking it complete.`;
       return;
     }
 
@@ -7247,6 +7880,17 @@ async function updateWorkOrderDetails(event) {
       if (errorTarget) errorTarget.textContent = "Use Complete Work and check safety devices before completing equipment work.";
       return;
     }
+    const procedureChanged = (previous?.procedure_template_id || "") !== (payload.procedure_template_id || "");
+    const procedureCompletionMessage = payload.status === "completed" && (previous?.status !== "completed" || procedureChanged)
+      ? blocksProcedureCompletion(previous, payload.procedure_template_id || null)
+      : "";
+    if (procedureCompletionMessage) {
+      setWorkOrderActionWarning(activeWorkOrderId, procedureCompletionMessage);
+      submitButton.disabled = false;
+      submitButton.textContent = "Save Work Order";
+      if (errorTarget) errorTarget.textContent = procedureCompletionMessage;
+      return;
+    }
     if (payload.status === "completed" && previous?.status !== "completed") {
       payload.completed_at = new Date().toISOString();
       applySafetyCheckPayload(payload, payload.safety_check_required && (form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous)));
@@ -7275,6 +7919,7 @@ async function updateWorkOrderDetails(event) {
       "Activity log timed out.",
       8000
     ).catch((error) => error);
+    setWorkOrderActionWarning("", "");
     showNotice(logError ? `Work order saved, but history did not update: ${logError.message}` : "Work order saved.", logError ? "warning" : "success");
     await render();
   } catch (error) {
@@ -7328,6 +7973,14 @@ async function updateWorkOrderQuickView(event) {
     applySafetyRequirementPayload(payload);
     const safetyChecked = form.get("safety_devices_checked") === "on";
     if (payload.status === "completed" && previous?.status !== "completed") {
+      const procedureCompletionMessage = blocksProcedureCompletion(previous);
+      if (procedureCompletionMessage) {
+        setWorkOrderActionWarning(activeWorkOrderId, procedureCompletionMessage);
+        submitButton.disabled = false;
+        submitButton.textContent = "Save Quick Update";
+        if (errorTarget) errorTarget.textContent = procedureCompletionMessage;
+        return;
+      }
       applySafetyCheckPayload(payload, safetyChecked);
       if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
         submitButton.disabled = false;
@@ -7379,6 +8032,7 @@ async function updateWorkOrderQuickView(event) {
       ).catch(() => null);
     }
     if (logError) warnings.push(`history did not update: ${logError.message}`);
+    setWorkOrderActionWarning("", "");
     showNotice(warnings.length ? `Quick update saved with warning: ${warnings[0]}` : "Quick update saved.", warnings.length ? "warning" : "success");
     await render();
   } catch (error) {
@@ -7440,6 +8094,7 @@ async function completeWorkOrder(event) {
       "Activity log timed out.",
       8000
     ).catch((error) => error);
+    setWorkOrderActionWarning("", "");
     showNotice(logError ? `Work order completed, but history did not update: ${logError.message}` : "Work order completed.", logError ? "warning" : "success");
     await render();
   } catch (error) {
@@ -7622,6 +8277,10 @@ async function saveStepResult(event) {
       field.disabled = false;
       return;
     }
+    if (workOrderActionWarningId === field.dataset.workOrderId) {
+      const refreshedWorkOrder = workOrders.find((item) => item.id === field.dataset.workOrderId);
+      if (!blocksProcedureCompletion(refreshedWorkOrder)) setWorkOrderActionWarning("", "");
+    }
     renderWorkspace();
   } catch (error) {
     showNotice(`Could not save checklist step: ${error.message || error}`, "warning");
@@ -7631,11 +8290,23 @@ async function saveStepResult(event) {
 
 async function setWorkOrderStatus(id, status) {
   const workOrder = workOrders.find((item) => item.id === id);
+  if (status === "completed") {
+    const procedureCompletionMessage = blocksProcedureCompletion(workOrder);
+    if (procedureCompletionMessage) {
+      activeWorkOrderId = id;
+      setWorkOrderActionWarning(id, procedureCompletionMessage);
+      showNotice(procedureCompletionMessage, "warning");
+      await render();
+      return false;
+    }
+  }
   const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(id);
   const hasSafetyCheck = hasCompletedSafetyDeviceCheck(workOrder) || safetyCheckedNow;
   if (status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasSafetyCheck) {
     activeWorkOrderId = id;
-    showNotice("Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.", "warning");
+    const safetyMessage = "Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.";
+    setWorkOrderActionWarning(id, safetyMessage);
+    showNotice(safetyMessage, "warning");
     await render();
     return false;
   }
@@ -7661,6 +8332,7 @@ async function setWorkOrderStatus(id, status) {
     return false;
   }
   activeWorkOrderId = id;
+  setWorkOrderActionWarning("", "");
   await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
   showNotice(`Status changed to ${statusLabel(status)}.`);
   await render();
