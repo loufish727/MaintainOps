@@ -830,6 +830,35 @@ button.gauge-readout {
   }
 }
 
+@keyframes mobileOverdueGaugeBlink {
+  0%, 100% {
+    border-color: #721018;
+    background:
+      radial-gradient(ellipse at 50% -18%, rgba(185, 21, 28, 0.18), transparent 48%),
+      linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.014)),
+      var(--surface-2);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.18),
+      inset 0 0 0 1px rgba(0,0,0,0.54),
+      inset 0 0 20px rgba(185, 21, 28, 0.14),
+      0 10px 24px rgba(0,0,0,0.22);
+  }
+  48% {
+    border-color: #ff3038;
+    background:
+      radial-gradient(ellipse at 50% -18%, rgba(255, 48, 56, 0.42), transparent 54%),
+      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.025)),
+      var(--surface-2);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.28),
+      inset 0 0 0 2px rgba(255, 48, 56, 0.42),
+      inset 0 0 34px rgba(185, 21, 28, 0.30),
+      0 0 0 2px rgba(185, 21, 28, 0.58),
+      0 0 26px rgba(255, 48, 56, 0.42),
+      0 0 54px rgba(185, 21, 28, 0.32);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gauge-readout.alert-blink,
   .gauge-readout.alert-blink .gauge-visual,
@@ -6414,6 +6443,14 @@ textarea:focus {
 
   .gauge-readout {
     min-height: 126px;
+  }
+
+  .gauge-readout.alert-blink {
+    animation: mobileOverdueGaugeBlink 0.95s ease-in-out infinite !important;
+  }
+
+  .gauge-readout.alert-blink .gauge-alert-badge {
+    animation: overdueMarkPulse 0.95s ease-in-out infinite !important;
   }
 
   .work-list {
