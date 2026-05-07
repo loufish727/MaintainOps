@@ -12,6 +12,7 @@ const SEARCH_ID_CHUNK_SIZE = 100;
 const SEARCH_PREVIEW_LIMIT = 6;
 const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
 const OUTSIDE_VENDOR_NOTE = "[Assignment: Outside vendor]";
+const COMPANY_ROLES = ["technician", "manager", "admin"];
 let supabaseClient;
 let session;
 let companies = [];
@@ -67,6 +68,7 @@ let photosByWorkOrder = {};
 let stepResultsByWorkOrder = {};
 let profilesByUserId = {};
 let commentsError = "";
+let requestPhotosReady = true;
 let activeWorkOrderId = null;
 let activeAssetId = null;
 let activePartId = null;
@@ -114,6 +116,11 @@ document.addEventListener("click", (event) => {
   if (!confirmPartDeleteButton) return;
   event.preventDefault();
   deletePart(confirmPartDeleteButton.dataset.confirmDeletePart);
+});
+
+document.addEventListener("submit", (event) => {
+  if (event.target?.id !== "request-form") return;
+  createRequest(event);
 });
 
 init();
@@ -502,6 +509,7 @@ async function renderPublicRequestIntake(token) {
           <label>What needs attention?<input name="title" required maxlength="140" placeholder="Short issue description"></label>
           <label>Machine / area<input name="equipment_note" maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
           <label>Details<textarea name="description" rows="4" maxlength="1000" placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
+          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
           <label>Your name<input name="requester_name" maxlength="120" placeholder="Optional"></label>
           <label>Contact<input name="requester_contact" maxlength="160" placeholder="Optional phone, radio, or email"></label>
           <label>Urgency
@@ -551,7 +559,7 @@ async function submitPublicRequest(event, token, intake) {
   }
 
   try {
-    const { error } = await withOperationTimeout(
+    const { data: requestId, error } = await withOperationTimeout(
       supabaseClient.rpc("submit_public_location_request", {
         request_token: token,
         request_title: requiredText(form.get("title"), "Request title"),
@@ -565,6 +573,12 @@ async function submitPublicRequest(event, token, intake) {
     );
 
     if (error) throw error;
+    const photo = form.get("photo");
+    let photoWarning = "";
+    if (photo && photo.name) {
+      const photoError = await addPhotoToMaintenanceRequest(requestId, photo);
+      if (photoError) photoWarning = `Request sent, but the photo did not upload: ${photoError.message || photoError}`;
+    }
 
     app.innerHTML = `
       <section class="auth-shell public-request-shell">
@@ -576,6 +590,7 @@ async function submitPublicRequest(event, token, intake) {
               <p>${escapeHtml(intake.location_name)} maintenance has received it.</p>
             </div>
           </div>
+          ${photoWarning ? `<p class="error-text">${escapeHtml(photoWarning)}</p>` : ""}
           <button class="secondary-button request-action-button" id="public-request-another" type="button">Send Another Request</button>
         </div>
       </section>
@@ -1374,7 +1389,7 @@ async function loadCompanyData() {
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
   proceduresReady = !procedureResponse.error;
-  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function reloadWorkOrderQueue() {
@@ -1692,6 +1707,24 @@ async function addSignedPhotoUrls() {
   }));
 }
 
+async function addSignedRequestPhotoUrls() {
+  requestPhotosReady = true;
+  const requestsWithPhotos = maintenanceRequests.filter((request) => request.photo_storage_path);
+  if (!requestsWithPhotos.length) return;
+
+  await Promise.all(requestsWithPhotos.map(async (request) => {
+    const { data, error } = await supabaseClient.storage
+      .from("maintenance-request-photos")
+      .createSignedUrl(request.photo_storage_path, 60 * 10);
+    if (error) {
+      requestPhotosReady = false;
+      request.photoSignedUrl = "";
+      return;
+    }
+    request.photoSignedUrl = data?.signedUrl || "";
+  }));
+}
+
 async function addSignedPartDocumentUrls() {
   const documents = Object.values(partDocumentsByPartId).flat();
   await Promise.all(documents.map(async (document) => {
@@ -1837,8 +1870,9 @@ function renderWorkspace() {
           </label>
           ${locationsReady ? "" : `<p class="warning-text">Run supabase/step-next-locations.sql to enable locations.</p>`}
           <button class="secondary-button" id="new-company" type="button">New Company</button>
-          <button class="text-button inverse" id="sign-out" type="button">Sign out</button>
+          <button class="text-button inverse" data-sign-out type="button">Sign out</button>
         </details>
+        <button class="text-button inverse desktop-sign-out" data-sign-out type="button">Sign out</button>
         ${renderCommandStack("mobile")}
         <nav class="section-nav" aria-label="Workspace sections">
           ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" ? renderMessageNavBadge() : ""}</button>`).join("")}
@@ -2075,7 +2109,6 @@ function renderWorkspace() {
                   <select name="role">
                     <option value="technician">Technician</option>
                     <option value="manager">Manager</option>
-                    <option value="member">Member</option>
                     <option value="admin">Admin</option>
                   </select>
                   <button class="secondary-button" type="submit">Add Member</button>
@@ -2124,7 +2157,7 @@ function renderWorkspace() {
           <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Company Settings</h2>
-              <span>${escapeHtml(activeCompany?.role || "member")}</span>
+              <span>${escapeHtml(roleLabel(activeCompany?.role))}</span>
             </div>
             ${canManageTeam() ? `
               <form class="form-grid settings-form" id="company-settings-form">
@@ -3428,7 +3461,7 @@ function renderMember(member) {
         ${canEditRole ? `
           <form class="member-role-form" data-member-role="${member.user_id}">
             <select name="role" aria-label="Role for ${escapeHtml(profile?.full_name || member.user_id)}">
-              ${["technician", "manager", "member", "admin"].map((role) => `<option value="${role}" ${role === member.role ? "selected" : ""}>${roleLabel(role)}</option>`).join("")}
+              ${COMPANY_ROLES.map((role) => `<option value="${role}" ${role === normalizeRole(member.role) ? "selected" : ""}>${roleLabel(role)}</option>`).join("")}
             </select>
             <button class="secondary-button" type="submit">Save Role</button>
           </form>
@@ -3468,7 +3501,7 @@ function renderMyProfileForm() {
 function renderRoleGuide() {
   return `
     <section class="team-role-guide">
-      ${["technician", "manager", "member", "admin"].map((role) => `
+      ${COMPANY_ROLES.map((role) => `
         <article>
           <strong>${roleLabel(role)}</strong>
           <span>${escapeHtml(roleDescription(role))}</span>
@@ -3490,7 +3523,6 @@ function renderTeamInviteForm() {
         <select name="role" ${teamInvitesReady ? "" : "disabled"}>
           <option value="technician">Technician</option>
           <option value="manager">Manager</option>
-          <option value="member">Member</option>
           <option value="admin">Admin</option>
         </select>
       </label>
@@ -4258,6 +4290,7 @@ function renderMaintenanceRequest(request) {
         </div>
         <h3>${escapeHtml(request.title)}</h3>
         <p>${escapeHtml(request.description || "No description.")}</p>
+        ${renderMaintenanceRequestPhoto(request)}
         <div class="meta-row">
           <span>${escapeHtml(request.assets?.name || request.locations?.name || "No equipment")}</span>
           <span>${escapeHtml(request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester")}</span>
@@ -4274,11 +4307,30 @@ function renderMaintenanceRequest(request) {
   `;
 }
 
+function renderMaintenanceRequestPhoto(request) {
+  if (!request.photo_storage_path) return "";
+  const fileName = request.photo_file_name || request.photo_original_file_name || "Request photo";
+  const meta = requestPhotoMetaText(request);
+  return `
+    <div class="request-photo-preview">
+      ${request.photoSignedUrl && request.photo_content_type?.startsWith("image/")
+        ? `<img class="photo-thumb" src="${escapeHtml(request.photoSignedUrl)}" alt="${escapeHtml(fileName)}">`
+        : ""}
+      <div>
+        <strong>${escapeHtml(fileName)}</strong>
+        <span>${escapeHtml(meta)}</span>
+        ${request.photoSignedUrl ? `<a href="${escapeHtml(request.photoSignedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : `<span>${requestPhotosReady ? "Photo attached" : "Photo attached - run request photo SQL if links do not open"}</span>`}
+      </div>
+    </div>
+  `;
+}
+
 function renderRequestFormContent() {
   return `
     <form class="form-grid" id="request-form">
       <label>Request title<input name="title" required placeholder="Cold room door not sealing"></label>
       <label>What is happening?<textarea name="description" rows="4" required></textarea></label>
+      <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
       <label>Machine / equipment
         <select name="asset_id">
           <option value="">Unknown or general location</option>
@@ -4368,7 +4420,7 @@ function renderWorkOrderCard(workOrder) {
         </div>
         ${renderRelationshipChips(workOrder)}
         <div class="quick-actions work-card-actions">
-          ${!workOrder.assigned_to ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
+          ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
           ${canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
         ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
           <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
@@ -4388,6 +4440,58 @@ function renderCardAssignmentControl(workOrder) {
       </select>
       <button class="card-assign-button" type="submit">Assign</button>
     </form>
+  `;
+}
+
+function renderAssignmentSelect(selectedValue = "", options = {}) {
+  const selected = selectedValue || "";
+  const allowManagerOptions = options.managerOptions ?? canManageTeam();
+  const allowUnassigned = options.allowUnassigned !== false;
+  const selfLabel = options.selfLabel || "Assign to me";
+  const optionsHtml = [];
+  if (allowUnassigned) {
+    optionsHtml.push(`<option value="" ${selected === "" ? "selected" : ""}>Unassigned</option>`);
+  }
+  optionsHtml.push(`<option value="${session.user.id}" ${selected === session.user.id ? "selected" : ""}>${selfLabel}</option>`);
+  if (allowManagerOptions) {
+    optionsHtml.push(`<option value="${OUTSIDE_VENDOR_VALUE}" ${selected === OUTSIDE_VENDOR_VALUE ? "selected" : ""}>Outside vendor</option>`);
+    optionsHtml.push(...Object.entries(profilesByUserId)
+      .filter(([userId]) => userId !== session.user.id)
+      .map(([userId, profile]) => `<option value="${userId}" ${selected === userId ? "selected" : ""}>${escapeHtml(profile.full_name || teamMemberName(userId))}</option>`));
+  }
+  return optionsHtml.join("");
+}
+
+function assignmentFormValue(workOrder) {
+  if (isVendorAssigned(workOrder)) return OUTSIDE_VENDOR_VALUE;
+  return workOrder?.assigned_to || "";
+}
+
+function renderWorkOrderAssignmentField(workOrder, id = "") {
+  const currentValue = assignmentFormValue(workOrder);
+  if (canManageTeam()) {
+    return `
+      <label ${id ? `id="${id}"` : ""}>Assign to
+        <select name="assigned_to">
+          ${renderAssignmentSelect(currentValue, { managerOptions: true })}
+        </select>
+      </label>
+    `;
+  }
+  if (!workOrder.assigned_to && !isVendorAssigned(workOrder)) {
+    return `
+      <label ${id ? `id="${id}"` : ""}>Assign to
+        <select name="assigned_to">
+          ${renderAssignmentSelect("", { managerOptions: false, selfLabel: "Assign to me" })}
+        </select>
+      </label>
+    `;
+  }
+  return `
+    <label ${id ? `id="${id}"` : ""}>Assigned to
+      <input value="${escapeHtml(assignmentLabel(workOrder))}" disabled>
+      <input name="assigned_to" type="hidden" value="${escapeHtml(currentValue)}">
+    </label>
   `;
 }
 
@@ -4495,10 +4599,7 @@ function renderCreateWorkOrder() {
         <div class="form-grid">
           <label>Assign to
             <select name="assigned_to">
-              <option value="">Unassigned</option>
-              <option value="${OUTSIDE_VENDOR_VALUE}">Outside vendor</option>
-              <option value="${session.user.id}">Assign to me</option>
-              ${Object.entries(profilesByUserId).filter(([userId]) => userId !== session.user.id).map(([userId, profile]) => `<option value="${userId}">${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+              ${renderAssignmentSelect("", { selfLabel: "Assign to me" })}
             </select>
           </label>
           <label>Procedure
@@ -4592,10 +4693,7 @@ function renderQuickFixForm() {
           </label>
           <label>Assign to
             <select name="assigned_to">
-              <option value="${session.user.id}">Assign to me</option>
-              <option value="${OUTSIDE_VENDOR_VALUE}">Outside vendor</option>
-              <option value="">Unassigned</option>
-              ${Object.entries(profilesByUserId).filter(([userId]) => userId !== session.user.id).map(([userId, profile]) => `<option value="${userId}">${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
+              ${renderAssignmentSelect(session.user.id, { selfLabel: "Assign to me" })}
             </select>
           </label>
           <label>Procedure
@@ -4734,7 +4832,7 @@ function renderWorkOrderDetail() {
       </label>
 
       <div class="quick-actions detail-quick-actions">
-        ${workOrder.assigned_to !== session.user.id ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
+        ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
         ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).map((status) => `
           <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
         `).join("")}
@@ -4767,13 +4865,7 @@ function renderWorkOrderDetail() {
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
             </select>
           </label>
-          <label id="quick-update-owner-field">Assign to
-            <select name="assigned_to">
-              <option value="">Unassigned</option>
-              <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
-              ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${!isVendorAssigned(workOrder) && userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
-            </select>
-          </label>
+          ${renderWorkOrderAssignmentField(workOrder, "quick-update-owner-field")}
           <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
           ${requiresSafetyDeviceCheck(workOrder) ? (
             `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
@@ -4812,13 +4904,7 @@ function renderWorkOrderDetail() {
             ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (workOrder.type || "reactive") ? "selected" : ""}>${type}</option>`).join("")}
           </select>
         </label>
-        <label>Assign to
-          <select name="assigned_to">
-            <option value="">Unassigned</option>
-            <option value="${OUTSIDE_VENDOR_VALUE}" ${isVendorAssigned(workOrder) ? "selected" : ""}>Outside vendor</option>
-            ${Object.entries(profilesByUserId).map(([userId, profile]) => `<option value="${userId}" ${!isVendorAssigned(workOrder) && userId === workOrder.assigned_to ? "selected" : ""}>${escapeHtml(profile.full_name || "Team member")}</option>`).join("")}
-          </select>
-        </label>
+        ${renderWorkOrderAssignmentField(workOrder)}
         <label>Procedure
           <select name="procedure_template_id">
             ${renderProcedureOptions(workOrder.procedure_template_id || "")}
@@ -5187,7 +5273,9 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
+  document.querySelectorAll("[data-sign-out]").forEach((button) => {
+    button.addEventListener("click", () => supabaseClient.auth.signOut());
+  });
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   document.querySelectorAll("[data-section]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -5205,6 +5293,7 @@ function bindWorkspaceEvents() {
       if (activeSection !== "work") setWorkOrderSearchMode(false);
       resetWorkOrderPage();
       localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
       await reloadWorkOrderQueue();
     });
   });
@@ -5529,6 +5618,29 @@ function bindWorkspaceEvents() {
     });
   });
 
+  document.querySelectorAll("[data-asset-id]").forEach((card) => {
+    const openAsset = () => {
+      activeAssetId = card.dataset.assetId;
+      activeWorkOrderId = null;
+      activePartId = null;
+      createWorkOrderMode = false;
+      quickFixMode = false;
+      quickFixAssetId = null;
+      quickFixRequestId = null;
+      reportIssueMode = false;
+      activeSection = "assets";
+      localStorage.setItem("maintainops.activeSection", activeSection);
+      renderWorkspace();
+    };
+
+    card.addEventListener("click", openAsset);
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openAsset();
+    });
+  });
+
   document.querySelectorAll("[data-mini-work-order]").forEach((item) => {
     item.addEventListener("click", () => {
       activeWorkOrderId = item.dataset.miniWorkOrder;
@@ -5825,9 +5937,6 @@ function bindWorkspaceEvents() {
 
   const quickFixForm = document.querySelector("#quick-fix-form");
   if (quickFixForm) quickFixForm.addEventListener("submit", createQuickFix);
-
-  const requestForm = document.querySelector("#request-form");
-  if (requestForm) requestForm.addEventListener("submit", createRequest);
 
   document.querySelectorAll("[data-create-public-request-link]").forEach((button) => {
     button.addEventListener("click", () => createPublicRequestLink(button.dataset.createPublicRequestLink));
@@ -6517,8 +6626,9 @@ async function updateCompanyMemberRole(event) {
         : error.message);
     }
 
+    await loadMembers();
     showNotice("Role saved.");
-    await render();
+    render();
   } catch (error) {
     showNotice(`Could not save role: ${error.message || error}`, "warning");
   } finally {
@@ -8009,6 +8119,7 @@ async function createQuickFix(event) {
     const markCompleted = form.get("mark_completed") === "on";
     const machineDown = form.get("machine_down") === "on";
     let assetId = form.get("asset_id") || null;
+    const sourceRequest = quickFixRequestId ? maintenanceRequests.find((request) => request.id === quickFixRequestId) : null;
     const newAssetName = String(form.get("new_asset_name") || "").trim();
     if (newAssetName) {
       const { data: newAsset, error: assetError } = await withOperationTimeout(
@@ -8038,7 +8149,7 @@ async function createQuickFix(event) {
       company_id: activeCompanyId,
       location_id: locationIdForAsset(assetId),
       title,
-      description: descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")),
+      description: descriptionWithRequestPhotoNote(descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")), sourceRequest),
       asset_id: assetId,
       assigned_to: assignedUserFromForm(form, session.user.id),
       priority: form.get("priority") || "medium",
@@ -8428,12 +8539,14 @@ async function completeWorkOrder(event) {
 function renderRequestForm() {
   const detailPanel = document.querySelector("#detail-panel");
   detailPanel.innerHTML = renderRequestFormContent();
-  document.querySelector("#request-form").addEventListener("submit", createRequest);
 }
 
 async function createRequest(event) {
   event.preventDefault();
-  const formElement = event.currentTarget;
+  await createRequestFromForm(event.target);
+}
+
+async function createRequestFromForm(formElement) {
   const errorElement = document.querySelector("#request-error");
   const submitButton = formElement.querySelector("button[type='submit']");
   if (errorElement) errorElement.textContent = "";
@@ -8458,8 +8571,8 @@ async function createRequest(event) {
     if (!requestsReady) {
       throw new Error("Run supabase/step-next-maintenance-requests.sql before submitting requests.");
     }
-    const { error } = await withOperationTimeout(
-      supabaseClient.from("maintenance_requests").insert(requestPayload),
+    const { data, error } = await withOperationTimeout(
+      supabaseClient.from("maintenance_requests").insert(requestPayload).select("*").single(),
       "Request save timed out. Check your connection and try again.",
       15000
     );
@@ -8468,9 +8581,15 @@ async function createRequest(event) {
       throw new Error(databaseSetupRequiredMessage("saving requests by location"));
     }
     if (error) throw error;
+    const photo = form.get("photo");
+    let photoWarning = "";
+    if (photo && photo.name) {
+      const photoError = await addPhotoToMaintenanceRequest(data.id, photo);
+      if (photoError) photoWarning = ` Photo did not upload: ${photoError.message || photoError}`;
+    }
     activeSection = "requests";
     localStorage.setItem("maintainops.activeSection", activeSection);
-    showNotice("Request submitted.");
+    showNotice(`Request submitted.${photoWarning}`, photoWarning ? "warning" : "success");
     await render();
   } catch (error) {
     if (errorElement) errorElement.textContent = error.message || "Could not submit request.";
@@ -8497,7 +8616,7 @@ async function convertRequestToWorkOrder(requestId) {
       company_id: activeCompanyId,
       location_id: request.location_id || locationIdForAsset(request.asset_id),
       title: request.title,
-      description: request.description,
+      description: descriptionWithRequestPhotoNote(request.description, request),
       asset_id: request.asset_id || null,
       priority: request.priority || "medium",
       type: "reactive",
@@ -8719,6 +8838,9 @@ async function assignWorkOrderToMe(id) {
     const hasProfile = await ensureProfileForActiveCompany();
     if (!hasProfile) return alert(appError);
     const workOrder = workOrders.find((item) => item.id === id);
+    if (!canAssignWorkOrderToMe(workOrder)) {
+      return alert("Technicians can only claim unassigned work. Managers can reassign work.");
+    }
 
     const { error } = await withOperationTimeout(
       supabaseClient
@@ -8968,6 +9090,40 @@ async function addPhotoToWorkOrder(workOrderId, file) {
   return error || null;
 }
 
+async function addPhotoToMaintenanceRequest(requestId, file) {
+  if (!requestId) return new Error("Request was not saved before photo upload.");
+
+  const optimized = await optimizePhoto(file);
+  const path = `${requestId}/${crypto.randomUUID()}-${optimized.fileName}`;
+  const upload = await withOperationTimeout(
+    supabaseClient.storage.from("maintenance-request-photos").upload(path, optimized.blob, {
+      contentType: optimized.contentType,
+      upsert: false,
+    }),
+    "Request photo upload timed out. Check your connection and try again.",
+    25000
+  );
+  if (upload.error) return upload.error;
+
+  const { error } = await withOperationTimeout(
+    supabaseClient.rpc("attach_maintenance_request_photo", {
+      target_request_id: requestId,
+      p_photo_storage_path: path,
+      p_photo_file_name: optimized.fileName,
+      p_photo_content_type: optimized.contentType,
+      p_photo_file_size_bytes: optimized.blob.size || null,
+      p_photo_original_file_name: safeFileName(file.name || "photo"),
+      p_photo_original_size_bytes: file.size || null,
+    }),
+    "Request photo record save timed out. Check your connection and try again.",
+    15000
+  );
+  if (error) {
+    await removeUploadedObject("maintenance-request-photos", path);
+  }
+  return error || null;
+}
+
 async function optimizePhoto(file) {
   const imageTypes = ["image/jpeg", "image/png", "image/webp"];
   if (!imageTypes.includes(file.type)) {
@@ -9083,8 +9239,9 @@ function activeCompanyRole() {
 }
 
 function normalizeRole(role) {
-  const normalized = String(role || "member").trim().toLowerCase();
-  return normalized || "member";
+  const normalized = String(role || "technician").trim().toLowerCase();
+  if (normalized === "member") return "technician";
+  return COMPANY_ROLES.includes(normalized) ? normalized : "technician";
 }
 
 function canManageTeam() {
@@ -9111,6 +9268,12 @@ function canDeleteEquipment() {
   return ["admin", "manager"].includes(activeCompanyRole());
 }
 
+function canAssignWorkOrderToMe(workOrder) {
+  if (!workOrder || workOrder.assigned_to === session?.user?.id) return false;
+  if (canManageTeam()) return true;
+  return !workOrder.assigned_to && !isVendorAssigned(workOrder);
+}
+
 function visibleNavItems() {
   const items = [
     ["mywork", "My Work"],
@@ -9135,19 +9298,17 @@ function roleLabel(role) {
     admin: "Admin",
     manager: "Manager",
     technician: "Technician",
-    member: "Member",
   };
-  return labels[role] || String(role || "Member");
+  return labels[normalizeRole(role)] || "Technician";
 }
 
 function roleDescription(role) {
   const descriptions = {
     admin: "Full company setup, team, and work access.",
     manager: "Can manage work, settings, and teammates.",
-    technician: "Focused on assigned work, Quick Fix, and updates.",
-    member: "General company access.",
+    technician: "Can create work, convert requests, and claim unassigned work.",
   };
-  return descriptions[role] || "General company access.";
+  return descriptions[normalizeRole(role)] || descriptions.technician;
 }
 
 function assignedUserFromForm(form, defaultUserId = null) {
@@ -9288,6 +9449,25 @@ function photoMetaText(photo) {
     parts.push(`optimized from ${formatBytes(photo.original_size_bytes)}`);
   }
   return parts.join(" - ");
+}
+
+function requestPhotoMetaText(request) {
+  const parts = [];
+  if (request.photo_uploaded_at || request.updated_at || request.created_at) {
+    parts.push(new Date(request.photo_uploaded_at || request.updated_at || request.created_at).toLocaleString());
+  }
+  if (request.photo_file_size_bytes) parts.push(formatBytes(request.photo_file_size_bytes));
+  if (request.photo_original_size_bytes && request.photo_file_size_bytes && request.photo_original_size_bytes !== request.photo_file_size_bytes) {
+    parts.push(`optimized from ${formatBytes(request.photo_original_size_bytes)}`);
+  }
+  return parts.join(" - ") || "Photo attached";
+}
+
+function descriptionWithRequestPhotoNote(description, request) {
+  const cleanDescription = String(description || "").trim();
+  if (!request?.photo_storage_path) return cleanDescription || null;
+  const note = "[Request photo attached to original request]";
+  return cleanDescription ? `${cleanDescription}\n\n${note}` : note;
 }
 
 function formatBytes(bytes) {

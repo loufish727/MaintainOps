@@ -6,6 +6,8 @@ This is the recommended restart point for the next session.
 
 Finish QA for the Mobile tech location lock.
 
+Use `docs/FEATURE_CHANGE_PROCESS.md` and `docs/DEBUG_PROCESS.md` for the standard scope, debug, and smoke workflow before and after this QA pass.
+
 Test:
 
 1. Manager account can switch locations.
@@ -46,6 +48,8 @@ Recommended QA work:
 - Re-run work creation matrix across Quick Fix, full work order, PM, and request conversion.
 - Re-run procedure checklist matrix.
 - Re-run comments/photos/parts/history matrix.
+
+For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the required smoke pass in `docs/DEBUG_PROCESS.md` before creating a GitHub upload package.
 
 ## Short-Term Improvements
 

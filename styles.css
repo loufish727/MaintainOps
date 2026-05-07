@@ -148,6 +148,12 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   display: none;
 }
 
+.desktop-sign-out {
+  justify-content: flex-start;
+  padding-left: 0;
+  color: var(--sidebar-text);
+}
+
 .brand, .brand-row {
   display: flex;
   align-items: center;
@@ -3229,6 +3235,40 @@ textarea {
   color: var(--muted);
 }
 
+.request-photo-preview {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.request-photo-preview .photo-thumb {
+  width: 96px;
+  height: 72px;
+  max-height: none;
+  margin: 0;
+}
+
+.request-photo-preview span,
+.request-photo-preview a {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.request-photo-preview span {
+  color: var(--muted);
+}
+
+.request-photo-preview a {
+  color: var(--accent);
+  font-weight: 650;
+}
+
 .request-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4535,6 +4575,10 @@ textarea {
     top: 0;
     z-index: 5;
     gap: 12px;
+  }
+
+  .desktop-sign-out {
+    display: none;
   }
 
   .section-nav {

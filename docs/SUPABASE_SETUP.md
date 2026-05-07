@@ -42,6 +42,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-locations.sql`
 - `step-next-login-memberships.sql`
 - `step-next-maintenance-requests.sql`
+- `step-next-maintenance-request-photos.sql`
 - `step-next-message-center.sql`
 - `step-next-message-work-order-links.sql`
 - `step-next-mobile-tech-setting.sql`
@@ -61,6 +62,8 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-team-invites.sql`
 - `step-next-team-members.sql`
 - `step-next-team-roles.sql`
+- `step-next-role-model-technician-manager-admin.sql`
+- `step-next-technician-assignment-guardrails.sql`
 - `step-next-work-order-assignment.sql`
 - `step-next-work-order-completion.sql`
 - `step-next-work-order-events.sql`
@@ -77,6 +80,10 @@ add column if not exists mobile_tech boolean not null default false;
 
 notify pgrst, 'reload schema';
 ```
+
+Maintenance request photos:
+
+Run `supabase/step-next-maintenance-request-photos.sql` before testing QR or internal request photo uploads. It adds optional request photo metadata columns, creates the private `maintenance-request-photos` bucket, and installs the public QR upload policy plus the attach RPC.
 
 ## Taylor Metal Location Cleanup
 
@@ -114,10 +121,11 @@ Do not disable RLS as a quick fix.
 Known storage usage:
 
 - Work order photos.
+- Maintenance request photos.
 - Company logos.
 - Part documents/receipts/invoices.
 
-Client-side image resizing is used for work order photos and logos to avoid storing oversized uploads.
+Client-side image resizing is used for work order photos, maintenance request photos, and logos to avoid storing oversized uploads.
 
 ## Common Recovery Snippets
 
