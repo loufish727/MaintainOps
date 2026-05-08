@@ -239,6 +239,64 @@ Recent change needing fresh QA:
 - Protocol improvements from this pass: open collapsed Comments before automating `#comment-form`; verify PM title fill before submit and verify refreshed DOM after PM saves; reopen manager app after anonymous QR testing if the in-app browser replaces the manager tab.
 - Still needs live technician-account QA to prove forbidden assignment paths and mobile-tech location lock under a true technician session.
 
+2026-05-08 request flow cleanup:
+
+- Cleaned up the Requests screen so converted requests no longer sit mixed into the default active request queue.
+- Requests now default to an Active filter showing only submitted, unconverted requests for the active location.
+- Added request filters: Active, Converted, All. Converted requests are still available intentionally, but no longer clutter the working request queue.
+- Work Orders request gauge/queue now stays focused on Active requests and notes that converted requests are kept out of that queue.
+- Converted request cards are visually quieter and show `Converted to work order` instead of conversion actions.
+- Mobile request cards were tightened with a stable main content column and cleaner converted-state styling.
+- Bumped cache tags to `styles.css?v=request-flow-clean-1` and `app.js?v=request-flow-clean-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Public QR request smoke passed through local server with `QA request flow public 1778270000000`; public form loaded for Spokane, WA and showed `Request Sent` with no MaintainOps console errors.
+- Authenticated full debug could not be completed in the browser automation session because direct `file://` navigation was blocked and the local test server opened a separate origin without the existing signed-in session. Needs signed-in local file refresh verification from the user's current browser session.
+- Retried against the user's current signed-in `file://` tab after request. Browser automation still reported the local file URL as blocked by policy before DOM inspection or clicks. Static checks and cache-tag verification still passed.
+- After Node approval, localhost browser smoke was retried in a new tab. App loaded to the login screen on `http://127.0.0.1:4182`, proving the changed files load without a startup error on a browser-safe origin.
+- Public QR request smoke passed again with `QA request flow retry 177827`; form loaded and showed `Request Sent` with no MaintainOps console errors.
+- Added login resilience for local browser QA: normal Supabase password sign-in still runs first, and a timed-out password login retries through the Supabase auth token endpoint before setting the session.
+- Added a safe `maintenance_requests` read fallback without joined relations so Requests can still load when relationship metadata is unavailable in a test origin.
+- Authenticated localhost QA then loaded Taylor Metal Products on `http://127.0.0.1:4182` with no MaintainOps console errors.
+- Verified Requests no longer shows the setup-needed message on localhost.
+- Verified Active / Converted / All filters on authenticated localhost. Active showed submitted unconverted requests only; Converted showed converted history only.
+- Full navigation smoke passed after the cleanup: My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Company Settings.
+- Manager location switching passed across all five configured locations using the visible location selector.
+- Created Quick Fix `QA auth full quick fix 177827-authfull-b`, saved Quick Update, and added comment `Auth full comment 177827-authfull-b`.
+- Verified existing part `QA full debug part 1778196110830` could still be opened, used, and restocked. Browser automation could not type into numeric inputs reliably, so the new-part path was not counted as an app failure in this pass.
+- Created or verified equipment detail save on `QA auth full equipment 177827-authfull-d saved`.
+- Created procedure `QA auth full procedure 177827-authfull-d` and step `QA auth full step 177827-authfull-d`.
+- Created PM `QA auth full PM 177827-authfull-d` and generated a preventive work order.
+- Submitted app issue report `QA auth full app report 177827-authfull-d`.
+- The debug pass found one cleanup wrinkle: if an internal request was submitted while the user was viewing Converted, the save succeeded but the new active request was not immediately visible until Active was clicked.
+- Fixed that by returning Requests to Active page 1 after an internal request submit. Bumped `index.html` to `app.js?v=request-flow-clean-auth-3`.
+- Verified the fix by submitting `QA request active reset 177827-active-reset` while viewing Converted. The app returned to Active, showed the new request, and did not show converted cards in Active.
+- Converted `QA request active reset 177827-active-reset` to a work order. Work Order Detail opened, then Requests Active no longer showed that converted request; Converted showed it with `Converted to work order` and no conversion buttons.
+- Static checks passed after the final fix: `node --check app.js` and `node --check supabase-config.js`.
+- No MaintainOps console errors were observed in the final request, navigation, and location checks.
+- Protocol improvements from this pass: request cleanup checks now require submit-from-any-filter verification, Active-vs-Converted action verification, and visible scoping for duplicate desktop/mobile location selectors.
+
+2026-05-08 full debug rerun after request cleanup:
+
+- Re-ran the debug protocol on `http://127.0.0.1:4182/index.html?qa_bust=full-debug-rerun-177827`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Confirmed cache tags: `styles.css?v=request-flow-clean-1` and `app.js?v=request-flow-clean-auth-3`.
+- Startup passed for Taylor Metal Products with no MaintainOps console errors.
+- Main navigation passed: My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Company Settings.
+- Manager location switching passed across Auburn, Riverside, Sacramento, Salem, and Spokane using the visible location selector.
+- Created Quick Fix `QA debug rerun quick fix 177827-rerun`; Work Order Detail opened.
+- Saved Quick Update on that work order with `Debug rerun quick update 177827-rerun`.
+- Added comment `Debug rerun comment 177827-rerun`.
+- Request cleanup path passed again: submitted `QA debug rerun request 177827-rerun` while viewing Converted, verified it returned to Active, then converted it to a work order. Active no longer showed it; Converted showed it with no conversion action.
+- Opened an existing part detail and verified Use and Restock controls still work.
+- Created equipment `QA debug rerun equipment 177827-rerun`, opened Equipment Detail, and saved it as `QA debug rerun equipment 177827-rerun saved`.
+- Created procedure `QA debug rerun procedure 177827-rerun` and added step `QA debug rerun step 177827-rerun`.
+- Created PM schedule `QA debug rerun PM 177827-rerun` using the newly saved equipment and generated a preventive work order from it.
+- Submitted app issue report `QA debug rerun app report 177827-rerun`.
+- Submitted anonymous Spokane QR request `QA debug rerun public request 177827-rerun`; public form showed Request Sent and manager Requests showed the request after reopening the manager app.
+- Team role UI still shows Technician, Manager, Admin; Member is absent. Mobile tech remains visible.
+- No MaintainOps console errors were observed in the final pass.
+- No new app bug was found. Protocol improvements from this pass: Quick Fix submit is `Log Quick Fix`, PM creation must fill equipment and due date before submit, and public QR verification should look for company/location text rather than a generic heading.
+
 Current next QA sequence:
 
 1. Manager account:

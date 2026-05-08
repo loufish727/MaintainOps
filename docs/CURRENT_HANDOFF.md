@@ -30,6 +30,35 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Requests flow was cleaned up so converted requests do not clutter the active request queue.
+
+Implementation:
+
+- Requests now default to an Active filter for submitted, unconverted requests.
+- Added Active, Converted, and All request filters.
+- Work Orders request gauge/queue stays focused on Active requests.
+- Converted request cards are visually quieter and no longer show conversion actions.
+- Mobile request card layout was tightened.
+- Local password login QA has a timeout fallback that retries through Supabase's auth token endpoint and sets the returned session.
+- Request loading has a safe no-join fallback for `maintenance_requests` so the Requests panel can still load if relationship metadata is unavailable in a test origin.
+- Internal request submit now returns the Requests screen to Active page 1 so newly submitted requests are immediately visible even if the user was reviewing Converted history.
+- Bumped `index.html` to `styles.css?v=request-flow-clean-1` and `app.js?v=request-flow-clean-auth-3`.
+
+Verified:
+
+- Static checks passed.
+- Public QR request smoke passed with `QA request flow public 1778270000000`.
+- Authenticated localhost app loaded after login fallback with Taylor Metal Products visible.
+- Requests panel loaded without setup-needed warning.
+- Active / Converted / All request filters worked; Active excluded converted cards and Converted removed conversion actions.
+- Submitted `QA request active reset 177827-active-reset` while viewing Converted; the app returned to Active and showed the new request.
+- Converted `QA request active reset 177827-active-reset` to a work order; Work Order Detail opened, Active no longer showed it, and Converted showed it as converted.
+- Main navigation passed for My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Settings.
+- Manager location switching passed across all five configured locations.
+- No MaintainOps console errors were observed in the final request, navigation, and location checks.
+
+## Prior Recent Change
+
 Technician assignment guardrails were added.
 
 Implementation:

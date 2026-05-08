@@ -3230,8 +3230,22 @@ textarea {
   padding: 14px;
 }
 
+.request-card-main {
+  min-width: 0;
+}
+
 .request-card p {
   margin-bottom: 0;
+  color: var(--muted);
+}
+
+.request-card.converted-request {
+  border-style: dashed;
+  opacity: 0.78;
+}
+
+.request-card.converted-request h3,
+.request-card.converted-request p {
   color: var(--muted);
 }
 
@@ -3274,6 +3288,26 @@ textarea {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.request-converted-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.request-filter-bar .segment span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 800;
 }
 
 .checklist-list {
@@ -4692,6 +4726,10 @@ textarea {
 
   .request-actions button {
     flex: 1 1 160px;
+  }
+
+  .request-converted-note {
+    justify-content: flex-start;
   }
 
   .setup-item {

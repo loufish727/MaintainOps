@@ -90,6 +90,7 @@ let workOrderPage = Number(localStorage.getItem("maintainops.workOrderPage")) ||
 let partsPage = Number(localStorage.getItem("maintainops.partsPage")) || 1;
 let assetsPage = Number(localStorage.getItem("maintainops.assetsPage")) || 1;
 let requestsPage = Number(localStorage.getItem("maintainops.requestsPage")) || 1;
+let requestViewFilter = localStorage.getItem("maintainops.requestViewFilter") || "active";
 let schedulesPage = Number(localStorage.getItem("maintainops.schedulesPage")) || 1;
 let proceduresPage = Number(localStorage.getItem("maintainops.proceduresPage")) || 1;
 let membersPage = Number(localStorage.getItem("maintainops.membersPage")) || 1;
@@ -327,11 +328,7 @@ function renderAuth(mode, initialError = "") {
           "Sign up timed out. Check your connection and try again.",
           20000
         )
-        : await withOperationTimeout(
-          supabaseClient.auth.signInWithPassword({ email, password }),
-          "Login timed out. Check your connection and try again.",
-          20000
-        );
+        : await signInWithPasswordWithFallback(email, password);
 
       if (response.error) {
         if (statusTarget) statusTarget.textContent = "";
@@ -362,6 +359,47 @@ function renderAuth(mode, initialError = "") {
         submitButton.textContent = originalButtonText;
       }
     }
+  });
+}
+
+async function signInWithPasswordWithFallback(email, password) {
+  try {
+    return await withOperationTimeout(
+      supabaseClient.auth.signInWithPassword({ email, password }),
+      "Login timed out. Retrying secure login...",
+      12000
+    );
+  } catch (error) {
+    if (!String(error?.message || error).includes("Retrying secure login")) throw error;
+  }
+
+  const response = await withOperationTimeout(
+    fetch(`${window.SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: window.SUPABASE_ANON_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    }),
+    "Login timed out. Check your connection and try again.",
+    20000
+  );
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+  if (!response.ok) {
+    return { error: { message: payload?.error_description || payload?.msg || payload?.message || "Login failed. Check your email and password." } };
+  }
+  if (!payload?.access_token || !payload?.refresh_token) {
+    return { error: { message: "Supabase did not return a login session. Try again." } };
+  }
+  return supabaseClient.auth.setSession({
+    access_token: payload.access_token,
+    refresh_token: payload.refresh_token,
   });
 }
 
@@ -1353,6 +1391,13 @@ async function loadCompanyData() {
       .eq("company_id", activeCompanyId)
       .order("created_at", { ascending: false });
   }
+  if (requestResponse.error) {
+    requestResponse = await supabaseClient
+      .from("maintenance_requests")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false });
+  }
 
   locationsReady = !locationResponse.error;
   locations = locationResponse.error ? [] : (locationResponse.data || []);
@@ -1756,8 +1801,10 @@ function renderWorkspace() {
     : "Run location setup to enable locations.";
   const showWorkDashboard = activeSection === "work" && !isViewingWorkOrderSearch && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const showIssueReportPanel = reportIssueMode && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
-  const visibleRequests = filteredRequests();
   const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
+  const activeRequestViewFilter = showingRequestsInWorkQueue ? "active" : requestViewFilter;
+  const requestCounts = requestFilterCounts();
+  const visibleRequests = filteredRequests(activeRequestViewFilter);
   const visibleWorkOrders = workOrders;
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
@@ -1919,7 +1966,8 @@ function renderWorkspace() {
                     <button class="segment ${myWorkFilter === "created" ? "active" : ""}" data-my-work-filter="created" type="button">${segmentIcon("created")}Created By Me</button>
                   </div>
                 ` : showingRequestsInWorkQueue ? `
-                  <p class="muted inline-request-note">Requests waiting for review at this location.</p>
+                  ${renderRequestFilterBar(requestCounts, activeRequestViewFilter, { locked: true })}
+                  <p class="muted inline-request-note">Active requests waiting for review at this location. Converted requests stay out of this queue.</p>
                 ` : isViewingWorkOrderSearch ? `
                   <div class="active-team-filter search-mode-filter">
                     <span>Showing exact paged work order matches at this location.</span>
@@ -1955,7 +2003,7 @@ function renderWorkspace() {
                 ` : ""}
                 ${showingRequestsInWorkQueue ? `
                   <div class="request-list">
-                    ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">No requests match this location.</p>`}
+                    ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">${escapeHtml(requestEmptyStateText(activeRequestViewFilter))}</p>`}
                   </div>
                   ${renderListPagination("requests", visibleRequests.length, requestsPage, totalRequestPages)}
                 ` : `
@@ -1985,12 +2033,13 @@ function renderWorkspace() {
           <section class="panel full-width ${activeSection === "requests" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Requests</h2>
-              <span>${requestsReady ? `${visibleRequests.length} shown` : "setup needed"}</span>
+              <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequests.length) : "setup needed"}</span>
             </div>
             ${renderRequestFormContent()}
             ${requestsReady ? `
+              ${renderRequestFilterBar(requestCounts, activeRequestViewFilter)}
               <div class="request-list">
-                ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">No requests match this search.</p>`}
+                ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">${escapeHtml(requestEmptyStateText(activeRequestViewFilter))}</p>`}
               </div>
               ${renderListPagination("requests", visibleRequests.length, requestsPage, totalRequestPages)}
             ` : `<p class="muted">Run supabase/step-next-maintenance-requests.sql before submitting and reviewing requests.</p>`}
@@ -2385,15 +2434,68 @@ function completedSortValue(workOrder) {
   return workOrder.completed_at ? new Date(workOrder.completed_at).getTime() : 0;
 }
 
-function filteredRequests() {
-  return maintenanceRequests.filter((request) => matchesActiveLocation(request) && matchesSearch([
+function requestMatchesBaseFilters(request) {
+  return matchesActiveLocation(request) && matchesSearch([
     request.title,
     request.description,
     request.status,
     request.priority,
     request.assets?.name,
     profilesByUserId[request.requested_by]?.full_name,
-  ]));
+  ]);
+}
+
+function isConvertedRequest(request) {
+  return request.status === "converted" || Boolean(request.converted_work_order_id);
+}
+
+function requestMatchesViewFilter(request, filter = requestViewFilter) {
+  if (filter === "converted") return isConvertedRequest(request);
+  if (filter === "all") return true;
+  return !isConvertedRequest(request) && request.status === "submitted";
+}
+
+function filteredRequests(filter = requestViewFilter) {
+  return maintenanceRequests.filter((request) => requestMatchesBaseFilters(request) && requestMatchesViewFilter(request, filter));
+}
+
+function requestFilterCounts() {
+  const baseRequests = maintenanceRequests.filter(requestMatchesBaseFilters);
+  return {
+    active: baseRequests.filter((request) => requestMatchesViewFilter(request, "active")).length,
+    converted: baseRequests.filter((request) => requestMatchesViewFilter(request, "converted")).length,
+    all: baseRequests.length,
+  };
+}
+
+function requestPanelSubtitle(filter, count) {
+  if (filter === "converted") return `${count} converted`;
+  if (filter === "all") return `${count} total`;
+  return `${count} active`;
+}
+
+function requestEmptyStateText(filter) {
+  if (searchQuery.trim()) return "No requests match this search.";
+  if (filter === "converted") return "No converted requests at this location.";
+  if (filter === "all") return "No requests at this location yet.";
+  return "No active requests waiting for review.";
+}
+
+function renderRequestFilterBar(counts, selectedFilter, options = {}) {
+  const filters = [
+    ["active", "Active", counts.active],
+    ["converted", "Converted", counts.converted],
+    ["all", "All", counts.all],
+  ];
+  return `
+    <div class="segmented-control request-filter-bar" aria-label="Request filter">
+      ${filters.map(([id, label, count]) => `
+        <button class="segment ${selectedFilter === id ? "active" : ""}" data-request-filter="${id}" type="button" ${options.locked && id !== "active" ? "disabled" : ""}>
+          ${segmentIcon(id === "active" ? "open" : id === "converted" ? "completed" : "all")}${label} <span>${count}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
 
 function filteredAssets() {
@@ -4280,13 +4382,13 @@ function qrSvgFor(value, cellSize = 4) {
 }
 
 function renderMaintenanceRequest(request) {
+  const converted = isConvertedRequest(request);
   return `
-    <article class="request-card">
-      <div>
+    <article class="request-card ${converted ? "converted-request" : "active-request"}">
+      <div class="request-card-main">
         <div class="chip-row">
           <span class="chip ${request.priority}">${escapeHtml(request.priority)}</span>
-          <span class="chip">${escapeHtml(request.status)}</span>
-          ${request.converted_work_order_id ? `<span class="chip completed">converted</span>` : ""}
+          <span class="chip ${converted ? "completed" : "open"}">${converted ? "converted" : escapeHtml(request.status)}</span>
         </div>
         <h3>${escapeHtml(request.title)}</h3>
         <p>${escapeHtml(request.description || "No description.")}</p>
@@ -4297,12 +4399,16 @@ function renderMaintenanceRequest(request) {
           <span>${new Date(request.created_at).toLocaleString()}</span>
         </div>
       </div>
-      ${request.status === "submitted" ? `
+      ${!converted && request.status === "submitted" ? `
         <div class="request-actions">
           <button class="secondary-button request-action-button" data-quick-fix-request="${request.id}" type="button">Quick Fix</button>
           <button class="secondary-button work-action-button" data-convert-request="${request.id}" type="button">Convert to Work Order</button>
         </div>
-      ` : ""}
+      ` : `
+        <div class="request-actions request-converted-note">
+          <span>Converted to work order</span>
+        </div>
+      `}
     </article>
   `;
 }
@@ -5865,6 +5971,17 @@ function bindWorkspaceEvents() {
       invalidateExactWorkOrderSearchCache();
       resetWorkOrderPage();
       await reloadWorkOrderQueue();
+    });
+  });
+
+  document.querySelectorAll("[data-request-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.disabled) return;
+      requestViewFilter = button.dataset.requestFilter || "active";
+      requestsPage = 1;
+      localStorage.setItem("maintainops.requestViewFilter", requestViewFilter);
+      localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+      renderWorkspace();
     });
   });
 
@@ -8588,7 +8705,11 @@ async function createRequestFromForm(formElement) {
       if (photoError) photoWarning = ` Photo did not upload: ${photoError.message || photoError}`;
     }
     activeSection = "requests";
+    requestViewFilter = "active";
+    requestsPage = 1;
     localStorage.setItem("maintainops.activeSection", activeSection);
+    localStorage.setItem("maintainops.requestViewFilter", requestViewFilter);
+    localStorage.setItem("maintainops.requestsPage", String(requestsPage));
     showNotice(`Request submitted.${photoWarning}`, photoWarning ? "warning" : "success");
     await render();
   } catch (error) {

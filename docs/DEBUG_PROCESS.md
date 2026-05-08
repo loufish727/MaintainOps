@@ -226,10 +226,14 @@ When a page has repeated button names, scope actions to the form or panel first.
 Match each smoke test to the actual workflow contract:
 
 - Quick Fix requires `#quick-fix-form input[name="title"]`; notes live in optional fields such as `resolution_summary` and `failure_cause`.
+- Quick Fix's submit button is labeled `Log Quick Fix`; scope to `#quick-fix-form` and do not assume the label is `Save Quick Fix`.
 - Parts list cards open from `[data-open-part]`.
 - Part Use and Restock controls live inside Part Detail under `[data-use-part]` and `[data-restock-part]`, not on the list card.
 - Add Part can open the new Part Detail immediately after save; treat that as a durable success signal before searching the parts list.
-- PM schedule creation should verify the title is actually filled before submit, then verify the saved schedule or generated Work Order Detail from the refreshed DOM. A fast re-render can make a visible-text wait look like a failure even when the record saved.
+- PM schedule creation should verify the title, equipment, and next due date are actually filled before submit, then verify the saved schedule or generated Work Order Detail from the refreshed DOM. A fast re-render can make a visible-text wait look like a failure even when the record saved.
+- Requests can be submitted while the user is looking at Active, Converted, or All. After creating an internal request, verify the app returns to the Active request queue and the new unconverted request is visible there.
+- When testing request cleanup, verify converted requests in both directions: Active must not show converted cards or conversion-history clutter, and Converted must show converted cards without `Convert to Work Order` or `Quick Fix` actions.
+- Location selectors can exist in both desktop and mobile shells at the same time. Scope automated location switching to `[data-location-select]` filtered to the visible select before changing locations.
 
 ### Public QR Request
 
@@ -238,7 +242,7 @@ Use a known active public request token or a newly generated location QR link.
 Verify:
 
 - Anonymous request URL loads without company login.
-- Location/company text is correct.
+- Location/company text is correct. The public form may use the company heading and location subtitle instead of a generic `Submit Maintenance Request` heading.
 - Submit request shows success.
 - Manager can see the request under that exact QR location. If the manager app is on another active location, switch to the QR location or search after switching.
 - Convert/Quick Fix actions are present.
