@@ -38,6 +38,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-company-logo.sql`
 - `step-next-company-settings.sql`
 - `step-next-equipment-delete.sql`
+- `step-next-explicit-data-api-grants.sql`
 - `step-next-location-integrity.sql`
 - `step-next-locations.sql`
 - `step-next-login-memberships.sql`
@@ -71,6 +72,12 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-work-order-type.sql`
 
 ## Recent Required SQL
+
+Explicit Data API grants:
+
+Run `supabase/step-next-explicit-data-api-grants.sql` after schema/setup changes and whenever new public tables or RPCs are added. This keeps MaintainOps ready for Supabase's 2026 change where new `public` schema tables are not exposed to the Data API unless explicit grants exist.
+
+Do not grant direct `anon` access to app tables unless a table is intentionally public. QR request intake should stay behind scoped RPC functions such as `get_public_request_intake` and `submit_public_location_request`.
 
 Mobile tech profile setting:
 

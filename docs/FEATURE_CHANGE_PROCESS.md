@@ -153,10 +153,12 @@ If the change needs Supabase:
 
 1. Write the SQL as a repo file under `supabase/`.
 2. Paste the full copy/paste SQL in chat.
-3. Include `notify pgrst, 'reload schema';` when schema cache reload is needed.
-4. Keep RLS enabled.
-5. Test with the affected role.
-6. Record the SQL filename and result in `docs/QA_LOG.md`.
+3. For every new `public` table, include explicit Data API grants. Browser tables should usually grant only to `authenticated` plus `service_role`; do not grant direct `anon` table access unless the table is intentionally public.
+4. For public QR or outside-company access, prefer tightly scoped RPC grants to `anon` instead of table grants.
+5. Include `notify pgrst, 'reload schema';` when schema cache reload is needed.
+6. Keep RLS enabled.
+7. Test with the affected role.
+8. Record the SQL filename and result in `docs/QA_LOG.md`.
 
 Do not say only "update Supabase." Always provide the full SQL.
 
@@ -255,6 +257,7 @@ Test:
 - manager/admin sees management controls,
 - technician does not see admin-only actions,
 - Mobile tech off/on location switch behavior,
+- reload/reopen persistence when location, role, or user preference state is changed,
 - sign out/in persistence when relevant,
 - role selector options match the current supported role model,
 - role save reloads durable Team data, not only a success toast,

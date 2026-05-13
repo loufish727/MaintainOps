@@ -30,6 +30,77 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+QA data cleanup process was formalized, the first app-delete cleanup pass was run, and the missing cleanup paths were added:
+
+- Added `docs/QA_DATA_PROCESS.md` with required QA naming, cleanup, and post-delete debug rules.
+- User clarified cleanup should go through the app, not SQL, so the SQL cleanup artifact was removed.
+- The app-delete process targets QA/debug/test records only and avoids broad deletes.
+- Parts/equipment should be left in place if the app reports linked history.
+- Updated `docs/DEBUG_PROCESS.md` so future debug runs include QA data lifecycle discipline.
+- Through the hosted app, QA active work orders were deleted via the real `Delete Work Order` -> `Permanently Delete` path across locations.
+- Salem active Work Orders now show only Lee's real `Hydralic Leak`; Auburn, Riverside, Sacramento, and Spokane show no visible active QA work orders.
+- Created and deleted `QA delete smoke 20260513 app path` through the same app workflow to verify create/delete after cleanup.
+- Deleted 13 QA parts through the app; Parts now shows `0 shown`.
+- Added manager/admin app delete controls for Requests, PM schedules, and Procedure templates.
+- Added `supabase/step-next-cleanup-delete-paths.sql` with exact delete grants and RLS policies for those app delete paths.
+- Still visible until the SQL is applied and app cleanup is rerun: QA equipment, PM schedules, requests, and procedures. Equipment deletion is correctly blocked when linked PM/history exists.
+- Ran full hosted debug after cleanup:
+  - navigation passed for all main sections,
+  - location switching passed all five locations,
+  - Work Orders active queues stayed clean with only live `Hydralic Leak` in Salem,
+  - Quick Fix create/delete, Part create/delete, and Equipment create/delete smokes passed,
+  - Requests, PM, Procedures, and linked QA Equipment remain the cleanup blockers,
+  - no hosted MaintainOps console errors were captured.
+
+## Prior Recent Change
+
+Active location persistence was hardened:
+
+- Location selection is now stored per signed-in user and company with a scoped localStorage key.
+- The old `maintainops.activeLocationId` key is still written/read as a compatibility fallback.
+- Startup now prefers the saved location for the loaded company when that location still exists.
+- Switching companies no longer wipes the saved location for that company before locations are loaded.
+- `index.html` now points to `app.js?v=location-persist-1`.
+- Updated the debug/feature processes so location changes must be verified after app reload/reopen.
+- Static checks passed and the local HTTP app loaded to the login screen with no `127.0.0.1:4182` console errors. Browser automation could not complete signed-in local location switching because the local/file origins did not have the current auth session and `file://` inspection is blocked by browser policy.
+
+## Prior Recent Change
+
+Supabase Data API grant hardening for the 2026 public-schema change:
+
+- Added `supabase/step-next-explicit-data-api-grants.sql`.
+- Updated process/setup/architecture docs so future public tables require explicit grants plus RLS policies.
+- Kept public QR access on scoped RPCs, not direct anonymous table grants.
+- Ran focused service-role table and RPC grant passes in Supabase after the first all-in-one run stalled in the dashboard.
+- Verified the important grants returned `true`: authenticated schema usage, service_role schema usage, authenticated work order select/update, service_role app issue report delete, service_role work order delete, anon public request RPC execute, and service_role public request RPC execute.
+- Ran hosted debug after the grants and Lee correction:
+  - static checks passed,
+  - hosted app loaded,
+  - main navigation passed,
+  - location switching passed Salem/Auburn/Salem,
+  - `Hydralic Leak` and `New thalmann` verified in Salem,
+  - Auburn search showed zero result cards for `Hydralic Leak`,
+  - Quick Fix, Quick Update, comment, internal request submit, and request conversion passed in Salem.
+- Ran full hosted debug afterward:
+  - main navigation passed cleanly after clearing persisted global search state,
+  - location switching passed Salem, Riverside, Spokane, Auburn, Salem,
+  - Quick Fix, Quick Update, comments, parts Use/Restock, equipment create, procedure/step create, PM create/generate, internal request submit/convert, app issue report, Team role surface, and public Salem QR request all passed,
+  - no MaintainOps console errors were found,
+  - protocol note: click a search result to clear a persisted global search state if direct automation fill does not clear the controlled search input.
+
+## Prior Recent Change
+
+Live correction for Lee Gaede's `Hydralic Leak` work order:
+
+- Found work order `8a19166f-c653-4da6-a5db-01bc5b96491a` had landed in Auburn, WA.
+- The linked equipment `New thalmann` (`fdab0981-bb5e-4335-92ce-f0b4667b1692`) was also in Auburn, WA.
+- App logic uses selected equipment location when equipment is attached, so this was likely equipment/location routing rather than a random save failure.
+- Ran a targeted Supabase correction to move the work order and linked equipment to Salem, OR.
+- Verification showed the work order now at Salem, OR.
+- Follow-up remains: build invite/default location and finish true technician mobile-tech lock QA so users do not fall back to the first alphabetical location.
+
+## Earlier Recent Change
+
 Requests flow was cleaned up so converted requests do not clutter the active request queue.
 
 Implementation:

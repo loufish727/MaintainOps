@@ -108,6 +108,28 @@ Recent change needing fresh QA:
 - Confirmed that Quick Fix appeared in Riverside, CA and did not appear after switching to Salem, OR.
 - Still needs a real technician-account pass for disabled switcher/unlock/re-lock behavior when a technician login is available.
 
+2026-05-13 live location correction:
+
+- Investigated Lee Gaede's live work order `Hydralic Leak`, id `8a19166f-c653-4da6-a5db-01bc5b96491a`.
+- Found it was created under Auburn, WA and linked to equipment `New thalmann`, id `fdab0981-bb5e-4335-92ce-f0b4667b1692`, which was also assigned to Auburn, WA.
+- Code review confirmed work order creation uses selected equipment location when equipment is attached; otherwise it uses the active workspace location. This points to equipment/location routing rather than a random database save failure.
+- Ran a targeted Supabase correction from an unsaved SQL editor tab: moved the one work order and its linked equipment from Auburn, WA to Salem, OR and inserted a work order event noting the admin correction.
+- Verification query showed `Hydralic Leak` at `Salem, OR` after the correction.
+- Follow-up product fix remains: implement invite/default location and finish true technician mobile-tech lock QA so new or restricted users do not silently fall back to Auburn, WA.
+
+2026-05-13 active location persistence hardening:
+
+- Root issue: active location was saved only in the global `maintainops.activeLocationId` localStorage key, so reload/reopen behavior was too loose for live field use.
+- Fix: active location is now persisted per signed-in user and company as `maintainops.activeLocationId:<user_id>:<company_id>`, while the legacy global key remains as a read/write fallback.
+- Startup now reloads the saved company/user location when it still belongs to the loaded company; otherwise it falls back safely to the first available location.
+- Company switching no longer clears that company's saved active location before the app has loaded and validated its locations.
+- Updated `docs/DEBUG_PROCESS.md` and `docs/FEATURE_CHANGE_PROCESS.md` so location changes require reload/reopen persistence verification.
+- Bumped `index.html` to `app.js?v=location-persist-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Targeted helper unit passed for scoped key creation, legacy fallback, scoped write, and scoped read.
+- Local HTTP app loaded at `http://127.0.0.1:4182/index.html?qa_bust=location-persist-20260513` to the login screen with no `127.0.0.1:4182` console errors.
+- Signed-in browser QA remains manual/pending because the local HTTP origins were not signed in and browser automation is blocked from inspecting the signed-in `file://` origin.
+
 ## Public Request QR QA
 
 2026-05-06 update:
@@ -168,11 +190,118 @@ Recent change needing fresh QA:
 
 ## Process QA
 
+2026-05-13 QA data lifecycle and app-delete cleanup:
+
+- Added `docs/QA_DATA_PROCESS.md` so future debug runs use consistent QA naming and cleanup tokens.
+- User clarified cleanup should run through the app, not SQL, so the temporary SQL cleanup file was removed before use.
+- Cleanup is intentionally QA-only: it targets explicit QA prefixes and known debug/test records.
+- Active QA work orders were deleted through the hosted app using the real `Delete Work Order` -> `Permanently Delete` flow.
+- Verified location results after app cleanup:
+  - Auburn, WA: 0 active work, no visible QA active work orders.
+  - Riverside, CA: 0 active work, no visible QA active work orders.
+  - Sacramento, CA: 0 active work, no visible QA active work orders.
+  - Salem, OR: 1 active work, only live `Hydralic Leak` visible.
+  - Spokane, WA: 0 active work, no visible QA active work orders.
+- Created `QA delete smoke 20260513 app path` through Quick Fix, verified Work Order Detail opened, then deleted it through the same app delete flow; it no longer appeared afterward.
+- Delete function behavior observed: delete confirmation appears, permanent delete completes, workspace reloads, and active counts update.
+- Deleted 13 QA parts through the app by opening each Part Detail and using the real `Delete Part` confirmation. Parts now shows `0 shown`.
+- Equipment app-delete check found a traceability blocker: `QA full debug equipment 20260513-full-debug` is kept because it still has a linked PM schedule. This is correct existing behavior.
+- Post-cleanup smoke found no MaintainOps console errors on the hosted app.
+- Remaining cleanup work:
+  - Equipment still has QA records because linked PM/history blocks deletion.
+  - PM still has QA schedules and currently needs an app delete/archive path.
+  - Requests still has QA requests and currently needs an app delete/archive path.
+  - Procedures still appear in dropdowns and need an app delete/archive path if they should be cleaned without SQL.
+- Added QA data lifecycle checks to `docs/DEBUG_PROCESS.md`.
+
+2026-05-13 full debug after app-delete cleanup:
+
+- Ran hosted full debug at `https://loufish727.github.io/MaintainOps/?qa_bust=full-debug-after-cleanup-20260513`.
+- Startup passed with Taylor Metal Products loaded.
+- Main navigation passed for My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Settings / Company Settings.
+- Location switching passed across Auburn, Riverside, Sacramento, Salem, Spokane, and back to Salem.
+- Active Work Orders stayed clean after cleanup:
+  - Auburn, WA: 0 active, no visible QA work.
+  - Riverside, CA: 0 active, no visible QA work.
+  - Sacramento, CA: 0 active, no visible QA work.
+  - Salem, OR: 1 active, only live `Hydralic Leak`.
+  - Spokane, WA: 0 active, no visible QA work.
+- Quick Fix create/delete smoke passed with `QA full debug cleanup smoke 20260513`; Work Order Detail opened and the app delete flow removed it.
+- Part create/delete smoke passed on retry with `QA full debug cleanup part retry 20260513`; the first attempt hit a browser automation limitation filling a number input, not an app failure.
+- Equipment create/delete smoke passed on retry with `QA full debug cleanup equipment retry 20260513`.
+- Requests filter loaded, but Active still contains old QA requests. This confirms Requests needs an app delete/archive cleanup path before live testing.
+- PM and Procedures load, but still contain old QA PM schedules/procedure templates. This confirms those sections need app delete/archive cleanup paths before app-only cleanup can be completed.
+- Existing QA equipment remains visible because linked PM/history blocks deletion for traceability; this is expected current behavior.
+
+2026-05-13 cleanup path follow-up:
+
+- Added manager/admin app delete controls for maintenance requests, preventive schedules, and procedure templates so QA cleanup can stay app-first.
+- Request delete removes attached request-photo storage before deleting the request row.
+- PM and Procedure deletes use permanent confirmation and verify the row is gone after Supabase delete.
+- Added `supabase/step-next-cleanup-delete-paths.sql` for the required delete grants/RLS policies.
+- Updated the QA data process so future cleanup order is Work Orders, Parts, Requests, PM, Procedures, then Equipment.
+- After SQL was applied, static verification passed with `node --check app.js`.
+- GitHub Pages was checked and was still serving the prior `app.js?v=request-flow-clean-auth-3` build, so the new cleanup delete buttons were not yet available on the hosted app.
+- Prepared clean upload package `MaintainOps-github-clean-20260513-final-cleanup` and zip `MaintainOps-github-clean-20260513-final-cleanup.zip` containing only the current app, assets, docs, and Supabase files.
+- Final app-click debug is pending upload of the cleanup build to GitHub Pages, then reload with a fresh cache-bust.
+- No hosted MaintainOps console errors were captured during the final pass.
+
 2026-05-07 update:
 
 - Added `docs/DEBUG_PROCESS.md` as the repeatable debug/smoke workflow.
 - Added `docs/FEATURE_CHANGE_PROCESS.md` as the feature gate process for scoping, risk classification, targeted QA, Supabase gate, GitHub package gate, GitHub Pages QA, and final response format.
 - Linked both process docs from `docs/CURRENT_HANDOFF.md`, `docs/NEXT_STEPS.md`, and this QA log so future feature work starts from the same process.
+
+2026-05-13 Supabase Data API grants update:
+
+- Reviewed Supabase's 2026 public-schema Data API grant change.
+- Added `supabase/step-next-explicit-data-api-grants.sql` so MaintainOps keeps explicit table/function grants instead of depending on old public schema defaults.
+- Updated `docs/FEATURE_CHANGE_PROCESS.md`, `docs/SUPABASE_SETUP.md`, and `docs/ARCHITECTURE.md` so every future public table must include explicit grants, RLS, and policies.
+- Kept anonymous QR access on scoped RPC grants; no direct `anon` table grants were added.
+- Supabase dashboard had a stalled run on the first large all-in-one grant pass. Re-ran the needed service-role table grants as a smaller batch, which returned `Success. No rows returned`.
+- Ran service-role RPC execute grants as a second small batch, which also returned `Success. No rows returned`.
+- Verification query returned `true` for authenticated schema usage, service_role schema usage, authenticated work order select/update, service_role app issue report delete, service_role work order delete, anon public request RPC execute, and service_role public request RPC execute.
+
+2026-05-13 hosted debug after Supabase grants and Lee correction:
+
+- Ran static checks: `node --check app.js` and `node --check supabase-config.js` passed.
+- Verified `index.html` still points to `styles.css?v=request-flow-clean-1` and `app.js?v=request-flow-clean-auth-3`.
+- Hosted app loaded at `https://loufish727.github.io/MaintainOps/?qa_bust=post-supabase-lee-debug-20260513` with Taylor Metal Products and no MaintainOps console errors.
+- Main navigation smoke passed: My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Settings.
+- Manager/admin location switching passed across Salem, Auburn, and back to Salem without loading hangs.
+- Verified Lee Gaede's corrected work order `Hydralic Leak` appears in Salem, OR search results with equipment `New thalmann`.
+- Verified Auburn, WA search for `Hydralic Leak` showed zero result cards; the only prior match was the search input value itself.
+- Verified `New thalmann` appears while Salem, OR is selected.
+- Created Quick Fix `QA post grants quick fix 20260513-grants-lee` in Salem, OR; Work Order Detail opened.
+- Saved Quick Update on that work order with status In Progress, due date `2026-05-20`, and resolution `Post grants quick update 20260513-grants-lee`.
+- Added comment `Post grants debug comment 20260513-grants-lee`; comment persisted in the comments panel.
+- Submitted internal request `QA post grants request 20260513-grants-lee` in Salem, OR; it appeared in Active requests.
+- Converted that request to a work order; Work Order Detail opened in Salem, OR.
+- Browser automation note: clearing the global search input required actual Ctrl+A/Backspace key events; direct fill did not clear the controlled value in that run.
+- Local HTTP server startup failed in this desktop shell, so hosted GitHub Pages was used for the app debug pass. This is acceptable for this pass because the changes were live Supabase grants/data, not local JavaScript behavior.
+
+2026-05-13 full hosted debug:
+
+- Ran a broader full debug pass on GitHub Pages using fresh hosted cache busts including `full-debug-20260513-1`, `full-debug-clean-20260513-2`, and `full-debug-fresh-tab-20260513`.
+- Static checks passed again: `node --check app.js` and `node --check supabase-config.js`.
+- Cache tags remained `styles.css?v=request-flow-clean-1` and `app.js?v=request-flow-clean-auth-3`.
+- Startup passed: signed-in hosted app loaded Taylor Metal Products with Salem, OR selected and no loading hang.
+- Main navigation passed cleanly after clearing a persisted global search result state: My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Settings.
+- Location switching passed across Salem, OR, Riverside, CA, Spokane, WA, Auburn, WA, and back to Salem, OR.
+- Created Quick Fix `QA full debug quick fix 20260513-full-debug`; Work Order Detail opened in Salem.
+- Saved Quick Update on that work order with resolution `Full debug resolution 20260513-full-debug`, due date `2026-05-21`, and status In Progress.
+- Added comment `Full debug comment 20260513-full-debug`; comment persisted after reopening the comments panel.
+- Opened an existing part from `[data-open-part]` and verified Use and Restock controls in Part Detail.
+- Created equipment `QA full debug equipment 20260513-full-debug` with ID `QA-EQ-20260513-full-debug`; it appeared in Equipment.
+- Created procedure `QA full debug procedure 20260513-full-debug` and step `QA full debug step 20260513-full-debug`.
+- PM creation first pass was not durable because the form cleared but the title was not visible/searchable. Retried with `QA full debug PM 20260513-full-debug-pm2`, selecting the new equipment and procedure explicitly; PM appeared in the list and Generate Work opened Work Order Detail.
+- Submitted internal request `QA full debug request 20260513-full-debug`; it appeared in Active requests and converted to Work Order Detail.
+- Submitted app issue report `QA full debug app report 20260513-full-debug`; report form closed without a loading hang.
+- Team role surface passed: Technician, Manager, Admin present; Member absent; Mobile tech visible; Lee Gaede present as a Technician.
+- Public Salem QR form loaded anonymously from `?request=PJIpdPESjj6fl_x2UwQNjSs3`, showed Taylor Metal Products / Salem, OR, and submitted `QA full debug public request 20260513-full-debug` with Request Sent.
+- Reopened manager app after public QR testing replaced the manager tab; Salem Requests showed `QA full debug public request 20260513-full-debug` in Active requests.
+- Final console check found no MaintainOps errors. Browser log noise was from Supabase dashboard/PostHog/ConfigCat tabs, not the hosted MaintainOps app.
+- Protocol note: if global search persists across reloads, clicking a search result clears `maintainops.searchQuery` through the app's own handler and returns to a normal section view. Direct automation fill may not clear the controlled search input reliably.
 
 2026-05-07 process test:
 

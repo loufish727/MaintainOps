@@ -4,6 +4,17 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+Continue QA-only app cleanup before more live user testing:
+
+1. Use the app delete flow only for cleanup-sensitive QA records.
+2. Work Orders active queues are already cleaned across locations.
+3. QA Parts are already cleaned; Parts shows `0 shown`.
+4. Apply `supabase/step-next-cleanup-delete-paths.sql` so manager/admin app deletes work for Requests, PM, and Procedures.
+5. Use the new app delete buttons to remove QA Requests, PM schedules, and Procedures, then retry QA Equipment cleanup.
+6. Run the post-delete debug in `docs/QA_DATA_PROCESS.md`.
+
+Then continue:
+
 Finish QA for the Mobile tech location lock.
 
 Use `docs/FEATURE_CHANGE_PROCESS.md` and `docs/DEBUG_PROCESS.md` for the standard scope, debug, and smoke workflow before and after this QA pass.

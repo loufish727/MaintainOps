@@ -169,6 +169,12 @@ Policies should enforce:
 
 Security-definer functions should pin `search_path`.
 
+Data API access should be explicit for Supabase's 2026 public schema grant changes:
+
+- App tables use explicit grants to `authenticated` plus RLS policies.
+- Backend/admin API usage gets explicit `service_role` grants.
+- Anonymous access should stay on narrowly scoped RPCs, such as public QR request intake, instead of direct table access.
+
 Known security hardening already addressed:
 
 - Company names escaped in UI.

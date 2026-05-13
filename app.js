@@ -13,13 +13,14 @@ const SEARCH_PREVIEW_LIMIT = 6;
 const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
 const OUTSIDE_VENDOR_NOTE = "[Assignment: Outside vendor]";
 const COMPANY_ROLES = ["technician", "manager", "admin"];
+const ACTIVE_LOCATION_STORAGE_KEY = "maintainops.activeLocationId";
 let supabaseClient;
 let session;
 let companies = [];
 let activeCompanyId = localStorage.getItem("maintainops.activeCompanyId");
 let locations = [];
 let locationsReady = true;
-let activeLocationId = localStorage.getItem("maintainops.activeLocationId") || "";
+let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
 let workOrderServerTotal = 0;
@@ -75,6 +76,9 @@ let activePartId = null;
 let pendingDeleteWorkOrderId = null;
 let pendingDeletePartId = null;
 let pendingDeleteAssetId = null;
+let pendingDeleteRequestId = null;
+let pendingDeleteScheduleId = null;
+let pendingDeleteProcedureId = null;
 let showPartSourceManager = false;
 let createWorkOrderMode = false;
 let quickFixMode = false;
@@ -111,6 +115,41 @@ let appNoticeTone = "success";
 let noticeTimer;
 let workOrderActionWarningId = "";
 let workOrderActionWarning = "";
+
+function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
+  return companyId && userId
+    ? `${ACTIVE_LOCATION_STORAGE_KEY}:${userId}:${companyId}`
+    : ACTIVE_LOCATION_STORAGE_KEY;
+}
+
+function readStoredActiveLocationId(companyId = activeCompanyId, userId = session?.user?.id) {
+  const scopedKey = activeLocationStorageKey(companyId, userId);
+  if (scopedKey !== ACTIVE_LOCATION_STORAGE_KEY) {
+    const scopedValue = localStorage.getItem(scopedKey);
+    if (scopedValue) return scopedValue;
+  }
+  return localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
+}
+
+function persistActiveLocationId(locationId, companyId = activeCompanyId, userId = session?.user?.id) {
+  const value = locationId || "";
+  localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, value);
+  const scopedKey = activeLocationStorageKey(companyId, userId);
+  if (scopedKey !== ACTIVE_LOCATION_STORAGE_KEY) {
+    localStorage.setItem(scopedKey, value);
+  }
+}
+
+function storedLocationForLoadedCompany() {
+  const storedLocationId = readStoredActiveLocationId();
+  if (storedLocationId && locations.some((location) => location.id === storedLocationId)) {
+    return storedLocationId;
+  }
+  if (activeLocationId && locations.some((location) => location.id === activeLocationId)) {
+    return activeLocationId;
+  }
+  return locations[0]?.id || "";
+}
 
 document.addEventListener("click", (event) => {
   const confirmPartDeleteButton = event.target.closest("[data-confirm-delete-part]");
@@ -1401,10 +1440,8 @@ async function loadCompanyData() {
 
   locationsReady = !locationResponse.error;
   locations = locationResponse.error ? [] : (locationResponse.data || []);
-  if (!activeLocationId || !locations.some((location) => location.id === activeLocationId)) {
-    activeLocationId = locations[0]?.id || "";
-    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
-  }
+  activeLocationId = storedLocationForLoadedCompany();
+  persistActiveLocationId(activeLocationId);
   assets = assetResponse.data || [];
   maintenanceRequests = requestResponse.error ? [] : (requestResponse.data || []);
   preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
@@ -3287,6 +3324,7 @@ function renderAssetMiniWorkOrder(workOrder) {
 
 function renderPreventiveSchedule(schedule) {
   const dueState = getDueState({ due_at: schedule.next_due_at, status: "open" });
+  const confirming = pendingDeleteScheduleId === schedule.id;
   return `
     <article class="pm-card">
       <div>
@@ -3297,18 +3335,30 @@ function renderPreventiveSchedule(schedule) {
         <h3>${escapeHtml(schedule.title)}</h3>
         <p>${escapeHtml(schedule.assets?.name || "No equipment")} - Next due ${schedule.next_due_at}</p>
       </div>
-      <button class="secondary-button" data-generate-pm="${schedule.id}" type="button">Generate Work</button>
+      <div class="request-actions">
+        <button class="secondary-button" data-generate-pm="${schedule.id}" type="button">Generate Work</button>
+        ${canDeleteOperationalRecords() ? confirming ? `
+          <button class="secondary-button" data-cancel-delete-schedule type="button">Cancel</button>
+          <button class="danger-action-button confirm-delete-button" data-confirm-delete-schedule="${escapeHtml(schedule.id)}" type="button">Permanently Delete</button>
+        ` : `
+          <button class="danger-action-button" data-delete-schedule="${escapeHtml(schedule.id)}" type="button">Delete</button>
+        ` : ""}
+      </div>
     </article>
   `;
 }
 
 function renderProcedureTemplate(template) {
+  const linkedWorkCount = workOrders.filter((workOrder) => workOrder.procedure_template_id === template.id).length;
+  const linkedScheduleCount = preventiveSchedules.filter((schedule) => schedule.procedure_template_id === template.id).length;
+  const confirming = pendingDeleteProcedureId === template.id;
   return `
     <article class="procedure-card">
       <div>
         <div class="chip-row">
           <span class="chip">${template.procedure_steps?.length || 0} steps</span>
-          <span class="chip">${workOrders.filter((workOrder) => workOrder.procedure_template_id === template.id).length} linked work orders</span>
+          <span class="chip">${linkedWorkCount} linked work orders</span>
+          ${linkedScheduleCount ? `<span class="chip">${linkedScheduleCount} PM schedules</span>` : ""}
         </div>
         <h3>${escapeHtml(template.name)}</h3>
         <p>${escapeHtml(template.description || "No description.")}</p>
@@ -3336,6 +3386,27 @@ function renderProcedureTemplate(template) {
         <p class="error-text" data-step-error="${template.id}"></p>
         <button class="secondary-button" type="submit">Add Step</button>
       </form>
+      ${canDeleteOperationalRecords() ? `
+        <section class="delete-zone procedure-delete-zone">
+          <div>
+            <h3>Delete Procedure</h3>
+            <p>This removes the template and checklist steps. Existing work history stays in place.</p>
+          </div>
+          <p class="error-text" data-procedure-delete-error="${escapeHtml(template.id)}"></p>
+          ${confirming ? `
+            <div class="delete-warning-panel">
+              <strong>Permanent Delete Warning</strong>
+              <p>You are about to permanently delete "${escapeHtml(template.name)}". This cannot be undone.</p>
+              <div class="button-row">
+                <button class="secondary-button" data-cancel-delete-procedure type="button">Cancel</button>
+                <button class="danger-action-button permanent-delete-button" data-confirm-delete-procedure="${escapeHtml(template.id)}" type="button">Permanently Delete</button>
+              </div>
+            </div>
+          ` : `
+            <button class="danger-action-button" data-delete-procedure="${escapeHtml(template.id)}" type="button">Delete Procedure</button>
+          `}
+        </section>
+      ` : ""}
     </article>
   `;
 }
@@ -4383,6 +4454,13 @@ function qrSvgFor(value, cellSize = 4) {
 
 function renderMaintenanceRequest(request) {
   const converted = isConvertedRequest(request);
+  const confirming = pendingDeleteRequestId === request.id;
+  const deleteControls = canDeleteOperationalRecords() ? confirming ? `
+    <button class="secondary-button" data-cancel-delete-request type="button">Cancel</button>
+    <button class="danger-action-button confirm-delete-button" data-confirm-delete-request="${escapeHtml(request.id)}" type="button">Permanently Delete</button>
+  ` : `
+    <button class="danger-action-button" data-delete-request="${escapeHtml(request.id)}" type="button">Delete</button>
+  ` : "";
   return `
     <article class="request-card ${converted ? "converted-request" : "active-request"}">
       <div class="request-card-main">
@@ -4403,10 +4481,12 @@ function renderMaintenanceRequest(request) {
         <div class="request-actions">
           <button class="secondary-button request-action-button" data-quick-fix-request="${request.id}" type="button">Quick Fix</button>
           <button class="secondary-button work-action-button" data-convert-request="${request.id}" type="button">Convert to Work Order</button>
+          ${deleteControls}
         </div>
       ` : `
         <div class="request-actions request-converted-note">
           <span>Converted to work order</span>
+          ${deleteControls}
         </div>
       `}
     </article>
@@ -5348,7 +5428,6 @@ function bindWorkspaceEvents() {
     createWorkOrderMode = false;
     reportIssueMode = false;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
-    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
     await render();
   });
 
@@ -5362,7 +5441,7 @@ function bindWorkspaceEvents() {
       resetPartsPage();
       resetAssetsPage();
       invalidateExactWorkOrderSearchCache();
-      localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+      persistActiveLocationId(activeLocationId);
       await reloadWorkOrderQueue();
   };
 
@@ -6089,6 +6168,21 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => openQuickFixForRequest(button.dataset.quickFixRequest));
   });
 
+  document.querySelectorAll("[data-delete-request]").forEach((button) => {
+    button.addEventListener("click", () => requestDeleteMaintenanceRequest(button.dataset.deleteRequest));
+  });
+
+  document.querySelectorAll("[data-cancel-delete-request]").forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingDeleteRequestId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-request]").forEach((button) => {
+    button.addEventListener("click", () => deleteMaintenanceRequest(button.dataset.confirmDeleteRequest));
+  });
+
   const editForm = document.querySelector("#edit-work-order-form");
   if (editForm) editForm.addEventListener("submit", updateWorkOrderDetails);
 
@@ -6124,6 +6218,21 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => generatePreventiveWorkOrder(button.dataset.generatePm));
   });
 
+  document.querySelectorAll("[data-delete-schedule]").forEach((button) => {
+    button.addEventListener("click", () => requestDeletePreventiveSchedule(button.dataset.deleteSchedule));
+  });
+
+  document.querySelectorAll("[data-cancel-delete-schedule]").forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingDeleteScheduleId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-schedule]").forEach((button) => {
+    button.addEventListener("click", () => deletePreventiveSchedule(button.dataset.confirmDeleteSchedule));
+  });
+
   document.querySelectorAll("[data-create-follow-up]").forEach((button) => {
     button.addEventListener("click", () => createFollowUpWorkOrder(button.dataset.createFollowUp));
   });
@@ -6136,6 +6245,21 @@ function bindWorkspaceEvents() {
 
   document.querySelectorAll("[data-add-step]").forEach((form) => {
     form.addEventListener("submit", createProcedureStep);
+  });
+
+  document.querySelectorAll("[data-delete-procedure]").forEach((button) => {
+    button.addEventListener("click", () => requestDeleteProcedureTemplate(button.dataset.deleteProcedure));
+  });
+
+  document.querySelectorAll("[data-cancel-delete-procedure]").forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingDeleteProcedureId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-delete-procedure]").forEach((button) => {
+    button.addEventListener("click", () => deleteProcedureTemplate(button.dataset.confirmDeleteProcedure));
   });
 
   document.querySelectorAll("[data-step-result]").forEach((field) => {
@@ -6553,6 +6677,71 @@ async function createPreventiveSchedule(event) {
   }
 }
 
+function requestDeletePreventiveSchedule(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete PM schedules.");
+    return;
+  }
+  if (!preventiveSchedules.some((schedule) => schedule.id === id)) return;
+  pendingDeleteScheduleId = id;
+  renderWorkspace();
+}
+
+async function deletePreventiveSchedule(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete PM schedules.");
+    return;
+  }
+
+  const schedule = preventiveSchedules.find((item) => item.id === id);
+  if (!schedule) return;
+  const button = document.querySelector(`[data-confirm-delete-schedule="${CSS.escape(id)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Deleting...";
+  }
+
+  try {
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("preventive_schedules")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .select("id"),
+      "PM schedule delete timed out. Check your connection and try again.",
+      15000
+    );
+    if (error) throw error;
+    if (!data?.length) {
+      throw new Error("PM schedule was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
+    }
+
+    const verification = await withOperationTimeout(
+      supabaseClient
+        .from("preventive_schedules")
+        .select("id")
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .maybeSingle(),
+      "PM schedule delete verification timed out. Refresh and check the PM list.",
+      15000
+    );
+    if (verification.error) throw new Error(`PM schedule delete verification failed: ${verification.error.message}`);
+    if (verification.data) throw new Error("PM schedule delete did not persist in Supabase.");
+
+    pendingDeleteScheduleId = null;
+    showNotice("PM schedule deleted.");
+    await render();
+  } catch (error) {
+    showNotice(error.message || "Could not delete PM schedule.", "warning");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Permanently Delete";
+    }
+  }
+}
+
 async function createProcedureTemplate(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -6682,6 +6871,75 @@ async function createProcedureStep(event) {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Add Step";
+    }
+  }
+}
+
+function requestDeleteProcedureTemplate(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete procedures.");
+    return;
+  }
+  if (!procedureTemplates.some((template) => template.id === id)) return;
+  pendingDeleteProcedureId = id;
+  renderWorkspace();
+}
+
+async function deleteProcedureTemplate(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete procedures.");
+    return;
+  }
+
+  const template = procedureTemplates.find((item) => item.id === id);
+  if (!template) return;
+  const button = document.querySelector(`[data-confirm-delete-procedure="${CSS.escape(id)}"]`);
+  const errorElement = document.querySelector(`[data-procedure-delete-error="${CSS.escape(id)}"]`);
+  if (errorElement) errorElement.textContent = "";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Deleting...";
+  }
+
+  try {
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("procedure_templates")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .select("id"),
+      "Procedure delete timed out. Check your connection and try again.",
+      15000
+    );
+    if (error) throw error;
+    if (!data?.length) {
+      throw new Error("Procedure was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
+    }
+
+    const verification = await withOperationTimeout(
+      supabaseClient
+        .from("procedure_templates")
+        .select("id")
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .maybeSingle(),
+      "Procedure delete verification timed out. Refresh and check the procedure list.",
+      15000
+    );
+    if (verification.error) throw new Error(`Procedure delete verification failed: ${verification.error.message}`);
+    if (verification.data) throw new Error("Procedure delete did not persist in Supabase.");
+
+    pendingDeleteProcedureId = null;
+    showNotice("Procedure deleted.");
+    await render();
+  } catch (error) {
+    const message = error.message || "Could not delete procedure.";
+    showNotice(message, "warning");
+    if (errorElement) errorElement.textContent = message;
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Permanently Delete";
     }
   }
 }
@@ -7171,7 +7429,7 @@ async function createLocation(event) {
     }
 
     activeLocationId = data.id;
-    localStorage.setItem("maintainops.activeLocationId", activeLocationId);
+    persistActiveLocationId(activeLocationId);
     showNotice("Location added.");
     await render();
   } catch (error) {
@@ -8788,6 +9046,80 @@ async function convertRequestToWorkOrder(requestId) {
   }
 }
 
+function requestDeleteMaintenanceRequest(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete requests.");
+    return;
+  }
+  if (!maintenanceRequests.some((request) => request.id === id)) return;
+  pendingDeleteRequestId = id;
+  renderWorkspace();
+}
+
+async function deleteMaintenanceRequest(id) {
+  if (!canDeleteOperationalRecords()) {
+    alert("Only company admins and managers can delete requests.");
+    return;
+  }
+
+  const request = maintenanceRequests.find((item) => item.id === id);
+  if (!request) return;
+  const button = document.querySelector(`[data-confirm-delete-request="${CSS.escape(id)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Deleting...";
+  }
+
+  try {
+    if (request.photo_storage_path) {
+      const storageDelete = await withOperationTimeout(
+        supabaseClient.storage.from("maintenance-request-photos").remove([request.photo_storage_path]),
+        "Request photo cleanup timed out.",
+        15000
+      );
+      if (storageDelete.error) throw new Error(`Could not remove request photo: ${storageDelete.error.message}`);
+    }
+
+    const { data, error } = await withOperationTimeout(
+      supabaseClient
+        .from("maintenance_requests")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .select("id"),
+      "Request delete timed out. Check your connection and try again.",
+      15000
+    );
+    if (error) throw error;
+    if (!data?.length) {
+      throw new Error("Request was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
+    }
+
+    const verification = await withOperationTimeout(
+      supabaseClient
+        .from("maintenance_requests")
+        .select("id")
+        .eq("id", id)
+        .eq("company_id", activeCompanyId)
+        .maybeSingle(),
+      "Request delete verification timed out. Refresh and check the request list.",
+      15000
+    );
+    if (verification.error) throw new Error(`Request delete verification failed: ${verification.error.message}`);
+    if (verification.data) throw new Error("Request delete did not persist in Supabase.");
+
+    pendingDeleteRequestId = null;
+    showNotice("Request deleted.");
+    await render();
+  } catch (error) {
+    showNotice(error.message || "Could not delete request.", "warning");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Permanently Delete";
+    }
+  }
+}
+
 async function updateWorkOrderStatus(event) {
   const previous = workOrders.find((item) => item.id === activeWorkOrderId);
   event.target.disabled = true;
@@ -9386,6 +9718,10 @@ function canDeleteParts() {
 }
 
 function canDeleteEquipment() {
+  return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canDeleteOperationalRecords() {
   return ["admin", "manager"].includes(activeCompanyRole());
 }
 

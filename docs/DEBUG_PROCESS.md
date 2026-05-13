@@ -100,6 +100,17 @@ After a JavaScript change, update the `app.js?v=...` tag in `index.html` and the
 
 Run this pass after any feature or bug fix that touches app behavior.
 
+## QA Data Lifecycle
+
+Use `docs/QA_DATA_PROCESS.md` before creating cleanup-sensitive test data.
+
+- Prefix every QA record with `QA ` and one shared token.
+- Do not create live-looking QA records.
+- After large debug passes, clean QA records through the app first so the real delete functions are tested.
+- After deletion, verify Work Orders, Requests, Parts, Equipment, PM, and Procedures are no longer clogged by QA records.
+- Run a focused post-delete smoke: startup, main navigation, location switching, one Quick Fix create/open, and console check.
+- Cleanup delete paths now include Requests, PM schedules, and Procedure templates. Verify delete confirmation, permanent delete, reload, and absence from the relevant filter/list.
+
 ### Startup
 
 - App loads past `Loading Workspace`.
@@ -144,6 +155,8 @@ As manager/admin:
 - Switch Riverside, CA.
 - Switch Spokane, WA.
 - Confirm work/orders/equipment/parts reload for the selected location.
+- After a location switch, navigate to another app section, reload or reopen the app, and confirm the same location is still selected.
+- Switch to a second location and reload again so persistence is proven in both directions, not just by defaulting to the first location.
 
 As technician:
 
