@@ -244,6 +244,43 @@ Recent change needing fresh QA:
 - GitHub Pages was checked and was still serving the prior `app.js?v=request-flow-clean-auth-3` build, so the new cleanup delete buttons were not yet available on the hosted app.
 - Prepared clean upload package `MaintainOps-github-clean-20260513-final-cleanup` and zip `MaintainOps-github-clean-20260513-final-cleanup.zip` containing only the current app, assets, docs, and Supabase files.
 - Final app-click debug is pending upload of the cleanup build to GitHub Pages, then reload with a fresh cache-bust.
+
+2026-05-13 final cleanup publish and hosted debug:
+
+- Published cleanup build to GitHub `main`:
+  - `cb5f5d2` added app cleanup delete paths.
+  - `ae484ce` bumped the app cache tag to `app.js?v=cleanup-delete-paths-2` after the browser had cached the first cleanup tag before GitHub Pages finished updating.
+- Verified GitHub `index.html` points to `app.js?v=cleanup-delete-paths-2`.
+- Verified hosted `app.js` contains `data-delete-request` and `canDeleteOperationalRecords`.
+- Hosted app loaded at `https://loufish727.github.io/MaintainOps/?qa_bust=final-cleanup-debug-20260513-cache2`.
+- Startup passed for Taylor Metal Products with Salem, OR selected and no MaintainOps console errors.
+- New cleanup buttons appeared on hosted Requests after the cache tag bump.
+- Deleted QA maintenance requests through the app delete confirmation flow:
+  - Salem: 6 converted requests and 13 active requests.
+  - Auburn: 2 requests.
+  - Riverside: 2 requests.
+  - Spokane: 6 requests, then 3 remaining converted requests on a follow-up pass.
+  - Sacramento: 1 remaining converted request on a follow-up pass.
+- Final Requests sweep across all locations showed `Active 0`, `Converted 0`, and `All 0`.
+- Deleted QA PM schedules through the app delete confirmation flow:
+  - Salem: 12 schedules, including 4 found on the second unfiltered pass.
+  - Spokane: 3 schedules.
+- Final PM sweep across all locations showed 0 QA PM headings.
+- Deleted 15 QA procedure templates through the app delete confirmation flow.
+- Final Procedures check showed 0 QA headings and 0 QA procedure options.
+- Deleted remaining QA equipment through the app delete confirmation flow:
+  - Spokane: 3 equipment records.
+  - Salem: 7 equipment records after PM blockers were removed.
+- Final Equipment sweep across all locations showed 0 QA equipment headings.
+- Deleted the remaining visible QA part `QA full debug part 1778196110830` through the app delete confirmation flow.
+- Final Parts check showed no QA headings and `No parts added yet.`
+- Quick Fix smoke after cleanup passed:
+  - Created `QA final cleanup smoke 20260513`.
+  - Work Order Detail opened.
+  - Deleted the smoke work order through `Delete Work Order` -> `Permanently Delete`.
+  - Confirmed the smoke title was gone after deletion.
+- Main navigation smoke passed for My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Messages, Team, Admin Setup, and Settings. PM and Parts headings differ from nav labels (`Preventive Maintenance`, `Parts Inventory`), but the sections loaded with no stopped workspace state.
+- Final console check found no MaintainOps errors.
 - No hosted MaintainOps console errors were captured during the final pass.
 
 2026-05-07 update:

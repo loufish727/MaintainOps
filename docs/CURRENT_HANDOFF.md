@@ -43,7 +43,14 @@ QA data cleanup process was formalized, the first app-delete cleanup pass was ru
 - Deleted 13 QA parts through the app; Parts now shows `0 shown`.
 - Added manager/admin app delete controls for Requests, PM schedules, and Procedure templates.
 - Added `supabase/step-next-cleanup-delete-paths.sql` with exact delete grants and RLS policies for those app delete paths.
-- Still visible until the SQL is applied and app cleanup is rerun: QA equipment, PM schedules, requests, and procedures. Equipment deletion is correctly blocked when linked PM/history exists.
+- Final hosted cleanup was completed after the SQL and GitHub Pages upload:
+  - Requests are clean across all locations.
+  - PM schedules are clean across all locations.
+  - Procedures are clean.
+  - Equipment has no visible QA headings across all locations.
+  - Parts has no visible QA headings.
+  - Quick Fix create/delete smoke passed after cleanup.
+  - No MaintainOps console errors were captured.
 - Ran full hosted debug after cleanup:
   - navigation passed for all main sections,
   - location switching passed all five locations,
