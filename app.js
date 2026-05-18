@@ -49,6 +49,14 @@ const {
 } = window.MaintainOpsProfilesService;
 const { listParts } = window.MaintainOpsPartsService;
 const { listAssets } = window.MaintainOpsAssetsService;
+const {
+  selectWorkOrders,
+  countWorkOrdersQuery,
+  fetchWorkOrderById,
+  fetchWorkOrdersByIds,
+  scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
+  fetchPagedSearchRows,
+} = window.MaintainOpsWorkOrdersService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -192,16 +200,16 @@ function storedLocationForLoadedCompany() {
   if (scopedLocationId && locations.some((location) => location.id === scopedLocationId)) {
     return scopedLocationId;
   }
-  const defaultLocationId = activeCompanyMembership()?.default_location_id || "";
-  if (defaultLocationId && locations.some((location) => location.id === defaultLocationId)) {
-    return defaultLocationId;
-  }
   const storedLocationId = readStoredActiveLocationId();
   if (storedLocationId && locations.some((location) => location.id === storedLocationId)) {
     return storedLocationId;
   }
   if (activeLocationId && locations.some((location) => location.id === activeLocationId)) {
     return activeLocationId;
+  }
+  const defaultLocationId = activeCompanyMembership()?.default_location_id || "";
+  if (defaultLocationId && locations.some((location) => location.id === defaultLocationId)) {
+    return defaultLocationId;
   }
   return locations[0]?.id || "";
 }
@@ -1220,9 +1228,7 @@ async function fetchWorkOrderPage(options = {}) {
   const to = from + WORK_ORDERS_PER_PAGE - 1;
   const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
   const response = await applyWorkOrderListFilters(
-    supabaseClient
-      .from("work_orders")
-      .select(selectClause, { count: "exact" })
+    selectWorkOrders(supabaseClient, selectClause, { count: "exact" })
   )
     .range(from, to);
 
@@ -1253,14 +1259,13 @@ async function fetchExactSearchedWorkOrderPage(options = {}) {
   if (!pageIds.length) return { data: [], error: null, count: total };
 
   const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
-  let query = supabaseClient
-    .from("work_orders")
-    .select(selectClause)
-    .eq("company_id", activeCompanyId)
-    .in("id", pageIds);
-  if (locationsReady && activeLocationId) query = query.eq("location_id", activeLocationId);
-
-  const response = await query;
+  const response = await fetchWorkOrdersByIds(supabaseClient, {
+    companyId: activeCompanyId,
+    locationId: activeLocationId,
+    locationsReady,
+    selectClause,
+    ids: pageIds,
+  });
   if (response.error) return response;
   const byId = new Map((response.data || []).map((workOrder) => [workOrder.id, workOrder]));
   return {
@@ -1376,12 +1381,11 @@ async function addWorkOrderSearchRowsByIds(target, ids) {
 }
 
 function scopedWorkOrderSearchQuery() {
-  let query = supabaseClient
-    .from("work_orders")
-    .select("id, created_at, due_at, completed_at, priority, status")
-    .eq("company_id", activeCompanyId);
-  if (locationsReady && activeLocationId) query = query.eq("location_id", activeLocationId);
-  return query;
+  return buildScopedWorkOrderSearchQuery(supabaseClient, {
+    companyId: activeCompanyId,
+    locationId: activeLocationId,
+    locationsReady,
+  });
 }
 
 function addWorkOrderSearchRows(target, rows) {
@@ -1389,21 +1393,6 @@ function addWorkOrderSearchRows(target, rows) {
     if (!row?.id) return;
     target.set(row.id, { ...(target.get(row.id) || {}), ...row });
   });
-}
-
-async function fetchPagedSearchRows(buildQuery, onRows, maxRows = Infinity) {
-  let from = 0;
-  let fetched = 0;
-  while (fetched < maxRows) {
-    const pageSize = Math.min(SEARCH_ID_PAGE_SIZE, maxRows - fetched);
-    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
-    if (error) throw error;
-    const rows = data || [];
-    onRows(rows);
-    fetched += rows.length;
-    if (rows.length < pageSize) break;
-    from += pageSize;
-  }
 }
 
 async function loadWorkOrderDashboardCounts() {
@@ -1433,12 +1422,7 @@ async function loadMyWorkDashboardCounts() {
 }
 
 async function countWorkOrders(options = {}) {
-  const response = await applyWorkOrderFilters(
-    supabaseClient
-      .from("work_orders")
-      .select("id", { count: "exact", head: true }),
-    options
-  );
+  const response = await applyWorkOrderFilters(countWorkOrdersQuery(supabaseClient), options);
   if (response.error) {
     console.warn("Work order count failed", response.error);
     return 0;
@@ -1582,12 +1566,7 @@ async function loadCompanyData() {
   const workOrderResponse = await loadServerWorkOrderSlice();
   const requestResponse = await loadServerRequestSlice();
   if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
-    const activeResponse = await supabaseClient
-      .from("work_orders")
-      .select(WORK_ORDER_RELATION_SELECT)
-      .eq("company_id", activeCompanyId)
-      .eq("id", activeWorkOrderId)
-      .maybeSingle();
+    const activeResponse = await fetchWorkOrderById(supabaseClient, activeCompanyId, activeWorkOrderId, WORK_ORDER_RELATION_SELECT);
     if (!activeResponse.error && activeResponse.data) {
       workOrders = [activeResponse.data, ...workOrders];
     }
