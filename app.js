@@ -57,6 +57,13 @@ const {
   scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
   fetchPagedSearchRows,
 } = window.MaintainOpsWorkOrdersService;
+const {
+  getMyCompanies,
+  listUserCompanyMemberships,
+  listUserCompanyMembershipsLegacy,
+  listCompaniesByIds,
+  listCompaniesByIdsLegacy,
+} = window.MaintainOpsCompanyService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -749,7 +756,7 @@ async function submitPublicRequest(event, token, intake) {
 
 async function loadCompanies() {
   appError = "";
-  const companyRpc = await supabaseClient.rpc("get_my_companies");
+  const companyRpc = await getMyCompanies(supabaseClient);
   if (!companyRpc.error) {
     const seenCompanies = new Set();
     companies = (companyRpc.data || [])
@@ -778,18 +785,10 @@ async function loadCompanies() {
     return;
   }
 
-  const { data: memberships, error: membershipError } = await supabaseClient
-    .from("company_members")
-    .select("company_id, role, default_location_id")
-    .eq("user_id", session.user.id)
-    .order("created_at", { ascending: true });
+  const { data: memberships, error: membershipError } = await listUserCompanyMemberships(supabaseClient, session.user.id);
 
   if (membershipError && isColumnSchemaError(membershipError, ["default_location_id"])) {
-    const retry = await supabaseClient
-      .from("company_members")
-      .select("company_id, role")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: true });
+    const retry = await listUserCompanyMembershipsLegacy(supabaseClient, session.user.id);
     if (!retry.error) {
       return loadCompaniesFromMembershipRows(retry.data || []);
     }
@@ -811,18 +810,10 @@ async function loadCompaniesFromMembershipRows(memberships) {
   }
 
   const ids = memberships.map((membership) => membership.company_id);
-  let { data: companyRows, error: companyError } = await supabaseClient
-    .from("companies")
-    .select("id, name, logo_path, created_at")
-    .in("id", ids)
-    .order("created_at", { ascending: true });
+  let { data: companyRows, error: companyError } = await listCompaniesByIds(supabaseClient, ids);
 
   if (companyError && isColumnSchemaError(companyError, ["logo_path"])) {
-    const retry = await supabaseClient
-      .from("companies")
-      .select("id, name, created_at")
-      .in("id", ids)
-      .order("created_at", { ascending: true });
+    const retry = await listCompaniesByIdsLegacy(supabaseClient, ids);
     companyRows = retry.data;
     companyError = retry.error;
   }
