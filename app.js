@@ -64,7 +64,11 @@ const {
   listCompaniesByIds,
   listCompaniesByIdsLegacy,
 } = window.MaintainOpsCompanyService;
-const { listAppIssueReports } = window.MaintainOpsAppIssueReportsService;
+const {
+  listAppIssueReports,
+  createAppIssueReportRecord,
+  updateAppIssueReportStatusRecord,
+} = window.MaintainOpsAppIssueReportsService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -7827,7 +7831,7 @@ async function createAppIssueReport(event) {
     };
 
     const { error } = await withOperationTimeout(
-      supabaseClient.from("app_issue_reports").insert(payload),
+      createAppIssueReportRecord(supabaseClient, payload),
       "App issue report save timed out. Check your connection and try again.",
       15000
     );
@@ -7861,14 +7865,12 @@ async function updateAppIssueReportStatus(event) {
   try {
     const nextStatus = String(form.get("status") || "open");
     const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("app_issue_reports")
-        .update({
-          status: nextStatus,
-          resolved_at: nextStatus === "resolved" ? new Date().toISOString() : null,
-        })
-        .eq("company_id", activeCompanyId)
-        .eq("id", formElement.dataset.appIssueStatus),
+      updateAppIssueReportStatusRecord(
+        supabaseClient,
+        activeCompanyId,
+        formElement.dataset.appIssueStatus,
+        nextStatus
+      ),
       "Issue report status save timed out. Check your connection and try again.",
       12000
     );

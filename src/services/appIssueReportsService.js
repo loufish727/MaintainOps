@@ -7,7 +7,24 @@
       .order("created_at", { ascending: false });
   }
 
+  function createAppIssueReportRecord(supabaseClient, payload) {
+    return supabaseClient.from("app_issue_reports").insert(payload);
+  }
+
+  function updateAppIssueReportStatusRecord(supabaseClient, companyId, reportId, nextStatus) {
+    return supabaseClient
+      .from("app_issue_reports")
+      .update({
+        status: nextStatus,
+        resolved_at: nextStatus === "resolved" ? new Date().toISOString() : null,
+      })
+      .eq("company_id", companyId)
+      .eq("id", reportId);
+  }
+
   window.MaintainOpsAppIssueReportsService = {
     listAppIssueReports,
+    createAppIssueReportRecord,
+    updateAppIssueReportStatusRecord,
   };
 })();
