@@ -47,6 +47,8 @@ const {
   listTeamInvites,
   listTeamInvitesLegacy,
 } = window.MaintainOpsProfilesService;
+const { listParts } = window.MaintainOpsPartsService;
+const { listAssets } = window.MaintainOpsAssetsService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -1545,17 +1547,13 @@ function applyWorkOrderSort(query) {
 async function loadCompanyData() {
   let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
     listLocations(supabaseClient, activeCompanyId),
-    supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
+    listAssets(supabaseClient, activeCompanyId),
     supabaseClient
       .from("preventive_schedules")
       .select("*, assets(name, location_id)")
       .eq("company_id", activeCompanyId)
       .order("next_due_at", { ascending: true }),
-    supabaseClient
-      .from("parts")
-      .select("*")
-      .eq("company_id", activeCompanyId)
-      .order("name"),
+    listParts(supabaseClient, activeCompanyId),
     supabaseClient
       .from("procedure_templates")
       .select("*, procedure_steps(*)")
