@@ -1,19 +1,45 @@
 const app = document.querySelector("#app");
 
-const STATUS_OPTIONS = ["open", "in_progress", "blocked", "completed"];
-const TYPE_OPTIONS = ["request", "reactive", "preventive", "inspection", "corrective"];
-const ASSET_TYPE_OPTIONS = ["machine", "secondary_machine", "component", "shop_item"];
-const WORK_ORDERS_PER_PAGE = 12;
-const PARTS_PER_PAGE = 12;
-const ASSETS_PER_PAGE = 12;
-const LIST_ITEMS_PER_PAGE = 12;
-const SEARCH_ID_PAGE_SIZE = 1000;
-const SEARCH_ID_CHUNK_SIZE = 100;
-const SEARCH_PREVIEW_LIMIT = 6;
-const OUTSIDE_VENDOR_VALUE = "__outside_vendor__";
-const OUTSIDE_VENDOR_NOTE = "[Assignment: Outside vendor]";
-const COMPANY_ROLES = ["technician", "manager", "admin"];
-const ACTIVE_LOCATION_STORAGE_KEY = "maintainops.activeLocationId";
+const {
+  STATUS_OPTIONS,
+  TYPE_OPTIONS,
+  ASSET_TYPE_OPTIONS,
+  WORK_ORDERS_PER_PAGE,
+  PARTS_PER_PAGE,
+  ASSETS_PER_PAGE,
+  LIST_ITEMS_PER_PAGE,
+  SEARCH_ID_PAGE_SIZE,
+  SEARCH_ID_CHUNK_SIZE,
+  SEARCH_PREVIEW_LIMIT,
+  OUTSIDE_VENDOR_VALUE,
+  OUTSIDE_VENDOR_NOTE,
+  COMPANY_ROLES,
+  ACTIVE_LOCATION_STORAGE_KEY,
+} = window.MaintainOpsConstants;
+const { escapeHtml } = window.MaintainOpsDom;
+const {
+  postgrestSearchTerm,
+  isoDate,
+  isoDateTime,
+  daysAgoDate,
+  monthStartDate,
+  chunkArray,
+  fileBaseName,
+  safeFileName,
+  statusLabel,
+  normalizeRole,
+  roleLabel,
+  roleDescription,
+  formatDate,
+  photoMetaText,
+  requestPhotoMetaText,
+  formatBytes,
+  money,
+  partUsageUnitCost,
+  getDueState,
+  startOfToday,
+  csvCell,
+} = window.MaintainOpsFormatting;
 let supabaseClient;
 let session;
 let companies = [];
@@ -29,6 +55,8 @@ let myWorkDashboardCounts = null;
 let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
 let exactWorkOrderSearchCache = { key: "", rows: [] };
 let maintenanceRequests = [];
+let requestServerTotal = 0;
+let requestDashboardCounts = { active: 0, converted: 0, all: 0 };
 let requestsReady = false;
 let publicRequestLinks = [];
 let publicRequestLinksReady = true;
@@ -36,6 +64,7 @@ let preventiveSchedules = [];
 let companyMembers = [];
 let teamInvites = [];
 let teamInvitesReady = true;
+let teamInviteCancelError = "";
 let messageThreads = [];
 let messageThreadMembers = [];
 let messagesByThreadId = {};
@@ -79,6 +108,7 @@ let pendingDeleteAssetId = null;
 let pendingDeleteRequestId = null;
 let pendingDeleteScheduleId = null;
 let pendingDeleteProcedureId = null;
+let pendingCancelInviteId = null;
 let showPartSourceManager = false;
 let createWorkOrderMode = false;
 let quickFixMode = false;
@@ -116,6 +146,7 @@ let noticeTimer;
 let workOrderActionWarningId = "";
 let workOrderActionWarning = "";
 
+// LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
 function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
   return companyId && userId
     ? `${ACTIVE_LOCATION_STORAGE_KEY}:${userId}:${companyId}`
@@ -133,14 +164,29 @@ function readStoredActiveLocationId(companyId = activeCompanyId, userId = sessio
 
 function persistActiveLocationId(locationId, companyId = activeCompanyId, userId = session?.user?.id) {
   const value = locationId || "";
-  localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, value);
   const scopedKey = activeLocationStorageKey(companyId, userId);
   if (scopedKey !== ACTIVE_LOCATION_STORAGE_KEY) {
     localStorage.setItem(scopedKey, value);
+    localStorage.removeItem(ACTIVE_LOCATION_STORAGE_KEY);
+    return;
   }
+  localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, value);
+}
+
+function activeCompanyMembership() {
+  return companies.find((company) => company.id === activeCompanyId) || null;
 }
 
 function storedLocationForLoadedCompany() {
+  const scopedKey = activeLocationStorageKey();
+  const scopedLocationId = scopedKey !== ACTIVE_LOCATION_STORAGE_KEY ? localStorage.getItem(scopedKey) : "";
+  if (scopedLocationId && locations.some((location) => location.id === scopedLocationId)) {
+    return scopedLocationId;
+  }
+  const defaultLocationId = activeCompanyMembership()?.default_location_id || "";
+  if (defaultLocationId && locations.some((location) => location.id === defaultLocationId)) {
+    return defaultLocationId;
+  }
   const storedLocationId = readStoredActiveLocationId();
   if (storedLocationId && locations.some((location) => location.id === storedLocationId)) {
     return storedLocationId;
@@ -623,6 +669,7 @@ function renderPublicRequestError(message) {
   `;
 }
 
+// LFES-SECURITY: Public QR intake is intentionally anonymous; all company/location authority must stay inside scoped Supabase RPCs.
 async function submitPublicRequest(event, token, intake) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -701,6 +748,7 @@ async function loadCompanies() {
         logo_path: company.logo_path,
         created_at: company.created_at,
         role: normalizeRole(company.role),
+        default_location_id: company.default_location_id || "",
       }));
 
     await loadCompanyLogoUrls();
@@ -715,9 +763,20 @@ async function loadCompanies() {
 
   const { data: memberships, error: membershipError } = await supabaseClient
     .from("company_members")
-    .select("company_id, role")
+    .select("company_id, role, default_location_id")
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: true });
+
+  if (membershipError && isColumnSchemaError(membershipError, ["default_location_id"])) {
+    const retry = await supabaseClient
+      .from("company_members")
+      .select("company_id, role")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: true });
+    if (!retry.error) {
+      return loadCompaniesFromMembershipRows(retry.data || []);
+    }
+  }
 
   if (membershipError) {
     appError = `Could not load company memberships: ${membershipError.message}`;
@@ -725,6 +784,10 @@ async function loadCompanies() {
     return;
   }
 
+  await loadCompaniesFromMembershipRows(memberships || []);
+}
+
+async function loadCompaniesFromMembershipRows(memberships) {
   if (!memberships.length) {
     companies = [];
     return;
@@ -764,6 +827,7 @@ async function loadCompanies() {
     .map((company) => ({
       ...company,
       role: normalizeRole(memberships.find((membership) => membership.company_id === company.id)?.role),
+      default_location_id: memberships.find((membership) => membership.company_id === company.id)?.default_location_id || "",
     }));
 
   await loadCompanyLogoUrls();
@@ -915,6 +979,119 @@ async function loadServerWorkOrderSlice() {
   workOrderDashboardCounts = dashboardCounts;
   myWorkDashboardCounts = myCounts;
   return pageResponse;
+}
+
+const REQUEST_RELATION_SELECT = "*, assets(name, location_id), locations(name)";
+const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name)";
+const REQUEST_FALLBACK_SELECT = "*";
+
+async function loadServerRequestSlice() {
+  const activeFilter = requestViewFilter || "active";
+  const [pageResponse, counts] = await Promise.all([
+    fetchRequestPage(activeFilter),
+    loadRequestDashboardCounts(),
+  ]);
+
+  maintenanceRequests = pageResponse.data || [];
+  requestServerTotal = pageResponse.count ?? maintenanceRequests.length;
+  requestDashboardCounts = counts;
+
+  return pageResponse;
+}
+
+async function fetchRequestPage(filter = requestViewFilter, options = {}) {
+  const page = Math.max(1, requestsPage);
+  const from = (page - 1) * LIST_ITEMS_PER_PAGE;
+  const to = from + LIST_ITEMS_PER_PAGE - 1;
+  const selectClause = options.includeRelations === false
+    ? REQUEST_FALLBACK_SELECT
+    : options.includeLocationRelation === false
+      ? REQUEST_ASSET_FALLBACK_SELECT
+      : REQUEST_RELATION_SELECT;
+
+  const response = await applyRequestQueryFilters(
+    supabaseClient
+      .from("maintenance_requests")
+      .select(selectClause, { count: "exact" }),
+    filter
+  )
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (response.error && options.includeLocationRelation !== false && isColumnSchemaError(response.error, ["location_id", "locations"])) {
+    return fetchRequestPage(filter, { includeLocationRelation: false });
+  }
+  if (response.error && options.includeRelations !== false) {
+    return fetchRequestPage(filter, { includeRelations: false });
+  }
+  if (!response.error && response.count && page > 1 && from >= response.count) {
+    requestsPage = Math.max(1, Math.ceil(response.count / LIST_ITEMS_PER_PAGE));
+    localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+    return fetchRequestPage(filter, options);
+  }
+  return response;
+}
+
+async function loadRequestDashboardCounts() {
+  const [active, converted, all] = await Promise.all([
+    countRequests("active"),
+    countRequests("converted"),
+    countRequests("all"),
+  ]);
+  return { active, converted, all };
+}
+
+async function countRequests(filter) {
+  const response = await applyRequestQueryFilters(
+    supabaseClient
+      .from("maintenance_requests")
+      .select("id", { count: "exact", head: true }),
+    filter
+  );
+  if (response.error) {
+    console.warn("Request count failed", response.error);
+    return 0;
+  }
+  return response.count || 0;
+}
+
+function applyRequestQueryFilters(query, filter = requestViewFilter) {
+  let nextQuery = query.eq("company_id", activeCompanyId);
+  if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
+
+  if (filter === "converted") {
+    nextQuery = nextQuery.or("status.eq.converted,converted_work_order_id.not.is.null");
+  } else if (filter !== "all") {
+    nextQuery = nextQuery.eq("status", "submitted").is("converted_work_order_id", null);
+  }
+
+  const term = postgrestSearchTerm(searchQuery);
+  if (term) {
+    const pattern = `%${term}%`;
+    const matchedAssetIds = assets
+      .filter(matchesActiveLocation)
+      .filter((asset) => matchesQuery([
+        asset.name,
+        asset.asset_code,
+        asset.location,
+        asset.status,
+        asset.asset_type,
+        parentAssetFor(asset)?.name,
+      ], term))
+      .map((asset) => asset.id)
+      .slice(0, SEARCH_ID_PAGE_SIZE);
+    nextQuery = nextQuery.or([
+      `title.ilike.${pattern}`,
+      `description.ilike.${pattern}`,
+      `status.ilike.${pattern}`,
+      `priority.ilike.${pattern}`,
+      `requested_by_name.ilike.${pattern}`,
+      `requested_by_contact.ilike.${pattern}`,
+      ...(matchedAssetIds.length ? [`asset_id.in.(${matchedAssetIds.join(",")})`] : []),
+    ].join(","));
+  }
+
+  return nextQuery;
 }
 
 async function refreshWorkOrderRelatedSearch() {
@@ -1220,14 +1397,6 @@ async function fetchPagedSearchRows(buildQuery, onRows, maxRows = Infinity) {
   }
 }
 
-function chunkArray(items, size) {
-  const chunks = [];
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-  return chunks;
-}
-
 async function loadWorkOrderDashboardCounts() {
   const [activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek] = await Promise.all([
     countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false }),
@@ -1366,42 +1535,10 @@ function applyWorkOrderSort(query) {
   return query.order("created_at", { ascending: false });
 }
 
-function postgrestSearchTerm(value) {
-  return String(value || "")
-    .trim()
-    .replace(/[,%()]/g, " ")
-    .replace(/\s+/g, " ")
-    .slice(0, 80);
-}
-
-function isoDate(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function isoDateTime(date) {
-  return date.toISOString();
-}
-
-function daysAgoDate(days) {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date;
-}
-
-function monthStartDate() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
-}
-
 async function loadCompanyData() {
-  let [locationResponse, assetResponse, requestResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
+  let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
     supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
-    supabaseClient
-      .from("maintenance_requests")
-      .select("*, assets(name, location_id), locations(name)")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false }),
     supabaseClient
       .from("preventive_schedules")
       .select("*, assets(name, location_id)")
@@ -1423,27 +1560,12 @@ async function loadCompanyData() {
       .eq("company_id", activeCompanyId)
       .order("created_at", { ascending: false }),
   ]);
-  if (requestResponse.error && isColumnSchemaError(requestResponse.error, ["location_id", "locations"])) {
-    requestResponse = await supabaseClient
-      .from("maintenance_requests")
-      .select("*, assets(name)")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false });
-  }
-  if (requestResponse.error) {
-    requestResponse = await supabaseClient
-      .from("maintenance_requests")
-      .select("*")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false });
-  }
 
   locationsReady = !locationResponse.error;
   locations = locationResponse.error ? [] : (locationResponse.data || []);
   activeLocationId = storedLocationForLoadedCompany();
   persistActiveLocationId(activeLocationId);
   assets = assetResponse.data || [];
-  maintenanceRequests = requestResponse.error ? [] : (requestResponse.data || []);
   preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
   parts = partsResponse.error ? [] : (partsResponse.data || []);
   appIssueReportsReady = !issueReportResponse.error;
@@ -1453,6 +1575,7 @@ async function loadCompanyData() {
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
   const workOrderResponse = await loadServerWorkOrderSlice();
+  const requestResponse = await loadServerRequestSlice();
   if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
     const activeResponse = await supabaseClient
       .from("work_orders")
@@ -1488,6 +1611,22 @@ async function reloadWorkOrderQueue() {
   }
 }
 
+async function reloadRequestQueue() {
+  try {
+    const response = await loadServerRequestSlice();
+    requestsReady = !response.error;
+    if (response.error) {
+      showNotice(`Could not load requests: ${response.error.message}`, "warning");
+      return;
+    }
+    await addSignedRequestPhotoUrls();
+    renderWorkspace();
+  } catch (error) {
+    requestsReady = false;
+    showNotice(`Could not load requests: ${error.message || error}`, "warning");
+  }
+}
+
 async function loadProfiles() {
   const { data } = await supabaseClient
     .from("profiles")
@@ -1518,11 +1657,23 @@ async function loadTeamInvites() {
   }
   const { data, error } = await supabaseClient
     .from("company_invites")
-    .select("id, email, role, invited_by, accepted_at, created_at")
+    .select("id, email, role, invited_by, accepted_at, created_at, default_location_id")
     .eq("company_id", activeCompanyId)
     .order("created_at", { ascending: false });
 
   if (error) {
+    if (isColumnSchemaError(error, ["default_location_id"])) {
+      const retry = await supabaseClient
+        .from("company_invites")
+        .select("id, email, role, invited_by, accepted_at, created_at")
+        .eq("company_id", activeCompanyId)
+        .order("created_at", { ascending: false });
+      teamInvites = retry.error ? [] : (retry.data || []);
+      if (retry.error && (isColumnSchemaError(retry.error, ["company_invites"]) || retry.error.message.includes("company_invites"))) {
+        teamInvitesReady = false;
+      }
+      return;
+    }
     if (isColumnSchemaError(error, ["company_invites"]) || error.message.includes("company_invites")) {
       teamInvitesReady = false;
       teamInvites = [];
@@ -1842,6 +1993,7 @@ function renderWorkspace() {
   const activeRequestViewFilter = showingRequestsInWorkQueue ? "active" : requestViewFilter;
   const requestCounts = requestFilterCounts();
   const visibleRequests = filteredRequests(activeRequestViewFilter);
+  const visibleRequestCount = requestCounts[activeRequestViewFilter] ?? requestServerTotal;
   const visibleWorkOrders = workOrders;
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
@@ -1866,10 +2018,10 @@ function renderWorkspace() {
   if (assetsPage < 1) assetsPage = 1;
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
   const visibleMembers = filteredMembers();
-  const totalRequestPages = Math.max(1, Math.ceil(visibleRequests.length / LIST_ITEMS_PER_PAGE));
+  const totalRequestPages = Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE));
   if (requestsPage > totalRequestPages) requestsPage = totalRequestPages;
   if (requestsPage < 1) requestsPage = 1;
-  const pagedRequests = visibleRequests.slice((requestsPage - 1) * LIST_ITEMS_PER_PAGE, requestsPage * LIST_ITEMS_PER_PAGE);
+  const pagedRequests = visibleRequests;
   const totalSchedulePages = Math.max(1, Math.ceil(visibleSchedules.length / LIST_ITEMS_PER_PAGE));
   if (schedulesPage > totalSchedulePages) schedulesPage = totalSchedulePages;
   if (schedulesPage < 1) schedulesPage = 1;
@@ -1994,7 +2146,7 @@ function renderWorkspace() {
               <section class="panel full-width my-work-panel queue-panel">
                 <div class="panel-header">
                   <h2>${isViewingWorkOrderSearch ? "Matching Work Orders" : showingRequestsInWorkQueue ? "Requests" : workQueuePanelTitle()}</h2>
-                  <span>${isViewingWorkOrderSearch ? `${visibleWorkOrderCount} found for "${escapeHtml(searchQuery.trim())}"` : showingRequestsInWorkQueue ? `${visibleRequests.length} shown` : workQueuePanelSubtitle(visibleWorkOrderCount)}</span>
+                  <span>${isViewingWorkOrderSearch ? `${visibleWorkOrderCount} found for "${escapeHtml(searchQuery.trim())}"` : showingRequestsInWorkQueue ? `${visibleRequestCount} shown` : workQueuePanelSubtitle(visibleWorkOrderCount)}</span>
                 </div>
                 ${activeSection === "mywork" ? renderWorkloadStrip(myWorkDashboardCounts) : ""}
                 ${activeSection === "mywork" ? `
@@ -2042,7 +2194,7 @@ function renderWorkspace() {
                   <div class="request-list">
                     ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">${escapeHtml(requestEmptyStateText(activeRequestViewFilter))}</p>`}
                   </div>
-                  ${renderListPagination("requests", visibleRequests.length, requestsPage, totalRequestPages)}
+                  ${renderListPagination("requests", visibleRequestCount, requestsPage, totalRequestPages)}
                 ` : `
                   <div class="work-list" id="work-order-list">
                     ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
@@ -2070,7 +2222,7 @@ function renderWorkspace() {
           <section class="panel full-width ${activeSection === "requests" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Requests</h2>
-              <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequests.length) : "setup needed"}</span>
+              <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequestCount) : "setup needed"}</span>
             </div>
             ${renderRequestFormContent()}
             ${requestsReady ? `
@@ -2078,7 +2230,7 @@ function renderWorkspace() {
               <div class="request-list">
                 ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">${escapeHtml(requestEmptyStateText(activeRequestViewFilter))}</p>`}
               </div>
-              ${renderListPagination("requests", visibleRequests.length, requestsPage, totalRequestPages)}
+              ${renderListPagination("requests", visibleRequestCount, requestsPage, totalRequestPages)}
             ` : `<p class="muted">Run supabase/step-next-maintenance-requests.sql before submitting and reviewing requests.</p>`}
           </section>
 
@@ -2128,10 +2280,11 @@ function renderWorkspace() {
             </div>
             <form class="inline-form pm-form" id="create-pm-form">
               <input name="title" required placeholder="Monthly compressor PM">
-              <select name="asset_id" required>
+              <select name="asset_id" required data-location-sensitive-asset>
                 <option value="">Machine / equipment</option>
                 ${renderAssetOptions()}
               </select>
+              <p class="error-text" data-asset-location-warning></p>
               <select name="frequency">
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
@@ -2187,7 +2340,7 @@ function renderWorkspace() {
             ${renderRoleGuide()}
             ${canManageTeam() ? `
               ${renderTeamInviteForm()}
-              ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-team-invites.sql to invite teammates by email.</p>`}
+              ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
               <details class="developer-details">
                 <summary>Developer add by User UUID</summary>
                 <form class="inline-form team-form" id="add-member-form">
@@ -2355,6 +2508,11 @@ function resetPartsPage() {
   localStorage.setItem("maintainops.partsPage", String(partsPage));
 }
 
+function resetRequestsPage() {
+  requestsPage = 1;
+  localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+}
+
 function clearPartSearchState() {
   partSearchQuery = "";
   localStorage.setItem("maintainops.partSearchQuery", "");
@@ -2376,6 +2534,43 @@ function recordLocationId(record) {
 
 function locationIdForAsset(assetId) {
   return assets.find((asset) => asset.id === assetId)?.location_id || activeLocationDatabaseId();
+}
+
+function assetLocationMismatch(assetId) {
+  if (!assetId || !locationsReady || !activeLocationId) return null;
+  const asset = assets.find((item) => item.id === assetId);
+  if (!asset?.location_id || asset.location_id === activeLocationId) return null;
+  const assetLocation = locations.find((location) => location.id === asset.location_id);
+  const activeLocation = locations.find((location) => location.id === activeLocationId);
+  return {
+    asset,
+    assetLocationName: assetLocation?.name || "another location",
+    activeLocationName: activeLocation?.name || "the selected location",
+  };
+}
+
+function assetLocationRoutingMessage(assetId) {
+  const mismatch = assetLocationMismatch(assetId);
+  if (!mismatch) return "";
+  return `${mismatch.asset.name} belongs to ${mismatch.assetLocationName}. This will save to ${mismatch.assetLocationName}, not ${mismatch.activeLocationName}.`;
+}
+
+// LFES-TRACEABILITY: Cross-location equipment routing is allowed only with visible user intent because it changes where work lands.
+function confirmAssetLocationRouting(assetId, actionLabel, errorTarget) {
+  const message = assetLocationRoutingMessage(assetId);
+  if (!message) return true;
+  const confirmed = window.confirm(`${message}\n\nContinue ${actionLabel}?`);
+  if (!confirmed && errorTarget) {
+    errorTarget.textContent = "Save cancelled. Switch location or choose equipment from the current location before trying again.";
+  }
+  return confirmed;
+}
+
+function updateAssetLocationWarning(select) {
+  const form = select.closest("form");
+  const warning = form?.querySelector("[data-asset-location-warning]");
+  if (!warning) return;
+  warning.textContent = assetLocationRoutingMessage(select.value);
 }
 
 function matchesActiveLocation(record) {
@@ -2497,12 +2692,7 @@ function filteredRequests(filter = requestViewFilter) {
 }
 
 function requestFilterCounts() {
-  const baseRequests = maintenanceRequests.filter(requestMatchesBaseFilters);
-  return {
-    active: baseRequests.filter((request) => requestMatchesViewFilter(request, "active")).length,
-    converted: baseRequests.filter((request) => requestMatchesViewFilter(request, "converted")).length,
-    all: baseRequests.length,
-  };
+  return requestDashboardCounts || { active: 0, converted: 0, all: 0 };
 }
 
 function requestPanelSubtitle(filter, count) {
@@ -3254,12 +3444,12 @@ function renderAssetDangerZone(asset) {
   const childCount = childAssetsFor(asset.id).length;
   const scheduleCount = preventiveSchedules.filter((schedule) => schedule.asset_id === asset.id).length;
   const requestCount = maintenanceRequests.filter((request) => request.asset_id === asset.id).length;
-  const blockers = [
-    workCount ? `${workCount} work order${workCount === 1 ? "" : "s"}` : "",
-    childCount ? `${childCount} linked equipment item${childCount === 1 ? "" : "s"}` : "",
-    scheduleCount ? `${scheduleCount} PM schedule${scheduleCount === 1 ? "" : "s"}` : "",
-    requestCount ? `${requestCount} request${requestCount === 1 ? "" : "s"}` : "",
-  ].filter(Boolean);
+  const blockerMessage = assetDeleteBlockerMessage({
+    workOrders: workCount,
+    children: childCount,
+    schedules: scheduleCount,
+    requests: requestCount,
+  });
   const confirming = pendingDeleteAssetId === asset.id;
   if (!canDeleteEquipment()) {
     return `<p class="muted">Admins and managers can delete unused equipment.</p>`;
@@ -3269,12 +3459,12 @@ function renderAssetDangerZone(asset) {
     <section class="delete-zone asset-delete-zone">
       <div>
         <h3>Delete Equipment</h3>
-        <p>${blockers.length
-          ? `This equipment is kept for traceability because it has ${blockers.join(", ")}.`
+        <p>${blockerMessage
+          ? blockerMessage
           : `This permanently removes "${escapeHtml(asset.name)}" from the equipment list.`}</p>
       </div>
       <p class="error-text" id="asset-delete-error"></p>
-      ${blockers.length ? `
+      ${blockerMessage ? `
         <button class="danger-action-button large-delete-button" type="button" disabled>Kept For Traceability</button>
       ` : confirming ? `
         <div class="delete-warning-panel">
@@ -3351,6 +3541,10 @@ function renderPreventiveSchedule(schedule) {
 function renderProcedureTemplate(template) {
   const linkedWorkCount = workOrders.filter((workOrder) => workOrder.procedure_template_id === template.id).length;
   const linkedScheduleCount = preventiveSchedules.filter((schedule) => schedule.procedure_template_id === template.id).length;
+  const blockerMessage = procedureDeleteBlockerMessage({
+    workOrders: linkedWorkCount,
+    schedules: linkedScheduleCount,
+  });
   const confirming = pendingDeleteProcedureId === template.id;
   return `
     <article class="procedure-card">
@@ -3390,10 +3584,12 @@ function renderProcedureTemplate(template) {
         <section class="delete-zone procedure-delete-zone">
           <div>
             <h3>Delete Procedure</h3>
-            <p>This removes the template and checklist steps. Existing work history stays in place.</p>
+            <p>${blockerMessage || "This removes the template and checklist steps."}</p>
           </div>
           <p class="error-text" data-procedure-delete-error="${escapeHtml(template.id)}"></p>
-          ${confirming ? `
+          ${blockerMessage ? `
+            <button class="danger-action-button" type="button" disabled>Kept For Traceability</button>
+          ` : confirming ? `
             <div class="delete-warning-panel">
               <strong>Permanent Delete Warning</strong>
               <p>You are about to permanently delete "${escapeHtml(template.name)}". This cannot be undone.</p>
@@ -3691,7 +3887,7 @@ function renderTeamInviteForm() {
         <h3>Invite Teammate</h3>
         <p class="muted">They sign up with this email, then the app adds them to this company automatically.</p>
       </div>
-      <label>Email<input name="email" type="email" required placeholder="tech@company.com" ${teamInvitesReady ? "" : "disabled"}></label>
+      <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required pattern="[^@\\s]+@[^@\\s]+\\.[^@\\s]+" placeholder="tech@company.com" ${teamInvitesReady ? "" : "disabled"}></label>
       <label>Role
         <select name="role" ${teamInvitesReady ? "" : "disabled"}>
           <option value="technician">Technician</option>
@@ -3699,7 +3895,13 @@ function renderTeamInviteForm() {
           <option value="admin">Admin</option>
         </select>
       </label>
-      <p class="error-text" id="team-invite-error">${teamInvitesReady ? "" : "Run supabase/step-next-team-invites.sql before inviting by email."}</p>
+      <label>Default location
+        <select name="default_location_id" ${teamInvitesReady && locations.length ? "" : "disabled"}>
+          ${locations.length ? "" : `<option value="">Run location setup first</option>`}
+          ${renderLocationOptions(activeLocationId)}
+        </select>
+      </label>
+      <p class="error-text" id="team-invite-error">${teamInvitesReady ? "" : "Run supabase/step-next-invite-default-location.sql before inviting by email."}</p>
       <button class="secondary-button" type="submit" ${teamInvitesReady ? "" : "disabled"}>Create Invite</button>
     </form>
   `;
@@ -3713,19 +3915,34 @@ function renderTeamInvites() {
         <h3>Pending Invites</h3>
         <span>${pending.length}</span>
       </div>
+      <p class="error-text" id="team-invite-cancel-error">${escapeHtml(teamInviteCancelError)}</p>
       <div class="member-list">
         ${pending.map((invite) => `
           <article class="member-card invite-card">
             <div>
               <strong>${escapeHtml(invite.email)}</strong>
               <p>Sent ${new Date(invite.created_at).toLocaleString()}</p>
+              <p>${escapeHtml(inviteDefaultLocationLabel(invite))}</p>
             </div>
-            <span class="chip">${escapeHtml(invite.role)}</span>
+            <div class="button-row">
+              <span class="chip">${escapeHtml(invite.role)}</span>
+              ${pendingCancelInviteId === invite.id ? `
+                <button class="secondary-button" data-cancel-invite-cancel type="button">Keep</button>
+                <button class="danger-action-button confirm-delete-button" data-confirm-cancel-invite="${escapeHtml(invite.id)}" type="button">Cancel Invite</button>
+              ` : `
+                <button class="danger-action-button" data-cancel-invite="${escapeHtml(invite.id)}" type="button">Cancel Invite</button>
+              `}
+            </div>
           </article>
         `).join("") || `<p class="muted">No pending invites.</p>`}
       </div>
     </section>
   `;
+}
+
+function inviteDefaultLocationLabel(invite) {
+  const location = locations.find((item) => item.id === invite.default_location_id);
+  return location ? `Default location: ${location.name}` : "Default location: first available";
 }
 
 function renderMessageCenter() {
@@ -4518,11 +4735,12 @@ function renderRequestFormContent() {
       <label>What is happening?<textarea name="description" rows="4" required></textarea></label>
       <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
       <label>Machine / equipment
-        <select name="asset_id">
+        <select name="asset_id" data-location-sensitive-asset>
           <option value="">Unknown or general location</option>
           ${renderAssetOptions()}
         </select>
       </label>
+      <p class="error-text" data-asset-location-warning></p>
       <label>Priority
         <select name="priority">
           <option>medium</option>
@@ -4746,7 +4964,7 @@ function renderCreateWorkOrder() {
       <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
       <div class="equipment-choice">
         <label>Machine / equipment
-          <select name="asset_id">
+          <select name="asset_id" data-location-sensitive-asset>
             <option value="">No machine / equipment - general item or area</option>
             ${renderAssetOptions()}
           </select>
@@ -4754,6 +4972,7 @@ function renderCreateWorkOrder() {
         <span>or</span>
         <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
       </div>
+      <p class="error-text" data-asset-location-warning></p>
 
       <details class="quick-fix-more" open>
         <summary>2. Priority and timing</summary>
@@ -4851,12 +5070,13 @@ function renderQuickFixForm() {
       ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
       <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
       <label>Machine / equipment
-        <select name="asset_id">
+        <select name="asset_id" data-location-sensitive-asset>
           <option value="">No machine / equipment - general item or area</option>
           ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
         </select>
         <small>Machine or equipment not listed? Add it below.</small>
       </label>
+      <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(selectedAssetId || sourceRequest?.asset_id || ""))}</p>
       <label>New machine / equipment name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
       <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
       <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
@@ -5031,7 +5251,7 @@ function renderWorkOrderDetail() {
           <label id="quick-update-issue-field">Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
           <div class="equipment-choice" id="quick-update-equipment-field">
             <label>Machine / equipment
-              <select name="asset_id">
+              <select name="asset_id" data-location-sensitive-asset>
                 <option value="">No machine / equipment - general item or area</option>
                 ${renderAssetOptions(workOrder.asset_id || "")}
               </select>
@@ -5039,6 +5259,7 @@ function renderWorkOrderDetail() {
             <span>or</span>
             <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
           </div>
+          <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(workOrder.asset_id || ""))}</p>
           <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
           <label id="quick-update-due-field">Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${escapeHtml(workOrder.due_at || "")}"></label>
           <label id="quick-update-status-field">Status
@@ -5440,9 +5661,11 @@ function bindWorkspaceEvents() {
       resetWorkOrderPage();
       resetPartsPage();
       resetAssetsPage();
+      resetRequestsPage();
       invalidateExactWorkOrderSearchCache();
       persistActiveLocationId(activeLocationId);
       await reloadWorkOrderQueue();
+      await reloadRequestQueue();
   };
 
   const locationSelect = document.querySelector("#location-select");
@@ -5456,6 +5679,11 @@ function bindWorkspaceEvents() {
     select.addEventListener("change", async () => {
       await switchLocation(select.value);
     });
+  });
+
+  document.querySelectorAll("[data-location-sensitive-asset]").forEach((select) => {
+    updateAssetLocationWarning(select);
+    select.addEventListener("change", () => updateAssetLocationWarning(select));
   });
 
   document.querySelectorAll("[data-sign-out]").forEach((button) => {
@@ -5480,10 +5708,11 @@ function bindWorkspaceEvents() {
       localStorage.setItem("maintainops.activeSection", activeSection);
       renderWorkspace();
       await reloadWorkOrderQueue();
+      if (activeSection === "requests") await reloadRequestQueue();
     });
   });
   document.querySelectorAll("[data-command-action]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       if (button.dataset.commandAction === "quick-fix") {
         activeWorkOrderId = null;
         activeAssetId = null;
@@ -5523,7 +5752,8 @@ function bindWorkspaceEvents() {
         activeSection = "requests";
         setWorkOrderSearchMode(false);
         localStorage.setItem("maintainops.activeSection", activeSection);
-        renderWorkspace();
+        resetRequestsPage();
+        await reloadRequestQueue();
         return;
       }
       if (button.dataset.commandAction === "report-issue") {
@@ -5729,7 +5959,9 @@ function bindWorkspaceEvents() {
       localStorage.setItem("maintainops.searchQuery", searchQuery);
       resetWorkOrderPage();
       resetPartsPage();
+      resetRequestsPage();
       await reloadWorkOrderQueue();
+      await reloadRequestQueue();
       const nextSearchInput = document.querySelector(`#${activeSearchId}`);
       if (!nextSearchInput) return;
       nextSearchInput.focus();
@@ -5972,9 +6204,9 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-delete-asset]").forEach((button) => {
-    button.addEventListener("click", (event) => {
+    button.addEventListener("click", async (event) => {
       event.stopPropagation();
-      requestDeleteAsset(button.dataset.deleteAsset);
+      await requestDeleteAsset(button.dataset.deleteAsset);
     });
   });
 
@@ -6007,10 +6239,10 @@ function bindWorkspaceEvents() {
       activeStatusFilter = button.dataset.statusFilter;
       resetWorkOrderPage();
       if (activeStatusFilter === "requests") {
-        requestsPage = 1;
-        localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+        resetRequestsPage();
       }
       await reloadWorkOrderQueue();
+      if (activeStatusFilter === "requests") await reloadRequestQueue();
     });
   });
 
@@ -6054,13 +6286,12 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-request-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       if (button.disabled) return;
       requestViewFilter = button.dataset.requestFilter || "active";
-      requestsPage = 1;
       localStorage.setItem("maintainops.requestViewFilter", requestViewFilter);
-      localStorage.setItem("maintainops.requestsPage", String(requestsPage));
-      renderWorkspace();
+      resetRequestsPage();
+      await reloadRequestQueue();
     });
   });
 
@@ -6089,11 +6320,13 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-list-page]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const delta = button.dataset.pageDirection === "next" ? 1 : -1;
       if (button.dataset.listPage === "requests") {
         requestsPage += delta;
         localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+        await reloadRequestQueue();
+        return;
       }
       if (button.dataset.listPage === "schedules") {
         schedulesPage += delta;
@@ -6248,7 +6481,7 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-delete-procedure]").forEach((button) => {
-    button.addEventListener("click", () => requestDeleteProcedureTemplate(button.dataset.deleteProcedure));
+    button.addEventListener("click", async () => requestDeleteProcedureTemplate(button.dataset.deleteProcedure));
   });
 
   document.querySelectorAll("[data-cancel-delete-procedure]").forEach((button) => {
@@ -6259,7 +6492,7 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-confirm-delete-procedure]").forEach((button) => {
-    button.addEventListener("click", () => deleteProcedureTemplate(button.dataset.confirmDeleteProcedure));
+    button.addEventListener("click", async () => deleteProcedureTemplate(button.dataset.confirmDeleteProcedure));
   });
 
   document.querySelectorAll("[data-step-result]").forEach((field) => {
@@ -6294,6 +6527,26 @@ function bindWorkspaceEvents() {
 
   const inviteForm = document.querySelector("#team-invite-form");
   if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
+
+  document.querySelectorAll("[data-cancel-invite]").forEach((button) => {
+    button.addEventListener("click", () => {
+      teamInviteCancelError = "";
+      pendingCancelInviteId = button.dataset.cancelInvite;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-cancel-invite-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      teamInviteCancelError = "";
+      pendingCancelInviteId = null;
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-confirm-cancel-invite]").forEach((button) => {
+    button.addEventListener("click", () => cancelTeamInvite(button.dataset.confirmCancelInvite));
+  });
 
   const partForm = document.querySelector("#create-part-form");
   if (partForm) partForm.addEventListener("submit", createPart);
@@ -6547,18 +6800,67 @@ function assetHasDeleteBlockers(assetId) {
   return Object.values(blockers).some(Boolean);
 }
 
-function requestDeleteAsset(id) {
+// LFES-RELIABILITY: Delete guards query live linked counts because paged client lists can hide traceability blockers.
+async function loadAssetDeleteBlockers(assetId) {
+  const [workOrdersCount, schedulesCount, requestsCount] = await Promise.all([
+    countAssetLinkedRows("work_orders", assetId),
+    countAssetLinkedRows("preventive_schedules", assetId),
+    countAssetLinkedRows("maintenance_requests", assetId),
+  ]);
+  return {
+    workOrders: workOrdersCount,
+    children: childAssetsFor(assetId).length,
+    schedules: schedulesCount,
+    requests: requestsCount,
+  };
+}
+
+async function countAssetLinkedRows(tableName, assetId) {
+  const { count, error } = await withOperationTimeout(
+    supabaseClient
+      .from(tableName)
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", activeCompanyId)
+      .eq("asset_id", assetId),
+    `Equipment delete check timed out while checking ${tableName}.`,
+    15000
+  );
+  if (error) throw new Error(`Could not verify linked ${tableName.replaceAll("_", " ")} before deleting equipment: ${error.message}`);
+  return count || 0;
+}
+
+function assetDeleteBlockerMessage(blockers) {
+  const parts = [
+    blockers.workOrders ? `${blockers.workOrders} work order${blockers.workOrders === 1 ? "" : "s"}` : "",
+    blockers.children ? `${blockers.children} linked equipment item${blockers.children === 1 ? "" : "s"}` : "",
+    blockers.schedules ? `${blockers.schedules} PM schedule${blockers.schedules === 1 ? "" : "s"}` : "",
+    blockers.requests ? `${blockers.requests} request${blockers.requests === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
+  return parts.length
+    ? `This equipment is kept for traceability because it has ${parts.join(", ")}.`
+    : "";
+}
+
+async function requestDeleteAsset(id) {
   if (!canDeleteEquipment()) {
     alert("Only company admins and managers can delete equipment.");
     return;
   }
-  if (assetHasDeleteBlockers(id)) {
-    const errorElement = document.querySelector("#asset-delete-error");
-    if (errorElement) errorElement.textContent = "This equipment has history or linked records and is kept for traceability.";
-    return;
+  const errorElement = document.querySelector("#asset-delete-error");
+  if (errorElement) errorElement.textContent = "";
+  try {
+    const blockers = await loadAssetDeleteBlockers(id);
+    const message = assetDeleteBlockerMessage(blockers);
+    if (message) {
+      if (errorElement) errorElement.textContent = message;
+      return;
+    }
+    pendingDeleteAssetId = id;
+    renderWorkspace();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not verify equipment links before delete.";
+    else showNotice(error.message || "Could not verify equipment links before delete.", "warning");
   }
-  pendingDeleteAssetId = id;
-  renderWorkspace();
 }
 
 async function deleteAsset(id) {
@@ -6568,10 +6870,6 @@ async function deleteAsset(id) {
   }
   const errorElement = document.querySelector("#asset-delete-error");
   if (errorElement) errorElement.textContent = "";
-  if (assetHasDeleteBlockers(id)) {
-    if (errorElement) errorElement.textContent = "This equipment has history or linked records and is kept for traceability.";
-    return;
-  }
   const confirmButton = document.querySelector(`[data-confirm-delete-asset="${CSS.escape(id)}"]`);
   if (confirmButton) {
     confirmButton.disabled = true;
@@ -6579,6 +6877,10 @@ async function deleteAsset(id) {
   }
 
   try {
+    const blockers = await loadAssetDeleteBlockers(id);
+    const blockerMessage = assetDeleteBlockerMessage(blockers);
+    if (blockerMessage) throw new Error(blockerMessage);
+
     const { error } = await withOperationTimeout(
       supabaseClient
         .from("assets")
@@ -6648,6 +6950,7 @@ async function createPreventiveSchedule(event) {
 
   try {
     const form = new FormData(formElement);
+    if (!confirmAssetLocationRouting(form.get("asset_id") || null, "this PM schedule", errorElement)) return;
     const { error } = await withOperationTimeout(
       insertWithOptionalProcedure("preventive_schedules", {
         company_id: activeCompanyId,
@@ -6875,14 +7178,62 @@ async function createProcedureStep(event) {
   }
 }
 
-function requestDeleteProcedureTemplate(id) {
+async function loadProcedureDeleteBlockers(templateId) {
+  const [workOrdersCount, schedulesCount] = await Promise.all([
+    countProcedureLinkedRows("work_orders", templateId),
+    countProcedureLinkedRows("preventive_schedules", templateId),
+  ]);
+  return {
+    workOrders: workOrdersCount,
+    schedules: schedulesCount,
+  };
+}
+
+async function countProcedureLinkedRows(tableName, templateId) {
+  const { count, error } = await withOperationTimeout(
+    supabaseClient
+      .from(tableName)
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", activeCompanyId)
+      .eq("procedure_template_id", templateId),
+    `Procedure delete check timed out while checking ${tableName}.`,
+    15000
+  );
+  if (error) throw new Error(`Could not verify linked ${tableName.replaceAll("_", " ")} before deleting procedure: ${error.message}`);
+  return count || 0;
+}
+
+function procedureDeleteBlockerMessage(blockers) {
+  const parts = [
+    blockers.workOrders ? `${blockers.workOrders} work order${blockers.workOrders === 1 ? "" : "s"}` : "",
+    blockers.schedules ? `${blockers.schedules} PM schedule${blockers.schedules === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
+  return parts.length
+    ? `This procedure is kept for traceability because it is linked to ${parts.join(", ")}.`
+    : "";
+}
+
+async function requestDeleteProcedureTemplate(id) {
   if (!canDeleteOperationalRecords()) {
     alert("Only company admins and managers can delete procedures.");
     return;
   }
   if (!procedureTemplates.some((template) => template.id === id)) return;
-  pendingDeleteProcedureId = id;
-  renderWorkspace();
+  const errorElement = document.querySelector(`[data-procedure-delete-error="${CSS.escape(id)}"]`);
+  if (errorElement) errorElement.textContent = "";
+  try {
+    const blockers = await loadProcedureDeleteBlockers(id);
+    const message = procedureDeleteBlockerMessage(blockers);
+    if (message) {
+      if (errorElement) errorElement.textContent = message;
+      return;
+    }
+    pendingDeleteProcedureId = id;
+    renderWorkspace();
+  } catch (error) {
+    if (errorElement) errorElement.textContent = error.message || "Could not verify procedure links before delete.";
+    else showNotice(error.message || "Could not verify procedure links before delete.", "warning");
+  }
 }
 
 async function deleteProcedureTemplate(id) {
@@ -6902,6 +7253,10 @@ async function deleteProcedureTemplate(id) {
   }
 
   try {
+    const blockers = await loadProcedureDeleteBlockers(id);
+    const blockerMessage = procedureDeleteBlockerMessage(blockers);
+    if (blockerMessage) throw new Error(blockerMessage);
+
     const { data, error } = await withOperationTimeout(
       supabaseClient
         .from("procedure_templates")
@@ -7062,6 +7417,7 @@ async function updateMyProfile(event) {
   }
 }
 
+// LFES-TRACEABILITY: Invite default location is onboarding state; acceptance must preserve the intended starting location.
 async function createTeamInvite(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -7070,7 +7426,7 @@ async function createTeamInvite(event) {
   const form = new FormData(formElement);
   if (errorElement) errorElement.textContent = "";
   if (!teamInvitesReady) {
-    if (errorElement) errorElement.textContent = "Run supabase/step-next-team-invites.sql before inviting by email.";
+    if (errorElement) errorElement.textContent = "Run supabase/step-next-invite-default-location.sql before inviting by email.";
     return;
   }
   if (submitButton) {
@@ -7084,6 +7440,7 @@ async function createTeamInvite(event) {
         target_company_id: activeCompanyId,
         invite_email: String(form.get("email") || "").trim(),
         invite_role: form.get("role"),
+        invite_default_location_id: form.get("default_location_id") || null,
       }),
       "Invite save timed out. Check your connection and try again.",
       15000
@@ -7092,12 +7449,13 @@ async function createTeamInvite(event) {
     if (error) {
       if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
         teamInvitesReady = false;
-        throw new Error("Run supabase/step-next-team-invites.sql before inviting by email.");
+        throw new Error("Run supabase/step-next-invite-default-location.sql before inviting by email.");
       }
       throw error;
     }
 
     showNotice("Invite created.");
+    teamInviteCancelError = "";
     await render();
   } catch (error) {
     if (errorElement) errorElement.textContent = error.message || "Could not create invite.";
@@ -7106,6 +7464,35 @@ async function createTeamInvite(event) {
       submitButton.disabled = false;
       submitButton.textContent = "Create Invite";
     }
+  }
+}
+
+async function cancelTeamInvite(inviteId) {
+  if (!inviteId || !activeCompanyId) return;
+  try {
+    const { error } = await withOperationTimeout(
+      supabaseClient.rpc("cancel_company_invite", {
+        target_company_id: activeCompanyId,
+        target_invite_id: inviteId,
+      }),
+      "Invite cancel timed out. Check your connection and try again.",
+      15000
+    );
+    if (error) {
+      if (error.message.includes("cancel_company_invite")) {
+        throw new Error("Run supabase/step-next-cancel-team-invites.sql before canceling invites.");
+      }
+      throw error;
+    }
+    pendingCancelInviteId = null;
+    teamInviteCancelError = "";
+    showNotice("Invite canceled.");
+    await loadTeamInvites();
+    renderWorkspace();
+  } catch (error) {
+    pendingCancelInviteId = null;
+    teamInviteCancelError = error.message || "Could not cancel invite.";
+    renderWorkspace();
   }
 }
 
@@ -8377,6 +8764,7 @@ async function createWorkOrder(event) {
       }
       assetId = newAsset.id;
     }
+    if (!newAssetName && !confirmAssetLocationRouting(assetId, "creating this work order", errorTarget)) return;
     if (status === "completed" && assetRequiresSafety(assetId) && form.get("safety_devices_checked") !== "on") {
       if (errorTarget) errorTarget.textContent = "Check safety devices before creating completed work tied to equipment.";
       return;
@@ -8507,6 +8895,7 @@ async function createQuickFix(event) {
       }
       assetId = newAsset.id;
     }
+    if (!newAssetName && !confirmAssetLocationRouting(assetId, "logging this Quick Fix", errorTarget)) return;
     if (markCompleted && assetRequiresSafety(assetId) && form.get("safety_devices_checked") !== "on") {
       if (errorTarget) errorTarget.textContent = "Check safety devices before marking equipment work complete.";
       return;
@@ -8764,6 +9153,7 @@ async function updateWorkOrderQuickView(event) {
       }
       assetId = newAsset.id;
     }
+    if (!newAssetName && !confirmAssetLocationRouting(assetId, "saving this work update", errorTarget)) return;
     const payload = {
       title: requiredText(form.get("title"), "Issue"),
       description: descriptionWithAssignmentNote(previous?.description || "", form.get("assigned_to")),
@@ -8932,12 +9322,14 @@ async function createRequestFromForm(formElement) {
 
   try {
     const form = new FormData(formElement);
+    const assetId = form.get("asset_id") || null;
+    if (!confirmAssetLocationRouting(assetId, "submitting this request", errorElement)) return;
     const requestPayload = {
       company_id: activeCompanyId,
-      location_id: locationIdForAsset(form.get("asset_id") || null),
+      location_id: locationIdForAsset(assetId),
       title: requiredText(form.get("title"), "Request title"),
       description: requiredText(form.get("description"), "Request description"),
-      asset_id: form.get("asset_id") || null,
+      asset_id: assetId,
       priority: form.get("priority"),
       status: "submitted",
       requested_by: session.user.id,
@@ -8981,6 +9373,7 @@ async function createRequestFromForm(formElement) {
   }
 }
 
+// LFES-EVOLUTION: Request conversion is a workflow mutation boundary; preserve source request context and location when changing it.
 async function convertRequestToWorkOrder(requestId) {
   const request = maintenanceRequests.find((item) => item.id === requestId);
   if (!request) return;
@@ -9660,41 +10053,12 @@ async function optimizeLogo(file) {
   }
 }
 
-function fileBaseName(fileName) {
-  return safeFileName(fileName).replace(/\.[^/.]+$/, "") || "photo";
-}
-
-function safeFileName(fileName) {
-  return String(fileName || "photo")
-    .replace(/[^a-z0-9._-]+/gi, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80) || "photo";
-}
-
-function statusLabel(status) {
-  if (status === "active" || status === "all") return "Active";
-  if (status === "overdue") return "Overdue";
-  if (status === "completed_month") return "Completed Month";
-  if (status === "completed_week") return "Done This Week";
-  if (status === "open") return "New";
-  return String(status || "")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function activeCompanyRole() {
   const activeMembership = companyMembers.find((member) =>
     member.company_id === activeCompanyId && member.user_id === session?.user?.id
   );
   if (activeMembership?.role) return normalizeRole(activeMembership.role);
   return normalizeRole(companies.find((company) => company.id === activeCompanyId)?.role);
-}
-
-function normalizeRole(role) {
-  const normalized = String(role || "technician").trim().toLowerCase();
-  if (normalized === "member") return "technician";
-  return COMPANY_ROLES.includes(normalized) ? normalized : "technician";
 }
 
 function canManageTeam() {
@@ -9748,24 +10112,6 @@ function visibleNavItems() {
     items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
   }
   return items;
-}
-
-function roleLabel(role) {
-  const labels = {
-    admin: "Admin",
-    manager: "Manager",
-    technician: "Technician",
-  };
-  return labels[normalizeRole(role)] || "Technician";
-}
-
-function roleDescription(role) {
-  const descriptions = {
-    admin: "Full company setup, team, and work access.",
-    manager: "Can manage work, settings, and teammates.",
-    technician: "Can create work, convert requests, and claim unassigned work.",
-  };
-  return descriptions[normalizeRole(role)] || descriptions.technician;
 }
 
 function assignedUserFromForm(form, defaultUserId = null) {
@@ -9868,10 +10214,6 @@ function assetNameForWorkOrder(workOrder) {
   return workOrder.assets?.name || "Equipment";
 }
 
-function formatDate(value) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString();
-}
-
 async function copyTextToClipboard(text) {
   try {
     if (navigator.clipboard?.writeText) {
@@ -9899,72 +10241,11 @@ async function copyTextToClipboard(text) {
   return copied;
 }
 
-function photoMetaText(photo) {
-  const parts = [new Date(photo.created_at).toLocaleString()];
-  if (photo.file_size_bytes) parts.push(formatBytes(photo.file_size_bytes));
-  if (photo.original_size_bytes && photo.file_size_bytes && photo.original_size_bytes !== photo.file_size_bytes) {
-    parts.push(`optimized from ${formatBytes(photo.original_size_bytes)}`);
-  }
-  return parts.join(" - ");
-}
-
-function requestPhotoMetaText(request) {
-  const parts = [];
-  if (request.photo_uploaded_at || request.updated_at || request.created_at) {
-    parts.push(new Date(request.photo_uploaded_at || request.updated_at || request.created_at).toLocaleString());
-  }
-  if (request.photo_file_size_bytes) parts.push(formatBytes(request.photo_file_size_bytes));
-  if (request.photo_original_size_bytes && request.photo_file_size_bytes && request.photo_original_size_bytes !== request.photo_file_size_bytes) {
-    parts.push(`optimized from ${formatBytes(request.photo_original_size_bytes)}`);
-  }
-  return parts.join(" - ") || "Photo attached";
-}
-
 function descriptionWithRequestPhotoNote(description, request) {
   const cleanDescription = String(description || "").trim();
   if (!request?.photo_storage_path) return cleanDescription || null;
   const note = "[Request photo attached to original request]";
   return cleanDescription ? `${cleanDescription}\n\n${note}` : note;
-}
-
-function formatBytes(bytes) {
-  const value = Number(bytes) || 0;
-  if (!value) return "";
-  if (value < 1024) return `${value} B`;
-  if (value < 1048576) return `${Math.round(value / 1024)} KB`;
-  return `${(value / 1048576).toFixed(value >= 10485760 ? 0 : 1)} MB`;
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function money(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
-}
-
-function partUsageUnitCost(row) {
-  return Number(row.unit_cost_at_use ?? row.parts?.unit_cost ?? 0) || 0;
-}
-
-function getDueState(workOrder) {
-  if (!workOrder.due_at || workOrder.status === "completed") return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(`${workOrder.due_at}T00:00:00`);
-  const diffDays = Math.round((due - today) / 86400000);
-  if (diffDays < 0) return { label: "overdue", className: "overdue" };
-  if (diffDays === 0) return { label: "due today", className: "due_today" };
-  return null;
 }
 
 function isProfileMissingError(error) {
@@ -10162,12 +10443,6 @@ function followUpItems() {
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-function startOfToday() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
-}
-
 function lowStockParts() {
   return parts.filter(isLowStockPart);
 }
@@ -10285,9 +10560,4 @@ function downloadCsv(filename, rows) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-}
-
-function csvCell(value) {
-  const text = String(value ?? "");
-  return `"${text.replaceAll('"', '""')}"`;
 }
