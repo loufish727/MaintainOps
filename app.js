@@ -64,6 +64,7 @@ const {
   listCompaniesByIds,
   listCompaniesByIdsLegacy,
 } = window.MaintainOpsCompanyService;
+const { listAppIssueReports } = window.MaintainOpsAppIssueReportsService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -1534,11 +1535,7 @@ async function loadCompanyData() {
       .select("*, procedure_steps(*)")
       .eq("company_id", activeCompanyId)
       .order("name"),
-    supabaseClient
-      .from("app_issue_reports")
-      .select("*")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false }),
+    listAppIssueReports(supabaseClient, activeCompanyId),
   ]);
 
   locationsReady = !locationResponse.error;
@@ -7787,11 +7784,7 @@ async function createLocation(event) {
 
 async function reloadAppIssueReports() {
   const { data, error } = await withOperationTimeout(
-    supabaseClient
-      .from("app_issue_reports")
-      .select("*")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false }),
+    listAppIssueReports(supabaseClient, activeCompanyId),
     "App issue report load timed out. Check your connection and try again.",
     12000
   );
