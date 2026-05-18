@@ -40,6 +40,13 @@ const {
   startOfToday,
   csvCell,
 } = window.MaintainOpsFormatting;
+const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
+const {
+  listProfiles,
+  listCompanyMembers,
+  listTeamInvites,
+  listTeamInvitesLegacy,
+} = window.MaintainOpsProfilesService;
 let supabaseClient;
 let session;
 let companies = [];
@@ -1537,7 +1544,7 @@ function applyWorkOrderSort(query) {
 
 async function loadCompanyData() {
   let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
-    supabaseClient.from("locations").select("*").eq("company_id", activeCompanyId).order("name"),
+    listLocations(supabaseClient, activeCompanyId),
     supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name"),
     supabaseClient
       .from("preventive_schedules")
@@ -1628,10 +1635,7 @@ async function reloadRequestQueue() {
 }
 
 async function loadProfiles() {
-  const { data } = await supabaseClient
-    .from("profiles")
-    .select("user_id, full_name, mobile_tech")
-    .eq("company_id", activeCompanyId);
+  const { data } = await listProfiles(supabaseClient, activeCompanyId);
 
   profilesByUserId = (data || []).reduce((profiles, profile) => {
     profiles[profile.user_id] = profile;
@@ -1640,11 +1644,7 @@ async function loadProfiles() {
 }
 
 async function loadMembers() {
-  const { data } = await supabaseClient
-    .from("company_members")
-    .select("*")
-    .eq("company_id", activeCompanyId)
-    .order("created_at", { ascending: true });
+  const { data } = await listCompanyMembers(supabaseClient, activeCompanyId);
 
   companyMembers = data || [];
   await loadTeamInvites();
@@ -1655,19 +1655,11 @@ async function loadTeamInvites() {
     teamInvites = [];
     return;
   }
-  const { data, error } = await supabaseClient
-    .from("company_invites")
-    .select("id, email, role, invited_by, accepted_at, created_at, default_location_id")
-    .eq("company_id", activeCompanyId)
-    .order("created_at", { ascending: false });
+  const { data, error } = await listTeamInvites(supabaseClient, activeCompanyId);
 
   if (error) {
     if (isColumnSchemaError(error, ["default_location_id"])) {
-      const retry = await supabaseClient
-        .from("company_invites")
-        .select("id, email, role, invited_by, accepted_at, created_at")
-        .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: false });
+      const retry = await listTeamInvitesLegacy(supabaseClient, activeCompanyId);
       teamInvites = retry.error ? [] : (retry.data || []);
       if (retry.error && (isColumnSchemaError(retry.error, ["company_invites"]) || retry.error.message.includes("company_invites"))) {
         teamInvitesReady = false;
@@ -7801,11 +7793,7 @@ async function createLocation(event) {
 
   try {
     const { data, error } = await withOperationTimeout(
-      supabaseClient
-        .from("locations")
-        .insert({ company_id: activeCompanyId, name })
-        .select("id")
-        .single(),
+      createLocationRecord(supabaseClient, activeCompanyId, name),
       "Location save timed out. Check your connection and try again.",
       15000
     );
