@@ -30,6 +30,2406 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Packaged, uploaded, and live verified LFES Phase 6D parts RPC integration:
+
+- Scope:
+  - package/upload/live verification only after Phase 6D integration.
+  - no additional app logic changes beyond the Phase 6D `addPartUsageToWorkOrder(...)` RPC integration.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS changes.
+  - no function extraction or new phase started.
+- Package:
+  - folder: `MaintainOps-github-clean-20260519-112043`.
+  - zip: `MaintainOps-github-clean-20260519-112043.zip`.
+  - package includes:
+    - `app.js`
+    - `index.html`
+    - `supabase-config.js`
+    - `styles.css`
+    - `assets/`
+    - `src/utils/`
+    - `src/services/`
+    - `src/render/displayHelpers.js`
+- Cache tag:
+  - `index.html` now loads `app.js?v=lfes-phase-6d-parts-rpc-1`.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check src/**/*.js`: PASS.
+- Deployment:
+  - pushed to GitHub Pages repo `loufish727/MaintainOps`.
+  - commit: `9b3ba40` (`Deploy LFES Phase 6D parts RPC`).
+  - remote initially rejected push because `main` had newer work; deployment folder was rebased on `origin/main`, one cache-tag conflict in `index.html` was resolved in favor of `lfes-phase-6d-parts-rpc-1`, then push succeeded.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-6d-live-20260519-1121`.
+- Live script checks:
+  - GitHub Pages served the new app cache tag.
+  - required files returned `200`, including `app.js`, `styles.css`, `supabase-config.js`, all `src/utils`, all `src/services`, and `src/render/displayHelpers.js`.
+- Live smoke:
+  - signed-in manager/admin-capable session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders, Equipment, Parts, Team, and Settings loaded cleanly.
+  - no missing-script errors or visible app errors observed.
+  - existing QA part/work order from local Phase 6D smoke were used:
+    - `QA Phase6D RPC Part 20260519-6D-1779214388252`.
+    - `QA Phase6D RPC Work 20260519-6D-1779214388252`.
+  - live Work Order Detail part usage succeeded through the deployed app:
+    - part went from `29 on hand` to `28 on hand`.
+    - Parts Used showed both rows: `21 used - $420.00` and `1 used - $20.00`.
+- Cleanup:
+  - QA work order permanently deleted through live admin UI.
+  - QA part permanently deleted through live admin UI.
+  - Parts page returned to `0 shown`.
+- Result:
+  - Phase 6D is fully closed.
+  - intended behavior change is limited to making work-order part usage transaction-safe through the RPC.
+  - next recommended phase is a short post-deploy checkpoint or planning the next controlled operational item, not more extraction by default.
+
+## Prior Recent Change
+
+Completed LFES Phase 6D parts RPC app integration:
+
+- Scope:
+  - updated only `addPartUsageToWorkOrder(...)` in `app.js`.
+  - replaced the old two-step mutation boundary with `supabaseClient.rpc("record_work_order_part_usage", ...)`.
+  - did not change restock, part creation/edit/delete, work order creation, rendering, event binding, Supabase SQL/RLS/policies, or unrelated workflows.
+- Code path changed:
+  - `app.js` line near `addPartUsageToWorkOrder(workOrderId, part, quantity)`.
+  - old behavior:
+    - insert into `work_order_parts`;
+    - then update `parts.quantity_on_hand`.
+  - new behavior:
+    - call `public.record_work_order_part_usage` with `p_company_id`, `p_work_order_id`, `p_part_id`, and `p_quantity`.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check src/**/*.js`: PASS.
+- Local smoke:
+  - URL: `http://localhost:4299/index.html?qa_bust=lfes-phase-6d-rpc-20260519`.
+  - signed-in QA technician session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - QA part created through the Parts UI:
+    - `QA Phase6D RPC Part 20260519-6D-1779214388252`.
+  - QA work order created through Quick Fix:
+    - `QA Phase6D RPC Work 20260519-6D-1779214388252`.
+  - Work Order Detail part usage submitted through the visible Parts Used form.
+  - usage row appeared:
+    - `QA Phase6D RPC Part 20260519-6D-1779214388252`
+    - `21 used - $420.00`.
+  - part quantity changed from `50 on hand` to `29 on hand`.
+  - no visible app errors or missing-script errors were observed.
+- Cleanup:
+  - not completed through the technician UI because the technician session did not expose delete controls.
+  - do not force cleanup with SQL inside this phase unless separately approved.
+- Result:
+  - Phase 6D integration passed local smoke.
+  - package/upload is approved as the next separate step.
+
+## Prior Recent Change
+
+Completed LFES Phase 6C SQL apply and verification in Supabase:
+
+- Scope:
+  - ran only the approved SQL for `public.record_work_order_part_usage`.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no workflow/business logic changed.
+  - no Supabase RLS/policy changes beyond creating the approved function/grant.
+- Supabase SQL Editor:
+  - project: `lbphkzznvvumemdkqoay`.
+  - query/tab used: `Record work-order part usage`.
+  - URL included SQL id `5b7a680a-f33f-4770-94de-6a58716cced5`.
+- Apply result:
+  - first browser-entry attempt failed with `42601` near `definerset` because the browser editor dropped whitespace between `security definer` and `set search_path`.
+  - corrected compact version of the same approved SQL ran successfully.
+  - Supabase returned `Success. No rows returned`.
+- Verification results:
+  - `rpc_exists`: `true`.
+  - `authenticated_can_execute`: `true`.
+  - `anon_can_execute`: `false`.
+  - `function_config`: `search_path=public, private, pg_temp`.
+  - `search_path_pinned`: `true`.
+  - `expected_column_count`: `4`.
+  - expected columns confirmed:
+    - `parts.quantity_on_hand`
+    - `parts.unit_cost`
+    - `work_order_parts.quantity_used`
+    - `work_order_parts.unit_cost_at_use`
+  - `rls_enabled_count`: `2`.
+  - RLS summary: `parts:true, work_order_parts:true`.
+- Result:
+  - `public.record_work_order_part_usage` is created and verified.
+  - Phase 6D app integration is unblocked as a separate controlled phase.
+  - Phase 6D should update only `addPartUsageToWorkOrder(...)` to call the RPC, then run the parts smoke matrix.
+
+## Prior Recent Change
+
+Attempted LFES Phase 6C SQL apply/verification step, but SQL was not run:
+
+- Scope:
+  - attempted approved SQL apply/verification only.
+  - no SQL was run.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no Supabase RLS/policy changes.
+  - no workflow/business logic changed.
+- Blocker:
+  - this workspace has only the public Supabase URL and publishable anon key in `supabase-config.js`.
+  - no `supabase` CLI command is available.
+  - no `psql` command is available.
+  - no `DATABASE_URL`, Postgres connection string, Supabase admin token, or management token is available in environment variables.
+  - the anon app key cannot safely create Postgres functions.
+- Result:
+  - `public.record_work_order_part_usage` was not created or verified from this workspace.
+  - verification SELECTs were not run because the SQL was not applied.
+  - Phase 6D app integration remains blocked.
+- Next safe step:
+  - run the approved SQL from `docs/LFES/audits/LFES_PHASE_6C_PARTS_RPC_SQL_PROPOSAL.md` in Supabase SQL Editor or provide an admin-capable database execution path.
+  - then run the verification SELECTs from the same proposal.
+  - only after verification passes should Phase 6D app integration begin.
+
+## Prior Recent Change
+
+Completed LFES Phase 6C-R parts RPC SQL review checkpoint:
+
+- Scope:
+  - SQL review/documentation only.
+  - no SQL was run.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no Supabase RLS/policy changes.
+  - no workflow/business logic changed.
+- Reviewed:
+  - `docs/LFES/audits/LFES_PHASE_6C_PARTS_RPC_SQL_PROPOSAL.md`
+- Decision:
+  - `APPROVED TO RUN`
+- Review results:
+  - function signature matches current schema expectations.
+  - `work_order_parts` insert columns match current table columns.
+  - `parts.quantity_on_hand` exists as an integer and supports the proposed decrement.
+  - `work_orders.company_id` and `parts.company_id` checks match current tenant scoping.
+  - `private.is_company_member(p_company_id)` is the expected company isolation boundary.
+  - `search_path` is pinned.
+  - execute is granted only to `authenticated`.
+  - `anon` is not granted execute.
+  - floor-at-zero behavior matches current app behavior.
+  - rollback SQL is included.
+  - verification SQL is non-mutating and separated from later authenticated mutation smoke.
+  - schema mismatch risks are documented.
+- Result:
+  - next safe step is applying the approved SQL and running the verification SELECTs only.
+  - Phase 6D app integration remains blocked until SQL is applied and verified.
+  - architecture extraction remains paused.
+
+## Prior Recent Change
+
+Completed LFES Phase 6C parts transaction RPC SQL proposal:
+
+- Scope:
+  - SQL proposal/documentation only.
+  - no SQL was run.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no functions extracted.
+  - no workflow/business logic changed.
+  - no Supabase RLS/policy changes.
+  - no RPC was created in Supabase.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_6C_PARTS_RPC_SQL_PROPOSAL.md`
+- Proposed RPC:
+  - `public.record_work_order_part_usage(p_company_id uuid, p_work_order_id uuid, p_part_id uuid, p_quantity integer)`
+- Proposed behavior:
+  - require authenticated user.
+  - require positive quantity.
+  - validate company membership with `private.is_company_member(p_company_id)`.
+  - validate work order belongs to the company.
+  - validate part belongs to the company.
+  - lock the part row with `for update`.
+  - insert `work_order_parts`.
+  - decrement `parts.quantity_on_hand` in the same transaction.
+  - preserve current floor-at-zero stock behavior unless strict insufficient-stock blocking is separately approved.
+  - grant execute to `authenticated` only.
+  - do not grant to `anon`.
+- Verification approach documented:
+  - non-mutating SELECT checks for function existence, execute grant, expected columns, and RLS enabled.
+  - future authenticated app/API smoke after SQL and app integration.
+- Result:
+  - Phase 6D implementation remains blocked until the SQL proposal is reviewed, approved, applied, and verified.
+  - architecture extraction remains paused.
+
+## Prior Recent Change
+
+Completed LFES Phase 6B parts transaction/RPC planning:
+
+- Scope:
+  - planning/documentation only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no functions extracted.
+  - no workflow/business logic changed.
+  - no Supabase SQL/RLS/policy changes.
+  - no RPC created.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_6B_PARTS_TRANSACTION_RPC_PLAN.md`
+- Current behavior mapped:
+  - `createPart(event)` inserts a single `parts` row and is low transaction risk.
+  - `restockPart(event)` updates `parts.quantity_on_hand` using client-calculated final quantity.
+  - `usePartFromInventory(event)` updates `parts.quantity_on_hand` using client-calculated final quantity and floors at zero.
+  - `recordPartUsed(event)` calls `addPartUsageToWorkOrder(...)`.
+  - `addPartUsageToWorkOrder(...)` inserts `work_order_parts`, then separately updates `parts.quantity_on_hand`.
+  - Quick Fix and full Work Order creation both call `addPartUsageToWorkOrder(...)` after the work order is created.
+- Primary transaction gap:
+  - work-order part usage and stock decrement are not atomic.
+  - a usage row can exist while inventory fails to update.
+  - concurrent users can overwrite stock using stale in-memory quantities.
+- Recommended design:
+  - create a future RPC named `public.record_work_order_part_usage`.
+  - it should validate authenticated company membership, work order company, part company, and positive quantity.
+  - it should insert the `work_order_parts` row and decrement `parts.quantity_on_hand` in one transaction.
+  - it should use database-side locking/arithmetic instead of client-calculated final quantity.
+  - it should preserve current floor-at-zero behavior first unless stricter insufficient-stock blocking is separately approved.
+  - it should grant execute only to `authenticated`.
+  - it should preserve `private.is_company_member(company_id)` as the security boundary.
+- Recommended implementation order:
+  1. Phase 6C: produce exact copy/paste SQL for the RPC, grants, and schema reload; do not run until approved.
+  2. Phase 6D: change only `addPartUsageToWorkOrder(...)` to call the RPC; do not move workflows or service wrappers.
+  3. Phase 6E: package/upload and run live smoke for Work Order Detail part usage, Quick Fix part usage, full Work Order part usage, insufficient-stock behavior, and concurrent/stale quantity behavior.
+  4. Phase 6F: optional planning for atomic Restock/Inventory Use RPCs.
+- Result:
+  - implementation remains blocked pending explicit Phase 6C approval.
+  - architecture extraction remains paused.
+
+## Prior Recent Change
+
+Completed LFES Phase 6A operational smoke hardening:
+
+- Scope:
+  - live operational smoke only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no service/helper extraction.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+- Live build:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-5b-live-20260519-100842`
+- Static checks:
+  - `node --check app.js`: PASS
+  - `node --check supabase-config.js`: PASS
+  - `node --check src/**/*.js`: PASS
+- Global live verification:
+  - signed-in manager/admin-capable session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - no missing-script or visible app errors.
+  - browser warning/error logs were empty.
+- Technician guardrail proof:
+  - used dedicated QA technician account through the authenticated Supabase boundary.
+  - created disposable Salem work order `QA Phase6A Tech Guardrail 20260519-6A-1779211250092`.
+  - technician self-claim succeeded.
+  - technician attempts to assign another user, clear assignment, and vendor-assign were blocked by the DB trigger with `P0001`: `Technicians can only claim unassigned work for themselves.`
+  - this proves DB-layer enforcement, not only UI hiding.
+- Public QR request validation:
+  - Salem public request form loaded for Taylor Metal Products / Salem, OR.
+  - disposable request `QA Phase6A QR Smoke 20260519-6A-1779211250092` submitted successfully.
+  - manager/admin Requests screen showed it under Active.
+  - request cleanup through app delete passed.
+- Parts smoke:
+  - disposable part `QA Phase6A Part Smoke 20260519-6A-1779211250092` created in Salem.
+  - restock, inventory use, and work-order-part recording passed.
+  - final quantity behavior matched the expected sequence.
+  - cleanup removed QA work order, linked work_order_parts row, QA part, and QA request.
+- Operational risk confirmed:
+  - work-order part usage and part stock decrement are still separate database operations.
+  - this worked in the smoke path, but future parts transaction RPC planning remains recommended before heavier live inventory use.
+- Result:
+  - broader live pilot confidence improved.
+  - architecture extraction remains paused.
+  - next controlled work should be planning or implementing the parts transaction/RPC approach, or formalizing repeatable smoke tests, before deeper workflow extraction.
+
+## Prior Recent Change
+
+Completed LFES Phase 5C readiness decision:
+
+- Scope:
+  - planning/decision only.
+  - no code changed.
+  - no render helpers moved.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Evidence reviewed:
+  - Phase 5A render-helper extraction plan.
+  - Phase 5B smoke and live deployment results.
+  - Phase 4B technician assignment guardrail status.
+  - parts transaction/inventory gap.
+  - public QR request validation status.
+  - remaining high-risk render/event/state contracts.
+- Decision:
+  - do not continue display-helper extraction now.
+  - another tiny extraction is technically possible, but not the highest-value next move during live testing.
+- Reason:
+  - Phase 5B proved the extraction process works for tiny display helpers.
+  - the next helper group is more coupled: message helpers, activity helpers, command cards, relationship chips, and request photo preview all carry session/state/relationship/storage assumptions.
+  - higher-value operational risks remain open.
+- Recommended next phase:
+  - LFES Phase 6A operational smoke hardening.
+  - first target: technician assignment DB-layer guardrail proof with disposable QA work order.
+- Follow-on priorities:
+  1. live public QR request end-to-end validation.
+  2. parts use/restock/work-order part usage smoke.
+  3. parts transaction RPC planning only after inventory smoke confirms current risk.
+- Remains blocked:
+  - Phase 5C implementation/code extraction.
+  - further render-helper extraction.
+  - workflow renderer extraction.
+  - event binding extraction.
+  - mutation extraction.
+  - public QR submit movement.
+  - Quick Fix/work-order/request conversion movement.
+  - delete/storage/photo/document movement.
+  - auth/session/company/location movement.
+  - Supabase SQL/RLS changes.
+
+## Prior Recent Change
+
+Completed LFES Phase 5B package/upload/live verification:
+
+- Scope:
+  - packaged and uploaded stable LFES Phase 5B build.
+  - no Phase 5C started.
+  - no additional render helpers moved.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Package:
+  - `MaintainOps-github-clean-20260519-100842`
+  - `MaintainOps-github-clean-20260519-100842.zip`
+- Package contents verified:
+  - `assets`
+  - `src`
+  - `src/render/displayHelpers.js`
+  - all `src/utils/*.js`
+  - all `src/services/*.js`
+  - `app.js`
+  - `index.html`
+  - `README.md`
+  - `styles.css`
+  - `supabase-config.js`
+- Static checks:
+  - passed for `app.js`, `supabase-config.js`, all current utils, all current services, and `src/render/displayHelpers.js`.
+- Deploy:
+  - repo: `loufish727/MaintainOps`
+  - branch: `main`
+  - commit: `3439f56`
+  - commit message: `Deploy LFES phase 5B display helpers`
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-5b-live-20260519-100842`
+- Live verification:
+  - GitHub Pages served updated `index.html`.
+  - `src/render/displayHelpers.js?v=lfes-phase-5b-display-1` returned HTTP 200.
+  - `app.js?v=password-recovery-1` returned HTTP 200.
+  - signed-in manager/admin session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained selected.
+  - Settings loaded.
+  - Team loaded and role guide rendered.
+  - My Work loaded.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - no visible app errors.
+  - no browser warning/error logs observed.
+- Result:
+  - Phase 5B is deployed and live-verified.
+  - no behavior change observed beyond intended helper extraction.
+  - Phase 5C remains blocked pending separate approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 5B manager/admin Settings smoke checkpoint:
+
+- Scope:
+  - manager/admin Settings verification only.
+  - no code changed.
+  - no Phase 5C started.
+  - no package/upload performed.
+  - no additional render helpers moved.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+- Browser/session:
+  - local URL tested: `http://localhost:4294/index.html?qa_bust=lfes-phase-5b-smoke-20260519`
+  - signed-in manager/admin-capable Taylor Metal Products session.
+- Verified:
+  - session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained selected.
+  - Admin Setup and Settings were visible.
+  - `src/render/displayHelpers.js?v=lfes-phase-5b-display-1` loaded.
+  - Settings loaded cleanly.
+  - Team loaded cleanly.
+  - Team role guide rendered Technician, Manager, and Admin descriptions.
+  - My Work loaded.
+  - Work Orders loaded.
+  - no visible app errors.
+  - no browser error/warning logs observed.
+- Notes:
+  - `renderMetric` currently has no active call sites in `app.js`, so no `.metric.dashboard-card` elements were expected or observed.
+  - My Work and Work Orders work-summary/gauge surfaces rendered normally.
+- Result:
+  - Phase 5B signed-in smoke is complete for technician and manager/admin coverage.
+  - no behavior change observed.
+  - Phase 5B packaging/upload is approved.
+  - Phase 5C remains blocked pending separate approval.
+
+## Prior Recent Change
+
+Attempted LFES Phase 5B manager/admin Settings smoke checkpoint:
+
+- Scope:
+  - manager/admin Settings verification only.
+  - no code changed.
+  - no Phase 5C started.
+  - no package/upload performed.
+  - no additional render helpers moved.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+- Browser:
+  - current in-app browser URL: `http://localhost:4294/index.html?qa_bust=lfes-phase-5b-smoke-20260519`
+- Result:
+  - NOT VERIFIED.
+- Reason:
+  - browser was on the `Welcome Back` login screen.
+  - no manager/admin signed-in session was active.
+- Verified while logged out:
+  - `src/render/displayHelpers.js?v=lfes-phase-5b-display-1` was present.
+  - no browser warning/error logs were observed.
+- Still required:
+  - sign in as manager/admin.
+  - verify Taylor Metal Products loads.
+  - verify Salem, OR remains active.
+  - verify Settings loads.
+  - verify Team loads and role guide renders.
+  - verify no missing-script, visible app, or actionable console errors.
+- Packaging/upload:
+  - still blocked until manager/admin Settings smoke passes or is explicitly waived.
+
+## Prior Recent Change
+
+Completed LFES Phase 5B signed-in smoke checkpoint:
+
+- Scope:
+  - signed-in browser verification only.
+  - no code changed.
+  - no Phase 5C started.
+  - no package/upload performed.
+  - no additional render helpers moved.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+- Browser/session:
+  - local URL tested: `http://localhost:4294/index.html?qa_bust=lfes-phase-5b-smoke-20260519`
+  - signed-in session was the QA technician Gmail session.
+- Verified:
+  - session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained selected.
+  - display helper script `src/render/displayHelpers.js?v=lfes-phase-5b-display-1` loaded.
+  - My Work loaded.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Team role guide rendered Technician, Manager, and Admin descriptions.
+  - no visible app errors.
+  - no browser error/warning logs observed.
+- Not fully verified:
+  - Settings screen load.
+  - reason: the active signed-in session is technician-role and no exact Settings navigation button was visible.
+  - before packaging/upload, either verify Settings with a manager/admin session or explicitly waive that role-specific smoke item.
+- Result:
+  - Phase 5B appears stable for the signed-in technician session.
+  - no behavior change observed.
+  - packaging/upload is blocked only by the unverified manager/admin Settings smoke item.
+
+## Prior Recent Change
+
+Completed LFES Phase 5B render display-helper extraction:
+
+- Scope:
+  - created one small render helper module.
+  - moved only `renderMetric`, `renderInsight`, and `renderRoleGuide`.
+  - no workflow renderers moved.
+  - no event handlers moved.
+  - no mutations moved.
+  - no Supabase SQL/RLS/policies changed.
+  - no business logic changed.
+- Created:
+  - `src/render/displayHelpers.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Static checks:
+  - `node --check app.js`: PASS
+  - `node --check supabase-config.js`: PASS
+  - `node --check src/utils/constants.js`: PASS
+  - `node --check src/utils/dom.js`: PASS
+  - `node --check src/utils/formatting.js`: PASS
+  - `node --check src/services/locationsService.js`: PASS
+  - `node --check src/services/profilesService.js`: PASS
+  - `node --check src/services/partsService.js`: PASS
+  - `node --check src/services/assetsService.js`: PASS
+  - `node --check src/services/workOrdersService.js`: PASS
+  - `node --check src/services/companyService.js`: PASS
+  - `node --check src/services/appIssueReportsService.js`: PASS
+  - `node --check src/render/displayHelpers.js`: PASS
+- Local resource check:
+  - `http://localhost:4294/index.html?qa_bust=lfes-phase-5b-display-2` returned 200.
+  - `index.html` includes `src/render/displayHelpers.js?v=lfes-phase-5b-display-1` before `app.js`.
+  - all local scripts referenced by `index.html` returned HTTP 200, including utils, services, `src/render/displayHelpers.js`, and `app.js`.
+- Runtime smoke status:
+  - signed-in browser smoke is NOT VERIFIED in this pass.
+  - reason: no direct browser automation tool was exposed in this turn, and local Playwright was unavailable in the Node REPL.
+  - before packaging/upload, verify signed-in session restore, Taylor Metal Products, Salem active location, dashboard metrics, Team role guide, Work Orders, Equipment, Parts, Team, and Settings.
+- Behavior:
+  - no intentional behavior change.
+  - expected behavior should be unchanged because only pure display helpers moved.
+
+## Prior Recent Change
+
+Completed LFES Phase 5A low-risk render-helper extraction planning:
+
+- Scope:
+  - planning/documentation only.
+  - no app code changes.
+  - no render behavior changes.
+  - no event-binding changes.
+  - no workflow handler movement.
+  - no mutation movement.
+  - no Supabase SQL/RLS/policy changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_5A_RENDER_HELPER_EXTRACTION_PLAN.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Safest first extraction candidates:
+  - `renderMetric`
+  - `renderInsight`
+  - `renderRoleGuide`
+- Safe later candidates:
+  - `renderMessageBubble`
+  - `renderMessageList`
+  - `renderMessageNavBadge`
+  - `renderActivityItem`
+  - `renderEmailHelperCommandCard`
+  - `renderRelationshipChips`
+  - `renderMaintenanceRequestPhoto`
+- Important catch:
+  - `renderWorkloadStrip` looked like a simple display helper, but it calls `renderGaugeReadout`.
+  - `renderGaugeReadout` emits `data-status-filter` behavior and reads `activeStatusFilter`, so gauge helpers are not safe first extraction targets.
+  - pagination helpers, relationship chips, and request photo preview also carry hidden state/storage/event assumptions.
+- Recommendation:
+  - next implementation, if approved, should be LFES Phase 5B render display-helper extraction only.
+  - move only `renderMetric`, `renderInsight`, and `renderRoleGuide` into a small render helper module.
+  - run static checks and signed-in smoke tests afterward.
+  - workflow/render/mutation/event extraction remains blocked.
+
+## Prior Recent Change
+
+Completed a partial LFES Phase 4B technician-role guardrail verification:
+
+- Scope:
+  - technician runtime verification only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+- Browser/session:
+  - local HTTP preview at `http://localhost:4294/index.html?qa_bust=password-recovery-2`.
+  - signed-in QA technician session for the invited Gmail account.
+- Verified:
+  - Taylor Metal Products loaded.
+  - Salem, OR was active.
+  - location selector was disabled.
+  - Mobile tech helper text was shown.
+  - visible workspace navigation did not include Admin Setup or Settings.
+  - Team invite/add-member/role-save controls were absent.
+  - Team showed the signed-in QA account as Technician.
+  - Work Orders loaded for Salem, OR.
+  - Work Orders showed status buttons but no visible assignment dropdowns.
+  - no missing-script or browser console errors were observed.
+- Not fully verified:
+  - DB/RLS/trigger denial for assigning another user, clearing assignment, or stealing another assignment.
+  - reason: browser automation could not type into the local Quick Fix form, and the browser tool could not read local Supabase auth storage needed for a safe direct REST denial probe.
+  - no disposable QA work order was created in this partial pass.
+- Current conclusion:
+  - technician UI restrictions and location lock are behaving correctly in this session.
+  - the assignment guardrail still needs one final DB-layer proof using a disposable QA work order.
+
+## Prior Recent Change
+
+Added MaintainOps password reset/recovery UI:
+
+- Scope:
+  - auth recovery UI only.
+  - no Supabase SQL/RLS/policy changes.
+  - no service-wrapper extraction.
+  - no `app.js` refactor beyond the auth recovery path.
+  - no workflow/business logic changes outside password reset/recovery.
+- Added:
+  - login-screen `Forgot password?` action.
+  - reset email request screen using `supabaseClient.auth.resetPasswordForEmail`.
+  - recovery-link landing screen using Supabase recovery tokens.
+  - new password confirmation validation.
+  - password update through `supabaseClient.auth.updateUser`.
+  - recovery URL cleanup after update/back/new-reset actions.
+- Important:
+  - do not paste recovery links/tokens into chat or docs.
+  - Supabase Auth redirect URLs must include the deployed GitHub Pages URL for live reset links to return to the app.
+  - real emailed reset-link end-to-end verification remains needed after upload/deploy.
+- Updated:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Verified:
+  - static checks passed for `app.js`, `supabase-config.js`, all `src/utils/*.js`, and all `src/services/*.js`.
+  - local HTTP preview showed `Forgot password?` on login.
+  - local HTTP preview with `#type=recovery` showed `Set New Password`, a safe invalid-link message, disabled update without secure tokens, and a path to send a new reset link.
+  - clean GitHub Pages package created and verified:
+    - `MaintainOps-github-clean-20260519-093021`
+    - `MaintainOps-github-clean-20260519-093021.zip`
+    - includes `assets`, `src`, `app.js`, `index.html`, `README.md`, `styles.css`, and `supabase-config.js`.
+    - packaged `index.html` references `app.js?v=password-recovery-1`.
+- Not verified:
+  - live GitHub Pages reset email and recovery-token update path, pending upload/deploy and Supabase redirect URL check.
+
+## Prior Recent Change
+
+Completed LFES Phase 4C technician test-account setup planning:
+
+- Scope:
+  - planning only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Findings:
+  - an existing real technician member is visible: `Lee Gaede`.
+  - do not use Lee's live account for QA unless he is intentionally participating.
+  - an existing `Louie Technician Test` member is visible, but its current visible role was Manager, not Technician.
+  - `Louie Technician Test` may be the safest existing account only if the user approves changing it to Technician and credentials are available.
+  - Team invite flow exists and supports Role plus Default location.
+  - Invite acceptance copies role/default location into `company_members`.
+- Recommended safe setup path:
+  1. Prefer a dedicated QA technician account with a clear email/name, such as `qa.tech.guardrail+20260519@maintainops.test` or another user-controlled test email.
+  2. Create the account through the normal Team invite/sign-up path when possible.
+  3. Invite as `Technician` with Default location `Salem, OR`.
+  4. The user should enter/retain the password privately; do not paste passwords into docs or chat.
+  5. If the app sign-up/invite path cannot create the auth user, use Supabase Auth/admin UI only to create the auth user, then accept/use the invite; no SQL is needed for the preferred path.
+- Alternative setup path:
+  - temporarily change `Louie Technician Test` from Manager to Technician through Team only if explicitly approved and credentials are known.
+  - after verification, either leave it as Technician if that is its intended role or restore its prior Manager role if approved.
+- QA data strategy:
+  - create disposable work orders prefixed `QA Phase4B Tech Guardrail <token>`.
+  - use Salem, OR unless intentionally testing another branch.
+  - include one unassigned QA work order to verify allowed "Assign to me" behavior.
+  - include one QA work order assigned to another user or outside vendor only if needed to verify denied reassignment/clear behavior.
+  - clean up all QA records through the app after testing.
+- Phase 4B remains blocked until a real technician session exists.
+
+## Prior Recent Change
+
+Attempted LFES Phase 4B technician-role guardrail verification, stopped because the active browser session was not a technician session:
+
+- Scope:
+  - technician-role guardrail verification only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Live session checked:
+  - `https://loufish727.github.io/MaintainOps/`
+- Result:
+  - NOT VERIFIED.
+- Reason:
+  - active signed-in session showed manager/admin capabilities.
+  - Admin Setup and Settings were visible.
+  - Team role editors, Save Role controls, Create Invite, and Add Member controls were visible.
+  - therefore this was not a real technician-role session.
+- Action taken:
+  - stopped before attempting assignment denial.
+  - did not fake the technician guardrail using manager/admin credentials.
+- Console/resource status:
+  - no missing-script errors observed during the session check.
+  - no visible app errors observed during the session check.
+  - no actionable MaintainOps console errors observed during the session check.
+- Current conclusion:
+  - Phase 4B still requires a real technician login/session.
+  - DB/RLS/trigger enforcement for technician unauthorized assignment remains unproven.
+
+## Prior Recent Change
+
+Completed LFES Phase 4A live smoke and technician assignment guardrail verification:
+
+- Scope:
+  - live runtime smoke verification only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=phase-4a-live-smoke-20260519`
+- Static checks passed:
+  - `node --check app.js`
+  - `node --check supabase-config.js`
+  - all current `src/utils/*.js`
+  - all current `src/services/*.js`
+- Verified:
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained selected after reload.
+  - app did not fall back to Auburn.
+  - live utility/service/app scripts loaded with no missing-script errors.
+  - Work Orders, Equipment, Parts, Team, and Settings opened cleanly.
+  - manager/admin Quick Fix create -> Work Order Detail -> normal delete path passed.
+  - manager/admin assignment control changed a disposable QA work order owner to Louie Andrade and saved.
+  - disposable QA work orders were deleted through the normal app path.
+  - no visible app errors or actionable MaintainOps console errors were observed.
+- QA records created and removed:
+  - `QA Phase4A Smoke 1779206383647 work order`
+  - `QA Phase4A Assign 1779206409169 work order`
+- Not verified:
+  - technician assignment guardrail under a real technician-role session.
+  - reason: no real technician-role signed-in browser session or technician credentials were available during this checkpoint.
+- Current conclusion:
+  - live pilot confidence improved for manager/admin runtime continuity.
+  - architecture work should not claim the technician guardrail is fully proven until a real technician session is tested.
+
+## Prior Recent Change
+
+Completed LFES Phase 3F implementation-readiness decision:
+
+- Scope:
+  - decision/planning only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3F_IMPLEMENTATION_READINESS_DECISION.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Decision:
+  - recommended next implementation phase is LFES Phase 4A live smoke and technician assignment guardrail verification.
+  - no code extraction is approved yet.
+  - low-risk render helper extraction is technically possible later, but not the highest-value next move during live testing.
+  - workflow, mutation, render, event binding, auth/session/company/location, public QR, delete/storage/photo/document, and Supabase SQL/RLS changes remain blocked.
+- Required Phase 4A smoke focus:
+  - session restore.
+  - Taylor Metal Products load.
+  - active location reload persistence.
+  - Work Orders load.
+  - manager/admin safe QA work order create/open/delete.
+  - technician assignment guardrails.
+  - manager/admin assignment controls.
+  - console/missing script check.
+
+## Prior Recent Change
+
+Completed LFES Phase 3E render ownership map:
+
+- Scope:
+  - analysis/documentation only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3E_RENDER_OWNERSHIP_MAP.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Findings:
+  - mapped 83 major `render*` functions in `app.js`.
+  - highest-risk renderers include `renderWorkspace`, auth/public request renderers, Quick Fix, work order detail/list/create, request conversion cards, delete zones, storage upload forms, Team/admin forms, PM/procedure/checklist renderers, and parts/equipment mutation forms.
+  - low-risk future render-helper candidates include pure display helpers such as metrics, insights, message bubbles, activity rows, relationship chips, email helper card, request photo preview, and some pagination/option helpers after smoke coverage.
+  - documented a real-world LFES catch that render output is a behavior contract.
+- Recommendation:
+  - keep workflow/render extraction blocked.
+  - next controlled phase should be LFES Phase 3F implementation-readiness decision, planning only.
+
+## Prior Recent Change
+
+Completed LFES Phase 3D state ownership map:
+
+- Scope:
+  - analysis/documentation only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3D_STATE_OWNERSHIP_MAP.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Findings:
+  - mapped 100 top-level mutable state variables in `app.js`.
+  - categorized state as company-scoped, location-scoped, user/session-scoped, view/UI-scoped, workflow-scoped, pending action/confirmation-scoped, and cache/list-scoped.
+  - highest-risk state includes `supabaseClient`, `session`, `activeCompanyId`, `activeLocationId`, `activeSection`, selected detail IDs, Quick Fix routing state, pending delete IDs, work/request/assets/parts lists, and work-order relationship maps.
+  - lower-risk future state-module candidates include notices, simple filters, page values, parts source manager visibility, and grouped readiness flags after call sites are mapped.
+- Recommendation:
+  - keep workflow extraction blocked.
+  - next controlled phase should be LFES Phase 3E render ownership map, planning only.
+
+## Prior Recent Change
+
+Completed LFES Phase 3C smoke-test matrix and contract guard planning:
+
+- Scope:
+  - analysis/documentation only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3C_SMOKE_TEST_MATRIX.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Findings:
+  - defined 12 smoke tests for high-risk workflows: Quick Fix, work order lifecycle, request conversion, public QR request visibility, location persistence, parts use/restock, PM generation, procedure checklist, issue reports, Team/invite/roles, technician assignment guardrails, and photo/document upload paths.
+  - documented high-risk DOM IDs, form IDs, `data-*` attributes, visual behavior hooks, and global pending-state dependencies.
+  - identified first automated Playwright candidates.
+  - documented a real-world LFES catch for missing workflow-specific smoke matrix before handler extraction.
+- Recommendation:
+  - keep workflow extraction blocked.
+  - next controlled phase should be LFES Phase 3D state ownership map, planning only.
+
+## Prior Recent Change
+
+Completed LFES Phase 3B event-contract inventory:
+
+- Scope:
+  - analysis/documentation only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no rendering/event-binding changes.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3B_EVENT_CONTRACT_INVENTORY.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Findings:
+  - mapped 126 listener registrations inside `bindWorkspaceEvents()`.
+  - mapped 381 raw DOM contract references across listener selectors, rendered IDs, and `data-*` attributes.
+  - found important event contracts outside `bindWorkspaceEvents()`, including auth, public QR intake, public QR print, workspace load retry, company create, and the signed-in `#request-form` document-level submit path.
+  - high-risk contracts include Quick Fix, full work order create/edit/status/complete/delete, request conversion, public QR submit, location switch, safety check sync, delete-confirm pairs, PM generation, procedure checklist results, Team/invite role flows, and storage/photo/document forms.
+- Recommendation:
+  - keep workflow extraction blocked.
+  - next controlled phase should be LFES Phase 3C smoke-test matrix and contract guard planning before moving any workflow handler.
+
+## Prior Recent Change
+
+Completed LFES Phase 3A rendering/event/state architecture mapping:
+
+- Scope:
+  - analysis/documentation only.
+  - no app code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+  - no workflow/business logic changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_3A_ARCHITECTURE_MAP.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Findings:
+  - `renderWorkspace()` remains the broad rendering owner and emits most DOM/event contracts.
+  - `bindWorkspaceEvents()` remains the broad event-binding owner and directly calls most workflow mutations.
+  - global state remains concentrated in `app.js` across session/company/location, queues, requests, assets, parts, PM, procedures, messages, relationship maps, pending deletes, filters, pages, and UI modes.
+  - remaining mutations are mostly workflow orchestration boundaries, not simple raw table calls.
+  - high-risk zones include Quick Fix, work-order mutations, request conversion, delete/storage cleanup, PM generation, procedures/checklists, public QR submit, active-location persistence, and Team/admin flows.
+- Smoke-test discipline:
+  - documented the TEST/STEPS/EXPECTED/RESULT/NOTES format for future implementation phases.
+  - appended a Phase 3A documentation-only smoke checkpoint to `docs/QA_LOG.md`.
+- Real-world LFES catches documented:
+  - Auburn first-load default-location risk.
+  - app-client 0-row admin data-fix attempt.
+  - `renderWorkspace()` / `bindWorkspaceEvents()` responsibility concentration.
+- Recommendation:
+  - pause deeper workflow extraction.
+  - next controlled phase should be LFES Phase 3B event-contract inventory, planning only.
+
+## Prior Recent Change
+
+Completed LFES Phase 2L approved data-only default-location fix and live verification:
+
+## Prior Recent Change
+
+Attempted LFES Phase 2L approved data-only default-location fix through the app client; admin SQL execution was required:
+
+## Prior Recent Change
+
+Completed LFES Phase 2L default-location policy decision and safe fix planning:
+
+- Scope:
+  - planning/documentation only.
+  - no code changes.
+  - no SQL run.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+- Updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Recommended default-location policy:
+  - Salem, OR should be the Taylor Metal Products no-saved-location default for existing Taylor users unless a specific user has an intentionally different default.
+  - Alphabetical first-location fallback should not be treated as an operational default.
+- Current data gap:
+  - observed Taylor `company_members.default_location_id` values are null.
+  - with no saved scoped/legacy browser location, the app falls through to first loaded location.
+  - locations are ordered by name, so Auburn becomes the accidental first-location fallback.
+- Alternatives reviewed:
+  - targeted `company_members.default_location_id` data fix,
+  - company-level default location field,
+  - onboarding prompt requiring user selection,
+  - preserve current behavior.
+- Recommended lowest-risk fix:
+  - data-only update: set Taylor users with null `default_location_id` to Salem, OR.
+  - do not overwrite users who already have a non-null default.
+  - no app behavior change required because current code already honors member defaults before first-location fallback.
+- SQL prepared but not run:
+
+```sql
+-- LFES Phase 2L recommended data-only default-location fix.
+-- Purpose: make Salem, OR the Taylor Metal Products no-saved-location default
+-- for existing Taylor users who do not already have an explicit default.
+-- This does not override any user's scoped saved browser location.
+
+update public.company_members
+set default_location_id = '328d9ebb-7c4d-4847-a9bb-4aa0619fec43'
+where company_id = '0875d674-7f07-4493-8668-701d192f4421'
+  and default_location_id is null;
+
+select
+  cm.company_id,
+  cm.user_id,
+  cm.role,
+  cm.default_location_id,
+  l.name as default_location_name
+from public.company_members cm
+left join public.locations l on l.id = cm.default_location_id
+where cm.company_id = '0875d674-7f07-4493-8668-701d192f4421'
+order by cm.created_at;
+```
+
+- Verification after approval/run:
+  - clear scoped/legacy active-location keys in a signed-in browser,
+  - reload live app,
+  - confirm Taylor Metal Products opens in Salem, OR,
+  - confirm scoped Salem key is written,
+  - confirm intentional later location switching still persists.
+- Behavior changed:
+  - none. Planning/docs only.
+- Deeper workflow extraction remains blocked until default-location policy is approved and verified.
+
+## Prior Recent Change
+
+Completed LFES Phase 2K default-location/onboarding verification checkpoint:
+
+- Scope:
+  - analysis/QA/documentation only.
+  - no code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+  - no location logic changes.
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Active-location precedence confirmed:
+  1. scoped saved user/company key: `maintainops.activeLocationId:<user_id>:<company_id>`
+  2. legacy saved key: `maintainops.activeLocationId`
+  3. in-memory `activeLocationId`
+  4. `company_members.default_location_id`
+  5. first loaded location
+- Live signed-in identifiers:
+  - company id: `0875d674-7f07-4493-8668-701d192f4421`
+  - user id: `8f6e618f-bf06-46a7-925b-1001d7d30228`
+  - Auburn, WA id: `6cdc08a7-1ce8-48f1-9d5c-ec7969fd6d45`
+  - Salem, OR id: `328d9ebb-7c4d-4847-a9bb-4aa0619fec43`
+- Root cause of Auburn first-load behavior:
+  - current signed-in admin membership has `default_location_id: null`.
+  - no saved scoped/legacy location means the app reaches first-location fallback.
+  - `locationsService.listLocations(...)` orders by name.
+  - Auburn is first alphabetically, so it becomes the fallback and is persisted into the scoped key.
+- Test results:
+  - fresh/no saved location keys -> Auburn, WA.
+  - legacy Salem only -> Salem, OR and migrated to scoped key.
+  - scoped Salem -> Salem, OR.
+  - conflicting legacy Auburn + scoped Salem -> Salem, OR.
+  - legacy Auburn only -> Auburn, WA and migrated to scoped key.
+  - intentional Salem restore + reload -> Salem, OR.
+- Expected or bug:
+  - technically expected under current code.
+  - operationally a default-location/onboarding bug risk if Salem should be the intended default for Taylor users.
+- Invite/default-location finding:
+  - not influencing this admin test account because its member default is null.
+  - real second-user invite/default-location QA is still needed.
+- Safe fix proposal:
+  - immediate data policy fix: set intended users' `company_members.default_location_id` to Salem, OR.
+  - product fix: add an explicit company/onboarding default-location rule instead of relying on first alphabetical location.
+- Behavior changed:
+  - none. Analysis/QA/docs only.
+- Deeper workflow extraction remains blocked until location default/onboarding behavior is settled.
+
+## Prior Recent Change
+
+Completed LFES Phase 2J mutation-boundary review checkpoint:
+
+- Scope:
+  - analysis/documentation only.
+  - no code changes.
+  - no wrapper extraction.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Current architectural state:
+  - LFES utility extraction and low-risk read-wrapper extraction improved clarity.
+  - Phase 2I app issue report insert/update wrappers are a good safe-boundary example.
+  - `app.js` remains the operational controller for auth/session, active company/location, rendering, event binding, permissions, validation, notices, reloads, and most workflow mutations.
+- Current measured shape:
+  - `app.js` is about 10,514 lines.
+  - `app.js` has about 388 function declarations.
+  - raw scan shows about 107 Supabase-related call patterns.
+  - raw scan shows about 76 mutation/RPC/storage-style patterns before excluding false-positive DOM calls.
+  - based on the Phase 2H verified mutation count, about 67 true mutation-boundary call sites remain after Phase 2I moved 2 app issue report mutations.
+- Review conclusion:
+  - wrapper boundaries are clearer than before.
+  - extraction still helps when it targets pure helpers, read wrappers, and isolated raw table mutations.
+  - extraction pace should slow now because more mutation wrappers could fragment the architecture without reducing workflow coupling.
+- Major remaining risks:
+  - public QR submit,
+  - invite/default-location onboarding,
+  - active location persistence/defaulting,
+  - Quick Fix and work-order mutations,
+  - request conversion,
+  - delete/storage/photo cleanup,
+  - PM/procedure/checklist mutations,
+  - messages,
+  - `renderWorkspace()` and `bindWorkspaceEvents()` concentration.
+- Operational continuity note:
+  - fresh local/live debug profiles initially selected Auburn, WA.
+  - Salem hard-save worked after intentional Salem selection and reload.
+  - Auburn first-load should be verified as default-location/onboarding behavior before deeper mutation extraction.
+- Recommended next controlled phase:
+  - LFES Phase 2K default-location/onboarding verification checkpoint, analysis/QA only.
+- Behavior changed:
+  - none. Analysis/docs only.
+- Next implementation phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Packaged, uploaded, and live verified stable LFES Phase 2I build on GitHub Pages:
+
+- Scope:
+  - package/upload/live verification only.
+  - no next phase started.
+  - no additional wrappers extracted.
+  - no `app.js` refactor.
+  - no Supabase SQL/RLS/policy changes.
+  - no auth, workflow, rendering, or unrelated business-logic changes.
+- Package created:
+  - folder: `MaintainOps-github-clean-20260518-142305`
+  - zip: `MaintainOps-github-clean-20260518-142305.zip`
+- Package contents confirmed:
+  - `assets`
+  - `src`
+  - `app.js`
+  - `index.html`
+  - `README.md`
+  - `styles.css`
+  - `supabase-config.js`
+  - all `src/utils` files.
+  - all `src/services` files, including updated `src/services/appIssueReportsService.js`.
+- Static checks:
+  - source checks passed for 12 JavaScript files.
+  - package checks passed for 12 JavaScript files.
+- GitHub Pages deployment:
+  - commit: `efd31566b4179d295ccdc4dee73636d033f01d49`
+  - live URL tested: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2i-live-20260518-1429`
+- Live verification:
+  - Phase 2I script tags served correctly.
+  - `MaintainOpsAppIssueReportsService` exposed list/create/update wrappers.
+  - user signed in on live Edge verification window.
+  - Taylor Metal Products loaded.
+  - Work Orders, Equipment, Parts, Team, Settings, and Admin Setup opened.
+  - Report Issue opened.
+  - existing issue reports loaded.
+  - safe live test issue report was submitted and appeared under Salem, OR:
+    - `LFES Phase 2I live wrapper smoke 1779139666427`
+  - safe live test issue report status was updated to `reviewing`.
+  - no missing-script errors.
+  - no visible app errors.
+  - no page errors/actionable console errors during signed-in live checks.
+- Location note:
+  - fresh live debug profile initially selected Auburn, WA.
+  - after intentionally selecting Salem, OR, reload preserved Salem, OR through the scoped hard-save key.
+  - unexpected first-load Auburn default remains a separate default-location/onboarding data verification item.
+- Behavior changed:
+  - no intended behavior change beyond the previously approved Phase 2I wrapper extraction.
+- Next phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2I app issue report mutation-wrapper extraction:
+
+- Scope:
+  - used existing `src/services/appIssueReportsService.js`.
+  - moved only the lowest-risk `app_issue_reports` insert/update wrappers.
+  - no public QR movement.
+  - no Quick Fix/work-order/request-conversion/delete/storage/photo/PM/procedure/message/auth/company/location movement.
+  - no Supabase SQL/RLS/policy changes.
+- Modified:
+  - `src/services/appIssueReportsService.js`
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Exact wrappers moved:
+  - `createAppIssueReportRecord(supabaseClient, payload)`
+  - `updateAppIssueReportStatusRecord(supabaseClient, companyId, reportId, nextStatus)`
+- Intentionally left in `app.js`:
+  - Report Issue form handling,
+  - submit button state,
+  - validation payload assembly,
+  - notices,
+  - reloads,
+  - rendering,
+  - permission checks.
+- Static checks:
+  - passed for `app.js`, `supabase-config.js`, all utility files, and all service files.
+- Browser/debug:
+  - local app loaded from `http://127.0.0.1:4196/index.html?qa_bust=lfes-phase-2i-issue-report-mutations-1`.
+  - Taylor Metal Products loaded.
+  - Work Orders, Equipment, Parts, Team, Settings, and Admin Setup opened.
+  - Report Issue opened.
+  - existing reported issues list loaded.
+  - safe test issue report was submitted and appeared in Reported App Issues:
+    - `LFES Phase 2I wrapper smoke 1779139232957`
+  - safe test issue report status was updated to `reviewing`.
+  - no missing script errors.
+  - no page errors/actionable console errors during signed-in checks.
+- Location note:
+  - fresh debug browser initially selected Auburn, WA.
+  - after intentionally selecting Salem, OR, reload preserved Salem, OR through the scoped hard-save key.
+  - treat unexpected first-load Auburn default as a separate default-location/onboarding data verification item, not a Phase 2I wrapper regression.
+- Behavior changed:
+  - no intended behavior change beyond moving raw `app_issue_reports` insert/update calls behind wrappers.
+- Next implementation phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2H mutation-boundary planning only:
+
+- Scope:
+  - planning/documentation only.
+  - no code changes.
+  - no functions moved.
+  - no service files created.
+  - no `app.js` refactor.
+  - no Supabase policy/SQL changes.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_2H_MUTATION_BOUNDARY_PLAN.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Mutation-boundary findings:
+  - true remaining Supabase/RPC/storage mutation-boundary call sites: 69.
+  - related storage signed URL read boundaries tracked separately: 4.
+  - risk counts:
+    - Critical: 32
+    - High: 24
+    - Medium: 11
+    - Low: 2
+- Lowest-risk mutation candidate:
+  - app issue report insert/update wrappers.
+- Highest-risk mutation areas:
+  - public anonymous QR submit,
+  - invite acceptance/default-location onboarding,
+  - Quick Fix and work-order creation/update/status/assignment,
+  - request conversion,
+  - delete workflows,
+  - PM generation,
+  - procedure/template changes,
+  - comments/photos/parts/checklist relationships,
+  - storage uploads/removes/photo metadata.
+- Recommended next controlled phase:
+  - LFES Phase 2I app issue report mutation wrapper extraction only, if explicitly approved.
+- Must remain blocked:
+  - public QR submit,
+  - request conversion,
+  - Quick Fix/work-order mutations,
+  - delete workflows,
+  - storage/photo/document uploads/removes,
+  - PM generation,
+  - procedure checklist behavior,
+  - messages,
+  - auth/session/company/location workflows,
+  - Supabase SQL/RLS changes.
+- Behavior changed:
+  - none. Planning/docs only.
+- Next implementation phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Completed LFES post-Phase-2G remaining `app.js` risk review:
+
+- Scope:
+  - analysis/documentation only.
+  - no code changes.
+  - no service extraction.
+  - no `app.js` refactor.
+  - no Supabase policy/SQL changes.
+  - no auth, workflow, rendering, or business-logic changes.
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Review findings:
+  - `app.js` remains about 9,600 lines with about 388 function declarations and about 100 remaining Supabase/RPC/storage call sites.
+  - The dominant remaining risk is workflow mutation plus render/event/global-state coupling, not simple read queries.
+  - `renderWorkspace()` and `bindWorkspaceEvents()` remain major reviewability bottlenecks.
+  - Remaining high-risk areas include auth/session, company/location persistence, public QR submit, request conversion, Quick Fix/work-order mutations, PM/procedure mutations, messages, storage, delete guards, and work-order relationship workflows.
+- Additional read-only extraction:
+  - still possible, but no longer the best next move by default.
+  - PM/procedure/public-link reads are the lower-risk read candidates.
+  - request/message/work-order relationship/storage reads need more focused QA before extraction.
+- Recommended next single controlled phase at that time:
+  - LFES Phase 2H mutation-boundary planning only.
+  - no implementation.
+  - map remaining mutations by risk before moving any write path.
+  - This has now been completed by the most recent Phase 2H planning pass above.
+- Behavior changed:
+  - none. Analysis/docs only.
+- Next implementation phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Packaged, uploaded, and live verified stable LFES Phase 2G build on GitHub Pages:
+
+- Scope:
+  - package/upload/live verification only.
+  - no next phase started.
+  - no additional services extracted.
+  - no `app.js` refactor.
+  - no Supabase policy/SQL changes.
+  - no auth, workflow, rendering, or business-logic changes.
+- Package created:
+  - folder: `MaintainOps-github-clean-20260518-135557`
+  - zip: `MaintainOps-github-clean-20260518-135557.zip`
+- Package contents confirmed:
+  - `assets`
+  - `src`
+  - `app.js`
+  - `index.html`
+  - `README.md`
+  - `styles.css`
+  - `supabase-config.js`
+- Package `src` contents confirmed:
+  - all `src/utils` files,
+  - all current `src/services` files,
+  - `src/services/appIssueReportsService.js`.
+- Packaged `index.html` confirmed:
+  - `src/services/appIssueReportsService.js?v=lfes-phase-2g-issue-reports-1`
+  - `app.js?v=lfes-phase-2g-issue-reports-1`
+- Static checks passed in source and package for `app.js`, `supabase-config.js`, all utils, and all current service files.
+- GitHub Pages commit pushed:
+  - `62d368c0ca27c4b2ab82d6710ad1aeee5ed69d83`
+- Live URL verified:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2g-live-20260518-1359`
+- Live resource checks passed after GitHub Pages propagation:
+  - `index.html` served the Phase 2G script tags,
+  - `app.js?v=lfes-phase-2g-issue-reports-1` returned HTTP 200,
+  - `src/services/appIssueReportsService.js?v=lfes-phase-2g-issue-reports-1` returned HTTP 200.
+- Signed-in live verification passed in accessible Edge debug window:
+  - user signed into the live GitHub Pages build,
+  - Taylor Metal Products loaded,
+  - `appIssueReportsService` was present on `window`,
+  - the debug profile initially had Auburn saved; after switching to Salem, OR and reloading, Salem remained active,
+  - Work Orders loaded and showed Salem work including `Hydralic Leak`,
+  - Equipment loaded,
+  - Parts loaded,
+  - Team loaded,
+  - Settings loaded,
+  - Admin Setup loaded,
+  - issue report area loaded,
+  - Report Issue form opened,
+  - no missing script errors or visible app errors were found.
+- Console/runtime note:
+  - only captured error was a GitHub Pages `favicon.ico` 404.
+  - no actionable MaintainOps runtime/script error was captured.
+- Behavior changed:
+  - no behavior change beyond deploying the already verified Phase 2G read-wrapper extraction.
+- Next phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2G `appIssueReportsService` read-only extraction:
+
+- Scope:
+  - `appIssueReportsService` only.
+  - one read wrapper only.
+  - no app issue report mutations moved.
+  - no requests, public QR submit, request conversion, PM/procedure logic, messages, work-order relationship loaders, storage/photo logic, auth/session/company/location workflows, or Supabase SQL/RLS/policies changed.
+- Created:
+  - `src/services/appIssueReportsService.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Exact function moved:
+  - `listAppIssueReports(supabaseClient, companyId)`
+- Exact reads moved out of `app.js`:
+  - `supabaseClient.from("app_issue_reports").select("*").eq("company_id", activeCompanyId).order("created_at", { ascending: false })`
+  - both the main company-data issue report read and the issue-report reload read now call the wrapper.
+- Updated `index.html` script loading:
+  - added `src/services/appIssueReportsService.js?v=lfes-phase-2g-issue-reports-1`
+  - bumped `app.js` to `app.js?v=lfes-phase-2g-issue-reports-1`
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all current service files including `appIssueReportsService`.
+- Local script/resource verification passed:
+  - local HTTP check returned `200` for `index.html`, `app.js?v=lfes-phase-2g-issue-reports-1`, `src/services/appIssueReportsService.js?v=lfes-phase-2g-issue-reports-1`, existing service scripts, and utility scripts.
+- Signed-in browser/debug passed in accessible Edge debug window:
+  - local URL: `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=lfes-phase-2g-issue-reports-accessible`
+  - signed-in session restored after user login.
+  - Taylor Metal Products loaded.
+  - Phase 2G scripts loaded:
+    - `src/services/appIssueReportsService.js?v=lfes-phase-2g-issue-reports-1`
+    - `app.js?v=lfes-phase-2g-issue-reports-1`
+  - The fresh debug profile initially had Auburn saved; after intentionally switching to Salem, OR and reloading, Salem remained active.
+  - Work Orders loaded and showed Salem, OR work including `Hydralic Leak`.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - Admin Setup loaded.
+  - Issue report/admin area loaded:
+    - `App issue reports` showed ready,
+    - Report Issue opened,
+    - Reported App Issues rendered existing captured reports.
+  - no missing script errors or visible app errors were found.
+  - no runtime error events were captured during the checkpoint.
+- Behavior changed:
+  - no intended behavior change.
+  - no behavior change observed in static/resource verification.
+- Next phase remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2G remaining service-wrapper planning only:
+
+- Scope:
+  - planning/documentation only.
+  - no app behavior changes.
+  - no new service files.
+  - no `app.js` refactor.
+  - no Supabase policy/SQL changes.
+  - no functions moved.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_2G_REMAINING_SERVICE_PLAN.md`
+- The plan maps remaining Supabase access in `app.js` after Phase 2F:
+  - maintenance requests,
+  - preventive schedules,
+  - procedure templates/steps,
+  - public request links,
+  - app issue reports,
+  - messages/message threads,
+  - work-order comments/photos/parts/events/step results,
+  - storage signed URLs/uploads/deletes,
+  - workflow mutations that should stay blocked.
+- Safest recommended next extraction:
+  - `src/services/appIssueReportsService.js`
+  - read-only only,
+  - one wrapper: `listAppIssueReports(supabaseClient, companyId)`.
+- Still blocked pending explicit approval:
+  - maintenance request reads/counts,
+  - public QR intake/submit,
+  - request conversion,
+  - PM generation/mutations,
+  - procedure mutations/checklist movement,
+  - messages,
+  - work-order relationship loaders,
+  - storage helpers/uploads/deletes,
+  - auth/session/company/location workflows,
+  - any Supabase SQL/RLS changes.
+- Behavior changed:
+  - none. Docs/planning only.
+- Phase 2G implementation remains blocked until the user explicitly approves the recommended narrow target.
+
+## Prior Recent Change
+
+Packaged, uploaded, and live verified the stable LFES Phase 2F build on GitHub Pages:
+
+- Scope:
+  - package/upload only.
+  - no Phase 2G.
+  - no additional service extraction.
+  - no `app.js` refactor, Supabase policy/SQL, auth, workflow, rendering, or business-logic changes.
+- Package created:
+  - folder: `MaintainOps-github-clean-20260518-132834`
+  - zip: `MaintainOps-github-clean-20260518-132834.zip`
+- GitHub Pages commit pushed:
+  - `5e79f64d4fc1aa12cd952d9d291bff1fa19209c2`
+- Package and live scripts confirmed:
+  - all `src/utils` files,
+  - all current `src/services` files,
+  - `src/services/companyService.js?v=lfes-phase-2f-company-1`,
+  - `app.js?v=lfes-phase-2f-company-1`.
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all service files.
+- Live URL verified:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2f-live-20260518-1329`
+- Signed-in live visual verification:
+  - Taylor Metal Products loaded,
+  - Salem, OR remained active after reload,
+  - Settings loaded and showed Company Settings,
+  - Work Orders, Equipment, Parts, Team, and Settings navigation buttons were visible and responsive in the mobile-width live pane,
+  - no missing-script failure or visible app error was observed.
+- Phase 2G remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2F company read service extraction:
+
+- Scope:
+  - `companyService` reads only.
+  - no code beyond read-wrapper extraction.
+  - no Supabase policy/SQL changes.
+  - no auth/session startup, company switching, invite acceptance, default location onboarding, active location persistence, mutations, rendering, or event binding moved.
+- Created:
+  - `src/services/companyService.js`
+- Moved read helpers:
+  - `getMyCompanies(supabaseClient)`
+  - `listUserCompanyMemberships(supabaseClient, userId)`
+  - `listUserCompanyMembershipsLegacy(supabaseClient, userId)`
+  - `listCompaniesByIds(supabaseClient, companyIds)`
+  - `listCompaniesByIdsLegacy(supabaseClient, companyIds)`
+- Updated `index.html` to load:
+  - `src/services/companyService.js?v=lfes-phase-2f-company-1`
+  - `app.js?v=lfes-phase-2f-company-1`
+- Company behavior intentionally left in `app.js`:
+  - dedupe,
+  - role normalization,
+  - active company selection,
+  - active/default location handling,
+  - logo URL loading,
+  - error messaging and fallbacks.
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all current service files including `companyService`.
+- Local controlled browser file-load check passed:
+  - `companyService` global loaded,
+  - all existing service globals loaded,
+  - `app.js?v=lfes-phase-2f-company-1` loaded,
+  - login screen rendered without a startup ReferenceError,
+  - no actionable console errors were captured.
+- Signed-in Phase 2F browser/debug passed on local HTTP:
+  - `http://localhost:4192/index.html?qa_bust=lfes-phase-2f-company-http-localhost-1779129000000`
+  - Taylor Metal Products loaded.
+  - Work Orders, Equipment, Parts, Team, and Settings opened cleanly.
+  - Utility/service scripts and `app.js?v=lfes-phase-2f-company-1` returned HTTP 200.
+  - The local `localhost` origin initially had Auburn saved from prior QA state; after selecting Salem, OR and reloading, Salem remained selected.
+  - No missing-script or visible app error was observed. Direct dev-console logs were not available through the current tool bridge.
+- Phase 2G or packaging/upload should wait for explicit user approval.
+
+## Prior Recent Change
+
+Ran the short LFES post-fix checkpoint after the deployed Salem hard-save fix:
+
+- Scope:
+  - verification checkpoint only.
+  - no code changes.
+  - no Phase 2F.
+  - no additional service extraction.
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all current service files.
+- Live GitHub Pages script verification passed against:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=location-hard-save-post-fix-checkpoint-20260518`
+- Confirmed live `index.html` still serves:
+  - `src/services/workOrdersService.js?v=lfes-phase-2e-work-orders-1`
+  - `app.js?v=location-hard-save-1`
+- Confirmed all utility/service scripts and `app.js?v=location-hard-save-1` returned HTTP 200.
+- Signed-in live app visual verification:
+  - Taylor Metal Products loaded,
+  - location selector showed `Salem, OR`,
+  - Work Orders loaded and showed Salem in the Work Orders header,
+  - Equipment, Parts, Team, and Settings loaded,
+  - the app did not visually revert to Auburn.
+- No missing-script failure was found.
+- No obvious app error screen appeared. Direct browser dev-console logs were not available through the current tool bridge.
+- Phase 2F can proceed only after explicit approval.
+
+## Prior Recent Change
+
+Packaged and deployed the location hard-save precedence fix to GitHub Pages:
+
+- Scope:
+  - package/upload the current local build containing the Salem location hard-save precedence fix.
+  - no Phase 2F service extraction.
+  - no unrelated `app.js` refactor.
+  - no Supabase policy/SQL/auth/workflow/rendering/business-logic changes.
+- Package created:
+  - folder: `MaintainOps-github-clean-20260518-094217`
+  - zip: `MaintainOps-github-clean-20260518-094217.zip`
+- GitHub Pages commit pushed:
+  - `70d01e5c0051cc1ed40352c18c75f0553b170657`
+- Package contains exactly the expected upload set:
+  - `assets`
+  - `src`
+  - `app.js`
+  - `index.html`
+  - `README.md`
+  - `styles.css`
+  - `supabase-config.js`
+- Confirmed package includes all extracted utilities/services through `workOrdersService`.
+- Confirmed packaged and live `index.html` references:
+  - `src/services/workOrdersService.js?v=lfes-phase-2e-work-orders-1`
+  - `app.js?v=location-hard-save-1`
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all service files.
+- Live GitHub Pages resource verification passed:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=location-hard-save-live-20260518-0943`
+  - all utility/service scripts and `app.js?v=location-hard-save-1` returned HTTP 200.
+- Signed-in live browser verification was completed visually after the user confirmed the in-app browser was signed in:
+  - Taylor Metal Products loaded,
+  - location selector showed `Salem, OR`,
+  - Work Orders loaded and continued to show Salem in the Work Orders header,
+  - Equipment, Parts, Team, and Settings loaded,
+  - the app did not visually switch back to Auburn,
+  - no obvious error screen or missing-script failure was visible.
+- Phase 2F remains blocked pending explicit approval.
+
+## Prior Recent Change
+
+Fixed active location hard-save precedence so Salem stays selected after reopen:
+
+- Root cause:
+  - `storedLocationForLoadedCompany()` checked invite/member default location before the old legacy saved location key.
+  - If the scoped per-user/company location key did not exist yet, a saved Salem location under the old key could lose to the member default before migration.
+- Fix:
+  - Location selection now resolves in this order:
+    1. scoped per-user/company saved location,
+    2. legacy saved location,
+    3. current in-memory location,
+    4. invite/member default location,
+    5. first available location fallback.
+- Updated `index.html` app cache tag:
+  - `app.js?v=location-hard-save-1`
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all service files.
+- Focused browser verification passed at:
+  - `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=location-hard-save-1779127000000`
+- Verification:
+  - legacy saved location seeded as Salem, OR,
+  - scoped location key removed before load,
+  - app opened with Salem, OR selected,
+  - Salem migrated into the scoped per-user/company key,
+  - legacy global location key cleared,
+  - no console errors.
+- Important note:
+  - Prior LFES automated checks forced Auburn in temporary browser profiles to make verification repeatable. Auburn should not be treated as the app default.
+
+## Prior Recent Change
+
+Completed LFES Phase 2E work order read/count/search service extraction:
+
+- Scope: `workOrdersService` read/count/search helpers only.
+- Created `src/services/workOrdersService.js`.
+- `workOrdersService` contains only:
+  - `selectWorkOrders(supabaseClient, selectClause, options)`,
+  - `countWorkOrdersQuery(supabaseClient)`,
+  - `fetchWorkOrderById(supabaseClient, companyId, workOrderId, selectClause)`,
+  - `fetchWorkOrdersByIds(supabaseClient, params)`,
+  - `scopedWorkOrderSearchQuery(supabaseClient, params)`,
+  - `fetchPagedSearchRows(buildQuery, onRows, maxRows, pageSizeLimit)`.
+- Moved raw work-order read/count/search query portions out of `app.js` while leaving app state and filters in place.
+- Updated `index.html` to load:
+  - `src/services/workOrdersService.js?v=lfes-phase-2e-work-orders-1`,
+  - `app.js?v=lfes-phase-2e-work-orders-1`.
+- Intentionally not moved:
+  - work order creation,
+  - Quick Fix,
+  - request conversion,
+  - status changes,
+  - assignment guardrails,
+  - delete workflows,
+  - comments/photos/parts/steps relationship loading or mutations,
+  - work-order filter, queue, sort, dashboard state logic,
+  - rendering,
+  - event binding,
+  - auth/session startup,
+  - Supabase policies/RLS/SQL.
+- Company isolation/RLS was preserved:
+  - work-order read helpers still require explicit `companyId` where they scope rows,
+  - app-side filters still apply `.eq("company_id", activeCompanyId)` through service query builders,
+  - no Supabase SQL or policy files were touched.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`,
+  - `node --check src/services/partsService.js`,
+  - `node --check src/services/assetsService.js`,
+  - `node --check src/services/workOrdersService.js`.
+- Local signed-in browser/debug passed at:
+  - `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=lfes-phase-2e-work-orders-1779126200000`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Work Orders, Equipment, Parts, Settings, and Team opened,
+  - `workOrdersService` and updated `app.js` scripts loaded,
+  - no missing script errors,
+  - no console errors.
+- Work Order Detail verification:
+  - Auburn had zero visible work orders in current filters,
+  - created temporary QA Quick Fix `QA LFES phase2E detail 1779122164459`,
+  - verified Work Order Detail opened,
+  - deleted the temporary QA work order through the app.
+- Behavior changed: no behavior change observed.
+- Next phase remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Packaged, uploaded, and live verified the stable LFES Phase 2D build on GitHub Pages:
+
+- Scope: package, deploy, and live verification only.
+- Package created:
+  - folder: `MaintainOps-github-clean-20260518-092721`
+  - zip: `MaintainOps-github-clean-20260518-092721.zip`
+- GitHub Pages commit pushed to `main`: `692d50c98d4fe27519a9390868b8bbf077131f06`.
+- No app behavior changed.
+- No `app.js` refactor was performed.
+- No Phase 2E work was started.
+- No Supabase policies, SQL, auth, workflow, rendering, or business logic changed.
+- Package folder and zip include:
+  - `src/utils/constants.js`
+  - `src/utils/dom.js`
+  - `src/utils/formatting.js`
+  - `src/services/locationsService.js`
+  - `src/services/profilesService.js`
+  - `src/services/partsService.js`
+  - `src/services/assetsService.js`
+- Confirmed live GitHub Pages loads:
+  - `src/utils/constants.js?v=lfes-utils-1`
+  - `src/utils/dom.js?v=lfes-utils-1`
+  - `src/utils/formatting.js?v=lfes-utils-1`
+  - `src/services/locationsService.js?v=lfes-phase-2a-locations-1`
+  - `src/services/profilesService.js?v=lfes-phase-2b-profiles-1`
+  - `src/services/partsService.js?v=lfes-phase-2c-parts-1`
+  - `src/services/assetsService.js?v=lfes-phase-2d-assets-1`
+  - `app.js?v=lfes-phase-2d-assets-1`
+- Static checks passed for `app.js`, `supabase-config.js`, all utils, and all current service files.
+- Live signed-in verification passed at:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2d-live-verify-20260518-0929`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Equipment, Work Orders, Parts, Settings, and Team opened,
+  - `assetsService` and updated `app.js` scripts loaded,
+  - no missing script errors,
+  - no failing live script/resource URLs after focused resource check,
+  - no actionable MaintainOps console error.
+- Behavior changed: no behavior change observed.
+- Phase 2E remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2D assets read service extraction:
+
+- Scope: `assetsService` reads only.
+- Created `src/services/assetsService.js`.
+- `assetsService` contains only:
+  - `listAssets(supabaseClient, companyId)`.
+- Moved the company-scoped equipment/assets list query out of `loadCompanyData()`:
+  - from `supabaseClient.from("assets").select("*").eq("company_id", activeCompanyId).order("name")`,
+  - to `listAssets(supabaseClient, activeCompanyId)`.
+- Updated `index.html` to load:
+  - `src/services/assetsService.js?v=lfes-phase-2d-assets-1`,
+  - `app.js?v=lfes-phase-2d-assets-1`.
+- Intentionally not moved:
+  - asset mutations,
+  - add/edit/delete equipment workflows,
+  - equipment delete guards,
+  - equipment-driven routing logic,
+  - location persistence logic,
+  - work order creation or assignment logic,
+  - asset search/filter/hierarchy UI helpers,
+  - rendering,
+  - event binding,
+  - auth/session startup,
+  - Supabase policies/RLS/SQL.
+- Company isolation/RLS was preserved:
+  - `listAssets()` requires explicit `companyId`,
+  - the query remains scoped by `.eq("company_id", companyId)`,
+  - no Supabase SQL or policy files were touched.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`,
+  - `node --check src/services/partsService.js`,
+  - `node --check src/services/assetsService.js`.
+- Local signed-in browser/debug passed at:
+  - `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=lfes-phase-2d-assets-1779125600000`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Equipment, Work Orders, Parts, Settings, and Team opened,
+  - `assetsService` and updated `app.js` scripts loaded,
+  - no missing script errors,
+  - no console errors.
+- Behavior changed: no behavior change observed.
+- Phase 2E remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Ran LFES checkpoint after Phase 2C parts read extraction:
+
+- Scope: verification checkpoint only.
+- No code changed during the checkpoint.
+- No `assetsService` was created.
+- No `app.js` refactor was performed.
+- No Supabase policies, SQL, auth, workflow, rendering, or business logic changed.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`,
+  - `node --check src/services/partsService.js`.
+- Confirmed `index.html` still loads:
+  - `src/services/partsService.js?v=lfes-phase-2c-parts-1`,
+  - `app.js?v=lfes-phase-2c-parts-1`.
+- Local signed-in browser/debug passed at:
+  - `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=lfes-phase-2c-checkpoint-1779125200000`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Parts, Work Orders, Equipment, Settings, and Team opened,
+  - `partsService` and updated `app.js` scripts loaded,
+  - no missing script errors,
+  - no console errors.
+- Behavior changed: no behavior change observed.
+- Phase 2D `assetsService` reads-only remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2C parts read service extraction:
+
+- Scope: `partsService` reads only.
+- Created `src/services/partsService.js`.
+- `partsService` contains only:
+  - `listParts(supabaseClient, companyId)`.
+- Moved the company-scoped parts list query out of `loadCompanyData()`:
+  - from `supabaseClient.from("parts").select("*").eq("company_id", activeCompanyId).order("name")`,
+  - to `listParts(supabaseClient, activeCompanyId)`.
+- Updated `index.html` to load:
+  - `src/services/partsService.js?v=lfes-phase-2c-parts-1`,
+  - `app.js?v=lfes-phase-2c-parts-1`.
+- Intentionally not moved:
+  - parts mutations,
+  - add/edit/delete part workflows,
+  - part source rename workflow,
+  - part stock/inventory business rules,
+  - `work_order_parts` logic,
+  - `part_documents` storage/metadata logic,
+  - rendering,
+  - event binding,
+  - auth/session startup,
+  - Supabase policies/RLS/SQL.
+- Company isolation/RLS was preserved:
+  - `listParts()` requires explicit `companyId`,
+  - the query remains scoped by `.eq("company_id", companyId)`,
+  - no Supabase SQL or policy files were touched.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`,
+  - `node --check src/services/partsService.js`.
+- Local signed-in browser/debug passed at:
+  - `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=lfes-phase-2c-parts-1779124800000`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Parts, Work Orders, Equipment, Settings, and Team opened,
+  - `partsService` and updated `app.js` scripts loaded,
+  - no missing script errors,
+  - no console errors.
+- Behavior changed: no behavior change observed.
+- Phase 2D remains blocked pending explicit user approval.
+
+## Prior Recent Change
+
+Uploaded and verified the current stable LFES Phase 2A/2B build on GitHub Pages:
+
+- Scope: deploy and live verification only.
+- Package deployed: `MaintainOps-github-clean-20260518-090136`.
+- GitHub Pages commit pushed to `main`: `2310126d934e836a0fea2b08fc95374e934aea4b`.
+- No app behavior changed.
+- No `app.js` refactor was performed.
+- No `partsService` was created.
+- No Supabase policies, SQL, auth, workflow, rendering, or business logic changed.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2ab-upload-live-20260518-0915`
+  - Quick Fix retry: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-2ab-qf-retry-20260518-0918`
+- Confirmed live GitHub Pages loads:
+  - `src/utils/constants.js`
+  - `src/utils/dom.js`
+  - `src/utils/formatting.js`
+  - `src/services/locationsService.js`
+  - `src/services/profilesService.js`
+  - `app.js?v=lfes-phase-2b-profiles-1`
+- Signed-in live verification passed:
+  - Taylor Metal Products loaded,
+  - Auburn active location loaded,
+  - Work Orders, Equipment, Parts, Settings, and Team opened cleanly,
+  - service globals were present,
+  - no missing utility/service script errors were found.
+- Safe workflow smoke passed:
+  - created a QA Quick Fix work order,
+  - opened the created work order detail,
+  - deleted the created QA work order through the app.
+- Follow-up resource check found no failing live script/resource URLs.
+- No actionable MaintainOps console error was found.
+- Result: hosted LFES Phase 2A/2B build is verified.
+- Phase 2C `partsService` remains blocked until the user explicitly approves continuing.
+
+## Prior Recent Change
+
+Packaged the current stable LFES Phase 2A/2B build for GitHub Pages upload:
+
+- Scope: packaging verification only.
+- No app behavior changed.
+- No `app.js` refactor was performed.
+- No `partsService` was created.
+- No Supabase policies, SQL, auth, workflow, rendering, or business logic changed.
+- Ran `tools/create-github-upload.ps1`.
+- Created clean package:
+  - folder: `MaintainOps-github-clean-20260518-090136`
+  - zip: `MaintainOps-github-clean-20260518-090136.zip`
+- Result: package was ready for GitHub Pages upload and was later deployed in commit `2310126d934e836a0fea2b08fc95374e934aea4b`.
+
+## Prior Recent Change
+
+Ran the full LFES Debug Protocol checkpoint after Phase 2A/2B service-wrapper extractions:
+
+- No code changed during the checkpoint.
+- No `partsService` was created.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`.
+- Confirmed required files exist:
+  - all three `src/utils` files,
+  - `src/services/locationsService.js`,
+  - `src/services/profilesService.js`.
+- Confirmed `index.html` loads:
+  - utility scripts,
+  - `locationsService`,
+  - `profilesService`,
+  - `app.js?v=lfes-phase-2b-profiles-1`.
+- Reviewer tags remain sparse:
+  - 7 total LFES reviewer tags across `app.js` and `supabase/schema.sql`.
+- Company isolation/RLS was not touched:
+  - no Supabase SQL/policy edits,
+  - `private.is_company_member(company_id)` unchanged,
+  - service wrappers keep explicit `companyId`.
+- Local signed-in browser/debug passed at:
+  - `http://127.0.0.1:4187/index.html?qa_bust=lfes-phase-2ab-full-debug-1779119916417`
+- Browser/debug verified:
+  - session restored,
+  - Taylor Metal Products loaded,
+  - active location Auburn, WA loaded,
+  - Quick Fix visible,
+  - all utility and service globals loaded,
+  - Work Orders opened,
+  - Equipment opened,
+  - Parts opened,
+  - Settings / Company Settings opened,
+  - Team opened,
+  - Mobile tech visible,
+  - Technician, Manager, and Admin role labels visible,
+  - Invite area rendered,
+  - no setup/load errors,
+  - no console errors.
+- Safe test work order smoke passed:
+  - created Quick Fix `QA LFES phase2AB checkpoint 1779119916417`,
+  - verified Work Order Detail opened,
+  - deleted it through `Delete Work Order` -> `Permanently Delete`,
+  - verified the title disappeared after delete.
+- Behavior changed: no behavior change observed.
+- Phase 2C remains blocked pending user approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 2B profile/member read service extraction:
+
+- Created `src/services/profilesService.js`.
+- `profilesService` contains only read wrappers:
+  - `listProfiles(supabaseClient, companyId)`,
+  - `listCompanyMembers(supabaseClient, companyId)`,
+  - `listTeamInvites(supabaseClient, companyId)`,
+  - `listTeamInvitesLegacy(supabaseClient, companyId)`.
+- Updated `index.html` to load `src/services/profilesService.js?v=lfes-phase-2b-profiles-1` before `app.js?v=lfes-phase-2b-profiles-1`.
+- Updated `app.js` to call the new service wrapper for:
+  - profile reads in `loadProfiles()`,
+  - company member reads in `loadMembers()`,
+  - team invite reads and legacy fallback reads in `loadTeamInvites()`.
+- Intentionally not moved:
+  - auth/session startup,
+  - invite acceptance,
+  - invite creation/cancel mutations,
+  - role update mutations,
+  - default location onboarding logic,
+  - company switching,
+  - active location persistence,
+  - rendering,
+  - event binding,
+  - workflow/business logic,
+  - Team readiness/fallback decisions,
+  - Supabase policies/RLS/SQL.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`,
+  - `node --check src/services/profilesService.js`.
+- Local signed-in browser/debug passed at:
+  - `http://127.0.0.1:4186/index.html?qa_bust=lfes-phase-2b-local-rerun-1779119712218`
+- Browser/debug verified:
+  - signed-in session restored,
+  - Taylor Metal Products loaded,
+  - active location Auburn, WA loaded,
+  - Work Orders, Equipment, Parts, Settings, and Team opened,
+  - Mobile tech visible,
+  - Technician, Manager, and Admin role labels visible,
+  - Pending Invite / Invite Teammate area rendered,
+  - no setup/load errors,
+  - no MaintainOps console errors.
+- Behavior changed: no intended behavior change. This was a read-only service-wrapper extraction.
+- Phase 2C is blocked pending user approval. Recommended next target is parts read/simple scoped mutations, or pause for a full Debug Protocol first.
+
+## Prior Recent Change
+
+Completed LFES Phase 2A `locationsService` extraction:
+
+- Created `src/services/locationsService.js`.
+- `locationsService` contains only:
+  - `listLocations(supabaseClient, companyId)`,
+  - `createLocation(supabaseClient, companyId, name)`.
+- Updated `index.html` to load `src/services/locationsService.js?v=lfes-phase-2a-locations-1` before `app.js?v=lfes-phase-2a-locations-1`.
+- Updated `app.js` to call the new service wrapper for:
+  - location list load in `loadCompanyData()`,
+  - location insert in `createLocation()`.
+- Intentionally not moved:
+  - active location persistence,
+  - auth/session startup,
+  - rendering,
+  - event binding,
+  - workflow/business logic,
+  - location readiness/error handling,
+  - Supabase policies/RLS/SQL.
+- Static checks passed:
+  - `node --check app.js`,
+  - `node --check supabase-config.js`,
+  - `node --check src/utils/constants.js`,
+  - `node --check src/utils/dom.js`,
+  - `node --check src/utils/formatting.js`,
+  - `node --check src/services/locationsService.js`.
+- Local signed-in browser/debug passed at:
+  - `http://127.0.0.1:4184/index.html?qa_bust=lfes-phase-2a-local-1779119154006`
+- Browser/debug verified:
+  - signed-in session restored,
+  - Taylor Metal Products loaded,
+  - Quick Fix visible,
+  - active location Auburn, WA loaded,
+  - all five locations visible,
+  - Work Orders, Equipment, Parts, and Settings opened,
+  - no setup/load errors,
+  - no MaintainOps console errors.
+- Behavior changed: no intended behavior change. This was a service-wrapper extraction only.
+- Phase 2B is blocked pending user approval. Recommended next target is profile/member/team read wrappers only.
+
+## Prior Recent Change
+
+Created the LFES Phase 2 service-wrapper extraction plan only:
+
+- Added `docs/LFES/audits/LFES_PHASE_2_SERVICE_WRAPPER_PLAN.md`.
+- No app behavior changed.
+- No `app.js` refactor was performed.
+- No service wrappers were created yet.
+- No Supabase policies, SQL, RLS, auth, UI, or workflow logic changed.
+- The plan identifies safe future service targets:
+  - `locationsService`,
+  - `profilesService`,
+  - `companyService`,
+  - `partsService`,
+  - `assetsService`,
+  - `workOrdersService`,
+  - `publicRequestsService` only after more caution.
+- Recommended order:
+  1. location read/create wrappers,
+  2. profile/member/invite read wrappers,
+  3. parts reads/simple mutations,
+  4. assets reads/simple mutations,
+  5. work-order read/count/search wrappers,
+  6. company RPC wrappers,
+  7. public request wrappers later,
+  8. storage wrappers last.
+- The plan explicitly says not to move auth/session startup, active company/location persistence, `bindWorkspaceEvents()`, render functions, Quick Fix, request conversion, work-order creation, PM generation, safety checks, assignment guardrails, delete workflows, photo/storage flows, or optional schema fallback logic in the first Phase 2 extraction.
+- Company isolation guidance: service wrappers must receive `companyId` explicitly, keep location scope explicit, preserve RLS, and never weaken `private.is_company_member(company_id)`.
+- Recommended next implementation, only after approval: Phase 2A `locationsService` extraction.
+
+## Prior Recent Change
+
+Completed the signed-in GitHub Pages verification after LFES Phase 1 utilities:
+
+- Verified live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-live-signedin-ui-clean-20260518`
+- Verified hosted signed-in session for `louie.fisher@taylormetal.com`.
+- Supabase/RLS-backed checks passed with HTTP 200:
+  - auth user lookup,
+  - `get_my_companies`,
+  - current company `Taylor Metal Products`,
+  - five company locations,
+  - stored active location `Auburn, WA`,
+  - location-scoped work orders,
+  - location-scoped equipment/assets,
+  - parts,
+  - active requests.
+- Live browser UI checks passed:
+  - signed-in app restored,
+  - dashboard/company loaded,
+  - Work Orders opened,
+  - Equipment opened,
+  - Parts opened,
+  - Settings / Company Settings opened,
+  - no setup/load errors appeared in those views.
+- Hosted script checks passed:
+  - `src/utils/constants.js?v=lfes-utils-1`,
+  - `src/utils/dom.js?v=lfes-utils-1`,
+  - `src/utils/formatting.js?v=lfes-utils-1`,
+  - `app.js?v=lfes-utils-1`.
+- Console checks:
+  - no missing `src/utils` script errors,
+  - no MaintainOps console errors during signed-in UI or workflow smoke,
+  - one `favicon.ico` 404 was observed and treated as harmless GitHub Pages/static-site noise.
+- Basic live workflow smoke passed:
+  - created Quick Fix `QA LFES live workflow 1779118764973`,
+  - verified Work Order Detail opened,
+  - deleted the QA order through the app delete path,
+  - verified the QA title was gone afterward.
+- App behavior was not changed during this verification.
+- Phase 2 service-wrapper planning is no longer blocked by the deployment/signed-in verification checkpoint, but should still be run only as a separate approved phase with Debug Protocol checkpoints.
+
+## Prior Recent Change
+
+Deployed the LFES Phase 1 utility package to GitHub Pages:
+
+- Pushed commit `aafc208` to `loufish727/MaintainOps` `main` with message `Deploy LFES utility package`.
+- GitHub repo `main` now has:
+  - updated `index.html` loading `src/utils/constants.js`, `src/utils/dom.js`, `src/utils/formatting.js`, and `app.js?v=lfes-utils-1`,
+  - `src/utils/constants.js`,
+  - `src/utils/dom.js`,
+  - `src/utils/formatting.js`.
+- GitHub Pages initially served the old HTML, then updated during polling at approximately 08:29 Pacific.
+- Hosted smoke URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-live-smoke-20260518-0830`
+- Hosted asset checks passed:
+  - all three `src/utils` scripts returned HTTP 200,
+  - `app.js?v=lfes-utils-1` returned HTTP 200.
+- Hosted unauthenticated startup passed: the live app rendered the normal `Welcome Back` login form through the new utility-script deployment.
+- Console/resource check found no missing `src/utils` errors. A `favicon.ico` 404 appeared and was treated as non-app noise.
+- Static checks passed before deploy:
+  - `node --check app.js`
+  - `node --check supabase-config.js`
+  - `node --check src/utils/constants.js`
+  - `node --check src/utils/dom.js`
+  - `node --check src/utils/formatting.js`
+- Signed-in live browser verification is complete; see the most recent change above.
+- Phase 2 service-wrapper planning is no longer blocked by deployment verification, but remains a separate approved phase.
+
+## Prior Recent Change
+
+Fixed GitHub upload packaging for LFES Phase 1 utilities:
+
+- Updated `tools/create-github-upload.ps1` so the clean GitHub Pages package copies both `assets/` and the full `src/` directory.
+- Updated `docs/GITHUB_PAGES_PROCESS.md` so upload instructions include `src/`.
+- Recreated a clean package:
+  - `MaintainOps-github-clean-20260518-082455`
+  - `MaintainOps-github-clean-20260518-082455.zip`
+- Verified the package folder includes `src/utils/constants.js`, `src/utils/dom.js`, and `src/utils/formatting.js`.
+- Verified the zip includes `src\utils\constants.js`, `src\utils\dom.js`, and `src\utils\formatting.js`.
+- Static checks passed:
+  - `node --check app.js`
+  - `node --check supabase-config.js`
+  - `node --check src/utils/constants.js`
+  - `node --check src/utils/dom.js`
+  - `node --check src/utils/formatting.js`
+- App behavior was not changed; no `app.js`, Supabase policy, SQL, auth, workflow, rendering, or service-wrapper code was modified.
+- Phase 2 service-wrapper planning remains blocked until a true signed-in browser pass is completed.
+
+## Prior Recent Change
+
+Ran the LFES signed-in Debug Protocol checkpoint after Phase 1 utilities as far as this session allowed:
+
+- Static checks passed again:
+  - `node --check app.js`
+  - `node --check supabase-config.js`
+  - `node --check src/utils/constants.js`
+  - `node --check src/utils/dom.js`
+  - `node --check src/utils/formatting.js`
+- Confirmed `index.html` still loads `src/utils/constants.js`, `src/utils/dom.js`, and `src/utils/formatting.js` before `app.js?v=lfes-utils-1`.
+- Headless Chrome local file load rendered the normal `Welcome Back` login screen through the utility scripts.
+- Existing LFES reviewer tags remain sparse: 7 total across `app.js` and `supabase/schema.sql`.
+- Company isolation/RLS was not touched; no Supabase policies, SQL, auth logic, workflow logic, or rendering logic were changed.
+- Signed-in browser verification is still blocked/pending because this session did not expose a controllable signed-in MaintainOps browser session or app credentials. Edge/Chrome storage inspection found hosted app state, but no reusable MaintainOps Supabase app auth token for the local/hosted app origin.
+- Not yet verified after Phase 1 utilities: authenticated session restore, company load, Work Orders, Equipment, Parts, location persistence, authenticated request visibility, and basic work order create/edit.
+- Public QR route was attempted with the known Salem token, but headless Chrome stayed at `Loading request form...`; do not count public QR as verified in this checkpoint.
+- Deployment risk discovered: `tools/create-github-upload.ps1` does not currently include `src/`, so it must be updated before the next GitHub upload package or GitHub Pages will miss the new utility scripts.
+- Phase 2 service-wrapper planning is not approved until a true signed-in browser pass is completed.
+
+## Prior Recent Change
+
+Completed LFES-approved `app.js` modularization Phase 1:
+
+- Extracted only pure constants and utility helpers from `app.js`.
+- Added `src/utils/constants.js`, `src/utils/dom.js`, and `src/utils/formatting.js`.
+- Updated `index.html` to load those scripts before `app.js`.
+- Bumped `index.html` to `app.js?v=lfes-utils-1`.
+- Left auth, Supabase calls, workflow/business logic, rendering logic, RLS/policies, and company isolation untouched.
+- Extracted constants: status/type/equipment role/list paging/search constants, outside-vendor constants, company roles, active-location storage key.
+- Extracted pure helpers: search/date/chunk helpers, safe filename helpers, status/role label helpers, photo/file-size/money/due-state/CSV helpers, and HTML escaping.
+- Static checks passed: `node --check app.js`, `node --check supabase-config.js`, and `node --check` for all three utility scripts.
+- Headless Chrome smoke passed: local file URL loaded through the new utility scripts and rendered the normal Welcome Back login form.
+- Verification boundary: authenticated Debug Protocol items such as session persistence and Work Orders loading were not completed in this sandbox because no authenticated browser session/credentials were available through the active tools.
+
+## Prior Recent Change
+
+Created LF Engineering Standard v1 documentation and audit pass:
+
+- Added `docs/LFES` as MaintainOps' internal engineering continuity and review framework.
+- LFES preserves engineering understanding, traceability, assumption visibility, operational observability, and controlled evolution.
+- LFES does not replace `docs/DEBUG_PROCESS.md`; Debug Protocol remains the functional verification process.
+- Added LFES Core and Gold standards, category standards, audit process, traceability matrix, templates, context docs, real-world failure pattern mapping, app.js modularization plan, and Gold audit report.
+- Added 7 sparse reviewer tags only at high-risk boundaries: location persistence, public QR intake, equipment-driven location routing, delete traceability guard, invite/default-location onboarding, request conversion, and `private.is_company_member(company_id)`.
+- Lightly updated `README.md` with LFES reviewer entry points.
+- Bumped `index.html` to `app.js?v=lfes-v1-1`.
+- App functionality was not intentionally changed.
+- Initial LFES Gold score: 78/100, Acceptable.
+- Key strengths confirmed: RLS/company isolation direction, `private.is_company_member(company_id)`, public QR scoped RPC direction, detailed Debug Protocol/QA logs, server-paged work/request direction, delete traceability guards.
+- Key risks recorded: true technician-session QA remains incomplete, real second-user invite acceptance remains unverified, `app.js` responsibility concentration, optional schema fallbacks can hide missing migrations, mobile file-picker/photo QA still needs real device verification.
+- Recommended next implementation after approval: utilities-only extraction from `app.js`, followed by Debug Protocol.
+
+## Prior Recent Change
+
+Added pending invite cancellation:
+
+- Team Pending Invites now show a Cancel Invite action for managers/admins.
+- Cancel is intentional: first click asks for confirmation with Keep / Cancel Invite, second click calls Supabase.
+- Added `supabase/step-next-cancel-team-invites.sql`.
+- The SQL creates `cancel_company_invite(company_id, invite_id)`, limited to admin/manager members of the company and only pending invites.
+- Bumped `index.html` to `app.js?v=cancel-team-invite-2`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Local browser UI smoke passed: Team loads, pending QA invite appears, Cancel Invite buttons render, and no console errors were captured.
+- Supabase SQL was applied.
+- Canceled pending QA invite `qa.invite.default.location@maintainops.test` through the app; Pending Invites reloaded cleanly and only the existing Jeffrey invite remained.
+- Still needs: live invite acceptance QA with a real second user to prove the accepted member starts in the invite default location.
+
+## Prior Recent Change
+
+Completed manager-side invite/default location build and smoke:
+
+- Team invite form now includes a Default location selector.
+- Pending invites show the selected default location when the new schema is available.
+- Added `supabase/step-next-invite-default-location.sql`.
+- The SQL adds `default_location_id` to `company_members` and `company_invites`, updates `create_company_invite(...)`, updates `accept_company_invites()`, and updates `get_my_companies()` to return member default location.
+- Startup now prefers the member default location when there is no saved scoped active location for the signed-in user/company.
+- Invite email input now keeps email keyboard/autocomplete/pattern validation while using a text input so browser QA automation can exercise the form reliably.
+- Bumped `index.html` to `app.js?v=invite-default-location-2`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Supabase SQL was applied, then local browser smoke passed with no console errors.
+- Created pending invite `qa.invite.default.location@maintainops.test` as Technician with Default location `Salem, OR`; Team displayed `Default location: Salem, OR`.
+- Still needs: live invite acceptance QA with a real second user to prove the accepted member starts in the invite default location.
+
+## Prior Recent Change
+
+Continued Mobile tech location lock QA:
+
+- Manager/admin side passed in signed-in local QA.
+- Visible location selector was enabled and switched Salem, OR and Spokane, WA with no console errors.
+- Team My Profile showed the Mobile tech checkbox and it was enabled for editing.
+- Quick Fix created while Spokane, WA was selected opened Work Order Detail and stayed in Spokane.
+- QA Quick Fix `QA mobile tech manager 1778885988402 quick fix` was deleted through the app.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Remaining unproven item: true technician-session QA for Mobile tech off/on/off lock behavior.
+
+## Prior Recent Change
+
+Continued senior-code-review corrections:
+
+- Procedure delete is now guarded by live Supabase link counts for work orders and PM schedules before showing/confirming delete.
+- Procedure cards still show quick loaded counts, but the actual delete path verifies against Supabase so server-paged work orders cannot hide linked history.
+- Bumped `index.html` to `app.js?v=procedure-delete-guard-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+
+Prior senior-code-review corrections:
+
+- Equipment delete is now guarded by live Supabase link counts before showing/confirming delete.
+- This prevents a server-paged Work Orders or Requests list from hiding linked records that should keep equipment for traceability.
+- Bumped `index.html` to `app.js?v=equipment-delete-guard-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+
+Earlier senior-code-review corrections:
+
+- Request lists now use server-paged loading at 12 per page, matching the large-list rule for live testing.
+- Request Active / Converted / All counts now come from count queries instead of loading every request into the browser.
+- Location changes, request filters, request pagination, and global search now reload the request queue from Supabase.
+- Request search still covers request text/contact fields and linked equipment matches.
+- Bumped `index.html` to `app.js?v=request-server-paging-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+
+Earlier senior-code-review corrections:
+
+- Archived 50 old GitHub/export package folders and zips under `_archive/github-packages`.
+- Left only the current clean GitHub package at the root during the pass.
+- Added read-only Supabase audit SQL: `supabase/step-next-location-integrity-audit.sql`.
+- The audit SQL checks bad company/location links, work/request/PM records whose location differs from linked equipment, and location constraint validation status.
+- Static checks still pass: `node --check app.js` and `node --check supabase-config.js`.
+
+## Prior Recent Change
+
+Renamed the local project folder:
+
+- Old folder: `C:\Users\louie\Documents\Codex\2026-04-28\theres-an-ap-called-maintenance-x`
+- New folder: `C:\Users\louie\Documents\Codex\2026-04-28\MaintainOps`
+- Updated live docs that referenced the old local file URL.
+- Updated automation `maintainops-daily-full-debug` so its workspace path is now `C:\Users\louie\Documents\Codex\2026-04-28\MaintainOps`.
+- Static checks still pass after the rename: `node --check app.js` and `node --check supabase-config.js`.
+- New local refresh link format: `file:///C:/Users/louie/Documents/Codex/2026-04-28/MaintainOps/index.html?qa_bust=...`
+
+## Prior Recent Change
+
+Started the senior-code-review correction pass:
+
+- Added cross-location equipment routing warnings before saving Quick Fix, full Work Order, Quick Update, internal Request, and PM schedule forms.
+- Existing behavior is preserved: if selected equipment belongs to another location, the record still routes to that equipment's location, but the user must intentionally continue.
+- Tightened active-location persistence so the scoped `maintainops.activeLocationId:<user_id>:<company_id>` key becomes the real storage path and the old global `maintainops.activeLocationId` key is removed after migration.
+- Added `docs/GITHUB_PAGES_PROCESS.md`.
+- Added `tools/create-github-upload.ps1`, which creates a clean GitHub Pages folder and zip containing only `index.html`, `app.js`, `styles.css`, `supabase-config.js`, `README.md`, and `assets/`.
+- Bumped `index.html` to `app.js?v=location-guardrails-1`.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Package script smoke passed and created `MaintainOps-github-clean-20260515-141819` plus matching zip.
+- Signed-in browser QA is still needed because the in-app browser blocked the local `127.0.0.1` test URL before the app loaded.
+
+## Prior Recent Change
+
+The daily debug process was combined into the full live debug protocol, then the full hosted protocol was run on GitHub Pages:
+
+- Created active automation `MaintainOps Daily Full Debug` (`maintainops-daily-full-debug`) to run the full protocol daily at 7:00 AM.
+- Static checks passed: `node --check app.js` and `node --check supabase-config.js`.
+- Hosted startup, main navigation, and location persistence passed.
+- Requests baseline was clean across Auburn, Riverside, Sacramento, Salem, and Spokane.
+- Live `Hydralic Leak` remained visible only in Salem.
+- Quick Fix create/update/delete passed.
+- Internal request submit/convert/delete passed.
+- Equipment, Procedure, PM schedule, generated PM work order, and related delete paths passed.
+- Public Salem QR request submit/manager visibility/delete passed.
+- Final sweep left no today QA work, requests, PM schedules, equipment, procedures, or parts visible.
+- Final console check found no MaintainOps errors.
+- Parts create was not counted in this run because browser automation still cannot reliably type into number inputs; no bad part was saved.
+
+## Prior Recent Change
+
 QA data cleanup process was formalized, the first app-delete cleanup pass was run, and the missing cleanup paths were added:
 
 - Added `docs/QA_DATA_PROCESS.md` with required QA naming, cleanup, and post-delete debug rules.
