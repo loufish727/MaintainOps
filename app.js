@@ -69,6 +69,11 @@ const {
   createAppIssueReportRecord,
   updateAppIssueReportStatusRecord,
 } = window.MaintainOpsAppIssueReportsService;
+const {
+  renderMetric,
+  renderInsight,
+  renderRoleGuide,
+} = window.MaintainOpsRenderDisplayHelpers;
 let supabaseClient;
 let session;
 let companies = [];
@@ -252,7 +257,12 @@ async function init() {
   }
 
   try {
+    const recoveryParams = passwordRecoveryParamsFromHref(window.location.href);
     supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    if (isPasswordRecoveryParams(recoveryParams)) {
+      await startPasswordRecovery(recoveryParams);
+      return;
+    }
     const qrToken = publicRequestQrTokenFromUrl();
     if (qrToken) {
       await renderPublicRequestQrPage(qrToken);
@@ -409,12 +419,14 @@ function renderAuth(mode, initialError = "") {
         <p class="muted auth-status" id="auth-status"></p>
         <button class="primary-button" type="submit">${isSignup ? "Sign Up" : "Log In"}</button>
         <button class="text-button" id="auth-mode" type="button">${isSignup ? "I already have an account" : "Create an account"}</button>
+        ${isSignup ? "" : `<button class="text-button" id="auth-forgot-password" type="button">Forgot password?</button>`}
         <button class="text-button" id="auth-reset" type="button">Reset login on this browser</button>
       </form>
     </section>
   `;
 
   document.querySelector("#auth-mode").addEventListener("click", () => renderAuth(isSignup ? "login" : "signup"));
+  document.querySelector("#auth-forgot-password")?.addEventListener("click", () => renderPasswordResetRequest());
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
   document.querySelector("#auth-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -471,6 +483,231 @@ function renderAuth(mode, initialError = "") {
       if (submitButton && document.body.contains(submitButton)) {
         submitButton.disabled = false;
         submitButton.textContent = originalButtonText;
+      }
+    }
+  });
+}
+
+function passwordRecoveryParamsFromUrl() {
+  return passwordRecoveryParamsFromHref(window.location.href);
+}
+
+function passwordRecoveryParamsFromHref(href) {
+  const url = new URL(href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const queryParams = url.searchParams;
+  return {
+    type: hashParams.get("type") || queryParams.get("type") || "",
+    accessToken: hashParams.get("access_token") || queryParams.get("access_token") || "",
+    refreshToken: hashParams.get("refresh_token") || queryParams.get("refresh_token") || "",
+  };
+}
+
+function isPasswordRecoveryUrl() {
+  return isPasswordRecoveryParams(passwordRecoveryParamsFromUrl());
+}
+
+function isPasswordRecoveryParams(params) {
+  return params.type === "recovery" || Boolean(params.accessToken && params.refreshToken);
+}
+
+function passwordResetRedirectUrl() {
+  const url = new URL(window.location.href);
+  [
+    "access_token",
+    "expires_at",
+    "expires_in",
+    "refresh_token",
+    "token_type",
+    "type",
+    "sb",
+  ].forEach((key) => url.searchParams.delete(key));
+  url.hash = "";
+  return url.href;
+}
+
+function clearPasswordRecoveryUrl() {
+  const url = new URL(window.location.href);
+  [
+    "access_token",
+    "expires_at",
+    "expires_in",
+    "refresh_token",
+    "token_type",
+    "type",
+    "sb",
+  ].forEach((key) => url.searchParams.delete(key));
+  url.hash = "";
+  window.history.replaceState({}, document.title, url.href);
+}
+
+async function startPasswordRecovery(params = passwordRecoveryParamsFromUrl()) {
+  let ready = false;
+  let initialError = "";
+
+  if (params.accessToken && params.refreshToken) {
+    const { data, error } = await supabaseClient.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+    ready = Boolean(data?.session && !error);
+    if (error) {
+      initialError = "This reset link is expired or invalid. Send a new password reset email and use the newest link.";
+    }
+  } else {
+    initialError = "This reset link is missing the secure session. Send a new password reset email and use the newest link.";
+  }
+
+  renderPasswordRecovery({ ready, initialError });
+}
+
+function renderPasswordResetRequest(initialError = "", initialStatus = "") {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <form class="auth-card" id="password-reset-request-form">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Reset Password</h1>
+            <p>Send a secure reset link to your email.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label>Email<input name="email" type="email" required autocomplete="email"></label>
+        </div>
+        <p class="error-text" id="auth-error">${escapeHtml(initialError)}</p>
+        <p class="muted auth-status" id="auth-status">${escapeHtml(initialStatus)}</p>
+        <button class="primary-button" type="submit">Send Reset Link</button>
+        <button class="text-button" id="auth-back-to-login" type="button">Back to sign in</button>
+        <button class="text-button" id="auth-reset" type="button">Reset login on this browser</button>
+      </form>
+    </section>
+  `;
+
+  document.querySelector("#auth-back-to-login").addEventListener("click", () => renderAuth("login"));
+  document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
+  document.querySelector("#password-reset-request-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formElement = event.target;
+    const submitButton = formElement.querySelector("button[type='submit']");
+    const errorTarget = document.querySelector("#auth-error");
+    const statusTarget = document.querySelector("#auth-status");
+    const email = String(new FormData(formElement).get("email") || "").trim();
+    errorTarget.textContent = "";
+    statusTarget.textContent = "Sending reset link...";
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending...";
+
+    try {
+      const { error } = await withOperationTimeout(
+        supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: passwordResetRedirectUrl() }),
+        "Password reset email timed out. Check your connection and try again.",
+        20000
+      );
+      if (error) {
+        statusTarget.textContent = "";
+        errorTarget.textContent = error.message;
+        return;
+      }
+      statusTarget.textContent = "If that email exists in Supabase, a reset link has been sent.";
+    } catch (error) {
+      statusTarget.textContent = "";
+      errorTarget.textContent = error.message || "Could not send reset link.";
+    } finally {
+      if (document.body.contains(submitButton)) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Send Reset Link";
+      }
+    }
+  });
+}
+
+function renderPasswordRecovery({ ready = false, initialError = "" } = {}) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <form class="auth-card" id="password-recovery-form">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Set New Password</h1>
+            <p>Enter a new password for this MaintainOps login.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label>New password<input name="password" type="password" minlength="6" required autocomplete="new-password" ${ready ? "" : "disabled"}></label>
+          <label>Confirm password<input name="confirmPassword" type="password" minlength="6" required autocomplete="new-password" ${ready ? "" : "disabled"}></label>
+        </div>
+        <p class="error-text" id="auth-error">${escapeHtml(initialError)}</p>
+        <p class="muted auth-status" id="auth-status">${ready ? "Reset link accepted. Choose your new password." : ""}</p>
+        <button class="primary-button" type="submit" ${ready ? "" : "disabled"}>Update Password</button>
+        <button class="text-button" id="auth-back-to-login" type="button">Back to sign in</button>
+        <button class="text-button" id="auth-send-new-reset" type="button">Send a new reset link</button>
+      </form>
+    </section>
+  `;
+
+  document.querySelector("#auth-back-to-login").addEventListener("click", () => {
+    clearPasswordRecoveryUrl();
+    renderAuth("login");
+  });
+  document.querySelector("#auth-send-new-reset").addEventListener("click", () => {
+    clearPasswordRecoveryUrl();
+    renderPasswordResetRequest();
+  });
+  document.querySelector("#password-recovery-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!ready) return;
+    const formElement = event.target;
+    const submitButton = formElement.querySelector("button[type='submit']");
+    const form = new FormData(formElement);
+    const password = String(form.get("password") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
+    const errorTarget = document.querySelector("#auth-error");
+    const statusTarget = document.querySelector("#auth-status");
+    errorTarget.textContent = "";
+
+    if (password.length < 6) {
+      errorTarget.textContent = "Password must be at least 6 characters.";
+      return;
+    }
+    if (password !== confirmPassword) {
+      errorTarget.textContent = "Passwords do not match.";
+      return;
+    }
+
+    statusTarget.textContent = "Updating password...";
+    submitButton.disabled = true;
+    submitButton.textContent = "Updating...";
+
+    try {
+      const { error } = await withOperationTimeout(
+        supabaseClient.auth.updateUser({ password }),
+        "Password update timed out. Try the newest reset link again.",
+        20000
+      );
+      if (error) {
+        statusTarget.textContent = "";
+        errorTarget.textContent = error.message;
+        return;
+      }
+      clearPasswordRecoveryUrl();
+      const { data } = await supabaseClient.auth.getSession();
+      session = data.session;
+      statusTarget.textContent = session ? "Password updated. Loading workspace..." : "Password updated. Sign in with your new password.";
+      if (session) {
+        await render();
+        return;
+      }
+      renderAuth("login", "Password updated. Sign in with your new password.");
+    } catch (error) {
+      statusTarget.textContent = "";
+      errorTarget.textContent = error.message || "Could not update password.";
+    } finally {
+      if (document.body.contains(submitButton)) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Update Password";
       }
     }
   });
@@ -3050,10 +3287,6 @@ function globalResultCount(results) {
   return Object.values(results).reduce((sum, list) => sum + list.length, 0);
 }
 
-function renderMetric(label, value, tone = "neutral") {
-  return `<article class="metric dashboard-card tone-${tone}"><span>${label}</span><strong>${value}</strong></article>`;
-}
-
 function renderGaugeReadout(label, value, tone = "active", options = {}) {
   const isAction = options.filter || options.section;
   const tag = isAction ? "button" : "article";
@@ -3168,16 +3401,6 @@ function navIcon(type) {
     settings: `<path d="M4 7h16"></path><path d="M4 17h16"></path><path d="M8 7v10"></path><path d="M16 7v10"></path>`,
   };
   return `<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[type] || icons.work}</svg>`;
-}
-
-function renderInsight(label, value, description, tone = "neutral") {
-  return `
-    <article class="insight dashboard-card tone-${tone}">
-      <span>${label}</span>
-      <strong>${value}</strong>
-      <p>${description}</p>
-    </article>
-  `;
 }
 
 function workOrdersPanelTitle() {
@@ -3825,19 +4048,6 @@ function renderMyProfileForm() {
       <p class="error-text" id="profile-error"></p>
       <button class="secondary-button" type="submit">Save My Settings</button>
     </form>
-  `;
-}
-
-function renderRoleGuide() {
-  return `
-    <section class="team-role-guide">
-      ${COMPANY_ROLES.map((role) => `
-        <article>
-          <strong>${roleLabel(role)}</strong>
-          <span>${escapeHtml(roleDescription(role))}</span>
-        </article>
-      `).join("")}
-    </section>
   `;
 }
 
