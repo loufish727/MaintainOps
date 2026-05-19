@@ -8748,36 +8748,16 @@ async function recordPartUsed(event) {
 async function addPartUsageToWorkOrder(workOrderId, part, quantity) {
   if (!part) return new Error("Choose a part first.");
 
-  const usagePayload = {
-    company_id: activeCompanyId,
-    work_order_id: workOrderId,
-    part_id: part.id,
-    quantity_used: quantity,
-    unit_cost_at_use: Number(part.unit_cost) || 0,
-  };
-  let { error: usageError } = await withOperationTimeout(
-    supabaseClient.from("work_order_parts").insert(usagePayload),
+  const { error } = await withOperationTimeout(
+    supabaseClient.rpc("record_work_order_part_usage", {
+      p_company_id: activeCompanyId,
+      p_work_order_id: workOrderId,
+      p_part_id: part.id,
+      p_quantity: quantity,
+    }),
     "Part usage save timed out."
   );
-  if (usageError && isMissingColumnError(usageError, "unit_cost_at_use")) {
-    delete usagePayload.unit_cost_at_use;
-    const retry = await withOperationTimeout(
-      supabaseClient.from("work_order_parts").insert(usagePayload),
-      "Part usage save timed out."
-    );
-    usageError = retry.error;
-  }
-  if (usageError) return usageError;
-
-  const { error: stockError } = await withOperationTimeout(
-    supabaseClient
-      .from("parts")
-      .update({ quantity_on_hand: Math.max(0, Number(part.quantity_on_hand) - quantity) })
-      .eq("id", part.id)
-      .eq("company_id", activeCompanyId),
-    "Part stock update timed out."
-  );
-  if (stockError) return new Error(`Part was recorded, but stock did not update: ${stockError.message}`);
+  if (error) return error;
   return null;
 }
 
