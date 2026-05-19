@@ -4,7 +4,7 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
-LFES Phase 6D is fully closed. The next step should be chosen deliberately rather than starting another extraction automatically.
+Begin LFES smoke-test formalization/planning before more code movement.
 
 Current status:
 
@@ -24,38 +24,66 @@ Current status:
 - static checks passed.
 - live smoke passed for Work Order Detail part usage and stock decrement through the RPC.
 - Phase 6D QA work order and QA part were cleaned up through the live admin UI.
+- post-Phase-6D live sanity checkpoint passed:
+  - session restore,
+  - Taylor Metal Products,
+  - Salem, OR active,
+  - Work Orders,
+  - Equipment,
+  - Parts,
+  - Team,
+  - Settings,
+  - no visible `QA Phase6D RPC` records,
+  - no missing-script or visible app errors.
 
-Recommended next controlled options:
+Recommended next controlled phase:
 
-1. Run a short post-deploy sanity checkpoint tomorrow:
-   - session restore,
-   - Salem active location,
-   - Work Orders/Parts/Equipment/Team/Settings,
-   - quick visual check that no QA Phase6D records remain.
-2. Plan the next inventory integrity step only if needed:
-   - Restock and inventory-only Use still use client-side updates.
-   - Do not change them unless live operations need transaction guarantees there too.
-3. Resume LFES architecture work only after the operational smoke path remains stable:
-   - next extraction should be tiny, separately approved, and followed by the same smoke discipline.
+**LFES smoke-test formalization/planning only.**
+
+Why this is the safest/highest-value next move:
+
+- Phase 6D is stable and closed.
+- The next risk is not one specific line of code; it is the amount of manual verification needed after every controlled change.
+- Formalizing repeatable smoke tests improves future confidence before more architecture extraction or inventory RPC work.
+- It preserves the live app while strengthening the process around it.
+
+Keep blocked for now:
+
+- more `app.js` extraction.
+- work-order workflow handler movement.
+- rendering/event-binding movement.
+- new Supabase SQL/RLS.
+- restock/inventory-only Use transaction changes unless specifically approved.
 
 Suggested next prompt:
 
 ```text
-Run a short LFES post-Phase-6D live sanity checkpoint.
+Begin LFES smoke-test formalization planning only.
 
 Do not change code.
 Do not change Supabase SQL/RLS.
-Do not start another phase.
+Do not refactor app.js.
+Do not extract helpers/services.
+Do not change workflows/business logic.
 
-Verify:
-- live signed-in session restore,
-- Taylor Metal Products loads,
-- Salem, OR remains active,
-- Work Orders, Equipment, Parts, Team, Settings load,
-- no QA Phase6D RPC records remain,
-- no visible app errors or missing scripts.
+Goal:
+Turn the repeated live/manual smoke checks into a clear reusable smoke-test checklist and decide which items could later be automated.
+
+Include:
+- session restore/location persistence,
+- Work Orders,
+- Quick Fix,
+- Work Order Detail part usage RPC,
+- Parts create/use/restock/delete,
+- Equipment,
+- Requests/public QR,
+- Team/role guardrails,
+- Settings,
+- cleanup rules,
+- required evidence format.
+
 Update QA_LOG.md, CURRENT_HANDOFF.md, and NEXT_STEPS.md.
-Stop after verification.
+Stop after planning/docs only.
 ```
 
 ## Prior Immediate Step

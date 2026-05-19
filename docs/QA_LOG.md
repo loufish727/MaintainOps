@@ -4337,3 +4337,118 @@ Conclusion:
 - Work Order Detail part usage passed on live GitHub Pages.
 - Phase 6D QA records were cleaned up through the live admin UI.
 - Restock and inventory-only Use remain unchanged and still use client-side updates.
+
+## LFES Post-Phase-6D Live Sanity Checkpoint - 2026-05-19
+
+Scope:
+
+- Verification and next-direction decision only.
+- No code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No workflow/business logic changed.
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=post-phase-6d-sanity-20260519`
+
+TEST:
+Live app/session/location sanity
+
+STEPS:
+- Open live GitHub Pages app with fresh cache bust.
+- Confirm signed-in session restores.
+- Confirm Taylor Metal Products loads.
+- Confirm Salem, OR remains active.
+
+EXPECTED:
+Live app loads signed in, company context is Taylor Metal Products, and active location remains Salem, OR.
+
+RESULT:
+PASS
+
+NOTES:
+The session restored into the authenticated app. Taylor Metal Products was visible. Salem, OR was selected as the active location.
+
+TEST:
+Core section navigation sanity
+
+STEPS:
+Open Work Orders, Equipment, Parts, Team, and Settings.
+
+EXPECTED:
+Each section loads without visible app errors, with Taylor Metal Products and Salem, OR still visible.
+
+RESULT:
+PASS
+
+NOTES:
+All five sections loaded. No visible `Could not`, missing script, failed load, or app error text was observed.
+
+TEST:
+Phase 6D QA cleanup persistence
+
+STEPS:
+Check the same core sections for visible `QA Phase6D RPC` records after the prior live cleanup.
+
+EXPECTED:
+No Phase 6D QA work order or QA part remains visible.
+
+RESULT:
+PASS
+
+NOTES:
+No visible `QA Phase6D RPC` records appeared in Work Orders, Equipment, Parts, Team, or Settings checks. Parts remained clean after prior cleanup.
+
+TEST:
+Hosted file/resource sanity
+
+STEPS:
+Request the live hosted `index.html`, app script, stylesheet, config, utility scripts, service scripts, and render helper script.
+
+EXPECTED:
+Each required hosted file returns HTTP 200 and the app script uses the Phase 6D cache tag.
+
+RESULT:
+PASS
+
+NOTES:
+`index.html`, `app.js?v=lfes-phase-6d-parts-rpc-1`, `styles.css`, `supabase-config.js`, all `src/utils`, all `src/services`, and `src/render/displayHelpers.js` returned `200`.
+
+TEST:
+Parts usage RPC path
+
+STEPS:
+Not re-mutated in this checkpoint.
+
+EXPECTED:
+No new QA data is created unless there is a reason to suspect the deployed RPC path regressed.
+
+RESULT:
+NOT RE-RUN
+
+NOTES:
+Phase 6D live verification already proved the deployed Work Order Detail RPC path and cleaned up the QA records. This sanity checkpoint found no visible regression, so no new part/work-order mutation was needed.
+
+TEST:
+Console/error visibility
+
+STEPS:
+Check visible app behavior and hosted resource status. Attempt to identify whether the browser automation surface exposes reliable post-load console collection.
+
+EXPECTED:
+No missing-script errors, visible app errors, or actionable console errors.
+
+RESULT:
+PASS WITH LIMITATION
+
+NOTES:
+No missing-script errors or visible app errors were observed, and required hosted files returned `200`. The current browser automation surface did not expose reliable post-load console log collection for this checkpoint, so console status is based on visible behavior and resource loading rather than a captured DevTools console transcript.
+
+Next-direction decision:
+
+- Recommended next phase: LFES smoke-test formalization/planning only.
+- Rationale: Phase 6D is stable and closed. The highest current value is making repeated smoke tests more reproducible before more code movement or new inventory transaction work.
+- Restock and inventory-only Use remain known future transaction-safety candidates, but should wait unless live operations require stronger guarantees there.
+- Additional app architecture extraction remains blocked until the smoke process is easier to repeat and compare.

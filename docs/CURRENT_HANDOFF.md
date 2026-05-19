@@ -30,6 +30,42 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES post-Phase-6D live sanity checkpoint and next-direction decision:
+
+- Scope:
+  - verification and planning only.
+  - no code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no workflow/business logic changes.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=post-phase-6d-sanity-20260519`.
+- Sanity results:
+  - live app loaded.
+  - signed-in manager/admin-capable session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - required hosted files returned `200`, including `app.js?v=lfes-phase-6d-parts-rpc-1`, all `src/utils`, all `src/services`, and `src/render/displayHelpers.js`.
+  - no missing-script or visible app errors observed.
+  - no `QA Phase6D RPC` records were visible in Work Orders, Equipment, Parts, Team, or Settings checks.
+- Parts RPC path:
+  - not re-mutated in this checkpoint because Phase 6D live smoke already verified the RPC and cleanup, and this checkpoint found no suspicious regression requiring new QA data.
+- Console note:
+  - no actionable console errors were observed through visible app behavior/resource loading.
+  - the current browser automation surface did not expose a reliable post-load console log collection for this checkpoint.
+- Decision:
+  - recommended next phase is LFES smoke-test formalization/planning, not more extraction by default.
+  - reason: repeated manual smoke has become the bottleneck and risk reducer; formalizing the smoke matrix will make future tiny refactors and inventory changes safer.
+  - restock/inventory-only Use transaction safety remains a known future option, but should wait unless live operations need it.
+
+## Prior Recent Change
+
 Packaged, uploaded, and live verified LFES Phase 6D parts RPC integration:
 
 - Scope:
