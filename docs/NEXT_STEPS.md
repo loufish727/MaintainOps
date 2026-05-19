@@ -4,7 +4,7 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
-LFES Phase 7A smoke-test formalization is complete. Use `docs/SMOKE_TESTS.md` as the manual smoke-test playbook before future controlled changes.
+LFES Phase 7F GitHub Actions resource-load smoke implementation is complete. The workflow is ready to push/upload.
 
 Current status:
 
@@ -46,17 +46,87 @@ Current status:
   - Team/invite/role visibility,
   - password recovery,
   - required script/resource load checks.
+- Phase 7B live smoke run passed for:
+  - live signed-in session restore,
+  - Salem, OR active location persistence,
+  - manager/admin Quick Fix work order create/open/delete,
+  - public QR request submit and manager visibility,
+  - parts restock/use/work-order part usage through the RPC-backed path,
+  - issue report submit and status update,
+  - Team/role/invite visibility in manager/admin session,
+  - required hosted script/resource loading.
+- Phase 7B cleanup completed for:
+  - QA work orders,
+  - QA part,
+  - QA public request.
+- Phase 7B left one resolved historical QA app issue report:
+  - `QA Phase7B Issue Report 20260519-7B-1779225564137`
+- Phase 7B NOT VERIFIED items:
+  - technician assignment guardrail in this specific run, because no isolated technician-role session was used and the result was not faked with admin credentials.
+  - password reset email/recovery-link round trip, because earlier Supabase email rate limits made it unsafe to trigger more email during the run.
+- Phase 7C automation planning created:
+  - `docs/LFES/audits/LFES_PHASE_7C_PLAYWRIGHT_AUTOMATION_PLAN.md`
+- Phase 7C decision:
+  - Playwright implementation is still blocked until explicitly approved.
+  - First safe automation target is the required hosted resource-load smoke check.
+  - The first automated test should require no login, no live data mutation, and no cleanup.
+- Phase 7D implemented:
+  - `.gitignore` now ignores `node_modules/`.
+  - `package.json`
+  - `package-lock.json`
+  - `playwright.config.js`
+  - `tests/smoke/resource-load.spec.js`
+- Phase 7D command:
+  - `npm run test:smoke:resources`
+- Phase 7D test result:
+  - PASS, `1 passed`.
+- Phase 7D test scope:
+  - fetch live GitHub Pages `index.html`.
+  - assert current required script references are present.
+  - assert HTTP 200 for `app.js`, `styles.css`, `supabase-config.js`, all `src/utils`, all `src/services`, and `src/render/displayHelpers.js`.
+- Phase 7D static checks passed for:
+  - `app.js`
+  - `supabase-config.js`
+  - all `src/utils`
+  - all `src/services`
+  - `src/render/displayHelpers.js`
+  - `playwright.config.js`
+  - `tests/smoke/resource-load.spec.js`
+- Phase 7E decision:
+  - GitHub Actions resource-load smoke is the recommended next phase.
+  - It is safe because it needs no secrets, no login, no live data mutation, and no cleanup.
+  - It should run the existing `npm run test:smoke:resources` command.
+  - credentialed and mutating automation remain blocked.
+- Phase 7F implemented:
+  - `.github/workflows/resource-load-smoke.yml`
+- Phase 7F workflow:
+  - triggers on `push`, `pull_request`, and `workflow_dispatch`.
+  - checks out the repo.
+  - sets up Node `20`.
+  - runs `npm ci`.
+  - runs `npm run test:smoke:resources`.
+  - requires no GitHub secrets.
+  - does not log in.
+  - does not mutate Supabase.
+  - does not create, edit, or delete app records.
+- Phase 7F verification:
+  - workflow sanity check passed.
+  - `npm ci` passed.
+  - `npm run test:smoke:resources` passed with `1 passed`.
 
 Recommended next controlled phase:
 
-**Choose one operationally useful next step.**
+**Push/upload the Phase 7F workflow and verify GitHub Actions result.**
 
-Best options:
+Recommended focus:
 
-1. Run the new `docs/SMOKE_TESTS.md` manual smoke suite once end to end and log results.
-2. Plan automation only, using `docs/SMOKE_TESTS.md` as the source of truth; do not add Playwright yet unless approved.
-3. Plan restock/inventory-only Use transaction safety if live inventory accuracy becomes the highest priority.
-4. Resume tiny LFES architecture work only after selecting the exact helper/service boundary and matching smoke subset.
+1. Upload/push `.github/workflows/resource-load-smoke.yml`, `package.json`, `package-lock.json`, Playwright config/test files, `.gitignore`, and updated docs.
+2. Confirm GitHub Actions runs.
+3. Confirm `Resource Load Smoke` passes.
+4. Do not add secrets.
+5. Do not automate login.
+6. Do not mutate app data.
+7. Update docs with the GitHub Actions run result.
 
 Keep blocked for now:
 
@@ -65,34 +135,74 @@ Keep blocked for now:
 - rendering/event-binding movement.
 - new Supabase SQL/RLS.
 - restock/inventory-only Use transaction changes unless specifically approved.
-- Playwright automation until test credentials, cleanup rules, and expected records are stable.
+- credentialed Playwright tests until test credentials, cleanup rules, and expected records are stable.
+- technician automation.
+- password reset automation.
+- public QR automation.
+- mutating work-order/parts automation.
 
 Suggested next prompt:
 
 ```text
-Run the manual smoke suite from docs/SMOKE_TESTS.md and log the results.
+Upload/push LFES Phase 7F GitHub Actions resource-load smoke and verify the GitHub Actions result.
 
-Do not change code.
+Do not change app code.
 Do not change Supabase SQL/RLS.
 Do not refactor app.js.
 Do not extract helpers/services.
 Do not change workflows/business logic.
+Do not add secrets.
+Do not add credentialed tests.
+Do not add mutating tests.
+Do not automate login.
+Do not mutate app data.
 
 Goal:
-Use docs/SMOKE_TESTS.md as the source of truth and run the highest-priority manual smoke tests against the live app.
-
-Prioritize:
-- session restore,
-- active location persistence,
-- Work Orders,
-- Parts work-order usage RPC,
-- public QR request,
-- technician guardrail if the QA technician session is available,
-- required script/resource load check.
+Get the Phase 7F workflow into GitHub and confirm the Resource Load Smoke action passes.
 
 Update QA_LOG.md, CURRENT_HANDOFF.md, and NEXT_STEPS.md.
-Stop after smoke verification and reporting.
+Stop after GitHub Actions verification only.
 ```
+
+## Prior Immediate Step
+
+LFES Phase 7E automation readiness decision checkpoint is complete. The next recommended controlled phase is adding the existing resource-load smoke to GitHub Actions.
+
+Recommended next controlled phase:
+
+LFES Phase 7F GitHub Actions resource-load smoke implementation only.
+
+## Prior Immediate Step
+
+LFES Phase 7D Playwright resource-load smoke implementation is complete. The first automated smoke test now verifies hosted resource loading only.
+
+Recommended next controlled phase:
+
+LFES Phase 7E automation readiness decision checkpoint.
+
+## Prior Immediate Step
+
+LFES Phase 7C Playwright automation planning is complete. Use `docs/LFES/audits/LFES_PHASE_7C_PLAYWRIGHT_AUTOMATION_PLAN.md` as the source of truth before adding any automated tests.
+
+Recommended next controlled phase:
+
+LFES Phase 7D Playwright resource-load smoke implementation only.
+
+## Prior Immediate Step
+
+LFES Phase 7B live manual smoke-suite run is complete. Use `docs/SMOKE_TESTS.md` plus the Phase 7B results in `docs/QA_LOG.md` as the current smoke-test baseline before future controlled changes.
+
+Recommended next controlled phase:
+
+LFES Phase 7C Playwright/manual automation planning only.
+
+## Prior Immediate Step
+
+LFES Phase 7A smoke-test formalization is complete. Use `docs/SMOKE_TESTS.md` as the manual smoke-test playbook before future controlled changes.
+
+Recommended next controlled phase:
+
+Run the manual smoke suite once end to end and log results.
 
 ## Prior Immediate Step
 

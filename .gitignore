@@ -1,0 +1,7 @@
+supabase-config.js
+verify-*.png
+node_modules/
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db

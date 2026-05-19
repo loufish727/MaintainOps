@@ -502,6 +502,80 @@ Yes. This can be automated early because it does not require data mutation.
 
 Do not add Playwright until these manual paths stay stable and the team agrees on test credentials, cleanup rules, and expected records.
 
+## Automated Resource-Load Smoke
+
+LFES Phase 7D added the first automated smoke test.
+
+This automated test is intentionally narrow:
+
+- no login,
+- no credentials,
+- no Supabase mutations,
+- no record creation,
+- no cleanup,
+- no workflow automation.
+
+Command:
+
+```powershell
+npm run test:smoke:resources
+```
+
+Test file:
+
+- `tests/smoke/resource-load.spec.js`
+
+What it verifies:
+
+- live GitHub Pages serves `index.html` with HTTP 200.
+- `index.html` references the required local app files.
+- the following hosted files return HTTP 200:
+  - `app.js`
+  - `styles.css`
+  - `supabase-config.js`
+  - `src/utils/constants.js`
+  - `src/utils/dom.js`
+  - `src/utils/formatting.js`
+  - `src/services/locationsService.js`
+  - `src/services/profilesService.js`
+  - `src/services/partsService.js`
+  - `src/services/assetsService.js`
+  - `src/services/workOrdersService.js`
+  - `src/services/companyService.js`
+  - `src/services/appIssueReportsService.js`
+  - `src/render/displayHelpers.js`
+
+Optional target override:
+
+```powershell
+$env:MAINTAINOPS_BASE_URL='https://loufish727.github.io/MaintainOps/'; npm run test:smoke:resources
+```
+
+Use this after:
+
+- GitHub Pages uploads,
+- clean package script changes,
+- `index.html` script changes,
+- `src` file moves/additions,
+- cache-tag changes.
+
+GitHub Actions:
+
+- LFES Phase 7F added `.github/workflows/resource-load-smoke.yml`.
+- It runs on:
+  - `push`
+  - `pull_request`
+  - `workflow_dispatch`
+- It runs:
+  - `npm ci`
+  - `npm run test:smoke:resources`
+- It does not require GitHub secrets.
+- It does not log in.
+- It does not create, edit, or delete app records.
+- It does not mutate Supabase.
+
+This does not replace manual smoke testing. It only catches missing/stale hosted files before deeper workflow checks.
+
 Recommended automation order:
 
 1. Required script/resource load check

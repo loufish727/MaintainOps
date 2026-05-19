@@ -30,6 +30,187 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 7F GitHub Actions resource-load smoke implementation:
+
+- Scope:
+  - GitHub Actions workflow for existing resource-load smoke only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no credentialed tests added.
+  - no mutating tests added.
+  - no secrets added.
+  - no login automation added.
+  - no app records created, edited, or deleted.
+- Created:
+  - `.github/workflows/resource-load-smoke.yml`
+- Modified:
+  - `docs/SMOKE_TESTS.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Workflow:
+  - triggers on `push`, `pull_request`, and `workflow_dispatch`.
+  - uses `actions/checkout@v4`.
+  - uses `actions/setup-node@v4` with Node `20`.
+  - runs `npm ci`.
+  - runs `npm run test:smoke:resources`.
+  - requires no GitHub secrets.
+- Verification:
+  - local workflow sanity check passed.
+  - `npm ci` passed.
+  - `npm run test:smoke:resources` passed, `1 passed`.
+- Result:
+  - Phase 7F is ready to push/upload.
+  - app behavior did not change.
+  - credentialed and mutating automation remains blocked.
+- Recommended next step:
+  - push/upload the workflow and let GitHub Actions run the resource-load smoke in the repository.
+  - continue keeping login/session/mutating automation blocked until a separate strategy is approved.
+
+## Prior Recent Change
+
+Completed LFES Phase 7E automation readiness decision checkpoint:
+
+- Scope:
+  - planning/decision checkpoint only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no credentialed tests added.
+  - no mutating tests added.
+  - no GitHub Actions workflow added in this phase.
+- Decision:
+  - recommended next phase is LFES Phase 7F GitHub Actions resource-load smoke implementation only.
+  - adding the existing resource-load smoke to GitHub Actions is safe to plan because it requires no secrets, no login, no Supabase data mutation, and no cleanup.
+- Value:
+  - catches stale/missing GitHub Pages files automatically.
+  - protects against upload/package mistakes like missing `src` files.
+  - runs the first automation without touching live operational data.
+- GitHub Actions status:
+  - APPROVED TO PLAN / NEXT IMPLEMENTATION CANDIDATE.
+  - not implemented yet.
+- Remains manual:
+  - technician assignment guardrail.
+  - password reset email/recovery-link round trip.
+  - file/photo upload.
+  - invite email acceptance.
+  - mobile Safari/Add-to-Home-Screen behavior.
+  - real employee flows.
+- Remains blocked:
+  - credentialed Playwright tests.
+  - mutating Playwright tests.
+  - public QR automation.
+  - work-order/parts mutation automation.
+  - technician automation.
+  - password reset automation.
+  - more `app.js` architecture extraction until a separate controlled phase is approved.
+- Recommended next step:
+  - add a minimal GitHub Actions workflow that runs `npm ci` and `npm run test:smoke:resources`.
+  - do not add secrets, login automation, or mutating tests.
+
+## Prior Recent Change
+
+Completed LFES Phase 7D Playwright resource-load smoke implementation:
+
+- Scope:
+  - first automated smoke test only.
+  - hosted resource loading only.
+  - no login automation.
+  - no records created.
+  - no Supabase data mutated.
+  - no app behavior changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no secrets/passwords added.
+- Created:
+  - `package.json`
+  - `package-lock.json`
+  - `playwright.config.js`
+  - `tests/smoke/resource-load.spec.js`
+- Modified:
+  - `.gitignore`
+  - `docs/SMOKE_TESTS.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Command:
+  - `npm run test:smoke:resources`
+- Test result:
+  - PASS, `1 passed`.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, `playwright.config.js`, and `tests/smoke/resource-load.spec.js`.
+- Test scope:
+  - live GitHub Pages `index.html`.
+  - `app.js`.
+  - `styles.css`.
+  - `supabase-config.js`.
+  - all current `src/utils`.
+  - all current `src/services`.
+  - `src/render/displayHelpers.js`.
+- Result:
+  - first safe automation slice is in place.
+  - app behavior did not change.
+  - credentialed and mutating automation remains blocked.
+- Recommended next step:
+  - either rerun `npm run test:smoke:resources` after the next GitHub Pages upload,
+  - or plan LFES Phase 7E session/auth automation strategy only.
+  - do not automate login or live data mutation without a separate approval.
+
+## Prior Recent Change
+
+Completed LFES Phase 7C Playwright automation planning:
+
+- Scope:
+  - planning/documentation only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no workflow/business logic changes.
+  - no Playwright dependency/config/test files added.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_7C_PLAYWRIGHT_AUTOMATION_PLAN.md`
+- Decision:
+  - first safe automation target is hosted resource-load smoke.
+  - credentialed/mutating Playwright tests remain blocked.
+
+## Prior Recent Change
+
+Completed LFES Phase 7B live manual smoke-suite run:
+
+- Scope:
+  - live GitHub Pages manual smoke run.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no workflow/business logic changes.
+  - no Playwright added.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=phase-7b-smoke-20260519`
+- Passed:
+  - live signed-in session restore.
+  - active location persistence with Salem, OR.
+  - manager/admin Quick Fix work order create/open/delete.
+  - public QR request submit, Salem manager visibility, and request cleanup.
+  - parts create/restock/use/work-order part usage through the RPC-backed path.
+  - issue report submit and status update to resolved.
+  - Team/role/invite visibility in manager/admin session.
+  - required hosted script/resource checks.
+  - final console/resource visibility check.
+- Not verified:
+  - technician assignment guardrail.
+  - full password reset email/recovery-link round trip.
+- Result:
+  - no app code defect was found.
+  - code movement remains blocked until a separate implementation phase is approved.
+
+## Prior Recent Change
+
 Completed LFES Phase 7A smoke-test formalization:
 
 - Scope:
@@ -53,26 +234,6 @@ Completed LFES Phase 7A smoke-test formalization:
   8. Team/invite/role visibility
   9. Password reset/recovery flow
   10. Required script/resource load check
-- Each test includes:
-  - required role/session.
-  - setup data.
-  - exact steps.
-  - expected observable result.
-  - cleanup steps.
-  - PASS / FAIL / NOT VERIFIED definitions.
-  - whether it is a future Playwright candidate.
-- Added guidance:
-  - this is manual smoke testing, not a full automated suite.
-  - QA records should use explicit tokens.
-  - cleanup should go through normal app paths where possible.
-  - console limitations must be documented honestly.
-  - Playwright should wait until manual paths, credentials, and cleanup are stable.
-- Highest-priority future automation candidates:
-  - Quick Fix/work order lifecycle.
-  - location persistence.
-  - technician guardrail.
-  - public QR request.
-  - parts transaction/RPC usage.
 - Result:
   - smoke process is now reproducible enough to support future controlled changes.
   - code movement remains blocked until a separate implementation phase is approved.

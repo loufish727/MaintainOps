@@ -4531,3 +4531,556 @@ Conclusion:
 - Manual smoke-test expectations are now centralized in `docs/SMOKE_TESTS.md`.
 - Code movement remains blocked until a separate implementation phase is approved.
 - Recommended next step is either running the manual smoke suite once end to end, or planning automation from this document without adding Playwright yet.
+
+## LFES Phase 7B Live Manual Smoke-Suite Run - 2026-05-19
+
+Scope:
+
+- Live GitHub Pages manual smoke run using `docs/SMOKE_TESTS.md`.
+- No app code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No workflow/business logic changed.
+- No Playwright added.
+
+Live target:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=phase-7b-smoke-20260519`
+
+QA token:
+
+- `20260519-7B-1779225564137`
+
+TEST:
+Live signed-in session restore
+
+STEPS:
+Open the live GitHub Pages app with the Phase 7B cache-bust URL in an existing signed-in manager/admin-capable browser session.
+
+EXPECTED:
+The app restores the signed-in session, loads Taylor Metal Products, and shows no missing-script or visible app errors.
+
+RESULT:
+PASS
+
+NOTES:
+Taylor Metal Products loaded in the live app. No visible login/session failure appeared.
+
+TEST:
+Active location persistence
+
+STEPS:
+Load the live app and confirm the active location shown in the workspace location selector.
+
+EXPECTED:
+Salem, OR remains selected and the app does not fall back to Auburn, WA.
+
+RESULT:
+PASS
+
+NOTES:
+Salem, OR was selected on the live run and remained the active workspace during the smoke suite.
+
+TEST:
+Manager/admin work order create/open/delete
+
+STEPS:
+Create `QA Phase7B Work 20260519-7B-1779225564137` through Quick Fix, confirm Work Order Detail opens, then delete the work order through the normal delete confirmation path.
+
+EXPECTED:
+The work order appears, detail opens, deletion succeeds, and the deleted QA item disappears.
+
+RESULT:
+PASS
+
+NOTES:
+Quick Fix created the QA work order, Work Order Detail opened automatically, and the work order was deleted through `Delete Work Order` then `Permanently Delete`.
+
+TEST:
+Technician assignment guardrail
+
+STEPS:
+Attempt to run the smoke test using a real technician-role session without using manager/admin credentials.
+
+EXPECTED:
+A technician cannot assign work to another user, clear assignment, or vendor-assign where prohibited, and DB/RLS/trigger protection is proven where possible.
+
+RESULT:
+NOT VERIFIED
+
+NOTES:
+This Phase 7B run used the live manager/admin-capable session. An isolated technician session was not available without disrupting the active admin smoke run, so the technician guardrail was not faked with admin credentials. Prior dedicated technician verification remains the better evidence for this path; rerun this test separately when the QA technician session is available in an isolated browser/profile.
+
+TEST:
+Public QR request submit and manager visibility
+
+STEPS:
+Open the Salem public request link from the QR route, submit `QA Phase7B QR Request 20260519-7B-1779225564137`, return to the signed-in manager/admin Requests view, verify the request appears under Salem, then delete it through the normal request delete path.
+
+EXPECTED:
+The public request submits successfully, routes to Salem, appears in manager/admin Requests, and can be cleaned up safely.
+
+RESULT:
+PASS
+
+NOTES:
+The public intake showed Taylor Metal Products / Salem, OR, submitted successfully with `Request Sent`, appeared in the Salem Requests view as active/submitted, and was cleaned up through `Delete` then `Permanently Delete`.
+
+TEST:
+Parts restock/use/work-order part usage
+
+STEPS:
+Create `QA Phase7B Part 20260519-7B-1779225564137`, restock/use it from the Parts detail screen, create `QA Phase7B Part Work 20260519-7B-1779225564137`, record the QA part as used on Work Order Detail, verify the usage row and stock decrement, then delete the QA work order and QA part through normal app paths.
+
+EXPECTED:
+Parts load correctly, restock/use visibly changes quantity, Work Order Detail part usage succeeds through the RPC-backed path, `parts.quantity_on_hand` changes as expected, and cleanup completes.
+
+RESULT:
+PASS
+
+NOTES:
+The QA part was created and restock increased visible quantity from `100` to `101`. Inventory-only Use returned it to `100` after one retry in browser automation. Work Order Detail recorded `1 used - $30.00` and the part selector then showed `99 on hand`, proving the RPC-backed work-order usage path updated usage and stock together. The QA work order and QA part were both cleaned up through the app. Browser automation amplified typed number inputs during part creation (`10` became `100`, `2` became `20`, `3` became `30`), so numeric automation should use more controlled input handling in future automated tests.
+
+TEST:
+Issue report submit/update
+
+STEPS:
+Submit `QA Phase7B Issue Report 20260519-7B-1779225564137` through Report Issue, open Admin Setup / Reported App Issues, verify the report appears, change its status to resolved, and save.
+
+EXPECTED:
+The issue report submits, appears in the admin issue report list, and status update succeeds.
+
+RESULT:
+PASS
+
+NOTES:
+The issue report appeared in Admin Setup with status `open`, was changed to `resolved`, and saved successfully. No delete/cleanup path was used; the QA issue remains as a resolved historical app issue.
+
+TEST:
+Team/invite/role visibility
+
+STEPS:
+Open Team in the manager/admin session and verify Team settings, role guide, invite controls, pending invite area, and member role controls render.
+
+EXPECTED:
+Team and role visibility load without visible app errors. Invite acceptance is not performed unless intentionally approved.
+
+RESULT:
+PASS
+
+NOTES:
+Team loaded with Mobile tech setting, role guide, Invite Teammate form, Pending Invites, member role selectors, and Save Role controls visible. No invite email was sent and invite acceptance was not tested in this live smoke pass to avoid unnecessary live email side effects.
+
+TEST:
+Password reset/recovery flow
+
+STEPS:
+Determine whether password recovery can be safely tested in this live smoke run without retrieving an email recovery link or causing additional Supabase email rate-limit pressure.
+
+EXPECTED:
+Recovery email request and recovery-link password update can be verified only if link retrieval is available and rate limits are not a concern.
+
+RESULT:
+NOT VERIFIED
+
+NOTES:
+Not re-run in Phase 7B. Earlier testing hit Supabase email rate limits, and this run did not have a safe way to retrieve a fresh email recovery link without adding more email pressure. The in-app recovery handler exists from the prior fix, but email delivery and full recovery-link round trip should be verified separately when rate limits are clear.
+
+TEST:
+Required script/resource load check
+
+STEPS:
+Request the live hosted `index.html`, `app.js`, `styles.css`, `supabase-config.js`, all `src/utils`, all `src/services`, and `src/render/displayHelpers.js`.
+
+EXPECTED:
+Each required hosted file returns HTTP 200 and no missing-script errors appear in the app.
+
+RESULT:
+PASS
+
+NOTES:
+`index.html`, `app.js?v=lfes-phase-6d-parts-rpc-1`, `styles.css`, `supabase-config.js`, all utility scripts, all current service scripts, and `src/render/displayHelpers.js` returned `200`.
+
+TEST:
+Console/resource visibility
+
+STEPS:
+Check live browser warnings/errors after the smoke run.
+
+EXPECTED:
+No actionable MaintainOps console errors, missing-script errors, or visible app errors.
+
+RESULT:
+PASS
+
+NOTES:
+No actionable console errors were captured at the end of the run. During public request and issue report submit, transient `Statsig` rate-limit warnings appeared from the browser environment; they were not MaintainOps script errors and did not block the app workflow.
+
+Conclusion:
+
+- Phase 7B live manual smoke suite improved controlled pilot confidence for manager/admin, location persistence, public QR request intake, parts RPC usage, issue reports, Team visibility, and hosted resources.
+- No app code defect was found during this run.
+- Cleanup completed for the QA work orders, QA part, and QA public request.
+- The QA issue report remains as a resolved historical issue record.
+- Technician guardrail and password recovery email round trip remain NOT VERIFIED in this Phase 7B pass and should be tested as separate focused checks.
+- Code movement remains blocked until the owner approves the next controlled phase.
+- Recommended next phase: LFES Phase 7C Playwright/manual automation planning only, using `docs/SMOKE_TESTS.md` and this Phase 7B result as source evidence. Do not add Playwright yet unless separately approved.
+
+## LFES Phase 7C Playwright Automation Planning - 2026-05-19
+
+Scope:
+
+- Planning/documentation only.
+- No app code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No workflow/business logic changed.
+- No Playwright dependency, config, or automated test file added.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_7C_PLAYWRIGHT_AUTOMATION_PLAN.md`
+
+TEST:
+Automation candidate review
+
+STEPS:
+Review `docs/SMOKE_TESTS.md`, the latest Phase 7B results in `docs/QA_LOG.md`, `docs/CURRENT_HANDOFF.md`, and `docs/NEXT_STEPS.md`.
+
+EXPECTED:
+The plan identifies the safest first automation target, what should remain manual, required account/session strategy, cleanup requirements, and implementation blockers.
+
+RESULT:
+PASS
+
+NOTES:
+The safest first automation target is the required script/resource load check. It requires no login, no database mutation, no cleanup, and directly protects against stale or incomplete GitHub Pages uploads.
+
+TEST:
+Automation boundary decision
+
+STEPS:
+Classify smoke tests as safe first automation, safe later, manual for now, or blocked.
+
+EXPECTED:
+High-risk paths remain blocked until role/session and cleanup strategies are explicit.
+
+RESULT:
+PASS
+
+NOTES:
+Recommended order is:
+1. resource-load smoke,
+2. app shell load,
+3. signed-in session restore after safe session strategy,
+4. active location persistence after session strategy,
+5. manager/admin Quick Fix create/open/delete after cleanup rules are proven,
+6. parts RPC usage after the work-order cleanup automation is reliable.
+
+Blocked/manual for now:
+
+- technician assignment guardrail until an isolated technician session strategy exists.
+- password reset email/recovery-link flow because it depends on email delivery and recent rate limits.
+- file/photo upload.
+- invite email acceptance.
+- real employee flows.
+- broad live SQL cleanup.
+
+TEST:
+Secret/session safety review
+
+STEPS:
+Define how future automation should handle accounts, passwords, tokens, and browser sessions.
+
+EXPECTED:
+The plan avoids committed secrets and prevents admin/technician/public sessions from contaminating each other.
+
+RESULT:
+PASS
+
+NOTES:
+The plan recommends dedicated QA manager/admin and technician accounts, local environment variables or ignored local config for credentials, separate browser contexts/storage states for admin, technician, and anonymous public QR testing, and no committed passwords, tokens, recovery links, or storage-state files.
+
+Conclusion:
+
+- Phase 7C completed as planning only.
+- Playwright implementation remains blocked until explicitly approved.
+- Recommended next phase is LFES Phase 7D resource-load smoke implementation only.
+- Phase 7D should not automate login, mutate data, change app behavior, or touch Supabase SQL/RLS.
+
+## LFES Phase 7D Playwright Resource-Load Smoke Implementation - 2026-05-19
+
+Scope:
+
+- Added first automated smoke test only.
+- Hosted resource loading only.
+- No login automation.
+- No records created.
+- No Supabase data mutated.
+- No app behavior changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No secrets or passwords added.
+
+Created:
+
+- `package.json`
+- `package-lock.json`
+- `playwright.config.js`
+- `tests/smoke/resource-load.spec.js`
+
+Modified:
+
+- `.gitignore`
+- `docs/SMOKE_TESTS.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+TEST:
+Playwright hosted resource-load smoke
+
+STEPS:
+Run:
+
+```powershell
+npm run test:smoke:resources
+```
+
+EXPECTED:
+The test verifies live GitHub Pages serves `index.html` and all required local app files with HTTP 200, without login or data mutation.
+
+RESULT:
+PASS
+
+NOTES:
+The test ran `tests/smoke/resource-load.spec.js` and passed: `1 passed`. It verified `index.html`, `app.js`, `styles.css`, `supabase-config.js`, all current `src/utils`, all current `src/services`, and `src/render/displayHelpers.js`.
+
+`node_modules/` was added to `.gitignore` so the installed Playwright dependency folder is not committed or uploaded.
+
+TEST:
+Static syntax checks
+
+STEPS:
+Run `node --check` for:
+
+- `app.js`
+- `supabase-config.js`
+- `src/utils/constants.js`
+- `src/utils/dom.js`
+- `src/utils/formatting.js`
+- `src/services/locationsService.js`
+- `src/services/profilesService.js`
+- `src/services/partsService.js`
+- `src/services/assetsService.js`
+- `src/services/workOrdersService.js`
+- `src/services/companyService.js`
+- `src/services/appIssueReportsService.js`
+- `src/render/displayHelpers.js`
+- `playwright.config.js`
+- `tests/smoke/resource-load.spec.js`
+
+EXPECTED:
+All files parse successfully.
+
+RESULT:
+PASS
+
+NOTES:
+All `node --check` commands completed successfully.
+
+Conclusion:
+
+- Phase 7D completed the first safe automation slice.
+- The automated test does not authenticate, create data, mutate Supabase, or require cleanup.
+- App behavior did not change.
+- Credentialed and mutating automation remains blocked.
+- Recommended next phase is LFES Phase 7E planning only for session strategy and automation boundaries, or rerun Phase 7D after the next GitHub Pages upload.
+
+## LFES Phase 7E Automation Readiness Decision Checkpoint - 2026-05-19
+
+Scope:
+
+- Planning/decision checkpoint only.
+- No app code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No credentialed tests added.
+- No mutating tests added.
+- No GitHub Actions workflow added in this phase.
+
+Reviewed:
+
+- Phase 7D Playwright resource-load result.
+- `docs/SMOKE_TESTS.md`.
+- `docs/QA_LOG.md`.
+- `docs/CURRENT_HANDOFF.md`.
+- `docs/NEXT_STEPS.md`.
+- Remaining known blockers from Phase 7B and Phase 7C.
+
+TEST:
+Automation readiness decision
+
+STEPS:
+Evaluate whether the next best move is GitHub Actions resource smoke, session strategy planning, architecture work, restock/inventory transaction planning, or pilot-readiness pause.
+
+EXPECTED:
+The next phase should increase confidence without introducing secrets, live data mutation, role/session confusion, or new workflow risk.
+
+RESULT:
+PASS
+
+NOTES:
+Recommended next phase is adding the existing non-credentialed resource-load smoke to GitHub Actions. This is safer and higher value than credentialed login automation because it needs no secrets, creates no records, and directly catches missing/stale GitHub Pages files.
+
+Decision:
+
+- GitHub Actions for the resource-load smoke: APPROVED TO PLAN / NEXT IMPLEMENTATION CANDIDATE.
+- GitHub Actions can run `npm ci` and `npm run test:smoke:resources`.
+- No secrets are required.
+- No Supabase data is touched.
+- No browser login is required.
+- No cleanup is required.
+
+What remains manual:
+
+- technician assignment guardrail.
+- password reset email/recovery-link round trip.
+- file/photo upload.
+- invite email acceptance.
+- mobile Safari/Add-to-Home-Screen behavior.
+- real employee flows.
+
+What remains blocked:
+
+- credentialed Playwright tests.
+- mutating Playwright tests.
+- public QR automation.
+- work-order/parts mutation automation.
+- technician automation.
+- password reset automation.
+- more `app.js` architecture extraction until the next controlled phase is approved.
+- restock/inventory-only transaction changes unless live inventory accuracy becomes the highest priority.
+
+Future login automation requirements:
+
+- dedicated QA manager/admin account.
+- dedicated QA technician account.
+- secrets stored outside the repo.
+- separate browser storage states for manager/admin, technician, and anonymous contexts.
+- no committed passwords, tokens, recovery links, or storage-state files.
+- explicit cleanup and failure-reporting rules before any data-mutating test runs.
+
+Conclusion:
+
+- The resource-load smoke adds immediate deployment protection now.
+- It should move from local-only to GitHub Actions next because it is non-secret, non-mutating, and low risk.
+- More automation should wait until role/session and cleanup strategy are explicit.
+- Recommended next phase: LFES Phase 7F GitHub Actions resource-load smoke implementation only.
+
+## LFES Phase 7F GitHub Actions Resource-Load Smoke Implementation - 2026-05-19
+
+Scope:
+
+- Added GitHub Actions workflow for the existing resource-load smoke test only.
+- No app code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No credentialed tests added.
+- No mutating tests added.
+- No secrets added.
+- No login automation added.
+- No app records created, edited, or deleted.
+
+Created:
+
+- `.github/workflows/resource-load-smoke.yml`
+
+Modified:
+
+- `docs/SMOKE_TESTS.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Workflow:
+
+- Name: `Resource Load Smoke`
+- Triggers:
+  - `push`
+  - `pull_request`
+  - `workflow_dispatch`
+- Runner:
+  - `ubuntu-latest`
+- Steps:
+  - `actions/checkout@v4`
+  - `actions/setup-node@v4` with Node `20` and npm cache
+  - `npm ci`
+  - `npm run test:smoke:resources`
+
+TEST:
+GitHub Actions workflow shape
+
+STEPS:
+Create `.github/workflows/resource-load-smoke.yml` and run a lightweight workflow sanity check confirming required triggers and commands are present.
+
+EXPECTED:
+Workflow contains `push`, `pull_request`, `workflow_dispatch`, checkout, Node setup, `npm ci`, and `npm run test:smoke:resources`.
+
+RESULT:
+PASS
+
+NOTES:
+Workflow sanity check passed. The workflow requires no GitHub secrets and does not authenticate into MaintainOps.
+
+TEST:
+CI-equivalent dependency install
+
+STEPS:
+Run:
+
+```powershell
+npm ci
+```
+
+EXPECTED:
+Dependencies install cleanly from `package-lock.json`.
+
+RESULT:
+PASS
+
+NOTES:
+`npm ci` completed successfully and found 0 vulnerabilities.
+
+TEST:
+Resource-load smoke after workflow addition
+
+STEPS:
+Run:
+
+```powershell
+npm run test:smoke:resources
+```
+
+EXPECTED:
+Existing hosted resource-load smoke passes locally.
+
+RESULT:
+PASS
+
+NOTES:
+The Playwright resource smoke passed: `1 passed`.
+
+Conclusion:
+
+- Phase 7F is ready to push/upload.
+- App behavior did not change.
+- No secrets are required.
+- No Supabase data is touched.
+- Credentialed and mutating automation remains blocked.
+- Recommended next step is to push/upload the workflow and let GitHub Actions run the resource-load smoke on the repository.
