@@ -52,8 +52,8 @@ Completed LFES Phase 7F GitHub Actions resource-load smoke implementation:
   - `docs/NEXT_STEPS.md`
 - Workflow:
   - triggers on `push`, `pull_request`, and `workflow_dispatch`.
-  - uses `actions/checkout@v4`.
-  - uses `actions/setup-node@v4` with Node `20`.
+  - uses `actions/checkout@v6`.
+  - uses `actions/setup-node@v6` with Node `24`.
   - runs `npm ci`.
   - runs `npm run test:smoke:resources`.
   - requires no GitHub secrets.
@@ -61,12 +61,17 @@ Completed LFES Phase 7F GitHub Actions resource-load smoke implementation:
   - local workflow sanity check passed.
   - `npm ci` passed.
   - `npm run test:smoke:resources` passed, `1 passed`.
+- GitHub push verification:
+  - final workflow commit tested: `b84fc41`.
+  - `Resource Load Smoke #4` completed successfully.
+  - `Hosted resource-load smoke` completed successfully.
+  - no CI errors observed.
 - Result:
-  - Phase 7F is ready to push/upload.
+  - Phase 7F workflow is uploaded and verified.
   - app behavior did not change.
   - credentialed and mutating automation remains blocked.
 - Recommended next step:
-  - push/upload the workflow and let GitHub Actions run the resource-load smoke in the repository.
+  - use GitHub Actions resource-load smoke as the automatic deployment/resource check.
   - continue keeping login/session/mutating automation blocked until a separate strategy is approved.
 
 ## Prior Recent Change

@@ -102,7 +102,7 @@ Current status:
 - Phase 7F workflow:
   - triggers on `push`, `pull_request`, and `workflow_dispatch`.
   - checks out the repo.
-  - sets up Node `20`.
+  - sets up Node `24`.
   - runs `npm ci`.
   - runs `npm run test:smoke:resources`.
   - requires no GitHub secrets.
@@ -113,20 +113,24 @@ Current status:
   - workflow sanity check passed.
   - `npm ci` passed.
   - `npm run test:smoke:resources` passed with `1 passed`.
+- Phase 7F GitHub verification:
+  - final workflow commit tested: `b84fc41`.
+  - `Resource Load Smoke #4` completed successfully.
+  - `Hosted resource-load smoke` completed successfully.
+  - no CI errors observed.
+  - workflow now uses `actions/checkout@v6`, `actions/setup-node@v6`, and Node `24`.
 
 Recommended next controlled phase:
 
-**Push/upload the Phase 7F workflow and verify GitHub Actions result.**
+**Plan LFES Phase 7G session/auth automation strategy only, or pause automation and return to the next approved live-pilot priority.**
 
 Recommended focus:
 
-1. Upload/push `.github/workflows/resource-load-smoke.yml`, `package.json`, `package-lock.json`, Playwright config/test files, `.gitignore`, and updated docs.
-2. Confirm GitHub Actions runs.
-3. Confirm `Resource Load Smoke` passes.
-4. Do not add secrets.
-5. Do not automate login.
-6. Do not mutate app data.
-7. Update docs with the GitHub Actions run result.
+1. Do not add more automated tests until session strategy is planned.
+2. If continuing automation, plan QA manager/admin and QA technician session handling only.
+3. Do not add secrets.
+4. Do not automate login yet.
+5. Do not mutate app data.
 
 Keep blocked for now:
 
@@ -144,7 +148,7 @@ Keep blocked for now:
 Suggested next prompt:
 
 ```text
-Upload/push LFES Phase 7F GitHub Actions resource-load smoke and verify the GitHub Actions result.
+Begin LFES Phase 7G session/auth automation strategy planning only.
 
 Do not change app code.
 Do not change Supabase SQL/RLS.
@@ -158,10 +162,10 @@ Do not automate login.
 Do not mutate app data.
 
 Goal:
-Get the Phase 7F workflow into GitHub and confirm the Resource Load Smoke action passes.
+Plan how future credentialed automation could safely handle QA manager/admin, QA technician, and anonymous public contexts without committing secrets or touching live data unexpectedly.
 
 Update QA_LOG.md, CURRENT_HANDOFF.md, and NEXT_STEPS.md.
-Stop after GitHub Actions verification only.
+Stop after planning only.
 ```
 
 ## Prior Immediate Step

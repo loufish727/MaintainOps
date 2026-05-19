@@ -5018,8 +5018,8 @@ Workflow:
 - Runner:
   - `ubuntu-latest`
 - Steps:
-  - `actions/checkout@v4`
-  - `actions/setup-node@v4` with Node `20` and npm cache
+  - `actions/checkout@v6`
+  - `actions/setup-node@v6` with Node `24` and npm cache
   - `npm ci`
   - `npm run test:smoke:resources`
 
@@ -5084,3 +5084,22 @@ Conclusion:
 - No Supabase data is touched.
 - Credentialed and mutating automation remains blocked.
 - Recommended next step is to push/upload the workflow and let GitHub Actions run the resource-load smoke on the repository.
+
+Push/upload verification:
+
+- Commit pushed:
+  - `b84fc41`
+- Workflow run:
+  - `Resource Load Smoke #4`
+- Result:
+  - PASS / Success
+- Job:
+  - `Hosted resource-load smoke`
+- Duration:
+  - 13s
+- CI errors:
+  - none observed.
+- Notes:
+  - Initial workflow runs passed but showed a GitHub Actions Node 20 deprecation warning for `actions/checkout@v4` / `actions/setup-node@v4`.
+  - The workflow was updated to `actions/checkout@v6` and `actions/setup-node@v6` with Node `24`.
+  - The current-runtime workflow run completed successfully.

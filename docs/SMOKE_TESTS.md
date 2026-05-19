@@ -569,6 +569,10 @@ GitHub Actions:
 - It runs:
   - `npm ci`
   - `npm run test:smoke:resources`
+- Current workflow actions:
+  - `actions/checkout@v6`
+  - `actions/setup-node@v6`
+  - Node `24`
 - It does not require GitHub secrets.
 - It does not log in.
 - It does not create, edit, or delete app records.
