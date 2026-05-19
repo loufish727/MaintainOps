@@ -30,6 +30,55 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 7A smoke-test formalization:
+
+- Scope:
+  - documentation only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no helper/service extraction.
+  - no Supabase SQL/RLS changes.
+  - no workflow/business logic changes.
+  - no Playwright added.
+- Created:
+  - `docs/SMOKE_TESTS.md`
+- Documented reusable manual smoke tests for:
+  1. Live signed-in session restore
+  2. Active location persistence
+  3. Manager/admin work order create/open/delete
+  4. Technician assignment guardrail
+  5. Public QR request submit and manager visibility
+  6. Parts restock/use/work-order part usage
+  7. Issue report submit/update
+  8. Team/invite/role visibility
+  9. Password reset/recovery flow
+  10. Required script/resource load check
+- Each test includes:
+  - required role/session.
+  - setup data.
+  - exact steps.
+  - expected observable result.
+  - cleanup steps.
+  - PASS / FAIL / NOT VERIFIED definitions.
+  - whether it is a future Playwright candidate.
+- Added guidance:
+  - this is manual smoke testing, not a full automated suite.
+  - QA records should use explicit tokens.
+  - cleanup should go through normal app paths where possible.
+  - console limitations must be documented honestly.
+  - Playwright should wait until manual paths, credentials, and cleanup are stable.
+- Highest-priority future automation candidates:
+  - Quick Fix/work order lifecycle.
+  - location persistence.
+  - technician guardrail.
+  - public QR request.
+  - parts transaction/RPC usage.
+- Result:
+  - smoke process is now reproducible enough to support future controlled changes.
+  - code movement remains blocked until a separate implementation phase is approved.
+
+## Prior Recent Change
+
 Completed LFES post-Phase-6D live sanity checkpoint and next-direction decision:
 
 - Scope:

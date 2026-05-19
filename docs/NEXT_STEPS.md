@@ -4,7 +4,7 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
-Begin LFES smoke-test formalization/planning before more code movement.
+LFES Phase 7A smoke-test formalization is complete. Use `docs/SMOKE_TESTS.md` as the manual smoke-test playbook before future controlled changes.
 
 Current status:
 
@@ -35,17 +35,28 @@ Current status:
   - Settings,
   - no visible `QA Phase6D RPC` records,
   - no missing-script or visible app errors.
+- `docs/SMOKE_TESTS.md` now documents reusable manual smoke tests for:
+  - session restore,
+  - location persistence,
+  - manager/admin work order lifecycle,
+  - technician assignment guardrail,
+  - public QR request,
+  - parts restock/use/work-order part usage,
+  - issue reports,
+  - Team/invite/role visibility,
+  - password recovery,
+  - required script/resource load checks.
 
 Recommended next controlled phase:
 
-**LFES smoke-test formalization/planning only.**
+**Choose one operationally useful next step.**
 
-Why this is the safest/highest-value next move:
+Best options:
 
-- Phase 6D is stable and closed.
-- The next risk is not one specific line of code; it is the amount of manual verification needed after every controlled change.
-- Formalizing repeatable smoke tests improves future confidence before more architecture extraction or inventory RPC work.
-- It preserves the live app while strengthening the process around it.
+1. Run the new `docs/SMOKE_TESTS.md` manual smoke suite once end to end and log results.
+2. Plan automation only, using `docs/SMOKE_TESTS.md` as the source of truth; do not add Playwright yet unless approved.
+3. Plan restock/inventory-only Use transaction safety if live inventory accuracy becomes the highest priority.
+4. Resume tiny LFES architecture work only after selecting the exact helper/service boundary and matching smoke subset.
 
 Keep blocked for now:
 
@@ -54,11 +65,12 @@ Keep blocked for now:
 - rendering/event-binding movement.
 - new Supabase SQL/RLS.
 - restock/inventory-only Use transaction changes unless specifically approved.
+- Playwright automation until test credentials, cleanup rules, and expected records are stable.
 
 Suggested next prompt:
 
 ```text
-Begin LFES smoke-test formalization planning only.
+Run the manual smoke suite from docs/SMOKE_TESTS.md and log the results.
 
 Do not change code.
 Do not change Supabase SQL/RLS.
@@ -67,23 +79,19 @@ Do not extract helpers/services.
 Do not change workflows/business logic.
 
 Goal:
-Turn the repeated live/manual smoke checks into a clear reusable smoke-test checklist and decide which items could later be automated.
+Use docs/SMOKE_TESTS.md as the source of truth and run the highest-priority manual smoke tests against the live app.
 
-Include:
-- session restore/location persistence,
+Prioritize:
+- session restore,
+- active location persistence,
 - Work Orders,
-- Quick Fix,
-- Work Order Detail part usage RPC,
-- Parts create/use/restock/delete,
-- Equipment,
-- Requests/public QR,
-- Team/role guardrails,
-- Settings,
-- cleanup rules,
-- required evidence format.
+- Parts work-order usage RPC,
+- public QR request,
+- technician guardrail if the QA technician session is available,
+- required script/resource load check.
 
 Update QA_LOG.md, CURRENT_HANDOFF.md, and NEXT_STEPS.md.
-Stop after planning/docs only.
+Stop after smoke verification and reporting.
 ```
 
 ## Prior Immediate Step

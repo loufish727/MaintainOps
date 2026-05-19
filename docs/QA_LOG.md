@@ -4452,3 +4452,82 @@ Next-direction decision:
 - Rationale: Phase 6D is stable and closed. The highest current value is making repeated smoke tests more reproducible before more code movement or new inventory transaction work.
 - Restock and inventory-only Use remain known future transaction-safety candidates, but should wait unless live operations require stronger guarantees there.
 - Additional app architecture extraction remains blocked until the smoke process is easier to repeat and compare.
+
+## LFES Phase 7A Smoke-Test Formalization - 2026-05-19
+
+Scope:
+
+- Documentation only.
+- No app code changed.
+- No `app.js` refactor.
+- No helper/service extraction.
+- No Supabase SQL/RLS/policies changed.
+- No workflow/business logic changed.
+- No Playwright added.
+
+Created:
+
+- `docs/SMOKE_TESTS.md`
+
+TEST:
+Smoke-test playbook creation
+
+STEPS:
+Create a reusable manual smoke-test document using the required format:
+`TEST`, `STEPS`, `EXPECTED`, `RESULT`, `NOTES`.
+
+EXPECTED:
+The document makes repeated manual smoke checks reproducible before automation or more code movement.
+
+RESULT:
+PASS
+
+NOTES:
+`docs/SMOKE_TESTS.md` now explains that these checks are manual smoke tests, not a full automated test suite. It also defines result meanings for PASS, FAIL, and NOT VERIFIED.
+
+TEST:
+Required smoke paths documented
+
+STEPS:
+Document smoke tests for session restore, location persistence, work orders, technician guardrails, public QR, parts, issue reports, Team/invites/roles, password recovery, and hosted resource checks.
+
+EXPECTED:
+Each smoke test includes required role/session, setup data, exact steps, expected observable result, cleanup steps, PASS/FAIL/NOT VERIFIED criteria, and future Playwright candidacy.
+
+RESULT:
+PASS
+
+NOTES:
+The documented tests are:
+1. Live signed-in session restore
+2. Active location persistence
+3. Manager/admin work order create/open/delete
+4. Technician assignment guardrail
+5. Public QR request submit and manager visibility
+6. Parts restock/use/work-order part usage
+7. Issue report submit/update
+8. Team/invite/role visibility
+9. Password reset/recovery flow
+10. Required script/resource load check
+
+TEST:
+Future automation roadmap
+
+STEPS:
+Add a section identifying when Playwright should be considered and which smoke tests should be automated first.
+
+EXPECTED:
+Automation is recommended only after manual paths, credentials, expected records, and cleanup rules are stable.
+
+RESULT:
+PASS
+
+NOTES:
+Highest-priority automation candidates are Quick Fix/work order lifecycle, location persistence, technician guardrail, public QR request, and parts transaction/RPC usage. Email delivery, OS file upload paths, invite email acceptance, mobile Safari/Add-to-Home-Screen checks, real employee account flows, and unsafe cleanup paths remain manual for now.
+
+Conclusion:
+
+- Phase 7A completed as documentation only.
+- Manual smoke-test expectations are now centralized in `docs/SMOKE_TESTS.md`.
+- Code movement remains blocked until a separate implementation phase is approved.
+- Recommended next step is either running the manual smoke suite once end to end, or planning automation from this document without adding Playwright yet.
