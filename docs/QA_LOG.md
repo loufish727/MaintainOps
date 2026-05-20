@@ -7679,3 +7679,75 @@ Conclusion:
 - Phase 9N local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 9O.
+
+## LFES Phase 9O Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9N equipment label helper extraction to GitHub Pages.
+- Did not start Phase 9P.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-085806`
+- `MaintainOps-github-clean-20260520-085806.zip`
+
+GitHub deploy:
+
+- Commit: `c7a03782b2bd6e547dcf6b99261d9d3c11a8d51a`
+- Commit message: `Extract equipment label helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9n-equipment-labels-1`.
+- Live `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9n-equipment-labels-1`: HTTP 200.
+- Hosted Resource Load Smoke: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26174279121`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26174277950`
+
+TEST:
+Phase 9O signed-in live equipment label smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9o-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected in `location-select`.
+5. Verified `src/render/equipmentLabels.js` and the Phase 9N `app.js` cache tag were present.
+6. Opened Equipment.
+7. Verified equipment type/status labels rendered.
+8. Opened Work Orders.
+9. Opened My Work.
+10. Opened Parts.
+11. Opened Team.
+12. Opened Settings.
+13. Opened Messages.
+14. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new equipment label script loads, Equipment labels render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The live app loaded with `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1` and `app.js?v=lfes-phase-9n-equipment-labels-1`. Equipment rendered `Machine` and `Running` label text. Work Orders, My Work, Parts, Team, Settings, and Messages loaded with Salem, OR selected. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9O package/upload and live verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 9N/9O is fully closed.

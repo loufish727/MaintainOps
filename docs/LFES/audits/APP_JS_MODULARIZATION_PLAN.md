@@ -1930,3 +1930,73 @@ Verified:
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
 - Supabase SQL/RLS changes.
+
+## Phase 9O Package/Upload And Live Verification - 2026-05-20
+
+Phase 9O packaged and uploaded the stable Phase 9N equipment label helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-085806`
+- zip: `MaintainOps-github-clean-20260520-085806.zip`
+- commit: `c7a03782b2bd6e547dcf6b99261d9d3c11a8d51a`
+- commit message: `Extract equipment label helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+- live `index.html` references `app.js?v=lfes-phase-9n-equipment-labels-1`.
+- live `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`: HTTP 200.
+- live `app.js?v=lfes-phase-9n-equipment-labels-1`: HTTP 200.
+- hosted Resource Load Smoke: PASS.
+
+### GitHub Actions
+
+- Resource Load Smoke: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26174279121`
+- Pages build/deployment: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26174277950`
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9o-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- Equipment loaded and rendered type/status labels.
+- Work Orders, My Work, Parts, Team, Settings, and Messages loaded.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 9O Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- Phase 9N/9O is fully closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 9P planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- Phase 9P implementation without fresh approval.
+- additional display extraction.
+- equipment cards/details/forms.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
