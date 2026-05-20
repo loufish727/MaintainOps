@@ -129,6 +129,7 @@ const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay
 const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
 const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearchDisplay;
 const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
+const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCenterErrorDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -734,6 +735,12 @@ const {
   matchesActiveLocation,
   matchesSearch,
   workOrderSearchValues,
+});
+const {
+  messageCenterErrorState,
+} = createMessageCenterErrorDisplayHelpers({
+  isMissingColumnError,
+  isColumnSchemaError,
 });
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
@@ -6994,14 +7001,9 @@ async function insertThreadMessage(threadId, body) {
 }
 
 function friendlyMessageCenterError(error) {
-  if (isMissingColumnError(error, "work_order_id")) {
-    return "Run supabase/step-next-message-work-order-links.sql before linking message threads to work orders.";
-  }
-  if (isColumnSchemaError(error, ["message_threads", "message_thread_members", "messages"]) || error.message.includes("message_threads")) {
-    messagesReady = false;
-    return "Run supabase/step-next-message-center.sql before using Messages.";
-  }
-  return error.message;
+  const state = messageCenterErrorState(error);
+  if (state.messagesReady === false) messagesReady = false;
+  return state.message;
 }
 
 async function updateCompanySettings(event) {

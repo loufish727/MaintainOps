@@ -70,6 +70,7 @@ const requiredResources = [
   "src/render/workOrderStatusFilterDisplay.js",
   "src/render/workOrderSearchDisplay.js",
   "src/render/myWorkQueueDisplay.js",
+  "src/render/messageCenterErrorDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
