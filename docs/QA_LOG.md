@@ -7751,3 +7751,81 @@ Conclusion:
 - Pages build/deployment: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 9N/9O is fully closed.
+
+## LFES Phase 9P Empty State Readiness - 2026-05-20
+
+Scope:
+
+- Reviewed the next low-risk `app.js` cleanup candidate after Phase 9N/9O.
+- Approved only the empty-state text helpers for extraction.
+- No code changed during readiness.
+
+Decision:
+
+- Proceed to Phase 9Q with `requestEmptyStateText`, `assetEmptyStateText`, and `partEmptyStateText` only.
+- Keep filter/search state owned by `app.js`; inject getter dependencies into the render helper module.
+
+Audit:
+
+- `docs/LFES/audits/LFES_PHASE_9P_EMPTY_STATE_READINESS.md`
+
+## LFES Phase 9Q Empty State Text Extraction - 2026-05-20
+
+Scope:
+
+- Added `src/render/emptyStateText.js`.
+- Moved only `requestEmptyStateText`, `assetEmptyStateText`, and `partEmptyStateText`.
+- Updated `index.html` to load `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-9q-empty-state-1`.
+- Updated Resource Load Smoke required resources.
+- No workflow logic, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()` changed.
+
+Line count:
+
+- `app.js` before: 10,476 lines.
+- `app.js` after: 10,470 lines.
+- reduction: 6 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9Q signed-in local empty-state smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9q-empty-state-20260520b`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1` and `app.js?v=lfes-phase-9q-empty-state-1` were present.
+6. Opened Requests and verified the active request empty-state copy rendered.
+7. Opened Equipment and verified equipment labels still rendered.
+8. Opened Parts and verified part empty-state copy rendered.
+9. Opened Work Orders, My Work, Team, Settings, and Messages.
+10. Verified Messages still showed the Phase 9I QA thread.
+11. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new empty-state text script loads, empty-state copy renders in applicable sections, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Requests rendered `No active requests waiting for review.`. Parts rendered an expected empty-state copy. Equipment still rendered label text including `Machine` / `Running`. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9Q local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 9R.

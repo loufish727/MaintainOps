@@ -19,6 +19,7 @@ const requiredResources = [
   "src/render/dashboardDisplay.js",
   "src/render/iconDisplay.js",
   "src/render/equipmentLabels.js",
+  "src/render/emptyStateText.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

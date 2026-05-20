@@ -2000,3 +2000,79 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 9P Empty State Readiness - 2026-05-20
+
+Phase 9P reviewed the next low-risk cleanup candidate after Phase 9N/9O was fully packaged, deployed, and live verified.
+
+Approved for Phase 9Q:
+
+- `requestEmptyStateText(filter)`
+- `assetEmptyStateText()`
+- `partEmptyStateText()`
+
+The approved helpers are display-only copy helpers. They depend on current search/filter values, so the extraction must inject getter functions from `app.js` instead of letting the helper module read app globals directly.
+
+Readiness audit:
+
+- `docs/LFES/audits/LFES_PHASE_9P_EMPTY_STATE_READINESS.md`
+
+Still blocked:
+
+- request/equipment/parts filtering logic.
+- pagination and count logic.
+- cards, forms, detail panels, and source managers.
+- event handlers and mutations.
+- Quick Fix, public QR, messages workflow/composer.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- Supabase SQL/RLS.
+
+## Phase 9Q Empty State Text Extraction - 2026-05-20
+
+Phase 9Q added `src/render/emptyStateText.js` and moved only the approved empty-state copy helpers.
+
+Implementation:
+
+- `src/render/emptyStateText.js` exposes `window.MaintainOpsEmptyStateText.createEmptyStateTextHelpers`.
+- `app.js` injects:
+  - `getSearchQuery`
+  - `getAssetStatusFilter`
+  - `getPartSearchQuery`
+  - `getPartInventoryFilter`
+  - `assetStatusLabel`
+- `index.html` now loads `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-9q-empty-state-1`.
+- Resource Load Smoke now includes `src/render/emptyStateText.js`.
+
+Line count:
+
+- before: 10,476 lines.
+- after: 10,470 lines.
+- reduction: 6 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new empty-state script and app cache tag loaded.
+- Requests rendered active empty-state copy.
+- Parts rendered empty-state copy.
+- Equipment labels still rendered.
+- Work Orders, My Work, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 9Q result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 9R.

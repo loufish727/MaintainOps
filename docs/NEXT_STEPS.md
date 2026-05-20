@@ -3322,6 +3322,28 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 ## Current Stop Point
 
+LFES app cleanup continuation is active.
+
+Latest completed local phase:
+
+- Phase 9P readiness approved only empty-state text helper extraction.
+- Phase 9Q implemented `src/render/emptyStateText.js` and moved only `requestEmptyStateText`, `assetEmptyStateText`, and `partEmptyStateText`.
+- Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
+
+Immediate next action:
+
+- Run Phase 9R package/upload and live verification for the Phase 9Q empty-state text extraction.
+
+Phase 9R must verify:
+
+1. `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-9q-empty-state-1` is referenced and serves HTTP 200 on GitHub Pages.
+3. Hosted Resource Load Smoke passes.
+4. GitHub Actions Resource Load Smoke and Pages deployment pass.
+5. Signed-in live smoke passes across Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+
+Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
 Last active development topic before handoff:
 
 Location switching was made intentional with `profiles.mobile_tech`. User suggested the setting belongs in Team, not Settings. The UI was adjusted so Team profile owns Mobile tech, while manager/admin Company Settings stay separate.

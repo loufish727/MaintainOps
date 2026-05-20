@@ -78,6 +78,7 @@ const { createRelationshipDisplayHelpers } = window.MaintainOpsRelationshipDispl
 const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
 const { segmentIcon, navIcon } = window.MaintainOpsIconDisplay;
 const { assetTypeLabel, assetStatusLabel } = window.MaintainOpsEquipmentLabels;
+const { createEmptyStateTextHelpers } = window.MaintainOpsEmptyStateText;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -222,6 +223,18 @@ const {
   renderWorkOrderGaugeDashboard,
   renderWorkloadStrip,
 } = dashboardDisplayHelpers;
+const emptyStateTextHelpers = createEmptyStateTextHelpers({
+  getSearchQuery: () => searchQuery,
+  getAssetStatusFilter: () => assetStatusFilter,
+  getPartSearchQuery: () => partSearchQuery,
+  getPartInventoryFilter: () => partInventoryFilter,
+  assetStatusLabel,
+});
+const {
+  requestEmptyStateText,
+  assetEmptyStateText,
+  partEmptyStateText,
+} = emptyStateTextHelpers;
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
   getCurrentUserId: () => session?.user?.id,
@@ -2954,13 +2967,6 @@ function requestPanelSubtitle(filter, count) {
   return `${count} active`;
 }
 
-function requestEmptyStateText(filter) {
-  if (searchQuery.trim()) return "No requests match this search.";
-  if (filter === "converted") return "No converted requests at this location.";
-  if (filter === "all") return "No requests at this location yet.";
-  return "No active requests waiting for review.";
-}
-
 function renderRequestFilterBar(counts, selectedFilter, options = {}) {
   const filters = [
     ["active", "Active", counts.active],
@@ -2991,12 +2997,6 @@ function filteredAssets() {
       parentAssetFor(asset)?.name,
     ]);
   });
-}
-
-function assetEmptyStateText() {
-  if (searchQuery.trim()) return "No equipment matches this search.";
-  if (assetStatusFilter !== "all") return `No ${assetStatusLabel(assetStatusFilter).toLowerCase()} equipment found.`;
-  return "No equipment added yet.";
 }
 
 function parentAssetFor(asset) {
@@ -3057,12 +3057,6 @@ function matchesPartSearch(values) {
   const query = partSearchQuery.trim().toLowerCase();
   if (!query) return true;
   return values.some((value) => String(value ?? "").toLowerCase().includes(query));
-}
-
-function partEmptyStateText() {
-  if (partSearchQuery.trim()) return "No parts match this search.";
-  if (partInventoryFilter === "low") return "No low stock parts right now.";
-  return "No parts added yet.";
 }
 
 function partSourceOptions() {
