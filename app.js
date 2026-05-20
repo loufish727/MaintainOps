@@ -126,6 +126,7 @@ const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDis
 const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
 const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThreadFilterDisplay;
 const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay;
+const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -700,6 +701,14 @@ const {
   unreadMessageCount,
   getMessagesByThreadId: () => messagesByThreadId,
   getActiveMessageThreadId: () => activeMessageThreadId,
+});
+const {
+  workOrderMatchesStatusFilter,
+} = createWorkOrderStatusFilterDisplayHelpers({
+  getActiveStatusFilter: () => activeStatusFilter,
+  getDueState,
+  isCompletedThisMonth,
+  isCompletedThisWeek,
 });
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
@@ -3185,14 +3194,6 @@ function filteredWorkOrders() {
           (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
     return statusMatch && queueMatch && matchesSearch(workOrderSearchValues(workOrder));
   }).sort(compareWorkOrders);
-}
-
-function workOrderMatchesStatusFilter(workOrder) {
-  if (activeStatusFilter === "overdue") return getDueState(workOrder)?.className === "overdue";
-  if (activeStatusFilter === "completed_month") return isCompletedThisMonth(workOrder);
-  if (activeStatusFilter === "completed_week") return isCompletedThisWeek(workOrder);
-  if (activeStatusFilter === "active" || activeStatusFilter === "all") return workOrder.status !== "completed";
-  return workOrder.status === activeStatusFilter;
 }
 
 function myWorkQueueOrders() {

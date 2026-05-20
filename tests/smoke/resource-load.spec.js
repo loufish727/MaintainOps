@@ -67,6 +67,7 @@ const requiredResources = [
   "src/render/locationFilterDisplay.js",
   "src/render/messageThreadFilterDisplay.js",
   "src/render/setupStatusDisplay.js",
+  "src/render/workOrderStatusFilterDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
