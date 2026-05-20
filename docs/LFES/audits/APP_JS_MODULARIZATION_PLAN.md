@@ -1817,3 +1817,116 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 9M Equipment Label Readiness Decision - 2026-05-20
+
+Phase 9M was planning/documentation only. No app code, helper extraction, rendering behavior, event binding, Supabase SQL/RLS, workflow logic, or business logic changed.
+
+Detailed decision:
+
+- `docs/LFES/audits/LFES_PHASE_9M_EQUIPMENT_LABEL_READINESS.md`
+
+### Phase 9M Decision
+
+Approve a narrow Phase 9N implementation:
+
+- create `src/render/equipmentLabels.js`
+- move only:
+  - `assetTypeLabel`
+  - `assetStatusLabel`
+
+Reason:
+
+- the helpers are pure string label helpers.
+- they perform no Supabase calls.
+- they emit no `data-*` behavior hooks.
+- they do not create forms, event handlers, mutations, auth/session/company/location behavior, or storage behavior.
+
+### Remains Blocked
+
+- equipment cards/details/forms.
+- equipment delete guards.
+- equipment-driven routing behavior.
+- Quick Fix hooks.
+- parts/request/work-order renderers.
+- event handlers.
+- mutations.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- Supabase SQL/RLS.
+
+## Phase 9N Equipment Label Helper Extraction - 2026-05-20
+
+Phase 9N implemented the approved equipment label helper extraction only. No workflow, equipment mutation, routing behavior, event binding, Supabase query, auth/session/company/location logic, `renderWorkspace()`, `bindWorkspaceEvents()`, Supabase SQL/RLS, or business logic changed.
+
+### Implementation
+
+Created:
+
+- `src/render/equipmentLabels.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/LFES/audits/LFES_PHASE_9M_EQUIPMENT_LABEL_READINESS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Moved from `app.js`:
+
+- `assetTypeLabel`
+- `assetStatusLabel`
+
+The new module exposes `window.MaintainOpsEquipmentLabels`.
+
+### Cache And Resource Smoke
+
+- `index.html` now loads `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9n-equipment-labels-1`.
+- `tests/smoke/resource-load.spec.js` now checks `src/render/equipmentLabels.js`.
+- Local Playwright Resource Load Smoke passed with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+
+### Line Reduction
+
+- before Phase 9N: 10,487 lines.
+- after Phase 9N: 10,476 lines.
+- reduction: 11 lines.
+
+### Local Smoke Result
+
+Local signed-in smoke passed on:
+
+- `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9n-equipment-labels-20260520`
+
+Verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- `src/render/equipmentLabels.js` and the Phase 9N `app.js` cache tag were present.
+- Equipment opened and rendered equipment type/status labels.
+- Work Orders, My Work, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+### Remains Blocked
+
+- package/upload until Phase 9O.
+- equipment cards/details/forms.
+- equipment delete guards.
+- equipment-driven routing behavior.
+- Quick Fix hooks.
+- parts/request/work-order renderers.
+- event handlers.
+- mutations.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- Supabase SQL/RLS changes.

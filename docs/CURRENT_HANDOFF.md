@@ -30,6 +30,69 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9N equipment label helper extraction locally:
+
+- Scope:
+  - created one small equipment label module.
+  - moved only the approved pure equipment label helpers.
+  - did not package/upload yet.
+  - did not move equipment cards/details/forms.
+  - did not move equipment delete guards.
+  - did not move equipment-driven routing behavior.
+  - did not move Quick Fix hooks.
+  - did not move event handlers.
+  - did not move mutations.
+  - did not move Supabase calls.
+  - did not move auth/session/company/location logic.
+  - did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Prior phase:
+  - Phase 9M planning/readiness: PASS.
+  - created `docs/LFES/audits/LFES_PHASE_9M_EQUIPMENT_LABEL_READINESS.md`.
+- Created:
+  - `src/render/equipmentLabels.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `tests/smoke/resource-load.spec.js`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- Helpers moved:
+  - `assetTypeLabel`
+  - `assetStatusLabel`
+- Cache/script loading:
+  - `index.html` now loads `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+  - `index.html` now loads `app.js?v=lfes-phase-9n-equipment-labels-1`.
+- Resource smoke:
+  - `tests/smoke/resource-load.spec.js` now includes `src/render/equipmentLabels.js`.
+- App.js line count:
+  - before Phase 9N: 10,487 lines.
+  - after Phase 9N: 10,476 lines.
+  - reduction: 11 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, `tests/smoke/resource-load.spec.js`, all `src/utils`, all `src/services`, and all `src/render` files.
+- Local resource smoke:
+  - PASS with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+- Local signed-in smoke:
+  - PASS.
+  - local URL: `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9n-equipment-labels-20260520`.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - `src/render/equipmentLabels.js` and the Phase 9N `app.js` cache tag were present.
+  - Equipment loaded and rendered equipment type/status labels.
+  - Work Orders, My Work, Parts, Team, Settings, and Messages loaded.
+  - no visible app errors.
+  - no browser warning/error logs captured.
+- Behavior changed:
+  - no observed behavior change.
+- Recommended next step:
+  - Phase 9O package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 9L package/upload and live verification:
 
 - Scope:

@@ -7537,3 +7537,145 @@ Conclusion:
 - Pages build/deployment: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 9K/9L is fully closed.
+
+## LFES Phase 9M Equipment Label Readiness Decision - 2026-05-20
+
+Scope:
+
+- Planning and documentation only.
+- Reviewed equipment label helper candidates after Phase 9K/9L fully closed.
+- Did not change app code.
+- Did not move functions.
+- Did not refactor `app.js`.
+- Did not change rendering behavior.
+- Did not change event binding.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_9M_EQUIPMENT_LABEL_READINESS.md`
+
+Decision:
+
+- Approved Phase 9N implementation for only:
+  - `assetTypeLabel`
+  - `assetStatusLabel`
+- Kept equipment cards/details/forms, delete guards, equipment-driven routing behavior, Quick Fix hooks, event handlers, mutations, Supabase calls, `renderWorkspace()`, `bindWorkspaceEvents()`, and Supabase SQL/RLS blocked.
+
+TEST:
+Phase 9M equipment label readiness decision
+
+STEPS:
+1. Reviewed latest Phase 9L closure state.
+2. Reviewed label helper candidates in `app.js`.
+3. Classified possible next candidates by risk and verification readiness.
+4. Documented the Phase 9M decision.
+
+EXPECTED:
+Planning identifies a narrow safe implementation scope without changing app code, Supabase SQL/RLS, rendering behavior, event binding, workflows, or business logic.
+
+RESULT:
+PASS
+
+NOTES:
+No runtime browser smoke was required because this was documentation-only. No JavaScript static checks were required because no JavaScript files changed.
+
+## LFES Phase 9N Equipment Label Helper Extraction - 2026-05-20
+
+Scope:
+
+- Created one small equipment label module.
+- Moved only the approved pure equipment label helpers.
+- Did not move equipment cards/details/forms.
+- Did not move equipment delete guards.
+- Did not move equipment-driven routing behavior.
+- Did not move Quick Fix hooks.
+- Did not move event handlers.
+- Did not move mutations.
+- Did not move Supabase calls.
+- Did not move auth/session/company/location logic.
+- Did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `src/render/equipmentLabels.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Helpers moved:
+
+- `assetTypeLabel`
+- `assetStatusLabel`
+
+Cache/script loading:
+
+- `index.html` now loads `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9n-equipment-labels-1`.
+
+Resource smoke:
+
+- `tests/smoke/resource-load.spec.js` now includes `src/render/equipmentLabels.js`.
+
+App.js line count:
+
+- before Phase 9N: 10,487 lines.
+- after Phase 9N: 10,476 lines.
+- reduction: 11 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9N signed-in local equipment label smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9n-equipment-labels-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/equipmentLabels.js` and the Phase 9N `app.js` cache tag were present.
+6. Opened Equipment.
+7. Verified equipment type/status labels rendered.
+8. Opened Work Orders.
+9. Opened My Work.
+10. Opened Parts.
+11. Opened Team.
+12. Opened Settings.
+13. Opened Messages.
+14. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new equipment label script loads, Equipment labels render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The local app loaded with `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1` and `app.js?v=lfes-phase-9n-equipment-labels-1`. Equipment rendered `Machine` and `Running` label text. Work Orders, My Work, Parts, Team, Settings, and Messages loaded with Salem, OR selected. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9N local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 9O.

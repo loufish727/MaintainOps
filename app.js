@@ -77,6 +77,7 @@ const {
 const { createRelationshipDisplayHelpers } = window.MaintainOpsRelationshipDisplay;
 const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
 const { segmentIcon, navIcon } = window.MaintainOpsIconDisplay;
+const { assetTypeLabel, assetStatusLabel } = window.MaintainOpsEquipmentLabels;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -3018,18 +3019,6 @@ function isAssetDescendantOf(assetId, ancestorId) {
     current = assets.find((asset) => asset.id === current.parent_asset_id);
   }
   return false;
-}
-
-function assetTypeLabel(type) {
-  return String(type || "machine")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function assetStatusLabel(status) {
-  return String(status || "running")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function filteredPreventiveSchedules() {

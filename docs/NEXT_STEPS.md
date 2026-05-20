@@ -4,6 +4,47 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9N equipment label helper extraction is complete locally. The next controlled phase is package/upload plus live verification.
+
+Current status:
+
+- Phase 9M planning/readiness:
+  - PASS.
+  - approved only `assetTypeLabel` and `assetStatusLabel` for movement.
+- Phase 9N local implementation:
+  - created `src/render/equipmentLabels.js`.
+  - moved only the approved pure equipment label helpers.
+  - updated `index.html` and Resource Load Smoke.
+  - app.js line count changed from 10,487 to 10,476.
+  - static checks: PASS.
+  - local resource smoke: PASS.
+  - local signed-in equipment/core-section smoke: PASS.
+  - behavior changed: no observed behavior change.
+
+Recommended immediate next controlled phase:
+
+- Phase 9O package/upload and live verification:
+  - package includes `src/render/equipmentLabels.js`.
+  - live `index.html` includes `src/render/equipmentLabels.js?v=lfes-phase-9n-equipment-labels-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9n-equipment-labels-1`.
+  - live helper script returns HTTP 200.
+  - hosted Resource Load Smoke passes.
+  - GitHub Actions Resource Load Smoke passes.
+  - signed-in live smoke verifies Taylor Metal Products, Salem, Equipment labels, Work Orders, My Work, Parts, Team, Settings, Messages, no missing scripts, and no visible app errors.
+
+Keep blocked until Phase 9O passes:
+
+- Phase 9P planning/implementation.
+- additional display extraction.
+- equipment cards/details/forms.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
 LFES Phase 9L package/upload and live verification is complete. Phase 9K/9L message formatting extraction is fully closed.
 
 Current status:
