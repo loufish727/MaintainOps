@@ -75,6 +75,7 @@ const {
   renderRoleGuide,
 } = window.MaintainOpsRenderDisplayHelpers;
 const { createRelationshipDisplayHelpers } = window.MaintainOpsRelationshipDisplay;
+const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
 let supabaseClient;
 let session;
 let companies = [];
@@ -200,6 +201,19 @@ const {
   relationshipChip,
   relationshipIcon,
 } = relationshipDisplayHelpers;
+const dashboardDisplayHelpers = createDashboardDisplayHelpers({
+  escapeHtml,
+  getActiveStatusFilter: () => activeStatusFilter,
+  getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
+  getRequestsReady: () => requestsReady,
+  openMaintenanceRequests,
+  matchesActiveLocation,
+});
+const {
+  renderGaugeReadout,
+  renderWorkOrderGaugeDashboard,
+  renderWorkloadStrip,
+} = dashboardDisplayHelpers;
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
 function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
@@ -3306,84 +3320,6 @@ function globalSearchResults() {
 
 function globalResultCount(results) {
   return Object.values(results).reduce((sum, list) => sum + list.length, 0);
-}
-
-function renderGaugeReadout(label, value, tone = "active", options = {}) {
-  const isAction = options.filter || options.section;
-  const tag = isAction ? "button" : "article";
-  const activeClass = options.filter && activeStatusFilter === options.filter ? " selected" : "";
-  const isOverdueAlert = tone.includes("overdue") && Number(value) >= 3;
-  const alertClass = isOverdueAlert ? " alert-blink" : "";
-  const attributes = [
-    isAction ? `type="button"` : "",
-    options.filter ? `data-status-filter="${options.filter}" aria-pressed="${activeStatusFilter === options.filter}"` : "",
-    options.section ? `data-section="${options.section}"` : "",
-  ].filter(Boolean).join(" ");
-  const attrText = attributes ? ` ${attributes}` : "";
-  return `
-    <${tag} class="gauge-readout ${tone}${activeClass}${alertClass}"${attrText}>
-      ${isOverdueAlert ? `<span class="gauge-alert-badge" aria-hidden="true">!</span>` : ""}
-      <div class="gauge-visual" aria-hidden="true">
-        <span class="gauge-arc"></span>
-        <span class="gauge-cut one"></span>
-        <span class="gauge-cut two"></span>
-        <span class="gauge-cut three"></span>
-        <span class="gauge-cut four"></span>
-        <span class="gauge-needle"></span>
-        <span class="gauge-hub"></span>
-      </div>
-      <strong>${value}</strong>
-      <span>${escapeHtml(label)}</span>
-    </${tag}>
-  `;
-}
-
-function renderWorkOrderGaugeDashboard() {
-  const counts = workOrderDashboardCounts || {};
-  const activeWork = counts.activeWork || 0;
-  const newWork = counts.newWork || 0;
-  const inProgress = counts.inProgress || 0;
-  const blocked = counts.blocked || 0;
-  const overdue = counts.overdue || 0;
-  const completedMonth = counts.completedMonth || 0;
-  const completedWeek = counts.completedWeek || 0;
-  const requestCount = requestsReady
-    ? openMaintenanceRequests().filter(matchesActiveLocation).length
-    : 0;
-  return `
-    <div class="summary-gauge-grid">
-      ${renderGaugeReadout("Active Work", activeWork, "active", { filter: "active" })}
-      ${renderGaugeReadout("New", newWork, "new", { filter: "open" })}
-      ${renderGaugeReadout("In Progress", inProgress, "in_progress", { filter: "in_progress" })}
-      ${renderGaugeReadout("Blocked", blocked, "blocked", { filter: "blocked" })}
-      ${renderGaugeReadout("Overdue", overdue, "overdue", { filter: "overdue" })}
-      ${renderGaugeReadout("Requests", requestCount, "request", { filter: "requests" })}
-      ${renderGaugeReadout("Completed Month", completedMonth, "completed", { filter: "completed_month" })}
-      ${renderGaugeReadout("Done This Week", completedWeek, "completed", { filter: "completed_week" })}
-    </div>
-  `;
-}
-
-function renderWorkloadStrip(items) {
-  const counts = items || {};
-  const newWork = counts.newWork || 0;
-  const inProgress = counts.inProgress || 0;
-  const blocked = counts.blocked || 0;
-  const active = counts.activeWork ?? (newWork + inProgress + blocked);
-  const overdue = counts.overdue || 0;
-  const completedMonth = counts.completedMonth || 0;
-  const completedWeek = counts.completedWeek || 0;
-  return `
-    <div class="workload-strip" aria-label="Active work summary">
-      ${renderGaugeReadout("Active Work", active, "active workload-pill", { filter: "active" })}
-      ${renderGaugeReadout("New", newWork, "new workload-pill", { filter: "open" })}
-      ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill", { filter: "in_progress" })}
-      ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill", { filter: "blocked" })}
-      ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill", { filter: "overdue" })}
-      ${renderGaugeReadout("Completed Month", completedMonth, "completed workload-pill", { filter: "completed_month" })}
-      ${renderGaugeReadout("Done This Week", completedWeek, "completed workload-pill", { filter: "completed_week" })}
-    </div>
-  `;
 }
 
 function segmentIcon(type) {

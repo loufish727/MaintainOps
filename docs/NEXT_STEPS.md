@@ -4,6 +4,114 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9D dashboard display-helper extraction is complete locally and passed signed-in local smoke.
+
+Current status:
+
+- Phase 9D created:
+  - `src/render/dashboardDisplay.js`
+- Phase 9D modified:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Helpers moved:
+  - `renderGaugeReadout`
+  - `renderWorkOrderGaugeDashboard`
+  - `renderWorkloadStrip`
+- App.js line reduction:
+  - 10,625 lines to 10,561 lines.
+  - reduction: 64 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, `src/render/relationshipDisplay.js`, and `src/render/dashboardDisplay.js`.
+- Local smoke:
+  - PASS.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - dashboard/gauge/workload metrics rendered.
+  - gauge filter click responded.
+  - Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- Package/upload:
+  - blocked until explicitly requested.
+
+Recommended immediate next controlled phase:
+
+- Package/upload LFES Phase 9D to GitHub Pages, then live verify:
+  - package includes `src/render/dashboardDisplay.js`.
+  - live `index.html` includes `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9d-dashboard-1`.
+  - live helper script returns HTTP 200.
+  - signed-in live smoke verifies dashboard/gauge/workload metrics, Work Orders, Equipment, Parts, Team, Settings, no missing scripts, and no visible app errors.
+  - GitHub Actions Resource Load Smoke passes after push.
+
+Keep blocked until explicitly approved:
+
+- Phase 9E planning/implementation.
+- additional helper extraction.
+- issue report display movement.
+- parts/equipment render movement.
+- public QR rendering.
+- Team invite/default-location rendering.
+- workflow/mutation/event binding extraction.
+- broad `renderWorkspace()` movement.
+- Supabase SQL/RLS changes.
+
+Prior immediate step:
+
+LFES Phase 9C app.js cleanup readiness decision is complete. No app code changed.
+
+Current status:
+
+- Phase 9C created:
+  - `docs/LFES/audits/LFES_PHASE_9C_APP_JS_CLEANUP_READINESS.md`
+- Phase 9C updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Recommended next extraction target:
+  - dashboard / metrics display cluster.
+- Suggested future file:
+  - `src/render/dashboardDisplay.js`
+- Suggested future helpers:
+  - `renderGaugeReadout`
+  - `renderWorkOrderGaugeDashboard`
+  - `renderWorkloadStrip`
+- Estimated app.js reduction:
+  - approximately 55-85 lines.
+- Implementation status:
+  - still blocked until explicitly approved.
+
+Recommended immediate next controlled phase:
+
+- If app.js cleanup continues:
+  - LFES Phase 9D dashboard/metrics display-helper extraction only.
+  - preserve exact gauge markup and `data-status-filter` / `data-section` attributes.
+  - update `index.html` script loading and `app.js` cache tag together.
+  - run static checks.
+  - run local signed-in smoke.
+  - verify dashboard/gauge filters, Work Orders, Requests gauge, Equipment, Parts, Team, Settings, and relationship display.
+  - package/upload and live verify only after local smoke passes.
+- If pilot operation is priority:
+  - pause code movement and continue live pilot monitoring.
+
+Keep blocked until explicitly approved:
+
+- Phase 9D implementation.
+- issue report display movement.
+- parts/equipment render movement.
+- public QR rendering.
+- Team invite/default-location rendering.
+- workflow/mutation/event binding extraction.
+- broad `renderWorkspace()` movement.
+- Supabase SQL/RLS changes.
+
+Prior immediate step:
+
 LFES Phase 9B package/upload and live verification is complete. Phase 9B is fully closed.
 
 Current status:

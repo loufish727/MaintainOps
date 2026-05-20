@@ -6300,3 +6300,190 @@ Conclusion:
 - GitHub Actions Resource Load Smoke: PASS.
 - Behavior changed: no observed behavior change beyond the intended relationship display-helper extraction.
 - Phase 9B is fully closed.
+
+## LFES Phase 9C App.js Cleanup Readiness Decision - 2026-05-20
+
+Scope:
+
+- Planning and documentation only.
+- No app code changed.
+- No `app.js` refactor performed.
+- No functions moved.
+- No Supabase SQL/RLS/policies changed.
+- No workflows/business logic changed.
+
+Evidence reviewed:
+
+- Phase 9A subsystem extraction strategy.
+- Phase 9B relationship display extraction and live verification result.
+- Latest `QA_LOG.md`, `CURRENT_HANDOFF.md`, `NEXT_STEPS.md`.
+- `APP_JS_MODULARIZATION_PLAN.md`.
+- `LFES_REAL_WORLD_CATCHES.md`.
+- Current `app.js` candidate render/helper clusters.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_9C_APP_JS_CLEANUP_READINESS.md`
+
+Updated:
+
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Candidate decision summary:
+
+- Recommended next extraction target: dashboard / metrics display cluster.
+- Suggested future file: `src/render/dashboardDisplay.js`.
+- Suggested future helpers: `renderGaugeReadout`, `renderWorkOrderGaugeDashboard`, `renderWorkloadStrip`.
+- Estimated line reduction: approximately 55-85 lines from `app.js`.
+- Implementation approval: still blocked until explicitly approved.
+
+Key risk notes:
+
+- Dashboard/gauge helpers are display-oriented but emit `data-status-filter` and `data-section`, so they are behavior contracts.
+- Issue report display is safe later but creates submit/status mutation contracts.
+- Notice/toast helpers are low-value and side-effectful because `showNotice()` mutates global notice state and calls `renderWorkspace()` through a timer.
+- Parts and equipment render helpers remain blocked because they emit inventory, document, edit, Quick Fix, routing, and delete workflow hooks.
+
+Phase 9B real catch documented:
+
+- `relationshipDisplay.js` deployed correctly, but `app.js` initially used a stale older cache tag.
+- Fixed by updating `index.html` to `app.js?v=lfes-phase-9b-relationship-1`.
+- New rule: every extracted script/app.js deploy must verify live helper script tags and live `app.js` cache tags.
+
+TEST:
+Phase 9C planning checkpoint
+
+STEPS:
+1. Reviewed Phase 9A and Phase 9B evidence.
+2. Scanned `app.js` for candidate display/helper clusters.
+3. Classified each candidate by coupling, event-contract risk, mutation risk, smoke requirements, and safety.
+4. Documented the Phase 9B cache-tag catch.
+5. Updated LFES planning, catch, QA, handoff, and next-step docs.
+
+EXPECTED:
+No app behavior changes. Next extraction candidate and blocked boundaries are documented.
+
+RESULT:
+PASS
+
+NOTES:
+No runtime smoke was required because Phase 9C was documentation-only and no app code changed.
+
+Conclusion:
+
+- Recommended next phase: LFES Phase 9D dashboard/metrics display-helper extraction only, if explicitly approved.
+- Code extraction remains blocked until approval.
+
+## LFES Phase 9D Dashboard Display-Helper Extraction - 2026-05-20
+
+Scope:
+
+- Created a small dashboard display module.
+- Moved only the approved dashboard/metrics helpers.
+- Did not move workflow renderers.
+- Did not move event handlers.
+- Did not move mutations.
+- Did not move `renderWorkspace()`.
+- Did not move `bindWorkspaceEvents()`.
+- Did not move parts/equipment detail renderers.
+- Did not move issue report renderers.
+- Did not move public QR renderers.
+- Did not move Team/invite/default-location renderers.
+- Did not change Supabase SQL/RLS/policies.
+
+Created:
+
+- `src/render/dashboardDisplay.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Helpers moved:
+
+- `renderGaugeReadout`
+- `renderWorkOrderGaugeDashboard`
+- `renderWorkloadStrip`
+
+Implementation notes:
+
+- `index.html` now loads `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1` before `app.js`.
+- `index.html` now loads `app.js?v=lfes-phase-9d-dashboard-1`.
+- `app.js` wires dashboard helpers through `createDashboardDisplayHelpers(...)` with explicit dependency getters/adapters.
+- Gauge behavior hooks were preserved:
+  - `data-status-filter`
+  - `data-section`
+  - selected gauge class behavior
+  - overdue alert marker behavior
+
+App.js line count:
+
+- before Phase 9D: 10,625 lines.
+- after Phase 9D: 10,561 lines.
+- reduction: 64 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check src/utils/constants.js`: PASS
+- `node --check src/utils/dom.js`: PASS
+- `node --check src/utils/formatting.js`: PASS
+- `node --check src/services/locationsService.js`: PASS
+- `node --check src/services/profilesService.js`: PASS
+- `node --check src/services/partsService.js`: PASS
+- `node --check src/services/assetsService.js`: PASS
+- `node --check src/services/workOrdersService.js`: PASS
+- `node --check src/services/companyService.js`: PASS
+- `node --check src/services/appIssueReportsService.js`: PASS
+- `node --check src/render/displayHelpers.js`: PASS
+- `node --check src/render/relationshipDisplay.js`: PASS
+- `node --check src/render/dashboardDisplay.js`: PASS
+
+Resource checks:
+
+- Local `index.html` served HTTP 200.
+- Local `app.js?v=lfes-phase-9d-dashboard-1` served HTTP 200.
+- Local `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1` served HTTP 200.
+- Local `src/render/relationshipDisplay.js?v=lfes-phase-9b-relationship-1` served HTTP 200.
+- Local `index.html` contains the Phase 9D dashboard helper script tag and the Phase 9D `app.js` cache tag.
+
+TEST:
+Phase 9D signed-in local dashboard smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9d-dashboard-20260520`.
+2. Verified signed-in workspace was available.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR remained active.
+5. Verified dashboard/workload metrics rendered.
+6. Verified gauge filter click still responded.
+7. Opened Work Orders.
+8. Opened Equipment.
+9. Opened Parts.
+10. Opened Team.
+11. Opened Settings.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace restores, dashboard/gauge/workload metrics render normally, gauge filter behavior still responds, core sections load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Taylor Metal Products loaded with Salem, OR active. My Work showed 7 gauge readouts and 1 workload strip. Work Orders showed 8 gauge readouts. Gauge filter click left the selected gauge state intact. Work Orders, Equipment, Parts, Team, and Settings loaded. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9D extraction: PASS locally.
+- Behavior changed: no observed behavior change.
+- Package/upload: approved only after explicit user request.

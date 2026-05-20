@@ -30,6 +30,122 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9D dashboard display-helper extraction and local smoke:
+
+- Scope:
+  - created one small dashboard display module.
+  - moved only approved dashboard/metrics helpers.
+  - no workflow renderers moved.
+  - no event handlers moved.
+  - no mutations moved.
+  - `renderWorkspace()` stayed in `app.js`.
+  - `bindWorkspaceEvents()` stayed in `app.js`.
+  - parts/equipment detail renderers stayed in `app.js`.
+  - issue report renderers stayed in `app.js`.
+  - public QR renderers stayed in `app.js`.
+  - Team/invite/default-location renderers stayed in `app.js`.
+  - no Supabase SQL/RLS changes.
+- Created:
+  - `src/render/dashboardDisplay.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Helpers moved:
+  - `renderGaugeReadout`
+  - `renderWorkOrderGaugeDashboard`
+  - `renderWorkloadStrip`
+- Cache/script loading:
+  - `index.html` now loads `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1`.
+  - `index.html` now loads `app.js?v=lfes-phase-9d-dashboard-1`.
+- App.js line count:
+  - before Phase 9D: 10,625 lines.
+  - after Phase 9D: 10,561 lines.
+  - reduction: 64 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, `src/render/relationshipDisplay.js`, and `src/render/dashboardDisplay.js`.
+- Local resource checks:
+  - local `index.html`, Phase 9D `app.js`, `src/render/dashboardDisplay.js`, and `src/render/relationshipDisplay.js` served HTTP 200.
+- Local signed-in smoke:
+  - PASS.
+  - local URL: `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9d-dashboard-20260520`.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - dashboard/workload metrics rendered.
+  - gauge filter click responded.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Package/upload:
+  - blocked until explicitly requested.
+- Recommended next step:
+  - package/upload LFES Phase 9D to GitHub Pages and live verify, if approved.
+  - otherwise pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
+Completed LFES Phase 9C app.js cleanup readiness decision:
+
+- Scope:
+  - planning and documentation only.
+  - no app code changed.
+  - no `app.js` refactor.
+  - no functions moved.
+  - no Supabase SQL/RLS changed.
+  - no workflows/business logic changed.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_9C_APP_JS_CLEANUP_READINESS.md`
+- Updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+- Evidence reviewed:
+  - Phase 9A subsystem strategy.
+  - Phase 9B relationship display extraction and live verification.
+  - latest QA/handoff/next steps.
+  - modularization plan.
+  - LFES real-world catches.
+  - current `app.js` candidate clusters.
+- Recommended next extraction target:
+  - dashboard / metrics display cluster.
+- Suggested future file:
+  - `src/render/dashboardDisplay.js`
+- Suggested future helpers:
+  - `renderGaugeReadout`
+  - `renderWorkOrderGaugeDashboard`
+  - `renderWorkloadStrip`
+- Estimated line reduction:
+  - approximately 55-85 lines from `app.js`.
+- Approval state:
+  - implementation is still blocked until explicitly approved.
+- Phase 9B real catch documented:
+  - `relationshipDisplay.js` deployed correctly, but `app.js` initially had a stale old cache tag.
+  - fixed by updating live deploy to `app.js?v=lfes-phase-9b-relationship-1`.
+  - future extractions must verify helper script tags and `app.js` cache tags live.
+- Remains blocked:
+  - issue report display movement.
+  - parts/equipment render movement.
+  - public QR rendering.
+  - Team invite/default-location rendering.
+  - workflow/mutation/event binding extraction.
+  - broad `renderWorkspace()` movement.
+  - Supabase SQL/RLS changes.
+- Recommended next step:
+  - if continuing app.js cleanup, approve LFES Phase 9D dashboard/metrics display-helper extraction only.
+  - otherwise continue live pilot monitoring.
+
+## Prior Recent Change
+
 Completed LFES Phase 9B package/upload and live verification:
 
 - Scope:
