@@ -91,6 +91,7 @@ const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
 const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
 const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
 const { createAppIssueDisplayHelpers } = window.MaintainOpsAppIssueDisplay;
+const { createWorkMessageDisplayHelpers } = window.MaintainOpsWorkMessageDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -361,6 +362,17 @@ const {
   escapeHtml,
   getProfilesByUserId: () => profilesByUserId,
   getLocations: () => locations,
+});
+const {
+  renderWorkOrderMessages,
+  renderLinkedWorkMessageThread,
+} = createWorkMessageDisplayHelpers({
+  escapeHtml,
+  formatMessageTime,
+  messageThreadScopeLabel,
+  getMessageThreads: () => messageThreads,
+  getMessagesByThreadId: () => messagesByThreadId,
+  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -5111,27 +5123,6 @@ function renderWorkOrderDangerZone(workOrder) {
   `;
 }
 
-function renderWorkOrderMessages(workOrder) {
-  const linkedThreads = messageThreads.filter((thread) => thread.work_order_id === workOrder.id);
-  return `
-    <details class="work-detail-section relationship-detail comment work-message-section" id="work-order-messages-target">
-      <summary>Messages</summary>
-      <div class="work-message-panel">
-        <div>
-          <h3>Work Order Conversation</h3>
-          <p class="muted">Start or open team conversations tied to this work order.</p>
-        </div>
-        <button class="secondary-button message-action-button" data-start-work-message="${workOrder.id}" type="button">Message Team</button>
-        ${messageWorkOrderLinksReady ? `
-          <div class="work-linked-thread-list">
-            ${linkedThreads.map(renderLinkedWorkMessageThread).join("") || `<p class="muted">No message threads linked yet.</p>`}
-          </div>
-        ` : `<p class="error-text">Run supabase/step-next-message-work-order-links.sql before linking message threads to work orders.</p>`}
-      </div>
-    </details>
-  `;
-}
-
 function renderWorkOrderRecommendation(workOrder) {
   const recommendation = recommendedWorkOrderStep(workOrder);
   if (!recommendation) return "";
@@ -5260,20 +5251,6 @@ function commandShortcut(label, count, targetId, helper, tone) {
       <strong>${count}</strong>
       <small>${escapeHtml(helper)}</small>
     </button>
-  `;
-}
-
-function renderLinkedWorkMessageThread(thread) {
-  const messages = messagesByThreadId[thread.id] || [];
-  const lastMessage = messages[messages.length - 1];
-  return `
-    <article class="work-linked-thread">
-      <div>
-        <strong>${escapeHtml(thread.title)}</strong>
-        <span>${escapeHtml(messageThreadScopeLabel(thread))}${lastMessage ? ` - ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : ""}</span>
-      </div>
-      <button class="secondary-button" data-open-work-message-thread="${thread.id}" type="button">Open Thread</button>
-    </article>
   `;
 }
 
