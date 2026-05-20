@@ -7829,3 +7829,70 @@ Conclusion:
 - Phase 9Q local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 9R.
+
+## LFES Phase 9R Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9Q empty-state text helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change workflow logic, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-091730`
+- `MaintainOps-github-clean-20260520-091730.zip`
+
+GitHub deploy:
+
+- Commit: `6f358dcdbfc3bd52aef6bce63521bcafa28d58f0`
+- Commit message: `Extract empty state text helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9q-empty-state-1`.
+- Live `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9q-empty-state-1`: HTTP 200.
+- Hosted Resource Load Smoke: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333772`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333222`
+
+TEST:
+Phase 9R signed-in live empty-state smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9r-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1` and `app.js?v=lfes-phase-9q-empty-state-1` were present.
+6. Opened Requests and verified the active request empty-state copy rendered.
+7. Opened Equipment and verified equipment labels still rendered.
+8. Opened Parts and verified part empty-state copy rendered.
+9. Opened Work Orders, My Work, Team, Settings, and Messages.
+10. Verified Messages still showed the Phase 9I QA thread.
+11. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new empty-state text script loads, empty-state copy renders in applicable sections, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Requests rendered `No active requests waiting for review.`. Parts rendered an expected empty-state copy. Equipment still rendered label text including `Machine` / `Running`. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9R package/upload and live verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 9P/9Q/9R is fully closed.
