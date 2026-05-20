@@ -54,6 +54,7 @@ const requiredResources = [
   "src/render/workOrderErrorDisplay.js",
   "src/render/assignmentDisplay.js",
   "src/render/workOrderDescriptionDisplay.js",
+  "src/render/workOrderChangeDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
