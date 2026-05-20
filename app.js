@@ -124,6 +124,7 @@ const { createMaintenanceListDisplayHelpers } = window.MaintainOpsMaintenanceLis
 const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDisplay;
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
+const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThreadFilterDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -527,12 +528,6 @@ const {
   getRequestPhotosReady: () => requestPhotosReady,
 });
 const {
-  renderMessageNavBadge,
-} = createMessageBadgeDisplayHelpers({
-  directUnreadMessages,
-  totalUnreadMessages,
-});
-const {
   renderAppIssueReport,
 } = createAppIssueDisplayHelpers({
   escapeHtml,
@@ -611,17 +606,6 @@ const {
   getProcedureTemplates: () => procedureTemplates,
 });
 const {
-  renderMessageThreadButton,
-} = createMessageThreadButtonDisplayHelpers({
-  escapeHtml,
-  formatMessageTime,
-  teamMemberName,
-  messageThreadScopeLabel,
-  unreadMessageCount,
-  getMessagesByThreadId: () => messagesByThreadId,
-  getActiveMessageThreadId: () => activeMessageThreadId,
-});
-const {
   messageComposerScopeNote,
 } = createMessageComposerDisplayHelpers({
   activeLocationName,
@@ -657,6 +641,44 @@ const {
   renderMessageBubble,
   renderMessageList,
 } = messageDisplayHelpers;
+const {
+  recentMessageLinkWorkOrders,
+  filteredMessageThreads,
+  messageThreadSearchValues,
+  unreadMessageCount,
+  totalUnreadMessages,
+  directUnreadMessages,
+} = createMessageThreadFilterDisplayHelpers({
+  getWorkOrders: () => workOrders,
+  matchesActiveLocation,
+  getMessageThreads: () => messageThreads,
+  getMessageThreadFilter: () => messageThreadFilter,
+  getMessageSearchQuery: () => messageSearchQuery,
+  matchesQuery,
+  getMessagesByThreadId: () => messagesByThreadId,
+  getMessageThreadMembers: () => messageThreadMembers,
+  teamMemberName,
+  messageThreadScopeLabel,
+  getMessageReadsByThreadId: () => messageReadsByThreadId,
+  getCurrentUser: () => session?.user,
+});
+const {
+  renderMessageNavBadge,
+} = createMessageBadgeDisplayHelpers({
+  directUnreadMessages,
+  totalUnreadMessages,
+});
+const {
+  renderMessageThreadButton,
+} = createMessageThreadButtonDisplayHelpers({
+  escapeHtml,
+  formatMessageTime,
+  teamMemberName,
+  messageThreadScopeLabel,
+  unreadMessageCount,
+  getMessagesByThreadId: () => messagesByThreadId,
+  getActiveMessageThreadId: () => activeMessageThreadId,
+});
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
 function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
@@ -4017,54 +4039,6 @@ function renderMessageCenter() {
 function messageThreadMembersForType(threadType, directUserId) {
   if (threadType === "direct") return [session.user.id, directUserId].filter(Boolean);
   return companyMembers.map((member) => member.user_id);
-}
-
-function recentMessageLinkWorkOrders() {
-  return workOrders
-    .filter((workOrder) => matchesActiveLocation(workOrder) && workOrder.status !== "completed")
-    .slice(0, 8);
-}
-
-function filteredMessageThreads() {
-  return messageThreads.filter((thread) => {
-    const filterMatch =
-      messageThreadFilter === "all" ||
-      (messageThreadFilter === "unread" && unreadMessageCount(thread.id) > 0) ||
-      thread.thread_type === messageThreadFilter;
-    return filterMatch && matchesQuery(messageThreadSearchValues(thread), messageSearchQuery);
-  });
-}
-
-function messageThreadSearchValues(thread) {
-  const messages = messagesByThreadId[thread.id] || [];
-  const participants = messageThreadMembers
-    .filter((member) => member.thread_id === thread.id)
-    .map((member) => teamMemberName(member.user_id));
-  return [
-    thread.title,
-    messageThreadScopeLabel(thread),
-    ...participants,
-    ...messages.map((message) => message.body),
-  ];
-}
-
-function unreadMessageCount(threadId) {
-  const lastReadAt = messageReadsByThreadId[threadId]?.last_read_at;
-  const lastReadTime = lastReadAt ? new Date(lastReadAt).getTime() : 0;
-  return (messagesByThreadId[threadId] || []).filter((message) => {
-    if (message.sender_id === session.user.id) return false;
-    return new Date(message.created_at).getTime() > lastReadTime;
-  }).length;
-}
-
-function totalUnreadMessages() {
-  return messageThreads.reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
-}
-
-function directUnreadMessages() {
-  return messageThreads
-    .filter((thread) => thread.thread_type === "direct")
-    .reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
 }
 
 function renderAppIssueReportForm() {
