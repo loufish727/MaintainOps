@@ -123,6 +123,7 @@ const { createAssetHierarchyDisplayHelpers } = window.MaintainOpsAssetHierarchyD
 const { createMaintenanceListDisplayHelpers } = window.MaintainOpsMaintenanceListDisplay;
 const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDisplay;
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
+const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -249,6 +250,13 @@ const {
 } = createWorkOrderSortDisplayHelpers({
   getActiveStatusFilter: () => activeStatusFilter,
   getWorkSort: () => workSort,
+});
+const {
+  recordLocationId,
+  matchesActiveLocation,
+} = createLocationFilterDisplayHelpers({
+  getLocationsReady: () => locationsReady,
+  getActiveLocationId: () => activeLocationId,
 });
 const {
   teamMemberName,
@@ -3196,10 +3204,6 @@ function activeLocationDatabaseId() {
   return locationsReady && activeLocationId ? activeLocationId : null;
 }
 
-function recordLocationId(record) {
-  return record?.location_id || record?.assets?.location_id || null;
-}
-
 function locationIdForAsset(assetId) {
   return assets.find((asset) => asset.id === assetId)?.location_id || activeLocationDatabaseId();
 }
@@ -3239,11 +3243,6 @@ function updateAssetLocationWarning(select) {
   const warning = form?.querySelector("[data-asset-location-warning]");
   if (!warning) return;
   warning.textContent = assetLocationRoutingMessage(select.value);
-}
-
-function matchesActiveLocation(record) {
-  if (!locationsReady || !activeLocationId) return true;
-  return recordLocationId(record) === activeLocationId;
 }
 
 function showNotice(message, tone = "success") {
