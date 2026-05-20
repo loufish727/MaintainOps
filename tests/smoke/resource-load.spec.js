@@ -50,6 +50,7 @@ const requiredResources = [
   "src/render/teamWorkloadDisplay.js",
   "src/render/locationDisplay.js",
   "src/render/downtimeEmailDisplay.js",
+  "src/render/setupErrorDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
