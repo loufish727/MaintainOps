@@ -3349,26 +3349,30 @@ Latest completed phases:
 - Phase 10Q readiness approved only Admin Setup item display helper extraction.
 - Phase 10R implemented `src/render/setupDisplay.js` and moved only `renderSetupItem`.
 - Phase 10R local static checks, local Resource Load Smoke, and signed-in local smoke passed.
+- Phase 10S packaged/uploaded the Phase 10R extraction and live verification passed.
+- Phase 10T readiness approved only request photo display helper extraction.
+- Phase 10U implemented `src/render/requestPhotoDisplay.js` and moved only `renderMaintenanceRequestPhoto`.
+- Phase 10U local static checks, local Resource Load Smoke, and signed-in local smoke passed.
+- Phase 10V packaged/uploaded the Phase 10U extraction and live verification passed.
 
 Immediate next action:
 
-- Phase 10S package/upload and live verification for the Phase 10R setup display extraction.
+- Choose LFES Phase 10W planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 10R local verified:
+Phase 10V verified:
 
-1. `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1` is referenced locally.
-2. `app.js?v=lfes-phase-10r-setup-display-1` is referenced locally.
-3. Local Resource Load Smoke passes.
-4. Admin Setup renders 16 `.setup-item` cards.
+1. `src/render/requestPhotoDisplay.js?v=lfes-phase-10u-request-photo-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-10u-request-photo-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+3. Hosted Resource Load Smoke passes.
+4. Signed-in live smoke verifies Requests opens.
 5. Messages Phase 9I thread remains visible.
 
-Phase 10S target:
+Phase 10V deploy:
 
-- create a fresh GitHub upload package.
-- deploy the Phase 10R files.
-- verify live resource tags and HTTP 200s.
-- run hosted Resource Load Smoke.
-- run signed-in live smoke with Admin Setup card checks.
+- package: `MaintainOps-github-clean-20260520-124047`
+- commit: `0b889c8`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10v-live-20260520`
+- GitHub connector check returned no workflow runs for `0b889c8`.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

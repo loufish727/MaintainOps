@@ -9025,3 +9025,138 @@ Conclusion:
 - Phase 10R local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 10S.
+
+## LFES Phase 10S Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 10R setup display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change `setupItems`, setup action handling, SQL-applied flag behavior, localStorage updates, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-123706`
+- `MaintainOps-github-clean-20260520-123706.zip`
+
+GitHub deploy:
+
+- Commit: `f09abd2`
+- Commit message: `Extract setup display helper`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-10r-setup-display-1`.
+- Live `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-10r-setup-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+TEST:
+Phase 10S signed-in live setup display smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- new setup display script and app cache tag loaded.
+- Admin Setup opened and rendered 16 `.setup-item` cards.
+- Admin Setup included `Supabase config` and `Photos`.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+Conclusion:
+
+- Phase 10S package/upload and live verification: PASS.
+- Behavior changed: no observed behavior change.
+- GitHub connector check for commit `f09abd2` returned no workflow runs.
+
+## LFES Phase 10U Request Photo Display Local Verification - 2026-05-20
+
+Scope:
+
+- Added `src/render/requestPhotoDisplay.js`.
+- Moved only `renderMaintenanceRequestPhoto` into the display helper module.
+- Did not move request submit handling, request conversion, Quick Fix request behavior, request delete controls, photo upload/optimization/storage code, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Local implementation:
+
+- `index.html` now references `src/render/requestPhotoDisplay.js?v=lfes-phase-10u-request-photo-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-10u-request-photo-display-1`.
+- Resource Load Smoke now includes `src/render/requestPhotoDisplay.js`.
+- `app.js` line count after extraction: 10,187.
+
+TEST:
+Phase 10U static and local resource checks
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local Requests smoke: PASS.
+- Requests opened successfully.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+Conclusion:
+
+- Phase 10U local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10V.
+
+## LFES Phase 10V Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 10U request photo display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change request submit handling, request conversion, Quick Fix request behavior, request delete controls, photo upload/optimization/storage code, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-124047`
+- `MaintainOps-github-clean-20260520-124047.zip`
+
+GitHub deploy:
+
+- Commit: `0b889c8`
+- Commit message: `Extract request photo display helper`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/requestPhotoDisplay.js?v=lfes-phase-10u-request-photo-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-10u-request-photo-display-1`.
+- Live `src/render/requestPhotoDisplay.js?v=lfes-phase-10u-request-photo-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-10u-request-photo-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+TEST:
+Phase 10V signed-in live request photo display smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- new request photo display script and app cache tag loaded.
+- Requests opened successfully.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+Conclusion:
+
+- Phase 10V package/upload and live verification: PASS.
+- Behavior changed: no observed behavior change.
+- GitHub connector check for commit `0b889c8` returned no workflow runs.
+- Phase 10Q/10R/10S and Phase 10T/10U/10V are functionally closed.

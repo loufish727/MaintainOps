@@ -30,6 +30,39 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10Q through 10V as two consecutive cleanup cycles:
+
+- Phase 10Q/10R/10S:
+  - added `src/render/setupDisplay.js`.
+  - moved only `renderSetupItem`.
+  - deployed commit `f09abd2` (`Extract setup display helper`).
+  - live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10s-live-20260520`.
+  - Admin Setup rendered 16 `.setup-item` cards on live.
+- Phase 10T/10U/10V:
+  - added `src/render/requestPhotoDisplay.js`.
+  - moved only `renderMaintenanceRequestPhoto`.
+  - deployed commit `0b889c8` (`Extract request photo display helper`).
+  - live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10v-live-20260520`.
+  - Requests opened successfully on live.
+- Current `app.js` line count:
+  - 10,187 lines.
+- Verification:
+  - static JS checks: PASS.
+  - local Resource Load Smoke: PASS.
+  - hosted Resource Load Smoke: PASS.
+  - signed-in local smokes: PASS.
+  - signed-in live smokes: PASS.
+  - no visible app errors.
+  - no browser warning/error logs.
+- GitHub Actions:
+  - GitHub connector checks for `f09abd2` and `0b889c8` returned no workflow runs.
+- Behavior changed:
+  - no observed behavior change.
+- Recommended next step:
+  - choose LFES Phase 10W planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
 Completed LFES Phase 10Q/10R local setup display extraction:
 
 - Scope:
