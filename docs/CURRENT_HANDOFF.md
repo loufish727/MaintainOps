@@ -4606,6 +4606,35 @@ Most recent full debug:
 
 ## Prior Recent Change
 
+LFES app cleanup continuation completed through Phase 11Q.
+
+Implementation:
+
+- Added `src/render/messageBadgeDisplay.js`.
+- Added `src/render/appIssueDisplay.js`.
+- Added `src/render/workMessageDisplay.js`.
+- Added `src/render/workRecommendationDisplay.js`.
+- Added `src/render/commandCardDisplay.js`.
+- Added `src/render/workCommandDisplay.js`.
+- Added `src/render/missingWorkDetailDisplay.js`.
+- Reduced `app.js` to 10,093 lines.
+- Latest GitHub Pages cache tag is `app.js?v=lfes-phase-11p-missing-work-detail-display-1`.
+
+Verified:
+
+- Latest commit: `3c31d77`.
+- Latest package: `MaintainOps-github-clean-20260520-131510`.
+- Static JS checks passed.
+- Local and hosted Resource Load Smoke passed.
+- Signed-in live smoke passed at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11q-live-20260520`.
+- Taylor Metal Products, Salem, OR, and the Phase 9I message thread remained visible.
+- No browser warning/error logs were observed.
+- GitHub connector returned no workflow runs for the latest app commits.
+
+Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete guards, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+## Prior Recent Change
+
 Team roles were simplified to the real working model: Technician, Manager, Admin.
 
 Implementation:

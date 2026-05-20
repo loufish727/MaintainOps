@@ -112,6 +112,37 @@ Move these later:
 - Photo/storage upload paths.
 - `bindWorkspaceEvents()`.
 
+## Phase 10W Through 11Q Continuation - 2026-05-20
+
+The continuation from Phase 10W through Phase 11Q completed seven additional tiny display-only extraction cycles:
+
+- Phase 10W/10X/10Y: `src/render/messageBadgeDisplay.js` moved `renderMessageNavBadge`.
+- Phase 10Z/11A/11B: `src/render/appIssueDisplay.js` moved `renderAppIssueReport`.
+- Phase 11C/11D/11E: `src/render/workMessageDisplay.js` moved `renderWorkOrderMessages` and `renderLinkedWorkMessageThread`.
+- Phase 11F/11G/11H: `src/render/workRecommendationDisplay.js` moved `renderWorkOrderRecommendation`.
+- Phase 11I/11J/11K: `src/render/commandCardDisplay.js` moved `renderEmailHelperCommandCard` and `commandShortcut`.
+- Phase 11L/11M/11N: `src/render/workCommandDisplay.js` moved `renderWorkOrderCommandSummary`.
+- Phase 11O/11P/11Q: `src/render/missingWorkDetailDisplay.js` moved `renderMissingWorkOrderDetail`.
+
+Latest state:
+
+- latest app commit: `3c31d77`.
+- latest package: `MaintainOps-github-clean-20260520-131510`.
+- latest live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11q-live-20260520`.
+- `app.js` line count after Phase 11P: 10,093.
+
+Verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- hosted GitHub Pages Resource Load Smoke: PASS.
+- signed-in live smoke: PASS.
+- Taylor Metal Products, Salem, OR, and Phase 9I message thread remained visible.
+- no browser warning/error logs.
+- GitHub connector returned no workflow runs for latest app commits.
+
+Continue with the same guardrails for the next cleanup pass. The remaining extractions should still avoid workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete guards, `renderWorkspace()`, and `bindWorkspaceEvents()`.
+
 ## Lowest-Risk Areas To Move First
 
 Move these first:

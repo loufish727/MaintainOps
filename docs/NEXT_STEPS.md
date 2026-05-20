@@ -3354,25 +3354,32 @@ Latest completed phases:
 - Phase 10U implemented `src/render/requestPhotoDisplay.js` and moved only `renderMaintenanceRequestPhoto`.
 - Phase 10U local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10V packaged/uploaded the Phase 10U extraction and live verification passed.
+- Phase 10W/10X/10Y extracted `renderMessageNavBadge` into `src/render/messageBadgeDisplay.js` and live verification passed.
+- Phase 10Z/11A/11B extracted `renderAppIssueReport` into `src/render/appIssueDisplay.js` and live verification passed.
+- Phase 11C/11D/11E extracted `renderWorkOrderMessages` and `renderLinkedWorkMessageThread` into `src/render/workMessageDisplay.js` and live verification passed.
+- Phase 11F/11G/11H extracted `renderWorkOrderRecommendation` into `src/render/workRecommendationDisplay.js` and live verification passed.
+- Phase 11I/11J/11K extracted `renderEmailHelperCommandCard` and `commandShortcut` into `src/render/commandCardDisplay.js` and live verification passed.
+- Phase 11L/11M/11N extracted `renderWorkOrderCommandSummary` into `src/render/workCommandDisplay.js` and live verification passed.
+- Phase 11O/11P/11Q extracted `renderMissingWorkOrderDetail` into `src/render/missingWorkDetailDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10W planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 11R planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 10V verified:
+Phase 11Q verified:
 
-1. `src/render/requestPhotoDisplay.js?v=lfes-phase-10u-request-photo-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10u-request-photo-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/missingWorkDetailDisplay.js?v=lfes-phase-11p-missing-work-detail-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-11p-missing-work-detail-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke verifies Requests opens.
+4. Signed-in live smoke verifies the workspace opens.
 5. Messages Phase 9I thread remains visible.
 
-Phase 10V deploy:
+Phase 11Q deploy:
 
-- package: `MaintainOps-github-clean-20260520-124047`
-- commit: `0b889c8`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10v-live-20260520`
-- GitHub connector check returned no workflow runs for `0b889c8`.
+- package: `MaintainOps-github-clean-20260520-131510`
+- commit: `3c31d77`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11q-live-20260520`
+- GitHub connector check returned no workflow runs for `3c31d77`.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
