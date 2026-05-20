@@ -3433,3 +3433,35 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 13N Through 14G Display Extraction Continuation - 2026-05-20
+
+Completed another 21 controlled LFES phase steps under the medium-risk workflow:
+
+- Phase 13N/13O/13P: extracted work-order description display helpers into `src/render/workOrderDescriptionDisplay.js`; deploy commit `7053b85`.
+- Phase 13P/13Q/13R: extracted `describeWorkOrderChanges` into `src/render/workOrderChangeDisplay.js`; deploy commit `8c0393d`.
+- Phase 13S/13T/13U: extracted `buildActivityFeed` into `src/render/activityFeedDisplay.js`; deploy commit `a8c0333`.
+- Phase 13V/13W/13X: extracted `isLowStockPart` and `lowStockParts` into `src/render/partInventoryDisplay.js`; deploy commit `6985a70`.
+- Phase 13Y/13Z/14A: extracted `partUsageRows` into `src/render/partUsageDisplay.js`; deploy commit `381bbc3`.
+- Phase 14B/14C/14D: extracted `openMaintenanceRequests` into `src/render/requestQueueDisplay.js`; deploy commit `ac9a3fa`.
+- Phase 14E/14F/14G: extracted `assetDeleteBlockerMessage` and `procedureDeleteBlockerMessage` into `src/render/deleteBlockerDisplay.js`; deploy commit `1a17d36`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260520-145833`.
+- final cache tag: `app.js?v=lfes-phase-14f-delete-blocker-display-1`.
+- final hosted Resource Load Smoke: PASS.
+- final live signed-in smoke: PASS.
+- final browser console warning/error logs: clean after filtering known benign noise.
+- `app.js` line count after Phase 14F: 9,969.
+
+Boundary preserved:
+
+- No request/workflow mutations, request conversion, Quick Fix, delete actions, delete confirmations, blocker queries, auth/startup, public QR flows, forms with mutations, PM generation, event handlers, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 14H planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.

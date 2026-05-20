@@ -3377,10 +3377,17 @@ Latest completed phases:
 - Phase 13E/13F/13G extracted setup error text helpers into `src/render/setupErrorDisplay.js` and live verification passed.
 - Phase 13H/13I/13J extracted `friendlyWorkOrderSaveError` into `src/render/workOrderErrorDisplay.js` and live verification passed.
 - Phase 13K/13L/13M extracted `assignmentLabel` into `src/render/assignmentDisplay.js` and live verification passed.
+- Phase 13N/13O/13P extracted work-order description display helpers into `src/render/workOrderDescriptionDisplay.js` and live verification passed.
+- Phase 13P/13Q/13R extracted `describeWorkOrderChanges` into `src/render/workOrderChangeDisplay.js` and live verification passed.
+- Phase 13S/13T/13U extracted `buildActivityFeed` into `src/render/activityFeedDisplay.js` and live verification passed.
+- Phase 13V/13W/13X extracted `isLowStockPart` and `lowStockParts` into `src/render/partInventoryDisplay.js` and live verification passed.
+- Phase 13Y/13Z/14A extracted `partUsageRows` into `src/render/partUsageDisplay.js` and live verification passed.
+- Phase 14B/14C/14D extracted `openMaintenanceRequests` into `src/render/requestQueueDisplay.js` and live verification passed.
+- Phase 14E/14F/14G extracted `assetDeleteBlockerMessage` and `procedureDeleteBlockerMessage` into `src/render/deleteBlockerDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 13N planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 14H planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
 Phase 13M verified:
 
@@ -3396,6 +3403,14 @@ Phase 13M deploy:
 - commit: `10516dc`
 - live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-13l-live-1779311774845`
 - GitHub connector check returned no workflow runs for `10516dc`.
+
+Phase 14G deploy:
+
+- package: `MaintainOps-github-clean-20260520-145833`
+- commit: `1a17d36`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-14f-live-*`
+- GitHub connector check returned no workflow runs for `1a17d36`.
+- `app.js` line count after Phase 14F: 9,969.
 
 Important:
 

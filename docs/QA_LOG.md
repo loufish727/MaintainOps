@@ -9395,3 +9395,62 @@ Conclusion:
 
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
+
+## LFES Phase 13N Through 14G Display Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the medium-risk LFES modularization loop for 21 phase steps, from Phase 13N through Phase 14G.
+- Added display modules for work-order description text, work-order change summaries, activity feed aggregation, part inventory low-stock filtering, part usage rows, open request queue filtering, and delete-blocker messages.
+- Did not move request/workflow mutations, request conversion, Quick Fix, delete actions, delete confirmations, blocker queries, auth/startup, public QR flows, forms with mutations, PM generation, event handlers, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 13P: `7053b85` - `Extract work order description display helper`
+- Phase 13R: `8c0393d` - `Extract work order change display helper`
+- Phase 13U: `a8c0333` - `Extract activity feed display helper`
+- Phase 13X: `6985a70` - `Extract part inventory display helper`
+- Phase 14A: `381bbc3` - `Extract part usage display helper`
+- Phase 14D: `ac9a3fa` - `Extract request queue display helper`
+- Phase 14G: `1a17d36` - `Extract delete blocker display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-145833`
+- `MaintainOps-github-clean-20260520-145833.zip`
+
+Latest implementation:
+
+- `index.html` now references `src/render/deleteBlockerDisplay.js?v=lfes-phase-14f-delete-blocker-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-14f-delete-blocker-display-1`.
+- `app.js` line count after Phase 14F extraction: 9,969.
+
+TEST:
+Phase 14G static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed for `app.js` and each new render module.
+- targeted local helper-output smokes passed for description text, change summaries, activity ordering, low-stock filtering, part usage rows, submitted request filtering, and delete-blocker message text.
+- local resource checks passed for each new module before package/upload.
+- hosted GitHub Pages resources passed for the final Phase 14G deploy.
+- live `src/render/deleteBlockerDisplay.js?v=lfes-phase-14f-delete-blocker-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-14f-delete-blocker-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible.
+- signed-in workspace rendered with Work, Parts, and Team nav available.
+- no browser warning/error logs after filtering known benign noise.
+
+Notes:
+
+- Local signed-in browser smoke remains unavailable on temporary localhost origins because the browser is signed out there; local verification used syntax, resource, and direct helper-output checks, with signed-in behavior gated on live smoke.
+- GitHub Pages briefly returned 404 for newly added render modules immediately after deploy, then served them successfully on retry after propagation.
+- GitHub connector checks returned no workflow runs for the latest app commits, including `1a17d36`.
+
+Conclusion:
+
+- The requested 21 phase steps completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.

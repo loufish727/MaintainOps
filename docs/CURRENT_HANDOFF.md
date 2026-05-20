@@ -4725,6 +4725,38 @@ Note:
 
 ## Prior Recent Change
 
+LFES app cleanup continued through another 21 controlled medium-risk phase steps, ending at Phase 14G.
+
+Implementation:
+
+- Extracted work-order description display helpers into `src/render/workOrderDescriptionDisplay.js`.
+- Extracted work-order change summary display helper into `src/render/workOrderChangeDisplay.js`.
+- Extracted activity feed aggregation into `src/render/activityFeedDisplay.js`.
+- Extracted part inventory low-stock helpers into `src/render/partInventoryDisplay.js`.
+- Extracted part usage row lookup into `src/render/partUsageDisplay.js`.
+- Extracted open request queue filtering into `src/render/requestQueueDisplay.js`.
+- Extracted delete-blocker message formatting into `src/render/deleteBlockerDisplay.js`.
+- Latest cache tag is `app.js?v=lfes-phase-14f-delete-blocker-display-1`.
+
+Verified:
+
+- Latest deploy commit: `1a17d36`.
+- Latest package: `MaintainOps-github-clean-20260520-145833`.
+- Static JS checks passed.
+- Targeted helper-output smokes passed.
+- Local and hosted resource checks passed.
+- Signed-in live smoke passed against `https://loufish727.github.io/MaintainOps/`.
+- Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, and Team nav were visible.
+- No browser warning/error logs were observed after filtering known benign noise.
+- GitHub connector returned no workflow runs for latest deploy commits.
+
+Note:
+
+- No workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, `bindWorkspaceEvents()`, assignment controls, delete actions, delete confirmations, public QR flows, Quick Fix, request conversion, or PM generation were moved.
+- `app.js` line count after Phase 14F is 9,969.
+
+## Prior Recent Change
+
 Team roles were simplified to the real working model: Technician, Manager, Admin.
 
 Implementation:
