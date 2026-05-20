@@ -4660,6 +4660,38 @@ Next cleanup selection should be cautious because many remaining render function
 
 ## Prior Recent Change
 
+LFES app cleanup continuation completed through Phase 12R.
+
+Implementation:
+
+- Added `src/render/procedureOptionsDisplay.js`.
+- Added `src/render/messageThreadButtonDisplay.js`.
+- Added `src/render/appIssuePanelDisplay.js`.
+- Added `src/render/messageThreadLabelDisplay.js`.
+- Added `src/render/messageComposerDisplay.js`.
+- Added `src/render/inviteLocationDisplay.js`.
+- Added `src/render/partSetupDisplay.js`.
+- Reduced `app.js` to 10,042 lines.
+- Latest GitHub Pages cache tag is `app.js?v=lfes-phase-12q-part-setup-display-1`.
+
+Verified:
+
+- Latest app commit: `eef5e1c`.
+- Latest package: `MaintainOps-github-clean-20260520-134626`.
+- Static JS checks passed.
+- Local and hosted Resource Load Smoke passed.
+- Signed-in live Parts smoke passed at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-12r-live-20260520`.
+- Phase 9I message regression passed after Parts navigation.
+- No browser warning/error logs were observed.
+- GitHub connector returned no workflow runs for the latest app commits.
+
+Note:
+
+- Phase 12H caught a local load-order issue before deployment; it was fixed by initializing message thread labels before helpers that receive `messageThreadScopeLabel`.
+- Remaining cleanup candidates require fresh readiness because most remaining render functions are forms, auth/startup, public QR, assignment controls, delete zones, workflow actions, or full detail views.
+
+## Prior Recent Change
+
 Team roles were simplified to the real working model: Technician, Manager, Admin.
 
 Implementation:

@@ -170,6 +170,37 @@ Verification:
 
 Next candidate selection should be more conservative. Many remaining render functions are mixed with auth, public QR, full forms, danger zones, workflow actions, or delete controls.
 
+## Phase 11X Through 12R Continuation - 2026-05-20
+
+Seven additional low-risk display extraction cycles completed:
+
+- Phase 11X/11Y/11Z: `src/render/procedureOptionsDisplay.js` moved `renderProcedureOptions`.
+- Phase 12A/12B/12C: `src/render/messageThreadButtonDisplay.js` moved `renderMessageThreadButton`.
+- Phase 12D/12E/12F: `src/render/appIssuePanelDisplay.js` moved `renderAppIssueReportsPanel`.
+- Phase 12G/12H/12I: `src/render/messageThreadLabelDisplay.js` moved `messageThreadScopeLabel` and `directThreadNames`.
+- Phase 12J/12K/12L: `src/render/messageComposerDisplay.js` moved `messageComposerScopeNote`.
+- Phase 12M/12N/12O: `src/render/inviteLocationDisplay.js` moved `inviteDefaultLocationLabel`.
+- Phase 12P/12Q/12R: `src/render/partSetupDisplay.js` moved `partSetupMessage`.
+
+Latest state:
+
+- latest app commit: `eef5e1c`.
+- latest package: `MaintainOps-github-clean-20260520-134626`.
+- latest live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-12r-live-20260520`.
+- `app.js` line count after Phase 12Q: 10,042.
+
+Verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- hosted GitHub Pages Resource Load Smoke: PASS.
+- signed-in live Parts smoke: PASS.
+- Phase 9I message regression after navigation: PASS.
+- no browser warning/error logs.
+- GitHub connector returned no workflow runs for latest app commits.
+
+Continue only with fresh readiness. Remaining render functions are mostly medium/high-risk because they include forms, auth/startup, public QR, work/request workflow actions, assignment controls, delete zones, or full detail views.
+
 ## Lowest-Risk Areas To Move First
 
 Move these first:

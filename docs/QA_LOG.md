@@ -9275,3 +9275,64 @@ Conclusion:
 
 - Phase 11R through 11W is functionally closed.
 - Behavior changed: no observed behavior change.
+
+## LFES Phase 11X Through 12R Display Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the low-risk LFES modularization loop for 21 phase steps, from Phase 11X through Phase 12R.
+- Added display modules for procedure select options, message thread buttons, app issue panel wrapper, message thread labels, message composer scope text, invite default-location labels, and part setup warning text.
+- Did not move request/work cards, assignment controls, delete zones, auth/startup views, public QR flows, forms with mutations, Quick Fix, request conversion, PM generation, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 11Z: `76a9b7d` - `Extract procedure options display helper`
+- Phase 12C: `e286d6e` - `Extract message thread button display helper`
+- Phase 12F: `84d2d3b` - `Extract app issue panel display helper`
+- Phase 12I: `56f46b4` - `Extract message thread label display helpers`
+- Phase 12L: `7eb5c6c` - `Extract message composer display helper`
+- Phase 12O: `2c01a71` - `Extract invite location display helper`
+- Phase 12R: `eef5e1c` - `Extract part setup display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-134626`
+- `MaintainOps-github-clean-20260520-134626.zip`
+
+Latest implementation:
+
+- `index.html` now references `src/render/partSetupDisplay.js?v=lfes-phase-12q-part-setup-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-12q-part-setup-display-1`.
+- Resource Load Smoke now includes `src/render/partSetupDisplay.js`.
+- `app.js` line count after Phase 12Q extraction: 10,042.
+
+TEST:
+Phase 12R static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed in source and publish worktrees.
+- local Resource Load Smoke passed.
+- hosted GitHub Pages Resource Load Smoke passed.
+- live `src/render/partSetupDisplay.js?v=lfes-phase-12q-part-setup-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-12q-part-setup-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible in the active workspace selector.
+- Parts Inventory opened and Add Part rendered.
+- part setup warning text was empty because part cost/source readiness flags are healthy.
+- Messages still showed the Phase 9I QA thread after Parts navigation.
+- no visible app errors.
+- no browser warning/error logs.
+
+Notes:
+
+- Phase 12H initially exposed a local runtime load-order issue after extracting message thread labels; it was fixed before deployment by instantiating the label helper before helpers that receive `messageThreadScopeLabel`.
+- GitHub connector checks returned no workflow runs for latest app commits, including `eef5e1c`.
+
+Conclusion:
+
+- The requested 21 phase steps completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.

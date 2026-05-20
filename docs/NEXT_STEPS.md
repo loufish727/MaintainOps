@@ -3363,25 +3363,36 @@ Latest completed phases:
 - Phase 11O/11P/11Q extracted `renderMissingWorkOrderDetail` into `src/render/missingWorkDetailDisplay.js` and live verification passed.
 - Phase 11R/11S/11T extracted `renderPartSourceOptions` and `renderPartSourceManager` into `src/render/partSourceDisplay.js` and live verification passed.
 - Phase 11U/11V/11W extracted `renderAssetCard` into `src/render/assetCardDisplay.js` and live verification passed.
+- Phase 11X/11Y/11Z extracted `renderProcedureOptions` into `src/render/procedureOptionsDisplay.js` and live verification passed.
+- Phase 12A/12B/12C extracted `renderMessageThreadButton` into `src/render/messageThreadButtonDisplay.js` and live verification passed.
+- Phase 12D/12E/12F extracted `renderAppIssueReportsPanel` into `src/render/appIssuePanelDisplay.js` and live verification passed.
+- Phase 12G/12H/12I extracted `messageThreadScopeLabel` and `directThreadNames` into `src/render/messageThreadLabelDisplay.js` and live verification passed.
+- Phase 12J/12K/12L extracted `messageComposerScopeNote` into `src/render/messageComposerDisplay.js` and live verification passed.
+- Phase 12M/12N/12O extracted `inviteDefaultLocationLabel` into `src/render/inviteLocationDisplay.js` and live verification passed.
+- Phase 12P/12Q/12R extracted `partSetupMessage` into `src/render/partSetupDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 11X planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 12S planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 11W verified:
+Phase 12R verified:
 
-1. `src/render/assetCardDisplay.js?v=lfes-phase-11v-asset-card-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-11v-asset-card-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/partSetupDisplay.js?v=lfes-phase-12q-part-setup-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-12q-part-setup-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke verifies Equipment opens and renders 1 asset card.
-5. Messages Phase 9I thread remains visible after Equipment navigation.
+4. Signed-in live smoke verifies Parts opens and Add Part renders.
+5. Messages Phase 9I thread remains visible after Parts navigation.
 
-Phase 11W deploy:
+Phase 12R deploy:
 
-- package: `MaintainOps-github-clean-20260520-132436`
-- commit: `3e68c82`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11w-live-20260520`
-- GitHub connector check returned no workflow runs for `3e68c82`.
+- package: `MaintainOps-github-clean-20260520-134626`
+- commit: `eef5e1c`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-12r-live-20260520`
+- GitHub connector check returned no workflow runs for `eef5e1c`.
+
+Important:
+
+- Remaining render functions are mostly medium/high-risk because they include forms, auth/startup, public QR, work/request workflow actions, assignment controls, delete zones, or full detail views.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
