@@ -33,6 +33,7 @@ const requiredResources = [
   "src/render/messageBadgeDisplay.js",
   "src/render/appIssueDisplay.js",
   "src/render/workMessageDisplay.js",
+  "src/render/workRecommendationDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

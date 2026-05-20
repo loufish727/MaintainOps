@@ -92,6 +92,7 @@ const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDispl
 const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
 const { createAppIssueDisplayHelpers } = window.MaintainOpsAppIssueDisplay;
 const { createWorkMessageDisplayHelpers } = window.MaintainOpsWorkMessageDisplay;
+const { createWorkRecommendationDisplayHelpers } = window.MaintainOpsWorkRecommendationDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -373,6 +374,12 @@ const {
   getMessageThreads: () => messageThreads,
   getMessagesByThreadId: () => messagesByThreadId,
   getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+});
+const {
+  renderWorkOrderRecommendation,
+} = createWorkRecommendationDisplayHelpers({
+  escapeHtml,
+  recommendedWorkOrderStep,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -5119,22 +5126,6 @@ function renderWorkOrderDangerZone(workOrder) {
       ` : `
         <button class="danger-action-button large-delete-button" data-delete-work-order="${workOrder.id}" type="button">Delete Work Order</button>
       `}
-    </section>
-  `;
-}
-
-function renderWorkOrderRecommendation(workOrder) {
-  const recommendation = recommendedWorkOrderStep(workOrder);
-  if (!recommendation) return "";
-
-  return `
-    <section class="work-recommendation ${recommendation.tone || ""}" aria-label="Recommended next step">
-      <div>
-        <span>Recommended Next Step</span>
-        <strong>${escapeHtml(recommendation.title)}</strong>
-        <p>${escapeHtml(recommendation.helper)}</p>
-      </div>
-      <button class="recommendation-button" data-jump-work-section="${recommendation.target}" type="button">${escapeHtml(recommendation.action)}</button>
     </section>
   `;
 }
