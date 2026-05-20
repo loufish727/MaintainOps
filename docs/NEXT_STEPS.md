@@ -4,7 +4,132 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
-LFES Phase 9G package/upload and live resource verification is complete. The remaining checkpoint is signed-in live UI smoke.
+LFES Phase 9K message formatting helper extraction is complete locally. The next controlled phase is package/upload plus live verification.
+
+Current status:
+
+- Phase 9J planning/readiness:
+  - PASS.
+  - approved only `formatMessageTime`, `formatMessageDay`, and `initials` for movement.
+- Phase 9K local implementation:
+  - created `src/render/messageFormatting.js`.
+  - moved only the approved pure message formatting helpers.
+  - updated `index.html` and Resource Load Smoke.
+  - app.js line count changed from 10,511 to 10,487.
+  - static checks: PASS.
+  - local resource smoke: PASS.
+  - local signed-in message/core-section smoke: PASS.
+  - behavior changed: no observed behavior change.
+
+Recommended immediate next controlled phase:
+
+- Phase 9L package/upload and live verification:
+  - package includes `src/render/messageFormatting.js`.
+  - live `index.html` includes `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9k-message-format-1`.
+  - live helper script returns HTTP 200.
+  - hosted Resource Load Smoke passes.
+  - GitHub Actions Resource Load Smoke passes.
+  - signed-in live smoke verifies Taylor Metal Products, Salem, Messages with the Phase 9I QA thread, My Work, Work Orders, Equipment, Parts, Team, Settings, no missing scripts, and no visible app errors.
+
+Keep blocked until Phase 9L passes:
+
+- Phase 9M planning/implementation.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
+LFES Phase 9I non-empty Messages smoke is complete. The Phase 9G message display-helper extraction now has both empty-state and non-empty message-bubble runtime evidence.
+
+Current status:
+
+- Phase 9I:
+  - live signed-in smoke: PASS.
+  - created one minimal direct QA thread as evidence.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no workflows/business logic changed.
+- QA thread retained as evidence:
+  - `QA Phase 9I message smoke 20260520-9I-1779288774749`
+  - direct participants: `Louie Fisher, loufish727`
+- Verified:
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed active.
+  - message thread button rendered.
+  - message bubble rendered.
+  - sender initials `LF` rendered.
+  - `Today` day divider rendered.
+  - My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded afterward.
+  - no visible app errors.
+  - no browser warning/error logs captured.
+
+Recommended immediate next controlled phase:
+
+- Choose one:
+  - LFES Phase 9J planning/readiness before any additional helper extraction.
+  - Pause code movement and continue live pilot monitoring.
+
+Keep blocked until explicitly approved:
+
+- Phase 9J implementation.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
+LFES Phase 9H planning/readiness is complete. The next recommended controlled phase is non-empty Messages smoke, not more code extraction.
+
+Current status:
+
+- Phase 9G:
+  - fully closed.
+  - signed-in live UI smoke passed.
+  - Messages loaded with `0 threads`, so non-empty message bubbles remain not data-exercised.
+- Phase 9H:
+  - planning/documentation only: PASS.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no workflows/business logic changed.
+  - decision: do not recommend immediate Phase 9I code extraction yet.
+
+Recommended immediate next controlled phase:
+
+- LFES Phase 9I non-empty Messages smoke, if explicitly approved:
+  - use an existing safe message thread if one exists, or create a minimal safe message thread only with explicit approval.
+  - verify message list, message bubble, sender initials, timestamp/day divider, thread button summary, and core sections afterward.
+  - document any live data created and whether cleanup is available.
+
+If live message mutation is not approved:
+
+- keep non-empty message bubble rendering as `NOT VERIFIED`.
+- continue live pilot monitoring.
+- defer additional `app.js` extraction.
+
+Keep blocked until explicitly approved:
+
+- Phase 9I code implementation.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations except a manually approved non-empty Messages smoke using safe owned accounts.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
+LFES Phase 9G is fully closed. Package/upload, live resource verification, GitHub Actions, Pages deployment, and signed-in live UI smoke are complete.
 
 Current status:
 
@@ -24,31 +149,28 @@ Current status:
   - Resource Load Smoke PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26169188200`
   - Pages build/deployment PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26169169535`
 - Authenticated live UI smoke:
-  - NOT VERIFIED in the automated pass because the automation session did not inherit the user's signed-in browser session.
+  - PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9g-live-20260520-072736`
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected in `location-select`.
+  - Messages loaded and rendered the 0-thread empty state.
+  - My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - no visible app errors.
+  - no browser warning/error logs captured.
 - Behavior changed:
-  - no observed behavior change from package/resource verification.
+  - no observed behavior change.
+- Smoke caveat:
+  - non-empty message bubbles remain not data-exercised because the live Messages screen had 0 threads.
 
 Recommended immediate next controlled phase:
 
-- Open live app with:
-  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9g-live-20260520-072736`
-- In a signed-in session verify:
-  - Taylor Metal Products loads.
-  - Salem, OR remains active.
-  - Messages loads.
-  - My Work loads.
-  - Work Orders loads.
-  - Equipment loads.
-  - Parts loads.
-  - Team loads.
-  - Settings loads.
-  - no missing-script errors.
-  - no visible app errors.
-- If that passes, mark Phase 9G fully closed.
+- Choose one:
+  - LFES Phase 9H planning/readiness only before any further extraction.
+  - Continue live pilot monitoring if operational usage is the priority.
 
-Keep blocked until Phase 9G signed-in live UI smoke passes:
+Keep blocked until explicitly approved after Phase 9H readiness:
 
-- Phase 9H planning/implementation.
+- Phase 9H implementation.
 - additional display extraction.
 - message workflow movement.
 - event handlers.

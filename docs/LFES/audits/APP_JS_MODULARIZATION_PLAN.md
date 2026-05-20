@@ -1488,3 +1488,258 @@ Important caveat:
 - Team invite/member/default-location rendering.
 - work-order lifecycle and command-card movement.
 - Supabase SQL/RLS changes.
+
+## Phase 9H App.js Cleanup Readiness Decision - 2026-05-20
+
+Phase 9H was planning/documentation only. No app code, helper extraction, rendering behavior, event binding, Supabase SQL/RLS, workflow logic, or business logic changed.
+
+Detailed decision:
+
+- `docs/LFES/audits/LFES_PHASE_9H_APP_JS_CLEANUP_READINESS.md`
+
+### Phase 9H Decision
+
+Do not recommend immediate Phase 9I code extraction yet.
+
+Reason:
+
+- Phase 9G is fully closed, including signed-in live UI smoke.
+- Both local and live Phase 9G smoke verified the Messages empty state.
+- Current live Messages data had `0 threads`, so non-empty message bubbles were not data-exercised.
+- Moving additional message-adjacent helpers before non-empty message evidence would stack unverified display risk.
+- Other pure label helpers are technically safe but low-value enough to defer.
+
+### Recommended Next Controlled Phase
+
+Recommended next phase:
+
+- LFES Phase 9I non-empty Messages smoke, if explicitly approved.
+
+Scope:
+
+- no code changes.
+- no helper extraction.
+- no Supabase SQL/RLS changes.
+- no workflow refactor.
+- use an existing safe message thread if available, or create a minimal safe message thread only with explicit approval.
+- verify message list, message bubble, sender initials, timestamp/day divider, thread button summary, and core sections afterward.
+
+If live message mutation is not approved:
+
+- keep non-empty message bubble rendering as `NOT VERIFIED`.
+- continue live pilot monitoring.
+- defer additional app.js extraction.
+
+### Safe Later Code Candidates
+
+After non-empty message display is verified, possible tiny code candidates include:
+
+- `formatMessageTime`.
+- `formatMessageDay`.
+- `initials`.
+- `assetTypeLabel`.
+- `assetStatusLabel`.
+
+These remain safe later, not currently approved for implementation.
+
+### Remains Blocked
+
+- Phase 9I code implementation without fresh approval.
+- `renderMessageCenter`.
+- `renderMessageThreadButton`.
+- `renderLinkedWorkMessageThread`.
+- message composer forms.
+- thread creation/send/read mutations, except a manually approved live smoke using safe owned accounts.
+- event handlers.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- notice/status/toast helper movement.
+- admin readiness display movement.
+- issue report display movement.
+- public QR rendering and submit flow.
+- parts and equipment rendering.
+- Team invite/member/default-location rendering.
+- work-order lifecycle and command-card movement.
+- Supabase SQL/RLS changes.
+
+## Phase 9I Non-Empty Messages Smoke - 2026-05-20
+
+Phase 9I completed the runtime evidence gap left after Phase 9G. It was live signed-in smoke only. No app code, helper extraction, rendering behavior, event binding, Supabase SQL/RLS, workflow logic, or business logic changed.
+
+### Scope
+
+- Created one minimal direct QA message thread using safe owned accounts.
+- Verified real message thread and message bubble rendering.
+- Did not move message center, composer, thread buttons, event handlers, Supabase calls, or mutations into modules.
+
+### QA Data Created
+
+- subject: `QA Phase 9I message smoke 20260520-9I-1779288774749`
+- body: `QA Phase 9I message bubble smoke 20260520-9I-1779288774749. Safe owned-account rendering check.`
+- type: direct
+- visible participants: `Louie Fisher, loufish727`
+- cleanup: retained as QA evidence unless a later app-supported cleanup/archive decision is made.
+
+### Verification
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9i-message-smoke-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- Messages went from `0 threads` to `1 threads`.
+- thread button rendered subject, participants, sender/body summary, and timestamp.
+- message detail rendered one `.message-bubble`.
+- sender initials rendered as `LF`.
+- `Today` day divider rendered.
+- My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded afterward.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 9I Result
+
+- non-empty Messages smoke: PASS.
+- non-empty message bubble rendering is now data-exercised.
+- app behavior changed: no.
+- live QA data changed: yes, one direct QA message thread was created.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 9J planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- Phase 9J implementation without fresh approval.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+## Phase 9J Message Format Readiness Decision - 2026-05-20
+
+Phase 9J was planning/documentation only. No app code, helper extraction, rendering behavior, event binding, Supabase SQL/RLS, workflow logic, or business logic changed.
+
+Detailed decision:
+
+- `docs/LFES/audits/LFES_PHASE_9J_MESSAGE_FORMAT_READINESS.md`
+
+### Phase 9J Decision
+
+Approve a narrow Phase 9K implementation:
+
+- create `src/render/messageFormatting.js`
+- move only:
+  - `formatMessageTime`
+  - `formatMessageDay`
+  - `initials`
+
+Reason:
+
+- Phase 9I verified non-empty message rendering before additional message-adjacent movement.
+- The three helpers are pure display-format helpers.
+- They perform no Supabase calls.
+- They emit no `data-*` behavior hooks.
+- They do not create forms, event handlers, message mutations, auth/session/company/location behavior, or storage behavior.
+
+### Remains Blocked
+
+- `renderMessageCenter`.
+- `renderMessageThreadButton`.
+- `renderLinkedWorkMessageThread`.
+- message composer forms.
+- thread creation/send/read mutations.
+- event handlers.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- Supabase SQL/RLS.
+
+## Phase 9K Message Formatting Helper Extraction - 2026-05-20
+
+Phase 9K implemented the approved message formatting helper extraction only. No workflow, message mutation, thread selection, event binding, Supabase query, auth/session/company/location logic, `renderWorkspace()`, `bindWorkspaceEvents()`, Supabase SQL/RLS, or business logic changed.
+
+### Implementation
+
+Created:
+
+- `src/render/messageFormatting.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/LFES/audits/LFES_PHASE_9J_MESSAGE_FORMAT_READINESS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Moved from `app.js`:
+
+- `formatMessageTime`
+- `formatMessageDay`
+- `initials`
+
+The new module exposes `window.MaintainOpsMessageFormatting`.
+
+### Cache And Resource Smoke
+
+- `index.html` now loads `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9k-message-format-1`.
+- `tests/smoke/resource-load.spec.js` now checks `src/render/messageFormatting.js`.
+- Local Playwright Resource Load Smoke passed with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+
+### Line Reduction
+
+- before Phase 9K: 10,511 lines.
+- after Phase 9K: 10,487 lines.
+- reduction: 24 lines.
+
+### Local Smoke Result
+
+Local signed-in smoke passed on:
+
+- `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9k-message-format-20260520`
+
+Verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- `src/render/messageFormatting.js` and the Phase 9K `app.js` cache tag were present.
+- Messages opened with the Phase 9I QA thread.
+- message thread button rendered.
+- one message bubble rendered.
+- sender initials `LF` rendered.
+- `Today` day divider rendered.
+- My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+### Remains Blocked
+
+- package/upload until Phase 9L.
+- `renderMessageCenter`.
+- `renderMessageThreadButton`.
+- `renderLinkedWorkMessageThread`.
+- message composer forms.
+- thread creation/send/read mutations.
+- event handlers.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- Supabase SQL/RLS changes.

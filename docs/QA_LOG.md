@@ -7132,3 +7132,331 @@ Conclusion:
 - Phase 9G package/upload and live resource verification: PASS.
 - Authenticated live UI smoke: NOT VERIFIED in this pass.
 - Behavior changed: no observed behavior change from resource/package verification.
+
+## LFES Phase 9G Signed-In Live UI Smoke - 2026-05-20
+
+Scope:
+
+- Completed the remaining authenticated live UI smoke for Phase 9G.
+- Did not start Phase 9H.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+- Did not create or mutate app records.
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9g-live-20260520-072736`
+
+TEST:
+Phase 9G signed-in live UI smoke
+
+STEPS:
+1. Opened live GitHub Pages app with Phase 9G cache bust.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected in `location-select`.
+5. Verified Phase 9G script tags were present:
+   - `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`
+   - `app.js?v=lfes-phase-9g-message-1`
+6. Opened Messages.
+7. Verified Messages loaded without visible errors.
+8. Opened My Work.
+9. Opened Work Orders.
+10. Opened Equipment.
+11. Opened Parts.
+12. Opened Team.
+13. Opened Settings.
+14. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, Messages and core sections load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The live signed-in session restored as `louie.fisher@taylormetal.com` under Taylor Metal Products. The active location select had `Salem, OR` selected. Messages loaded with `0 threads` and rendered the empty/no-thread state, so non-empty message bubbles remain not data-exercised. My Work, Work Orders, Equipment, Parts, Team, and Settings loaded. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9G signed-in live UI smoke: PASS.
+- Phase 9G is fully closed.
+- Behavior changed: no observed behavior change.
+- Follow-up watch item: verify non-empty message bubble rendering when safe message-thread data exists.
+
+## LFES Phase 9H App.js Cleanup Readiness Decision - 2026-05-20
+
+Scope:
+
+- Planning and documentation only.
+- Reviewed remaining low-risk `app.js` cleanup candidates after Phase 9G was fully closed.
+- Did not change app code.
+- Did not move functions.
+- Did not refactor `app.js`.
+- Did not change rendering behavior.
+- Did not change event binding.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_9H_APP_JS_CLEANUP_READINESS.md`
+
+Updated:
+
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+
+Decision:
+
+- Do not recommend immediate Phase 9I code extraction yet.
+- Phase 9G is fully closed, but non-empty message bubbles remain not data-exercised because the live Messages screen had `0 threads`.
+- Moving additional message-adjacent helpers before non-empty message evidence would stack unverified display risk.
+- Pure label helpers such as `assetTypeLabel` and `assetStatusLabel` remain technically safe later, but low-value now.
+
+Recommended next controlled phase:
+
+- LFES Phase 9I non-empty Messages smoke, if explicitly approved.
+- Use an existing safe message thread if available, or create a minimal safe message thread only with explicit approval.
+- Verify message list, message bubble, sender initials, timestamp/day divider, thread button summary, and core section navigation afterward.
+
+TEST:
+Phase 9H app.js cleanup readiness decision
+
+STEPS:
+1. Reviewed current Phase 9G closure state, QA caveats, `app.js` helper candidates, and existing render modules.
+2. Classified possible next candidates by operational value, risk, and verification availability.
+3. Documented the Phase 9H decision and updated continuity docs.
+
+EXPECTED:
+Planning identifies the next safest controlled phase without changing app code, Supabase SQL/RLS, rendering behavior, event binding, workflows, or business logic.
+
+RESULT:
+PASS
+
+NOTES:
+No runtime browser smoke was required because this was documentation-only. No JavaScript static checks were required because no JavaScript files changed. The next recommended phase is a non-empty Messages smoke before further helper extraction.
+
+## LFES Phase 9I Non-Empty Messages Smoke - 2026-05-20
+
+Scope:
+
+- Live signed-in runtime smoke only.
+- Created one minimal direct QA message thread to exercise non-empty message rendering.
+- Did not change app code.
+- Did not move functions.
+- Did not refactor `app.js`.
+- Did not change rendering behavior.
+- Did not change event binding.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9i-message-smoke-20260520`
+
+QA data created:
+
+- Subject: `QA Phase 9I message smoke 20260520-9I-1779288774749`
+- Body: `QA Phase 9I message bubble smoke 20260520-9I-1779288774749. Safe owned-account rendering check.`
+- Thread type: direct
+- Visible participants: `Louie Fisher, loufish727`
+
+QA cleanup:
+
+- No cleanup was performed.
+- The thread is retained as QA evidence unless a later app-supported cleanup/archive decision is made.
+
+TEST:
+Phase 9I non-empty Messages smoke
+
+STEPS:
+1. Opened live GitHub Pages app with Phase 9I cache bust.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected in `location-select`.
+5. Opened Messages.
+6. Confirmed there were initially `0` message threads.
+7. Opened New message.
+8. Selected Direct message.
+9. Selected the safe owned `loufish727` teammate entry.
+10. Created the direct QA thread with token `20260520-9I-1779288774749`.
+11. Verified the thread list rendered the new thread.
+12. Verified the message detail rendered the non-empty message list and bubble.
+13. Opened My Work.
+14. Opened Work Orders.
+15. Opened Equipment.
+16. Opened Parts.
+17. Opened Team.
+18. Opened Settings.
+19. Returned to Messages.
+20. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, a safe direct QA message thread can be created, message thread summary and message bubble render, sender initials and date divider render, core sections still load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Messages showed `1 threads` after creation. The thread button rendered the subject, participants `Louie Fisher, loufish727`, sender/body summary, and `Today 7:52 AM` timestamp. The detail view rendered one `.message-bubble`, sender initials `LF`, and a `Today` day divider. My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded afterward with Salem, OR still active. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9I non-empty Messages smoke: PASS.
+- Non-empty message bubble rendering is now data-exercised.
+- Behavior changed: no app behavior changed.
+- Live data changed: one direct QA message thread was intentionally created and retained as evidence.
+
+## LFES Phase 9J Message Format Readiness Decision - 2026-05-20
+
+Scope:
+
+- Planning and documentation only.
+- Reviewed message-format helper candidates after Phase 9I verified non-empty message rendering.
+- Did not change app code.
+- Did not move functions.
+- Did not refactor `app.js`.
+- Did not change rendering behavior.
+- Did not change event binding.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_9J_MESSAGE_FORMAT_READINESS.md`
+
+Decision:
+
+- Approved Phase 9K implementation for only:
+  - `formatMessageTime`
+  - `formatMessageDay`
+  - `initials`
+- Kept message center, thread buttons, composer forms, message mutations, event handlers, Supabase calls, `renderWorkspace()`, `bindWorkspaceEvents()`, and Supabase SQL/RLS blocked.
+
+TEST:
+Phase 9J message format readiness decision
+
+STEPS:
+1. Reviewed Phase 9I live non-empty Messages smoke evidence.
+2. Reviewed message-related helpers in `app.js`.
+3. Classified possible next candidates by risk and verification readiness.
+4. Documented the Phase 9J decision.
+
+EXPECTED:
+Planning identifies a narrow safe implementation scope without changing app code, Supabase SQL/RLS, rendering behavior, event binding, workflows, or business logic.
+
+RESULT:
+PASS
+
+NOTES:
+No runtime browser smoke was required because this was documentation-only. No JavaScript static checks were required because no JavaScript files changed.
+
+## LFES Phase 9K Message Formatting Helper Extraction - 2026-05-20
+
+Scope:
+
+- Created one small message formatting module.
+- Moved only the approved pure message formatting helpers.
+- Did not move `renderMessageCenter`.
+- Did not move `renderMessageThreadButton`.
+- Did not move `renderLinkedWorkMessageThread`.
+- Did not move message composer forms.
+- Did not move thread creation/send/read mutations.
+- Did not move event handlers.
+- Did not move Supabase calls.
+- Did not move auth/session/company/location logic.
+- Did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `src/render/messageFormatting.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Helpers moved:
+
+- `formatMessageTime`
+- `formatMessageDay`
+- `initials`
+
+Cache/script loading:
+
+- `index.html` now loads `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9k-message-format-1`.
+
+Resource smoke:
+
+- `tests/smoke/resource-load.spec.js` now includes `src/render/messageFormatting.js`.
+
+App.js line count:
+
+- before Phase 9K: 10,511 lines.
+- after Phase 9K: 10,487 lines.
+- reduction: 24 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9K signed-in local message formatting smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9k-message-format-20260520`.
+2. Verified signed-in workspace restored after loading.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/messageFormatting.js` and the Phase 9K `app.js` cache tag were present.
+6. Opened Messages.
+7. Verified the Phase 9I QA thread was visible.
+8. Verified the message thread button rendered.
+9. Verified one message bubble rendered.
+10. Verified sender initials `LF` rendered.
+11. Verified `Today` day divider rendered.
+12. Opened My Work.
+13. Opened Work Orders.
+14. Opened Equipment.
+15. Opened Parts.
+16. Opened Team.
+17. Opened Settings.
+18. Returned to Messages.
+19. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new message formatting script loads, message thread summary and message bubble formatting remain stable, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The local app loaded with `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1` and `app.js?v=lfes-phase-9k-message-format-1`. The Phase 9I QA message thread and body rendered. One message bubble, sender initials `LF`, and one day divider rendered. My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded with Salem, OR selected. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9K local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 9L.
