@@ -6719,6 +6719,104 @@ Notes:
 - The handoff preserves the high-risk LFES deviation warning format for skipped verification, risky sequencing changes, or dangerous extraction jumps.
 - The handoff preserves the blocked list for mutations, workflow orchestration, event binding, auth/session/company/location logic, public QR submit, delete/storage/photo/document flows, `renderWorkspace()`, `bindWorkspaceEvents()`, and Supabase SQL/RLS.
 
+## LFES Phase 9E GitHub Pages Package/Upload and Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded LFES Phase 9E static icon display-helper extraction to GitHub Pages.
+- Did not start Phase 9F.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-070853`
+
+Commits:
+
+- App deploy: `0ce9a80` (`Deploy LFES Phase 9E icon display helpers`)
+- Resource-smoke stabilization/docs: `4ba4e99` (`Stabilize hosted resource smoke`)
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Package/resource checks:
+
+- Package included `src/render/iconDisplay.js`.
+- Package included all current `src/render`, `src/utils`, `src/services`, `assets`, `app.js`, `index.html`, `README.md`, `styles.css`, and `supabase-config.js`.
+- Packaged `index.html` includes `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+- Packaged `index.html` includes `app.js?v=lfes-phase-9e-icons-1`.
+- Live `index.html` includes `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+- Live `index.html` includes `app.js?v=lfes-phase-9e-icons-1`.
+- Live `src/render/iconDisplay.js`: HTTP 200.
+- Live `app.js`: HTTP 200.
+
+CI note:
+
+- Initial Resource Load Smoke for commit `0ce9a80` failed because GitHub Pages was still serving the previous Phase 9D `index.html`.
+- This was a deployment timing issue, not an app behavior failure.
+- `tests/smoke/resource-load.spec.js` was updated to retry hosted resource checks briefly while Pages catches up.
+- Resource Load Smoke then passed for commit `4ba4e99`.
+
+TEST:
+Phase 9E live icon display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9e-live-20260520-0714`.
+2. Verified signed-in session restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified live `index.html` contained the Phase 9E icon helper script and Phase 9E `app.js` cache tag.
+6. Opened My Work and verified nav/segment icons rendered.
+7. Opened Work Orders and verified work list and segment icons rendered.
+8. Opened Equipment.
+9. Opened Parts.
+10. Opened Team.
+11. Opened Settings.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live app restores session, Taylor Metal Products loads, Salem remains selected, nav icons and segment icons render normally, core sections load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+My Work rendered 7 gauge readouts and segment icons. Work Orders rendered 8 gauge readouts and segment icons. Work Orders, Equipment, Parts, Team, and Settings loaded. No visible app errors were found. No browser warning/error logs were captured.
+
+TEST:
+GitHub Actions Resource Load Smoke
+
+STEPS:
+1. Checked GitHub Actions after push.
+2. Verified latest Resource Load Smoke workflow for commit `4ba4e9912c64afcd99cea14dfcf278457fb2a61e`.
+3. Verified GitHub Pages deployment workflow for the same commit.
+
+EXPECTED:
+Resource Load Smoke completes successfully and Pages deployment completes successfully.
+
+RESULT:
+PASS
+
+NOTES:
+Resource Load Smoke passed: `https://github.com/loufish727/MaintainOps/actions/runs/26168207272`. Pages build/deployment passed: `https://github.com/loufish727/MaintainOps/actions/runs/26168191246`.
+
+Conclusion:
+
+- Phase 9E package/upload: PASS.
+- Live Phase 9E smoke: PASS.
+- GitHub Actions Resource Load Smoke: PASS after retry stabilization.
+- Behavior changed: no observed behavior change beyond the intended icon display-helper extraction.
+- Phase 9E is fully closed.
+
 ## Daily QA Pass - 2026-05-20 (Automation) - 20260520-0704
 
 Scope:

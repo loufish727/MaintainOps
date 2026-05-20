@@ -4,6 +4,63 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9E package/upload and live verification is complete. Phase 9E is fully closed.
+
+Current status:
+
+- Package:
+  - `MaintainOps-github-clean-20260520-070853`
+- Commits:
+  - app deploy: `0ce9a80`
+  - resource-smoke stabilization/docs: `4ba4e99`
+- Live URL verified:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9e-live-20260520-0714`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, `tests/smoke/resource-load.spec.js`, all `src/utils`, all `src/services`, and all `src/render` files.
+- Live resource checks:
+  - live `index.html` includes `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9e-icons-1`.
+  - live `src/render/iconDisplay.js`: HTTP 200.
+  - live `app.js`: HTTP 200.
+- Live smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - nav icons and segment icons rendered.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- GitHub Actions:
+  - Resource Load Smoke passed after retry stabilization.
+  - Pages build/deployment passed.
+- Behavior changed:
+  - no observed behavior change beyond intended icon display-helper extraction.
+- Phase status:
+  - Phase 9E is fully closed.
+
+Recommended immediate next controlled phase:
+
+- Choose one:
+  - LFES Phase 9F planning/readiness only before any additional extraction.
+  - Continue live pilot monitoring if operational usage is the priority.
+
+Keep blocked until explicitly approved:
+
+- Phase 9F implementation.
+- additional helper extraction.
+- notice/status/toast helper movement.
+- admin readiness display movement.
+- issue report display movement.
+- parts/equipment render movement.
+- public QR rendering.
+- Team invite/default-location rendering.
+- workflow/mutation/event binding extraction.
+- broad `renderWorkspace()` movement.
+- Supabase SQL/RLS changes.
+
+Prior immediate step:
+
 Codex LFES execution ownership is now documented in:
 
 - `docs/LFES/context/CODEX_LFES_EXECUTION_HANDOFF.md`

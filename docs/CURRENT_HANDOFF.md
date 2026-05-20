@@ -30,6 +30,57 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9E package/upload and live verification:
+
+- Scope:
+  - packaged/uploaded the stable Phase 9E static icon display-helper extraction.
+  - did not start Phase 9F.
+  - did not move more helpers.
+  - did not refactor `app.js`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Package:
+  - `MaintainOps-github-clean-20260520-070853`
+- Commits:
+  - app deploy: `0ce9a80`
+  - resource-smoke stabilization/docs: `4ba4e99`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, `tests/smoke/resource-load.spec.js`, all `src/utils`, all `src/services`, and all `src/render` files.
+- Deployment/resource checks:
+  - live `index.html` includes `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9e-icons-1`.
+  - live `src/render/iconDisplay.js`: HTTP 200.
+  - live `app.js`: HTTP 200.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9e-live-20260520-0714`
+- Live smoke result:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - My Work rendered nav/segment icons.
+  - Work Orders rendered work list and segment icons.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- GitHub Actions:
+  - initial Resource Load Smoke for commit `0ce9a80` failed because GitHub Pages was still serving the previous Phase 9D `index.html`.
+  - `tests/smoke/resource-load.spec.js` was stabilized to retry hosted resource checks while Pages catches up.
+  - Resource Load Smoke passed for commit `4ba4e9912c64afcd99cea14dfcf278457fb2a61e`.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26168207272`
+  - Pages build/deployment passed for the same commit.
+- Behavior changed:
+  - no observed behavior change beyond intended icon display-helper extraction.
+- Phase status:
+  - Phase 9E is fully closed.
+- Recommended next step:
+  - LFES Phase 9F planning/readiness only before any additional extraction, or pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
 Captured the Codex LFES execution handoff:
 
 - Codex is now the primary LFES execution agent for MaintainOps.
