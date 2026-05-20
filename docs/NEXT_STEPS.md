@@ -3333,26 +3333,26 @@ Latest completed phases:
 - Phase 10E readiness approved only mini work order display helper extraction.
 - Phase 10F implemented `src/render/miniWorkOrderDisplay.js` and moved only `renderMiniWorkOrder` and `renderAssetMiniWorkOrder`.
 - Phase 10F local static checks, local Resource Load Smoke, and signed-in local smoke passed.
+- Phase 10G packaged/uploaded the Phase 10F extraction and live verification passed.
 
 Immediate next action:
 
-- Phase 10G package/upload and live verification for the Phase 10F mini work order display extraction.
+- Choose LFES Phase 10H planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 10F local verified:
+Phase 10G verified:
 
-1. `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced locally.
-2. `app.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced locally.
-3. Local Resource Load Smoke passes.
-4. Signed-in local smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+1. `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+3. Hosted Resource Load Smoke passes.
+4. Signed-in live smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
 5. Equipment detail renders two `[data-mini-work-order]` snippets.
 
-Phase 10G target:
+Phase 10G deploy:
 
-- create a fresh GitHub upload package.
-- deploy the Phase 10F files.
-- verify live resource tags and HTTP 200s.
-- run hosted Resource Load Smoke.
-- run signed-in live smoke with Salem, Equipment detail mini work-order snippets, and Messages Phase 9I thread.
+- package: `MaintainOps-github-clean-20260520-110415`
+- commit: `fba2c26`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10g-live-20260520`
+- GitHub connector check returned no workflow runs for `fba2c26`.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

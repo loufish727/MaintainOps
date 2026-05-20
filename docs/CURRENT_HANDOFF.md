@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 10E/10F local mini work order display extraction:
+Completed LFES Phase 10E/10F/10G mini work order display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 10E readiness approved only tiny mini work order display helper extraction.
@@ -65,8 +65,29 @@ Completed LFES Phase 10E/10F local mini work order display extraction:
   - no browser warning/error logs were captured.
 - Behavior changed:
   - no observed behavior change.
-- Immediate next step:
-  - Phase 10G package/upload and live verification.
+- Package:
+  - `MaintainOps-github-clean-20260520-110415`
+  - `MaintainOps-github-clean-20260520-110415.zip`
+- GitHub commit:
+  - `fba2c26`
+  - message: `Extract mini work order display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10g-live-20260520`
+- Live verification:
+  - PASS.
+  - live `index.html` references `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+  - both live resources returned HTTP 200.
+  - hosted Resource Load Smoke against GitHub Pages passed.
+  - signed-in live smoke passed across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+  - Equipment detail rendered two `[data-mini-work-order]` snippets.
+  - no visible app errors and no browser warning/error logs.
+- GitHub Actions:
+  - GitHub connector check for commit `fba2c26` returned no workflow runs.
+- Phase status:
+  - Phase 10E/10F/10G is functionally closed.
+- Recommended next step:
+  - choose LFES Phase 10H planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
 
 ## Prior Recent Change
 

@@ -2791,6 +2791,65 @@ Phase 10F result:
 - behavior changed: no observed behavior change.
 - package/upload: next Phase 10G.
 
+## Phase 10G Package/Upload And Live Verification - 2026-05-20
+
+Phase 10G packaged and uploaded the stable Phase 10F mini work order display helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-110415`
+- zip: `MaintainOps-github-clean-20260520-110415.zip`
+- commit: `fba2c26`
+- commit message: `Extract mini work order display helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- live `index.html` references `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- live `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-10f-mini-work-order-display-1`: HTTP 200.
+- hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+### GitHub Actions
+
+- GitHub connector check for commit `fba2c26` returned no workflow runs.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10g-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new mini work order display script and app cache tag loaded.
+- My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+- Equipment still showed `New thalmann`.
+- Equipment detail rendered two `[data-mini-work-order]` snippets.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 10G Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- Phase 10E/10F/10G is functionally closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 10H planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.

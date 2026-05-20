@@ -8537,3 +8537,67 @@ Conclusion:
 - Phase 10F local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 10G.
+
+## LFES Phase 10G Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 10F mini work order display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change asset detail rendering, relationship loading, work-order click behavior, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-110415`
+- `MaintainOps-github-clean-20260520-110415.zip`
+
+GitHub deploy:
+
+- Commit: `fba2c26`
+- Commit message: `Extract mini work order display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- Live `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-10f-mini-work-order-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+GitHub Actions:
+
+- GitHub connector check for commit `fba2c26` returned no workflow runs.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+TEST:
+Phase 10G signed-in live mini work order display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10g-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` and `app.js?v=lfes-phase-10f-mini-work-order-display-1` were present.
+6. Opened My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+7. Verified Equipment showed `New thalmann`.
+8. Opened an Equipment detail and verified two `[data-mini-work-order]` snippets rendered.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new mini work order display script loads, Equipment detail mini work-order snippets render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10G package/upload and live verification: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 10E/10F/10G is functionally closed.
