@@ -2451,3 +2451,82 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 9Y Work Queue Display Readiness - 2026-05-20
+
+Phase 9Y reviewed the next low-risk cleanup candidate after Phase 9V/9W/9X was packaged, deployed, and live verified.
+
+Approved for Phase 9Z:
+
+- `workOrdersPanelTitle()`
+- `myWorkPanelTitle()`
+- `workQueuePanelTitle()`
+- `workQueuePanelSubtitle(count)`
+
+The approved helpers are display-only. They return Work Orders / My Work title and subtitle copy from existing filter state.
+
+Readiness audit:
+
+- `docs/LFES/audits/LFES_PHASE_9Y_WORK_QUEUE_DISPLAY_READINESS.md`
+
+Still blocked:
+
+- work order filtering/sorting/paging/counting.
+- assignment filtering behavior.
+- Quick Fix.
+- work order create/update/complete/delete behavior.
+- event handlers and mutations.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+## Phase 9Z Work Queue Display Extraction - 2026-05-20
+
+Phase 9Z added `src/render/workQueueDisplay.js` and moved only the approved Work Orders / My Work queue title/subtitle helpers.
+
+Implementation:
+
+- `src/render/workQueueDisplay.js` exposes `window.MaintainOpsWorkQueueDisplay.createWorkQueueDisplayHelpers`.
+- `app.js` injects:
+  - `statusLabel`
+  - `teamMemberName`
+  - `getWorkOrderAssigneeFilter`
+  - `getWorkOrderFilter`
+  - `getActiveStatusFilter`
+  - `getMyWorkFilter`
+  - `getActiveSection`
+- `index.html` now loads `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-9z-work-queue-display-1`.
+- Resource Load Smoke now includes `src/render/workQueueDisplay.js`.
+
+Line count:
+
+- before: 10,370 lines.
+- after: 10,354 lines.
+- reduction: 16 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new work queue display script and app cache tag loaded.
+- My Work title/subtitle rendered.
+- Work Orders title/subtitle rendered.
+- Requests still rendered Active/Converted/All filter buttons.
+- Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 9Z result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10A.

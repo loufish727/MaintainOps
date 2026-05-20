@@ -8191,3 +8191,81 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 9V/9W/9X is functionally closed.
+
+## LFES Phase 9Y Work Queue Display Readiness - 2026-05-20
+
+Scope:
+
+- Reviewed the next low-risk `app.js` cleanup candidate after Phase 9V/9W/9X.
+- Approved only Work Orders / My Work queue title display helper extraction.
+- No code changed during readiness.
+
+Decision:
+
+- Proceed to Phase 9Z with `workOrdersPanelTitle`, `myWorkPanelTitle`, `workQueuePanelTitle`, and `workQueuePanelSubtitle` only.
+- Keep queue filtering, server paging, counts, assignment filtering, and event handling in `app.js`.
+
+Audit:
+
+- `docs/LFES/audits/LFES_PHASE_9Y_WORK_QUEUE_DISPLAY_READINESS.md`
+
+## LFES Phase 9Z Work Queue Display Extraction - 2026-05-20
+
+Scope:
+
+- Added `src/render/workQueueDisplay.js`.
+- Moved only Work Orders / My Work queue title/subtitle display helpers.
+- Updated `index.html` to load `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-9z-work-queue-display-1`.
+- Updated Resource Load Smoke required resources.
+- No work order filtering, server paging, counts, assignment filtering, event handlers, mutations, workflow logic, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()` changed.
+
+Line count:
+
+- `app.js` before: 10,370 lines.
+- `app.js` after: 10,354 lines.
+- reduction: 16 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9Z signed-in local work queue display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9z-work-queue-display-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1` and `app.js?v=lfes-phase-9z-work-queue-display-1` were present.
+6. Opened My Work and verified the title/subtitle rendered.
+7. Opened Work Orders and verified the queue title/subtitle rendered.
+8. Opened Requests, Equipment, Parts, Team, Settings, and Messages.
+9. Verified Requests still rendered the Active/Converted/All filter bar.
+10. Verified Messages still showed the Phase 9I QA thread.
+11. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new work queue display script loads, queue title/subtitle copy renders, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+My Work and Work Orders rendered title/subtitle copy. Requests still rendered the request filter bar. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9Z local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10A.

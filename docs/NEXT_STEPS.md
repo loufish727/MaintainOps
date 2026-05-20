@@ -3324,33 +3324,23 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 LFES app cleanup continuation is active.
 
-Latest completed phases:
+Latest completed local phase:
 
-- Phase 9V readiness approved only global search result display helper extraction.
-- Phase 9W implemented `src/render/globalSearchDisplay.js` and moved only global search result display helpers plus `globalResultCount`.
+- Phase 9Y readiness approved only Work Orders / My Work queue title display helper extraction.
+- Phase 9Z implemented `src/render/workQueueDisplay.js` and moved only `workOrdersPanelTitle`, `myWorkPanelTitle`, `workQueuePanelTitle`, and `workQueuePanelSubtitle`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
-- Node render probe verified the extracted global search display HTML.
-- Phase 9X packaged/uploaded the Phase 9W extraction and live verification passed, with one known app-commit Resource Load Smoke timing failure.
 
 Immediate next action:
 
-- Choose LFES Phase 9Y planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Run Phase 10A package/upload and live verification for the Phase 9Z work queue display extraction.
 
-Phase 9X verified:
+Phase 10A must verify:
 
-1. `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-9z-work-queue-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Pages deployment passes.
-5. Signed-in live smoke passes across Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
-
-Phase 9X deploy:
-
-- package: `MaintainOps-github-clean-20260520-100524`
-- commit: `57a746f20af54941196f07c49b7fcb7e5b263808`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9x-live-20260520`
-- Pages run: `https://github.com/loufish727/MaintainOps/actions/runs/26177756072`
-- app commit Resource Load Smoke timing failure: `https://github.com/loufish727/MaintainOps/actions/runs/26177757511`
+4. Pages/Actions checks pass when available.
+5. Signed-in live smoke passes across My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

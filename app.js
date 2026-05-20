@@ -81,6 +81,7 @@ const { assetTypeLabel, assetStatusLabel } = window.MaintainOpsEquipmentLabels;
 const { createEmptyStateTextHelpers } = window.MaintainOpsEmptyStateText;
 const { createRequestDisplayHelpers } = window.MaintainOpsRequestDisplay;
 const { createGlobalSearchDisplayHelpers } = window.MaintainOpsGlobalSearchDisplay;
+const { createWorkQueueDisplayHelpers } = window.MaintainOpsWorkQueueDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -251,6 +252,20 @@ const {
   assignmentLabel,
   activeLocationName,
   getSearchQuery: () => searchQuery,
+});
+const {
+  workOrdersPanelTitle,
+  myWorkPanelTitle,
+  workQueuePanelTitle,
+  workQueuePanelSubtitle,
+} = createWorkQueueDisplayHelpers({
+  statusLabel,
+  teamMemberName,
+  getWorkOrderAssigneeFilter: () => workOrderAssigneeFilter,
+  getWorkOrderFilter: () => workOrderFilter,
+  getActiveStatusFilter: () => activeStatusFilter,
+  getMyWorkFilter: () => myWorkFilter,
+  getActiveSection: () => activeSection,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -3222,37 +3237,6 @@ function globalSearchResults() {
     .slice(0, SEARCH_PREVIEW_LIMIT);
 
   return { work, assets: assetResults, parts: partResults, requests: requestResults, pm: pmResults, procedures: procedureResults };
-}
-
-function workOrdersPanelTitle() {
-  const baseTitle = workOrderAssigneeFilter
-    ? `${teamMemberName(workOrderAssigneeFilter)} Work`
-    : workOrderFilter === "unassigned"
-      ? "Unassigned Work Orders"
-      : workOrderFilter === "vendor"
-        ? "Outside Vendor Work"
-        : workOrderFilter === "assigned"
-          ? "Assigned Work Orders"
-          : "All Work Orders";
-  if (activeStatusFilter === "active" || activeStatusFilter === "all") return baseTitle;
-  return `${statusLabel(activeStatusFilter)} - ${baseTitle}`;
-}
-
-function myWorkPanelTitle() {
-  const baseTitle = myWorkFilter === "created" ? "Created By Me" : "Assigned To Me";
-  if (activeStatusFilter === "active" || activeStatusFilter === "all") return "My Work";
-  return `${statusLabel(activeStatusFilter)} - My Work`;
-}
-
-function workQueuePanelTitle() {
-  return activeSection === "mywork" ? myWorkPanelTitle() : workOrdersPanelTitle();
-}
-
-function workQueuePanelSubtitle(count) {
-  const context = activeSection === "mywork"
-    ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me")
-    : "shown";
-  return activeSection === "mywork" ? `${count} shown - ${context}` : `${count} shown`;
 }
 
 function teamMemberName(userId) {
