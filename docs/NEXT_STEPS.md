@@ -3324,24 +3324,33 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 LFES app cleanup continuation is active.
 
-Latest completed local phase:
+Latest completed phases:
 
 - Phase 9V readiness approved only global search result display helper extraction.
 - Phase 9W implemented `src/render/globalSearchDisplay.js` and moved only global search result display helpers plus `globalResultCount`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Node render probe verified the extracted global search display HTML.
+- Phase 9X packaged/uploaded the Phase 9W extraction and live verification passed, with one known app-commit Resource Load Smoke timing failure.
 
 Immediate next action:
 
-- Run Phase 9X package/upload and live verification for the Phase 9W global search display extraction.
+- Choose LFES Phase 9Y planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 9X must verify:
+Phase 9X verified:
 
 1. `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 2. `app.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. GitHub Actions Resource Load Smoke and Pages deployment pass.
+4. Pages deployment passes.
 5. Signed-in live smoke passes across Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+
+Phase 9X deploy:
+
+- package: `MaintainOps-github-clean-20260520-100524`
+- commit: `57a746f20af54941196f07c49b7fcb7e5b263808`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9x-live-20260520`
+- Pages run: `https://github.com/loufish727/MaintainOps/actions/runs/26177756072`
+- app commit Resource Load Smoke timing failure: `https://github.com/loufish727/MaintainOps/actions/runs/26177757511`
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

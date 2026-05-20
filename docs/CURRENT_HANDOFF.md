@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 9W global search display extraction locally. Phase 9X package/upload and live verification is next:
+Completed LFES Phase 9V/9W/9X global search display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 9V readiness approved only global search result display helper extraction.
@@ -69,12 +69,40 @@ Completed LFES Phase 9W global search display extraction locally. Phase 9X packa
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 9W local extraction is complete.
+  - Phase 9V/9W/9X is functionally closed.
 - Recommended next step:
-  - run LFES Phase 9X package/upload and live verification.
-  - verify live `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
-  - verify live `app.js?v=lfes-phase-9w-global-search-display-1`.
-  - run hosted Resource Load Smoke, GitHub Actions checks, and signed-in live smoke.
+  - choose LFES Phase 9Y planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+- Package:
+  - `MaintainOps-github-clean-20260520-100524`
+  - `MaintainOps-github-clean-20260520-100524.zip`
+- GitHub commit:
+  - `57a746f20af54941196f07c49b7fcb7e5b263808`
+  - message: `Extract global search display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9x-live-20260520`
+- Live resource checks:
+  - live `index.html` references `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9w-global-search-display-1`.
+  - live `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS after Pages served the new build.
+- GitHub Actions:
+  - Resource Load Smoke for app commit: failed due Pages timing.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26177757511`
+  - Pages build/deployment: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26177756072`
+- Live signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected.
+  - Phase 9W script tags were present.
+  - Requests still rendered Active/Converted/All filter buttons.
+  - Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
 
 ## Prior Recent Change
 

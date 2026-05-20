@@ -2374,3 +2374,80 @@ Phase 9W result:
 - local extraction: PASS.
 - behavior changed: no observed behavior change.
 - package/upload: next Phase 9X.
+
+## Phase 9X Package/Upload And Live Verification - 2026-05-20
+
+Phase 9X packaged and uploaded the stable Phase 9W global search display helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-100524`
+- zip: `MaintainOps-github-clean-20260520-100524.zip`
+- commit: `57a746f20af54941196f07c49b7fcb7e5b263808`
+- commit message: `Extract global search display helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+- live `index.html` references `app.js?v=lfes-phase-9w-global-search-display-1`.
+- live `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+- hosted Resource Load Smoke after Pages served the new build: PASS.
+
+### GitHub Actions
+
+- Resource Load Smoke for commit `57a746f20af54941196f07c49b7fcb7e5b263808`: failed due Pages timing.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26177757511`
+- Pages build/deployment: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26177756072`
+- follow-up hosted Resource Load Smoke run locally against live GitHub Pages after Pages completed: PASS.
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9x-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new global search display script and app cache tag loaded.
+- Requests still rendered Active/Converted/All filter buttons.
+- Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 9X Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- Pages build/deployment: PASS.
+- hosted Resource Load Smoke after Pages completion: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- known issue: the first GitHub Actions Resource Load Smoke run for the app commit failed because it started before Pages served the new cache tags.
+- Phase 9V/9W/9X is functionally closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 9Y planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- additional display extraction without fresh readiness.
+- global search/filter logic.
+- exact work order search.
+- search input state.
+- data-search event handlers.
+- mutations.
+- workflow logic.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.

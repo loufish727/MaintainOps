@@ -8124,3 +8124,70 @@ Conclusion:
 - Phase 9W local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 9X.
+
+## LFES Phase 9X Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9W global search display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change `globalSearchResults()`, search/filter logic, exact work order search, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-100524`
+- `MaintainOps-github-clean-20260520-100524.zip`
+
+GitHub deploy:
+
+- Commit: `57a746f20af54941196f07c49b7fcb7e5b263808`
+- Commit message: `Extract global search display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9w-global-search-display-1`.
+- Live `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9w-global-search-display-1`: HTTP 200.
+- Hosted Resource Load Smoke after Pages served the new build: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke for commit `57a746f20af54941196f07c49b7fcb7e5b263808`: failed due Pages timing. The job ran before GitHub Pages served the new `index.html` cache tags and timed out waiting for the new resource reference.
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26177757511`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26177756072`
+- Follow-up hosted Resource Load Smoke run locally against live GitHub Pages after Pages completed: PASS.
+
+TEST:
+Phase 9X signed-in live global search display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9x-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1` and `app.js?v=lfes-phase-9w-global-search-display-1` were present.
+6. Opened Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+7. Verified Requests still rendered the Active/Converted/All filter bar.
+8. Verified Messages still showed the Phase 9I QA thread.
+9. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new global search display script loads, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The live app loaded with the Phase 9W global search display script and app cache tag. Requests still rendered the request filter bar. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9X package/upload and live verification: PASS with one known GitHub Actions timing failure.
+- live resource verification: PASS.
+- Pages build/deployment: PASS.
+- hosted Resource Load Smoke after Pages completion: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 9V/9W/9X is functionally closed.
