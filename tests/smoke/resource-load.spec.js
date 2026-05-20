@@ -47,6 +47,7 @@ const requiredResources = [
   "src/render/inviteLocationDisplay.js",
   "src/render/partSetupDisplay.js",
   "src/render/teamMemberDisplay.js",
+  "src/render/teamWorkloadDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
