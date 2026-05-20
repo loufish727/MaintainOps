@@ -3398,10 +3398,12 @@ Latest completed phases:
 - Phase 15O/15P/15Q extracted work-order status predicate into `src/render/workOrderStatusFilterDisplay.js` and live verification passed.
 - Phase 15R/15S/15T extracted work-order search value helper into `src/render/workOrderSearchDisplay.js` and live verification passed.
 - Phase 15U/15V/15W extracted `myWorkQueueOrders` into `src/render/myWorkQueueDisplay.js` and live verification passed.
+- Phase 15X/15Y/15Z extracted pure message-center error display classification into `src/render/messageCenterErrorDisplay.js` and live verification passed.
+- Phase 16A/16B/16C extracted pure app-issue error display classification into `src/render/appIssueErrorDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit, or pause code movement for an AI/code review.
+- Choose LFES Phase 16D planning/readiness only after a fresh remaining-candidate audit, or pause code movement for an AI/code review.
 
 Phase 13M verified:
 
@@ -3447,6 +3449,18 @@ Phase 15W deploy:
 - `app.js` line count after Phase 15V: 9,705.
 - live `src/render/myWorkQueueDisplay.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
 - live `app.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
+- signed-in live smoke verified Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, Team nav, current cache tags, and clean warning/error logs.
+
+Phase 16C deploy:
+
+- package: `MaintainOps-github-clean-20260520-161159`
+- package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+- commit: `09ef977`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?fresh_phase16c=*`
+- GitHub connector check returned no workflow runs for `09ef977`.
+- `app.js` line count after Phase 16B: 9,711.
+- live `src/render/appIssueErrorDisplay.js?v=lfes-phase-16b-app-issue-error-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-16b-app-issue-error-display-1`: HTTP 200.
 - signed-in live smoke verified Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, Team nav, current cache tags, and clean warning/error logs.
 
 Important:

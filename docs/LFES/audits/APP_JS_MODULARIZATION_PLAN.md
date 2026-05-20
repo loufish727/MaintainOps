@@ -3530,3 +3530,31 @@ Choose one:
 
 - LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit.
 - pause code movement for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
+
+## Phase 15X Through 16C Error Display Extraction - 2026-05-20
+
+Completed a smaller 6-step LFES phase run under the medium-risk workflow:
+
+- Phase 15X/15Y/15Z: extracted pure message-center error classification/text into `src/render/messageCenterErrorDisplay.js`; deploy commit `f90f376`.
+- Phase 16A/16B/16C: extracted pure app-issue error classification/text into `src/render/appIssueErrorDisplay.js`; deploy commit `09ef977`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260520-161159`.
+- final package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- final cache tag: `app.js?v=lfes-phase-16b-app-issue-error-display-1`.
+- final hosted resource checks: PASS.
+- final live signed-in smoke: PASS.
+- final browser console warning/error logs: clean after filtering known benign noise.
+- `app.js` line count after Phase 16B: 9,711.
+
+Boundary preserved:
+
+- No readiness mutations, workflow logic, event handlers, mutations, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 16D planning/readiness only after a fresh remaining-candidate audit.
+- pause code movement for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.

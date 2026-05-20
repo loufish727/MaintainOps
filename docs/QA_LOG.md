@@ -9337,6 +9337,62 @@ Conclusion:
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
 
+## LFES Phase 15X Through 16C Error Display Extraction - 2026-05-20
+
+Scope:
+
+- Continued with a smaller 6-step LFES modularization run, from Phase 15X through Phase 16C.
+- Added pure error display helpers for message-center errors and app issue report errors.
+- Left readiness mutations in `app.js`: `messagesReady = false` and `appIssueReportsReady = false` were not moved.
+- Did not move message creation, reply sending, read-state mutation, issue report creation/update/reload, forms, event handlers, workflows, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 15Z: `f90f376` - `Extract message center error display helper`
+- Phase 16C: `09ef977` - `Extract app issue error display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-161159`
+- `MaintainOps-github-clean-20260520-161159.zip`
+- Stored under `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+
+Latest implementation:
+
+- `index.html` now references `src/render/appIssueErrorDisplay.js?v=lfes-phase-16b-app-issue-error-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-16b-app-issue-error-display-1`.
+- `app.js` line count after Phase 16B extraction: 9,711.
+
+TEST:
+Phase 16C static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed for `app.js`, `src/render/messageCenterErrorDisplay.js`, and `src/render/appIssueErrorDisplay.js`.
+- targeted local helper-output smokes passed for message-center schema/generic errors and app-issue schema/generic errors.
+- local resource checks passed before each package/upload.
+- hosted GitHub Pages resources passed for the final Phase 16C deploy.
+- live `src/render/appIssueErrorDisplay.js?v=lfes-phase-16b-app-issue-error-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-16b-app-issue-error-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible.
+- Louie was visible.
+- signed-in workspace rendered with Work, Parts, and Team nav available.
+- no browser warning/error logs after filtering known benign noise.
+
+Notes:
+
+- GitHub Pages again served `app.js` before the newly added module path; final verification waited until the new module returned HTTP 200.
+- GitHub connector checks returned no workflow runs for the latest app commits, including `09ef977`.
+
+Conclusion:
+
+- The requested smaller 6-step run completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.
+
 ## LFES Phase 15C Through 15W Display Extraction Continuation - 2026-05-20
 
 Scope:

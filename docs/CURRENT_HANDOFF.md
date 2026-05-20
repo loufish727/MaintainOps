@@ -30,24 +30,19 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed another 21-step LFES medium-risk modularization run from Phase 15C through Phase 15W.
+Completed a smaller 6-step LFES medium-risk modularization run from Phase 15X through Phase 16C.
 
 - Added or extended:
-  - `src/render/workOrderSortDisplay.js`
-  - `src/render/locationFilterDisplay.js`
-  - `src/render/messageThreadFilterDisplay.js`
-  - `src/render/setupStatusDisplay.js`
-  - `src/render/workOrderStatusFilterDisplay.js`
-  - `src/render/workOrderSearchDisplay.js`
-  - `src/render/myWorkQueueDisplay.js`
+  - `src/render/messageCenterErrorDisplay.js`
+  - `src/render/appIssueErrorDisplay.js`
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-15v-my-work-queue-display-1`
+  - `app.js?v=lfes-phase-16b-app-issue-error-display-1`
 - Latest package:
-  - `MaintainOps-github-clean-20260520-155625`
+  - `MaintainOps-github-clean-20260520-161159`
 - Latest app commit:
-  - `3a9f4be` (`Extract my work queue display helper`)
+  - `09ef977` (`Extract app issue error display helper`)
 - Current `app.js` line count:
-  - 9,705 lines.
+  - 9,711 lines.
 - Verification:
   - static JS checks: PASS.
   - targeted local helper-output smokes: PASS.
@@ -58,7 +53,7 @@ Completed another 21-step LFES medium-risk modularization run from Phase 15C thr
 - Behavior changed:
   - no observed behavior change.
 - Recommended next step:
-  - choose LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit, or pause for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
+  - choose LFES Phase 16D planning/readiness only after a fresh remaining-candidate audit, or pause for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
