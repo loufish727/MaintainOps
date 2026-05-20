@@ -8972,3 +8972,56 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 10N/10O/10P is functionally closed.
+
+## LFES Phase 10R Setup Display Local Verification - 2026-05-20
+
+Scope:
+
+- Added `src/render/setupDisplay.js`.
+- Moved only `renderSetupItem` into the display helper module.
+- Did not move `setupItems`, setup action handling, SQL-applied flag behavior, localStorage updates, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Local implementation:
+
+- `index.html` now references `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-10r-setup-display-1`.
+- Resource Load Smoke now includes `src/render/setupDisplay.js`.
+- `app.js` line count after extraction: 10,197.
+
+TEST:
+Phase 10R static and local resource checks
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check supabase-config.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check` across `src/utils`, `src/services`, and `src/render`: PASS.
+- Local Resource Load Smoke against `http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 10R signed-in local setup display smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- signed-in workspace restored.
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1` and `app.js?v=lfes-phase-10r-setup-display-1` were present.
+- Admin Setup opened and rendered 16 `.setup-item` cards.
+- Admin Setup included `Supabase config` and `Photos`.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+Conclusion:
+
+- Phase 10R local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10S.

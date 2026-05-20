@@ -28,6 +28,7 @@ const requiredResources = [
   "src/render/paginationDisplay.js",
   "src/render/partsDisplay.js",
   "src/render/optionDisplay.js",
+  "src/render/setupDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

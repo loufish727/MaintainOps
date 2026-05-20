@@ -87,6 +87,7 @@ const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDis
 const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
 const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
 const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
+const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -332,6 +333,11 @@ const {
   matchesActiveLocation,
   isAssetDescendantOf,
   parentAssetFor,
+});
+const {
+  renderSetupItem,
+} = createSetupDisplayHelpers({
+  escapeHtml,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -4230,19 +4236,6 @@ function setupItems() {
       detail: photosReady ? "Photo records available" : "Check storage bucket and photo table policies",
     },
   ];
-}
-
-function renderSetupItem(item) {
-  return `
-    <article class="setup-item ${item.ready ? "ready" : "needs-work"}">
-      <div>
-        <strong>${escapeHtml(item.name)}</strong>
-        <span>${escapeHtml(item.detail)}</span>
-        ${item.action ? `<button class="secondary-button setup-action-button" data-setup-action="${escapeHtml(item.action)}" type="button">${escapeHtml(item.actionLabel)}</button>` : ""}
-      </div>
-      <span class="chip ${item.ready ? "completed" : "blocked"}">${item.ready ? "ready" : "setup"}</span>
-    </article>
-  `;
 }
 
 function renderPartDetail() {

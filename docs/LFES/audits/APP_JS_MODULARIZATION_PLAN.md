@@ -3186,6 +3186,49 @@ Choose one:
 - LFES Phase 10Q planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
 
+## Phase 10Q/10R Setup Display Extraction - 2026-05-20
+
+Phase 10Q readiness approved only the Admin Setup item display helper extraction. Phase 10R added `src/render/setupDisplay.js` and moved only:
+
+- `renderSetupItem`
+
+Implementation:
+
+- `src/render/setupDisplay.js` exposes `window.MaintainOpsSetupDisplay.createSetupDisplayHelpers`.
+- `app.js` injects `escapeHtml`.
+- `index.html` now loads `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10r-setup-display-1`.
+- Resource Load Smoke now includes `src/render/setupDisplay.js`.
+
+Line count:
+
+- before: 10,204 lines.
+- after: 10,197 lines.
+- reduction: 7 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new setup display script and app cache tag loaded.
+- Admin Setup opened and rendered 16 `.setup-item` cards.
+- Admin Setup included `Supabase config` and `Photos`.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 10R result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10S.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.

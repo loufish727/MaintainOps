@@ -30,6 +30,45 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10Q/10R local setup display extraction:
+
+- Scope:
+  - Phase 10Q readiness approved only Admin Setup item display helper extraction.
+  - added `src/render/setupDisplay.js`.
+  - moved only `renderSetupItem`.
+  - updated `index.html` to load `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-10r-setup-display-1`.
+  - updated Resource Load Smoke required resources.
+  - did not move `setupItems`, setup action handling, SQL-applied flag behavior, localStorage updates, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Line count:
+  - `app.js` before: 10,204.
+  - `app.js` after: 10,197.
+  - reduction: 7 lines.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check tests/smoke/resource-load.spec.js`: PASS.
+  - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
+- Local Resource Load Smoke:
+  - PASS.
+- Local signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 10R script tags were present.
+  - Admin Setup opened and rendered 16 `.setup-item` cards.
+  - Admin Setup included `Supabase config` and `Photos`.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Immediate next step:
+  - Phase 10S package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 10N/10O/10P option display extraction, package/upload, and live verification:
 
 - Scope:

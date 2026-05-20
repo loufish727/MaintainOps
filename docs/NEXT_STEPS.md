@@ -3346,25 +3346,29 @@ Latest completed phases:
 - Phase 10O implemented `src/render/optionDisplay.js` and moved only `renderLocationOptions`, `renderAssetOptions`, `renderParentAssetOptions`, and `assetOptionLabel`.
 - Phase 10O local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10P packaged/uploaded the Phase 10O extraction and live verification passed.
+- Phase 10Q readiness approved only Admin Setup item display helper extraction.
+- Phase 10R implemented `src/render/setupDisplay.js` and moved only `renderSetupItem`.
+- Phase 10R local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10Q planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Phase 10S package/upload and live verification for the Phase 10R setup display extraction.
 
-Phase 10P verified:
+Phase 10R local verified:
 
-1. `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10o-option-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke verifies request asset, create equipment parent/location, PM asset, and invite location selects render options.
+1. `src/render/setupDisplay.js?v=lfes-phase-10r-setup-display-1` is referenced locally.
+2. `app.js?v=lfes-phase-10r-setup-display-1` is referenced locally.
+3. Local Resource Load Smoke passes.
+4. Admin Setup renders 16 `.setup-item` cards.
 5. Messages Phase 9I thread remains visible.
 
-Phase 10P deploy:
+Phase 10S target:
 
-- package: `MaintainOps-github-clean-20260520-122031`
-- commit: `0b100fa`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10p-live-20260520`
-- GitHub connector check returned no workflow runs for `0b100fa`.
+- create a fresh GitHub upload package.
+- deploy the Phase 10R files.
+- verify live resource tags and HTTP 200s.
+- run hosted Resource Load Smoke.
+- run signed-in live smoke with Admin Setup card checks.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
