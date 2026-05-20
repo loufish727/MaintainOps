@@ -93,6 +93,7 @@ const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDispl
 const { createAppIssueDisplayHelpers } = window.MaintainOpsAppIssueDisplay;
 const { createWorkMessageDisplayHelpers } = window.MaintainOpsWorkMessageDisplay;
 const { createWorkRecommendationDisplayHelpers } = window.MaintainOpsWorkRecommendationDisplay;
+const { createCommandCardDisplayHelpers } = window.MaintainOpsCommandCardDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -380,6 +381,12 @@ const {
 } = createWorkRecommendationDisplayHelpers({
   escapeHtml,
   recommendedWorkOrderStep,
+});
+const {
+  renderEmailHelperCommandCard,
+  commandShortcut,
+} = createCommandCardDisplayHelpers({
+  escapeHtml,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -5227,21 +5234,6 @@ function renderWorkOrderCommandSummary(workOrder) {
       </button>
       ${renderEmailHelperCommandCard(workOrder)}
     </section>
-  `;
-}
-
-function renderEmailHelperCommandCard(workOrder) {
-  if (!workOrder.asset_id) return "";
-  return commandShortcut("Email Helper", "Copy", "work-order-email-helper-target", "Copy to paste an email update", "email");
-}
-
-function commandShortcut(label, count, targetId, helper, tone) {
-  return `
-    <button class="command-card command-${tone} ${count ? "" : "empty"}" data-jump-work-section="${targetId}" type="button">
-      <span>${escapeHtml(label)}</span>
-      <strong>${count}</strong>
-      <small>${escapeHtml(helper)}</small>
-    </button>
   `;
 }
 
