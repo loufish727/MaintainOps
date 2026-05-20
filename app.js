@@ -130,6 +130,7 @@ const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrde
 const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearchDisplay;
 const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
 const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCenterErrorDisplay;
+const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -740,6 +741,11 @@ const {
   messageCenterErrorState,
 } = createMessageCenterErrorDisplayHelpers({
   isMissingColumnError,
+  isColumnSchemaError,
+});
+const {
+  appIssueReportErrorState,
+} = createAppIssueErrorDisplayHelpers({
   isColumnSchemaError,
 });
 
@@ -7159,11 +7165,9 @@ async function reloadAppIssueReports() {
 }
 
 function appIssueReportError(error) {
-  if (isColumnSchemaError(error, ["app_issue_reports"]) || String(error.message || "").includes("app_issue_reports")) {
-    appIssueReportsReady = false;
-    return "Run supabase/step-next-app-issue-reports.sql before saving app issue reports.";
-  }
-  return error.message || String(error);
+  const state = appIssueReportErrorState(error);
+  if (state.appIssueReportsReady === false) appIssueReportsReady = false;
+  return state.message;
 }
 
 async function createAppIssueReport(event) {
