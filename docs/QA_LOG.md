@@ -6874,3 +6874,183 @@ Blockers / next action:
 
 - Blocker: outbound network access is required to run the hosted GitHub Pages smoke and any Supabase-backed live debug flows.
 - Next action: rerun this daily pass from an environment with internet access and a browser so the hosted checks can be executed with a fresh `?qa_bust=daily-qa-20260520-0704`.
+
+## LFES Phase 9F App.js Cleanup Readiness Decision - 2026-05-20
+
+Scope:
+
+- Planning and documentation only.
+- Reviewed remaining `app.js` helper/render candidates after Phase 9E.
+- Did not change app code.
+- Did not move functions.
+- Did not refactor `app.js`.
+- Did not change rendering behavior.
+- Did not change event binding.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `docs/LFES/audits/LFES_PHASE_9F_APP_JS_CLEANUP_READINESS.md`
+
+Updated:
+
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Decision:
+
+- Recommended next implementation target: message bubble/list display only.
+- Suggested future file: `src/render/messageDisplay.js`.
+- Allowed future helpers:
+  - `renderMessageBubble`
+  - `renderMessageList`
+
+Why:
+
+- These helpers are display-only.
+- They do not create forms.
+- They do not emit `data-*` action hooks.
+- They do not submit messages.
+- They do not create or select threads.
+- They can receive explicit dependencies from `app.js`.
+
+Blocked from Phase 9G:
+
+- `renderMessageCenter`
+- `renderMessageThreadButton`
+- `renderLinkedWorkMessageThread`
+- message composer forms
+- thread creation/send/read mutations
+- event handlers
+- Supabase calls
+- auth/session/company/location logic
+- `renderWorkspace()`
+- `bindWorkspaceEvents()`
+- Supabase SQL/RLS
+
+Other candidates reviewed:
+
+- tiny label/text helpers: safe later but too low-value as a standalone phase.
+- notice/status/toast helpers: blocked because `showNotice()` mutates notice state and can call `renderWorkspace()`.
+- admin readiness helpers: blocked because `renderSetupItem()` emits `data-setup-action`.
+- issue-report display/admin area: blocked because it includes report submit/status controls.
+- public QR display: blocked because it crosses public anonymous intake and QR admin controls.
+- parts/equipment display: blocked because these helpers carry open/detail/use/restock/Quick Fix/delete behavior hooks.
+- work-order command cards: blocked because they emit `data-jump-work-section`.
+
+Verification:
+
+- Documentation-only phase; no app behavior changed.
+- Static/runtime smoke was not required because no app code changed.
+
+Conclusion:
+
+- Phase 9F planning/readiness: PASS.
+- Behavior changed: no.
+- Next recommended phase: LFES Phase 9G message bubble/list display-helper extraction only, pending explicit implementation request.
+
+## LFES Phase 9G Message Display Helper Extraction - 2026-05-20
+
+Scope:
+
+- Created one small message display module.
+- Moved only the approved message bubble/list display helpers.
+- Did not move `renderMessageCenter`.
+- Did not move `renderMessageThreadButton`.
+- Did not move `renderLinkedWorkMessageThread`.
+- Did not move message composer forms.
+- Did not move thread creation/send/read mutations.
+- Did not move event handlers.
+- Did not move Supabase calls.
+- Did not move auth/session/company/location logic.
+- Did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `src/render/messageDisplay.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Helpers moved:
+
+- `renderMessageBubble`
+- `renderMessageList`
+
+Cache/script loading:
+
+- `index.html` now loads `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9g-message-1`.
+
+Resource smoke:
+
+- `tests/smoke/resource-load.spec.js` now includes `src/render/messageDisplay.js`.
+
+App.js line count:
+
+- before Phase 9G: 10,524 lines.
+- after Phase 9G: 10,511 lines.
+- reduction: 13 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local `src/render/messageDisplay.js?v=lfes-phase-9g-message-1` served HTTP 200.
+- Local `app.js?v=lfes-phase-9g-message-1` served HTTP 200.
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9G signed-in local message display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9g-message-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/messageDisplay.js` and the Phase 9G `app.js` cache tag were present.
+6. Opened Messages.
+7. Verified Messages screen loaded without visible errors.
+8. Verified the no-thread/empty message state rendered.
+9. Opened My Work.
+10. Opened Work Orders.
+11. Opened Equipment.
+12. Opened Parts.
+13. Opened Team.
+14. Opened Settings.
+15. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace restores, Taylor Metal Products loads, Salem remains selected, Messages loads, message empty/list display remains stable, core sections load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The current pilot data had 0 message threads, so actual non-empty message bubbles were not data-exercised during this smoke. The Messages screen loaded and rendered the empty state normally. My Work, Work Orders, Equipment, Parts, Team, and Settings loaded. No visible app errors were found. No browser warning/error logs were captured. User confirmed QA and Louie Fisher accounts are both safe owned accounts for a later non-empty Messages smoke if needed.
+
+Conclusion:
+
+- Phase 9G local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: blocked until explicitly requested.
+- Follow-up watch item: verify non-empty message bubble rendering when safe message-thread data exists.

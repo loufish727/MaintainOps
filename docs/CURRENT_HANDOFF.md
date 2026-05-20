@@ -30,6 +30,125 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9G message display-helper extraction locally:
+
+- Scope:
+  - created one small message display module.
+  - moved only the approved message bubble/list display helpers.
+  - did not package/upload.
+  - did not move `renderMessageCenter`.
+  - did not move `renderMessageThreadButton`.
+  - did not move `renderLinkedWorkMessageThread`.
+  - did not move message composer forms.
+  - did not move thread creation/send/read mutations.
+  - did not move event handlers.
+  - did not move Supabase calls.
+  - did not move auth/session/company/location logic.
+  - did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Created:
+  - `src/render/messageDisplay.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `tests/smoke/resource-load.spec.js`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- Helpers moved:
+  - `renderMessageBubble`
+  - `renderMessageList`
+- Cache/script loading:
+  - `index.html` now loads `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+  - `index.html` now loads `app.js?v=lfes-phase-9g-message-1`.
+- Resource smoke:
+  - `tests/smoke/resource-load.spec.js` now includes `src/render/messageDisplay.js`.
+- App.js line count:
+  - before Phase 9G: 10,524 lines.
+  - after Phase 9G: 10,511 lines.
+  - reduction: 13 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, `tests/smoke/resource-load.spec.js`, all `src/utils`, all `src/services`, and all `src/render` files.
+- Local resource checks:
+  - `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`: HTTP 200.
+  - `app.js?v=lfes-phase-9g-message-1`: HTTP 200.
+  - Local Playwright Resource Load Smoke passed with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+- Local signed-in smoke:
+  - PASS.
+  - local URL: `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9g-message-20260520`.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - Messages loaded and rendered the no-thread empty state.
+  - My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- Smoke caveat:
+  - current pilot data has 0 message threads, so actual non-empty message bubbles were not data-exercised.
+  - user confirmed QA and Louie Fisher accounts are both safe owned accounts for a later non-empty Messages smoke if needed.
+- Behavior changed:
+  - no observed behavior change.
+- Package/upload:
+  - blocked until explicitly requested.
+- Recommended next step:
+  - package/upload LFES Phase 9G to GitHub Pages and live verify, if approved.
+
+## Prior Recent Change
+
+Completed LFES Phase 9F app.js cleanup readiness decision:
+
+- Scope:
+  - planning/documentation only.
+  - did not change app code.
+  - did not move functions.
+  - did not refactor `app.js`.
+  - did not change rendering behavior.
+  - did not change event binding.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Created:
+  - `docs/LFES/audits/LFES_PHASE_9F_APP_JS_CLEANUP_READINESS.md`
+- Updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- Decision:
+  - recommended next implementation target is message bubble/list display only.
+  - suggested future file: `src/render/messageDisplay.js`.
+  - allowed helpers: `renderMessageBubble` and `renderMessageList`.
+- Why this is safest:
+  - these helpers are display-only.
+  - they do not create forms.
+  - they do not emit `data-*` action hooks.
+  - they do not submit messages.
+  - they do not create/select threads.
+  - they can receive explicit dependencies from `app.js`.
+- Blocked from the next implementation phase:
+  - `renderMessageCenter`
+  - `renderMessageThreadButton`
+  - `renderLinkedWorkMessageThread`
+  - message composer forms
+  - thread creation/send/read mutations
+  - event handlers
+  - Supabase calls
+  - auth/session/company/location logic
+  - `renderWorkspace()`
+  - `bindWorkspaceEvents()`
+  - Supabase SQL/RLS
+- Other candidates reviewed:
+  - tiny labels are safe later but too low-value alone.
+  - notice/status/toast helpers remain blocked because `showNotice()` mutates notice state and calls `renderWorkspace()`.
+  - admin readiness remains blocked because `renderSetupItem()` emits `data-setup-action`.
+  - issue reports, public QR, parts, equipment, and work-order command cards remain blocked.
+- Phase status:
+  - Phase 9F planning/readiness: PASS.
+- Recommended next step:
+  - LFES Phase 9G message bubble/list display-helper extraction only, if app.js cleanup continues.
+
+## Prior Recent Change
+
 Completed LFES Phase 9E package/upload and live verification:
 
 - Scope:

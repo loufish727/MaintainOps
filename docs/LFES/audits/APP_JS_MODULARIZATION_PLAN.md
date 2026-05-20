@@ -1333,3 +1333,158 @@ Updated:
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
 - Supabase SQL/RLS changes.
+
+## Phase 9F App.js Cleanup Readiness Decision - 2026-05-20
+
+Phase 9F was planning/documentation only. No app code, `app.js` refactor, function movement, rendering behavior, event binding, Supabase SQL/RLS, workflow logic, or business logic changed.
+
+Detailed decision:
+
+- `docs/LFES/audits/LFES_PHASE_9F_APP_JS_CLEANUP_READINESS.md`
+
+### Phase 9F Decision
+
+The next safest coherent `app.js` reduction target is:
+
+- message bubble/list display only.
+
+Recommended Phase 9G file:
+
+- `src/render/messageDisplay.js`
+
+Recommended helpers:
+
+- `renderMessageBubble`
+- `renderMessageList`
+
+Estimated line-reduction potential:
+
+- approximately 25-45 lines from `app.js`, depending on adapter code.
+
+### Why This Is The Next Safest Target
+
+The message bubble/list helpers are display-oriented and do not create forms, action buttons, thread selection controls, Supabase calls, message mutations, public/auth boundaries, company/location logic, storage flows, or delete controls.
+
+Important caveat:
+
+- the broader message center is not low-risk.
+- only the bubble/list display helpers are approved for a future Phase 9G.
+- message thread buttons and linked work-order thread buttons must stay in `app.js` because they emit behavior hooks.
+
+### Required Phase 9G Guardrails
+
+Phase 9G should:
+
+- create `src/render/messageDisplay.js`.
+- move only `renderMessageBubble` and `renderMessageList`.
+- pass dependencies explicitly from `app.js`.
+- preserve exact returned markup.
+- update `index.html` script loading.
+- bump the `app.js` cache tag.
+- update Resource Load Smoke required resources.
+- run static checks.
+- run local signed-in smoke that opens Messages and core sections.
+- stop before package/upload unless explicitly requested.
+
+### Remains Blocked
+
+- `renderMessageCenter`.
+- `renderMessageThreadButton`.
+- `renderLinkedWorkMessageThread`.
+- message composer forms.
+- thread creation/send/read mutations.
+- event handlers.
+- Supabase calls.
+- auth/session/company/location logic.
+
+## Phase 9G Message Display Helper Extraction - 2026-05-20
+
+Phase 9G implemented the approved message bubble/list display extraction only. No workflow, message mutation, thread selection, event binding, Supabase query, auth/session/company/location logic, `renderWorkspace()`, `bindWorkspaceEvents()`, Supabase SQL/RLS, or business logic changed.
+
+### Implementation
+
+Created:
+
+- `src/render/messageDisplay.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Moved from `app.js`:
+
+- `renderMessageBubble`
+- `renderMessageList`
+
+The new module exposes `window.MaintainOpsMessageDisplay.createMessageDisplayHelpers(...)`. Dependencies remain explicit and are passed from `app.js`:
+
+- `escapeHtml`
+- `getCurrentUserId`
+- `teamMemberName`
+- `initials`
+- `formatMessageTime`
+- `formatMessageDay`
+
+This preserves the old rendering behavior while keeping the broader message center, message thread controls, composer forms, and message mutations in `app.js`.
+
+### Cache And Resource Smoke
+
+- `index.html` now loads `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9g-message-1`.
+- `tests/smoke/resource-load.spec.js` now checks `src/render/messageDisplay.js`.
+- Local HTTP resource checks returned HTTP 200 for the new helper and updated `app.js`.
+- Local Playwright Resource Load Smoke passed with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+
+### Line Reduction
+
+- before Phase 9G: 10,524 lines.
+- after Phase 9G: 10,511 lines.
+- reduction: 13 lines.
+
+### Local Smoke Result
+
+Local signed-in smoke passed on:
+
+- `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9g-message-20260520`
+
+Verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR was selected.
+- Messages opened and rendered the no-thread empty state.
+- My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+- no visible app errors.
+- no actionable browser console warning/error logs captured.
+
+Important caveat:
+
+- current pilot data had 0 message threads, so non-empty message bubbles were not data-exercised.
+- user confirmed QA and Louie Fisher accounts are both safe owned accounts for a later non-empty Messages smoke if needed.
+
+### Remains Blocked
+
+- package/upload until explicitly requested.
+- `renderMessageCenter`.
+- `renderMessageThreadButton`.
+- `renderLinkedWorkMessageThread`.
+- message composer forms.
+- thread creation/send/read mutations.
+- event handlers.
+- Supabase calls.
+- auth/session/company/location logic.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+- notice/status/toast helper movement.
+- admin readiness display movement.
+- issue report display movement.
+- public QR rendering and submit flow.
+- parts and equipment rendering.
+- Team invite/member/default-location rendering.
+- work-order lifecycle and command-card movement.
+- Supabase SQL/RLS changes.

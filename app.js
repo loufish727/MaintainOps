@@ -77,6 +77,7 @@ const {
 const { createRelationshipDisplayHelpers } = window.MaintainOpsRelationshipDisplay;
 const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
 const { segmentIcon, navIcon } = window.MaintainOpsIconDisplay;
+const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 let supabaseClient;
 let session;
 let companies = [];
@@ -215,6 +216,18 @@ const {
   renderWorkOrderGaugeDashboard,
   renderWorkloadStrip,
 } = dashboardDisplayHelpers;
+const messageDisplayHelpers = createMessageDisplayHelpers({
+  escapeHtml,
+  getCurrentUserId: () => session?.user?.id,
+  teamMemberName,
+  initials,
+  formatMessageTime,
+  formatMessageDay,
+});
+const {
+  renderMessageBubble,
+  renderMessageList,
+} = messageDisplayHelpers;
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
 function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
@@ -4151,32 +4164,6 @@ function renderMessageThreadButton(thread) {
       <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)} · ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
     </button>
   `;
-}
-
-function renderMessageBubble(message) {
-  const mine = message.sender_id === session.user.id;
-  const senderName = teamMemberName(message.sender_id);
-  return `
-    <article class="message-bubble ${mine ? "mine" : ""}">
-      <span class="message-avatar" aria-hidden="true">${escapeHtml(initials(senderName))}</span>
-      <div>
-        <strong>${escapeHtml(senderName)}</strong>
-        <span>${escapeHtml(formatMessageTime(message.created_at))}</span>
-      </div>
-      <p>${escapeHtml(message.body)}</p>
-    </article>
-  `;
-}
-
-function renderMessageList(messages) {
-  if (!messages.length) return `<p class="muted">No messages yet.</p>`;
-  let lastDay = "";
-  return messages.map((message) => {
-    const day = formatMessageDay(message.created_at);
-    const divider = day !== lastDay ? `<div class="message-day-divider"><span>${escapeHtml(day)}</span></div>` : "";
-    lastDay = day;
-    return `${divider}${renderMessageBubble(message)}`;
-  }).join("");
 }
 
 function messageThreadScopeLabel(thread) {
