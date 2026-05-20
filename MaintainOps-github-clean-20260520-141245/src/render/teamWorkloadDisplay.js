@@ -1,0 +1,22 @@
+(function () {
+  function createTeamWorkloadDisplayHelpers(deps) {
+    function teamMemberWorkload(userId) {
+      const workOrders = deps.getWorkOrders();
+      const assigned = workOrders.filter((workOrder) => deps.matchesActiveLocation(workOrder) && workOrder.assigned_to === userId);
+      return {
+        newWork: assigned.filter((workOrder) => workOrder.status === "open").length,
+        inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,
+        blocked: assigned.filter((workOrder) => workOrder.status === "blocked").length,
+        overdue: assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length,
+      };
+    }
+
+    return {
+      teamMemberWorkload,
+    };
+  }
+
+  window.MaintainOpsTeamWorkloadDisplay = {
+    createTeamWorkloadDisplayHelpers,
+  };
+})();
