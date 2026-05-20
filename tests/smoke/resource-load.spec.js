@@ -36,6 +36,7 @@ const requiredResources = [
   "src/render/workRecommendationDisplay.js",
   "src/render/commandCardDisplay.js",
   "src/render/workCommandDisplay.js",
+  "src/render/missingWorkDetailDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
