@@ -4,6 +4,61 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9G package/upload and live resource verification is complete. The remaining checkpoint is signed-in live UI smoke.
+
+Current status:
+
+- Package:
+  - `MaintainOps-github-clean-20260520-072736`
+  - `MaintainOps-github-clean-20260520-072736.zip`
+- GitHub commit:
+  - `26b3d1615b03a7f125ec0a32a8bc784a3f92f082`
+- Live resource verification:
+  - live `index.html` references `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9g-message-1`.
+  - live `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9g-message-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - Resource Load Smoke PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26169188200`
+  - Pages build/deployment PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26169169535`
+- Authenticated live UI smoke:
+  - NOT VERIFIED in the automated pass because the automation session did not inherit the user's signed-in browser session.
+- Behavior changed:
+  - no observed behavior change from package/resource verification.
+
+Recommended immediate next controlled phase:
+
+- Open live app with:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9g-live-20260520-072736`
+- In a signed-in session verify:
+  - Taylor Metal Products loads.
+  - Salem, OR remains active.
+  - Messages loads.
+  - My Work loads.
+  - Work Orders loads.
+  - Equipment loads.
+  - Parts loads.
+  - Team loads.
+  - Settings loads.
+  - no missing-script errors.
+  - no visible app errors.
+- If that passes, mark Phase 9G fully closed.
+
+Keep blocked until Phase 9G signed-in live UI smoke passes:
+
+- Phase 9H planning/implementation.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
 LFES Phase 9G message display-helper extraction is complete locally. No app behavior changed.
 
 Current status:

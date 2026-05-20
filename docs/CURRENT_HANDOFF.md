@@ -30,6 +30,43 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9G package/upload and live resource verification:
+
+- Scope:
+  - packaged/uploaded the stable Phase 9G message display-helper extraction.
+  - did not start Phase 9H.
+  - did not move more helpers.
+  - did not refactor `app.js`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Package:
+  - `MaintainOps-github-clean-20260520-072736`
+  - `MaintainOps-github-clean-20260520-072736.zip`
+- GitHub commit:
+  - `26b3d1615b03a7f125ec0a32a8bc784a3f92f082`
+  - message: `Extract message display helpers`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, `tests/smoke/resource-load.spec.js`, all `src/utils`, all `src/services`, and all `src/render` files.
+- Live resource checks:
+  - live `index.html` references `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9g-message-1`.
+  - live `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9g-message-1`: HTTP 200.
+- GitHub Actions:
+  - Resource Load Smoke: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26169188200`
+  - Pages build/deployment: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26169169535`
+- Authenticated live UI smoke:
+  - NOT VERIFIED in this automated pass because the automation session did not inherit the user's signed-in browser session.
+  - still needs a signed-in browser check for Taylor Metal Products, Salem, Messages, My Work, Work Orders, Equipment, Parts, Team, and Settings.
+- Behavior changed:
+  - no observed behavior change from package/resource verification.
+- Recommended next step:
+  - complete signed-in live UI smoke for Phase 9G, then mark Phase 9G fully closed.
+
+## Prior Recent Change
+
 Completed LFES Phase 9G message display-helper extraction locally:
 
 - Scope:

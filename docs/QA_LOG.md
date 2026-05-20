@@ -7054,3 +7054,81 @@ Conclusion:
 - Behavior changed: no observed behavior change.
 - Package/upload: blocked until explicitly requested.
 - Follow-up watch item: verify non-empty message bubble rendering when safe message-thread data exists.
+
+## LFES Phase 9G Package/Upload And Live Resource Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9G message display-helper extraction to GitHub Pages.
+- Did not start Phase 9H.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-072736`
+- `MaintainOps-github-clean-20260520-072736.zip`
+
+GitHub deploy:
+
+- Commit: `26b3d1615b03a7f125ec0a32a8bc784a3f92f082`
+- Commit message: `Extract message display helpers`
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Package/resource verification:
+
+- Package includes `src/render/messageDisplay.js`.
+- Packaged `index.html` references `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+- Packaged `index.html` references `app.js?v=lfes-phase-9g-message-1`.
+
+Live resource verification:
+
+- Live `index.html` references `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9g-message-1`.
+- Live `src/render/messageDisplay.js?v=lfes-phase-9g-message-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9g-message-1`: HTTP 200.
+- Hosted Resource Load Smoke: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26169188200`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26169169535`
+
+TEST:
+Phase 9G live resource smoke
+
+STEPS:
+1. Pushed commit `26b3d1615b03a7f125ec0a32a8bc784a3f92f082`.
+2. Waited for GitHub Pages to serve the updated `index.html`.
+3. Confirmed live `index.html` contains the Phase 9G `messageDisplay.js` and `app.js` cache tags.
+4. Confirmed live `messageDisplay.js` returns HTTP 200.
+5. Confirmed live `app.js` returns HTTP 200.
+6. Ran hosted Resource Load Smoke.
+7. Checked GitHub Actions and Pages deployment result.
+
+EXPECTED:
+GitHub Pages serves the new message display helper, `app.js` uses the current cache tag, hosted Resource Load Smoke passes, and GitHub Actions/Pages deployment are green.
+
+RESULT:
+PASS
+
+NOTES:
+Authenticated live UI smoke was not completed in this automated pass because the automation session did not inherit the user's signed-in browser session. A signed-in live smoke should still verify Taylor Metal Products, Salem, Messages, My Work, Work Orders, Equipment, Parts, Team, and Settings.
+
+Conclusion:
+
+- Phase 9G package/upload and live resource verification: PASS.
+- Authenticated live UI smoke: NOT VERIFIED in this pass.
+- Behavior changed: no observed behavior change from resource/package verification.
