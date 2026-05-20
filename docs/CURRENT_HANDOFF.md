@@ -30,22 +30,22 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 9S/9T/9U request filter display extraction, package/upload, and live verification:
+Completed LFES Phase 9W global search display extraction locally. Phase 9X package/upload and live verification is next:
 
 - Scope:
-  - Phase 9S readiness approved only request filter display helper extraction.
-  - added `src/render/requestDisplay.js`.
-  - moved only `requestPanelSubtitle` and `renderRequestFilterBar`.
-  - updated `index.html` to load `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
-  - updated `app.js` cache tag to `app.js?v=lfes-phase-9t-request-display-1`.
+  - Phase 9V readiness approved only global search result display helper extraction.
+  - added `src/render/globalSearchDisplay.js`.
+  - moved only global search result display helpers and `globalResultCount`.
+  - updated `index.html` to load `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-9w-global-search-display-1`.
   - updated Resource Load Smoke required resources.
-  - did not move request filtering, counts, pagination, submit, conversion, delete, workflow logic, event handlers, mutations, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+  - did not move `globalSearchResults()`, search/filter logic, exact work order search, data-search event handlers, mutations, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
   - did not change Supabase SQL/RLS.
   - did not change workflows/business logic.
 - Line count:
-  - `app.js` before: 10,470.
-  - `app.js` after: 10,454.
-  - reduction: 16 lines.
+  - `app.js` before: 10,454.
+  - `app.js` after: 10,370.
+  - reduction: 84 lines.
 - Static checks:
   - `node --check app.js`: PASS.
   - `node --check supabase-config.js`: PASS.
@@ -53,14 +53,15 @@ Completed LFES Phase 9S/9T/9U request filter display extraction, package/upload,
   - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
 - Local Resource Load Smoke:
   - PASS.
+- Node render probe:
+  - global search display helper renders Search Results panel/groups/action/data-search attributes: PASS.
 - Local signed-in UI smoke:
   - PASS.
   - signed-in session restored.
   - Taylor Metal Products loaded.
   - Salem, OR stayed selected in `location-select`.
-  - Phase 9T script tags were present.
-  - Requests rendered Active/Converted/All filter buttons with counts.
-  - Requests rendered active empty-state copy.
+  - Phase 9W script tags were present.
+  - Requests still rendered Active/Converted/All filter buttons.
   - Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
   - Messages still showed the Phase 9I QA thread.
   - no visible app errors were found.
@@ -68,41 +69,12 @@ Completed LFES Phase 9S/9T/9U request filter display extraction, package/upload,
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 9S/9T/9U is fully closed.
+  - Phase 9W local extraction is complete.
 - Recommended next step:
-  - choose LFES Phase 9V planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
-- Package:
-  - `MaintainOps-github-clean-20260520-094703`
-  - `MaintainOps-github-clean-20260520-094703.zip`
-- GitHub commit:
-  - `c6e94f14a1faaa210d722116111ea3969ced1530`
-  - message: `Extract request filter display helpers`
-- Live URL:
-  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9u-live-20260520`
-- Live resource checks:
-  - live `index.html` references `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
-  - live `index.html` references `app.js?v=lfes-phase-9t-request-display-1`.
-  - live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
-  - live `app.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
-- Hosted Resource Load Smoke:
-  - PASS.
-- GitHub Actions:
-  - Resource Load Smoke: PASS.
-  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26176843065`
-  - Pages build/deployment: PASS.
-  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26176841661`
-- Live signed-in UI smoke:
-  - PASS.
-  - signed-in session restored.
-  - Taylor Metal Products loaded.
-  - Salem, OR stayed selected.
-  - Phase 9T script tags were present.
-  - Requests rendered Active/Converted/All filter buttons with counts.
-  - Requests rendered active empty-state copy.
-  - Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
-  - Messages still showed the Phase 9I QA thread.
-  - no visible app errors were found.
-  - no browser warning/error logs were captured.
+  - run LFES Phase 9X package/upload and live verification.
+  - verify live `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+  - verify live `app.js?v=lfes-phase-9w-global-search-display-1`.
+  - run hosted Resource Load Smoke, GitHub Actions checks, and signed-in live smoke.
 
 ## Prior Recent Change
 

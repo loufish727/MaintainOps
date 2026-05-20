@@ -8039,3 +8039,88 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 9S/9T/9U is fully closed.
+
+## LFES Phase 9V Global Search Display Readiness - 2026-05-20
+
+Scope:
+
+- Reviewed the next low-risk `app.js` cleanup candidate after Phase 9S/9T/9U.
+- Approved only global search result display helper extraction.
+- No code changed during readiness.
+
+Decision:
+
+- Proceed to Phase 9W with global search result display helpers only.
+- Keep `globalSearchResults()`, search matching, exact work order search, search input state, and data-search event handling in `app.js`.
+
+Audit:
+
+- `docs/LFES/audits/LFES_PHASE_9V_GLOBAL_SEARCH_DISPLAY_READINESS.md`
+
+## LFES Phase 9W Global Search Display Extraction - 2026-05-20
+
+Scope:
+
+- Added `src/render/globalSearchDisplay.js`.
+- Moved only global search result display helpers and `globalResultCount`.
+- Updated `index.html` to load `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-9w-global-search-display-1`.
+- Updated Resource Load Smoke required resources.
+- No search/filter logic, exact work order search, event handlers, mutations, workflow logic, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()` changed.
+
+Line count:
+
+- `app.js` before: 10,454 lines.
+- `app.js` after: 10,370 lines.
+- reduction: 84 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+Display render probe:
+
+- Node VM probe loaded `src/render/globalSearchDisplay.js`, created the helper factory with sample dependencies, rendered a sample global search result panel, and verified:
+  - `Search Results` panel text.
+  - Work Orders, Equipment, Parts, Requests, PM, and Procedures groups.
+  - `Page through all matching work orders` action.
+  - expected `data-search-work-order` and `data-search-asset` attributes.
+- Result: PASS.
+
+TEST:
+Phase 9W signed-in local global search display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9w-global-search-display-20260520h`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1` and `app.js?v=lfes-phase-9w-global-search-display-1` were present.
+6. Opened Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+7. Verified Requests still rendered the Active/Converted/All filter bar.
+8. Verified Messages still showed the Phase 9I QA thread.
+9. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new global search display script loads, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The in-browser text entry path for the global search box was blocked by the browser virtual clipboard layer, so the actual global search display HTML was verified with the Node render probe and the loaded app was verified by signed-in section smoke. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9W local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 9X.

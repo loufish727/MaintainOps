@@ -3324,32 +3324,24 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 LFES app cleanup continuation is active.
 
-Latest completed phases:
+Latest completed local phase:
 
-- Phase 9S readiness approved only request filter display helper extraction.
-- Phase 9T implemented `src/render/requestDisplay.js` and moved only `requestPanelSubtitle` and `renderRequestFilterBar`.
+- Phase 9V readiness approved only global search result display helper extraction.
+- Phase 9W implemented `src/render/globalSearchDisplay.js` and moved only global search result display helpers plus `globalResultCount`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
-- Phase 9U packaged/uploaded the Phase 9T extraction and live verification passed.
+- Node render probe verified the extracted global search display HTML.
 
 Immediate next action:
 
-- Choose LFES Phase 9V planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Run Phase 9X package/upload and live verification for the Phase 9W global search display extraction.
 
-Phase 9U verified:
+Phase 9X must verify:
 
-1. `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-9t-request-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-9w-global-search-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
 4. GitHub Actions Resource Load Smoke and Pages deployment pass.
 5. Signed-in live smoke passes across Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
-
-Phase 9U deploy:
-
-- package: `MaintainOps-github-clean-20260520-094703`
-- commit: `c6e94f14a1faaa210d722116111ea3969ced1530`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9u-live-20260520`
-- Resource Load Smoke run: `https://github.com/loufish727/MaintainOps/actions/runs/26176843065`
-- Pages run: `https://github.com/loufish727/MaintainOps/actions/runs/26176841661`
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

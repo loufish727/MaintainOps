@@ -2292,3 +2292,85 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 9V Global Search Display Readiness - 2026-05-20
+
+Phase 9V reviewed the next low-risk cleanup candidate after Phase 9S/9T/9U was fully packaged, deployed, and live verified.
+
+Approved for Phase 9W:
+
+- `renderGlobalSearchResults(results)`
+- `renderGlobalResultGroup(title, items, renderer, tone, options = {})`
+- `renderGlobalWorkResult(workOrder)`
+- `renderGlobalAssetResult(asset)`
+- `renderGlobalPartResult(part)`
+- `renderGlobalRequestResult(request)`
+- `renderGlobalPmResult(schedule)`
+- `renderGlobalProcedureResult(template)`
+- `globalResultCount(results)`
+
+The approved helpers are display-only. They build global search result HTML from result data already prepared by `app.js`.
+
+Readiness audit:
+
+- `docs/LFES/audits/LFES_PHASE_9V_GLOBAL_SEARCH_DISPLAY_READINESS.md`
+
+Still blocked:
+
+- `globalSearchResults()`.
+- search/filter/matching logic.
+- exact work order search.
+- search input state and localStorage.
+- data-search click handlers.
+- event handlers and mutations.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+## Phase 9W Global Search Display Extraction - 2026-05-20
+
+Phase 9W added `src/render/globalSearchDisplay.js` and moved only the approved global search result display helpers.
+
+Implementation:
+
+- `src/render/globalSearchDisplay.js` exposes `window.MaintainOpsGlobalSearchDisplay.createGlobalSearchDisplayHelpers`.
+- `app.js` injects:
+  - `escapeHtml`
+  - `statusLabel`
+  - `assignmentLabel`
+  - `activeLocationName`
+  - `getSearchQuery`
+- `index.html` now loads `src/render/globalSearchDisplay.js?v=lfes-phase-9w-global-search-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-9w-global-search-display-1`.
+- Resource Load Smoke now includes `src/render/globalSearchDisplay.js`.
+
+Line count:
+
+- before: 10,454 lines.
+- after: 10,370 lines.
+- reduction: 84 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- Node render probe for global search display HTML: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new global search display script and app cache tag loaded.
+- Requests still rendered Active/Converted/All filter buttons.
+- Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 9W result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 9X.
