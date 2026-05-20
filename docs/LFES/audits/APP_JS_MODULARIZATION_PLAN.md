@@ -3465,3 +3465,35 @@ Choose one:
 
 - LFES Phase 14H planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
+
+## Phase 14H Through 15B Display/Search Extraction Continuation - 2026-05-20
+
+Completed another 21 controlled LFES phase steps under the medium-risk workflow:
+
+- Phase 14H/14I/14J: extracted request filter/count helpers into `src/render/requestQueueDisplay.js`; deploy commit `d5bbfe9`.
+- Phase 14K/14L/14M: extracted asset hierarchy filter helpers into `src/render/assetHierarchyDisplay.js`; deploy commit `bed7851`.
+- Phase 14N/14O/14P: extracted part filter/search/source helpers into `src/render/partInventoryDisplay.js`; deploy commit `6e99df9`.
+- Phase 14Q/14R/14S: extracted `filteredMembers` into `src/render/teamMemberDisplay.js`; deploy commit `85029c7`.
+- Phase 14T/14U/14V: extracted maintenance list filters into `src/render/maintenanceListDisplay.js`; deploy commit `65aaa6a`.
+- Phase 14W/14X/14Y: extracted dashboard metric helpers into `src/render/dashboardDisplay.js`; deploy commit `01f547b`.
+- Phase 14Z/15A/15B: extracted shared search predicates into `src/render/searchFilterDisplay.js`; deploy commit `1242284`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260520-152322`.
+- final cache tag: `app.js?v=lfes-phase-15a-search-filter-display-1`.
+- final hosted resource checks: PASS.
+- final live signed-in smoke: PASS.
+- final browser console warning/error logs: clean after filtering known benign noise.
+- `app.js` line count after Phase 15A: 9,854.
+
+Boundary preserved:
+
+- No workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 15C planning/readiness before any additional helper extraction.
+- pause code movement for an AI/code review because remaining candidates are more cross-cutting and higher risk.

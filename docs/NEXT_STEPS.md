@@ -3384,10 +3384,17 @@ Latest completed phases:
 - Phase 13Y/13Z/14A extracted `partUsageRows` into `src/render/partUsageDisplay.js` and live verification passed.
 - Phase 14B/14C/14D extracted `openMaintenanceRequests` into `src/render/requestQueueDisplay.js` and live verification passed.
 - Phase 14E/14F/14G extracted `assetDeleteBlockerMessage` and `procedureDeleteBlockerMessage` into `src/render/deleteBlockerDisplay.js` and live verification passed.
+- Phase 14H/14I/14J extracted request filter/count helpers into `src/render/requestQueueDisplay.js` and live verification passed.
+- Phase 14K/14L/14M extracted asset hierarchy filter helpers into `src/render/assetHierarchyDisplay.js` and live verification passed.
+- Phase 14N/14O/14P extracted part filter/search/source helpers into `src/render/partInventoryDisplay.js` and live verification passed.
+- Phase 14Q/14R/14S extracted `filteredMembers` into `src/render/teamMemberDisplay.js` and live verification passed.
+- Phase 14T/14U/14V extracted maintenance schedule/procedure list filters into `src/render/maintenanceListDisplay.js` and live verification passed.
+- Phase 14W/14X/14Y extracted dashboard metric helpers into `src/render/dashboardDisplay.js` and live verification passed.
+- Phase 14Z/15A/15B extracted shared search predicates into `src/render/searchFilterDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 14H planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 15C planning/readiness before any additional helper extraction, or pause code movement for an AI/code review.
 
 Phase 13M verified:
 
@@ -3411,6 +3418,17 @@ Phase 14G deploy:
 - live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-14f-live-*`
 - GitHub connector check returned no workflow runs for `1a17d36`.
 - `app.js` line count after Phase 14F: 9,969.
+
+Phase 15B deploy:
+
+- package: `MaintainOps-github-clean-20260520-152322`
+- commit: `1242284`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?fresh_phase15a=*`
+- GitHub connector check returned no workflow runs for `1242284`.
+- `app.js` line count after Phase 15A: 9,854.
+- live `src/render/searchFilterDisplay.js?v=lfes-phase-15a-search-filter-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-15a-search-filter-display-1`: HTTP 200.
+- signed-in live smoke verified Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, Team nav, current cache tags, and clean warning/error logs.
 
 Important:
 

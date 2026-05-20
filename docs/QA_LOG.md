@@ -9337,6 +9337,66 @@ Conclusion:
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
 
+## LFES Phase 14H Through 15B Display/Search Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the medium-risk LFES modularization loop for 21 phase steps, from Phase 14H through Phase 15B.
+- Added or extended display modules for request filtering/counts, asset hierarchy filtering, part inventory filtering, team member filtering, maintenance list filtering, dashboard metrics, and shared search predicates.
+- Did not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 14J: `d5bbfe9` - `Extract request filter display helpers`
+- Phase 14M: `bed7851` - `Extract asset hierarchy display helpers`
+- Phase 14P: `6e99df9` - `Extract part filter display helpers`
+- Phase 14S: `85029c7` - `Extract team member filter display helper`
+- Phase 14V: `65aaa6a` - `Extract maintenance list display helpers`
+- Phase 14Y: `01f547b` - `Extract dashboard metrics display helpers`
+- Phase 15B: `1242284` - `Extract search filter display helpers`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-152322`
+- `MaintainOps-github-clean-20260520-152322.zip`
+
+Latest implementation:
+
+- `index.html` now references `src/render/searchFilterDisplay.js?v=lfes-phase-15a-search-filter-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-15a-search-filter-display-1`.
+- `app.js` line count after Phase 15A extraction: 9,854.
+
+TEST:
+Phase 15B static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed for `app.js` and each new or updated render module.
+- targeted local helper-output smokes passed for all seven extraction cycles.
+- local resource checks passed before each package/upload.
+- hosted GitHub Pages resources passed for the final Phase 15B deploy.
+- live `src/render/searchFilterDisplay.js?v=lfes-phase-15a-search-filter-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-15a-search-filter-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible.
+- Louie was visible.
+- signed-in workspace rendered with Work, Parts, and Team nav available.
+- no browser warning/error logs after filtering known benign noise.
+
+Notes:
+
+- Local signed-in browser smoke remains unavailable on temporary localhost origins because the browser is signed out there; local verification used syntax, resource, and direct helper-output checks, with signed-in behavior gated on live smoke.
+- GitHub Pages/browser propagation lag appeared intermittently; new paths or fresh script tags sometimes needed 30-90 seconds before fresh tabs saw them.
+- GitHub connector checks returned no workflow runs for the latest app commits, including `1242284`.
+
+Conclusion:
+
+- The requested 21 phase steps completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.
+
 ## LFES Phase 12S Through 13M Display Extraction Continuation - 2026-05-20
 
 Scope:
