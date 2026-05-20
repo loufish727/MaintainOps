@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 10K/10L local Parts display extraction:
+Completed LFES Phase 10K/10L/10M Parts display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 10K readiness approved only Parts list display helper extraction.
@@ -66,8 +66,30 @@ Completed LFES Phase 10K/10L local Parts display extraction:
   - current Salem data had zero visible part cards, so the empty-state path was observed.
 - Behavior changed:
   - no observed behavior change.
-- Immediate next step:
-  - Phase 10M package/upload and live verification.
+- Package:
+  - `MaintainOps-github-clean-20260520-115838`
+  - `MaintainOps-github-clean-20260520-115838.zip`
+- GitHub commit:
+  - `affeabb`
+  - message: `Extract parts display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10m-live-20260520`
+- Live verification:
+  - PASS.
+  - live `index.html` references `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-10l-parts-display-1`.
+  - both live resources returned HTTP 200.
+  - hosted Resource Load Smoke against GitHub Pages passed.
+  - signed-in live smoke passed across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+  - Parts Inventory rendered two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
+  - no visible app errors and no browser warning/error logs.
+  - current Salem data had zero visible part cards, so the empty-state path was observed.
+- GitHub Actions:
+  - GitHub connector check for commit `affeabb` returned no workflow runs.
+- Phase status:
+  - Phase 10K/10L/10M is functionally closed.
+- Recommended next step:
+  - choose LFES Phase 10N planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
 
 ## Prior Recent Change
 
