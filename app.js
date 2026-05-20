@@ -88,6 +88,7 @@ const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
 const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
 const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
 const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
+const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -338,6 +339,13 @@ const {
   renderSetupItem,
 } = createSetupDisplayHelpers({
   escapeHtml,
+});
+const {
+  renderMaintenanceRequestPhoto,
+} = createRequestPhotoDisplayHelpers({
+  escapeHtml,
+  requestPhotoMetaText,
+  getRequestPhotosReady: () => requestPhotosReady,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -4523,24 +4531,6 @@ function renderMaintenanceRequest(request) {
         </div>
       `}
     </article>
-  `;
-}
-
-function renderMaintenanceRequestPhoto(request) {
-  if (!request.photo_storage_path) return "";
-  const fileName = request.photo_file_name || request.photo_original_file_name || "Request photo";
-  const meta = requestPhotoMetaText(request);
-  return `
-    <div class="request-photo-preview">
-      ${request.photoSignedUrl && request.photo_content_type?.startsWith("image/")
-        ? `<img class="photo-thumb" src="${escapeHtml(request.photoSignedUrl)}" alt="${escapeHtml(fileName)}">`
-        : ""}
-      <div>
-        <strong>${escapeHtml(fileName)}</strong>
-        <span>${escapeHtml(meta)}</span>
-        ${request.photoSignedUrl ? `<a href="${escapeHtml(request.photoSignedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : `<span>${requestPhotosReady ? "Photo attached" : "Photo attached - run request photo SQL if links do not open"}</span>`}
-      </div>
-    </div>
   `;
 }
 

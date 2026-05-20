@@ -29,6 +29,7 @@ const requiredResources = [
   "src/render/partsDisplay.js",
   "src/render/optionDisplay.js",
   "src/render/setupDisplay.js",
+  "src/render/requestPhotoDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
