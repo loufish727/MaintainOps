@@ -8269,3 +8269,70 @@ Conclusion:
 - Phase 9Z local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 10A.
+
+## LFES Phase 10A Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9Z work queue display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change work order filtering, server paging, counts, assignment filtering, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-102539`
+- `MaintainOps-github-clean-20260520-102539.zip`
+
+GitHub deploy:
+
+- Commit: `b037737b5edcf85f9910fb89d087da33235a88de`
+- Commit message: `Extract work queue display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9z-work-queue-display-1`.
+- Live `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9z-work-queue-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+GitHub Actions:
+
+- Public GitHub API was rate-limited during final verification.
+- Connector workflow lookup returned no workflow runs for commit `b037737b5edcf85f9910fb89d087da33235a88de`.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+TEST:
+Phase 10A signed-in live work queue display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10a-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1` and `app.js?v=lfes-phase-9z-work-queue-display-1` were present.
+6. Opened My Work and verified the title/subtitle rendered.
+7. Opened Work Orders and verified the queue title/subtitle rendered.
+8. Opened Requests, Equipment, Parts, Team, Settings, and Messages.
+9. Verified Requests still rendered the Active/Converted/All filter bar.
+10. Verified Messages still showed the Phase 9I QA thread.
+11. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new work queue display script loads, queue title/subtitle copy renders, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+My Work and Work Orders rendered title/subtitle copy. Requests still rendered the request filter bar. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10A package/upload and live verification: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- GitHub Actions final check unavailable due public API rate limiting / connector run lookup gap.
+- Phase 9Y/9Z/10A is functionally closed.

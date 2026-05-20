@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 9Z work queue display extraction locally. Phase 10A package/upload and live verification is next:
+Completed LFES Phase 9Y/9Z/10A work queue display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 9Y readiness approved only Work Orders / My Work queue title display helper extraction.
@@ -69,12 +69,39 @@ Completed LFES Phase 9Z work queue display extraction locally. Phase 10A package
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 9Z local extraction is complete.
+  - Phase 9Y/9Z/10A is functionally closed.
 - Recommended next step:
-  - run LFES Phase 10A package/upload and live verification.
-  - verify live `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`.
-  - verify live `app.js?v=lfes-phase-9z-work-queue-display-1`.
-  - run hosted Resource Load Smoke, Pages/Actions checks when available, and signed-in live smoke.
+  - choose LFES Phase 10B planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+- Package:
+  - `MaintainOps-github-clean-20260520-102539`
+  - `MaintainOps-github-clean-20260520-102539.zip`
+- GitHub commit:
+  - `b037737b5edcf85f9910fb89d087da33235a88de`
+  - message: `Extract work queue display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10a-live-20260520`
+- Live resource checks:
+  - live `index.html` references `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9z-work-queue-display-1`.
+  - live `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9z-work-queue-display-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - final check unavailable due public API rate limiting / connector run lookup gap.
+- Live signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected.
+  - Phase 9Z script tags were present.
+  - My Work title/subtitle rendered.
+  - Work Orders title/subtitle rendered.
+  - Requests still rendered Active/Converted/All filter buttons.
+  - Equipment, Parts, Team, Settings, and Messages loaded.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
 
 ## Prior Recent Change
 
