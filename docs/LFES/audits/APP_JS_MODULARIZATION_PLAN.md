@@ -1743,3 +1743,77 @@ Verified:
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
 - Supabase SQL/RLS changes.
+
+## Phase 9L Package/Upload And Live Verification - 2026-05-20
+
+Phase 9L packaged and uploaded the stable Phase 9K message formatting helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-082153`
+- zip: `MaintainOps-github-clean-20260520-082153.zip`
+- commit: `989ac29b6a9c13df0143756ab74184c421572455`
+- commit message: `Extract message formatting helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+- live `index.html` references `app.js?v=lfes-phase-9k-message-format-1`.
+- live `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- live `app.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- hosted Resource Load Smoke: PASS.
+
+### GitHub Actions
+
+- Resource Load Smoke: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26172273053`
+- Pages build/deployment: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26172272050`
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9l-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- Messages loaded with the Phase 9I QA thread.
+- thread button rendered.
+- one message bubble rendered.
+- sender initials `LF` rendered.
+- `Today` day divider rendered.
+- My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded afterward.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 9L Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- Phase 9K/9L is fully closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 9M planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- Phase 9M implementation without fresh approval.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.

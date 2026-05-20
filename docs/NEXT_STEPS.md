@@ -4,6 +4,57 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9L package/upload and live verification is complete. Phase 9K/9L message formatting extraction is fully closed.
+
+Current status:
+
+- Package:
+  - `MaintainOps-github-clean-20260520-082153`
+  - `MaintainOps-github-clean-20260520-082153.zip`
+- GitHub commit:
+  - `989ac29b6a9c13df0143756ab74184c421572455`
+- Live resource verification:
+  - live `index.html` references `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9k-message-format-1`.
+  - live `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - Resource Load Smoke PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26172273053`
+  - Pages build/deployment PASS: `https://github.com/loufish727/MaintainOps/actions/runs/26172272050`
+- Authenticated live UI smoke:
+  - PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9l-live-20260520`.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected.
+  - Messages loaded with the Phase 9I QA thread.
+  - message thread button, message bubble, sender initials `LF`, and `Today` day divider rendered.
+  - My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+  - no visible app errors.
+  - no browser warning/error logs captured.
+- Behavior changed:
+  - no observed behavior change.
+
+Recommended immediate next controlled phase:
+
+- Choose one:
+  - LFES Phase 9M planning/readiness before any additional extraction.
+  - Pause code movement and continue live pilot monitoring.
+
+Keep blocked until explicitly approved:
+
+- Phase 9M implementation.
+- additional display extraction.
+- message workflow movement.
+- event handlers.
+- mutations.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Prior immediate step:
+
 LFES Phase 9K message formatting helper extraction is complete locally. The next controlled phase is package/upload plus live verification.
 
 Current status:

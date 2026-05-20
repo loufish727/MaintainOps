@@ -7460,3 +7460,80 @@ Conclusion:
 - Phase 9K local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 9L.
+
+## LFES Phase 9L Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9K message formatting helper extraction to GitHub Pages.
+- Did not start Phase 9M.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-082153`
+- `MaintainOps-github-clean-20260520-082153.zip`
+
+GitHub deploy:
+
+- Commit: `989ac29b6a9c13df0143756ab74184c421572455`
+- Commit message: `Extract message formatting helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9k-message-format-1`.
+- Live `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- Hosted Resource Load Smoke: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26172273053`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26172272050`
+
+TEST:
+Phase 9L signed-in live message formatting smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9l-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected in `location-select`.
+5. Verified `src/render/messageFormatting.js` and the Phase 9K `app.js` cache tag were present.
+6. Opened Messages.
+7. Verified the Phase 9I QA thread was visible.
+8. Verified the message thread button rendered.
+9. Verified one message bubble rendered.
+10. Verified sender initials `LF` rendered.
+11. Verified `Today` day divider rendered.
+12. Opened My Work.
+13. Opened Work Orders.
+14. Opened Equipment.
+15. Opened Parts.
+16. Opened Team.
+17. Opened Settings.
+18. Returned to Messages.
+19. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new message formatting script loads, message thread summary and message bubble formatting remain stable, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The live app loaded with `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1` and `app.js?v=lfes-phase-9k-message-format-1`. The Phase 9I QA message thread and body rendered. One message bubble, sender initials `LF`, and one day divider rendered. My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded with Salem, OR selected. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9L package/upload and live verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 9K/9L is fully closed.

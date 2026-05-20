@@ -30,6 +30,58 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9L package/upload and live verification:
+
+- Scope:
+  - packaged/uploaded the stable Phase 9K message formatting helper extraction.
+  - did not start Phase 9M.
+  - did not move more helpers.
+  - did not refactor `app.js`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Package:
+  - `MaintainOps-github-clean-20260520-082153`
+  - `MaintainOps-github-clean-20260520-082153.zip`
+- GitHub commit:
+  - `989ac29b6a9c13df0143756ab74184c421572455`
+  - message: `Extract message formatting helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9l-live-20260520`
+- Live resource checks:
+  - live `index.html` references `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9k-message-format-1`.
+  - live `src/render/messageFormatting.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9k-message-format-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - Resource Load Smoke: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26172273053`
+  - Pages build/deployment: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26172272050`
+- Authenticated live UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 9K script tags were present.
+  - Messages loaded with the Phase 9I QA thread.
+  - message thread button rendered.
+  - one message bubble rendered.
+  - sender initials `LF` rendered.
+  - `Today` day divider rendered.
+  - My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Phase status:
+  - Phase 9L is fully closed.
+- Recommended next step:
+  - choose LFES Phase 9M planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
 Completed LFES Phase 9K message formatting helper extraction locally:
 
 - Scope:
