@@ -57,6 +57,7 @@ const requiredResources = [
   "src/render/workOrderChangeDisplay.js",
   "src/render/activityFeedDisplay.js",
   "src/render/partInventoryDisplay.js",
+  "src/render/partUsageDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
