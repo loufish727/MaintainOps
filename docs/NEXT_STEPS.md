@@ -3391,10 +3391,17 @@ Latest completed phases:
 - Phase 14T/14U/14V extracted maintenance schedule/procedure list filters into `src/render/maintenanceListDisplay.js` and live verification passed.
 - Phase 14W/14X/14Y extracted dashboard metric helpers into `src/render/dashboardDisplay.js` and live verification passed.
 - Phase 14Z/15A/15B extracted shared search predicates into `src/render/searchFilterDisplay.js` and live verification passed.
+- Phase 15C/15D/15E extracted work-order sort helpers into `src/render/workOrderSortDisplay.js` and live verification passed.
+- Phase 15F/15G/15H extracted active-location filter helpers into `src/render/locationFilterDisplay.js` and live verification passed.
+- Phase 15I/15J/15K extracted message thread filter/unread helpers into `src/render/messageThreadFilterDisplay.js` and live verification passed.
+- Phase 15L/15M/15N extracted setup readiness status helper into `src/render/setupStatusDisplay.js` and live verification passed.
+- Phase 15O/15P/15Q extracted work-order status predicate into `src/render/workOrderStatusFilterDisplay.js` and live verification passed.
+- Phase 15R/15S/15T extracted work-order search value helper into `src/render/workOrderSearchDisplay.js` and live verification passed.
+- Phase 15U/15V/15W extracted `myWorkQueueOrders` into `src/render/myWorkQueueDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 15C planning/readiness before any additional helper extraction, or pause code movement for an AI/code review.
+- Choose LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit, or pause code movement for an AI/code review.
 
 Phase 13M verified:
 
@@ -3430,9 +3437,21 @@ Phase 15B deploy:
 - live `app.js?v=lfes-phase-15a-search-filter-display-1`: HTTP 200.
 - signed-in live smoke verified Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, Team nav, current cache tags, and clean warning/error logs.
 
+Phase 15W deploy:
+
+- package: `MaintainOps-github-clean-20260520-155625`
+- package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+- commit: `3a9f4be`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?fresh_phase15w=*`
+- GitHub connector check returned no workflow runs for `3a9f4be`.
+- `app.js` line count after Phase 15V: 9,705.
+- live `src/render/myWorkQueueDisplay.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
+- signed-in live smoke verified Taylor Metal Products, Salem, OR, Louie, Work nav, Parts nav, Team nav, current cache tags, and clean warning/error logs.
+
 Important:
 
-- Remaining render functions are mostly medium/high-risk because they include forms, auth/startup, public QR, work/request workflow actions, assignment controls, delete zones, or full detail views.
+- Remaining render functions are mostly medium/high-risk because they include forms, auth/startup, public QR, work/request workflow actions, assignment controls, delete zones, full detail views, or broad queue/search orchestration.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

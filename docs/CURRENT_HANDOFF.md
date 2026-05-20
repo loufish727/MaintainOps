@@ -30,24 +30,24 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed another 21-step LFES medium-risk modularization run from Phase 14H through Phase 15B.
+Completed another 21-step LFES medium-risk modularization run from Phase 15C through Phase 15W.
 
 - Added or extended:
-  - `src/render/requestQueueDisplay.js`
-  - `src/render/assetHierarchyDisplay.js`
-  - `src/render/partInventoryDisplay.js`
-  - `src/render/teamMemberDisplay.js`
-  - `src/render/maintenanceListDisplay.js`
-  - `src/render/dashboardDisplay.js`
-  - `src/render/searchFilterDisplay.js`
+  - `src/render/workOrderSortDisplay.js`
+  - `src/render/locationFilterDisplay.js`
+  - `src/render/messageThreadFilterDisplay.js`
+  - `src/render/setupStatusDisplay.js`
+  - `src/render/workOrderStatusFilterDisplay.js`
+  - `src/render/workOrderSearchDisplay.js`
+  - `src/render/myWorkQueueDisplay.js`
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-15a-search-filter-display-1`
+  - `app.js?v=lfes-phase-15v-my-work-queue-display-1`
 - Latest package:
-  - `MaintainOps-github-clean-20260520-152322`
+  - `MaintainOps-github-clean-20260520-155625`
 - Latest app commit:
-  - `1242284` (`Extract search filter display helpers`)
+  - `3a9f4be` (`Extract my work queue display helper`)
 - Current `app.js` line count:
-  - 9,854 lines.
+  - 9,705 lines.
 - Verification:
   - static JS checks: PASS.
   - targeted local helper-output smokes: PASS.
@@ -58,7 +58,7 @@ Completed another 21-step LFES medium-risk modularization run from Phase 14H thr
 - Behavior changed:
   - no observed behavior change.
 - Recommended next step:
-  - choose LFES Phase 15C planning/readiness before any additional extraction, or pause for an AI/code review because remaining candidates are more cross-cutting and higher risk.
+  - choose LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit, or pause for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

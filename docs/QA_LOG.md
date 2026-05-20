@@ -9337,6 +9337,68 @@ Conclusion:
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
 
+## LFES Phase 15C Through 15W Display Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the medium-risk LFES modularization loop for 21 phase steps, from Phase 15C through Phase 15W.
+- Added display modules for work-order sorting, active-location filtering, message thread filtering/unread counts, setup readiness status, work-order status matching, work-order search values, and the My Work queue helper.
+- Preserved the tightened review boundary: no workflow logic, event handlers, mutations, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+Shipped commits:
+
+- Phase 15E: `51092d8` - `Extract work order sort display helpers`
+- Phase 15H: `ef12207` - `Extract location filter display helpers`
+- Phase 15K: `fb9ba71` - `Extract message thread filter display helpers`
+- Phase 15N: `b62799d` - `Extract setup status display helper`
+- Phase 15Q: `d0da94c` - `Extract work order status filter display helper`
+- Phase 15T: `fd96990` - `Extract work order search display helper`
+- Phase 15W: `3a9f4be` - `Extract my work queue display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-155625`
+- `MaintainOps-github-clean-20260520-155625.zip`
+- Stored under `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+
+Latest implementation:
+
+- `index.html` now references `src/render/myWorkQueueDisplay.js?v=lfes-phase-15v-my-work-queue-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-15v-my-work-queue-display-1`.
+- `app.js` line count after Phase 15V extraction: 9,705.
+
+TEST:
+Phase 15W static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed for `app.js` and each new render module.
+- targeted local helper-output smokes passed for all seven extraction cycles.
+- local resource checks passed before each package/upload.
+- hosted GitHub Pages resources passed for the final Phase 15W deploy.
+- live `src/render/myWorkQueueDisplay.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-15v-my-work-queue-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible.
+- Louie was visible.
+- signed-in workspace rendered with Work, Parts, and Team nav available.
+- no browser warning/error logs after filtering known benign noise.
+
+Notes:
+
+- Local signed-in browser smoke remains unavailable on temporary localhost origins because the browser is signed out there; local verification used syntax, resource, and direct helper-output checks, with signed-in behavior gated on live smoke.
+- GitHub Pages continued to show a predictable propagation lag where `index.html`/`app.js` advanced before newly added module paths served 200; each deploy was verified only after the new module path served successfully.
+- GitHub connector checks returned no workflow runs for the latest app commits, including `3a9f4be`.
+- `myWorkQueueOrders` appears unused in the current main render path, but it was moved intact and direct-smoked to preserve behavior if reactivated.
+
+Conclusion:
+
+- The requested 21 phase steps completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.
+
 ## LFES Phase 14H Through 15B Display/Search Extraction Continuation - 2026-05-20
 
 Scope:

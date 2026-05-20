@@ -3497,3 +3497,36 @@ Choose one:
 
 - LFES Phase 15C planning/readiness before any additional helper extraction.
 - pause code movement for an AI/code review because remaining candidates are more cross-cutting and higher risk.
+
+## Phase 15C Through 15W Display Extraction Continuation - 2026-05-20
+
+Completed another 21 controlled LFES phase steps under the medium-risk workflow:
+
+- Phase 15C/15D/15E: extracted work-order sort helpers into `src/render/workOrderSortDisplay.js`; deploy commit `51092d8`.
+- Phase 15F/15G/15H: extracted active-location filter helpers into `src/render/locationFilterDisplay.js`; deploy commit `ef12207`.
+- Phase 15I/15J/15K: extracted message thread filter/unread helpers into `src/render/messageThreadFilterDisplay.js`; deploy commit `fb9ba71`.
+- Phase 15L/15M/15N: extracted setup readiness status helper into `src/render/setupStatusDisplay.js`; deploy commit `b62799d`.
+- Phase 15O/15P/15Q: extracted work-order status predicate into `src/render/workOrderStatusFilterDisplay.js`; deploy commit `d0da94c`.
+- Phase 15R/15S/15T: extracted work-order search value helper into `src/render/workOrderSearchDisplay.js`; deploy commit `fd96990`.
+- Phase 15U/15V/15W: extracted `myWorkQueueOrders` into `src/render/myWorkQueueDisplay.js`; deploy commit `3a9f4be`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260520-155625`.
+- final package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- final cache tag: `app.js?v=lfes-phase-15v-my-work-queue-display-1`.
+- final hosted resource checks: PASS.
+- final live signed-in smoke: PASS.
+- final browser console warning/error logs: clean after filtering known benign noise.
+- `app.js` line count after Phase 15V: 9,705.
+
+Boundary preserved:
+
+- No workflow logic, event handlers, mutations, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 15X planning/readiness only after a fresh remaining-candidate audit.
+- pause code movement for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
