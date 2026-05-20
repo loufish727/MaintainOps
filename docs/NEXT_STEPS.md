@@ -3334,25 +3334,29 @@ Latest completed phases:
 - Phase 10F implemented `src/render/miniWorkOrderDisplay.js` and moved only `renderMiniWorkOrder` and `renderAssetMiniWorkOrder`.
 - Phase 10F local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10G packaged/uploaded the Phase 10F extraction and live verification passed.
+- Phase 10H readiness approved only pagination display helper extraction.
+- Phase 10I implemented `src/render/paginationDisplay.js` and moved only `renderWorkPagination`, `renderPartsPagination`, `renderAssetsPagination`, and `renderListPagination`.
+- Phase 10I local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10H planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Phase 10J package/upload and live verification for the Phase 10I pagination display extraction.
 
-Phase 10G verified:
+Phase 10I local verified:
 
-1. `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
-5. Equipment detail renders two `[data-mini-work-order]` snippets.
+1. `src/render/paginationDisplay.js?v=lfes-phase-10i-pagination-display-1` is referenced locally.
+2. `app.js?v=lfes-phase-10i-pagination-display-1` is referenced locally.
+3. Local Resource Load Smoke passes.
+4. Signed-in local smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+5. Current Salem data did not exceed pagination thresholds, so no pagination bars were visible in the smoke pass.
 
-Phase 10G deploy:
+Phase 10J target:
 
-- package: `MaintainOps-github-clean-20260520-110415`
-- commit: `fba2c26`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10g-live-20260520`
-- GitHub connector check returned no workflow runs for `fba2c26`.
+- create a fresh GitHub upload package.
+- deploy the Phase 10I files.
+- verify live resource tags and HTTP 200s.
+- run hosted Resource Load Smoke.
+- run signed-in live smoke with Salem, core sections, and Messages Phase 9I thread.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

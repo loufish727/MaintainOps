@@ -30,6 +30,46 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10H/10I local pagination display extraction:
+
+- Scope:
+  - Phase 10H readiness approved only pagination display helper extraction.
+  - added `src/render/paginationDisplay.js`.
+  - moved only `renderWorkPagination`, `renderPartsPagination`, `renderAssetsPagination`, and `renderListPagination`.
+  - updated `index.html` to load `src/render/paginationDisplay.js?v=lfes-phase-10i-pagination-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-10i-pagination-display-1`.
+  - updated Resource Load Smoke required resources.
+  - did not move page click handling, page state mutation, localStorage updates, filtering, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Line count:
+  - `app.js` before: 10,290.
+  - `app.js` after: 10,253.
+  - reduction: 37 lines.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check tests/smoke/resource-load.spec.js`: PASS.
+  - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
+- Local Resource Load Smoke:
+  - PASS.
+- Local signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 10I script tags were present.
+  - My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+  - Equipment showed `New thalmann`.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+  - current Salem data did not exceed pagination thresholds, so no pagination bars were visible in this smoke pass.
+- Behavior changed:
+  - no observed behavior change.
+- Immediate next step:
+  - Phase 10J package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 10E/10F/10G mini work order display extraction, package/upload, and live verification:
 
 - Scope:

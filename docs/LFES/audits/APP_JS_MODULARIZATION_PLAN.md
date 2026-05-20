@@ -2850,6 +2850,58 @@ Choose one:
 - LFES Phase 10H planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
 
+## Phase 10H/10I Pagination Display Extraction - 2026-05-20
+
+Phase 10H readiness approved only the pagination display helper extraction. Phase 10I added `src/render/paginationDisplay.js` and moved only:
+
+- `renderWorkPagination`
+- `renderPartsPagination`
+- `renderAssetsPagination`
+- `renderListPagination`
+
+Implementation:
+
+- `src/render/paginationDisplay.js` exposes `window.MaintainOpsPaginationDisplay.createPaginationDisplayHelpers`.
+- `app.js` injects:
+  - `WORK_ORDERS_PER_PAGE`
+  - `PARTS_PER_PAGE`
+  - `ASSETS_PER_PAGE`
+  - `LIST_ITEMS_PER_PAGE`
+  - read-only getters for `workOrderPage`, `partsPage`, and `assetsPage`
+- `index.html` now loads `src/render/paginationDisplay.js?v=lfes-phase-10i-pagination-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10i-pagination-display-1`.
+- Resource Load Smoke now includes `src/render/paginationDisplay.js`.
+
+Line count:
+
+- before: 10,290 lines.
+- after: 10,253 lines.
+- reduction: 37 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new pagination display script and app cache tag loaded.
+- My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+- Equipment still showed `New thalmann`.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+- current Salem data did not exceed pagination thresholds, so no pagination bars were visible in the smoke pass.
+
+Phase 10I result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10J.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.
