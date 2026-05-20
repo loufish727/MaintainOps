@@ -7896,3 +7896,80 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 9P/9Q/9R is fully closed.
+
+## LFES Phase 9S Request Filter Display Readiness - 2026-05-20
+
+Scope:
+
+- Reviewed the next low-risk `app.js` cleanup candidate after Phase 9P/9Q/9R.
+- Approved only request filter display helper extraction.
+- No code changed during readiness.
+
+Decision:
+
+- Proceed to Phase 9T with `requestPanelSubtitle` and `renderRequestFilterBar` only.
+- Keep request counts, filtering, pagination, conversion, mutation, and event handling in `app.js`.
+
+Audit:
+
+- `docs/LFES/audits/LFES_PHASE_9S_REQUEST_FILTER_DISPLAY_READINESS.md`
+
+## LFES Phase 9T Request Filter Display Extraction - 2026-05-20
+
+Scope:
+
+- Added `src/render/requestDisplay.js`.
+- Moved only `requestPanelSubtitle` and `renderRequestFilterBar`.
+- Updated `index.html` to load `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-9t-request-display-1`.
+- Updated Resource Load Smoke required resources.
+- No request filtering, event handlers, mutations, workflow logic, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()` changed.
+
+Line count:
+
+- `app.js` before: 10,470 lines.
+- `app.js` after: 10,454 lines.
+- reduction: 16 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 9T signed-in local request filter display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9t-request-display-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1` and `app.js?v=lfes-phase-9t-request-display-1` were present.
+6. Opened Requests and verified the request filter bar rendered Active, Converted, and All with counts.
+7. Verified active request empty-state copy still rendered.
+8. Opened Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new request display script loads, request filter display renders, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Requests rendered the Active/Converted/All filter bar with counts and `No active requests waiting for review.`. Parts still rendered expected empty-state copy. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9T local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 9U.

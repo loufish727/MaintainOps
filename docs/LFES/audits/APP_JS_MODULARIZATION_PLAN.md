@@ -2150,3 +2150,71 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 9S Request Filter Display Readiness - 2026-05-20
+
+Phase 9S reviewed the next low-risk cleanup candidate after Phase 9P/9Q/9R was fully packaged, deployed, and live verified.
+
+Approved for Phase 9T:
+
+- `requestPanelSubtitle(filter, count)`
+- `renderRequestFilterBar(counts, selectedFilter, options = {})`
+
+The approved helpers are display-only. They build the request panel subtitle and request filter bar HTML from counts/filter values already calculated by `app.js`.
+
+Readiness audit:
+
+- `docs/LFES/audits/LFES_PHASE_9S_REQUEST_FILTER_DISPLAY_READINESS.md`
+
+Still blocked:
+
+- `requestFilterCounts()`.
+- request filtering and matching logic.
+- request pagination, submit, conversion, delete, Quick Fix, and public QR behavior.
+- event handlers and mutations.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+## Phase 9T Request Filter Display Extraction - 2026-05-20
+
+Phase 9T added `src/render/requestDisplay.js` and moved only the approved request filter display helpers.
+
+Implementation:
+
+- `src/render/requestDisplay.js` exposes `window.MaintainOpsRequestDisplay.createRequestDisplayHelpers`.
+- `app.js` injects `segmentIcon`.
+- `index.html` now loads `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-9t-request-display-1`.
+- Resource Load Smoke now includes `src/render/requestDisplay.js`.
+
+Line count:
+
+- before: 10,470 lines.
+- after: 10,454 lines.
+- reduction: 16 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new request display script and app cache tag loaded.
+- Requests rendered Active/Converted/All filter buttons with counts.
+- Requests rendered active empty-state copy.
+- Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 9T result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 9U.

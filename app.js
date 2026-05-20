@@ -79,6 +79,7 @@ const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
 const { segmentIcon, navIcon } = window.MaintainOpsIconDisplay;
 const { assetTypeLabel, assetStatusLabel } = window.MaintainOpsEquipmentLabels;
 const { createEmptyStateTextHelpers } = window.MaintainOpsEmptyStateText;
+const { createRequestDisplayHelpers } = window.MaintainOpsRequestDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -235,6 +236,12 @@ const {
   assetEmptyStateText,
   partEmptyStateText,
 } = emptyStateTextHelpers;
+const {
+  requestPanelSubtitle,
+  renderRequestFilterBar,
+} = createRequestDisplayHelpers({
+  segmentIcon,
+});
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
   getCurrentUserId: () => session?.user?.id,
@@ -2959,29 +2966,6 @@ function filteredRequests(filter = requestViewFilter) {
 
 function requestFilterCounts() {
   return requestDashboardCounts || { active: 0, converted: 0, all: 0 };
-}
-
-function requestPanelSubtitle(filter, count) {
-  if (filter === "converted") return `${count} converted`;
-  if (filter === "all") return `${count} total`;
-  return `${count} active`;
-}
-
-function renderRequestFilterBar(counts, selectedFilter, options = {}) {
-  const filters = [
-    ["active", "Active", counts.active],
-    ["converted", "Converted", counts.converted],
-    ["all", "All", counts.all],
-  ];
-  return `
-    <div class="segmented-control request-filter-bar" aria-label="Request filter">
-      ${filters.map(([id, label, count]) => `
-        <button class="segment ${selectedFilter === id ? "active" : ""}" data-request-filter="${id}" type="button" ${options.locked && id !== "active" ? "disabled" : ""}>
-          ${segmentIcon(id === "active" ? "open" : id === "converted" ? "completed" : "all")}${label} <span>${count}</span>
-        </button>
-      `).join("")}
-    </div>
-  `;
 }
 
 function filteredAssets() {

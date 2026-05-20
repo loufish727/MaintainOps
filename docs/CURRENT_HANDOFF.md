@@ -30,22 +30,22 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 9P/9Q/9R empty-state text extraction, package/upload, and live verification:
+Completed LFES Phase 9T request filter display extraction locally. Phase 9U package/upload and live verification is next:
 
 - Scope:
-  - Phase 9P readiness approved only empty-state text helper extraction.
-  - added `src/render/emptyStateText.js`.
-  - moved only `requestEmptyStateText`, `assetEmptyStateText`, and `partEmptyStateText`.
-  - updated `index.html` to load `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`.
-  - updated `app.js` cache tag to `app.js?v=lfes-phase-9q-empty-state-1`.
+  - Phase 9S readiness approved only request filter display helper extraction.
+  - added `src/render/requestDisplay.js`.
+  - moved only `requestPanelSubtitle` and `renderRequestFilterBar`.
+  - updated `index.html` to load `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-9t-request-display-1`.
   - updated Resource Load Smoke required resources.
-  - did not move workflow logic, event handlers, mutations, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+  - did not move request filtering, counts, pagination, submit, conversion, delete, workflow logic, event handlers, mutations, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
   - did not change Supabase SQL/RLS.
   - did not change workflows/business logic.
 - Line count:
-  - `app.js` before: 10,476.
-  - `app.js` after: 10,470.
-  - reduction: 6 lines.
+  - `app.js` before: 10,470.
+  - `app.js` after: 10,454.
+  - reduction: 16 lines.
 - Static checks:
   - `node --check app.js`: PASS.
   - `node --check supabase-config.js`: PASS.
@@ -58,53 +58,22 @@ Completed LFES Phase 9P/9Q/9R empty-state text extraction, package/upload, and l
   - signed-in session restored.
   - Taylor Metal Products loaded.
   - Salem, OR stayed selected in `location-select`.
-  - Phase 9Q script tags were present.
+  - Phase 9T script tags were present.
+  - Requests rendered Active/Converted/All filter buttons with counts.
   - Requests rendered active empty-state copy.
-  - Parts rendered empty-state copy.
-  - Equipment still rendered equipment type/status labels.
-  - Work Orders, My Work, Parts, Team, Settings, and Messages loaded.
-  - Messages still showed the Phase 9I QA thread.
-  - no visible app errors were found.
-  - no browser warning/error logs were captured.
-- Package:
-  - `MaintainOps-github-clean-20260520-091730`
-  - `MaintainOps-github-clean-20260520-091730.zip`
-- GitHub commit:
-  - `6f358dcdbfc3bd52aef6bce63521bcafa28d58f0`
-  - message: `Extract empty state text helpers`
-- Live URL:
-  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9r-live-20260520`
-- Live resource checks:
-  - live `index.html` references `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`.
-  - live `index.html` references `app.js?v=lfes-phase-9q-empty-state-1`.
-  - live `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1`: HTTP 200.
-  - live `app.js?v=lfes-phase-9q-empty-state-1`: HTTP 200.
-- Hosted Resource Load Smoke:
-  - PASS.
-- GitHub Actions:
-  - Resource Load Smoke: PASS.
-  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333772`
-  - Pages build/deployment: PASS.
-  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333222`
-- Live signed-in UI smoke:
-  - PASS.
-  - signed-in session restored.
-  - Taylor Metal Products loaded.
-  - Salem, OR stayed selected.
-  - Phase 9Q script tags were present.
-  - Requests rendered active empty-state copy.
-  - Parts rendered empty-state copy.
-  - Equipment still rendered equipment type/status labels.
-  - Work Orders, My Work, Parts, Team, Settings, and Messages loaded.
+  - Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
   - Messages still showed the Phase 9I QA thread.
   - no visible app errors were found.
   - no browser warning/error logs were captured.
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 9P/9Q/9R is fully closed.
+  - Phase 9T local extraction is complete.
 - Recommended next step:
-  - choose LFES Phase 9S planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+  - run LFES Phase 9U package/upload and live verification.
+  - verify live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+  - verify live `app.js?v=lfes-phase-9t-request-display-1`.
+  - run hosted Resource Load Smoke, GitHub Actions checks, and signed-in live smoke.
 
 ## Prior Recent Change
 

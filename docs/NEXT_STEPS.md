@@ -3324,32 +3324,23 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 LFES app cleanup continuation is active.
 
-Latest completed phases:
+Latest completed local phase:
 
-- Phase 9P readiness approved only empty-state text helper extraction.
-- Phase 9Q implemented `src/render/emptyStateText.js` and moved only `requestEmptyStateText`, `assetEmptyStateText`, and `partEmptyStateText`.
+- Phase 9S readiness approved only request filter display helper extraction.
+- Phase 9T implemented `src/render/requestDisplay.js` and moved only `requestPanelSubtitle` and `renderRequestFilterBar`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
-- Phase 9R packaged/uploaded the Phase 9Q extraction and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 9S planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Run Phase 9U package/upload and live verification for the Phase 9T request filter display extraction.
 
-Phase 9R verified:
+Phase 9U must verify:
 
-1. `src/render/emptyStateText.js?v=lfes-phase-9q-empty-state-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-9q-empty-state-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-9t-request-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
 4. GitHub Actions Resource Load Smoke and Pages deployment pass.
 5. Signed-in live smoke passes across Requests, Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
-
-Phase 9R deploy:
-
-- package: `MaintainOps-github-clean-20260520-091730`
-- commit: `6f358dcdbfc3bd52aef6bce63521bcafa28d58f0`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9r-live-20260520`
-- Resource Load Smoke run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333772`
-- Pages run: `https://github.com/loufish727/MaintainOps/actions/runs/26175333222`
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
