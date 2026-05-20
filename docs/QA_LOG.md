@@ -8336,3 +8336,80 @@ Conclusion:
 - Behavior changed: no observed behavior change.
 - GitHub Actions final check unavailable due public API rate limiting / connector run lookup gap.
 - Phase 9Y/9Z/10A is functionally closed.
+
+## LFES Phase 10B Planning Display Readiness - 2026-05-20
+
+Scope:
+
+- Reviewed the next low-risk `app.js` cleanup candidate after Phase 9Y/9Z/10A.
+- Approved only Planning display helper extraction.
+- No code changed during readiness.
+
+Decision:
+
+- Proceed to Phase 10C with `renderPlanningGroup` and `renderPlanningItem` only.
+- Keep planning item generation, PM generation, follow-up work order creation, mini work-order opening, and event handling in `app.js`.
+
+Audit:
+
+- `docs/LFES/audits/LFES_PHASE_10B_PLANNING_DISPLAY_READINESS.md`
+
+## LFES Phase 10C Planning Display Extraction - 2026-05-20
+
+Scope:
+
+- Added `src/render/planningDisplay.js`.
+- Moved only `renderPlanningGroup` and `renderPlanningItem`.
+- Updated `index.html` to load `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-10c-planning-display-1`.
+- Updated Resource Load Smoke required resources.
+- No planning bucket calculation, PM generation, follow-up creation, mini work-order opening, event handlers, mutations, workflow logic, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()` changed.
+
+Line count:
+
+- `app.js` before: 10,354 lines.
+- `app.js` after: 10,309 lines.
+- reduction: 45 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+- all `src/utils/*.js`: PASS
+- all `src/services/*.js`: PASS
+- all `src/render/*.js`: PASS
+
+Resource checks:
+
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 10C signed-in local planning display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-10c-planning-display-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1` and `app.js?v=lfes-phase-10c-planning-display-1` were present.
+6. Opened Planning and verified Overdue, Due Today, Next 7 Days, Follow-up Needed, and PM Due Soon groups rendered.
+7. Opened My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
+8. Verified Requests still rendered the Active/Converted/All filter bar.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new planning display script loads, Planning groups render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Planning rendered the expected groups and either planning items or `Nothing here.` copy. Requests still rendered the request filter bar. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10C local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10D.

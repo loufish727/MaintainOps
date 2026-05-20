@@ -3324,30 +3324,22 @@ For each feature or fix, follow `docs/FEATURE_CHANGE_PROCESS.md` and run the req
 
 LFES app cleanup continuation is active.
 
-Latest completed phases:
+Latest completed local phase:
 
-- Phase 9Y readiness approved only Work Orders / My Work queue title display helper extraction.
-- Phase 9Z implemented `src/render/workQueueDisplay.js` and moved only `workOrdersPanelTitle`, `myWorkPanelTitle`, `workQueuePanelTitle`, and `workQueuePanelSubtitle`.
+- Phase 10B readiness approved only Planning display helper extraction.
+- Phase 10C implemented `src/render/planningDisplay.js` and moved only `renderPlanningGroup` and `renderPlanningItem`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
-- Phase 10A packaged/uploaded the Phase 9Z extraction and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10B planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Run Phase 10D package/upload and live verification for the Phase 10C Planning display extraction.
 
-Phase 10A verified:
+Phase 10D must verify:
 
-1. `src/render/workQueueDisplay.js?v=lfes-phase-9z-work-queue-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-9z-work-queue-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-10c-planning-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke passes across My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
-
-Phase 10A deploy:
-
-- package: `MaintainOps-github-clean-20260520-102539`
-- commit: `b037737b5edcf85f9910fb89d087da33235a88de`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10a-live-20260520`
-- GitHub Actions final check unavailable due public API rate limiting / connector run lookup gap.
+4. Signed-in live smoke passes across Planning, My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
 5. Signed-in live smoke passes across My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.

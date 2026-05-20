@@ -23,6 +23,7 @@ const requiredResources = [
   "src/render/requestDisplay.js",
   "src/render/globalSearchDisplay.js",
   "src/render/workQueueDisplay.js",
+  "src/render/planningDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

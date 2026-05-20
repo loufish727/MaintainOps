@@ -2607,3 +2607,77 @@ Choose one:
 - Supabase SQL/RLS.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
+
+## Phase 10B Planning Display Readiness - 2026-05-20
+
+Phase 10B reviewed the next low-risk cleanup candidate after Phase 9Y/9Z/10A was packaged, deployed, and live verified.
+
+Approved for Phase 10C:
+
+- `renderPlanningGroup(title, items, chipClass)`
+- `renderPlanningItem(item)`
+
+The approved helpers are display-only. They render Planning section groups and item cards from already-computed planning items.
+
+Readiness audit:
+
+- `docs/LFES/audits/LFES_PHASE_10B_PLANNING_DISPLAY_READINESS.md`
+
+Still blocked:
+
+- `planningItems()`.
+- `planningPmItems()`.
+- `followUpItems()`.
+- PM generation.
+- follow-up work order creation.
+- mini work order opening behavior.
+- event handlers and mutations.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+## Phase 10C Planning Display Extraction - 2026-05-20
+
+Phase 10C added `src/render/planningDisplay.js` and moved only the approved Planning display helpers.
+
+Implementation:
+
+- `src/render/planningDisplay.js` exposes `window.MaintainOpsPlanningDisplay.createPlanningDisplayHelpers`.
+- `app.js` injects:
+  - `escapeHtml`
+  - `statusLabel`
+  - `renderRelationshipChips`
+- `index.html` now loads `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10c-planning-display-1`.
+- Resource Load Smoke now includes `src/render/planningDisplay.js`.
+
+Line count:
+
+- before: 10,354 lines.
+- after: 10,309 lines.
+- reduction: 45 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new Planning display script and app cache tag loaded.
+- Planning rendered Overdue, Due Today, Next 7 Days, Follow-up Needed, and PM Due Soon groups.
+- Requests still rendered Active/Converted/All filter buttons.
+- My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 10C result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10D.
