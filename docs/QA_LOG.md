@@ -8906,3 +8906,69 @@ Conclusion:
 - Phase 10O local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 10P.
+
+## LFES Phase 10P Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 10O option display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change location switching, asset routing warnings, filtering logic, hierarchy checks, form submit handling, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-122031`
+- `MaintainOps-github-clean-20260520-122031.zip`
+
+GitHub deploy:
+
+- Commit: `0b100fa`
+- Commit message: `Extract option display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-10o-option-display-1`.
+- Live `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-10o-option-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+GitHub Actions:
+
+- GitHub connector check for commit `0b100fa` returned no workflow runs.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+TEST:
+Phase 10P signed-in live option display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10p-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1` and `app.js?v=lfes-phase-10o-option-display-1` were present.
+6. Verified request asset select rendered 2 options.
+7. Verified create equipment parent select rendered 2 options.
+8. Verified create equipment location select rendered 5 options.
+9. Verified PM asset select rendered 2 options.
+10. Verified team invite default location select rendered 5 options.
+11. Verified Messages still showed the Phase 9I QA thread.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new option display script loads, location/equipment option lists render in existing forms, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10P package/upload and live verification: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 10N/10O/10P is functionally closed.
