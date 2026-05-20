@@ -2681,3 +2681,78 @@ Phase 10C result:
 - local extraction: PASS.
 - behavior changed: no observed behavior change.
 - package/upload: next Phase 10D.
+
+## Phase 10D Package/Upload And Live Verification - 2026-05-20
+
+Phase 10D packaged and uploaded the stable Phase 10C Planning display helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-103436`
+- zip: `MaintainOps-github-clean-20260520-103436.zip`
+- commit: `efef39c`
+- commit message: `Extract planning display helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
+- live `index.html` references `app.js?v=lfes-phase-10c-planning-display-1`.
+- live `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+- hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+### GitHub Actions
+
+- Public GitHub API was still rate-limited during final verification.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10d-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new Planning display script and app cache tag loaded.
+- Planning rendered Overdue, Due Today, Next 7 Days, Follow-up Needed, and PM Due Soon groups.
+- Requests still rendered Active/Converted/All filter buttons.
+- My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 10D Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- GitHub Actions final check unavailable due public API rate limiting.
+- Phase 10B/10C/10D is functionally closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 10E planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- additional display extraction without fresh readiness.
+- planning item generation.
+- PM generation.
+- follow-up work order creation.
+- mini work order opening behavior.
+- event handlers.
+- mutations.
+- workflow logic.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.

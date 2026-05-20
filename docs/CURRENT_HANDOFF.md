@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 10C Planning display extraction locally. Phase 10D package/upload and live verification is next:
+Completed LFES Phase 10B/10C/10D Planning display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 10B readiness approved only Planning display helper extraction.
@@ -68,12 +68,38 @@ Completed LFES Phase 10C Planning display extraction locally. Phase 10D package/
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 10C local extraction is complete.
+  - Phase 10B/10C/10D is functionally closed.
 - Recommended next step:
-  - run LFES Phase 10D package/upload and live verification.
-  - verify live `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
-  - verify live `app.js?v=lfes-phase-10c-planning-display-1`.
-  - run hosted Resource Load Smoke, Pages/Actions checks when available, and signed-in live smoke.
+  - choose LFES Phase 10E planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+- Package:
+  - `MaintainOps-github-clean-20260520-103436`
+  - `MaintainOps-github-clean-20260520-103436.zip`
+- GitHub commit:
+  - `efef39c`
+  - message: `Extract planning display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10d-live-20260520`
+- Live resource checks:
+  - live `index.html` references `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-10c-planning-display-1`.
+  - live `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - final check unavailable due public API rate limiting.
+- Live signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected.
+  - Phase 10C script tags were present.
+  - Planning rendered Overdue, Due Today, Next 7 Days, Follow-up Needed, and PM Due Soon groups.
+  - Requests still rendered Active/Converted/All filter buttons.
+  - My Work, Work Orders, Equipment, Parts, Team, Settings, and Messages loaded.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
 
 ## Prior Recent Change
 

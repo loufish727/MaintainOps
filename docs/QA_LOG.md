@@ -8413,3 +8413,68 @@ Conclusion:
 - Phase 10C local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 10D.
+
+## LFES Phase 10D Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 10C Planning display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change planning item generation, PM generation, follow-up creation, mini work-order opening, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-103436`
+- `MaintainOps-github-clean-20260520-103436.zip`
+
+GitHub deploy:
+
+- Commit: `efef39c`
+- Commit message: `Extract planning display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-10c-planning-display-1`.
+- Live `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-10c-planning-display-1`: HTTP 200.
+- Hosted Resource Load Smoke against live GitHub Pages: PASS.
+
+GitHub Actions:
+
+- Public GitHub API was still rate-limited during final verification.
+- Live resource verification and hosted Resource Load Smoke passed after Pages served the new build.
+
+TEST:
+Phase 10D signed-in live Planning display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10d-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1` and `app.js?v=lfes-phase-10c-planning-display-1` were present.
+6. Opened Planning and verified Overdue, Due Today, Next 7 Days, Follow-up Needed, and PM Due Soon groups rendered.
+7. Opened My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
+8. Verified Requests still rendered the Active/Converted/All filter bar.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new Planning display script loads, Planning groups render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Planning rendered the expected groups and either planning items or `Nothing here.` copy. Requests still rendered the request filter bar. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10D package/upload and live verification: PASS.
+- live resource verification: PASS.
+- hosted Resource Load Smoke: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- GitHub Actions final check unavailable due public API rate limiting.
+- Phase 10B/10C/10D is functionally closed.
