@@ -4,6 +4,82 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+Codex LFES execution ownership is now documented in:
+
+- `docs/LFES/context/CODEX_LFES_EXECUTION_HANDOFF.md`
+
+Codex can determine the next LFES phase inside the established constraints. The external planning chat is now reserved for higher-risk architecture judgment, second opinions, external critique, difficult risk tradeoffs, or major product direction.
+
+Current immediate next step remains:
+
+- package/upload LFES Phase 9E to GitHub Pages, then live verify.
+
+Prior immediate step:
+
+LFES Phase 9E batched low-risk display-helper cleanup is complete locally and passed signed-in local smoke. It has not been packaged/uploaded yet.
+
+Current status:
+
+- Created:
+  - `src/render/iconDisplay.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `tests/smoke/resource-load.spec.js`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- Helpers moved:
+  - `segmentIcon`
+  - `navIcon`
+- App.js line reduction:
+  - 10,561 lines to 10,524 lines.
+  - reduction: 37 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, all `src/render` files, and `tests/smoke/resource-load.spec.js`.
+- Local Playwright resource smoke:
+  - PASS with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+  - resource list now includes `src/render/relationshipDisplay.js`, `src/render/dashboardDisplay.js`, and `src/render/iconDisplay.js`.
+- Local smoke:
+  - PASS.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - nav icons and segment icons rendered.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- Behavior changed:
+  - no observed behavior change.
+- Package/upload:
+  - blocked until explicitly requested.
+
+Recommended immediate next controlled phase:
+
+- Package/upload LFES Phase 9E to GitHub Pages, then live verify:
+  - package includes `src/render/iconDisplay.js`.
+  - live `index.html` includes `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9e-icons-1`.
+  - live helper script returns HTTP 200.
+  - signed-in live smoke verifies Taylor Metal Products, Salem, My Work, Work Orders, Equipment, Parts, Team, Settings, nav icons, segment icons, no missing scripts, and no visible app errors.
+  - GitHub Actions Resource Load Smoke should pass with the updated resource list after upload.
+
+Keep blocked until explicitly approved:
+
+- Phase 9F planning/implementation.
+- additional helper extraction.
+- notice/status/toast helper movement.
+- admin readiness display movement.
+- issue report display movement.
+- parts/equipment render movement.
+- public QR rendering.
+- Team invite/default-location rendering.
+- workflow/mutation/event binding extraction.
+- broad `renderWorkspace()` movement.
+- Supabase SQL/RLS changes.
+
+Prior immediate step:
+
 LFES Phase 9D package/upload and live verification is complete. Phase 9D is fully closed.
 
 Current status:

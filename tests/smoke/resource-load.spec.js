@@ -15,6 +15,9 @@ const requiredResources = [
   "src/services/companyService.js",
   "src/services/appIssueReportsService.js",
   "src/render/displayHelpers.js",
+  "src/render/relationshipDisplay.js",
+  "src/render/dashboardDisplay.js",
+  "src/render/iconDisplay.js",
 ];
 
 test.describe("MaintainOps hosted resource smoke", () => {

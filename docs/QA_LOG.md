@@ -6588,3 +6588,191 @@ Conclusion:
 - GitHub Actions Resource Load Smoke: PASS.
 - Behavior changed: no observed behavior change beyond the intended dashboard display-helper extraction.
 - Phase 9D is fully closed.
+
+## LFES Phase 9E Batched Low-Risk Display Helper Cleanup - 2026-05-20
+
+Scope:
+
+- Classified the next display-helper cleanup candidates before implementation.
+- Implemented only the clearly low-risk static icon display helper batch.
+- Did not move notice/status/toast helpers because they mutate notice state and call `renderWorkspace()`.
+- Did not move admin readiness helpers because `renderSetupItem()` emits `data-setup-action` behavior hooks.
+- Did not move issue-report helpers because they include submit/status mutation contracts.
+- Did not move public QR helpers because they include copy/regenerate/disable/test form action hooks.
+- Did not move parts/equipment card helpers because they emit open/detail behavior hooks.
+- Did not move email/helper command cards because they emit `data-jump-work-section` behavior hooks.
+- Did not move workflow renderers, event handlers, mutations, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Did not change Supabase SQL/RLS/policies.
+
+Created:
+
+- `src/render/iconDisplay.js`
+
+Modified:
+
+- `app.js`
+- `index.html`
+- `tests/smoke/resource-load.spec.js`
+- `docs/QA_LOG.md`
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+
+Helpers moved:
+
+- `segmentIcon`
+- `navIcon`
+
+Cache/script loading:
+
+- `index.html` now loads `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+- `index.html` now loads `app.js?v=lfes-phase-9e-icons-1`.
+
+App.js line count:
+
+- before Phase 9E: 10,561 lines.
+- after Phase 9E: 10,524 lines.
+- reduction: 37 lines.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check src/utils/constants.js`: PASS
+- `node --check src/utils/dom.js`: PASS
+- `node --check src/utils/formatting.js`: PASS
+- `node --check src/services/locationsService.js`: PASS
+- `node --check src/services/profilesService.js`: PASS
+- `node --check src/services/partsService.js`: PASS
+- `node --check src/services/assetsService.js`: PASS
+- `node --check src/services/workOrdersService.js`: PASS
+- `node --check src/services/companyService.js`: PASS
+- `node --check src/services/appIssueReportsService.js`: PASS
+- `node --check src/render/displayHelpers.js`: PASS
+- `node --check src/render/relationshipDisplay.js`: PASS
+- `node --check src/render/dashboardDisplay.js`: PASS
+- `node --check src/render/iconDisplay.js`: PASS
+- `node --check tests/smoke/resource-load.spec.js`: PASS
+
+Resource checks:
+
+- Local `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1` served HTTP 200.
+- Local `app.js?v=lfes-phase-9e-icons-1` served HTTP 200.
+- Local Playwright Resource Load Smoke was run with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`: PASS.
+- The resource smoke list now includes `src/render/relationshipDisplay.js`, `src/render/dashboardDisplay.js`, and `src/render/iconDisplay.js`.
+
+TEST:
+Phase 9E signed-in local display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9e-icons-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was the selected active location.
+5. Verified `src/render/iconDisplay.js` and the Phase 9E `app.js` cache tag were present.
+6. Opened My Work and verified gauges/segment icons rendered.
+7. Opened Work Orders and verified work list and segment icons rendered.
+8. Opened Equipment.
+9. Opened Parts.
+10. Opened Team.
+11. Opened Settings.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace restores, Taylor Metal Products loads, Salem remains active, nav icons and segment icons render normally, core sections load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+The local app loaded with the Phase 9E icon helper script and app cache tag. Navigation icons rendered across the workspace. My Work rendered 7 gauge readouts and segment icons. Work Orders rendered 8 gauge readouts and segment icons. Work Orders, Equipment, Parts, Team, and Settings loaded. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9E local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: blocked until explicitly requested.
+
+## Codex LFES Execution Handoff Captured - 2026-05-20
+
+Scope:
+
+- Captured the handoff that Codex is now the primary LFES execution agent for MaintainOps.
+- Did not change app code.
+- Did not package/upload.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Created:
+
+- `docs/LFES/context/CODEX_LFES_EXECUTION_HANDOFF.md`
+
+Updated:
+
+- `docs/CURRENT_HANDOFF.md`
+- `docs/NEXT_STEPS.md`
+- `docs/QA_LOG.md`
+
+Notes:
+
+- The handoff preserves that Phase 9E is locally complete and the next recommended phase is Phase 9E package/upload plus live verification.
+- The handoff preserves the high-risk LFES deviation warning format for skipped verification, risky sequencing changes, or dangerous extraction jumps.
+- The handoff preserves the blocked list for mutations, workflow orchestration, event binding, auth/session/company/location logic, public QR submit, delete/storage/photo/document flows, `renderWorkspace()`, `bindWorkspaceEvents()`, and Supabase SQL/RLS.
+
+## Daily QA Pass - 2026-05-20 (Automation) - 20260520-0704
+
+Scope:
+
+- Daily QA pass for MaintainOps using the documented Debug Protocol + Smoke Tests.
+- No app code changes were made.
+- No Supabase SQL/RLS/policy changes were made.
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+
+Hosted GitHub Pages (fresh `qa_bust`) and live debug protocol:
+
+TEST:
+Hosted resource smoke (Playwright)
+
+STEPS:
+1. Ran `npm run test:smoke:resources` (Playwright request-based hosted resource verification).
+
+EXPECTED:
+The live GitHub Pages site responds with HTTP 200 for `index.html` and required JS/CSS resources.
+
+RESULT:
+NOT VERIFIED
+
+NOTES:
+This environment has outbound network blocked (cannot reach GitHub Pages or any external HTTPS endpoints), so Playwright failed with `connect EACCES ...:443` while requesting `https://loufish727.github.io/MaintainOps/index.html?qa_bust=resource-smoke`.
+
+TEST:
+Live UI smoke (startup, navigation, location persistence, requests, Quick Fix)
+
+STEPS:
+1. Attempted outbound HTTP probes to GitHub Pages and `api.github.com` to confirm reachability.
+
+EXPECTED:
+Browser and/or scripted checks can reach hosted GitHub Pages and Supabase-backed APIs.
+
+RESULT:
+NOT VERIFIED
+
+NOTES:
+Outbound network is blocked in this automation runtime, so hosted/live UI checks (startup, navigation, location persistence, request baselines, public QR submit, internal request/convert, Quick Fix lifecycle, and console scan) could not be executed.
+
+QA records created:
+
+- None (no safe way to reach Supabase-hosted app).
+
+QA records deleted:
+
+- None.
+
+Blockers / next action:
+
+- Blocker: outbound network access is required to run the hosted GitHub Pages smoke and any Supabase-backed live debug flows.
+- Next action: rerun this daily pass from an environment with internet access and a browser so the hosted checks can be executed with a fresh `?qa_bust=daily-qa-20260520-0704`.

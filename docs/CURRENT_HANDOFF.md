@@ -30,6 +30,83 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Captured the Codex LFES execution handoff:
+
+- Codex is now the primary LFES execution agent for MaintainOps.
+- The external planning chat should only be needed for second opinions, big architecture judgment, external critique, difficult risk tradeoffs, or plain-English strategy explanation.
+- Preserved the working rule that Codex may combine planning and implementation only for clearly low-risk display/read-only helper extraction.
+- Preserved the blocked list for mutations, event handlers, workflow orchestration, auth/session/company/location logic, Quick Fix, work-order lifecycle, request conversion, public QR submit, delete confirmations, storage/photo/document flows, parts usage/restock forms, invite/default-location forms, `renderWorkspace`, `bindWorkspaceEvents`, and Supabase SQL/RLS.
+- Added the high-risk LFES deviation warning format for skipped verification, risky sequencing changes, or dangerous extraction jumps.
+- Documented that Phase 9E is now complete locally and the next recommended phase is package/upload plus live verification.
+
+Created:
+
+- `docs/LFES/context/CODEX_LFES_EXECUTION_HANDOFF.md`
+
+## Prior Recent Change
+
+Completed LFES Phase 9E batched low-risk display-helper cleanup locally:
+
+- Scope:
+  - classified candidate helpers first.
+  - implemented only the clearly low-risk static icon helper batch.
+  - did not package/upload.
+  - did not move workflow renderers.
+  - did not move event handlers.
+  - did not move mutations.
+  - did not move `renderWorkspace()` or `bindWorkspaceEvents()`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Created:
+  - `src/render/iconDisplay.js`
+- Modified:
+  - `app.js`
+  - `index.html`
+  - `tests/smoke/resource-load.spec.js`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/NEXT_STEPS.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+- Helpers moved:
+  - `segmentIcon`
+  - `navIcon`
+- Blocked candidates:
+  - notice/status/toast helpers: mutate notice state and call `renderWorkspace()`.
+  - admin readiness helpers: emit `data-setup-action`.
+  - issue-report helpers: include submit/status mutation contracts.
+  - public QR helpers: include copy/regenerate/disable/test form action hooks.
+  - parts/equipment cards: emit open/detail behavior hooks.
+  - email/helper command cards: emit `data-jump-work-section`.
+- Cache/script loading:
+  - `index.html` now loads `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
+  - `index.html` now loads `app.js?v=lfes-phase-9e-icons-1`.
+- App.js line count:
+  - before Phase 9E: 10,561 lines.
+  - after Phase 9E: 10,524 lines.
+  - reduction: 37 lines.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, all `src/render` files including `src/render/iconDisplay.js`, and `tests/smoke/resource-load.spec.js`.
+- Local resource checks:
+  - `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`: HTTP 200.
+  - `app.js?v=lfes-phase-9e-icons-1`: HTTP 200.
+  - Local Playwright Resource Load Smoke passed with `MAINTAINOPS_BASE_URL=http://127.0.0.1:4294/`.
+  - The resource smoke list now includes `src/render/relationshipDisplay.js`, `src/render/dashboardDisplay.js`, and `src/render/iconDisplay.js`.
+- Local signed-in smoke:
+  - PASS.
+  - local URL: `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9e-icons-20260520`.
+  - Taylor Metal Products loaded.
+  - Salem, OR was selected.
+  - My Work, Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - nav icons and segment icons rendered.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Package/upload:
+  - blocked until explicitly requested.
+
+## Prior Recent Change
+
 Completed LFES Phase 9D package/upload and live verification:
 
 - Scope:
