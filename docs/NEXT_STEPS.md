@@ -4,6 +4,50 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9B package/upload and live verification is complete. Phase 9B is fully closed.
+
+Current status:
+
+- Final deployed commit:
+  - `209dce9`
+- Package:
+  - `MaintainOps-github-clean-20260520-063612`
+- Live URL verified:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9b-live-cachefix-20260520-0640`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, and `src/render/relationshipDisplay.js`.
+- Live smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded.
+  - `Hydralic Leak` detail opened.
+  - relationship chips rendered normally.
+  - History activity entries rendered normally.
+  - Equipment, Parts, Team, and Settings loaded.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- GitHub Actions:
+  - Resource Load Smoke passed.
+  - Pages build/deployment passed.
+- Cache-tag correction:
+  - fixed `index.html` so live deploy uses `app.js?v=lfes-phase-9b-relationship-1`.
+
+Recommended immediate next controlled phase:
+
+- Choose one:
+  - LFES Phase 9C readiness/planning only before any further extraction.
+  - Continue live pilot monitoring if operational usage is the priority.
+- Keep blocked until explicitly approved:
+  - additional helper extraction.
+  - workflow extraction.
+  - mutation extraction.
+  - event binding extraction.
+  - Supabase SQL/RLS changes.
+
+Prior immediate step:
+
 LFES Phase 9B-M manager/admin local Settings smoke confirmation rerun passed. The stable Phase 9B relationship display extraction remains approved for package/upload.
 
 Current status:

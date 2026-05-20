@@ -30,6 +30,61 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9B package/upload and live verification:
+
+- Scope:
+  - packaged/uploaded the stable Phase 9B relationship display-helper extraction.
+  - did not start Phase 9C.
+  - did not move more helpers.
+  - did not refactor `app.js`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Package:
+  - initial package: `MaintainOps-github-clean-20260520-063140`.
+  - corrected package after cache-tag fix: `MaintainOps-github-clean-20260520-063612`.
+- GitHub commits:
+  - initial deploy: `35f21ed`.
+  - final corrected deploy: `209dce9`.
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, and `src/render/relationshipDisplay.js`.
+- Deployment/resource checks:
+  - live `index.html` includes `src/render/relationshipDisplay.js?v=lfes-phase-9b-relationship-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9b-relationship-1`.
+  - live `src/render/relationshipDisplay.js`: HTTP 200.
+  - live `app.js`: HTTP 200.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9b-live-cachefix-20260520-0640`
+- Live smoke result:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded.
+  - `Hydralic Leak` detail opened.
+  - relationship chips rendered: 2 chips found.
+  - History rendered activity entries.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- GitHub Actions:
+  - Resource Load Smoke passed for commit `209dce9aeee5f7c4bce3fd157e6f89b648199e20`.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26166156956`
+  - Pages build/deployment passed for the same commit.
+- Important catch:
+  - initial deploy included the new `relationshipDisplay.js` script tag, but `app.js` still had the older Phase 6D cache tag.
+  - fixed by updating `index.html` to use `app.js?v=lfes-phase-9b-relationship-1`.
+- Behavior changed:
+  - no observed behavior change beyond intended relationship display-helper extraction.
+- Phase status:
+  - Phase 9B is fully closed.
+- Recommended next step:
+  - LFES Phase 9C readiness/planning only before any further extraction, or pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
 Completed LFES Phase 9B-M manager/admin local Settings smoke confirmation rerun:
 
 - Scope:

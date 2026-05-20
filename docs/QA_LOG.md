@@ -6200,3 +6200,103 @@ Conclusion:
 - Display regressions: none observed.
 - Behavior changed: no observed behavior change.
 - Package/upload: approved for stable Phase 9B build.
+
+## LFES Phase 9B GitHub Pages Package/Upload and Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded LFES Phase 9B relationship display-helper extraction to GitHub Pages.
+- Did not start Phase 9C.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- Initial package: `MaintainOps-github-clean-20260520-063140`
+- Corrected package after cache-tag fix: `MaintainOps-github-clean-20260520-063612`
+
+Commits:
+
+- Initial deploy commit: `35f21ed` (`Deploy LFES Phase 9B relationship display`)
+- Corrected deploy commit: `209dce9` (`Fix Phase 9B cache tag`)
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check src/utils/constants.js`: PASS
+- `node --check src/utils/dom.js`: PASS
+- `node --check src/utils/formatting.js`: PASS
+- `node --check src/services/locationsService.js`: PASS
+- `node --check src/services/profilesService.js`: PASS
+- `node --check src/services/partsService.js`: PASS
+- `node --check src/services/assetsService.js`: PASS
+- `node --check src/services/workOrdersService.js`: PASS
+- `node --check src/services/companyService.js`: PASS
+- `node --check src/services/appIssueReportsService.js`: PASS
+- `node --check src/render/displayHelpers.js`: PASS
+- `node --check src/render/relationshipDisplay.js`: PASS
+
+Resource/package checks:
+
+- Package included `src/render/relationshipDisplay.js`.
+- Package included `src/render/displayHelpers.js`.
+- Package included all `src/utils` files.
+- Package included all current `src/services` files.
+- Live `index.html` serves `src/render/relationshipDisplay.js?v=lfes-phase-9b-relationship-1`.
+- Live `index.html` now serves `app.js?v=lfes-phase-9b-relationship-1`.
+- Live `src/render/relationshipDisplay.js?v=lfes-phase-9b-relationship-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9b-relationship-1`: HTTP 200.
+
+TEST:
+Phase 9B corrected live smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9b-live-cachefix-20260520-0640`.
+2. Verified signed-in session restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR remained active.
+5. Opened Work Orders.
+6. Opened `Hydralic Leak` detail.
+7. Opened History and verified activity/history entries rendered.
+8. Opened Equipment.
+9. Opened Parts.
+10. Opened Team.
+11. Opened Settings.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live app restores session, Taylor Metal Products loads, Salem remains active, Work Orders load, `Hydralic Leak` detail opens, relationship chips and activity/history entries render, Equipment/Parts/Team/Settings load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Live smoke passed after correcting the `app.js` cache tag from the older Phase 6D tag to `lfes-phase-9b-relationship-1`. `Hydralic Leak` detail rendered 2 relationship chips. History rendered assignment, data correction, update, status change, equipment-created, and work-order-created entries. No visible app errors were found. No browser warning/error logs were captured.
+
+TEST:
+GitHub Actions Resource Load Smoke
+
+STEPS:
+1. Checked GitHub Actions after push to `main`.
+2. Verified latest Resource Load Smoke workflow for commit `209dce9aeee5f7c4bce3fd157e6f89b648199e20`.
+3. Verified GitHub Pages deployment workflow for the same commit.
+
+EXPECTED:
+Resource Load Smoke completes successfully and Pages deployment completes successfully.
+
+RESULT:
+PASS
+
+NOTES:
+Resource Load Smoke run passed: `https://github.com/loufish727/MaintainOps/actions/runs/26166156956`. Pages build/deployment passed: `https://github.com/loufish727/MaintainOps/actions/runs/26166153561`.
+
+Conclusion:
+
+- Phase 9B package/upload: PASS.
+- Live Phase 9B smoke: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Behavior changed: no observed behavior change beyond the intended relationship display-helper extraction.
+- Phase 9B is fully closed.
