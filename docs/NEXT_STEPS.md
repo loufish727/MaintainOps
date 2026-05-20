@@ -3338,25 +3338,29 @@ Latest completed phases:
 - Phase 10I implemented `src/render/paginationDisplay.js` and moved only `renderWorkPagination`, `renderPartsPagination`, `renderAssetsPagination`, and `renderListPagination`.
 - Phase 10I local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10J packaged/uploaded the Phase 10I extraction and live verification passed.
+- Phase 10K readiness approved only Parts list display helper extraction.
+- Phase 10L implemented `src/render/partsDisplay.js` and moved only `renderPart`, `renderPartsHealth`, and `renderPartSearch`.
+- Phase 10L local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10K planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Phase 10M package/upload and live verification for the Phase 10L Parts display extraction.
 
-Phase 10J verified:
+Phase 10L local verified:
 
-1. `src/render/paginationDisplay.js?v=lfes-phase-10i-pagination-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10i-pagination-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
-5. Current Salem data did not exceed pagination thresholds, so no pagination bars were visible in the smoke pass.
+1. `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1` is referenced locally.
+2. `app.js?v=lfes-phase-10l-parts-display-1` is referenced locally.
+3. Local Resource Load Smoke passes.
+4. Signed-in local smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+5. Parts Inventory renders two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
 
-Phase 10J deploy:
+Phase 10M target:
 
-- package: `MaintainOps-github-clean-20260520-114423`
-- commit: `a0f48e3`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10j-live-20260520`
-- GitHub connector check returned no workflow runs for `a0f48e3`.
+- create a fresh GitHub upload package.
+- deploy the Phase 10L files.
+- verify live resource tags and HTTP 200s.
+- run hosted Resource Load Smoke.
+- run signed-in live smoke with Salem, Parts Inventory controls, and Messages Phase 9I thread.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

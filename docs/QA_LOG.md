@@ -8722,3 +8722,62 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 10H/10I/10J is functionally closed.
+
+## LFES Phase 10L Parts Display Local Verification - 2026-05-20
+
+Scope:
+
+- Added `src/render/partsDisplay.js`.
+- Moved only `renderPart`, `renderPartsHealth`, and `renderPartSearch` into the display helper module.
+- Did not move part detail, source manager, part create/edit/use/restock/document forms beyond existing returned markup, click/open handling, search submit handling, inventory filter click handling, localStorage updates, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Local implementation:
+
+- `index.html` now references `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-10l-parts-display-1`.
+- Resource Load Smoke now includes `src/render/partsDisplay.js`.
+- `app.js` line count after extraction: 10,215.
+
+TEST:
+Phase 10L static and local resource checks
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check supabase-config.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check` across `src/utils`, `src/services`, and `src/render`: PASS.
+- Local Resource Load Smoke against `http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 10L signed-in local parts display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-10l-parts-display-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1` and `app.js?v=lfes-phase-10l-parts-display-1` were present.
+6. Opened My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+7. Verified Equipment showed `New thalmann`.
+8. Verified Parts Inventory rendered two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new parts display script loads, Parts Inventory display controls render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+No visible app errors were found. No browser warning/error logs were captured. Current Salem data had zero visible part cards in the smoke pass, so the empty-state path was observed alongside the Parts health/search controls.
+
+Conclusion:
+
+- Phase 10L local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10M.

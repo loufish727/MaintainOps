@@ -2961,6 +2961,58 @@ Choose one:
 - LFES Phase 10K planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
 
+## Phase 10K/10L Parts Display Extraction - 2026-05-20
+
+Phase 10K readiness approved only the Parts list display helper extraction. Phase 10L added `src/render/partsDisplay.js` and moved only:
+
+- `renderPart`
+- `renderPartsHealth`
+- `renderPartSearch`
+
+Implementation:
+
+- `src/render/partsDisplay.js` exposes `window.MaintainOpsPartsDisplay.createPartsDisplayHelpers`.
+- `app.js` injects:
+  - `escapeHtml`
+  - `money`
+  - `isLowStockPart`
+  - `matchesActiveLocation`
+  - read-only accessors for parts, part cost readiness, inventory filter, and search query
+- `index.html` now loads `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10l-parts-display-1`.
+- Resource Load Smoke now includes `src/render/partsDisplay.js`.
+
+Line count:
+
+- before: 10,253 lines.
+- after: 10,215 lines.
+- reduction: 38 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new parts display script and app cache tag loaded.
+- My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+- Equipment still showed `New thalmann`.
+- Parts Inventory rendered two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+- current Salem data had zero visible part cards, so the empty-state path was observed.
+
+Phase 10L result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10M.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.

@@ -26,6 +26,7 @@ const requiredResources = [
   "src/render/planningDisplay.js",
   "src/render/miniWorkOrderDisplay.js",
   "src/render/paginationDisplay.js",
+  "src/render/partsDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

@@ -30,6 +30,47 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10K/10L local Parts display extraction:
+
+- Scope:
+  - Phase 10K readiness approved only Parts list display helper extraction.
+  - added `src/render/partsDisplay.js`.
+  - moved only `renderPart`, `renderPartsHealth`, and `renderPartSearch`.
+  - updated `index.html` to load `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-10l-parts-display-1`.
+  - updated Resource Load Smoke required resources.
+  - did not move part detail, source manager, part create/edit/use/restock/document forms beyond existing returned markup, click/open handling, search submit handling, inventory filter click handling, localStorage updates, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Line count:
+  - `app.js` before: 10,253.
+  - `app.js` after: 10,215.
+  - reduction: 38 lines.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check tests/smoke/resource-load.spec.js`: PASS.
+  - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
+- Local Resource Load Smoke:
+  - PASS.
+- Local signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 10L script tags were present.
+  - My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+  - Equipment showed `New thalmann`.
+  - Parts Inventory rendered two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+  - current Salem data had zero visible part cards, so the empty-state path was observed.
+- Behavior changed:
+  - no observed behavior change.
+- Immediate next step:
+  - Phase 10M package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 10H/10I/10J pagination display extraction, package/upload, and live verification:
 
 - Scope:
