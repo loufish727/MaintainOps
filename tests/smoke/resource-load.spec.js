@@ -44,6 +44,7 @@ const requiredResources = [
   "src/render/messageThreadButtonDisplay.js",
   "src/render/messageComposerDisplay.js",
   "src/render/appIssuePanelDisplay.js",
+  "src/render/inviteLocationDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
