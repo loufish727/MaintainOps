@@ -6487,3 +6487,104 @@ Conclusion:
 - Phase 9D extraction: PASS locally.
 - Behavior changed: no observed behavior change.
 - Package/upload: approved only after explicit user request.
+
+## LFES Phase 9D GitHub Pages Package/Upload and Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded LFES Phase 9D dashboard display-helper extraction to GitHub Pages.
+- Did not start Phase 9E.
+- Did not move more helpers.
+- Did not refactor `app.js`.
+- Did not change Supabase SQL/RLS/policies.
+- Did not change workflows/business logic.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-065324`
+
+Commit:
+
+- `0fc2083` (`Deploy LFES Phase 9D dashboard display`)
+
+Static checks:
+
+- `node --check app.js`: PASS
+- `node --check supabase-config.js`: PASS
+- `node --check src/utils/constants.js`: PASS
+- `node --check src/utils/dom.js`: PASS
+- `node --check src/utils/formatting.js`: PASS
+- `node --check src/services/locationsService.js`: PASS
+- `node --check src/services/profilesService.js`: PASS
+- `node --check src/services/partsService.js`: PASS
+- `node --check src/services/assetsService.js`: PASS
+- `node --check src/services/workOrdersService.js`: PASS
+- `node --check src/services/companyService.js`: PASS
+- `node --check src/services/appIssueReportsService.js`: PASS
+- `node --check src/render/displayHelpers.js`: PASS
+- `node --check src/render/relationshipDisplay.js`: PASS
+- `node --check src/render/dashboardDisplay.js`: PASS
+
+Resource/package checks:
+
+- Package included `src/render/dashboardDisplay.js`.
+- Package included `src/render/relationshipDisplay.js`.
+- Package included `src/render/displayHelpers.js`.
+- Package included all `src/utils` files.
+- Package included all current `src/services` files.
+- Live `index.html` serves `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1`.
+- Live `index.html` serves `app.js?v=lfes-phase-9d-dashboard-1`.
+- Live `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9d-dashboard-1`: HTTP 200.
+
+TEST:
+Phase 9D live dashboard smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9d-live-20260520-0656`.
+2. Verified signed-in session restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR remained active.
+5. Opened My Work.
+6. Verified dashboard/workload metrics rendered.
+7. Clicked the Active Work gauge and verified the gauge filter still responded.
+8. Opened Work Orders.
+9. Opened Equipment.
+10. Opened Parts.
+11. Opened Team.
+12. Opened Settings.
+13. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live app restores session, Taylor Metal Products loads, Salem remains active, dashboard/gauge/workload metrics render, gauge filter responds, Work Orders/Equipment/Parts/Team/Settings load, no missing-script errors appear, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Initial live smoke ran before the workspace settled and did not find navigation buttons. DOM inspection showed the page completed and the expected Phase 9D script tags were present. Rerunning against the settled workspace passed. My Work rendered 7 gauge readouts and 1 workload strip. Work Orders rendered 8 gauge readouts. The Active Work gauge click responded and selected gauge state remained present. No visible app errors were found. No browser warning/error logs were captured.
+
+TEST:
+GitHub Actions Resource Load Smoke
+
+STEPS:
+1. Checked GitHub Actions after push to `main`.
+2. Verified latest Resource Load Smoke workflow for commit `0fc2083b80c33dd762ae5efcb089d33dca709764`.
+3. Verified GitHub Pages deployment workflow for the same commit.
+
+EXPECTED:
+Resource Load Smoke completes successfully and Pages deployment completes successfully.
+
+RESULT:
+PASS
+
+NOTES:
+Resource Load Smoke run passed: `https://github.com/loufish727/MaintainOps/actions/runs/26167151368`. Pages build/deployment passed: `https://github.com/loufish727/MaintainOps/actions/runs/26167148730`.
+
+Conclusion:
+
+- Phase 9D package/upload: PASS.
+- Live Phase 9D smoke: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Behavior changed: no observed behavior change beyond the intended dashboard display-helper extraction.
+- Phase 9D is fully closed.

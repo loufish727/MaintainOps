@@ -30,6 +30,55 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 9D package/upload and live verification:
+
+- Scope:
+  - packaged/uploaded the stable Phase 9D dashboard display-helper extraction.
+  - did not start Phase 9E.
+  - did not move more helpers.
+  - did not refactor `app.js`.
+  - did not change Supabase SQL/RLS.
+  - did not change workflows/business logic.
+- Package:
+  - `MaintainOps-github-clean-20260520-065324`
+- GitHub commit:
+  - `0fc2083`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, `src/render/relationshipDisplay.js`, and `src/render/dashboardDisplay.js`.
+- Deployment/resource checks:
+  - live `index.html` includes `src/render/dashboardDisplay.js?v=lfes-phase-9d-dashboard-1`.
+  - live `index.html` includes `app.js?v=lfes-phase-9d-dashboard-1`.
+  - live `src/render/dashboardDisplay.js`: HTTP 200.
+  - live `app.js`: HTTP 200.
+- Live URL tested:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9d-live-20260520-0656`
+- Live smoke result:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - My Work dashboard/workload metrics rendered.
+  - Active Work gauge filter responded.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - no visible app errors were found.
+  - no actionable browser console warning/error logs were captured.
+- GitHub Actions:
+  - Resource Load Smoke passed for commit `0fc2083b80c33dd762ae5efcb089d33dca709764`.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26167151368`
+  - Pages build/deployment passed for the same commit.
+- Behavior changed:
+  - no observed behavior change beyond intended dashboard display-helper extraction.
+- Phase status:
+  - Phase 9D is fully closed.
+- Recommended next step:
+  - LFES Phase 9E planning/readiness only before any further extraction, or pause and continue live pilot monitoring.
+
+## Prior Recent Change
+
 Completed LFES Phase 9D dashboard display-helper extraction and local smoke:
 
 - Scope:

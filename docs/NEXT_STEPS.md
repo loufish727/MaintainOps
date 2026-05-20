@@ -4,6 +4,54 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
+LFES Phase 9D package/upload and live verification is complete. Phase 9D is fully closed.
+
+Current status:
+
+- Final deployed commit:
+  - `0fc2083`
+- Package:
+  - `MaintainOps-github-clean-20260520-065324`
+- Live URL verified:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9d-live-20260520-0656`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all `src/utils`, all `src/services`, `src/render/displayHelpers.js`, `src/render/relationshipDisplay.js`, and `src/render/dashboardDisplay.js`.
+- Live smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - My Work dashboard/workload metrics rendered.
+  - Active Work gauge filter responded.
+  - Work Orders, Equipment, Parts, Team, and Settings loaded.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- GitHub Actions:
+  - Resource Load Smoke passed.
+  - Pages build/deployment passed.
+- Phase status:
+  - Phase 9D is fully closed.
+
+Recommended immediate next controlled phase:
+
+- Choose one:
+  - LFES Phase 9E readiness/planning only before any further extraction.
+  - Continue live pilot monitoring if operational usage is the priority.
+
+Keep blocked until explicitly approved:
+
+- Phase 9E implementation.
+- additional helper extraction.
+- issue report display movement.
+- parts/equipment render movement.
+- public QR rendering.
+- Team invite/default-location rendering.
+- workflow/mutation/event binding extraction.
+- broad `renderWorkspace()` movement.
+- Supabase SQL/RLS changes.
+
+Prior immediate step:
+
 LFES Phase 9D dashboard display-helper extraction is complete locally and passed signed-in local smoke.
 
 Current status:
