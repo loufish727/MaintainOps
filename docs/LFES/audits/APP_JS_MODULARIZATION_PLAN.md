@@ -2218,3 +2218,77 @@ Phase 9T result:
 - local extraction: PASS.
 - behavior changed: no observed behavior change.
 - package/upload: next Phase 9U.
+
+## Phase 9U Package/Upload And Live Verification - 2026-05-20
+
+Phase 9U packaged and uploaded the stable Phase 9T request filter display helper extraction. No additional helpers moved, no workflow logic changed, no event handlers moved, and no Supabase SQL/RLS changed.
+
+### Package And Deploy
+
+- package: `MaintainOps-github-clean-20260520-094703`
+- zip: `MaintainOps-github-clean-20260520-094703.zip`
+- commit: `c6e94f14a1faaa210d722116111ea3969ced1530`
+- commit message: `Extract request filter display helpers`
+
+### Live Resource Verification
+
+- live `index.html` references `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+- live `index.html` references `app.js?v=lfes-phase-9t-request-display-1`.
+- live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+- hosted Resource Load Smoke: PASS.
+
+### GitHub Actions
+
+- Resource Load Smoke: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26176843065`
+- Pages build/deployment: PASS.
+- run: `https://github.com/loufish727/MaintainOps/actions/runs/26176841661`
+
+### Live Signed-In Smoke
+
+Live URL:
+
+- `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9u-live-20260520`
+
+Verified:
+
+- signed-in session restored.
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new request display script and app cache tag loaded.
+- Requests rendered Active/Converted/All filter buttons with counts.
+- Requests rendered active empty-state copy.
+- Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs.
+
+### Phase 9U Result
+
+- package/upload: PASS.
+- live resource verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- live signed-in smoke: PASS.
+- behavior changed: no observed behavior change.
+- Phase 9S/9T/9U is fully closed.
+
+### Recommended Next Phase
+
+Choose one:
+
+- LFES Phase 9V planning/readiness before any additional helper extraction.
+- pause code movement and continue live pilot monitoring.
+
+### Remains Blocked
+
+- additional display extraction without fresh readiness.
+- request filtering/counting/pagination.
+- event handlers.
+- mutations.
+- workflow logic.
+- auth/session/company/location logic.
+- Supabase SQL/RLS.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.

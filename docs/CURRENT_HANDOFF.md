@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 9T request filter display extraction locally. Phase 9U package/upload and live verification is next:
+Completed LFES Phase 9S/9T/9U request filter display extraction, package/upload, and live verification:
 
 - Scope:
   - Phase 9S readiness approved only request filter display helper extraction.
@@ -68,12 +68,41 @@ Completed LFES Phase 9T request filter display extraction locally. Phase 9U pack
 - Behavior changed:
   - no observed behavior change.
 - Phase status:
-  - Phase 9T local extraction is complete.
+  - Phase 9S/9T/9U is fully closed.
 - Recommended next step:
-  - run LFES Phase 9U package/upload and live verification.
-  - verify live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
-  - verify live `app.js?v=lfes-phase-9t-request-display-1`.
-  - run hosted Resource Load Smoke, GitHub Actions checks, and signed-in live smoke.
+  - choose LFES Phase 9V planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+- Package:
+  - `MaintainOps-github-clean-20260520-094703`
+  - `MaintainOps-github-clean-20260520-094703.zip`
+- GitHub commit:
+  - `c6e94f14a1faaa210d722116111ea3969ced1530`
+  - message: `Extract request filter display helpers`
+- Live URL:
+  - `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9u-live-20260520`
+- Live resource checks:
+  - live `index.html` references `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+  - live `index.html` references `app.js?v=lfes-phase-9t-request-display-1`.
+  - live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+  - live `app.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+- Hosted Resource Load Smoke:
+  - PASS.
+- GitHub Actions:
+  - Resource Load Smoke: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26176843065`
+  - Pages build/deployment: PASS.
+  - run: `https://github.com/loufish727/MaintainOps/actions/runs/26176841661`
+- Live signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected.
+  - Phase 9T script tags were present.
+  - Requests rendered Active/Converted/All filter buttons with counts.
+  - Requests rendered active empty-state copy.
+  - Work Orders, My Work, Equipment, Parts, Team, Settings, and Messages loaded.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
 
 ## Prior Recent Change
 

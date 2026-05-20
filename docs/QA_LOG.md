@@ -7973,3 +7973,69 @@ Conclusion:
 - Phase 9T local extraction: PASS.
 - Behavior changed: no observed behavior change.
 - Package/upload: next Phase 9U.
+
+## LFES Phase 9U Package/Upload And Live Verification - 2026-05-20
+
+Scope:
+
+- Packaged and uploaded the stable LFES Phase 9T request filter display helper extraction to GitHub Pages.
+- Did not move additional helpers.
+- Did not change request filtering, counts, pagination, submit/convert/delete behavior, workflow logic, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Package:
+
+- `MaintainOps-github-clean-20260520-094703`
+- `MaintainOps-github-clean-20260520-094703.zip`
+
+GitHub deploy:
+
+- Commit: `c6e94f14a1faaa210d722116111ea3969ced1530`
+- Commit message: `Extract request filter display helpers`
+
+Live resource verification:
+
+- Live `index.html` references `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`.
+- Live `index.html` references `app.js?v=lfes-phase-9t-request-display-1`.
+- Live `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+- Live `app.js?v=lfes-phase-9t-request-display-1`: HTTP 200.
+- Hosted Resource Load Smoke: PASS.
+
+GitHub Actions:
+
+- Resource Load Smoke: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26176843065`
+- Pages build/deployment: PASS
+- Run: `https://github.com/loufish727/MaintainOps/actions/runs/26176841661`
+
+TEST:
+Phase 9U signed-in live request filter display smoke
+
+STEPS:
+1. Opened live app at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-9u-live-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/requestDisplay.js?v=lfes-phase-9t-request-display-1` and `app.js?v=lfes-phase-9t-request-display-1` were present.
+6. Opened Requests and verified the request filter bar rendered Active, Converted, and All with counts.
+7. Verified active request empty-state copy still rendered.
+8. Opened Equipment, Parts, Work Orders, My Work, Team, Settings, and Messages.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Live signed-in workspace loads, Salem remains active, the new request display script loads, request filter display renders, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+Requests rendered the Active/Converted/All filter bar with counts and `No active requests waiting for review.`. Parts still rendered expected empty-state copy. Messages still showed `QA Phase 9I message smoke`. No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 9U package/upload and live verification: PASS.
+- GitHub Actions Resource Load Smoke: PASS.
+- Pages build/deployment: PASS.
+- live signed-in smoke: PASS.
+- Behavior changed: no observed behavior change.
+- Phase 9S/9T/9U is fully closed.
