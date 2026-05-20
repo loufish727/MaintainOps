@@ -58,6 +58,12 @@ const requiredResources = [
   "src/render/activityFeedDisplay.js",
   "src/render/partInventoryDisplay.js",
   "src/render/partUsageDisplay.js",
+  "src/render/requestQueueDisplay.js",
+  "src/render/deleteBlockerDisplay.js",
+  "src/render/assetHierarchyDisplay.js",
+  "src/render/maintenanceListDisplay.js",
+  "src/render/searchFilterDisplay.js",
+  "src/render/workOrderSortDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

@@ -122,6 +122,7 @@ const { createDeleteBlockerDisplayHelpers } = window.MaintainOpsDeleteBlockerDis
 const { createAssetHierarchyDisplayHelpers } = window.MaintainOpsAssetHierarchyDisplay;
 const { createMaintenanceListDisplayHelpers } = window.MaintainOpsMaintenanceListDisplay;
 const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDisplay;
+const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -239,6 +240,15 @@ const {
   matchesQuery,
 } = createSearchFilterDisplayHelpers({
   getSearchQuery: () => searchQuery,
+});
+const {
+  compareWorkOrders,
+  dueSortValue,
+  prioritySortValue,
+  completedSortValue,
+} = createWorkOrderSortDisplayHelpers({
+  getActiveStatusFilter: () => activeStatusFilter,
+  getWorkSort: () => workSort,
 });
 const {
   teamMemberName,
@@ -3262,35 +3272,6 @@ function bindAutoGrowTextareas() {
 function autoGrowTextarea(field) {
   field.style.height = "auto";
   field.style.height = `${field.scrollHeight}px`;
-}
-
-function compareWorkOrders(a, b) {
-  if (["completed", "completed_month", "completed_week"].includes(activeStatusFilter)) {
-    return completedSortValue(b) - completedSortValue(a) || new Date(b.created_at) - new Date(a.created_at);
-  }
-
-  if (workSort === "due") {
-    return dueSortValue(a) - dueSortValue(b) || new Date(b.created_at) - new Date(a.created_at);
-  }
-
-  if (workSort === "priority") {
-    return prioritySortValue(b.priority) - prioritySortValue(a.priority) || dueSortValue(a) - dueSortValue(b);
-  }
-
-  return new Date(b.created_at) - new Date(a.created_at);
-}
-
-function dueSortValue(workOrder) {
-  if (!workOrder.due_at) return Number.MAX_SAFE_INTEGER;
-  return new Date(`${workOrder.due_at}T00:00:00`).getTime();
-}
-
-function prioritySortValue(priority) {
-  return { low: 1, medium: 2, high: 3, critical: 4 }[priority] || 0;
-}
-
-function completedSortValue(workOrder) {
-  return workOrder.completed_at ? new Date(workOrder.completed_at).getTime() : 0;
 }
 
 function workOrderSearchValues(workOrder) {
