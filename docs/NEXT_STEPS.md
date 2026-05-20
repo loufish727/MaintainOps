@@ -4,10 +4,514 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step
 
-LFES Phase 7F GitHub Actions resource-load smoke implementation is complete. The workflow is ready to push/upload.
+LFES Phase 9B-M manager/admin local Settings smoke confirmation rerun passed. The stable Phase 9B relationship display extraction remains approved for package/upload.
 
 Current status:
 
+- Phase 9B-M confirmation updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 9B-M confirmation result:
+  - PASS.
+  - no app code changed during smoke.
+  - no Supabase SQL/RLS changed.
+  - no package/upload performed yet.
+  - no Phase 9C started.
+- Verified in manager/admin-capable local session:
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Settings loaded.
+  - Team loaded.
+  - Work Orders loaded.
+  - `Hydralic Leak` detail opened.
+  - relationship chips rendered normally.
+  - History activity entries rendered normally.
+  - Equipment loaded.
+  - Parts loaded.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- Package/upload:
+  - approved for the stable Phase 9B build.
+
+Recommended immediate next controlled phase:
+
+- Package/upload stable LFES Phase 9B build to GitHub Pages, then live verify:
+  - scripts load including `src/render/relationshipDisplay.js`.
+  - signed-in session restores.
+  - Taylor Metal Products loads.
+  - Salem, OR active.
+  - Settings, Team, Work Orders, Equipment, and Parts load.
+  - `Hydralic Leak` detail opens.
+  - relationship chips/activity items render normally.
+  - no visible app errors or missing scripts.
+
+Prior immediate step:
+
+LFES Phase 9B-M manager/admin local Settings smoke checkpoint passed. The stable Phase 9B relationship display extraction is approved for package/upload.
+
+Current status:
+
+- Phase 9B-M updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 9B-M result:
+  - PASS.
+  - no app code changed during smoke.
+  - no Supabase SQL/RLS changed.
+  - no package/upload performed yet.
+  - no Phase 9C started.
+- Verified in manager/admin-capable local session:
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Settings loaded.
+  - Team loaded.
+  - Work Orders loaded.
+  - `Hydralic Leak` detail opened.
+  - relationship chips rendered normally.
+  - activity items rendered normally.
+  - Equipment loaded.
+  - Parts loaded.
+  - no visible app errors.
+  - no actionable browser console warning/error logs captured.
+- Package/upload:
+  - approved for the stable Phase 9B build.
+
+Recommended immediate next controlled phase:
+
+- Package/upload stable LFES Phase 9B build to GitHub Pages, then live verify:
+  - scripts load including `src/render/relationshipDisplay.js`.
+  - signed-in session restores.
+  - Taylor Metal Products loads.
+  - Salem, OR active.
+  - Settings, Team, Work Orders, Equipment, and Parts load.
+  - `Hydralic Leak` detail opens.
+  - relationship chips/activity items render normally.
+  - no visible app errors or missing scripts.
+
+Prior immediate step:
+
+LFES Phase 9B-M manager/admin local Settings smoke was attempted but is NOT VERIFIED because no manager/admin-capable local session was available.
+
+Current status:
+
+- Phase 9B-M updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 9B-M result:
+  - NOT VERIFIED.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no package/upload.
+  - no Phase 9C started.
+- Reason:
+  - local in-app browser remained at login.
+  - previous Playwright smoke account did not expose Settings nav.
+  - Settings must be verified from a manager/admin-capable account before upload.
+- Package/upload:
+  - blocked pending manager/admin Settings smoke.
+
+Recommended immediate next controlled phase:
+
+- Rerun LFES Phase 9B-M after signing into the local app with a manager/admin-capable account:
+  - `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9b-relationship-20260519`
+- Verify:
+  - Taylor Metal Products loads.
+  - Salem, OR active.
+  - Settings loads.
+  - Team loads.
+  - Work Orders load.
+  - `Hydralic Leak` detail opens if safe.
+  - relationship chips/activity items render normally.
+  - no visible app errors or missing scripts.
+  - no actionable console errors.
+
+Prior immediate step:
+
+LFES Phase 9B-S signed-in local smoke checkpoint is complete. Relationship display passed signed-in local smoke, but package/upload remains blocked until Settings is verified under a manager/admin local session.
+
+Current status:
+
+- Phase 9B-S updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 9B-S result:
+  - PASS WITH SETTINGS NOT VERIFIED.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no package/upload.
+  - no Phase 9C started.
+- Verified:
+  - sign-in succeeded.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded.
+  - `Hydralic Leak` detail opened.
+  - relationship chips rendered normally.
+  - activity items rendered normally.
+  - Equipment, Parts, and Team loaded.
+  - no visible app errors.
+  - no actionable console messages captured.
+- Not verified:
+  - Settings load under manager/admin.
+  - the smoke account/session used for Playwright did not expose Settings nav.
+- Notes:
+  - in-app browser text entry remained blocked by the browser automation virtual clipboard issue, so Playwright Chromium was used for the signed-in local smoke.
+  - aborted Supabase HEAD requests were observed during rapid navigation, but the UI loaded and no console errors appeared; this was treated as non-actionable test-navigation noise.
+- Package/upload:
+  - blocked pending manager/admin Settings smoke.
+
+Recommended immediate next controlled phase:
+
+- LFES Phase 9B-M manager/admin Settings smoke checkpoint.
+- Use a manager/admin local session and verify:
+  - Taylor Metal Products loads.
+  - Salem, OR active.
+  - Settings loads.
+  - Work Orders/Equipment/Parts/Team still load.
+  - no visible app errors or missing scripts.
+- After this passes, package/upload can be approved for the stable Phase 9B build.
+
+Prior immediate step:
+
+LFES Phase 9B relationship display-helper extraction is complete, but package/upload is blocked until the signed-in local smoke checkpoint is completed.
+
+Current status:
+
+- Phase 9B created:
+  - `src/render/relationshipDisplay.js`
+- Phase 9B modified:
+  - `app.js`
+  - `index.html`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Helpers moved:
+  - `renderActivityItem`
+  - `renderRelationshipChips`
+  - `relationshipChip`
+  - `relationshipIcon`
+- Static checks:
+  - PASS for `app.js`, `supabase-config.js`, all utils, all services, `src/render/displayHelpers.js`, and `src/render/relationshipDisplay.js`.
+- Local resource/load smoke:
+  - `index.html` served HTTP 200.
+  - `app.js` served HTTP 200.
+  - `src/render/relationshipDisplay.js` served HTTP 200.
+  - local app reached the login screen with no browser warning/error logs captured.
+- Signed-in local smoke:
+  - NOT VERIFIED.
+  - local origin did not have a restored session.
+  - browser text entry failed in the current automation environment, so sign-in could not be completed from Codex.
+- Package/upload:
+  - blocked pending signed-in local smoke.
+
+Recommended immediate next controlled phase:
+
+- LFES Phase 9B-S signed-in local smoke checkpoint.
+- Open local app:
+  - `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-9b-relationship-20260519`
+- Sign in normally if needed.
+- Verify:
+  - session restore/sign-in works.
+  - Salem, OR active.
+  - Work Orders load.
+  - `Hydralic Leak` detail opens if safe.
+  - relationship chips/activity feed render normally.
+  - Equipment, Parts, Team, Settings load.
+  - no missing-script errors.
+  - no visible app errors.
+
+Prior immediate step:
+
+LFES Phase 9A app.js subsystem extraction strategy is complete. The next safest cleanup step is a narrow read-only relationship display extraction, not broad workflow movement.
+
+Current status:
+
+- Phase 9A created:
+  - `docs/LFES/audits/LFES_PHASE_9A_SUBSYSTEM_EXTRACTION_STRATEGY.md`
+- Phase 9A updated:
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 9A result:
+  - planning only.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no workflows/business logic changed.
+- Recommended Phase 9B implementation:
+  - create `src/render/relationshipDisplay.js`.
+  - move only:
+    - `renderActivityItem`
+    - `renderRelationshipChips`
+    - `relationshipChip`
+    - `relationshipIcon`
+  - preserve exact markup.
+  - keep work-order card/detail renderers in `app.js`.
+  - pass dependencies explicitly or through a small adapter.
+- Estimated line reduction:
+  - approximately 110-140 lines from `app.js`.
+- Required Phase 9B smoke:
+  - static checks.
+  - signed-in app load.
+  - Taylor Metal Products and Salem active.
+  - Work Orders load.
+  - work-order detail opens.
+  - relationship chips/activity feed render.
+  - Equipment, Parts, Team, Settings load.
+  - no missing script or visible app errors.
+- Still blocked:
+  - workflow extraction.
+  - mutation extraction.
+  - event binding extraction.
+  - public QR movement.
+  - Team invite/default-location movement.
+  - parts/equipment detail movement.
+  - Supabase SQL/RLS changes.
+
+Prior immediate step:
+
+LFES Phase 8H invite acceptance / first-login verification was attempted as a checkpoint but is NOT VERIFIED because no real invite recipient or owner-approved QA recipient completed the invite flow in the current session.
+
+Current status:
+
+- Phase 8H created:
+  - `docs/LFES/audits/LFES_PHASE_8H_INVITE_ACCEPTANCE_VERIFICATION.md`
+- Phase 8H updated:
+  - `docs/QA_LOG.md`
+  - `docs/CURRENT_HANDOFF.md`
+- Phase 8H result:
+  - NOT VERIFIED.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no broader rollout started.
+- Reason:
+  - current live browser session was already signed in to the established Taylor Metal Products workspace.
+  - current session showed Salem, OR selected and owner/admin-style navigation available.
+  - this does not prove invite acceptance or first-login behavior for `jeffrey.kinkaid@taylormetal.com`.
+- Corrected invite from Phase 8G remains the onboarding item to verify:
+  - email: `jeffrey.kinkaid@taylormetal.com`
+  - role: Manager
+  - default location: Salem, OR
+- Recommended next controlled phase:
+  - rerun LFES Phase 8H after Jeffrey or an owner-approved QA recipient accepts the invite and signs in.
+  - verify Taylor Metal Products membership, Manager role visibility, Salem, OR active on first login, no Auburn fallback, reload persistence, and Work Orders/Equipment/Parts/Team loading.
+
+Prior immediate step:
+
+LFES Phase 8G onboarding action decision and invite correction is complete. MaintainOps can continue the supervised Taylor Metal Products / Salem, OR pilot with the pending invite now corrected to Salem, OR.
+
+Current status:
+
+- Phase 8G created:
+  - `docs/LFES/audits/LFES_PHASE_8G_ONBOARDING_ACTION.md`
+- Phase 8G updated:
+  - `docs/QA_LOG.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Phase 8G result:
+  - PASS / ACCEPTANCE NOT VERIFIED.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no broader rollout started.
+- Invite action taken:
+  - old pending invite for `jeffrey.kinkaid@taylormetal.com` was canceled through Team UI.
+  - old invite default location was `first available`.
+  - corrected invite was created through Team UI:
+    - email: `jeffrey.kinkaid@taylormetal.com`
+    - role: Manager
+    - default location: Salem, OR
+    - sent: 2026-05-19, 4:05:43 PM
+- Phase 8G smoke passed:
+  - Salem remained selected.
+  - Work Orders loaded with `Hydralic Leak` visible and `Test 1` absent.
+  - Equipment loaded with `New thalmann` visible and `Test 1` absent.
+  - Parts loaded with 0 shown.
+  - Requests loaded with 0 active.
+  - Team loaded with corrected invite visible.
+  - Admin Setup loaded and still showed 15/16 ready.
+  - no browser warning/error logs were captured.
+- Remaining onboarding verification:
+  - actual invite acceptance.
+  - first login for the invited account.
+  - confirm Taylor Metal Products membership as Manager.
+  - confirm Salem, OR becomes active on first load.
+  - confirm the app does not fall back to Auburn.
+- Recommended next controlled phase:
+  - LFES Phase 8H invite acceptance / first-login verification.
+
+Prior status:
+
+- Phase 8F created:
+  - `docs/LFES/audits/LFES_PHASE_8F_PILOT_FOLLOWUP.md`
+- Phase 8F updated:
+  - `docs/QA_LOG.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Phase 8F result:
+  - PASS WITH ONBOARDING DECISIONS REMAINING.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no broader rollout started.
+- Phase 8F smoke passed:
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded with `Hydralic Leak` visible and `Test 1` absent.
+  - Equipment loaded with `New thalmann` visible and `Test 1` absent.
+  - Requests loaded with 0 active.
+  - Parts loaded with 0 shown.
+  - Team, Settings, and Admin Setup loaded.
+  - no visible app errors or browser warning/error logs were captured.
+- Invite/default-location finding:
+  - pending invite `jeffrey.kinkaid@taylormetal.com` remains unchanged.
+  - role: Manager.
+  - default location: `first available`.
+  - `first available` is not recommended for Taylor Metal Products Salem-first pilot onboarding.
+  - recommended action is to cancel/reissue or otherwise correct the invite with Salem, OR as explicit default before the invitee joins.
+- Historical QA issue-report visibility:
+  - Admin Setup still shows 9 captured historical QA/smoke reports.
+  - recommendation: keep as evidence for now, but consider a future Live / QA / Archived distinction or filter.
+- Admin Setup:
+  - still 15/16 ready.
+  - Admin delete protection warning documented only; no SQL run.
+- Recommended next controlled phase:
+  - LFES Phase 8G onboarding action decision.
+  - decide whether to cancel/reissue `jeffrey.kinkaid@taylormetal.com` with Salem, OR as default.
+  - if approved, use Team UI only and run invite/default-location smoke afterward.
+
+Prior status:
+
+- Phase 8E created:
+  - `docs/LFES/audits/LFES_PHASE_8E_APPROVED_PILOT_CLEANUP.md`
+- Phase 8E updated:
+  - `docs/QA_LOG.md`
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Phase 8E result:
+  - PASS.
+  - no app code changed.
+  - no Supabase SQL/RLS changed.
+  - no broader rollout started.
+  - cleanup used normal app UI paths only.
+- Phase 8E cleanup performed:
+  - `Test 1` work order deleted through Work Order Detail.
+  - `Test 1` equipment reviewed and deleted through Equipment Detail after the app showed no linked equipment, open work, completed history, PM schedules, or parts history.
+- Current active Salem Work Orders:
+  - only `Hydralic Leak` remains visible.
+  - `Hydralic Leak` was not touched.
+- Current Equipment:
+  - only `New thalmann` remains visible.
+  - `New thalmann` was not touched.
+- Current Requests:
+  - 0 active.
+  - 0 converted.
+  - 0 all.
+- Current Parts:
+  - 0 shown.
+- Current Team/invite:
+  - pending invite `jeffrey.kinkaid@taylormetal.com` remains unchanged.
+  - role: Manager.
+  - default location: `first available`.
+  - decision needed before onboarding because Salem, OR is the supervised pilot default.
+- Current Issue Reports:
+  - Admin Setup still shows 9 captured historical QA/smoke reports.
+  - no delete/archive action was performed.
+- Admin Setup:
+  - still 15/16 ready.
+  - Admin delete protection warning documented only; no SQL run.
+- Phase 8E smoke passed:
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders, Requests, Equipment, Parts, Team, Settings, and Admin Setup loaded.
+  - Salem public QR request page loaded.
+  - no visible app errors or browser warning/error logs were captured.
+- Pilot confidence:
+  - improved because the stale `Test 1` work/equipment records no longer pollute pilot queues.
+  - still supervised/limited because invite onboarding, historical issue report cleanup, technician guardrail rerun, password recovery round trip, photo upload, and broad rollout remain limited.
+- Recommended next controlled phase:
+  - LFES Phase 8F pilot follow-up / invite and admin issue-queue decision.
+  - decide whether to cancel/reissue `jeffrey.kinkaid@taylormetal.com` with Salem, OR as default.
+  - decide whether historical QA issue reports should remain as evidence, be marked resolved, archived, or cleaned through an approved path.
+  - continue daily light pilot smoke.
+
+Prior status:
+
+- Phase 8D created:
+  - `docs/LFES/audits/LFES_PHASE_8D_PILOT_ISSUE_REVIEW.md`
+- Phase 8D updated:
+  - `docs/LFES/evidence/LFES_REAL_WORLD_CATCHES.md`
+- Phase 8D result:
+  - PASS WITH CLEANUP CANDIDATES.
+  - no app defect was found.
+  - no cleanup was performed.
+  - app surfaces loaded cleanly, but stale/setup records can confuse pilot users.
+- Phase 8D active Work Orders review:
+  - `Hydralic Leak`: likely real operational work; keep unless owner says otherwise.
+  - `Test 1`: likely setup/demo or leftover test data; cleanup candidate.
+- Phase 8D Requests review:
+  - 0 active.
+  - 0 converted.
+  - 0 all.
+  - clean starting state for QR intake.
+- Phase 8D Parts review:
+  - 0 shown.
+  - no stale QA parts visible.
+- Phase 8D Team/invite review:
+  - Team loads with 5 members shown.
+  - pending invite `jeffrey.kinkaid@taylormetal.com` from 5/6/2026 has `Default location: first available`; review before pilot onboarding.
+- Phase 8D Issue Reports review:
+  - Admin Setup shows 9 captured issue reports, mostly historical QA/smoke records.
+  - Report Issue works, but the admin issue queue is cluttered for pilot use.
+- Phase 8D Admin Setup review:
+  - 15/16 ready.
+  - missing readiness item shown as `Admin delete protection`; reconcile before broader rollout.
+- LFES catch added:
+  - Pilot queue trust risk from stale setup / QA data.
+- Phase 8C created:
+  - `docs/LFES/audits/LFES_PHASE_8C_DAY_ONE_MONITORING.md`
+- Phase 8C result:
+  - no Critical, High, or Medium defects were found.
+  - pilot confidence improved slightly.
+  - controlled pilot can continue under Phase 8B supervised limits.
+- Phase 8C day-one smoke passed:
+  - signed-in workspace restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR remained active.
+  - Work Orders loaded.
+  - Requests loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - Admin Setup loaded.
+  - Report Issue modal opened and was canceled without submitting.
+  - Salem public QR request page loaded.
+  - no visible app errors or missing-script failures observed.
+- Phase 8C observations:
+  - Salem currently shows 2 active work orders, including `Test 1` and `Hydralic Leak`.
+  - confirm whether `Test 1` is intentional live/pilot data or leftover setup/test data before treating the active queue as live-only.
+  - Parts showed `0 shown`, so the parts RPC path was not re-mutated in the monitoring-only pass.
+  - Requests showed `0 active`, `0 converted`, and `0 all`, which is a clean starting state for controlled QR intake.
+  - Admin Setup showed `15/16 ready`; review before broader rollout if the missing readiness item matters operationally.
+- Phase 8B created:
+  - `docs/LFES/audits/LFES_PHASE_8B_PILOT_LAUNCH_CHECKLIST.md`
+- Phase 8B result:
+  - PASS WITH SUPERVISED LIMITS.
+  - controlled Taylor Metal Products / Salem pilot can begin.
+  - broad rollout remains blocked.
+- Latest observed deploy/repo hash:
+  - `4b6185e`
+- Latest Resource Load Smoke:
+  - `Resource Load Smoke #5` / `Hosted resource-load smoke`.
+  - PASS / succeeded.
+  - no CI errors observed.
+- Phase 8B light live smoke passed:
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR selected and active.
+  - Work Orders loaded.
+  - Equipment loaded.
+  - Parts loaded.
+  - Team loaded.
+  - Settings loaded.
+  - Salem public QR request page loaded to the Taylor Metal Products / Salem, OR form.
+  - no visible app errors or missing-script failures observed.
 - `public.record_work_order_part_usage` exists.
 - `authenticated` can execute the function.
 - `anon` cannot execute the function.
@@ -119,18 +623,27 @@ Current status:
   - `Hosted resource-load smoke` completed successfully.
   - no CI errors observed.
   - workflow now uses `actions/checkout@v6`, `actions/setup-node@v6`, and Node `24`.
+- Phase 8A created:
+  - `docs/LFES/audits/LFES_PHASE_8A_CONTROLLED_PILOT_READINESS.md`
+- Phase 8A decision:
+  - controlled pilot readiness: CONDITIONAL YES.
+  - safe for a small supervised Taylor Metal Products / Salem, OR pilot.
+  - not ready for broad rollout.
 
 Recommended next controlled phase:
 
-**Plan LFES Phase 7G session/auth automation strategy only, or pause automation and return to the next approved live-pilot priority.**
+**LFES Phase 8E approved pilot cleanup pass.**
 
 Recommended focus:
 
-1. Do not add more automated tests until session strategy is planned.
-2. If continuing automation, plan QA manager/admin and QA technician session handling only.
-3. Do not add secrets.
-4. Do not automate login yet.
-5. Do not mutate app data.
+1. Ask for explicit approval before deleting or canceling anything.
+2. Use normal app UI paths only unless a separate SQL fix is approved.
+3. Cleanup `Test 1` work order if approved.
+4. Cleanup `Test 1` equipment only if safe after dependency checks.
+5. Review/cancel pending invite `jeffrey.kinkaid@taylormetal.com` if approved.
+6. Decide whether historical QA issue reports should remain as evidence, be marked resolved, archived, or cleaned through approved paths.
+7. Rerun light pilot smoke after cleanup.
+8. Keep technician assignment, password recovery, invite acceptance, photo upload, authoritative inventory, and multi-company rollout limited until focused verification passes.
 
 Keep blocked for now:
 
@@ -148,25 +661,60 @@ Keep blocked for now:
 Suggested next prompt:
 
 ```text
-Begin LFES Phase 7G session/auth automation strategy planning only.
+Begin LFES Phase 8E approved pilot cleanup pass.
 
 Do not change app code.
 Do not change Supabase SQL/RLS.
 Do not refactor app.js.
 Do not extract helpers/services.
 Do not change workflows/business logic.
-Do not add secrets.
-Do not add credentialed tests.
-Do not add mutating tests.
-Do not automate login.
-Do not mutate app data.
+Do not add tests.
+Do not add automation.
 
 Goal:
-Plan how future credentialed automation could safely handle QA manager/admin, QA technician, and anonymous public contexts without committing secrets or touching live data unexpectedly.
+Perform only the explicitly approved pilot cleanup through normal app UI paths, then rerun light pilot smoke.
+
+Approved cleanup candidates to decide before acting:
+- `Test 1` work order
+- `Test 1` equipment, only if safe after dependency checks
+- pending invite `jeffrey.kinkaid@taylormetal.com`
+- historical QA issue reports, only through approved app/admin paths
 
 Update QA_LOG.md, CURRENT_HANDOFF.md, and NEXT_STEPS.md.
-Stop after planning only.
+Stop after approved cleanup and light smoke verification only.
 ```
+
+## Prior Immediate Step
+
+LFES Phase 8C pilot day-one monitoring and issue triage is complete. MaintainOps can continue the small supervised Taylor Metal Products / Salem, OR pilot with limits.
+
+Recommended next controlled phase:
+
+LFES Phase 8D pilot issue-review and limited cleanup decision.
+
+## Prior Immediate Step
+
+LFES Phase 8B controlled pilot launch checklist execution is complete. MaintainOps is ready to begin a small supervised Taylor Metal Products / Salem, OR pilot with limits, not a broad rollout.
+
+Recommended next controlled phase:
+
+LFES Phase 8C pilot day-one monitoring and issue triage.
+
+## Prior Immediate Step
+
+LFES Phase 8A controlled pilot readiness review is complete. MaintainOps is conditionally ready for a small supervised pilot, not a broad rollout.
+
+Recommended next controlled phase:
+
+LFES Phase 8B pilot launch checklist execution.
+
+## Prior Immediate Step
+
+LFES Phase 7F GitHub Actions resource-load smoke implementation is complete. The workflow is uploaded and verified.
+
+Recommended next controlled phase:
+
+Controlled pilot readiness review.
 
 ## Prior Immediate Step
 
