@@ -127,6 +127,7 @@ const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterD
 const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThreadFilterDisplay;
 const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay;
 const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
+const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearchDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -709,6 +710,19 @@ const {
   getDueState,
   isCompletedThisMonth,
   isCompletedThisWeek,
+});
+const {
+  workOrderSearchValues,
+} = createWorkOrderSearchDisplayHelpers({
+  getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
+  getCommentsByWorkOrder: () => commentsByWorkOrder,
+  getEventsByWorkOrder: () => eventsByWorkOrder,
+  getPhotosByWorkOrder: () => photosByWorkOrder,
+  getProcedureTemplates: () => procedureTemplates,
+  getStepResultsByWorkOrder: () => stepResultsByWorkOrder,
+  getProfilesByUserId: () => profilesByUserId,
+  statusLabel,
+  assignmentLabel,
 });
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
@@ -3316,58 +3330,6 @@ function bindAutoGrowTextareas() {
 function autoGrowTextarea(field) {
   field.style.height = "auto";
   field.style.height = `${field.scrollHeight}px`;
-}
-
-function workOrderSearchValues(workOrder) {
-  const usedParts = partsUsedByWorkOrder[workOrder.id] || [];
-  const comments = commentsByWorkOrder[workOrder.id] || [];
-  const events = eventsByWorkOrder[workOrder.id] || [];
-  const photos = photosByWorkOrder[workOrder.id] || [];
-  const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
-  const stepResults = Object.values(stepResultsByWorkOrder[workOrder.id] || {});
-
-  return [
-    workOrder.title,
-    workOrder.description,
-    workOrder.status,
-    statusLabel(workOrder.status),
-    workOrder.priority,
-    workOrder.type,
-    workOrder.assets?.name,
-    assignmentLabel(workOrder),
-    workOrder.failure_cause,
-    workOrder.resolution_summary,
-    workOrder.completion_notes,
-    workOrder.current_update,
-    procedure?.name,
-    procedure?.description,
-    ...(procedure?.procedure_steps || []).flatMap((step) => [step.prompt, step.step_type]),
-    ...usedParts.flatMap((row) => [
-      row.parts?.name,
-      row.parts?.sku,
-      row.parts?.supplier_name,
-      row.quantity_used,
-      row.unit_cost,
-    ]),
-    ...comments.flatMap((comment) => [
-      comment.body,
-      profilesByUserId[comment.author_id]?.full_name,
-    ]),
-    ...events.flatMap((event) => [
-      event.event_type,
-      event.summary,
-      profilesByUserId[event.actor_id]?.full_name,
-    ]),
-    ...photos.flatMap((photo) => [
-      photo.file_name,
-      photo.original_file_name,
-      photo.content_type,
-    ]),
-    ...stepResults.flatMap((result) => [
-      result.value,
-      result.notes,
-    ]),
-  ];
 }
 
 function globalSearchResults() {
