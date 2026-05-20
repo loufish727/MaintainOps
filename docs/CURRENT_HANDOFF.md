@@ -30,6 +30,48 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10N/10O local option display extraction:
+
+- Scope:
+  - Phase 10N readiness approved only option-list display helper extraction.
+  - added `src/render/optionDisplay.js`.
+  - moved only `renderLocationOptions`, `renderAssetOptions`, `renderParentAssetOptions`, and `assetOptionLabel`.
+  - updated `index.html` to load `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-10o-option-display-1`.
+  - updated Resource Load Smoke required resources.
+  - did not move location switching, asset routing warnings, filtering logic, hierarchy checks, form submit handling, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Line count:
+  - `app.js` before: 10,215.
+  - `app.js` after: 10,204.
+  - reduction: 11 lines.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check tests/smoke/resource-load.spec.js`: PASS.
+  - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
+- Local Resource Load Smoke:
+  - PASS.
+- Local signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 10O script tags were present.
+  - request asset select rendered 2 options.
+  - create equipment parent select rendered 2 options.
+  - create equipment location select rendered 5 options.
+  - PM asset select rendered 2 options.
+  - team invite default location select rendered 5 options.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Immediate next step:
+  - Phase 10P package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 10K/10L/10M Parts display extraction, package/upload, and live verification:
 
 - Scope:

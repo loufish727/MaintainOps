@@ -8845,3 +8845,64 @@ Conclusion:
 - live signed-in smoke: PASS.
 - Behavior changed: no observed behavior change.
 - Phase 10K/10L/10M is functionally closed.
+
+## LFES Phase 10O Option Display Local Verification - 2026-05-20
+
+Scope:
+
+- Added `src/render/optionDisplay.js`.
+- Moved only `renderLocationOptions`, `renderAssetOptions`, `renderParentAssetOptions`, and `assetOptionLabel` into the display helper module.
+- Did not move location switching, asset routing warnings, filtering logic, hierarchy checks, form submit handling, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Local implementation:
+
+- `index.html` now references `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-10o-option-display-1`.
+- Resource Load Smoke now includes `src/render/optionDisplay.js`.
+- `app.js` line count after extraction: 10,204.
+
+TEST:
+Phase 10O static and local resource checks
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check supabase-config.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check` across `src/utils`, `src/services`, and `src/render`: PASS.
+- Local Resource Load Smoke against `http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 10O signed-in local option display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-10o-option-display-20260520`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1` and `app.js?v=lfes-phase-10o-option-display-1` were present.
+6. Verified request asset select rendered 2 options.
+7. Verified create equipment parent select rendered 2 options.
+8. Verified create equipment location select rendered 5 options.
+9. Verified PM asset select rendered 2 options.
+10. Verified team invite default location select rendered 5 options.
+11. Verified Messages still showed the Phase 9I QA thread.
+12. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new option display script loads, location/equipment option lists render in existing forms, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10O local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10P.

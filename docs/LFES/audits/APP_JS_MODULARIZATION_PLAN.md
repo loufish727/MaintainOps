@@ -3073,6 +3073,58 @@ Choose one:
 - LFES Phase 10N planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
 
+## Phase 10N/10O Option Display Extraction - 2026-05-20
+
+Phase 10N readiness approved only the option-list display helper extraction. Phase 10O added `src/render/optionDisplay.js` and moved only:
+
+- `renderLocationOptions`
+- `renderAssetOptions`
+- `renderParentAssetOptions`
+- `assetOptionLabel`
+
+Implementation:
+
+- `src/render/optionDisplay.js` exposes `window.MaintainOpsOptionDisplay.createOptionDisplayHelpers`.
+- `app.js` injects:
+  - `escapeHtml`
+  - read-only accessors for locations, active location, and assets
+  - existing read-only helpers `filteredAssets`, `matchesActiveLocation`, `isAssetDescendantOf`, and `parentAssetFor`
+- `index.html` now loads `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10o-option-display-1`.
+- Resource Load Smoke now includes `src/render/optionDisplay.js`.
+
+Line count:
+
+- before: 10,215 lines.
+- after: 10,204 lines.
+- reduction: 11 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new option display script and app cache tag loaded.
+- request asset select rendered 2 options.
+- create equipment parent select rendered 2 options.
+- create equipment location select rendered 5 options.
+- PM asset select rendered 2 options.
+- team invite default location select rendered 5 options.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 10O result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10P.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.

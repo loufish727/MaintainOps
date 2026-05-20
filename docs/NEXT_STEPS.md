@@ -3342,25 +3342,29 @@ Latest completed phases:
 - Phase 10L implemented `src/render/partsDisplay.js` and moved only `renderPart`, `renderPartsHealth`, and `renderPartSearch`.
 - Phase 10L local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10M packaged/uploaded the Phase 10L extraction and live verification passed.
+- Phase 10N readiness approved only option-list display helper extraction.
+- Phase 10O implemented `src/render/optionDisplay.js` and moved only `renderLocationOptions`, `renderAssetOptions`, `renderParentAssetOptions`, and `assetOptionLabel`.
+- Phase 10O local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10N planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Phase 10P package/upload and live verification for the Phase 10O option display extraction.
 
-Phase 10M verified:
+Phase 10O local verified:
 
-1. `src/render/partsDisplay.js?v=lfes-phase-10l-parts-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10l-parts-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
-5. Parts Inventory renders two `.parts-health` controls, one `#part-search-form`, and the All Parts / Low Stock labels.
+1. `src/render/optionDisplay.js?v=lfes-phase-10o-option-display-1` is referenced locally.
+2. `app.js?v=lfes-phase-10o-option-display-1` is referenced locally.
+3. Local Resource Load Smoke passes.
+4. request asset, create equipment parent/location, PM asset, and invite location selects render options.
+5. Messages Phase 9I thread remains visible.
 
-Phase 10M deploy:
+Phase 10P target:
 
-- package: `MaintainOps-github-clean-20260520-115838`
-- commit: `affeabb`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10m-live-20260520`
-- GitHub connector check returned no workflow runs for `affeabb`.
+- create a fresh GitHub upload package.
+- deploy the Phase 10O files.
+- verify live resource tags and HTTP 200s.
+- run hosted Resource Load Smoke.
+- run signed-in live smoke with Salem and key option-list counts.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

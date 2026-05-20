@@ -86,6 +86,7 @@ const { createPlanningDisplayHelpers } = window.MaintainOpsPlanningDisplay;
 const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDisplay;
 const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
 const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
+const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -316,6 +317,21 @@ const {
   getPartCostsReady: () => partCostsReady,
   getPartInventoryFilter: () => partInventoryFilter,
   getPartSearchQuery: () => partSearchQuery,
+});
+const {
+  renderLocationOptions,
+  renderAssetOptions,
+  renderParentAssetOptions,
+  assetOptionLabel,
+} = createOptionDisplayHelpers({
+  escapeHtml,
+  getLocations: () => locations,
+  getActiveLocationId: () => activeLocationId,
+  getAssets: () => assets,
+  filteredAssets,
+  matchesActiveLocation,
+  isAssetDescendantOf,
+  parentAssetFor,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -2928,33 +2944,6 @@ function matchesActiveLocation(record) {
 
 function activeLocationName() {
   return locations.find((location) => location.id === activeLocationId)?.name || "Location";
-}
-
-function renderLocationOptions(selectedId = activeLocationId) {
-  return locations.map((location) => `<option value="${location.id}" ${location.id === selectedId ? "selected" : ""}>${escapeHtml(location.name)}</option>`).join("");
-}
-
-function renderAssetOptions(selectedId = "") {
-  const options = filteredAssets();
-  const selectedAsset = selectedId ? assets.find((asset) => asset.id === selectedId) : null;
-  const list = selectedAsset && !options.some((asset) => asset.id === selectedAsset.id)
-    ? [selectedAsset, ...options]
-    : options;
-  return list.map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(assetOptionLabel(asset))}</option>`).join("");
-}
-
-function renderParentAssetOptions(selectedId = "", currentAssetId = "") {
-  return assets
-    .filter(matchesActiveLocation)
-    .filter((asset) => asset.id !== currentAssetId && !isAssetDescendantOf(asset.id, currentAssetId))
-    .sort((a, b) => assetOptionLabel(a).localeCompare(assetOptionLabel(b)))
-    .map((asset) => `<option value="${asset.id}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(assetOptionLabel(asset))}</option>`)
-    .join("");
-}
-
-function assetOptionLabel(asset) {
-  const parent = parentAssetFor(asset);
-  return parent ? `${asset.name} - part of ${parent.name}` : asset.name;
 }
 
 function showNotice(message, tone = "success") {
