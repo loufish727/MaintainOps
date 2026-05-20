@@ -3387,6 +3387,31 @@ Phase 10T/10U/10V result:
 - behavior changed: no observed behavior change.
 - Phase 10Q through 10V is functionally closed.
 
+## Phase 12S Through 13M Display Extraction Continuation - 2026-05-20
+
+Completed another 21 controlled LFES phase steps:
+
+- Phase 12S/12T/12U: extracted `teamMemberName` into `src/render/teamMemberDisplay.js`; deploy commit `7c2d1e9`.
+- Phase 12V/12W/12X: extracted `teamMemberWorkload` into `src/render/teamWorkloadDisplay.js`; deploy commit `2237404`.
+- Phase 12Y/12Z/13A: extracted `activeLocationName` into `src/render/locationDisplay.js`; deploy commit `05364be`.
+- Phase 13B/13C/13D: extracted downtime email subject/body helpers into `src/render/downtimeEmailDisplay.js`; deploy commit `92cd812`.
+- Phase 13E/13F/13G: extracted setup error text helpers into `src/render/setupErrorDisplay.js`; deploy commit `31ec687`.
+- Phase 13H/13I/13J: extracted `friendlyWorkOrderSaveError` into `src/render/workOrderErrorDisplay.js`; deploy commit `d3b8e63`.
+- Phase 13K/13L/13M: extracted `assignmentLabel` into `src/render/assignmentDisplay.js`; deploy commit `10516dc`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260520-141451`.
+- final cache tag: `app.js?v=lfes-phase-13l-assignment-display-1`.
+- final hosted Resource Load Smoke: PASS.
+- final live signed-in smoke: PASS.
+- final browser console warning/error logs: clean.
+- `app.js` line count after Phase 13L: 10,011.
+
+Boundary preserved:
+
+- No workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, `bindWorkspaceEvents()`, assignment controls, delete zones, public QR flows, Quick Fix, request conversion, or PM generation were moved.
+
 ### Recommended Next Phase
 
 Choose one:

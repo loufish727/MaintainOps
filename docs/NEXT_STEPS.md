@@ -3370,25 +3370,32 @@ Latest completed phases:
 - Phase 12J/12K/12L extracted `messageComposerScopeNote` into `src/render/messageComposerDisplay.js` and live verification passed.
 - Phase 12M/12N/12O extracted `inviteDefaultLocationLabel` into `src/render/inviteLocationDisplay.js` and live verification passed.
 - Phase 12P/12Q/12R extracted `partSetupMessage` into `src/render/partSetupDisplay.js` and live verification passed.
+- Phase 12S/12T/12U extracted `teamMemberName` into `src/render/teamMemberDisplay.js` and live verification passed.
+- Phase 12V/12W/12X extracted `teamMemberWorkload` into `src/render/teamWorkloadDisplay.js` and live verification passed.
+- Phase 12Y/12Z/13A extracted `activeLocationName` into `src/render/locationDisplay.js` and live verification passed.
+- Phase 13B/13C/13D extracted downtime email subject/body text into `src/render/downtimeEmailDisplay.js` and live verification passed.
+- Phase 13E/13F/13G extracted setup error text helpers into `src/render/setupErrorDisplay.js` and live verification passed.
+- Phase 13H/13I/13J extracted `friendlyWorkOrderSaveError` into `src/render/workOrderErrorDisplay.js` and live verification passed.
+- Phase 13K/13L/13M extracted `assignmentLabel` into `src/render/assignmentDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 12S planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 13N planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 12R verified:
+Phase 13M verified:
 
-1. `src/render/partSetupDisplay.js?v=lfes-phase-12q-part-setup-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-12q-part-setup-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/assignmentDisplay.js?v=lfes-phase-13l-assignment-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-13l-assignment-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke verifies Parts opens and Add Part renders.
-5. Messages Phase 9I thread remains visible after Parts navigation.
+4. Signed-in live smoke verifies Taylor Metal Products, Salem, OR, Louie, Work nav, Team nav, and Messages nav.
+5. Browser warning/error logs are clean.
 
-Phase 12R deploy:
+Phase 13M deploy:
 
-- package: `MaintainOps-github-clean-20260520-134626`
-- commit: `eef5e1c`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-12r-live-20260520`
-- GitHub connector check returned no workflow runs for `eef5e1c`.
+- package: `MaintainOps-github-clean-20260520-141451`
+- commit: `10516dc`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-13l-live-1779311774845`
+- GitHub connector check returned no workflow runs for `10516dc`.
 
 Important:
 

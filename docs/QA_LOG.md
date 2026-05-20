@@ -9336,3 +9336,62 @@ Conclusion:
 
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
+
+## LFES Phase 12S Through 13M Display Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the low-risk LFES modularization loop for 21 phase steps, from Phase 12S through Phase 13M.
+- Added display modules for team member names, team workload chips, active location labels, downtime email copy text, setup error messages, work-order save error messages, and assignment labels.
+- Did not move request/work cards, assignment controls, assignment mutations, delete zones, auth/startup views, public QR flows, forms with mutations, Quick Fix, request conversion, PM generation, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 12U: `7c2d1e9` - `Extract team member display helper`
+- Phase 12X: `2237404` - `Extract team workload display helper`
+- Phase 13A: `05364be` - `Extract location display helper`
+- Phase 13D: `92cd812` - `Extract downtime email display helper`
+- Phase 13G: `31ec687` - `Extract setup error display helper`
+- Phase 13J: `d3b8e63` - `Extract work order error display helper`
+- Phase 13M: `10516dc` - `Extract assignment display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-141451`
+- `MaintainOps-github-clean-20260520-141451.zip`
+
+Latest implementation:
+
+- `index.html` now references `src/render/assignmentDisplay.js?v=lfes-phase-13l-assignment-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-13l-assignment-display-1`.
+- Resource Load Smoke now includes `src/render/assignmentDisplay.js`.
+- `app.js` line count after Phase 13L extraction: 10,011.
+
+TEST:
+Phase 13M static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed in source and publish worktrees.
+- local resource checks passed for each new module.
+- hosted GitHub Pages Resource Load Smoke passed for the final Phase 13M deploy.
+- live `src/render/assignmentDisplay.js?v=lfes-phase-13l-assignment-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-13l-assignment-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible.
+- signed-in workspace rendered with Work, Team, and Messages nav available.
+- no browser warning/error logs.
+
+Notes:
+
+- Local signed-in browser smoke was unavailable on the temporary localhost origins because the browser was signed out there; local verification used syntax and resource checks, with signed-in behavior gated on live smoke.
+- Browser click automation was intermittently slow during Phase 13G live smoke, so the accepted smoke used passive signed-in workspace assertions plus clean console.
+- GitHub connector checks returned no workflow runs for the latest app commits, including `10516dc`.
+
+Conclusion:
+
+- The requested 21 phase steps completed without an `ACTION NEEDED` stop.
+- Behavior changed: no observed behavior change.

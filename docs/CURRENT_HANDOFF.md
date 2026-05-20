@@ -30,6 +30,39 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed another 21-step LFES display modularization run from Phase 12S through Phase 13M.
+
+- Added:
+  - `src/render/teamMemberDisplay.js`
+  - `src/render/teamWorkloadDisplay.js`
+  - `src/render/locationDisplay.js`
+  - `src/render/downtimeEmailDisplay.js`
+  - `src/render/setupErrorDisplay.js`
+  - `src/render/workOrderErrorDisplay.js`
+  - `src/render/assignmentDisplay.js`
+- Latest live cache tag:
+  - `app.js?v=lfes-phase-13l-assignment-display-1`
+- Latest package:
+  - `MaintainOps-github-clean-20260520-141451`
+- Latest app commit:
+  - `10516dc` (`Extract assignment display helper`)
+- Current `app.js` line count:
+  - 10,011 lines.
+- Verification:
+  - static JS checks: PASS.
+  - local resource checks: PASS.
+  - hosted Resource Load Smoke: PASS.
+  - signed-in live smoke: PASS.
+  - no browser warning/error logs.
+- Behavior changed:
+  - no observed behavior change.
+- Recommended next step:
+  - choose LFES Phase 13N planning/readiness before any additional extraction, or pause and continue live pilot monitoring.
+
+Still do not move request/work cards, assignment controls, assignment mutations, delete zones, auth/startup views, public QR flows, forms with mutations, Quick Fix, request conversion, PM generation, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+## Prior Recent Change
+
 Completed LFES Phase 10Q through 10V as two consecutive cleanup cycles:
 
 - Phase 10Q/10R/10S:
