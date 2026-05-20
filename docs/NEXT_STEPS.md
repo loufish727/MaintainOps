@@ -3361,25 +3361,27 @@ Latest completed phases:
 - Phase 11I/11J/11K extracted `renderEmailHelperCommandCard` and `commandShortcut` into `src/render/commandCardDisplay.js` and live verification passed.
 - Phase 11L/11M/11N extracted `renderWorkOrderCommandSummary` into `src/render/workCommandDisplay.js` and live verification passed.
 - Phase 11O/11P/11Q extracted `renderMissingWorkOrderDetail` into `src/render/missingWorkDetailDisplay.js` and live verification passed.
+- Phase 11R/11S/11T extracted `renderPartSourceOptions` and `renderPartSourceManager` into `src/render/partSourceDisplay.js` and live verification passed.
+- Phase 11U/11V/11W extracted `renderAssetCard` into `src/render/assetCardDisplay.js` and live verification passed.
 
 Immediate next action:
 
-- Choose LFES Phase 11R planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Choose LFES Phase 11X planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
 
-Phase 11Q verified:
+Phase 11W verified:
 
-1. `src/render/missingWorkDetailDisplay.js?v=lfes-phase-11p-missing-work-detail-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-11p-missing-work-detail-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+1. `src/render/assetCardDisplay.js?v=lfes-phase-11v-asset-card-display-1` is referenced and serves HTTP 200 on GitHub Pages.
+2. `app.js?v=lfes-phase-11v-asset-card-display-1` is referenced and serves HTTP 200 on GitHub Pages.
 3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke verifies the workspace opens.
-5. Messages Phase 9I thread remains visible.
+4. Signed-in live smoke verifies Equipment opens and renders 1 asset card.
+5. Messages Phase 9I thread remains visible after Equipment navigation.
 
-Phase 11Q deploy:
+Phase 11W deploy:
 
-- package: `MaintainOps-github-clean-20260520-131510`
-- commit: `3c31d77`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11q-live-20260520`
-- GitHub connector check returned no workflow runs for `3c31d77`.
+- package: `MaintainOps-github-clean-20260520-132436`
+- commit: `3e68c82`
+- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11w-live-20260520`
+- GitHub connector check returned no workflow runs for `3e68c82`.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

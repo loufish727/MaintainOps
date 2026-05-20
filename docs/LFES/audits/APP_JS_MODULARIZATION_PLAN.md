@@ -143,6 +143,33 @@ Verification:
 
 Continue with the same guardrails for the next cleanup pass. The remaining extractions should still avoid workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete guards, `renderWorkspace()`, and `bindWorkspaceEvents()`.
 
+## Phase 11R Through 11W Continuation - 2026-05-20
+
+Two additional display-only extraction cycles completed:
+
+- Phase 11R/11S/11T: `src/render/partSourceDisplay.js` moved `renderPartSourceOptions` and `renderPartSourceManager`.
+- Phase 11U/11V/11W: `src/render/assetCardDisplay.js` moved `renderAssetCard`.
+
+Latest state:
+
+- latest app commit: `3e68c82`.
+- latest package: `MaintainOps-github-clean-20260520-132436`.
+- latest live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11w-live-20260520`.
+- `app.js` line count after Phase 11V: 10,055.
+
+Verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- hosted GitHub Pages Resource Load Smoke: PASS.
+- signed-in live Equipment smoke: PASS.
+- Equipment rendered 1 asset card.
+- Phase 9I message regression after navigation: PASS.
+- no browser warning/error logs.
+- GitHub connector returned no workflow runs for latest app commits.
+
+Next candidate selection should be more conservative. Many remaining render functions are mixed with auth, public QR, full forms, danger zones, workflow actions, or delete controls.
+
 ## Lowest-Risk Areas To Move First
 
 Move these first:

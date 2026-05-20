@@ -9219,3 +9219,59 @@ Conclusion:
 
 - The requested 20-phase continuation target was completed and intentionally rounded out to a full packaged/live-verified cycle.
 - Behavior changed: no observed behavior change.
+
+## LFES Phase 11R Through 11W Display Extraction Continuation - 2026-05-20
+
+Scope:
+
+- Continued the same low-risk LFES modularization loop after Phase 11Q.
+- Added `src/render/partSourceDisplay.js` and moved only `renderPartSourceOptions` and `renderPartSourceManager`.
+- Added `src/render/assetCardDisplay.js` and moved only `renderAssetCard`.
+- Did not move part source rename behavior, source toggles, equipment detail forms, Quick Fix actions, hierarchy mutation logic, delete guards, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- Phase 11T: `50d40f0` - `Extract part source display helpers`
+- Phase 11W: `3e68c82` - `Extract asset card display helper`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260520-132436`
+- `MaintainOps-github-clean-20260520-132436.zip`
+
+Latest implementation:
+
+- `index.html` now references `src/render/assetCardDisplay.js?v=lfes-phase-11v-asset-card-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-11v-asset-card-display-1`.
+- Resource Load Smoke now includes `src/render/assetCardDisplay.js`.
+- `app.js` line count after Phase 11V extraction: 10,055.
+
+TEST:
+Phase 11W static, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- static JS checks passed in source and publish worktrees.
+- local Resource Load Smoke passed.
+- hosted GitHub Pages Resource Load Smoke passed.
+- live `src/render/assetCardDisplay.js?v=lfes-phase-11v-asset-card-display-1`: HTTP 200.
+- live `app.js?v=lfes-phase-11v-asset-card-display-1`: HTTP 200.
+- Taylor Metal Products loaded.
+- Salem, OR was visible in the active workspace selector.
+- Equipment opened and rendered 1 `.asset-card`.
+- Messages still showed the Phase 9I QA thread after Equipment navigation.
+- no visible app errors.
+- no browser warning/error logs.
+
+Notes:
+
+- Salem Parts view currently had 0 parts, so Phase 11T verified the Parts Inventory view, Add Part source/vendor datalist, and Edit sources control rather than existing source options.
+- GitHub connector checks returned no workflow runs for `50d40f0` and `3e68c82`.
+
+Conclusion:
+
+- Phase 11R through 11W is functionally closed.
+- Behavior changed: no observed behavior change.

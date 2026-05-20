@@ -4635,6 +4635,31 @@ Still do not move workflow logic, event handlers, mutations, auth/session/compan
 
 ## Prior Recent Change
 
+LFES app cleanup continuation completed through Phase 11W.
+
+Implementation:
+
+- Added `src/render/partSourceDisplay.js`.
+- Added `src/render/assetCardDisplay.js`.
+- Reduced `app.js` to 10,055 lines.
+- Latest GitHub Pages cache tag is `app.js?v=lfes-phase-11v-asset-card-display-1`.
+
+Verified:
+
+- Latest app commit: `3e68c82`.
+- Latest package: `MaintainOps-github-clean-20260520-132436`.
+- Static JS checks passed.
+- Local and hosted Resource Load Smoke passed.
+- Signed-in live Equipment smoke passed at `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-11w-live-20260520`.
+- Equipment rendered 1 asset card.
+- Taylor Metal Products, Salem, OR, and the Phase 9I message thread remained visible.
+- No browser warning/error logs were observed.
+- GitHub connector returned no workflow runs for the latest app commits.
+
+Next cleanup selection should be cautious because many remaining render functions mix forms, danger zones, auth, public QR, or workflow actions.
+
+## Prior Recent Change
+
 Team roles were simplified to the real working model: Technician, Manager, Admin.
 
 Implementation:
