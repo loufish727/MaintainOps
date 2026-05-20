@@ -128,6 +128,7 @@ const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThr
 const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay;
 const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
 const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearchDisplay;
+const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -723,6 +724,16 @@ const {
   getProfilesByUserId: () => profilesByUserId,
   statusLabel,
   assignmentLabel,
+});
+const {
+  myWorkQueueOrders,
+} = createMyWorkQueueDisplayHelpers({
+  getWorkOrders: () => workOrders,
+  getCurrentUser: () => session?.user,
+  getMyWorkFilter: () => myWorkFilter,
+  matchesActiveLocation,
+  matchesSearch,
+  workOrderSearchValues,
 });
 
 // LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
@@ -3208,16 +3219,6 @@ function filteredWorkOrders() {
           (workOrderFilter === "unassigned" && !workOrder.assigned_to && !isVendorAssigned(workOrder));
     return statusMatch && queueMatch && matchesSearch(workOrderSearchValues(workOrder));
   }).sort(compareWorkOrders);
-}
-
-function myWorkQueueOrders() {
-  return workOrders.filter((workOrder) => {
-    if (!matchesActiveLocation(workOrder)) return false;
-    const queueMatch = myWorkFilter === "created"
-      ? workOrder.created_by === session.user.id
-      : workOrder.assigned_to === session.user.id;
-    return queueMatch && matchesSearch(workOrderSearchValues(workOrder));
-  });
 }
 
 function resetWorkOrderPage() {
