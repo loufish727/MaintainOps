@@ -2742,6 +2742,55 @@ Choose one:
 - LFES Phase 10E planning/readiness before any additional helper extraction.
 - pause code movement and continue live pilot monitoring.
 
+## Phase 10E/10F Mini Work Order Display Extraction - 2026-05-20
+
+Phase 10E readiness approved only the tiny mini work order display helper extraction. Phase 10F added `src/render/miniWorkOrderDisplay.js` and moved only:
+
+- `renderMiniWorkOrder`
+- `renderAssetMiniWorkOrder`
+
+Implementation:
+
+- `src/render/miniWorkOrderDisplay.js` exposes `window.MaintainOpsMiniWorkOrderDisplay.createMiniWorkOrderDisplayHelpers`.
+- `app.js` injects:
+  - `escapeHtml`
+  - `statusLabel`
+  - `relationshipIcon`
+  - read-only accessors for `partsUsedByWorkOrder` and `photosByWorkOrder`
+- `index.html` now loads `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- `app.js` cache tag is now `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- Resource Load Smoke now includes `src/render/miniWorkOrderDisplay.js`.
+
+Line count:
+
+- before: 10,309 lines.
+- after: 10,290 lines.
+- reduction: 19 lines.
+
+Local verification:
+
+- static JS checks: PASS.
+- local Resource Load Smoke: PASS.
+- signed-in local smoke: PASS.
+
+Local signed-in smoke verified:
+
+- Taylor Metal Products loaded.
+- Salem, OR stayed selected.
+- new mini work order display script and app cache tag loaded.
+- My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+- Equipment still showed `New thalmann`.
+- Equipment detail rendered two `[data-mini-work-order]` snippets.
+- Messages still showed the Phase 9I QA thread.
+- no visible app errors.
+- no browser warning/error logs captured.
+
+Phase 10F result:
+
+- local extraction: PASS.
+- behavior changed: no observed behavior change.
+- package/upload: next Phase 10G.
+
 ### Remains Blocked
 
 - additional display extraction without fresh readiness.

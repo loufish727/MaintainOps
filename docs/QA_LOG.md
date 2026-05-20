@@ -8478,3 +8478,62 @@ Conclusion:
 - Behavior changed: no observed behavior change.
 - GitHub Actions final check unavailable due public API rate limiting.
 - Phase 10B/10C/10D is functionally closed.
+
+## LFES Phase 10F Mini Work Order Display Local Verification - 2026-05-20
+
+Scope:
+
+- Added `src/render/miniWorkOrderDisplay.js`.
+- Moved only `renderMiniWorkOrder` and `renderAssetMiniWorkOrder` into the display helper module.
+- Did not move asset detail rendering, relationship loading, work-order click behavior, event handlers, mutations, Supabase SQL/RLS, auth/session/company/location logic, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Local implementation:
+
+- `index.html` now references `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- `index.html` now references `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+- Resource Load Smoke now includes `src/render/miniWorkOrderDisplay.js`.
+- `app.js` line count after extraction: 10,290.
+
+TEST:
+Phase 10F static and local resource checks
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check supabase-config.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check` across `src/utils`, `src/services`, and `src/render`: PASS.
+- Local Resource Load Smoke against `http://127.0.0.1:4294/`: PASS.
+
+TEST:
+Phase 10F signed-in local mini work order display smoke
+
+STEPS:
+1. Opened local app at `http://127.0.0.1:4294/index.html?qa_bust=lfes-phase-10f-mini-work-order-display-20260520b`.
+2. Verified signed-in workspace restored.
+3. Verified Taylor Metal Products loaded.
+4. Verified Salem, OR was selected.
+5. Verified `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` and `app.js?v=lfes-phase-10f-mini-work-order-display-1` were present.
+6. Opened My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+7. Verified Equipment showed `New thalmann`.
+8. Opened an Equipment detail and verified two `[data-mini-work-order]` snippets rendered.
+9. Verified Messages still showed the Phase 9I QA thread.
+10. Checked browser warning/error logs available through the browser connection.
+
+EXPECTED:
+Signed-in workspace loads, Salem remains active, the new mini work order display script loads, Equipment detail mini work-order snippets render, core sections load, no visible app errors appear, and no actionable console errors appear.
+
+RESULT:
+PASS
+
+NOTES:
+No visible app errors were found. No browser warning/error logs were captured.
+
+Conclusion:
+
+- Phase 10F local extraction: PASS.
+- Behavior changed: no observed behavior change.
+- Package/upload: next Phase 10G.

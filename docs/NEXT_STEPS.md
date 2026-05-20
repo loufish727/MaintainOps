@@ -3330,25 +3330,29 @@ Latest completed phases:
 - Phase 10C implemented `src/render/planningDisplay.js` and moved only `renderPlanningGroup` and `renderPlanningItem`.
 - Local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 - Phase 10D packaged/uploaded the Phase 10C extraction and live verification passed.
+- Phase 10E readiness approved only mini work order display helper extraction.
+- Phase 10F implemented `src/render/miniWorkOrderDisplay.js` and moved only `renderMiniWorkOrder` and `renderAssetMiniWorkOrder`.
+- Phase 10F local static checks, local Resource Load Smoke, and signed-in local smoke passed.
 
 Immediate next action:
 
-- Choose LFES Phase 10E planning/readiness before any additional helper extraction, or pause code movement and continue live pilot monitoring.
+- Phase 10G package/upload and live verification for the Phase 10F mini work order display extraction.
 
-Phase 10D verified:
+Phase 10F local verified:
 
-1. `src/render/planningDisplay.js?v=lfes-phase-10c-planning-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-2. `app.js?v=lfes-phase-10c-planning-display-1` is referenced and serves HTTP 200 on GitHub Pages.
-3. Hosted Resource Load Smoke passes.
-4. Signed-in live smoke passes across Planning, My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
+1. `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced locally.
+2. `app.js?v=lfes-phase-10f-mini-work-order-display-1` is referenced locally.
+3. Local Resource Load Smoke passes.
+4. Signed-in local smoke passes across My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages.
+5. Equipment detail renders two `[data-mini-work-order]` snippets.
 
-Phase 10D deploy:
+Phase 10G target:
 
-- package: `MaintainOps-github-clean-20260520-103436`
-- commit: `efef39c`
-- live smoke URL: `https://loufish727.github.io/MaintainOps/?qa_bust=lfes-phase-10d-live-20260520`
-- GitHub Actions final check unavailable due public API rate limiting.
-5. Signed-in live smoke passes across My Work, Work Orders, Requests, Equipment, Parts, Team, Settings, and Messages.
+- create a fresh GitHub upload package.
+- deploy the Phase 10F files.
+- verify live resource tags and HTTP 200s.
+- run hosted Resource Load Smoke.
+- run signed-in live smoke with Salem, Equipment detail mini work-order snippets, and Messages Phase 9I thread.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

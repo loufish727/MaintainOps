@@ -1,4 +1,4 @@
-const app = document.querySelector("#app");
+﻿const app = document.querySelector("#app");
 
 const {
   STATUS_OPTIONS,
@@ -83,6 +83,7 @@ const { createRequestDisplayHelpers } = window.MaintainOpsRequestDisplay;
 const { createGlobalSearchDisplayHelpers } = window.MaintainOpsGlobalSearchDisplay;
 const { createWorkQueueDisplayHelpers } = window.MaintainOpsWorkQueueDisplay;
 const { createPlanningDisplayHelpers } = window.MaintainOpsPlanningDisplay;
+const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -275,6 +276,16 @@ const {
   escapeHtml,
   statusLabel,
   renderRelationshipChips,
+});
+const {
+  renderMiniWorkOrder,
+  renderAssetMiniWorkOrder,
+} = createMiniWorkOrderDisplayHelpers({
+  escapeHtml,
+  statusLabel,
+  relationshipIcon,
+  getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
+  getPhotosByWorkOrder: () => photosByWorkOrder,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -3426,36 +3437,6 @@ function renderAssetDangerZone(asset) {
   `;
 }
 
-function renderMiniWorkOrder(workOrder) {
-  return `
-    <article class="mini-work-order" data-mini-work-order="${workOrder.id}">
-      <strong>${escapeHtml(workOrder.title)}</strong>
-      <span>${statusLabel(workOrder.status)} · ${workOrder.due_at || "no due date"}</span>
-    </article>
-  `;
-}
-
-function renderAssetMiniWorkOrder(workOrder) {
-  const partsCount = (partsUsedByWorkOrder[workOrder.id] || []).length;
-  const photosCount = (photosByWorkOrder[workOrder.id] || []).length;
-  const completedDate = workOrder.completed_at ? new Date(workOrder.completed_at).toLocaleDateString() : "";
-  const outcome = workOrder.resolution_summary || workOrder.completion_notes || "";
-  return `
-    <article class="mini-work-order ${workOrder.status === "completed" ? "completed-history" : ""}" data-mini-work-order="${workOrder.id}">
-      <div class="chip-row">
-        <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
-        ${workOrder.follow_up_needed ? `<span class="chip blocked">follow-up</span>` : ""}
-        ${partsCount ? `<span class="relationship-chip parts">${relationshipIcon("parts")}<span>${partsCount}</span></span>` : ""}
-        ${photosCount ? `<span class="relationship-chip photo">${relationshipIcon("photo")}<span>${photosCount}</span></span>` : ""}
-      </div>
-      <strong>${escapeHtml(workOrder.title)}</strong>
-      <span>${completedDate ? `Completed ${completedDate}` : `Due ${workOrder.due_at || "unset"}`}</span>
-      ${workOrder.failure_cause ? `<p><b>Finding:</b> ${escapeHtml(workOrder.failure_cause)}</p>` : ""}
-      ${outcome ? `<p><b>Resolution:</b> ${escapeHtml(outcome)}</p>` : ""}
-    </article>
-  `;
-}
-
 function renderPreventiveSchedule(schedule) {
   const dueState = getDueState({ due_at: schedule.next_due_at, status: "open" });
   const confirming = pendingDeleteScheduleId === schedule.id;
@@ -3988,7 +3969,7 @@ function renderMessageThreadButton(thread) {
     <button class="message-thread-button ${thread.id === activeMessageThreadId ? "active" : ""}" data-message-thread="${thread.id}" type="button">
       <strong>${escapeHtml(thread.title)}${unreadMessageCount(thread.id) ? `<span class="message-unread-pill">${unreadMessageCount(thread.id)}</span>` : ""}</strong>
       <span>${escapeHtml(messageThreadScopeLabel(thread))}</span>
-      <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)} · ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
+      <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)} Â· ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
     </button>
   `;
 }
@@ -4131,7 +4112,7 @@ function renderAppIssueReport(report) {
         </div>
         <strong>${escapeHtml(report.title)}</strong>
         <p>${escapeHtml(report.details || "")}</p>
-        <small>${escapeHtml(reporter)} · ${escapeHtml(report.screen || "workspace")}</small>
+        <small>${escapeHtml(reporter)} Â· ${escapeHtml(report.screen || "workspace")}</small>
       </div>
       <form class="inline-form issue-status-form" data-app-issue-status="${escapeHtml(report.id)}">
         <select name="status" aria-label="Issue status">
@@ -4990,7 +4971,7 @@ function renderWorkOrderDetail() {
         <h2>${escapeHtml(workOrder.title)}</h2>
         <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         ${renderRelationshipChips(workOrder)}
-        ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
+        ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} Â· ${workOrder.actual_minutes || 0} min</p>` : ""}
         ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
         ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
       </div>
@@ -5114,7 +5095,7 @@ function renderWorkOrderDetail() {
           <summary>Procedure Checklist</summary>
           <div class="panel-header compact-header">
             <h3>${escapeHtml(procedure.name)}</h3>
-            <span>${progress.done} of ${progress.total} complete · required ${requiredProgress.done}/${requiredProgress.total}</span>
+            <span>${progress.done} of ${progress.total} complete Â· required ${requiredProgress.done}/${requiredProgress.total}</span>
           </div>
           <div class="checklist-list">
             ${procedure.procedure_steps.map((step) => renderChecklistStep(workOrder, step)).join("") || `<p class="muted">This procedure has no steps yet.</p>`}

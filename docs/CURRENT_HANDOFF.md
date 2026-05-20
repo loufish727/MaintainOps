@@ -30,6 +30,46 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Completed LFES Phase 10E/10F local mini work order display extraction:
+
+- Scope:
+  - Phase 10E readiness approved only tiny mini work order display helper extraction.
+  - added `src/render/miniWorkOrderDisplay.js`.
+  - moved only `renderMiniWorkOrder` and `renderAssetMiniWorkOrder`.
+  - updated `index.html` to load `src/render/miniWorkOrderDisplay.js?v=lfes-phase-10f-mini-work-order-display-1`.
+  - updated `app.js` cache tag to `app.js?v=lfes-phase-10f-mini-work-order-display-1`.
+  - updated Resource Load Smoke required resources.
+  - did not move asset detail rendering, relationship loading, work-order click behavior, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+- Line count:
+  - `app.js` before: 10,309.
+  - `app.js` after: 10,290.
+  - reduction: 19 lines.
+- Static checks:
+  - `node --check app.js`: PASS.
+  - `node --check supabase-config.js`: PASS.
+  - `node --check tests/smoke/resource-load.spec.js`: PASS.
+  - all `src/utils/*.js`, `src/services/*.js`, and `src/render/*.js`: PASS.
+- Local Resource Load Smoke:
+  - PASS.
+- Local signed-in UI smoke:
+  - PASS.
+  - signed-in session restored.
+  - Taylor Metal Products loaded.
+  - Salem, OR stayed selected in `location-select`.
+  - Phase 10F script tags were present.
+  - My Work, Work Orders, Planning, Requests, Equipment, PM, Procedures, Parts, Team, Admin Setup, Settings, and Messages loaded.
+  - Equipment showed `New thalmann`.
+  - Equipment detail rendered two `[data-mini-work-order]` snippets.
+  - Messages still showed the Phase 9I QA thread.
+  - no visible app errors were found.
+  - no browser warning/error logs were captured.
+- Behavior changed:
+  - no observed behavior change.
+- Immediate next step:
+  - Phase 10G package/upload and live verification.
+
+## Prior Recent Change
+
 Completed LFES Phase 10B/10C/10D Planning display extraction, package/upload, and live verification:
 
 - Scope:
