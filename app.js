@@ -125,6 +125,7 @@ const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDispl
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
 const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThreadFilterDisplay;
+const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -667,6 +668,27 @@ const {
 } = createMessageBadgeDisplayHelpers({
   directUnreadMessages,
   totalUnreadMessages,
+});
+const {
+  setupItems,
+} = createSetupStatusDisplayHelpers({
+  getSupabaseUrl: () => window.SUPABASE_URL,
+  getSupabaseAnonKey: () => window.SUPABASE_ANON_KEY,
+  getActiveCompanyId: () => activeCompanyId,
+  getRequestsReady: () => requestsReady,
+  getPublicRequestLinksReady: () => publicRequestLinksReady,
+  getSchedulesReady: () => schedulesReady,
+  getProceduresReady: () => proceduresReady,
+  getPartCostsReady: () => partCostsReady,
+  getPartSuppliersReady: () => partSuppliersReady,
+  getPartDocumentsReady: () => partDocumentsReady,
+  getAppIssueReportsReady: () => appIssueReportsReady,
+  getMessagesReady: () => messagesReady,
+  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+  getOutcomesReady: () => outcomesReady,
+  getSafetyChecksReady: () => safetyChecksReady,
+  getAdminDeleteSqlConfirmed: () => adminDeleteSqlConfirmed,
+  getPhotosReady: () => photosReady,
 });
 const {
   renderMessageThreadButton,
@@ -4065,95 +4087,6 @@ function renderAppIssueReportForm() {
       </form>
     </section>
   `;
-}
-
-function setupItems() {
-  return [
-    {
-      name: "Supabase config",
-      ready: Boolean(window.SUPABASE_URL && window.SUPABASE_ANON_KEY),
-      detail: window.SUPABASE_URL || "Missing supabase-config.js",
-    },
-    {
-      name: "Company data",
-      ready: Boolean(activeCompanyId),
-      detail: activeCompanyId ? "Active tenant selected" : "Create or select a company",
-    },
-    {
-      name: "Requests",
-      ready: requestsReady,
-      detail: requestsReady ? "Stored in maintenance_requests" : "Run step-next-maintenance-requests.sql",
-    },
-    {
-      name: "Public request QR links",
-      ready: publicRequestLinksReady,
-      detail: publicRequestLinksReady ? "External location intake is available" : "Run step-next-public-request-links.sql",
-    },
-    {
-      name: "Preventive schedules",
-      ready: schedulesReady,
-      detail: schedulesReady ? "PM schedules available" : "Run step-next-preventive-schedules.sql",
-    },
-    {
-      name: "Procedures",
-      ready: proceduresReady,
-      detail: proceduresReady ? "Procedure templates available" : "Run step-next-procedures.sql",
-    },
-    {
-      name: "Part costs",
-      ready: partCostsReady,
-      detail: partCostsReady ? "Unit costs available" : "Run step-next-part-costs.sql",
-    },
-    {
-      name: "Part sources",
-      ready: partSuppliersReady,
-      detail: partSuppliersReady ? "Vendor/source names available" : "Run step-next-part-suppliers.sql",
-    },
-    {
-      name: "Part files",
-      ready: partDocumentsReady,
-      detail: partDocumentsReady ? "Receipts and invoices can be filed with parts" : "Run step-next-part-documents.sql",
-    },
-    {
-      name: "App issue reports",
-      ready: appIssueReportsReady,
-      detail: appIssueReportsReady ? "Live tester feedback can be captured" : "Run step-next-app-issue-reports.sql",
-    },
-    {
-      name: "Message center",
-      ready: messagesReady,
-      detail: messagesReady ? "Company, location, and direct message threads available" : "Run step-next-message-center.sql",
-    },
-    {
-      name: "Message work links",
-      ready: messageWorkOrderLinksReady,
-      detail: messageWorkOrderLinksReady ? "Message threads can link back to work orders" : "Run step-next-message-work-order-links.sql",
-    },
-    {
-      name: "Work outcomes",
-      ready: outcomesReady,
-      detail: outcomesReady ? "Cause/resolution/follow-up available" : "Run step-next-work-order-outcomes.sql",
-    },
-    {
-      name: "Safety checks",
-      ready: safetyChecksReady,
-      detail: safetyChecksReady ? "Asset safety check completion available" : "Run step-next-safety-checks.sql",
-    },
-    {
-      name: "Admin delete protection",
-      ready: adminDeleteSqlConfirmed,
-      detail: adminDeleteSqlConfirmed
-        ? "Admin-only delete SQL marked applied"
-        : "Run step-next-admin-delete-work-orders.sql, then mark it applied",
-      action: adminDeleteSqlConfirmed ? "" : "confirm-admin-delete-sql",
-      actionLabel: "Mark SQL Applied",
-    },
-    {
-      name: "Photos",
-      ready: photosReady,
-      detail: photosReady ? "Photo records available" : "Check storage bucket and photo table policies",
-    },
-  ];
 }
 
 function renderPartDetail() {
