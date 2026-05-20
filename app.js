@@ -89,6 +89,7 @@ const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
 const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
 const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
 const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
+const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
 const {
   formatMessageTime,
   formatMessageDay,
@@ -346,6 +347,12 @@ const {
   escapeHtml,
   requestPhotoMetaText,
   getRequestPhotosReady: () => requestPhotosReady,
+});
+const {
+  renderMessageNavBadge,
+} = createMessageBadgeDisplayHelpers({
+  directUnreadMessages,
+  totalUnreadMessages,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -4077,13 +4084,6 @@ function directUnreadMessages() {
   return messageThreads
     .filter((thread) => thread.thread_type === "direct")
     .reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
-}
-
-function renderMessageNavBadge() {
-  const directUnread = directUnreadMessages();
-  if (directUnread > 0) return `<b class="nav-badge nav-alert-badge">${directUnread}!</b>`;
-  const unread = totalUnreadMessages();
-  return unread > 0 ? `<b class="nav-badge">${unread}</b>` : "";
 }
 
 function renderAppIssueReportForm() {
