@@ -4,6 +4,50 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-20 - Phase 9B - New Helper Script Deployed With Stale App.js Cache Tag
+
+- Date: 2026-05-20
+- Phase/build: LFES Phase 9B relationship display-helper extraction.
+- Issue discovered: `src/render/relationshipDisplay.js` deployed correctly and live `index.html` referenced it, but `app.js` initially still used the older `app.js?v=lfes-phase-6d-parts-rpc-1` cache tag.
+- How it was discovered: during live GitHub Pages verification, the new helper file returned HTTP 200, but the browser still had stale orchestration behavior risk because the `app.js` cache tag had not changed with the extraction.
+- Operational risk: some browsers could keep using an older cached `app.js` that did not initialize the newly extracted helper module. That can create live-only failures even when the new file exists and static checks pass.
+- What LFES principle exposed it: deployment-state traceability, verification visibility, and controlled evolution.
+- What prevented escalation: Phase 9B required live script checks plus signed-in smoke after deployment. The stale cache tag was caught before Phase 9B was closed.
+- Fix applied or recommended: updated `index.html` to load `app.js?v=lfes-phase-9b-relationship-1`, redeployed, verified live `index.html`, live `app.js`, live `relationshipDisplay.js`, live signed-in smoke, and GitHub Actions Resource Load Smoke.
+- Lessons learned: extracted script deploys must verify both new helper script tags and the `app.js` cache tag. File presence alone is not enough; the orchestration script must also be forced current.
+
+## 2026-05-19 - Phase 8D - Pilot Queue Trust Risk From Stale Setup / QA Data
+
+- Date: 2026-05-19
+- Pilot context: controlled Taylor Metal Products / Salem, OR pilot readiness and day-one monitoring.
+- Issue: the live Salem active Work Orders queue still showed `Test 1`, and Admin Setup showed historical QA issue reports. Team also showed an older pending invite with `Default location: first available`.
+- Operational risk: pilot users may treat visible active work and issue reports as live operational truth. Stale setup/test records can reduce trust, hide real pilot issues, or cause work to be discussed/updated incorrectly.
+- How LFES exposed it: Phase 8C monitoring identified `Test 1` as an ambiguous active work order; Phase 8D performed a focused pilot cleanliness review instead of proceeding with broader rollout.
+- Severity: Medium for pilot trust if users begin relying on the queues without cleanup/context; Low if reviewed and cleaned before broader pilot use.
+- Fix or mitigation: no cleanup was performed in Phase 8D. Recommended mitigation is an approved app-UI cleanup pass for `Test 1` work/equipment if confirmed stale, review/cancel the stale pending invite if no longer intended, and decide whether historical QA issue reports should remain as evidence or be archived/cleaned through approved paths.
+- Lessons learned: a technically working app can still lose operational trust if live pilot surfaces contain ambiguous setup or QA records. Pilot readiness must include data cleanliness, not just code and workflow smoke tests.
+
+Phase 8E update:
+
+- Mitigation applied: `Test 1` work order and `Test 1` equipment were deleted through normal app UI paths after review confirmed they were setup/demo/test-like data.
+- Evidence: Work Orders now shows only `Hydralic Leak` in the active Salem queue, and Equipment now shows only `New thalmann`.
+- Still open: pending invite `jeffrey.kinkaid@taylormetal.com` still has default location `first available`; Admin Setup still contains 9 historical QA issue reports; Admin Setup still shows the documented `Admin delete protection` readiness warning.
+- Lesson reinforced: cleanup should be done through the same operational UI paths users rely on when possible, because it tests deletion protections while improving pilot trust.
+
+Phase 8F update:
+
+- Follow-up finding: active pilot queues remained clean after Phase 8E, but the pending invite default-location ambiguity is still present.
+- Onboarding risk: `first available` is not acceptable for Taylor Metal Products Salem-first pilot onboarding because it can recreate location confusion for a new user.
+- Recommended mitigation: cancel/reissue or otherwise correct the `jeffrey.kinkaid@taylormetal.com` invite with Salem, OR as explicit default before using it for pilot onboarding.
+- Issue-report visibility: historical QA reports should remain as evidence for now, but future Live / QA / Archived filtering would reduce pilot admin confusion.
+
+Phase 8G update:
+
+- Mitigation applied: the old `jeffrey.kinkaid@taylormetal.com` invite with `Default location: first available` was canceled through Team UI.
+- Corrected invite created: `jeffrey.kinkaid@taylormetal.com`, role Manager, `Default location: Salem, OR`, created through Team UI.
+- Evidence: Team showed the corrected pending invite with `Default location: Salem, OR`; Salem remained active; Work Orders, Equipment, Parts, Requests, Team, and Admin Setup loaded without browser warning/error logs.
+- Remaining boundary: actual invite acceptance and first-login default-location behavior still need to be verified by the recipient or a controlled test recipient.
+
 ## 2026-05-19 - Phase 6A - Parts Usage Is Not Transaction-Safe Yet
 
 - Issue discovered: recording a part on a work order and decrementing inventory are separate database operations.
@@ -119,3 +163,13 @@ Phase 6D update:
 - What prevented escalation: Phase 5A stopped at planning, separated `SAFE FIRST EXTRACTION` from `SECRETLY COUPLED`, and kept broad render extraction blocked.
 - Fix applied or recommended: no app code fix applied. Recommended Phase 5B should move only `renderMetric`, `renderInsight`, and `renderRoleGuide` first, with static checks and signed-in smoke verification.
 - Lessons learned: a helper is not safe because it is short. It is safe only if it does not carry behavior contracts, global state assumptions, or operational workflow dependencies.
+
+## 2026-05-20 - Phase 9E - Resource Smoke Can Race GitHub Pages Deployment
+
+- Issue discovered: the GitHub Actions Resource Load Smoke failed on commit `0ce9a80` because it checked live GitHub Pages while Pages was still serving the previous Phase 9D `index.html`.
+- How it was discovered: Phase 9E package/upload pushed the new `iconDisplay.js` resource list, and the workflow failed with `index.html should reference src/render/iconDisplay.js`; direct live checks shortly afterward confirmed Phase 9E was serving correctly.
+- Operational risk: a valid deployment could show a false CI failure if the smoke test checks the live site before GitHub Pages finishes publishing the new commit.
+- LFES principle exposed it: deployment-state traceability, verification visibility, and operational continuity.
+- What prevented escalation: the failure was investigated before reporting success, live `index.html` and `src/render/iconDisplay.js` were checked directly, and the smoke test was updated to retry while Pages catches up.
+- Fix applied or recommended: updated `tests/smoke/resource-load.spec.js` to retry hosted resource checks for a short window before failing.
+- Lessons learned: hosted smoke tests that validate GitHub Pages must account for publish lag, especially when a push triggers the smoke workflow and Pages deployment concurrently.

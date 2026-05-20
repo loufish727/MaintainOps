@@ -22,16 +22,31 @@ const requiredResources = [
 
 test.describe("MaintainOps hosted resource smoke", () => {
   test("live GitHub Pages serves required app resources", async ({ request, baseURL }) => {
-    const indexResponse = await request.get(`${baseURL}index.html?qa_bust=resource-smoke`);
-    expect(indexResponse.status(), "index.html should load").toBe(200);
+    test.setTimeout(180000);
 
-    const indexHtml = await indexResponse.text();
+    let lastError;
 
-    for (const resource of requiredResources) {
-      expect(indexHtml, `index.html should reference ${resource}`).toContain(resource);
+    for (let attempt = 1; attempt <= 36; attempt += 1) {
+      try {
+        const indexResponse = await request.get(`${baseURL}index.html?qa_bust=resource-smoke-${attempt}`);
+        expect(indexResponse.status(), "index.html should load").toBe(200);
 
-      const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke`);
-      expect(response.status(), `${resource} should load`).toBe(200);
+        const indexHtml = await indexResponse.text();
+
+        for (const resource of requiredResources) {
+          expect(indexHtml, `index.html should reference ${resource}`).toContain(resource);
+
+          const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke-${attempt}`);
+          expect(response.status(), `${resource} should load`).toBe(200);
+        }
+
+        return;
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
     }
+
+    throw lastError;
   });
 });
