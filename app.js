@@ -52,6 +52,7 @@ const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
+const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -5271,68 +5272,16 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-search-work-order]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeWorkOrderId = button.dataset.searchWorkOrder;
-      activeAssetId = null;
-      activePartId = null;
-      activeSection = "work";
-      searchQuery = "";
-      setWorkOrderSearchMode(false);
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-search-asset]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeAssetId = button.dataset.searchAsset;
-      activeWorkOrderId = null;
-      activePartId = null;
-      activeSection = "assets";
-      searchQuery = "";
-      setWorkOrderSearchMode(false);
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-search-part]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activePartId = button.dataset.searchPart;
-      activeAssetId = null;
-      activeWorkOrderId = null;
-      activeSection = "parts";
-      searchQuery = "";
-      setWorkOrderSearchMode(false);
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-search-request]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeSection = "requests";
-      searchQuery = "";
-      setWorkOrderSearchMode(false);
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-search-section]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeSection = button.dataset.searchSection;
-      searchQuery = "";
-      setWorkOrderSearchMode(false);
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
+  bindGlobalSearchNavigationEvents({
+    state: {
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActivePartId: (value) => { activePartId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setSearchQuery: (value) => { searchQuery = value; },
+    },
+    renderWorkspace,
+    setWorkOrderSearchMode,
   });
 
   document.querySelectorAll("[data-quick-fix-asset]").forEach((button) => {
