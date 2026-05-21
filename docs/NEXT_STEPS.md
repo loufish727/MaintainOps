@@ -21,7 +21,9 @@ Current state as of 2026-05-21:
 
 Recommended immediate next controlled phase:
 
-- Pause before another extraction and choose the next explicit boundary.
+- The project has crossed from safe line reduction into authority reduction. Do not chase another line-count target.
+- Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
+- Recommended first medium-risk boundary: workspace search and exact work-search read-only events from `bindWorkspaceEvents()`.
 - Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
 - Maintenance schedule date helper `nextDueDate` is already extracted into `src/utils/maintenanceScheduleDates.js` and live verified with a passive PM smoke.
 - Work-order query filter/sort orchestration is already extracted into `src/utils/workOrderQueryFilters.js` and live verified with My Work, Work Orders, and Overdue-filter read-path smokes.

@@ -13,7 +13,44 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES small event-binding hard-boundary work-order detail jump extraction closed cleanly.
 - 2026-05-21: LFES hard-boundary global search navigation event extraction closed cleanly.
 - 2026-05-21: LFES measurable app.js reduction run moved read-only query/search/list helpers and met the 300-line target.
+- 2026-05-21: LFES authority map created for `renderWorkspace()` and `bindWorkspaceEvents()`; next recommended boundary is workspace search/exact work-search read-only events.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Authority Map - renderWorkspace / bindWorkspaceEvents - 2026-05-21
+
+Result:
+
+- Created `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md`.
+
+Purpose:
+
+- Shift LFES from safe line reduction to authority reduction under medium/high-risk controls.
+- Map concentrated authority in `renderWorkspace()` and `bindWorkspaceEvents()`.
+- Identify the first survivable medium-risk boundary.
+
+Recommended first boundary:
+
+- Workspace search and exact work-search read-only events:
+  - `.workspace-search-input`
+  - `[data-view-work-search]`
+  - `[data-close-work-search]`
+
+Risk:
+
+- Medium.
+- Mutates local UI/search/page state and reloads read queues, but does not submit forms, delete, upload, convert requests, change auth/session/company startup, or touch SQL/RLS.
+
+Required future smoke:
+
+- Static JS checks.
+- Targeted mock-DOM event smoke.
+- Local resource and boot smoke.
+- Signed-in live smoke for `Hydralic` search, exact work-search mode, and return to search preview.
+- Hosted resource smoke.
+
+Behavior changed:
+
+- No app behavior changed in this mapping phase.
 
 ## LFES Measurable Reduction - Read-Only Query/Search/List Helpers - 2026-05-21
 

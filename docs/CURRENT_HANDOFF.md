@@ -74,7 +74,9 @@ Completed measurable app.js reduction run for read-only query/search/list helper
   - removed tracked `MaintainOps-github-clean-*` package snapshots from the repo and ignored future package exports.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
-  - pause before another hard-boundary extraction and choose the next explicit boundary. Do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
+  - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
+  - recommended first authority-reduction boundary is workspace search and exact work-search read-only events from `bindWorkspaceEvents()`.
+  - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move workflow logic, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Event-binding extraction is allowed only when explicitly selected as a hard boundary with visible smoke coverage and direct rollback.
 
