@@ -54,6 +54,7 @@ const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFi
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
 const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
+const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5080,114 +5081,66 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-status-filter]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      activeStatusFilter = button.dataset.statusFilter;
-      resetWorkOrderPage();
-      if (activeStatusFilter === "requests") {
-        resetRequestsPage();
-      }
-      await reloadWorkOrderQueue();
-      if (activeStatusFilter === "requests") await reloadRequestQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-my-work-filter]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      myWorkFilter = button.dataset.myWorkFilter;
-      localStorage.setItem("maintainops.myWorkFilter", myWorkFilter);
-      resetWorkOrderPage();
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-work-order-filter]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      workOrderFilter = button.dataset.workOrderFilter;
-      workOrderAssigneeFilter = "";
-      localStorage.setItem("maintainops.workOrderFilter", workOrderFilter);
-      localStorage.removeItem("maintainops.workOrderAssigneeFilter");
-      resetWorkOrderPage();
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      workOrderAssigneeFilter = "";
-      localStorage.removeItem("maintainops.workOrderAssigneeFilter");
-      resetWorkOrderPage();
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-work-sort]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      workSort = button.dataset.workSort;
-      localStorage.setItem("maintainops.workSort", workSort);
-      invalidateExactWorkOrderSearchCache();
-      resetWorkOrderPage();
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-request-filter]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      if (button.disabled) return;
-      requestViewFilter = button.dataset.requestFilter || "active";
-      localStorage.setItem("maintainops.requestViewFilter", requestViewFilter);
-      resetRequestsPage();
-      await reloadRequestQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-work-page]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      workOrderPage += button.dataset.workPage === "next" ? 1 : -1;
-      localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-parts-page]").forEach((button) => {
-    button.addEventListener("click", () => {
-      partsPage += button.dataset.partsPage === "next" ? 1 : -1;
-      localStorage.setItem("maintainops.partsPage", String(partsPage));
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-assets-page]").forEach((button) => {
-    button.addEventListener("click", () => {
-      assetsPage += button.dataset.assetsPage === "next" ? 1 : -1;
-      localStorage.setItem("maintainops.assetsPage", String(assetsPage));
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-list-page]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const delta = button.dataset.pageDirection === "next" ? 1 : -1;
-      if (button.dataset.listPage === "requests") {
-        requestsPage += delta;
-        localStorage.setItem("maintainops.requestsPage", String(requestsPage));
-        await reloadRequestQueue();
-        return;
-      }
-      if (button.dataset.listPage === "schedules") {
-        schedulesPage += delta;
-        localStorage.setItem("maintainops.schedulesPage", String(schedulesPage));
-      }
-      if (button.dataset.listPage === "procedures") {
-        proceduresPage += delta;
-        localStorage.setItem("maintainops.proceduresPage", String(proceduresPage));
-      }
-      if (button.dataset.listPage === "members") {
-        membersPage += delta;
-        localStorage.setItem("maintainops.membersPage", String(membersPage));
-      }
-      renderWorkspace();
-    });
+  bindWorkspaceFilterPaginationEvents({
+    state: {
+      getActiveStatusFilter: () => activeStatusFilter,
+      setActiveStatusFilter: (value) => {
+        activeStatusFilter = value;
+      },
+      getMyWorkFilter: () => myWorkFilter,
+      setMyWorkFilter: (value) => {
+        myWorkFilter = value;
+      },
+      getWorkOrderFilter: () => workOrderFilter,
+      setWorkOrderFilter: (value) => {
+        workOrderFilter = value;
+      },
+      setWorkOrderAssigneeFilter: (value) => {
+        workOrderAssigneeFilter = value;
+      },
+      getWorkSort: () => workSort,
+      setWorkSort: (value) => {
+        workSort = value;
+      },
+      getRequestViewFilter: () => requestViewFilter,
+      setRequestViewFilter: (value) => {
+        requestViewFilter = value;
+      },
+      getWorkOrderPage: () => workOrderPage,
+      setWorkOrderPage: (value) => {
+        workOrderPage = value;
+      },
+      getPartsPage: () => partsPage,
+      setPartsPage: (value) => {
+        partsPage = value;
+      },
+      getAssetsPage: () => assetsPage,
+      setAssetsPage: (value) => {
+        assetsPage = value;
+      },
+      getRequestsPage: () => requestsPage,
+      setRequestsPage: (value) => {
+        requestsPage = value;
+      },
+      getSchedulesPage: () => schedulesPage,
+      setSchedulesPage: (value) => {
+        schedulesPage = value;
+      },
+      getProceduresPage: () => proceduresPage,
+      setProceduresPage: (value) => {
+        proceduresPage = value;
+      },
+      getMembersPage: () => membersPage,
+      setMembersPage: (value) => {
+        membersPage = value;
+      },
+    },
+    invalidateExactWorkOrderSearchCache,
+    reloadRequestQueue,
+    reloadWorkOrderQueue,
+    renderWorkspace,
+    resetRequestsPage,
+    resetWorkOrderPage,
   });
 
   document.querySelectorAll("[data-copy-downtime]").forEach((button) => {
