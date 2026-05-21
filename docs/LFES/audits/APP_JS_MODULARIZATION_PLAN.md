@@ -3683,3 +3683,40 @@ Carried-forward stop:
 ### Recommended Next Phase
 
 Pause before the next extraction. Choose a new explicit boundary only after a targeted behavior smoke proves it, and keep form/payload validation blocked until the invalid-date behavior is understood.
+
+## Phase 17D Maintenance Schedule Date Helper - 2026-05-21
+
+Completed one tiny utility extraction adjacent to PM logic:
+
+- Extracted only `nextDueDate` into `src/utils/maintenanceScheduleDates.js`; deploy commit `1c37db8`.
+- Added `src/utils/maintenanceScheduleDates.js?v=lfes-phase-17d-maintenance-date-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-17d-maintenance-date-1`.
+- Updated `tests/smoke/resource-load.spec.js` so hosted resource smoke covers the new utility.
+
+Moved function:
+
+- `nextDueDate`
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/maintenanceScheduleDates.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted helper smoke: PASS for weekly, monthly, quarterly, and unknown-frequency behavior.
+- local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- local browser boot smoke: PASS with `maintenanceScheduleDates.js` and the Phase 17D app cache tag present.
+- hosted resource smoke after GitHub Pages propagation: PASS.
+- live signed-in PM passive smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-maintenance-date-17d-1c37db8`.
+- live PM surface opened and showed Preventive Maintenance without generating PM work or clicking mutation controls.
+- fresh live console sample after smoke: PASS, no current error logs.
+- `app.js` line count after extraction: 9,620.
+
+Boundary preserved:
+
+- No PM generation, schedule mutation, schedule creation/update/delete, Supabase call, workflow logic, event handler, render function, form payload validation, auth/session/company/location logic, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()` was moved.
+
+Carried-forward stop:
+
+- Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation UI path has a narrower contract and passing targeted smoke.
+
+### Recommended Next Phase
+
+Pause before the next extraction. Remaining candidates should be re-audited because most now sit near auth, location state, PM mutations, forms, delete zones, assignment, or workflow/event contracts.

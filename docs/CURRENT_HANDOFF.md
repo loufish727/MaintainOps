@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 17C public URL/QR utility boundary extraction after targeted smokes ruled out form/payload validation as the safer next boundary.
+Completed LFES Phase 17D maintenance schedule date helper extraction.
 
 - Latest app behavior commit:
-  - `b67f252` (`Extract public URL QR utility`)
+  - `1c37db8` (`Extract maintenance schedule date helper`)
 - Latest documentation/process cleanup commit:
   - `accfd5d` (`Restore LFES docs and remove package snapshots`)
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-17c-public-url-qr-1`
+  - `app.js?v=lfes-phase-17d-maintenance-date-1`
 - Current `app.js` line count:
-  - 9,627 lines.
+  - 9,620 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -47,14 +47,15 @@ Completed LFES Phase 17C public URL/QR utility boundary extraction after targete
   - Phase 16G/16H/16I moved `withSetupError` to `src/utils/operationResults.js`.
   - Phase 17A/17B/17C moved `withOperationTimeout` to `src/utils/operationTimeout.js`.
   - Phase 17C moved public URL/QR helpers to `src/utils/publicUrlQr.js`.
+  - Phase 17D moved `nextDueDate` to `src/utils/maintenanceScheduleDates.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/publicUrlQr.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted exact-source public URL/QR helper smoke passed for request/QR URL generation, HTTPS normalization, private-host rejection, QR SVG output, and fallback output.
+  - static JS checks passed for `app.js`, `src/utils/maintenanceScheduleDates.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted date helper smoke passed for weekly, monthly, quarterly, and unknown-frequency behavior.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live Settings/QR smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-public-url-qr-17c-b67f252`.
-  - live `index.html` referenced `src/utils/publicUrlQr.js?v=lfes-phase-17c-public-url-qr-1` and `app.js?v=lfes-phase-17c-public-url-qr-1`.
-  - Settings showed 5 active location QR links, GitHub Pages public URL, QR/Test Form links, and QR SVGs.
+  - signed-in live PM passive smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-maintenance-date-17d-1c37db8`.
+  - live `index.html` referenced `src/utils/maintenanceScheduleDates.js?v=lfes-phase-17d-maintenance-date-1` and `app.js?v=lfes-phase-17d-maintenance-date-1`.
+  - PM opened and showed the Preventive Maintenance surface without clicking generate/create mutation controls.
   - fresh live console sample after the smoke showed no current error logs.
 - Behavior changed:
   - no observed behavior change.

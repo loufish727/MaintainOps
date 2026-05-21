@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-21:
 
-- Latest app behavior commit: `b67f252` (`Extract public URL QR utility`).
+- Latest app behavior commit: `1c37db8` (`Extract maintenance schedule date helper`).
 - Latest documentation/process cleanup: `accfd5d` (`Restore LFES docs and remove package snapshots`).
-- Latest deployed cache tag: `app.js?v=lfes-phase-17c-public-url-qr-1`.
-- Current `app.js` line count: 9,627.
+- Latest deployed cache tag: `app.js?v=lfes-phase-17d-maintenance-date-1`.
+- Current `app.js` line count: 9,620.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -23,6 +23,7 @@ Recommended immediate next controlled phase:
 
 - Pause before another extraction and choose the next explicit boundary.
 - Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
+- Maintenance schedule date helper `nextDueDate` is already extracted into `src/utils/maintenanceScheduleDates.js` and live verified with a passive PM smoke.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose a new explicit boundary only after targeted behavior smokes prove it.
 

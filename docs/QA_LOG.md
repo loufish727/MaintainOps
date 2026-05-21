@@ -8,7 +8,38 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
 - 2026-05-21: LFES Phase 17C public URL/QR utility boundary closed cleanly after form/payload validation was rejected by targeted smoke.
+- 2026-05-21: LFES Phase 17D maintenance schedule date helper boundary closed cleanly.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Phase 17D Maintenance Schedule Date Helper - 2026-05-21
+
+Scope:
+
+- Extracted only `nextDueDate` from `app.js` into `src/utils/maintenanceScheduleDates.js`.
+- Added `src/utils/maintenanceScheduleDates.js?v=lfes-phase-17d-maintenance-date-1` before `app.js` in `index.html`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-17d-maintenance-date-1`.
+- Updated hosted resource smoke resource list to include `src/utils/maintenanceScheduleDates.js`.
+- Did not move PM generation, schedule creation/update/delete, Supabase calls, event handlers, render functions, or mutation workflows.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/maintenanceScheduleDates.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted date helper smoke: PASS for weekly, monthly, quarterly, and unknown-frequency behavior.
+- Local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- Local browser boot smoke: PASS, new date script and app cache tag present, no fresh errors.
+- Deploy commit: `1c37db8` (`Extract maintenance schedule date helper`).
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in PM passive smoke on `https://loufish727.github.io/MaintainOps/?qa_bust=live-maintenance-date-17d-1c37db8`: PASS.
+- Live PM surface opened and showed Preventive Maintenance without generating PM work or clicking mutation controls.
+- Fresh live console sample after smoke: PASS, no current error logs.
+
+Result:
+
+- PASS for maintenance schedule date helper extraction.
+- `app.js` line count after extraction: 9,620.
+- Form/payload validation remains blocked pending a narrower behavior contract and smoke.
 
 ## LFES Phase 17C Public URL/QR Utility Boundary - 2026-05-21
 

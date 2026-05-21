@@ -30,20 +30,20 @@ Current active technical direction:
 
 Most recent deployed closed phase:
 
-- Phase 17C public URL/QR utility extraction.
+- Phase 17D maintenance schedule date helper extraction.
 
 Most recent local completed phase:
 
-- Phase 17C public URL/QR utility extraction is deployed and live verified.
+- Phase 17D maintenance schedule date helper extraction is deployed and live verified.
 - A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after Phase 17C public URL/QR extraction:
+Current app.js line count after Phase 17D maintenance schedule date extraction:
 
-- 9,627 lines.
+- 9,620 lines.
 
 Recent extraction modules:
 
@@ -51,6 +51,7 @@ Recent extraction modules:
 - `src/utils/operationResults.js`
 - `src/utils/operationTimeout.js`
 - `src/utils/publicUrlQr.js`
+- `src/utils/maintenanceScheduleDates.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:
@@ -170,12 +171,13 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-Phase 17C public URL/QR utility extraction is complete.
+Phase 17D maintenance schedule date helper extraction is complete.
 
 Next recommended phase:
 
 - choose the next explicit boundary before moving code.
 - public URL/QR helpers are already extracted and live verified.
+- maintenance schedule date helper is already extracted and live verified.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
 
