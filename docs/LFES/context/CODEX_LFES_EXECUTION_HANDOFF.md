@@ -190,6 +190,7 @@ Next recommended phase:
 - workspace search/exact-search events are already extracted and live verified.
 - workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
 - workspace detail/open navigation events are already extracted and live verified in app commit `ef69559`.
+- GitHub Actions verification gap is closed. Use `npm run test:smoke:github-actions`; direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits including `ceb8ba6`, `ef69559`, and `9f8bbed`.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
 

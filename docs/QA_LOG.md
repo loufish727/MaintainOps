@@ -9888,6 +9888,34 @@ LFES catch:
 
 - Work-order detail open state is not persisted to localStorage. Live smoke must assert visible detail/back-button DOM state for work detail navigation rather than expecting a storage key.
 
+## GitHub Actions Verification Gap Closed - 2026-05-21
+
+Issue:
+
+- Recent phase reports treated GitHub Actions as `NOT AVAILABLE` because the GitHub connector workflow lookup returned no runs for pushed commits.
+
+Root cause:
+
+- The workflow was active and passing. The gap was the verification method, not GitHub Actions.
+- Direct GitHub Actions API lookup showed `Resource Load Smoke` push runs completed successfully for recent commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+
+Fix:
+
+- Added `scripts/verify-github-actions-run.js`.
+- Added package script `npm run test:smoke:github-actions`.
+- The script queries GitHub's Actions runs API for the current commit and waits for `Resource Load Smoke` to complete successfully.
+
+Verification:
+
+- `node --check scripts/verify-github-actions-run.js`: PASS.
+- `npm run test:smoke:github-actions`: PASS for current HEAD `9f8bbed`.
+- Confirmed run: `https://github.com/loufish727/MaintainOps/actions/runs/26244086777`.
+
+Process update:
+
+- Future LFES phases should use `npm run test:smoke:github-actions` for push-run verification.
+- The GitHub connector commit workflow lookup may still be useful for PR-specific checks, but it should not be treated as authoritative evidence for normal push workflow runs.
+
 ## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
 
 Scope:

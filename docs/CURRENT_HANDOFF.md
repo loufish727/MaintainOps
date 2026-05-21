@@ -4861,7 +4861,8 @@ Latest completed hard-boundary extraction:
 - Current app cache tag: `app.js?v=lfes-authority-detail-navigation-events-1`.
 - Current `app.js` line count: 8,986.
 - Signed-in live smoke passed with the dedicated QA/test account.
-- GitHub Actions workflow runs: none returned for `ef69559`.
+- GitHub Actions verification gap is closed: use `npm run test:smoke:github-actions`.
+- Direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
 
 Next safest candidates:
 

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test:smoke:resources": "playwright test tests/smoke/resource-load.spec.js"
+    "test:smoke:resources": "playwright test tests/smoke/resource-load.spec.js",
+    "test:smoke:github-actions": "node scripts/verify-github-actions-run.js"
   },
   "devDependencies": {
     "@playwright/test": "1.60.0"

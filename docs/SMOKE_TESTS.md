@@ -580,6 +580,20 @@ GitHub Actions:
 
 This does not replace manual smoke testing. It only catches missing/stale hosted files before deeper workflow checks.
 
+Local verification command:
+
+```powershell
+npm run test:smoke:github-actions
+```
+
+This checks GitHub's Actions runs API for the current commit and verifies that the `Resource Load Smoke` workflow completed successfully. Use this command instead of the PR-oriented GitHub connector commit workflow lookup for normal `push` runs.
+
+2026-05-21 catch:
+
+- The workflow was active and passing, but prior LFES reports marked GitHub Actions as `NOT AVAILABLE` because the connector method used for commit workflow lookup did not surface ordinary `push` workflow runs.
+- Direct Actions API verification showed successful `Resource Load Smoke` runs for recent commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+- `scripts/verify-github-actions-run.js` was added to make this check repeatable.
+
 Recommended automation order:
 
 1. Required script/resource load check

@@ -3553,7 +3553,8 @@ Latest completed hard-boundary extraction:
 - Cache tag: `app.js?v=lfes-authority-detail-navigation-events-1`.
 - `app.js` line count: 8,986.
 - Signed-in live smoke passed with the dedicated QA/test account.
-- GitHub Actions workflow runs: none returned for `ef69559`.
+- GitHub Actions verification gap is closed: use `npm run test:smoke:github-actions`.
+- Direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
 
 Current safe sequence:
 
@@ -3561,7 +3562,8 @@ Current safe sequence:
 2. Keep `app.js` as state owner unless a separate state-boundary phase is explicitly planned.
 3. Require targeted mock-DOM event smoke before deploy for every event extraction.
 4. Require signed-in live smoke after deploy for every medium/high-risk event extraction.
-5. Keep credentials in local-only storage or environment only; do not commit passwords, tokens, recovery links, or browser storage states.
+5. Require `npm run test:smoke:github-actions` after push-run propagation for GitHub Actions verification.
+6. Keep credentials in local-only storage or environment only; do not commit passwords, tokens, recovery links, or browser storage states.
 
 Next candidate options:
 

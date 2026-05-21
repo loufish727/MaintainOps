@@ -4069,11 +4069,12 @@ Verification:
 - Local resource and boot smokes passed.
 - Hosted resource smoke passed.
 - Signed-in live smoke opened and backed out of a real Work Order detail and a real Equipment detail with no relevant page errors.
-- GitHub Actions returned no workflow runs for `ef69559`.
+- GitHub Actions verification gap was later traced to the wrong lookup method. Direct Actions API verification confirmed `Resource Load Smoke` passed for `ef69559`.
 
 LFES catch:
 
 - Work-order detail open state is not persisted to localStorage; live behavior evidence should use visible DOM/back-button state for this path.
+- Use `npm run test:smoke:github-actions` for future push-run Actions verification; do not rely on the PR-oriented connector workflow lookup for normal push runs.
 
 Next best candidates:
 
