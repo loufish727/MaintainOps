@@ -47,6 +47,7 @@ const {
   isProcedureSchemaError,
   isAssetHierarchySchemaError,
 } = window.MaintainOpsSchemaErrors;
+const { withSetupError } = window.MaintainOpsOperationResults;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -3649,17 +3650,6 @@ function renderProcedureTemplate(template) {
 
 function procedureColumn(value) {
   return proceduresReady ? { procedure_template_id: value || null } : {};
-}
-
-function withSetupError(response, message) {
-  return {
-    ...response,
-    error: {
-      ...(response.error || {}),
-      message,
-      originalMessage: response.error?.message || "",
-    },
-  };
 }
 
 function markSchemaReadiness(error) {

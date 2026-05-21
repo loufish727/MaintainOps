@@ -8,6 +8,7 @@ const requiredResources = [
   "src/utils/dom.js",
   "src/utils/formatting.js",
   "src/utils/schemaErrors.js",
+  "src/utils/operationResults.js",
   "src/services/locationsService.js",
   "src/services/profilesService.js",
   "src/services/partsService.js",
