@@ -10,7 +10,70 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES Phase 17C public URL/QR utility boundary closed cleanly after form/payload validation was rejected by targeted smoke.
 - 2026-05-21: LFES Phase 17D maintenance schedule date helper boundary closed cleanly.
 - 2026-05-21: LFES hard-boundary work-order query filter/sort extraction closed cleanly.
+- 2026-05-21: LFES small event-binding hard-boundary work-order detail jump extraction closed cleanly.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Hard Boundary - Work-Order Detail Field-Jump Event Binding - 2026-05-21
+
+Hard boundary selected:
+
+- Small event-binding extraction for work-order detail field-jump buttons.
+
+Why it is hard:
+
+- The moved code is a real event contract from `bindWorkspaceEvents()`, not a display helper.
+- It depends on stable `data-jump-work-section` attributes and matching target IDs in Work Order Detail.
+
+Why it is recoverable:
+
+- The behavior is non-mutating: open a details section, scroll to a target, add temporary highlight classes, then remove them.
+- No Supabase call, workflow state, Quick Fix, request conversion, delete flow, auth/session/company/location startup, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+- Rollback path is direct: revert `5a99590`, or remove `src/utils/workSectionJumpEvents.js`, restore the original listener block in `bindWorkspaceEvents()`, and restore the prior cache tag.
+
+Exact implementation scope:
+
+- Added `src/utils/workSectionJumpEvents.js`.
+- Replaced only the `[data-jump-work-section]` listener block in `bindWorkspaceEvents()` with `bindWorkSectionJumpEvents()`.
+- Added `src/utils/workSectionJumpEvents.js?v=lfes-hard-boundary-work-jump-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-work-jump-1`.
+- Updated hosted resource smoke resource list.
+- Resolved the previous LFES catch in:
+  - `docs/DEBUG_PROCESS.md`
+  - `docs/LFES/CORE_STANDARD.md`
+
+Required smoke tests:
+
+- Static JS checks.
+- Targeted mock-DOM event smoke.
+- Local resource smoke.
+- Local browser boot smoke.
+- Hosted GitHub Pages resource smoke.
+- Live signed-in Work Order Detail field-jump smoke.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workSectionJumpEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted mock-DOM event smoke: PASS. It proved details opening, smooth scroll call, both highlight classes, and delayed class removal.
+- Local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- Local browser boot smoke: PASS, new jump event script and hard-boundary app cache tag present, no fresh errors.
+- Deploy commit: `5a99590` (`Extract work section jump event binding`).
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in smoke on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-jump-event-5a99590`: PASS.
+- Work Order Detail opened for `Hydralic Leak`.
+- `Go To Completion` opened the completion details, applied `jump-highlight` and `field-jump-highlight`, and removed both after timeout.
+- Fresh live console sample after smoke: PASS, no current error logs.
+
+LFES catch resolved:
+
+- The prior responsive-duplicate-control catch is now part of `docs/DEBUG_PROCESS.md` and `docs/LFES/CORE_STANDARD.md`.
+- The live smoke again confirmed why visible-DOM targeting is needed: `Hydralic Leak` appeared twice, so a generic text locator was ambiguous.
+
+Result:
+
+- PASS for small event-binding hard boundary.
+- `app.js` line count after extraction: 9,539.
 
 ## LFES Hard Boundary - Work-Order Query Filters - 2026-05-21
 

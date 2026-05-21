@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed first hard-boundary LFES extraction: work-order query filter/sort orchestration.
+Completed small event-binding hard-boundary extraction for work-order detail field jumps.
 
 - Latest app behavior commit:
-  - `d90976d` (`Extract work order query filters`)
+  - `5a99590` (`Extract work section jump event binding`)
 - Latest documentation/process cleanup commit:
   - `accfd5d` (`Restore LFES docs and remove package snapshots`)
 - Latest live cache tag:
-  - `app.js?v=lfes-hard-boundary-work-order-query-1`
+  - `app.js?v=lfes-hard-boundary-work-jump-1`
 - Current `app.js` line count:
-  - 9,550 lines.
+  - 9,539 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -49,16 +49,16 @@ Completed first hard-boundary LFES extraction: work-order query filter/sort orch
   - Phase 17C moved public URL/QR helpers to `src/utils/publicUrlQr.js`.
   - Phase 17D moved `nextDueDate` to `src/utils/maintenanceScheduleDates.js`.
   - Hard-boundary run moved work-order query filter/sort orchestration to `src/utils/workOrderQueryFilters.js`.
+  - Small event-binding hard-boundary run moved work-order detail field-jump binding to `src/utils/workSectionJumpEvents.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workOrderQueryFilters.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted fake-query chain smoke passed for My Work queue, unassigned queue, completed-month status/sort, global search, and request pseudo-status behavior.
+  - static JS checks passed for `app.js`, `src/utils/workSectionJumpEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed: details section opened, target scrolled, highlight classes applied, and both classes were removed after timeout.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live work-order query smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-query-hard-boundary-d90976d`.
-  - live `index.html` referenced `src/utils/workOrderQueryFilters.js?v=lfes-hard-boundary-work-order-query-1` and `app.js?v=lfes-hard-boundary-work-order-query-1`.
-  - My Work loaded assigned/created filter surface and counts.
-  - Work Orders loaded active/status/filter/sort surface and showed `Hydralic Leak`.
-  - non-mutating Overdue filter click reloaded Work Orders to `Overdue - All Work Orders` and kept the expected work order visible.
+  - signed-in live work-order detail jump smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-jump-event-5a99590`.
+  - live `index.html` referenced `src/utils/workSectionJumpEvents.js?v=lfes-hard-boundary-work-jump-1` and `app.js?v=lfes-hard-boundary-work-jump-1`.
+  - Work Order Detail opened for `Hydralic Leak`.
+  - `Go To Completion` opened the completion details, applied `jump-highlight` and `field-jump-highlight`, and removed both classes after timeout.
   - fresh live console sample after the smoke showed no current error logs.
 - Behavior changed:
   - no observed behavior change.

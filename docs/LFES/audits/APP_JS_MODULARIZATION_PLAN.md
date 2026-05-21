@@ -3772,3 +3772,50 @@ LFES catch:
 ### Recommended Next Phase
 
 Pause before selecting another hard boundary. Good next candidates must have an explicit rollback path and live visible smoke coverage. Keep Quick Fix, request conversion, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, broad `renderWorkspace`, and broad `bindWorkspaceEvents` blocked.
+
+## Hard Boundary - Work-Order Detail Field-Jump Event Binding - 2026-05-21
+
+Completed a small event-binding extraction from `bindWorkspaceEvents()`:
+
+- Selected boundary: `[data-jump-work-section]` field-jump listener.
+- Extracted into `src/utils/workSectionJumpEvents.js`; deploy commit `5a99590`.
+- Added `src/utils/workSectionJumpEvents.js?v=lfes-hard-boundary-work-jump-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-work-jump-1`.
+- Updated `tests/smoke/resource-load.spec.js` so hosted resource smoke covers the new utility.
+- Resolved the prior visible-DOM/dependency-injection LFES catch in `docs/DEBUG_PROCESS.md` and `docs/LFES/CORE_STANDARD.md`.
+
+Why it is hard:
+
+- This moved an actual event-binding contract out of `bindWorkspaceEvents()`.
+- It depends on stable `data-jump-work-section` attributes and matching Work Order Detail target IDs.
+
+Why it is recoverable:
+
+- The behavior is non-mutating and visual only: open a details section, scroll the target, add temporary highlight classes, and remove them after timeout.
+- No Supabase calls, mutations, workflow state, Quick Fix, request conversion, delete flow, auth/session/company/location startup, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` moved.
+- Rollback is direct: revert `5a99590`, or remove the script/module, restore the listener block in `bindWorkspaceEvents()`, and restore the previous app cache tag.
+
+Moved event contract:
+
+- `[data-jump-work-section]` click listener.
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/workSectionJumpEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM event smoke: PASS for details opening, scroll call, highlight classes, and delayed removal.
+- local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- local browser boot smoke: PASS with `workSectionJumpEvents.js` and the hard-boundary cache tag present.
+- hosted resource smoke after GitHub Pages propagation: PASS.
+- live signed-in Work Order Detail jump smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-jump-event-5a99590`.
+- live `Hydralic Leak` detail opened.
+- live `Go To Completion` opened the completion details, applied `jump-highlight` and `field-jump-highlight`, and removed both after timeout.
+- fresh live console sample after smoke: PASS, no current error logs.
+- `app.js` line count after extraction: 9,539.
+
+LFES catch:
+
+- The live smoke again encountered duplicate `Hydralic Leak` text. The newly documented visible-DOM targeting rule was used successfully.
+
+### Recommended Next Phase
+
+Pause before selecting another hard boundary. Small event-binding extraction can continue only when the event contract is isolated, non-mutating or safely smokeable, and has a direct rollback path.

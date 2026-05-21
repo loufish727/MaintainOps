@@ -30,20 +30,20 @@ Current active technical direction:
 
 Most recent deployed closed phase:
 
-- Hard-boundary work-order query filter/sort extraction.
+- Small event-binding hard-boundary work-order detail field-jump extraction.
 
 Most recent local completed phase:
 
-- Hard-boundary work-order query filter/sort extraction is deployed and live verified.
+- Small event-binding hard-boundary work-order detail field-jump extraction is deployed and live verified.
 - A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after hard-boundary work-order query extraction:
+Current app.js line count after small event-binding hard-boundary extraction:
 
-- 9,550 lines.
+- 9,539 lines.
 
 Recent extraction modules:
 
@@ -53,6 +53,7 @@ Recent extraction modules:
 - `src/utils/publicUrlQr.js`
 - `src/utils/maintenanceScheduleDates.js`
 - `src/utils/workOrderQueryFilters.js`
+- `src/utils/workSectionJumpEvents.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:
@@ -172,7 +173,7 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-Hard-boundary work-order query filter/sort extraction is complete.
+Small event-binding hard-boundary work-order detail field-jump extraction is complete.
 
 Next recommended phase:
 
@@ -180,6 +181,7 @@ Next recommended phase:
 - public URL/QR helpers are already extracted and live verified.
 - maintenance schedule date helper is already extracted and live verified.
 - work-order query filter/sort orchestration is already extracted and live verified.
+- work-order detail field-jump event binding is already extracted and live verified.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
 
