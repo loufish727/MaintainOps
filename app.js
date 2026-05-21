@@ -53,6 +53,9 @@ const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
+const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
+const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
+const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -316,6 +319,19 @@ const {
   getLocationsReady: () => locationsReady,
   getActiveLocationId: () => activeLocationId,
 });
+const { applyRequestQueryFilters } = createRequestQueryFilterHelpers({
+  activeCompanyId: () => activeCompanyId,
+  activeLocationId: () => activeLocationId,
+  assets: () => assets,
+  locationsReady: () => locationsReady,
+  matchesActiveLocation,
+  matchesQuery,
+  parentAssetFor: () => parentAssetFor,
+  postgrestSearchTerm,
+  requestViewFilter: () => requestViewFilter,
+  SEARCH_ID_PAGE_SIZE,
+  searchQuery: () => searchQuery,
+});
 const {
   teamMemberName,
   filteredMembers,
@@ -342,6 +358,65 @@ const {
   assignmentLabel,
 } = createAssignmentDisplayHelpers({
   isVendorAssigned,
+});
+const {
+  refreshWorkOrderRelatedSearch,
+  fetchExactSearchedWorkOrderPage,
+} = createWorkOrderSearchHelpers({
+  activeCompanyId: () => activeCompanyId,
+  activeLocationId: () => activeLocationId,
+  assets: () => assets,
+  buildScopedWorkOrderSearchQuery,
+  chunkArray,
+  compareWorkOrders,
+  exactWorkOrderSearchCache: () => exactWorkOrderSearchCache,
+  fetchPagedSearchRows,
+  fetchWorkOrdersByIds,
+  locationsReady: () => locationsReady,
+  matchesActiveLocation,
+  matchesQuery,
+  parentAssetFor: () => parentAssetFor,
+  parts: () => parts,
+  postgrestSearchTerm,
+  procedureTemplates: () => procedureTemplates,
+  searchQuery: () => searchQuery,
+  SEARCH_ID_CHUNK_SIZE,
+  setExactWorkOrderSearchCache: (value) => { exactWorkOrderSearchCache = value; },
+  setWorkOrderPage: (value) => {
+    workOrderPage = value;
+    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+  },
+  setWorkOrderRelatedSearch: (value) => { workOrderRelatedSearch = value; },
+  supabaseClient: () => supabaseClient,
+  warn: console.warn,
+  workOrderPage: () => workOrderPage,
+  WORK_ORDER_FALLBACK_SELECT: () => WORK_ORDER_FALLBACK_SELECT,
+  WORK_ORDER_RELATION_SELECT: () => WORK_ORDER_RELATION_SELECT,
+  WORK_ORDERS_PER_PAGE,
+  workOrderSearchMode: () => workOrderSearchMode,
+  workSort: () => workSort,
+});
+const {
+  globalSearchResults,
+  planningItems,
+  planningPmItems,
+  followUpItems,
+} = createWorkspaceListBuilders({
+  assets: () => assets,
+  assignmentLabel,
+  compareWorkOrders,
+  maintenanceRequests: () => maintenanceRequests,
+  matchesActiveLocation,
+  matchesQuery,
+  matchesSearch,
+  parts: () => parts,
+  preventiveSchedules: () => preventiveSchedules,
+  procedureTemplates: () => procedureTemplates,
+  profilesByUserId: () => profilesByUserId,
+  searchQuery: () => searchQuery,
+  SEARCH_PREVIEW_LIMIT,
+  startOfToday,
+  workOrders: () => workOrders,
 });
 const {
   cleanWorkOrderDescription,
@@ -1925,152 +2000,6 @@ async function countRequests(filter) {
   return response.count || 0;
 }
 
-function applyRequestQueryFilters(query, filter = requestViewFilter) {
-  let nextQuery = query.eq("company_id", activeCompanyId);
-  if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
-
-  if (filter === "converted") {
-    nextQuery = nextQuery.or("status.eq.converted,converted_work_order_id.not.is.null");
-  } else if (filter !== "all") {
-    nextQuery = nextQuery.eq("status", "submitted").is("converted_work_order_id", null);
-  }
-
-  const term = postgrestSearchTerm(searchQuery);
-  if (term) {
-    const pattern = `%${term}%`;
-    const matchedAssetIds = assets
-      .filter(matchesActiveLocation)
-      .filter((asset) => matchesQuery([
-        asset.name,
-        asset.asset_code,
-        asset.location,
-        asset.status,
-        asset.asset_type,
-        parentAssetFor(asset)?.name,
-      ], term))
-      .map((asset) => asset.id)
-      .slice(0, SEARCH_ID_PAGE_SIZE);
-    nextQuery = nextQuery.or([
-      `title.ilike.${pattern}`,
-      `description.ilike.${pattern}`,
-      `status.ilike.${pattern}`,
-      `priority.ilike.${pattern}`,
-      `requested_by_name.ilike.${pattern}`,
-      `requested_by_contact.ilike.${pattern}`,
-      ...(matchedAssetIds.length ? [`asset_id.in.(${matchedAssetIds.join(",")})`] : []),
-    ].join(","));
-  }
-
-  return nextQuery;
-}
-
-async function refreshWorkOrderRelatedSearch() {
-  const query = searchQuery.trim();
-  if (!query || workOrderSearchMode) {
-    workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
-    return;
-  }
-
-  const matchedAssets = assets
-    .filter(matchesActiveLocation)
-    .filter((asset) => matchesQuery([
-      asset.name,
-      asset.asset_code,
-      asset.location,
-      asset.status,
-      asset.asset_type,
-      parentAssetFor(asset)?.name,
-    ], query))
-    .map((asset) => asset.id);
-
-  const matchedProcedures = procedureTemplates
-    .filter((template) => matchesQuery([
-      template.name,
-      template.description,
-      ...(template.procedure_steps || []).map((step) => step.prompt),
-    ], query))
-    .map((template) => template.id);
-
-  const matchedPartIds = parts
-    .filter(matchesActiveLocation)
-    .filter((part) => matchesQuery([
-      part.name,
-      part.sku,
-      part.supplier_name,
-      part.quantity_on_hand,
-      part.reorder_point,
-      part.unit_cost,
-    ], query))
-    .map((part) => part.id);
-
-  const workOrderIds = new Set();
-  await Promise.all([
-    addRelatedWorkOrderIdsFromParts(workOrderIds, matchedPartIds),
-    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_comments", ["body"], query),
-    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_events", ["event_type", "summary"], query),
-    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_photos", ["file_name"], query),
-    addRelatedWorkOrderIdsFromTable(workOrderIds, "work_order_step_results", ["value"], query),
-  ]);
-
-  workOrderRelatedSearch = {
-    assetIds: matchedAssets.slice(0, 200),
-    procedureIds: matchedProcedures.slice(0, 200),
-    workOrderIds: [...workOrderIds].slice(0, 300),
-  };
-}
-
-async function addRelatedWorkOrderIdsFromParts(target, partIds, options = {}) {
-  if (!partIds.length) return;
-  const maxRows = options.maxRows ?? 300;
-  let remaining = maxRows;
-  for (const chunk of chunkArray(partIds, SEARCH_ID_CHUNK_SIZE)) {
-    if (remaining <= 0) break;
-    try {
-      await fetchPagedSearchRows(
-        () => supabaseClient
-          .from("work_order_parts")
-          .select("work_order_id")
-          .eq("company_id", activeCompanyId)
-          .in("part_id", chunk),
-        (rows) => {
-          rows.forEach((row) => {
-            if (row.work_order_id) target.add(row.work_order_id);
-          });
-          remaining -= rows.length;
-        },
-        remaining
-      );
-    } catch (error) {
-      console.warn("Part-linked work order search failed", error);
-      return;
-    }
-  }
-}
-
-async function addRelatedWorkOrderIdsFromTable(target, tableName, columns, query, options = {}) {
-  const term = postgrestSearchTerm(query);
-  if (!term) return;
-  const orClause = columns.map((column) => `${column}.ilike.%${term}%`).join(",");
-  const maxRows = options.maxRows ?? 300;
-  try {
-    await fetchPagedSearchRows(
-      () => supabaseClient
-        .from(tableName)
-        .select("work_order_id")
-        .eq("company_id", activeCompanyId)
-        .or(orClause),
-      (rows) => {
-        rows.forEach((row) => {
-          if (row.work_order_id) target.add(row.work_order_id);
-        });
-      },
-      maxRows
-    );
-  } catch (error) {
-    console.warn(`${tableName} work order search failed`, error);
-  }
-}
-
 async function fetchWorkOrderPage(options = {}) {
   if (workOrderSearchMode && searchQuery.trim()) {
     return fetchExactSearchedWorkOrderPage(options);
@@ -2092,160 +2021,6 @@ async function fetchWorkOrderPage(options = {}) {
   }
 
   return response;
-}
-
-async function fetchExactSearchedWorkOrderPage(options = {}) {
-  const rows = await exactWorkOrderSearchRows();
-  const total = rows.length;
-  const totalPages = Math.max(1, Math.ceil(total / WORK_ORDERS_PER_PAGE));
-  if (workOrderPage > totalPages) {
-    workOrderPage = totalPages;
-    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
-  }
-  if (workOrderPage < 1) {
-    workOrderPage = 1;
-    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
-  }
-
-  const from = (workOrderPage - 1) * WORK_ORDERS_PER_PAGE;
-  const pageIds = rows.slice(from, from + WORK_ORDERS_PER_PAGE).map((row) => row.id);
-  if (!pageIds.length) return { data: [], error: null, count: total };
-
-  const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
-  const response = await fetchWorkOrdersByIds(supabaseClient, {
-    companyId: activeCompanyId,
-    locationId: activeLocationId,
-    locationsReady,
-    selectClause,
-    ids: pageIds,
-  });
-  if (response.error) return response;
-  const byId = new Map((response.data || []).map((workOrder) => [workOrder.id, workOrder]));
-  return {
-    ...response,
-    data: pageIds.map((id) => byId.get(id)).filter(Boolean),
-    count: total,
-  };
-}
-
-async function exactWorkOrderSearchRows() {
-  const key = [
-    activeCompanyId || "",
-    locationsReady ? activeLocationId || "" : "all-locations",
-    workSort,
-    searchQuery.trim().toLowerCase(),
-  ].join("|");
-  if (exactWorkOrderSearchCache.key === key) return exactWorkOrderSearchCache.rows;
-
-  const query = searchQuery.trim();
-  const rowMap = new Map();
-  await addDirectWorkOrderSearchRows(rowMap, query);
-
-  const matchedAssets = assets
-    .filter(matchesActiveLocation)
-    .filter((asset) => matchesQuery([
-      asset.name,
-      asset.asset_code,
-      asset.location,
-      asset.status,
-      asset.asset_type,
-      parentAssetFor(asset)?.name,
-    ], query))
-    .map((asset) => asset.id);
-
-  const matchedProcedures = procedureTemplates
-    .filter((template) => matchesQuery([
-      template.name,
-      template.description,
-      ...(template.procedure_steps || []).map((step) => step.prompt),
-    ], query))
-    .map((template) => template.id);
-
-  const matchedPartIds = parts
-    .filter(matchesActiveLocation)
-    .filter((part) => matchesQuery([
-      part.name,
-      part.sku,
-      part.supplier_name,
-      part.quantity_on_hand,
-      part.reorder_point,
-      part.unit_cost,
-    ], query))
-    .map((part) => part.id);
-
-  await Promise.all([
-    addWorkOrderSearchRowsByColumn(rowMap, "asset_id", matchedAssets),
-    addWorkOrderSearchRowsByColumn(rowMap, "procedure_template_id", matchedProcedures),
-  ]);
-
-  const relatedIds = new Set();
-  await Promise.all([
-    addRelatedWorkOrderIdsFromParts(relatedIds, matchedPartIds, { maxRows: Infinity }),
-    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_comments", ["body"], query, { maxRows: Infinity }),
-    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_events", ["event_type", "summary"], query, { maxRows: Infinity }),
-    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_photos", ["file_name"], query, { maxRows: Infinity }),
-    addRelatedWorkOrderIdsFromTable(relatedIds, "work_order_step_results", ["value"], query, { maxRows: Infinity }),
-  ]);
-  await addWorkOrderSearchRowsByIds(rowMap, [...relatedIds]);
-
-  const rows = [...rowMap.values()].sort(compareWorkOrders);
-  exactWorkOrderSearchCache = { key, rows };
-  return rows;
-}
-
-async function addDirectWorkOrderSearchRows(target, query) {
-  const term = postgrestSearchTerm(query);
-  if (!term) return;
-  const orClause = [
-    "title",
-    "description",
-    "priority",
-    "type",
-    "status",
-    "failure_cause",
-    "resolution_summary",
-    "completion_notes",
-  ].map((column) => `${column}.ilike.%${term}%`).join(",");
-
-  await fetchPagedSearchRows(
-    () => scopedWorkOrderSearchQuery().or(orClause),
-    (rows) => addWorkOrderSearchRows(target, rows)
-  );
-}
-
-async function addWorkOrderSearchRowsByColumn(target, column, values) {
-  if (!values.length) return;
-  for (const chunk of chunkArray(values, SEARCH_ID_CHUNK_SIZE)) {
-    await fetchPagedSearchRows(
-      () => scopedWorkOrderSearchQuery().in(column, chunk),
-      (rows) => addWorkOrderSearchRows(target, rows)
-    );
-  }
-}
-
-async function addWorkOrderSearchRowsByIds(target, ids) {
-  if (!ids.length) return;
-  for (const chunk of chunkArray(ids, SEARCH_ID_CHUNK_SIZE)) {
-    await fetchPagedSearchRows(
-      () => scopedWorkOrderSearchQuery().in("id", chunk),
-      (rows) => addWorkOrderSearchRows(target, rows)
-    );
-  }
-}
-
-function scopedWorkOrderSearchQuery() {
-  return buildScopedWorkOrderSearchQuery(supabaseClient, {
-    companyId: activeCompanyId,
-    locationId: activeLocationId,
-    locationsReady,
-  });
-}
-
-function addWorkOrderSearchRows(target, rows) {
-  (rows || []).forEach((row) => {
-    if (!row?.id) return;
-    target.set(row.id, { ...(target.get(row.id) || {}), ...row });
-  });
 }
 
 async function loadWorkOrderDashboardCounts() {
@@ -3297,56 +3072,6 @@ function bindAutoGrowTextareas() {
 function autoGrowTextarea(field) {
   field.style.height = "auto";
   field.style.height = `${field.scrollHeight}px`;
-}
-
-function globalSearchResults() {
-  const query = searchQuery.trim();
-  const work = workOrders
-    .filter(matchesActiveLocation)
-    .sort(compareWorkOrders)
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  const assetResults = assets
-    .filter(matchesActiveLocation)
-    .filter((asset) => matchesQuery([asset.name, asset.asset_code, asset.location, asset.status], query))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  const partResults = parts
-    .filter(matchesActiveLocation)
-    .filter((part) => matchesQuery([part.name, part.sku, part.supplier_name, part.quantity_on_hand, part.reorder_point], query))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  const requestResults = maintenanceRequests
-    .filter(matchesActiveLocation)
-    .filter((request) => matchesQuery([
-      request.title,
-      request.description,
-      request.status,
-      request.priority,
-      request.assets?.name,
-      profilesByUserId[request.requested_by]?.full_name,
-    ], query))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  const pmResults = preventiveSchedules
-    .filter(matchesActiveLocation)
-    .filter((schedule) => matchesQuery([schedule.title, schedule.frequency, schedule.next_due_at, schedule.assets?.name], query))
-    .sort((a, b) => String(a.next_due_at || "").localeCompare(String(b.next_due_at || "")))
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  const procedureResults = procedureTemplates
-    .filter((template) => matchesQuery([
-      template.name,
-      template.description,
-      ...(template.procedure_steps || []).map((step) => step.prompt),
-    ], query))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, SEARCH_PREVIEW_LIMIT);
-
-  return { work, assets: assetResults, parts: partResults, requests: requestResults, pm: pmResults, procedures: procedureResults };
 }
 
 function renderAssetDetail() {
@@ -9293,97 +9018,6 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   } catch (error) {
     console.warn("Could not record work order event", error);
   }
-}
-
-function planningItems(bucket = "all") {
-  const today = startOfToday();
-  const soon = new Date(today);
-  soon.setDate(soon.getDate() + 7);
-
-  return workOrders
-    .filter(matchesActiveLocation)
-    .filter((workOrder) => workOrder.status !== "completed" && workOrder.due_at)
-    .filter((workOrder) => matchesSearch([
-      workOrder.title,
-      workOrder.description,
-      workOrder.priority,
-      workOrder.status,
-      workOrder.assets?.name,
-      assignmentLabel(workOrder),
-    ]))
-    .map((workOrder) => {
-      const due = new Date(`${workOrder.due_at}T00:00:00`);
-      return {
-        kind: "work",
-        id: workOrder.id,
-        title: workOrder.title,
-        priority: workOrder.priority,
-        status: workOrder.status,
-        assetName: workOrder.assets?.name || "No equipment",
-        dueAt: workOrder.due_at,
-        due,
-        workOrder,
-      };
-    })
-    .filter((item) => {
-      if (bucket === "overdue") return item.due < today;
-      if (bucket === "today") return item.due.getTime() === today.getTime();
-      if (bucket === "soon") return item.due > today && item.due <= soon;
-      return true;
-    })
-    .sort((a, b) => a.due - b.due);
-}
-
-function planningPmItems() {
-  const today = startOfToday();
-  const soon = new Date(today);
-  soon.setDate(soon.getDate() + 7);
-
-  return preventiveSchedules
-    .filter(matchesActiveLocation)
-    .filter((schedule) => {
-      const due = new Date(`${schedule.next_due_at}T00:00:00`);
-      return due >= today && due <= soon;
-    })
-    .filter((schedule) => matchesSearch([
-      schedule.title,
-      schedule.frequency,
-      schedule.next_due_at,
-      schedule.assets?.name,
-    ]))
-    .map((schedule) => ({
-      kind: "pm",
-      id: schedule.id,
-      title: schedule.title,
-      assetName: schedule.assets?.name || "No equipment",
-      dueAt: schedule.next_due_at,
-      due: new Date(`${schedule.next_due_at}T00:00:00`),
-    }))
-    .sort((a, b) => a.due - b.due);
-}
-
-function followUpItems() {
-  return workOrders
-    .filter(matchesActiveLocation)
-    .filter((workOrder) => workOrder.follow_up_needed)
-    .filter((workOrder) => matchesSearch([
-      workOrder.title,
-      workOrder.description,
-      workOrder.failure_cause,
-      workOrder.resolution_summary,
-      workOrder.assets?.name,
-      workOrder.assigned_profile?.full_name,
-    ]))
-    .map((workOrder) => ({
-      kind: "follow_up",
-      id: workOrder.id,
-      title: workOrder.title,
-      assetName: workOrder.assets?.name || "No equipment",
-      completedAt: workOrder.completed_at ? new Date(workOrder.completed_at).toLocaleDateString() : "not completed",
-      resolution: workOrder.resolution_summary || workOrder.completion_notes || "",
-      workOrder,
-    }))
-    .sort((a, b) => a.title.localeCompare(b.title));
 }
 
 function exportActiveSectionCsv() {
