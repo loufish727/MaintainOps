@@ -3558,3 +3558,29 @@ Choose one:
 
 - LFES Phase 16D planning/readiness only after a fresh remaining-candidate audit.
 - pause code movement for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
+
+## Phase 16D Through 16I Utility Extraction And Safety Stop - 2026-05-21
+
+Completed two controlled medium-risk utility extraction cycles:
+
+- Phase 16D/16E/16F: extracted pure schema error predicate helpers into `src/utils/schemaErrors.js`; deploy commit `f78d84a`.
+- Phase 16G/16H/16I: extracted pure setup error response wrapper into `src/utils/operationResults.js`; deploy commit `abb1b80`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260521-085044`.
+- final package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- final cache tag: `app.js?v=lfes-phase-16h-operation-results-1`.
+- final hosted resource checks: PASS.
+- final live signed-in smoke: PASS.
+- live app showed authenticated shell with Louie, Work, Parts, and Team visible.
+- hosted files confirmed `src/utils/operationResults.js` exports `MaintainOpsOperationResults`, live `app.js` imports it, and the old inline `withSetupError` function is absent.
+- `app.js` line count after Phase 16H: 9,684.
+
+Boundary preserved:
+
+- No Supabase calls, schema readiness mutations, readiness flags, workflow logic, event handlers, mutations, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()` were moved.
+
+### ACTION NEEDED
+
+Pause additional automated phase extraction before continuing. The next apparent helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`, auth URL helpers, public URL/QR helpers, readiness wrappers, and queue/detail helpers) now intersect mutation payloads, auth/public flows, readiness side effects, or workflow state. Continuing safely requires an explicit architecture/review decision for the next module boundary rather than another low-risk display-helper style extraction.
