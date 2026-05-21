@@ -9916,6 +9916,30 @@ Process update:
 - Future LFES phases should use `npm run test:smoke:github-actions` for push-run verification.
 - The GitHub connector commit workflow lookup may still be useful for PR-specific checks, but it should not be treated as authoritative evidence for normal push workflow runs.
 
+## Authority Contract Phase - 2026-05-21
+
+Scope:
+
+- Added explicit LFES contract comments to current event-boundary modules.
+- Added first state-boundary planning document.
+
+Files:
+
+- `src/utils/workspaceSearchEvents.js`
+- `src/utils/workspaceFilterPaginationEvents.js`
+- `src/utils/workspaceDetailNavigationEvents.js`
+- `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`
+
+Result:
+
+- Event modules now state what they bind, what they may call, what app.js still owns, and what they must not touch.
+- The recommended first state boundary is workspace UI state only.
+- RLS/security audit is explicitly separated from modularization.
+
+Behavior changed:
+
+- No runtime behavior change intended.
+
 ## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
 
 Scope:

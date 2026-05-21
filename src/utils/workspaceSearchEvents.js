@@ -1,4 +1,11 @@
 (function () {
+  /*
+   * LFES contract: binds workspace search and exact work-search controls only.
+   * Requires injected state getters/setters and queue reload/page reset callbacks from app.js.
+   * May write search/active-section UI keys to storage and may call read-only queue reloads.
+   * Must not mutate business records, change selectors, submit forms, route auth/startup,
+   * touch Supabase/RLS/storage uploads, or take ownership of app.js state.
+   */
   function bindWorkspaceSearchEvents(options = {}) {
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;

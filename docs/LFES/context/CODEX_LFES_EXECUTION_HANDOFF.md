@@ -191,6 +191,8 @@ Next recommended phase:
 - workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
 - workspace detail/open navigation events are already extracted and live verified in app commit `ef69559`.
 - GitHub Actions verification gap is closed. Use `npm run test:smoke:github-actions`; direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+- Existing event-boundary modules now have explicit LFES contract comments.
+- First state-boundary planning is documented in `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
 

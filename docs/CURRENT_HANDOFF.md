@@ -4863,9 +4863,12 @@ Latest completed hard-boundary extraction:
 - Signed-in live smoke passed with the dedicated QA/test account.
 - GitHub Actions verification gap is closed: use `npm run test:smoke:github-actions`.
 - Direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+- Event modules now carry explicit LFES contract comments.
+- First state-boundary planning is documented in `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 
 Next safest candidates:
 
+- Workspace UI state factory as a medium-risk non-mutating state boundary, if the next goal is real authority reduction.
 - Part inventory and asset status filters if kept read-only.
 - Team member work-view bridge as a medium-risk UI-state boundary.
 - Message read-only navigation sub-boundary only after mapping read-state side effects; send/reply forms remain blocked.

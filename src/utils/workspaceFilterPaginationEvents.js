@@ -1,4 +1,12 @@
 (function () {
+  /*
+   * LFES contract: binds workspace filter and pagination controls only.
+   * Requires app.js-owned state getters/setters plus render/reload/reset callbacks.
+   * May update local filter/page state, persist matching localStorage keys, invalidate
+   * exact-search cache through the injected callback, and choose render vs. read reload.
+   * Must not mutate business records, change selectors, submit forms, delete, upload,
+   * route auth/startup, touch Supabase/RLS, or take ownership of app.js state.
+   */
   function bindWorkspaceFilterPaginationEvents(options = {}) {
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;

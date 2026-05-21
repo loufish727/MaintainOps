@@ -4078,6 +4078,7 @@ LFES catch:
 
 Next best candidates:
 
+- Workspace UI state factory as the first explicit state-boundary phase, if the next goal is authority reduction rather than more surface extraction. See `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 - Part inventory and asset status filters if kept read-only.
 - Team member work-view bridge as a medium-risk UI-state boundary.
 - Message read-only navigation only after mapping thread/read-state effects; send/reply forms stay blocked.

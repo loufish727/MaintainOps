@@ -3565,6 +3565,12 @@ Current safe sequence:
 5. Require `npm run test:smoke:github-actions` after push-run propagation for GitHub Actions verification.
 6. Keep credentials in local-only storage or environment only; do not commit passwords, tokens, recovery links, or browser storage states.
 
+State-boundary planning:
+
+- Added `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
+- Existing event modules now carry explicit LFES contract comments.
+- Recommended first state boundary is workspace UI state only, not auth/company/location startup, business arrays, mutations, Quick Fix, request conversion, uploads, or Supabase/RLS.
+
 Next candidate options:
 
 - Local pagination/filter follow-up group: part inventory filter and asset status filter. Safe-to-medium if kept read-only and verified with localStorage/render smoke.

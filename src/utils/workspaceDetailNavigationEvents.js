@@ -1,4 +1,11 @@
 (function () {
+  /*
+   * LFES contract: binds workspace detail/open navigation controls only.
+   * Requires app.js-owned active-detail/create/quick-fix state setters plus render callback.
+   * May update UI navigation state, active-section storage, and render the workspace.
+   * Must not mutate business records, change selectors, submit forms, delete, upload,
+   * route auth/startup, touch Supabase/RLS, or take ownership of app.js state.
+   */
   function bindWorkspaceDetailNavigationEvents(options = {}) {
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;
