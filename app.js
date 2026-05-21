@@ -48,6 +48,7 @@ const {
   isAssetHierarchySchemaError,
 } = window.MaintainOpsSchemaErrors;
 const { withSetupError } = window.MaintainOpsOperationResults;
+const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -3656,14 +3657,6 @@ function markSchemaReadiness(error) {
   if (isMissingColumnError(error, "location_id") || error?.message?.includes("locations")) locationsReady = false;
   if (isProcedureSchemaError(error)) proceduresReady = false;
   if (isColumnSchemaError(error, ["safety_devices_checked", "safety_devices_checked_at", "safety_check_required"])) safetyChecksReady = false;
-}
-
-function withOperationTimeout(promise, message, timeoutMs = 20000) {
-  let timeoutId;
-  const timeout = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
 function workOrderDateValue(value) {
