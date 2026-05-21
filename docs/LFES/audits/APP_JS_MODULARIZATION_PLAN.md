@@ -3870,3 +3870,57 @@ LFES catch:
 ### Recommended Next Phase
 
 Pause before selecting another hard boundary. Next candidates should remain non-mutating or have stronger targeted smoke coverage before implementation.
+
+## Measurable Reduction - Read-Only Query/Search/List Helpers - 2026-05-21
+
+Completed a controlled app.js reduction run with a 300-500 line target:
+
+- Starting `app.js` line count: 9,488.
+- Ending `app.js` line count: 9,122.
+- Net reduction: 366 lines.
+- Deploy commit: `2be8b54` (`Extract read-only query and list helpers`).
+- Added `src/utils/requestQueryFilters.js?v=lfes-reduction-read-only-query-list-1`.
+- Added `src/utils/workOrderSearch.js?v=lfes-reduction-read-only-query-list-1`.
+- Added `src/utils/workspaceListBuilders.js?v=lfes-reduction-read-only-query-list-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-reduction-read-only-query-list-1`.
+- Updated hosted resource smoke coverage.
+
+Moved helpers:
+
+- request query filtering: `applyRequestQueryFilters`.
+- work-order related and exact search orchestration: `refreshWorkOrderRelatedSearch`, related ID readers, exact search page/row helpers.
+- read-only list builders: `globalSearchResults`, `planningItems`, `planningPmItems`, `followUpItems`.
+
+Risk classification:
+
+- Medium, bounded read-only extraction.
+- The moved code reads data, composes read queries, derives list/search results, and writes only explicit local cache/page/search-result state through injected setters.
+- No mutation, event binding, form submit, delete action, delete confirmation, Quick Fix, request conversion, public QR submit, auth/session/company/location startup, storage/photo/document flow, SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()` movement occurred.
+
+Final verification:
+
+- static checks: PASS for `app.js`, all three new modules, and `tests/smoke/resource-load.spec.js`.
+- helper-output smoke: PASS for request query filtering, related/exact work-order search orchestration, global search, planning, PM planning, and follow-up builders.
+- local resource smoke: PASS.
+- local browser boot smoke: PASS after fixing lazy dependency injection for `parentAssetFor`.
+- hosted GitHub Pages resource smoke: PASS.
+- live signed-in search smoke: PASS. `Hydralic` global search and exact work-order search showed `Hydralic Leak`.
+- live signed-in Planning smoke: PASS. Planning groups rendered without search overlay.
+- live signed-in Requests smoke: PASS. Request surface and filters rendered without search overlay.
+- GitHub Actions resource smoke: NOT AVAILABLE; GitHub connector returned no workflow runs for `2be8b54`.
+
+Rejected as unsafe:
+
+- Work-order detail/create/quick-fix/card rendering, asset/detail/procedure/part/request display, message center, public QR link cards, and all event/mutation/delete/upload/auth/RLS zones.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- `parentAssetFor` looked function-like but is initialized from a display helper later in app startup. Hard-boundary modules must use lazy getter injection for later-initialized dependencies.
+
+### Recommended Next Phase
+
+Pause and re-audit before another measurable reduction. Do not force another 300-line target if the next candidates require forms, mutations, event contracts, delete/QR/storage/auth flows, or broad render/event movement.

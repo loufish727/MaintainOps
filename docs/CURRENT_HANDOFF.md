@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed hard-boundary extraction for global search result navigation events.
+Completed measurable app.js reduction run for read-only query/search/list helper clusters.
 
 - Latest app behavior commit:
-  - `fb77f1c` (`Extract global search navigation events`)
+  - `2be8b54` (`Extract read-only query and list helpers`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-hard-boundary-global-search-nav-1`
+  - `app.js?v=lfes-reduction-read-only-query-list-1`
 - Current `app.js` line count:
-  - 9,488 lines.
+  - 9,122 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -51,15 +51,19 @@ Completed hard-boundary extraction for global search result navigation events.
   - Hard-boundary run moved work-order query filter/sort orchestration to `src/utils/workOrderQueryFilters.js`.
   - Small event-binding hard-boundary run moved work-order detail field-jump binding to `src/utils/workSectionJumpEvents.js`.
   - Hard-boundary run moved global search result navigation events to `src/utils/globalSearchNavigationEvents.js`.
+  - Measurable reduction run moved request query filters to `src/utils/requestQueryFilters.js`, exact/related work-order search helpers to `src/utils/workOrderSearch.js`, and global/planning/follow-up list builders to `src/utils/workspaceListBuilders.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/globalSearchNavigationEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed for work-order, asset, part, request, and generic section search result navigation.
+  - static JS checks passed for `app.js`, `src/utils/requestQueryFilters.js`, `src/utils/workOrderSearch.js`, `src/utils/workspaceListBuilders.js`, and `tests/smoke/resource-load.spec.js`.
+  - helper-output smoke passed for request query filtering, exact/related work-order search orchestration, global search results, planning items, PM planning items, and follow-up items.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
-  - local browser boot smoke passed with new global search navigation script and cache tag present.
+  - local browser boot smoke passed with the three new scripts and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live global search navigation smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-global-search-nav-behavior-fb77f1c-final`.
-  - live `index.html` referenced `src/utils/globalSearchNavigationEvents.js?v=lfes-hard-boundary-global-search-nav-1` and `app.js?v=lfes-hard-boundary-global-search-nav-1`.
-  - live search for `Hydralic` produced a visible work-order result, click opened Work Order Detail, set active section to `work`, and cleared persisted search.
+  - signed-in live smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-read-only-query-list-2be8b54` and `https://loufish727.github.io/MaintainOps/?qa_bust=live-read-only-list-clear-2be8b54`.
+  - live `index.html` referenced `src/utils/requestQueryFilters.js`, `src/utils/workOrderSearch.js`, `src/utils/workspaceListBuilders.js`, and `app.js?v=lfes-reduction-read-only-query-list-1`.
+  - live search for `Hydralic` showed global search results, opened exact paged work-order search, and kept `Hydralic Leak` visible.
+  - live Planning rendered Overdue / Due Today / Next 7 Days with no search overlay.
+  - live Requests rendered the request surface and filters with no search overlay.
+  - GitHub connector returned no workflow runs for `2be8b54`; GitHub Actions resource smoke is NOT AVAILABLE, not PASS.
   - fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
 - Behavior changed:
   - no observed behavior change.

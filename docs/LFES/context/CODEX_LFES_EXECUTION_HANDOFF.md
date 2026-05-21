@@ -30,20 +30,20 @@ Current active technical direction:
 
 Most recent deployed closed phase:
 
-- Hard-boundary global search result navigation event extraction.
+- Measurable app.js reduction run for read-only query/search/list helpers.
 
 Most recent local completed phase:
 
-- Global search result navigation event extraction is deployed and live verified.
+- Read-only query/search/list helper extraction is deployed and live verified.
 - A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after global search navigation hard-boundary extraction:
+Current app.js line count after read-only query/search/list helper extraction:
 
-- 9,488 lines.
+- 9,122 lines.
 
 Recent extraction modules:
 
@@ -55,6 +55,9 @@ Recent extraction modules:
 - `src/utils/workOrderQueryFilters.js`
 - `src/utils/workSectionJumpEvents.js`
 - `src/utils/globalSearchNavigationEvents.js`
+- `src/utils/requestQueryFilters.js`
+- `src/utils/workOrderSearch.js`
+- `src/utils/workspaceListBuilders.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:

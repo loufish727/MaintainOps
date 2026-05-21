@@ -12,7 +12,79 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES hard-boundary work-order query filter/sort extraction closed cleanly.
 - 2026-05-21: LFES small event-binding hard-boundary work-order detail jump extraction closed cleanly.
 - 2026-05-21: LFES hard-boundary global search navigation event extraction closed cleanly.
+- 2026-05-21: LFES measurable app.js reduction run moved read-only query/search/list helpers and met the 300-line target.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Measurable Reduction - Read-Only Query/Search/List Helpers - 2026-05-21
+
+Starting app.js line count:
+
+- 9,488.
+
+Ending app.js line count:
+
+- 9,122.
+
+Net lines removed:
+
+- 366.
+
+Files/modules created or expanded:
+
+- Added `src/utils/requestQueryFilters.js`.
+- Added `src/utils/workOrderSearch.js`.
+- Added `src/utils/workspaceListBuilders.js`.
+- Updated `index.html` to load the three scripts before `app.js`.
+- Updated `tests/smoke/resource-load.spec.js`.
+
+Helpers moved:
+
+- `applyRequestQueryFilters`
+- `refreshWorkOrderRelatedSearch`
+- related work-order search helpers for parts/tables
+- `fetchExactSearchedWorkOrderPage`
+- exact work-order search row helpers
+- `globalSearchResults`
+- `planningItems`
+- `planningPmItems`
+- `followUpItems`
+
+Risk classification:
+
+- Medium, bounded read-only extraction.
+- The moved code composes read queries, derives search/list output, and updates explicit local cache/page/search-result state through injected setters.
+- No mutation, event binding, form submit, delete, upload, auth/session/company/location startup, public QR submit, storage/photo/document flow, SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()` movement occurred.
+
+Smoke results:
+
+- Static JS checks: PASS for `app.js`, `src/utils/requestQueryFilters.js`, `src/utils/workOrderSearch.js`, `src/utils/workspaceListBuilders.js`, and `tests/smoke/resource-load.spec.js`.
+- Helper-output smoke: PASS for request query filtering, related/exact work-order search orchestration, global search results, planning items, PM planning items, and follow-up items.
+- Local resource smoke: PASS against `http://127.0.0.1:4187/`.
+- Local boot smoke: PASS with all three new scripts and `app.js?v=lfes-reduction-read-only-query-list-1`; no page errors.
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in smoke: PASS. Search for `Hydralic` produced global results, exact paged Work Orders, and `Hydralic Leak`.
+- Live signed-in Planning smoke: PASS. Planning showed Overdue / Due Today / Next 7 Days without the search overlay.
+- Live signed-in Requests smoke: PASS. Requests showed request filters/form surface without the search overlay.
+- GitHub Actions resource smoke: NOT AVAILABLE. GitHub connector returned no workflow runs for commit `2be8b54`.
+
+Functions rejected as unsafe for this run:
+
+- `renderWorkOrderDetail`, `renderCreateWorkOrder`, `renderQuickFixForm`, and `renderWorkOrderCard`: forms, workflow controls, assignment/status controls, or mutation buttons.
+- `renderAssetDetail`, `renderProcedureTemplate`, `renderPartDetail`, `renderMaintenanceRequest`, and public request link cards: delete/conversion/QR/mutation-adjacent controls.
+- `renderMessageCenter`: message creation/reply forms and read-state workflow coupling.
+- `bindWorkspaceEvents`, mutation handlers, delete handlers, upload/storage helpers, auth/startup, and SQL/RLS zones remained blocked.
+
+Measurable progress target:
+
+- MET. The run removed 366 lines from `app.js`, inside the requested 300-500 line target.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Initial local boot caught a load-order issue because `parentAssetFor` is a later-initialized helper, not a hoisted function. The stable fix was to inject it lazily as a getter. This reinforced the hard-boundary dependency rule.
 
 ## LFES Hard Boundary - Global Search Navigation Events - 2026-05-21
 
