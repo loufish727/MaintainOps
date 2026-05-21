@@ -55,6 +55,7 @@ const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
 const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
+const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4848,27 +4849,42 @@ function bindWorkspaceEvents() {
     });
   });
 
-  const backToMyWork = document.querySelector("#back-to-my-work");
-  if (backToMyWork) {
-    backToMyWork.addEventListener("click", () => {
-      activeWorkOrderId = null;
-      activeAssetId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      renderWorkspace();
-    });
-  }
-
-  const backToEquipment = document.querySelector("#back-to-equipment");
-  if (backToEquipment) {
-    backToEquipment.addEventListener("click", () => {
-      activeAssetId = null;
-      pendingDeleteAssetId = null;
-      renderWorkspace();
-    });
-  }
+  bindWorkspaceDetailNavigationEvents({
+    state: {
+      getActiveSection: () => activeSection,
+      setActiveAssetId: (value) => {
+        activeAssetId = value;
+      },
+      setActivePartId: (value) => {
+        activePartId = value;
+      },
+      setActiveSection: (value) => {
+        activeSection = value;
+      },
+      setActiveWorkOrderId: (value) => {
+        activeWorkOrderId = value;
+      },
+      setCreateWorkOrderMode: (value) => {
+        createWorkOrderMode = value;
+      },
+      setPendingDeleteAssetId: (value) => {
+        pendingDeleteAssetId = value;
+      },
+      setQuickFixAssetId: (value) => {
+        quickFixAssetId = value;
+      },
+      setQuickFixMode: (value) => {
+        quickFixMode = value;
+      },
+      setQuickFixRequestId: (value) => {
+        quickFixRequestId = value;
+      },
+      setReportIssueMode: (value) => {
+        reportIssueMode = value;
+      },
+    },
+    renderWorkspace,
+  });
 
   bindWorkspaceSearchEvents({
     state: {
@@ -4891,82 +4907,6 @@ function bindWorkspaceEvents() {
     resetRequestsPage,
     resetWorkOrderPage,
     setWorkOrderSearchMode,
-  });
-
-  document.querySelectorAll(".work-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      activeWorkOrderId = card.dataset.id;
-      activeAssetId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll(".asset-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      activeAssetId = card.dataset.assetId;
-      activeWorkOrderId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      activeSection = "assets";
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-open-asset]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      activeAssetId = button.dataset.openAsset;
-      activeWorkOrderId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      if (activeSection !== "assets") activeSection = "work";
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-asset-id]").forEach((card) => {
-    const openAsset = () => {
-      activeAssetId = card.dataset.assetId;
-      activeWorkOrderId = null;
-      activePartId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      reportIssueMode = false;
-      activeSection = "assets";
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    };
-
-    card.addEventListener("click", openAsset);
-    card.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      openAsset();
-    });
-  });
-
-  document.querySelectorAll("[data-mini-work-order]").forEach((item) => {
-    item.addEventListener("click", () => {
-      activeWorkOrderId = item.dataset.miniWorkOrder;
-      activeAssetId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      renderWorkspace();
-    });
   });
 
   bindGlobalSearchNavigationEvents({
