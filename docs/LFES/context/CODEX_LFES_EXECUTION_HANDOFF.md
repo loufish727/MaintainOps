@@ -30,20 +30,20 @@ Current active technical direction:
 
 Most recent deployed closed phase:
 
-- Measurable app.js reduction run for read-only query/search/list helpers.
+- Medium-risk authority reduction for workspace search/exact work-search events.
 
 Most recent local completed phase:
 
-- Read-only query/search/list helper extraction is deployed and live verified.
+- Workspace search/exact work-search event extraction is deployed and live verified.
 - A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after read-only query/search/list helper extraction:
+Current app.js line count after workspace search event authority extraction:
 
-- 9,122 lines.
+- 9,093 lines.
 
 Recent extraction modules:
 
@@ -58,6 +58,7 @@ Recent extraction modules:
 - `src/utils/requestQueryFilters.js`
 - `src/utils/workOrderSearch.js`
 - `src/utils/workspaceListBuilders.js`
+- `src/utils/workspaceSearchEvents.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:

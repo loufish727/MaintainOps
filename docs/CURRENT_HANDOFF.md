@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed measurable app.js reduction run for read-only query/search/list helper clusters.
+Completed medium-risk authority reduction for workspace search/exact work-search events.
 
 - Latest app behavior commit:
-  - `2be8b54` (`Extract read-only query and list helpers`)
+  - `61f6387` (`Extract workspace search events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-reduction-read-only-query-list-1`
+  - `app.js?v=lfes-authority-workspace-search-events-1`
 - Current `app.js` line count:
-  - 9,122 lines.
+  - 9,093 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -52,18 +52,17 @@ Completed measurable app.js reduction run for read-only query/search/list helper
   - Small event-binding hard-boundary run moved work-order detail field-jump binding to `src/utils/workSectionJumpEvents.js`.
   - Hard-boundary run moved global search result navigation events to `src/utils/globalSearchNavigationEvents.js`.
   - Measurable reduction run moved request query filters to `src/utils/requestQueryFilters.js`, exact/related work-order search helpers to `src/utils/workOrderSearch.js`, and global/planning/follow-up list builders to `src/utils/workspaceListBuilders.js`.
+  - Medium-risk authority run moved workspace search/exact work-search open/close event binding to `src/utils/workspaceSearchEvents.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/requestQueryFilters.js`, `src/utils/workOrderSearch.js`, `src/utils/workspaceListBuilders.js`, and `tests/smoke/resource-load.spec.js`.
-  - helper-output smoke passed for request query filtering, exact/related work-order search orchestration, global search results, planning items, PM planning items, and follow-up items.
+  - static JS checks passed for `app.js`, `src/utils/workspaceSearchEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed for search input, exact work-search entry, exact work-search close, storage writes, read reload calls, page resets, cache invalidation, and focus restoration.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
-  - local browser boot smoke passed with the three new scripts and cache tag present.
+  - local browser boot smoke passed with the new workspace search event script and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-read-only-query-list-2be8b54` and `https://loufish727.github.io/MaintainOps/?qa_bust=live-read-only-list-clear-2be8b54`.
-  - live `index.html` referenced `src/utils/requestQueryFilters.js`, `src/utils/workOrderSearch.js`, `src/utils/workspaceListBuilders.js`, and `app.js?v=lfes-reduction-read-only-query-list-1`.
-  - live search for `Hydralic` showed global search results, opened exact paged work-order search, and kept `Hydralic Leak` visible.
-  - live Planning rendered Overdue / Due Today / Next 7 Days with no search overlay.
-  - live Requests rendered the request surface and filters with no search overlay.
-  - GitHub connector returned no workflow runs for `2be8b54`; GitHub Actions resource smoke is NOT AVAILABLE, not PASS.
+  - signed-in live smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-workspace-search-events-61f6387`.
+  - live `index.html` referenced `src/utils/workspaceSearchEvents.js?v=lfes-authority-workspace-search-events-1` and `app.js?v=lfes-authority-workspace-search-events-1`.
+  - live search for `Hydralic` showed global search preview with `Hydralic Leak`, entered exact work-search mode, showed `Matching Work Orders`, then returned to search preview via Back.
+  - GitHub connector returned no workflow runs for `61f6387`; GitHub Actions resource smoke is NOT AVAILABLE, not PASS.
   - fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
 - Behavior changed:
   - no observed behavior change.
@@ -75,7 +74,8 @@ Completed measurable app.js reduction run for read-only query/search/list helper
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - recommended first authority-reduction boundary is workspace search and exact work-search read-only events from `bindWorkspaceEvents()`.
+  - workspace search/exact work-search event boundary is implemented and live verified.
+  - choose the next boundary from the authority map; do not combine with mutation/form/delete/storage/auth flows.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move workflow logic, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Event-binding extraction is allowed only when explicitly selected as a hard boundary with visible smoke coverage and direct rollback.

@@ -3924,3 +3924,53 @@ LFES catch:
 ### Recommended Next Phase
 
 Pause and re-audit before another measurable reduction. Do not force another 300-line target if the next candidates require forms, mutations, event contracts, delete/QR/storage/auth flows, or broad render/event movement.
+
+## Medium-Risk Authority Boundary - Workspace Search Events - 2026-05-21
+
+Completed the first implementation phase after the render/event authority map:
+
+- Selected boundary: workspace search and exact work-search read-only event cluster.
+- Extracted into `src/utils/workspaceSearchEvents.js`; deploy commit `61f6387`.
+- Added `src/utils/workspaceSearchEvents.js?v=lfes-authority-workspace-search-events-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-workspace-search-events-1`.
+- Updated hosted resource smoke coverage.
+
+Why it is medium risk:
+
+- The moved code changes local UI state, page state, exact-search cache state, and read queue reload sequencing.
+- It also restores focus/cursor after render-driven DOM replacement.
+
+Why it is recoverable:
+
+- It is read-only and non-mutating.
+- No form submit, delete, upload, auth/session/company/location startup, public QR submit, Quick Fix, request conversion, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+- Rollback is direct: revert `61f6387`, or remove the module/script, restore the three listener blocks, and restore the prior cache tag.
+
+Moved event contracts:
+
+- `.workspace-search-input`
+- `[data-view-work-search]`
+- `[data-close-work-search]`
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/workspaceSearchEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM event smoke: PASS for search state, cache invalidation, read reload calls, page resets, exact search open/close, storage writes, and focus restoration.
+- local resource smoke: PASS.
+- local browser boot smoke: PASS.
+- hosted GitHub Pages resource smoke: PASS.
+- live signed-in smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-workspace-search-events-61f6387`.
+- live `Hydralic` search preview, exact work-search mode, and back-to-preview path all worked.
+- GitHub Actions resource smoke: NOT AVAILABLE; GitHub connector returned no workflow runs for `61f6387`.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Authority reduced:
+
+- Workspace search and exact work-search event ownership moved out of the monolithic `bindWorkspaceEvents()` function into a named, dependency-injected module.
+
+### Recommended Next Phase
+
+Choose one next authority-map boundary. Good next candidates are local read-only navigation/card openers or pagination/filter events. Keep command routing, message sending, form submissions, mutations, deletes, uploads, auth/startup, storage/photo/document flows, Quick Fix, and request conversion blocked until individually planned.

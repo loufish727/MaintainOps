@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-21:
 
-- Latest app behavior commit: `2be8b54` (`Extract read-only query and list helpers`).
+- Latest app behavior commit: `61f6387` (`Extract workspace search events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-reduction-read-only-query-list-1`.
-- Current `app.js` line count: 9,122.
+- Latest deployed cache tag: `app.js?v=lfes-authority-workspace-search-events-1`.
+- Current `app.js` line count: 9,093.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -23,7 +23,8 @@ Recommended immediate next controlled phase:
 
 - The project has crossed from safe line reduction into authority reduction. Do not chase another line-count target.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
-- Recommended first medium-risk boundary: workspace search and exact work-search read-only events from `bindWorkspaceEvents()`.
+- Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
+- Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.
 - Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
 - Maintenance schedule date helper `nextDueDate` is already extracted into `src/utils/maintenanceScheduleDates.js` and live verified with a passive PM smoke.
 - Work-order query filter/sort orchestration is already extracted into `src/utils/workOrderQueryFilters.js` and live verified with My Work, Work Orders, and Overdue-filter read-path smokes.
@@ -59,6 +60,7 @@ Verification note:
 - Hosted resource checks and signed-in live Work Order Detail jump smoke passed for the small event-binding hard boundary.
 - Hosted resource checks and signed-in live global-search result navigation smoke passed for the latest hard boundary.
 - Hosted resource checks and signed-in live global search, exact work-order search, Planning, and Requests smokes passed for the read-only query/list reduction run.
+- Hosted resource checks and signed-in live workspace search/exact work-search/back-to-preview smoke passed for the workspace search authority boundary.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - GitHub connector returned no workflow runs for recent commits. Do not record GitHub Actions as PASS unless an actual run is inspected and confirmed.
 

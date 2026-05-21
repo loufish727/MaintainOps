@@ -14,7 +14,67 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES hard-boundary global search navigation event extraction closed cleanly.
 - 2026-05-21: LFES measurable app.js reduction run moved read-only query/search/list helpers and met the 300-line target.
 - 2026-05-21: LFES authority map created for `renderWorkspace()` and `bindWorkspaceEvents()`; next recommended boundary is workspace search/exact work-search read-only events.
+- 2026-05-21: LFES medium-risk workspace search/exact work-search event boundary extracted and live verified.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Medium-Risk Authority Boundary - Workspace Search Events - 2026-05-21
+
+Boundary selected:
+
+- Workspace search and exact work-search read-only events from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The moved event cluster mutates local search/detail/mode/page state, invalidates exact-search cache, reloads Work Order and Request read queues, restores search focus, and toggles exact work-search mode.
+
+Expected behavior:
+
+- Typing in visible workspace search persists the query.
+- Non-empty search clears active work/equipment/part detail and form modes.
+- Search input resets work, parts, and request page state.
+- Search input reloads Work Order and Request read queues.
+- Focus returns to the same visible search input with cursor at the end.
+- "Page through all matching work orders" opens Work Orders exact-search mode.
+- "Back to search preview" exits exact-search mode and returns to the global search preview.
+- No mutation, delete, upload, auth, QR submit, request conversion, or form submit behavior changes.
+
+Implementation scope:
+
+- Added `src/utils/workspaceSearchEvents.js`.
+- Replaced only `.workspace-search-input`, `[data-view-work-search]`, and `[data-close-work-search]` listener blocks in `bindWorkspaceEvents()` with `bindWorkspaceSearchEvents(...)`.
+- Added explicit state setters/getters and read-reload/reset/cache dependencies.
+- Added `src/utils/workspaceSearchEvents.js?v=lfes-authority-workspace-search-events-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-workspace-search-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `61f6387`, or remove `src/utils/workspaceSearchEvents.js`, restore the original three listener blocks in `bindWorkspaceEvents()`, and restore the prior app cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceSearchEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted mock-DOM event smoke: PASS for search input, exact-search entry, exact-search close, storage writes, read reload calls, page resets, cache invalidation, and focus restoration.
+- Local resource smoke: PASS against `http://127.0.0.1:4187/`.
+- Local browser boot smoke: PASS with new script/cache tag and no page errors.
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-workspace-search-events-61f6387`.
+- Live search for `Hydralic` showed global search preview with `Hydralic Leak`.
+- Live "Page through all matching work orders" entered exact work-search mode with `Matching Work Orders` and `Hydralic Leak`.
+- Live Back returned to the search preview, preserved `Hydralic`, and removed exact-search mode.
+- GitHub Actions resource smoke: NOT AVAILABLE. GitHub connector returned no workflow runs for `61f6387`.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Concentrated authority reduced:
+
+- `bindWorkspaceEvents()` no longer directly owns workspace search input and exact work-search open/close event contracts.
+- Read-only search authority is now isolated behind explicit dependency injection.
 
 ## LFES Authority Map - renderWorkspace / bindWorkspaceEvents - 2026-05-21
 
