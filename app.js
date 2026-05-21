@@ -56,6 +56,7 @@ const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavig
 const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
+const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5290,22 +5291,20 @@ function bindWorkspaceEvents() {
   const partForm = document.querySelector("#create-part-form");
   if (partForm) partForm.addEventListener("submit", createPart);
 
-  document.querySelectorAll("[data-part-inventory-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      partInventoryFilter = button.dataset.partInventoryFilter;
-      localStorage.setItem("maintainops.partInventoryFilter", partInventoryFilter);
-      resetPartsPage();
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-asset-status-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      assetStatusFilter = assetStatusFilter === button.dataset.assetStatusFilter ? "all" : button.dataset.assetStatusFilter;
-      localStorage.setItem("maintainops.assetStatusFilter", assetStatusFilter);
-      resetAssetsPage();
-      renderWorkspace();
-    });
+  bindWorkspaceInventoryFilterEvents({
+    state: {
+      getAssetStatusFilter: () => assetStatusFilter,
+      setAssetStatusFilter: (value) => {
+        assetStatusFilter = value;
+      },
+      getPartInventoryFilter: () => partInventoryFilter,
+      setPartInventoryFilter: (value) => {
+        partInventoryFilter = value;
+      },
+    },
+    renderWorkspace,
+    resetAssetsPage,
+    resetPartsPage,
   });
 
   const partSearchForm = document.querySelector("#part-search-form");

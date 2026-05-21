@@ -18,6 +18,7 @@ const requiredResources = [
   "src/utils/workspaceSearchEvents.js",
   "src/utils/workspaceFilterPaginationEvents.js",
   "src/utils/workspaceDetailNavigationEvents.js",
+  "src/utils/workspaceInventoryFilterEvents.js",
   "src/utils/requestQueryFilters.js",
   "src/utils/workOrderSearch.js",
   "src/utils/workspaceListBuilders.js",
