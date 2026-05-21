@@ -6,11 +6,11 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-21:
 
-- Latest app behavior commit: `db77ffd` (`Extract operation timeout utility`).
-- Latest documentation/process cleanup: see latest git log entry for the cleanup commit.
-- Latest deployed cache tag: `app.js?v=lfes-phase-17b-operation-timeout-1`.
-- Current `app.js` line count: 9,677.
-- Latest package: `MaintainOps-github-clean-20260521-090143` in `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- Latest app behavior commit: `b67f252` (`Extract public URL QR utility`).
+- Latest documentation/process cleanup: `accfd5d` (`Restore LFES docs and remove package snapshots`).
+- Latest deployed cache tag: `app.js?v=lfes-phase-17c-public-url-qr-1`.
+- Current `app.js` line count: 9,627.
+- Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
   - `docs/LFES/CORE_STANDARD.md`
@@ -22,9 +22,9 @@ Current state as of 2026-05-21:
 Recommended immediate next controlled phase:
 
 - Pause before another extraction and choose the next explicit boundary.
-- Candidate 1: form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`).
-- Candidate 2: public URL/QR helpers.
-- Both candidates require targeted behavior smokes beyond resource loading.
+- Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
+- Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
+- Choose a new explicit boundary only after targeted behavior smokes prove it.
 
 Keep blocked until explicitly approved:
 
@@ -47,7 +47,8 @@ Keep blocked until explicitly approved:
 
 Verification note:
 
-- Hosted resource checks and signed-in live smoke passed for Phase 17C.
+- Hosted resource checks and signed-in live Settings/QR smoke passed for Phase 17C public URL/QR extraction.
+- The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - GitHub connector returned no workflow runs for recent commits. Do not record GitHub Actions as PASS unless an actual run is inspected and confirmed.
 
 ## Historical Next-Step Log

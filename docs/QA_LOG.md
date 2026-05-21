@@ -7,7 +7,45 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
+- 2026-05-21: LFES Phase 17C public URL/QR utility boundary closed cleanly after form/payload validation was rejected by targeted smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Phase 17C Public URL/QR Utility Boundary - 2026-05-21
+
+Scope:
+
+- Extracted only public URL/QR helper logic from `app.js` into `src/utils/publicUrlQr.js`.
+- Added `src/utils/publicUrlQr.js?v=lfes-phase-17c-public-url-qr-1` before `app.js` in `index.html`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-17c-public-url-qr-1`.
+- Updated hosted resource smoke resource list to include `src/utils/publicUrlQr.js`.
+- Did not move public QR submission, QR admin mutation buttons, request creation, event handlers, auth/session/company/location logic, Supabase SQL/RLS, storage/photo flows, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Pre-flight boundary smoke:
+
+- Public URL/QR helpers passed exact-source smoke for request URL generation, QR URL generation, HTTPS normalization, localhost/private host rejection, QR SVG generation, and QR fallback output.
+- Signed-in passive Settings smoke showed 5 active location QR links, public GitHub Pages base URL, QR/Test Form links, and QR controls.
+- Form/payload validation was rejected as the next boundary: blank Quick Fix submit stayed blocked by native required-field validation, but an invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/publicUrlQr.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted module helper smoke: PASS.
+- Local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- Deploy commit: `b67f252` (`Extract public URL QR utility`).
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in Settings/QR smoke on `https://loufish727.github.io/MaintainOps/?qa_bust=live-public-url-qr-17c-b67f252`: PASS.
+- Live `index.html` references:
+  - `src/utils/publicUrlQr.js?v=lfes-phase-17c-public-url-qr-1`
+  - `app.js?v=lfes-phase-17c-public-url-qr-1`
+- Fresh live console sample after smoke: PASS, no current error logs.
+
+Result:
+
+- PASS for public URL/QR helper extraction.
+- `app.js` line count after extraction: 9,627.
+- Form/payload validation remains blocked pending a narrower behavior contract and smoke.
 
 ## LFES QA / Audit Notes
 

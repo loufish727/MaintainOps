@@ -3640,3 +3640,46 @@ Verification/process correction:
 ### Recommended Next Phase
 
 Continue to pause code movement until the next explicit boundary is chosen and its targeted smoke is defined.
+
+## Phase 17C Public URL/QR Utility Boundary - 2026-05-21
+
+Completed one targeted utility extraction after candidate smokes:
+
+- Rejected form/payload validation as the next boundary because the invalid-date Quick Fix UI smoke did not block cleanly.
+- Extracted public URL/QR helper logic into `src/utils/publicUrlQr.js`; deploy commit `b67f252`.
+- Added `src/utils/publicUrlQr.js?v=lfes-phase-17c-public-url-qr-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-phase-17c-public-url-qr-1`.
+- Updated `tests/smoke/resource-load.spec.js` so hosted resource smoke covers the new utility.
+
+Moved functions:
+
+- `publicRequestUrl`
+- `publicRequestQrUrl`
+- `publicAppUrlWithSearch`
+- `publicAppBaseUrl`
+- `normalizePublicAppUrl`
+- `isPublicAppHost`
+- `qrSvgFor`
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/publicUrlQr.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted helper smoke: PASS for request/QR URL generation, HTTPS normalization, localhost/private host rejection, QR SVG generation, and QR fallback output.
+- local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- hosted resource smoke after GitHub Pages propagation: PASS.
+- live signed-in Settings/QR smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-public-url-qr-17c-b67f252`.
+- live Settings showed 5 active location QR links, GitHub Pages public URL, QR/Test Form links, and QR SVGs.
+- fresh live console sample after smoke: PASS, no current error logs.
+- `app.js` line count after extraction: 9,627.
+
+Boundary preserved:
+
+- No public QR submit flow, QR admin mutation action, request creation/conversion, workflow logic, event handler, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flow, Quick Fix flow, form payload validation, `renderWorkspace()`, or `bindWorkspaceEvents()` was moved.
+
+Carried-forward stop:
+
+- Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation UI path has a narrower contract and passing targeted smoke.
+
+### Recommended Next Phase
+
+Pause before the next extraction. Choose a new explicit boundary only after a targeted behavior smoke proves it, and keep form/payload validation blocked until the invalid-date behavior is understood.

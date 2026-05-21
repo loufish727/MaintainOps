@@ -30,39 +30,42 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES documentation/process cleanup after the Phase 17C operation-timeout boundary extraction.
+Completed LFES Phase 17C public URL/QR utility boundary extraction after targeted smokes ruled out form/payload validation as the safer next boundary.
 
 - Latest app behavior commit:
-  - `db77ffd` (`Extract operation timeout utility`)
+  - `b67f252` (`Extract public URL QR utility`)
 - Latest documentation/process cleanup commit:
-  - see latest git log entry for the cleanup commit.
+  - `accfd5d` (`Restore LFES docs and remove package snapshots`)
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-17b-operation-timeout-1`
+  - `app.js?v=lfes-phase-17c-public-url-qr-1`
 - Current `app.js` line count:
-  - 9,677 lines.
-- Latest package:
-  - `MaintainOps-github-clean-20260521-090143`
-  - package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+  - 9,627 lines.
+- Latest deployment:
+  - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
   - Phase 16D/16E/16F moved schema error predicates to `src/utils/schemaErrors.js`.
   - Phase 16G/16H/16I moved `withSetupError` to `src/utils/operationResults.js`.
   - Phase 17A/17B/17C moved `withOperationTimeout` to `src/utils/operationTimeout.js`.
+  - Phase 17C moved public URL/QR helpers to `src/utils/publicUrlQr.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/schemaErrors.js`, `src/utils/operationResults.js`, and `src/utils/operationTimeout.js`.
-  - direct helper smokes passed for schema predicates, setup error wrapping, and operation timeout success/rejection.
-  - local resource checks passed before package/upload.
-  - hosted GitHub Pages resource checks passed after Pages propagation.
-  - signed-in live smoke passed: authenticated shell loaded with Louie, Work, Parts, and Team visible.
-  - hosted files confirmed current utility modules export expected globals and `app.js` imports them.
-  - GitHub connector returned no workflow runs for the latest app/doc commits; this is not the same as a verified GitHub Actions PASS.
+  - static JS checks passed for `app.js`, `src/utils/publicUrlQr.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted exact-source public URL/QR helper smoke passed for request/QR URL generation, HTTPS normalization, private-host rejection, QR SVG output, and fallback output.
+  - local resource smoke passed against `http://127.0.0.1:4187/`.
+  - hosted GitHub Pages resource smoke passed after Pages propagation.
+  - signed-in live Settings/QR smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-public-url-qr-17c-b67f252`.
+  - live `index.html` referenced `src/utils/publicUrlQr.js?v=lfes-phase-17c-public-url-qr-1` and `app.js?v=lfes-phase-17c-public-url-qr-1`.
+  - Settings showed 5 active location QR links, GitHub Pages public URL, QR/Test Form links, and QR SVGs.
+  - fresh live console sample after the smoke showed no current error logs.
 - Behavior changed:
   - no observed behavior change.
+- Safety stop carried forward:
+  - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
   - restored top-level LFES standards/docs so reviewers do not need to inspect old package snapshots.
   - removed tracked `MaintainOps-github-clean-*` package snapshots from the repo and ignored future package exports.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
-  - pause before another extraction and choose the next explicit boundary. Candidate boundaries are form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) or public URL/QR helpers. Both require targeted behavior smokes beyond resource loading.
+  - pause before another extraction and choose the next explicit boundary. Do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 
