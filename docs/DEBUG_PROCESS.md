@@ -28,6 +28,12 @@ Use this process after every new feature, fix, Supabase change, or GitHub upload
    - cached GitHub/local file.
 5. Prefer root-cause fixes over one-off workarounds.
 
+## Hard-Boundary Smoke Notes
+
+- On dense responsive screens, the same control may exist more than once. Before clicking, filling, or asserting a control by label, inspect the visible DOM and use the visible target when generic locators are ambiguous.
+- For hard-boundary extractions, make hidden global dependencies explicit through small dependency objects or getter functions. Do not move code into a module while leaving important app state reads invisible.
+- A hard-boundary smoke should prove the behavior surface that owns the moved contract, not only that the page loaded.
+
 ## Debug Packet
 
 Start every bug/debug run by collecting this packet. Keep it short, but do not skip it.

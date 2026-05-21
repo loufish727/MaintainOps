@@ -51,6 +51,7 @@ const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
+const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -5038,19 +5039,7 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-jump-work-section]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const target = document.querySelector(`#${button.dataset.jumpWorkSection}`);
-      if (!target) return;
-      const detailSection = target.closest("details");
-      if (detailSection) detailSection.open = true;
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      const highlightTarget = target;
-      highlightTarget.classList.add("jump-highlight", "field-jump-highlight");
-      setTimeout(() => highlightTarget.classList.remove("jump-highlight"), 1400);
-      setTimeout(() => highlightTarget.classList.remove("field-jump-highlight"), 1400);
-    });
-  });
+  bindWorkSectionJumpEvents();
 
   document.querySelectorAll("[data-start-work-message]").forEach((button) => {
     button.addEventListener("click", () => {

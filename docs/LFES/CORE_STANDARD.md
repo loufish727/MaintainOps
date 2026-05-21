@@ -58,6 +58,14 @@ Do not remove useful warnings, errors, status text, audit history, or visible st
 
 Before refactoring high-risk areas, write a plan with extraction order, checkpoints, rollback strategy, and debug protocol coverage.
 
+### LFES-EVOL-002: Make Hard-Boundary Dependencies Explicit
+
+When moving code that touches query orchestration, event binding, workflow state, or other hard boundaries, expose its dependencies through a clear dependency object or getter functions. Do not hide app-state coupling inside a new module.
+
+### LFES-VER-001: Match Smoke Method To UI Shape
+
+Responsive app surfaces may render duplicate controls. For dense or duplicated controls, verify the visible DOM before interacting, and target the visible element rather than assuming a label or placeholder is unique.
+
 ## Everyday Core Checklist
 
 - Read current handoff, next steps, architecture, QA log, and debug process first.
