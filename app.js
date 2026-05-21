@@ -50,6 +50,7 @@ const {
 const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
+const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { listLocations, createLocation: createLocationRecord } = window.MaintainOpsLocationsService;
 const {
   listProfiles,
@@ -141,6 +142,33 @@ const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearc
 const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
 const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCenterErrorDisplay;
 const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
+const {
+  applyWorkOrderListFilters,
+  applyWorkOrderFilters,
+  applyWorkOrderQueueFilters,
+  applyWorkOrderStatusFilter,
+  applyWorkOrderSort,
+} = createWorkOrderQueryFilterHelpers({
+  activeCompanyId: () => activeCompanyId,
+  activeLocationId: () => activeLocationId,
+  activeSection: () => activeSection,
+  activeStatusFilter: () => activeStatusFilter,
+  daysAgoDate,
+  isoDate,
+  isoDateTime,
+  locationsReady: () => locationsReady,
+  monthStartDate,
+  myWorkFilter: () => myWorkFilter,
+  OUTSIDE_VENDOR_NOTE,
+  postgrestSearchTerm,
+  searchQuery: () => searchQuery,
+  session: () => session,
+  startOfToday,
+  workOrderAssigneeFilter: () => workOrderAssigneeFilter,
+  workOrderFilter: () => workOrderFilter,
+  workOrderRelatedSearch: () => workOrderRelatedSearch,
+  workSort: () => workSort,
+});
 const {
   formatMessageTime,
   formatMessageDay,
@@ -2251,104 +2279,6 @@ async function countWorkOrders(options = {}) {
     return 0;
   }
   return response.count || 0;
-}
-
-function applyWorkOrderListFilters(query) {
-  const isGlobalSearch = Boolean(searchQuery.trim());
-  const statusFilter = isGlobalSearch
-    ? "__any__"
-    : activeSection === "work" && activeStatusFilter === "requests"
-      ? "__none__"
-      : activeStatusFilter;
-  return applyWorkOrderSort(applyWorkOrderFilters(query, {
-    statusFilter,
-    section: activeSection,
-    includeQueue: !isGlobalSearch,
-    includeSearch: true,
-  }));
-}
-
-function applyWorkOrderFilters(query, options = {}) {
-  let nextQuery = query.eq("company_id", activeCompanyId);
-  if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
-
-  if (options.includeQueue !== false) {
-    nextQuery = applyWorkOrderQueueFilters(nextQuery, options.section || activeSection);
-  }
-
-  nextQuery = applyWorkOrderStatusFilter(nextQuery, options.statusFilter || activeStatusFilter);
-
-  if (options.includeSearch !== false) {
-    const term = postgrestSearchTerm(searchQuery);
-    if (term) {
-      const searchClauses = [
-        `title.ilike.%${term}%`,
-        `description.ilike.%${term}%`,
-        `priority.ilike.%${term}%`,
-        `type.ilike.%${term}%`,
-        `status.ilike.%${term}%`,
-        ...(workOrderRelatedSearch.assetIds.length ? [`asset_id.in.(${workOrderRelatedSearch.assetIds.join(",")})`] : []),
-        ...(workOrderRelatedSearch.procedureIds.length ? [`procedure_template_id.in.(${workOrderRelatedSearch.procedureIds.join(",")})`] : []),
-        ...(workOrderRelatedSearch.workOrderIds.length ? [`id.in.(${workOrderRelatedSearch.workOrderIds.join(",")})`] : []),
-      ];
-      nextQuery = nextQuery.or(searchClauses.join(","));
-    }
-  }
-
-  return nextQuery;
-}
-
-function applyWorkOrderQueueFilters(query, section) {
-  if (section === "mywork") {
-    return myWorkFilter === "created"
-      ? query.eq("created_by", session.user.id)
-      : query.eq("assigned_to", session.user.id);
-  }
-
-  if (section !== "work") return query;
-  if (workOrderAssigneeFilter) return query.eq("assigned_to", workOrderAssigneeFilter);
-  if (workOrderFilter === "assigned") return query.not("assigned_to", "is", null);
-  if (workOrderFilter === "vendor") return query.ilike("description", `%${OUTSIDE_VENDOR_NOTE}%`);
-  if (workOrderFilter === "unassigned") {
-    return query
-      .is("assigned_to", null)
-      .not("description", "ilike", `%${OUTSIDE_VENDOR_NOTE}%`);
-  }
-  return query;
-}
-
-function applyWorkOrderStatusFilter(query, statusFilter) {
-  const today = isoDate(startOfToday());
-  if (statusFilter === "__any__") return query;
-  if (statusFilter === "__none__") return query.eq("id", "00000000-0000-0000-0000-000000000000");
-  if (statusFilter === "overdue") return query.neq("status", "completed").lt("due_at", today);
-  if (statusFilter === "completed_month") return query.gte("completed_at", isoDateTime(monthStartDate()));
-  if (statusFilter === "completed_week") return query.gte("completed_at", isoDateTime(daysAgoDate(7)));
-  if (statusFilter === "active" || statusFilter === "all") return query.neq("status", "completed");
-  return query.eq("status", statusFilter);
-}
-
-function applyWorkOrderSort(query) {
-  if (["completed", "completed_month", "completed_week"].includes(activeStatusFilter)) {
-    return query
-      .order("completed_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
-  }
-
-  if (workSort === "due") {
-    return query
-      .order("due_at", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
-  }
-
-  if (workSort === "priority") {
-    return query
-      .order("priority", { ascending: true })
-      .order("due_at", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
-  }
-
-  return query.order("created_at", { ascending: false });
 }
 
 async function loadCompanyData() {
