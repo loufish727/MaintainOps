@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed LFES Phase 17D maintenance schedule date helper extraction.
+Completed first hard-boundary LFES extraction: work-order query filter/sort orchestration.
 
 - Latest app behavior commit:
-  - `1c37db8` (`Extract maintenance schedule date helper`)
+  - `d90976d` (`Extract work order query filters`)
 - Latest documentation/process cleanup commit:
   - `accfd5d` (`Restore LFES docs and remove package snapshots`)
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-17d-maintenance-date-1`
+  - `app.js?v=lfes-hard-boundary-work-order-query-1`
 - Current `app.js` line count:
-  - 9,620 lines.
+  - 9,550 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -48,14 +48,17 @@ Completed LFES Phase 17D maintenance schedule date helper extraction.
   - Phase 17A/17B/17C moved `withOperationTimeout` to `src/utils/operationTimeout.js`.
   - Phase 17C moved public URL/QR helpers to `src/utils/publicUrlQr.js`.
   - Phase 17D moved `nextDueDate` to `src/utils/maintenanceScheduleDates.js`.
+  - Hard-boundary run moved work-order query filter/sort orchestration to `src/utils/workOrderQueryFilters.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/maintenanceScheduleDates.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted date helper smoke passed for weekly, monthly, quarterly, and unknown-frequency behavior.
+  - static JS checks passed for `app.js`, `src/utils/workOrderQueryFilters.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted fake-query chain smoke passed for My Work queue, unassigned queue, completed-month status/sort, global search, and request pseudo-status behavior.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live PM passive smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-maintenance-date-17d-1c37db8`.
-  - live `index.html` referenced `src/utils/maintenanceScheduleDates.js?v=lfes-phase-17d-maintenance-date-1` and `app.js?v=lfes-phase-17d-maintenance-date-1`.
-  - PM opened and showed the Preventive Maintenance surface without clicking generate/create mutation controls.
+  - signed-in live work-order query smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-query-hard-boundary-d90976d`.
+  - live `index.html` referenced `src/utils/workOrderQueryFilters.js?v=lfes-hard-boundary-work-order-query-1` and `app.js?v=lfes-hard-boundary-work-order-query-1`.
+  - My Work loaded assigned/created filter surface and counts.
+  - Work Orders loaded active/status/filter/sort surface and showed `Hydralic Leak`.
+  - non-mutating Overdue filter click reloaded Work Orders to `Overdue - All Work Orders` and kept the expected work order visible.
   - fresh live console sample after the smoke showed no current error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -66,7 +69,7 @@ Completed LFES Phase 17D maintenance schedule date helper extraction.
   - removed tracked `MaintainOps-github-clean-*` package snapshots from the repo and ignored future package exports.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
-  - pause before another extraction and choose the next explicit boundary. Do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
+  - pause before another hard-boundary extraction and choose the next explicit boundary. Do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

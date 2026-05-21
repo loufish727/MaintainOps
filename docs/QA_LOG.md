@@ -9,7 +9,74 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
 - 2026-05-21: LFES Phase 17C public URL/QR utility boundary closed cleanly after form/payload validation was rejected by targeted smoke.
 - 2026-05-21: LFES Phase 17D maintenance schedule date helper boundary closed cleanly.
+- 2026-05-21: LFES hard-boundary work-order query filter/sort extraction closed cleanly.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Hard Boundary - Work-Order Query Filters - 2026-05-21
+
+Hard boundary selected:
+
+- Work-order filter/sort query orchestration.
+
+Why it is hard:
+
+- The moved helpers shape Supabase read queries for Work Orders, My Work, dashboard counts, global search, status filters, queue filters, and sort order.
+- The helpers depend on many pieces of app state: company, location, active section, status filter, queue filter, assignee filter, search text, related search IDs, session user, and date helpers.
+
+Why it is recoverable:
+
+- The boundary is read-only query composition.
+- No mutations, event handlers, `renderWorkspace()`, `bindWorkspaceEvents()`, Quick Fix, request conversion, auth/session/company/location startup, storage/photo/document flow, or Supabase SQL/RLS changed.
+- Rollback path is direct: revert `d90976d`, or remove `src/utils/workOrderQueryFilters.js`, restore the five inline helpers in `app.js`, and restore the prior cache tag.
+
+Exact implementation scope:
+
+- Added `src/utils/workOrderQueryFilters.js`.
+- Moved:
+  - `applyWorkOrderListFilters`
+  - `applyWorkOrderFilters`
+  - `applyWorkOrderQueueFilters`
+  - `applyWorkOrderStatusFilter`
+  - `applyWorkOrderSort`
+- Added explicit state getter/dependency injection for previously hidden globals.
+- Added `src/utils/workOrderQueryFilters.js?v=lfes-hard-boundary-work-order-query-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-work-order-query-1`.
+- Updated hosted resource smoke resource list.
+
+Required smoke tests:
+
+- Static JS checks.
+- Targeted fake-query chain smoke covering My Work queue, unassigned queue, completed-month status/sort, global search, and request pseudo-status.
+- Local resource smoke.
+- Local browser boot smoke.
+- Hosted GitHub Pages resource smoke.
+- Live signed-in My Work/Work Orders smoke with a visible non-mutating filter interaction.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workOrderQueryFilters.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted fake-query chain smoke: PASS.
+- Local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- Local browser boot smoke: PASS, new query script and hard-boundary app cache tag present, no fresh errors.
+- Deploy commit: `d90976d` (`Extract work order query filters`).
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in smoke on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-query-hard-boundary-d90976d`: PASS.
+- My Work loaded with Assigned To Me / Created By Me and dashboard count surface.
+- Work Orders loaded with active/status/filter/sort surface and `Hydralic Leak`.
+- Overdue metric click reloaded the read path to `Overdue - All Work Orders` with `Hydralic Leak` still visible.
+- Fresh live console sample after smoke: PASS, no current error logs.
+
+LFES catch discovered:
+
+- Responsive duplicate controls made generic Playwright locators ambiguous for the search box. Visible DOM targeting was more reliable for non-mutating filter smoke.
+- Moving hard query helpers safely required making hidden global state dependencies explicit through injected getters; this should be treated as the pattern for future hard-but-contained extraction candidates.
+
+Result:
+
+- PASS for work-order query filter/sort hard boundary.
+- `app.js` line count after extraction: 9,550.
 
 ## LFES Phase 17D Maintenance Schedule Date Helper - 2026-05-21
 

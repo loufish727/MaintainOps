@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-21:
 
-- Latest app behavior commit: `1c37db8` (`Extract maintenance schedule date helper`).
+- Latest app behavior commit: `d90976d` (`Extract work order query filters`).
 - Latest documentation/process cleanup: `accfd5d` (`Restore LFES docs and remove package snapshots`).
-- Latest deployed cache tag: `app.js?v=lfes-phase-17d-maintenance-date-1`.
-- Current `app.js` line count: 9,620.
+- Latest deployed cache tag: `app.js?v=lfes-hard-boundary-work-order-query-1`.
+- Current `app.js` line count: 9,550.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -24,8 +24,9 @@ Recommended immediate next controlled phase:
 - Pause before another extraction and choose the next explicit boundary.
 - Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
 - Maintenance schedule date helper `nextDueDate` is already extracted into `src/utils/maintenanceScheduleDates.js` and live verified with a passive PM smoke.
+- Work-order query filter/sort orchestration is already extracted into `src/utils/workOrderQueryFilters.js` and live verified with My Work, Work Orders, and Overdue-filter read-path smokes.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
-- Choose a new explicit boundary only after targeted behavior smokes prove it.
+- Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit.
 
 Keep blocked until explicitly approved:
 
@@ -49,6 +50,7 @@ Keep blocked until explicitly approved:
 Verification note:
 
 - Hosted resource checks and signed-in live Settings/QR smoke passed for Phase 17C public URL/QR extraction.
+- Hosted resource checks and signed-in live read-path smoke passed for the work-order query hard boundary.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - GitHub connector returned no workflow runs for recent commits. Do not record GitHub Actions as PASS unless an actual run is inspected and confirmed.
 

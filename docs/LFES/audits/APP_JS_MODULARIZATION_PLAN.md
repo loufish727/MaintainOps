@@ -3720,3 +3720,55 @@ Carried-forward stop:
 ### Recommended Next Phase
 
 Pause before the next extraction. Remaining candidates should be re-audited because most now sit near auth, location state, PM mutations, forms, delete zones, assignment, or workflow/event contracts.
+
+## Hard Boundary - Work-Order Query Filters - 2026-05-21
+
+Completed the first deliberate hard-boundary extraction in this continuation run:
+
+- Selected boundary: work-order filter/sort query orchestration.
+- Extracted into `src/utils/workOrderQueryFilters.js`; deploy commit `d90976d`.
+- Added `src/utils/workOrderQueryFilters.js?v=lfes-hard-boundary-work-order-query-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-work-order-query-1`.
+- Updated `tests/smoke/resource-load.spec.js` so hosted resource smoke covers the new utility.
+
+Why it is hard:
+
+- These helpers are not display helpers. They compose Supabase read queries for My Work, Work Orders, dashboard counts, status filters, queue filters, global search, and sort order.
+- The original inline functions depended on hidden app globals including company/location state, active section, filters, search text, related search IDs, session user, and date helpers.
+
+Why it is recoverable:
+
+- The boundary is read-only query composition.
+- No event handlers, mutations, Quick Fix, request conversion, auth/session/company/location startup, public QR submit, storage/photo/document flow, Supabase SQL/RLS, `renderWorkspace()`, or `bindWorkspaceEvents()` moved.
+- Rollback is direct: revert `d90976d`, or remove the script/module, restore the five inline helpers, and restore the previous app cache tag.
+
+Moved functions:
+
+- `applyWorkOrderListFilters`
+- `applyWorkOrderFilters`
+- `applyWorkOrderQueueFilters`
+- `applyWorkOrderStatusFilter`
+- `applyWorkOrderSort`
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/workOrderQueryFilters.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted fake-query chain smoke: PASS for My Work queue, unassigned queue, completed-month status/sort, global search, and request pseudo-status.
+- local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- local browser boot smoke: PASS with `workOrderQueryFilters.js` and the hard-boundary cache tag present.
+- hosted resource smoke after GitHub Pages propagation: PASS.
+- live signed-in Work Orders/My Work smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-query-hard-boundary-d90976d`.
+- live My Work showed Assigned To Me / Created By Me and dashboard counts.
+- live Work Orders showed status/filter/sort surface and `Hydralic Leak`.
+- live Overdue metric click reloaded to `Overdue - All Work Orders` and kept `Hydralic Leak` visible.
+- fresh live console sample after smoke: PASS, no current error logs.
+- `app.js` line count after extraction: 9,550.
+
+LFES catch:
+
+- Responsive duplicate controls made generic locator-based search smoke ambiguous. Use visible DOM targeting for non-mutating filter/sort smoke on dense responsive surfaces.
+- For hard-but-contained extractions, explicit dependency getter injection is better than silently preserving global reads in the module.
+
+### Recommended Next Phase
+
+Pause before selecting another hard boundary. Good next candidates must have an explicit rollback path and live visible smoke coverage. Keep Quick Fix, request conversion, auth/session/company/location startup, Supabase SQL/RLS, storage/photo/document flows, broad `renderWorkspace`, and broad `bindWorkspaceEvents` blocked.
