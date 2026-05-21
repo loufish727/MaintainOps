@@ -66,6 +66,10 @@ When moving code that touches query orchestration, event binding, workflow state
 
 Responsive app surfaces may render duplicate controls. For dense or duplicated controls, verify the visible DOM before interacting, and target the visible element rather than assuming a label or placeholder is unique.
 
+### LFES-VER-002: Separate Auth Harness Health From Product Behavior
+
+Copied browser profiles, cached sessions, and smoke-test auth harnesses can fail independently of the product. If a harness session is stale, use a valid authenticated harness before judging product behavior, and document the harness limitation separately from app verification.
+
 ## Everyday Core Checklist
 
 - Read current handoff, next steps, architecture, QA log, and debug process first.

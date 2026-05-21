@@ -11,7 +11,68 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES Phase 17D maintenance schedule date helper boundary closed cleanly.
 - 2026-05-21: LFES hard-boundary work-order query filter/sort extraction closed cleanly.
 - 2026-05-21: LFES small event-binding hard-boundary work-order detail jump extraction closed cleanly.
+- 2026-05-21: LFES hard-boundary global search navigation event extraction closed cleanly.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Hard Boundary - Global Search Navigation Events - 2026-05-21
+
+Hard boundary selected:
+
+- Global search result navigation click handlers.
+
+Why it is hard:
+
+- The moved code is a stateful event contract from `bindWorkspaceEvents()`, not a display helper.
+- It updates active IDs, active section, persisted search state, and work-search mode before re-rendering.
+
+Why it is recoverable:
+
+- The behavior is non-mutating navigation/read UI behavior.
+- No Supabase write path, Quick Fix, request conversion, delete flow, auth/session/company/location startup, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+- Rollback path is direct: revert `fb77f1c`, or remove `src/utils/globalSearchNavigationEvents.js`, restore the original five search-result listener blocks in `bindWorkspaceEvents()`, and restore the prior cache tag.
+
+Exact implementation scope:
+
+- Added `src/utils/globalSearchNavigationEvents.js`.
+- Replaced only the `[data-search-work-order]`, `[data-search-asset]`, `[data-search-part]`, `[data-search-request]`, and `[data-search-section]` listener blocks in `bindWorkspaceEvents()` with `bindGlobalSearchNavigationEvents(...)`.
+- Added explicit dependency injection for state setters, `renderWorkspace`, `setWorkOrderSearchMode`, storage, and document access.
+- Added `src/utils/globalSearchNavigationEvents.js?v=lfes-hard-boundary-global-search-nav-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-global-search-nav-1`.
+- Updated hosted resource smoke resource list.
+
+Required smoke tests:
+
+- Static JS checks.
+- Targeted mock-DOM event smoke covering all moved search result routes.
+- Local resource smoke.
+- Local browser boot smoke.
+- Hosted GitHub Pages resource smoke.
+- Live signed-in global search result navigation smoke.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/globalSearchNavigationEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- Targeted mock-DOM event smoke: PASS for work-order, asset, part, request, and generic section result routes.
+- Local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- Local browser boot smoke: PASS, new script and app cache tag present, no fresh errors.
+- Deploy commit: `fb77f1c` (`Extract global search navigation events`).
+- Hosted GitHub Pages resource smoke: PASS after Pages propagation.
+- Live signed-in smoke on `https://loufish727.github.io/MaintainOps/?qa_bust=live-global-search-nav-behavior-fb77f1c-final`: PASS.
+- Live search for `Hydralic` returned a visible work-order result for `Hydralic Leak`.
+- Clicking the result opened Work Order Detail, set active section to `work`, and cleared persisted search plus the visible search input.
+- Fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
+
+LFES catch:
+
+- The smoke had to avoid Playwright's first-match visibility trap on responsive duplicates. Visible-DOM inspection remains required for dense responsive app surfaces.
+- Reusing a copied Chrome profile did not preserve valid auth; copied Edge profile did. Auth-backed smoke method should be recorded as environment-dependent and never treated as a product defect unless the actual user browser fails.
+
+Result:
+
+- PASS for global search navigation hard boundary.
+- `app.js` line count after extraction: 9,488.
 
 ## LFES Hard Boundary - Work-Order Detail Field-Jump Event Binding - 2026-05-21
 

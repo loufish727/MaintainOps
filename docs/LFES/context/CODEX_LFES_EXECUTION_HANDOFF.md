@@ -30,20 +30,20 @@ Current active technical direction:
 
 Most recent deployed closed phase:
 
-- Small event-binding hard-boundary work-order detail field-jump extraction.
+- Hard-boundary global search result navigation event extraction.
 
 Most recent local completed phase:
 
-- Small event-binding hard-boundary work-order detail field-jump extraction is deployed and live verified.
+- Global search result navigation event extraction is deployed and live verified.
 - A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after small event-binding hard-boundary extraction:
+Current app.js line count after global search navigation hard-boundary extraction:
 
-- 9,539 lines.
+- 9,488 lines.
 
 Recent extraction modules:
 
@@ -54,6 +54,7 @@ Recent extraction modules:
 - `src/utils/maintenanceScheduleDates.js`
 - `src/utils/workOrderQueryFilters.js`
 - `src/utils/workSectionJumpEvents.js`
+- `src/utils/globalSearchNavigationEvents.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:

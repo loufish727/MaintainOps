@@ -3819,3 +3819,54 @@ LFES catch:
 ### Recommended Next Phase
 
 Pause before selecting another hard boundary. Small event-binding extraction can continue only when the event contract is isolated, non-mutating or safely smokeable, and has a direct rollback path.
+
+## Hard Boundary - Global Search Navigation Events - 2026-05-21
+
+Completed another contained event-binding extraction from `bindWorkspaceEvents()`:
+
+- Selected boundary: global search result navigation click handlers.
+- Extracted into `src/utils/globalSearchNavigationEvents.js`; deploy commit `fb77f1c`.
+- Added `src/utils/globalSearchNavigationEvents.js?v=lfes-hard-boundary-global-search-nav-1` before `app.js`.
+- Updated `app.js` cache tag to `app.js?v=lfes-hard-boundary-global-search-nav-1`.
+- Updated `tests/smoke/resource-load.spec.js` so hosted resource smoke covers the new utility.
+
+Why it is hard:
+
+- This moved stateful navigation event contracts out of `bindWorkspaceEvents()`.
+- The original inline handlers updated active IDs, active section, persisted search, work-search mode, and then re-rendered.
+
+Why it is recoverable:
+
+- The boundary is non-mutating UI navigation.
+- No Supabase calls, mutations, Quick Fix, request conversion, delete flow, auth/session/company/location startup, public QR submit, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` moved.
+- Rollback is direct: revert `fb77f1c`, or remove the script/module, restore the five listener blocks in `bindWorkspaceEvents()`, and restore the previous app cache tag.
+
+Moved event contracts:
+
+- `[data-search-work-order]`
+- `[data-search-asset]`
+- `[data-search-part]`
+- `[data-search-request]`
+- `[data-search-section]`
+
+Final verification:
+
+- static checks: PASS for `app.js`, `src/utils/globalSearchNavigationEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM event smoke: PASS for all five moved search result routes.
+- local resource smoke against `http://127.0.0.1:4187/`: PASS.
+- local browser boot smoke: PASS with `globalSearchNavigationEvents.js` and the hard-boundary cache tag present.
+- hosted resource smoke after GitHub Pages propagation: PASS.
+- live signed-in global search navigation smoke: PASS on `https://loufish727.github.io/MaintainOps/?qa_bust=live-global-search-nav-behavior-fb77f1c-final`.
+- live search for `Hydralic` returned a visible `Hydralic Leak` work-order result.
+- clicking the visible result opened Work Order Detail, persisted active section as `work`, and cleared persisted search plus the visible search input.
+- fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
+- `app.js` line count after extraction: 9,488.
+
+LFES catch:
+
+- The smoke initially hit the known responsive-duplicate issue because a generic selector resolved hidden controls first. The documented visible-DOM inspection rule handled it.
+- Copied Chrome profile auth was stale, while copied Edge profile auth was valid. Treat copied-profile smoke auth as environment-dependent; the product signal is the signed-in app behavior once a valid session is available.
+
+### Recommended Next Phase
+
+Pause before selecting another hard boundary. Next candidates should remain non-mutating or have stronger targeted smoke coverage before implementation.

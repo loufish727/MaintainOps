@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed small event-binding hard-boundary extraction for work-order detail field jumps.
+Completed hard-boundary extraction for global search result navigation events.
 
 - Latest app behavior commit:
-  - `5a99590` (`Extract work section jump event binding`)
-- Latest documentation/process cleanup commit:
-  - `accfd5d` (`Restore LFES docs and remove package snapshots`)
+  - `fb77f1c` (`Extract global search navigation events`)
+- Latest documentation/process cleanup:
+  - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-hard-boundary-work-jump-1`
+  - `app.js?v=lfes-hard-boundary-global-search-nav-1`
 - Current `app.js` line count:
-  - 9,539 lines.
+  - 9,488 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -50,16 +50,17 @@ Completed small event-binding hard-boundary extraction for work-order detail fie
   - Phase 17D moved `nextDueDate` to `src/utils/maintenanceScheduleDates.js`.
   - Hard-boundary run moved work-order query filter/sort orchestration to `src/utils/workOrderQueryFilters.js`.
   - Small event-binding hard-boundary run moved work-order detail field-jump binding to `src/utils/workSectionJumpEvents.js`.
+  - Hard-boundary run moved global search result navigation events to `src/utils/globalSearchNavigationEvents.js`.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workSectionJumpEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed: details section opened, target scrolled, highlight classes applied, and both classes were removed after timeout.
+  - static JS checks passed for `app.js`, `src/utils/globalSearchNavigationEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed for work-order, asset, part, request, and generic section search result navigation.
   - local resource smoke passed against `http://127.0.0.1:4187/`.
+  - local browser boot smoke passed with new global search navigation script and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live work-order detail jump smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-work-jump-event-5a99590`.
-  - live `index.html` referenced `src/utils/workSectionJumpEvents.js?v=lfes-hard-boundary-work-jump-1` and `app.js?v=lfes-hard-boundary-work-jump-1`.
-  - Work Order Detail opened for `Hydralic Leak`.
-  - `Go To Completion` opened the completion details, applied `jump-highlight` and `field-jump-highlight`, and removed both classes after timeout.
-  - fresh live console sample after the smoke showed no current error logs.
+  - signed-in live global search navigation smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-global-search-nav-behavior-fb77f1c-final`.
+  - live `index.html` referenced `src/utils/globalSearchNavigationEvents.js?v=lfes-hard-boundary-global-search-nav-1` and `app.js?v=lfes-hard-boundary-global-search-nav-1`.
+  - live search for `Hydralic` produced a visible work-order result, click opened Work Order Detail, set active section to `work`, and cleared persisted search.
+  - fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
 - Behavior changed:
   - no observed behavior change.
 - Safety stop carried forward:
@@ -71,7 +72,7 @@ Completed small event-binding hard-boundary extraction for work-order detail fie
 - Recommended next step:
   - pause before another hard-boundary extraction and choose the next explicit boundary. Do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
-Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+Still do not move workflow logic, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Event-binding extraction is allowed only when explicitly selected as a hard boundary with visible smoke coverage and direct rollback.
 
 ## Prior Recent Change
 
