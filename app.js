@@ -221,6 +221,17 @@ let quickFixMode = false;
 let quickFixAssetId = null;
 let quickFixRequestId = null;
 let publicAppUrlOverride = localStorage.getItem("maintainops.publicAppUrl") || "";
+const {
+  publicRequestUrl,
+  publicRequestQrUrl,
+  publicAppUrlWithSearch,
+  publicAppBaseUrl,
+  normalizePublicAppUrl,
+  isPublicAppHost,
+  qrSvgFor,
+} = window.MaintainOpsPublicUrlQr.createPublicUrlQrHelpers({
+  getPublicAppUrlOverride: () => publicAppUrlOverride,
+});
 let activeStatusFilter = "active";
 let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
 let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
@@ -4226,67 +4237,6 @@ function renderPublicRequestLocationCard(location) {
       `}
     </article>
   `;
-}
-
-function publicRequestUrl(token) {
-  return publicAppUrlWithSearch(`?request=${encodeURIComponent(token)}`);
-}
-
-function publicRequestQrUrl(token) {
-  return publicAppUrlWithSearch(`?qr=${encodeURIComponent(token)}`);
-}
-
-function publicAppUrlWithSearch(search) {
-  const base = publicAppBaseUrl();
-  if (!base) return "";
-  const url = new URL(base);
-  url.search = search;
-  url.hash = "";
-  return url.toString();
-}
-
-function publicAppBaseUrl() {
-  const configured = publicAppUrlOverride || String(window.PUBLIC_APP_URL || "").trim();
-  const candidate = configured || (window.location.protocol === "https:" ? window.location.href : "");
-  if (!candidate) return "";
-  return normalizePublicAppUrl(candidate);
-}
-
-function normalizePublicAppUrl(value) {
-  try {
-    const url = new URL(String(value || "").trim(), window.location.href);
-    if (url.protocol !== "https:") return "";
-    if (!isPublicAppHost(url.hostname)) return "";
-    url.search = "";
-    url.hash = "";
-    if (url.pathname && url.pathname !== "/" && !url.pathname.endsWith("/") && !url.pathname.endsWith(".html")) {
-      url.pathname = `${url.pathname}/`;
-    }
-    return url.toString();
-  } catch (error) {
-    return "";
-  }
-}
-
-function isPublicAppHost(hostname) {
-  const host = String(hostname || "").toLowerCase();
-  if (!host || host === "localhost" || host.endsWith(".localhost")) return false;
-  if (host === "127.0.0.1" || host === "::1" || host === "[::1]") return false;
-  if (/^10\./.test(host) || /^192\.168\./.test(host)) return false;
-  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return false;
-  return true;
-}
-
-function qrSvgFor(value, cellSize = 4) {
-  if (!window.qrcode || !value) return `<div class="qr-fallback">QR</div>`;
-  try {
-    const qr = window.qrcode(0, "M");
-    qr.addData(value);
-    qr.make();
-    return qr.createSvgTag(cellSize, 0).replace("<svg", "<svg class=\"qr-code\"");
-  } catch (error) {
-    return `<div class="qr-fallback">QR</div>`;
-  }
 }
 
 function renderMaintenanceRequest(request) {
