@@ -190,6 +190,7 @@ Next recommended phase:
 - workspace search/exact-search events are already extracted and live verified.
 - workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
 - workspace detail/open navigation events are already extracted and live verified in app commit `ef69559`.
+- workspace inventory/equipment filter events are already extracted and live verified in app commit `2b4ad8e`.
 - GitHub Actions verification gap is closed. Use `npm run test:smoke:github-actions`; direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits including `ceb8ba6`, `ef69559`, and `9f8bbed`.
 - Existing event-boundary modules now have explicit LFES contract comments.
 - First state-boundary planning is documented in `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
@@ -198,7 +199,7 @@ Next recommended phase:
 
 Best next candidates:
 
-- part inventory and asset status filters if kept read-only.
+- workspace UI state factory as a medium-risk non-mutating state boundary.
 - team member work-view bridge as a medium-risk UI-state boundary.
 - message read-only navigation only after mapping thread/read-state side effects.
 

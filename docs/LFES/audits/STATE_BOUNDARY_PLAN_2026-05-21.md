@@ -23,6 +23,7 @@ Modules now carrying explicit contract comments:
 - `src/utils/workspaceSearchEvents.js`
 - `src/utils/workspaceFilterPaginationEvents.js`
 - `src/utils/workspaceDetailNavigationEvents.js`
+- `src/utils/workspaceInventoryFilterEvents.js`
 
 ## First Credible State Boundary
 
@@ -58,6 +59,7 @@ Why this is the first candidate:
 - It is already mostly local UI state.
 - It already has localStorage persistence contracts.
 - It is exercised by current event modules.
+- Part inventory and asset status filter events have now been extracted, closing the sequencing asymmetry called out during review.
 - It can be tested without creating, editing, deleting, uploading, or touching Supabase/RLS.
 
 ## Explicitly Out Of Scope For First State Boundary

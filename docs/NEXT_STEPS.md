@@ -3570,10 +3570,11 @@ State-boundary planning:
 - Added `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 - Existing event modules now carry explicit LFES contract comments.
 - Recommended first state boundary is workspace UI state only, not auth/company/location startup, business arrays, mutations, Quick Fix, request conversion, uploads, or Supabase/RLS.
+- Part inventory and asset status filter events were extracted in `2b4ad8e`, so `partInventoryFilter` and `assetStatusFilter` can enter the future state factory without leaving their event bindings in `app.js`.
 
 Next candidate options:
 
-- Local pagination/filter follow-up group: part inventory filter and asset status filter. Safe-to-medium if kept read-only and verified with localStorage/render smoke.
+- Workspace UI state factory. Medium-risk but non-mutating; now better sequenced because search, filter/pagination, detail navigation, and inventory/equipment filter event modules exist.
 - Team member work-view group. Medium-risk because it bridges Team and Work views.
 - Message read-only navigation sub-boundary may be considered only after mapping thread/read-state effects; sending/reply forms remain blocked.
 

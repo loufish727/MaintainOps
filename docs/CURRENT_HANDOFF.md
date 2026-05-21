@@ -4855,21 +4855,19 @@ Continue LFES hard-boundary authority reduction.
 
 Latest completed hard-boundary extraction:
 
-- `bindWorkspaceEvents()` detail/open navigation group was extracted into `src/utils/workspaceDetailNavigationEvents.js`.
-- App deploy commit: `ef69559`.
+- `bindWorkspaceEvents()` part/equipment filter group was extracted into `src/utils/workspaceInventoryFilterEvents.js`.
+- App deploy commit: `2b4ad8e`.
 - Docs update commit follows the app deploy.
-- Current app cache tag: `app.js?v=lfes-authority-detail-navigation-events-1`.
-- Current `app.js` line count: 8,986.
+- Current app cache tag: `app.js?v=lfes-authority-inventory-filter-events-1`.
+- Current `app.js` line count: 8,985.
 - Signed-in live smoke passed with the dedicated QA/test account.
-- GitHub Actions verification gap is closed: use `npm run test:smoke:github-actions`.
-- Direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits, including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+- GitHub Actions verification gap is closed: use `npm run test:smoke:github-actions`; latest verifier pass covered `2b4ad8e`.
 - Event modules now carry explicit LFES contract comments.
 - First state-boundary planning is documented in `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 
 Next safest candidates:
 
 - Workspace UI state factory as a medium-risk non-mutating state boundary, if the next goal is real authority reduction.
-- Part inventory and asset status filters if kept read-only.
 - Team member work-view bridge as a medium-risk UI-state boundary.
 - Message read-only navigation sub-boundary only after mapping read-state side effects; send/reply forms remain blocked.
 

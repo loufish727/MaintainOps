@@ -9940,6 +9940,48 @@ Behavior changed:
 
 - No runtime behavior change intended.
 
+## Safe-to-Medium Authority Boundary - Workspace Inventory Filter Events - 2026-05-21
+
+Scope:
+
+- Extracted the remaining read-only part/equipment filter bindings before moving workspace UI state into a factory.
+- Added `src/utils/workspaceInventoryFilterEvents.js?v=lfes-authority-inventory-filter-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-inventory-filter-events-1`.
+- Updated hosted resource smoke coverage.
+- Deliberately left part search text handling in `app.js`; it has focus restoration and text-input behavior and should be a separate boundary if moved.
+
+Moved event contracts:
+
+- `[data-part-inventory-filter]`
+- `[data-asset-status-filter]`
+
+Risk:
+
+- Safe-to-medium.
+- The moved handlers update local filter state, persist localStorage keys, reset local pages, and render.
+- They do not create, edit, delete, upload, submit forms, route auth/startup, touch Supabase/RLS, or mutate business records.
+
+Verification:
+
+- static JS checks: PASS for `app.js`, `src/utils/workspaceInventoryFilterEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM event smoke: PASS for part inventory filter storage/reset/render and asset status toggle-to-filter/toggle-to-all behavior.
+- local hosted resource smoke: PASS.
+- local browser boot smoke: PASS.
+- hosted GitHub Pages resource smoke: PASS.
+- signed-in live smoke with QA/test account: PASS.
+- live smoke verified deployed script tags, binder presence, part filter storage change to `low`, asset status filter storage change to `running`, asset status toggle back to `all`, and no relevant page errors.
+- GitHub Actions verifier: PASS for `2b4ad8e`.
+
+Result:
+
+- deploy commit: `2b4ad8e` (`Extract workspace inventory filter events`).
+- `app.js` line count moved from 8,986 to 8,985.
+- Behavior changed: no observed behavior change.
+
+Process note:
+
+- This intentionally prioritizes sequencing over line count. It closes the event/state asymmetry before a workspace UI state factory owns `partInventoryFilter` and `assetStatusFilter`.
+
 ## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
 
 Scope:
