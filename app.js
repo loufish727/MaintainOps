@@ -53,6 +53,7 @@ const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
+const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4868,57 +4869,27 @@ function bindWorkspaceEvents() {
     });
   }
 
-  document.querySelectorAll(".workspace-search-input").forEach((searchInput) => {
-    searchInput.addEventListener("input", async () => {
-      const activeSearchId = searchInput.id;
-      searchQuery = searchInput.value;
-      invalidateExactWorkOrderSearchCache();
-      if (!searchQuery.trim()) setWorkOrderSearchMode(false);
-      if (searchQuery.trim()) {
-        activeWorkOrderId = null;
-        activeAssetId = null;
-        activePartId = null;
-        quickFixMode = false;
-        createWorkOrderMode = false;
-        quickFixAssetId = null;
-        quickFixRequestId = null;
-      }
-      localStorage.setItem("maintainops.searchQuery", searchQuery);
-      resetWorkOrderPage();
-      resetPartsPage();
-      resetRequestsPage();
-      await reloadWorkOrderQueue();
-      await reloadRequestQueue();
-      const nextSearchInput = document.querySelector(`#${activeSearchId}`);
-      if (!nextSearchInput) return;
-      nextSearchInput.focus();
-      nextSearchInput.setSelectionRange(searchQuery.length, searchQuery.length);
-    });
-  });
-
-  document.querySelectorAll("[data-view-work-search]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      activeSection = "work";
-      activeWorkOrderId = null;
-      activeAssetId = null;
-      activePartId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      setWorkOrderSearchMode(true);
-      invalidateExactWorkOrderSearchCache();
-      resetWorkOrderPage();
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      await reloadWorkOrderQueue();
-    });
-  });
-
-  document.querySelectorAll("[data-close-work-search]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      setWorkOrderSearchMode(false);
-      invalidateExactWorkOrderSearchCache();
-      resetWorkOrderPage();
-      await reloadWorkOrderQueue();
-    });
+  bindWorkspaceSearchEvents({
+    state: {
+      getActiveSection: () => activeSection,
+      getSearchQuery: () => searchQuery,
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActivePartId: (value) => { activePartId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+      setSearchQuery: (value) => { searchQuery = value; },
+    },
+    invalidateExactWorkOrderSearchCache,
+    reloadRequestQueue,
+    reloadWorkOrderQueue,
+    resetPartsPage,
+    resetRequestsPage,
+    resetWorkOrderPage,
+    setWorkOrderSearchMode,
   });
 
   document.querySelectorAll(".work-card").forEach((card) => {
