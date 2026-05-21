@@ -3,5 +3,7 @@ verify-*.png
 node_modules/
 test-results/
 playwright-report/
+MaintainOps-github-clean-*/
+MaintainOps-github-clean-*.zip
 .DS_Store
 Thumbs.db

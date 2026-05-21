@@ -4,6 +4,18 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-21 - Documentation Source-of-Truth Drift Before High-Risk Work
+
+- Date: 2026-05-21.
+- Phase/build: post Phase 17C operation-timeout boundary and LFES process review.
+- Issue discovered: implementation discipline remained strong, but current restart docs and LFES standards were split. `APP_JS_MODULARIZATION_PLAN.md` was current through Phase 17C, while `CURRENT_HANDOFF.md`, `NEXT_STEPS.md`, and `QA_LOG.md` lagged. Full LFES standards were present inside committed package snapshots instead of the current top-level `docs/LFES` tree.
+- How it was discovered: user requested a full LFES/process/documentation review before high-risk items. Repo review showed stale Phase 9/16 restart docs, missing top-level standards folders, and 3,369 tracked files under `MaintainOps-github-clean-*`.
+- Operational risk: a future AI, coder reviewer, or operator could start from stale instructions, miss LFES standards, or treat old package snapshots as current source. Verification language could also drift by implying GitHub Actions passed when only hosted resource checks were performed.
+- What LFES principle exposed it: reviewability, traceability, engineering memory, and verification-scope clarity.
+- What prevented escalation: the review was run before high-risk extraction. No app behavior was changed.
+- Fix applied or recommended: restore top-level LFES standards, update current handoff/next steps/QA log, remove tracked package snapshots, add `.gitignore` rules for package artifacts, and create an explicit package artifact policy.
+- Lessons learned: fast phase execution can preserve code safety while still drifting documentation if source-of-truth docs are not part of every closeout. High-risk work must begin with documentation alignment.
+
 ## 2026-05-20 - Phase 9B - New Helper Script Deployed With Stale App.js Cache Tag
 
 - Date: 2026-05-20

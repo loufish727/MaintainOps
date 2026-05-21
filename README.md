@@ -39,6 +39,7 @@ Reviewer starting points:
 - [docs/LFES/GOLD_STANDARD.md](docs/LFES/GOLD_STANDARD.md)
 - [docs/LFES/audits/LFES_GOLD_AUDIT_REPORT.md](docs/LFES/audits/LFES_GOLD_AUDIT_REPORT.md)
 - [docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md](docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md)
+- [docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md](docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md)
 
 LFES focuses on preserving engineering understanding as the system evolves. It is not a legal compliance framework and does not claim external certification.
 

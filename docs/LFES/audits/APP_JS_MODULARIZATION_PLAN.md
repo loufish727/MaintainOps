@@ -3613,3 +3613,30 @@ Boundary preserved:
 ### Recommended Next Phase
 
 Pause before another extraction and choose the next explicit boundary. The next viable candidates are form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) or public URL/QR helpers, both of which require targeted behavior smokes beyond resource loading.
+
+## Documentation Source-of-Truth Cleanup - 2026-05-21
+
+Completed a process/documentation cleanup before high-risk extraction work:
+
+- Restored full LFES standards into the current top-level `docs/LFES` tree.
+- Updated current handoff, next steps, Codex LFES handoff, QA log, README, and LFES evidence.
+- Removed tracked `MaintainOps-github-clean-*` package snapshots from the publish repo.
+- Added `.gitignore` rules to keep future clean packages out of the source repository.
+- Added `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
+- Added `docs/LFES/context/PACKAGE_ARTIFACT_POLICY.md`.
+
+Root cause:
+
+- Package/export artifacts were committed into the publish repo, causing historical copies of app code and LFES standards to live beside current source files.
+- Rapid phase execution kept `APP_JS_MODULARIZATION_PLAN.md` current, but restart docs and the central QA log lagged behind.
+
+Verification/process correction:
+
+- Current restart docs now point at Phase 17C.
+- LFES standards are available from the current README entry points.
+- Package artifacts are preserved outside the repo in the project package folder.
+- Future verification language must distinguish hosted resource checks from GitHub Actions runs.
+
+### Recommended Next Phase
+
+Continue to pause code movement until the next explicit boundary is chosen and its targeted smoke is defined.

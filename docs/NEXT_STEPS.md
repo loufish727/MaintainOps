@@ -2,7 +2,55 @@
 
 This is the recommended restart point for the next session.
 
-## Immediate Next Step
+## Immediate Next Step - Current
+
+Current state as of 2026-05-21:
+
+- Latest app behavior commit: `db77ffd` (`Extract operation timeout utility`).
+- Latest documentation/process cleanup: see latest git log entry for the cleanup commit.
+- Latest deployed cache tag: `app.js?v=lfes-phase-17b-operation-timeout-1`.
+- Current `app.js` line count: 9,677.
+- Latest package: `MaintainOps-github-clean-20260521-090143` in `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- Current LFES source-of-truth docs:
+  - `docs/CURRENT_HANDOFF.md`
+  - `docs/LFES/CORE_STANDARD.md`
+  - `docs/LFES/GOLD_STANDARD.md`
+  - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
+  - `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`
+  - `docs/QA_LOG.md`
+
+Recommended immediate next controlled phase:
+
+- Pause before another extraction and choose the next explicit boundary.
+- Candidate 1: form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`).
+- Candidate 2: public URL/QR helpers.
+- Both candidates require targeted behavior smokes beyond resource loading.
+
+Keep blocked until explicitly approved:
+
+- additional automatic 21-phase extraction runs.
+- workflow logic.
+- event handlers.
+- mutations.
+- auth/session/company/location startup.
+- Supabase SQL/RLS.
+- storage/photo/document flows.
+- Quick Fix.
+- request conversion.
+- delete actions and confirmations.
+- public QR submission flows.
+- PM generation.
+- forms with mutations.
+- assignment controls.
+- `renderWorkspace()`.
+- `bindWorkspaceEvents()`.
+
+Verification note:
+
+- Hosted resource checks and signed-in live smoke passed for Phase 17C.
+- GitHub connector returned no workflow runs for recent commits. Do not record GitHub Actions as PASS unless an actual run is inspected and confirmed.
+
+## Historical Next-Step Log
 
 LFES Phase 9O package/upload and live verification is complete. Phase 9N/9O equipment label extraction is fully closed.
 

@@ -30,30 +30,39 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed a smaller 6-step LFES medium-risk modularization run from Phase 15X through Phase 16C.
+Completed LFES documentation/process cleanup after the Phase 17C operation-timeout boundary extraction.
 
-- Added or extended:
-  - `src/render/messageCenterErrorDisplay.js`
-  - `src/render/appIssueErrorDisplay.js`
+- Latest app behavior commit:
+  - `db77ffd` (`Extract operation timeout utility`)
+- Latest documentation/process cleanup commit:
+  - see latest git log entry for the cleanup commit.
 - Latest live cache tag:
-  - `app.js?v=lfes-phase-16b-app-issue-error-display-1`
-- Latest package:
-  - `MaintainOps-github-clean-20260520-161159`
-- Latest app commit:
-  - `09ef977` (`Extract app issue error display helper`)
+  - `app.js?v=lfes-phase-17b-operation-timeout-1`
 - Current `app.js` line count:
-  - 9,711 lines.
+  - 9,677 lines.
+- Latest package:
+  - `MaintainOps-github-clean-20260521-090143`
+  - package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+- Latest modularization state:
+  - Phase 16D/16E/16F moved schema error predicates to `src/utils/schemaErrors.js`.
+  - Phase 16G/16H/16I moved `withSetupError` to `src/utils/operationResults.js`.
+  - Phase 17A/17B/17C moved `withOperationTimeout` to `src/utils/operationTimeout.js`.
 - Verification:
-  - static JS checks: PASS.
-  - targeted local helper-output smokes: PASS.
-  - local resource checks before package/upload: PASS.
-  - hosted GitHub Pages resource checks: PASS.
-  - signed-in live smoke: PASS.
-  - no browser warning/error logs after filtering known benign noise.
+  - static JS checks passed for `app.js`, `src/utils/schemaErrors.js`, `src/utils/operationResults.js`, and `src/utils/operationTimeout.js`.
+  - direct helper smokes passed for schema predicates, setup error wrapping, and operation timeout success/rejection.
+  - local resource checks passed before package/upload.
+  - hosted GitHub Pages resource checks passed after Pages propagation.
+  - signed-in live smoke passed: authenticated shell loaded with Louie, Work, Parts, and Team visible.
+  - hosted files confirmed current utility modules export expected globals and `app.js` imports them.
+  - GitHub connector returned no workflow runs for the latest app/doc commits; this is not the same as a verified GitHub Actions PASS.
 - Behavior changed:
   - no observed behavior change.
+- Process cleanup:
+  - restored top-level LFES standards/docs so reviewers do not need to inspect old package snapshots.
+  - removed tracked `MaintainOps-github-clean-*` package snapshots from the repo and ignored future package exports.
+  - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
-  - choose LFES Phase 16D planning/readiness only after a fresh remaining-candidate audit, or pause for an AI/code review because remaining candidates are now mostly core queue/detail/form/workflow areas.
+  - pause before another extraction and choose the next explicit boundary. Candidate boundaries are form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) or public URL/QR helpers. Both require targeted behavior smokes beyond resource loading.
 
 Still do not move workflow logic, event handlers, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or `bindWorkspaceEvents()`.
 

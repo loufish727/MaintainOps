@@ -26,37 +26,37 @@ MaintainOps is in supervised pilot territory.
 
 Current active technical direction:
 
-- continue controlled `app.js` cleanup through batched low-risk display/read-only helper extraction.
+- pause automatic extraction runs and use explicit boundary review for each next module movement.
 
 Most recent deployed closed phase:
 
-- Phase 9D dashboard display-helper extraction.
+- Phase 17A/17B/17C operation-timeout infrastructure extraction.
 
 Most recent local completed phase:
 
-- Phase 9E static icon display-helper extraction.
-- Phase 9E has passed local checks and local smoke.
-- Phase 9E has not yet been packaged/uploaded/live-verified.
+- Phase 17C is packaged, deployed, and live verified.
+- A documentation/process cleanup followed Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after Phase 9E:
+Current app.js line count after Phase 17B:
 
-- 10,524 lines.
+- 9,677 lines after Phase 17B.
 
 Recent extraction modules:
 
-- `src/render/displayHelpers.js`
-- `src/render/relationshipDisplay.js`
-- `src/render/dashboardDisplay.js`
-- `src/render/iconDisplay.js`
+- `src/utils/schemaErrors.js`
+- `src/utils/operationResults.js`
+- `src/utils/operationTimeout.js`
+- previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:
 
-- batch low-risk display/read-only cleanup where safe.
-- do not touch dangerous workflow/orchestration zones yet.
+- do not batch by default.
+- require explicit boundary selection and targeted behavior smoke for each next medium/high-risk extraction.
+- keep workflow/orchestration zones blocked unless separately planned and approved.
 
 ## Safe To Batch
 
@@ -97,7 +97,7 @@ Any of these requires planning-only first or explicit approval.
 1. Preserve behavior exactly unless a defect fix is explicitly approved.
 2. Prefer small coherent modules over random line movement.
 3. Do not move functions just to reduce line count.
-4. Every extraction must have static checks, local smoke, package/upload, live smoke, and GitHub Actions resource smoke after push.
+4. Every extraction must have static checks, local smoke, package/upload, hosted resource checks, and live smoke. Record GitHub Actions as PASS only when an actual workflow run is inspected and confirmed.
 5. Verify cache tags after every deploy:
    - new helper script must return HTTP 200.
    - `app.js` cache tag must be current.
@@ -106,7 +106,7 @@ Any of these requires planning-only first or explicit approval.
 7. Never fake verification.
 8. Keep blocked items visible.
 9. Update docs every phase.
-10. Stop if risk rises above low-risk display/read-only.
+10. Stop if risk rises above the approved boundary, if verification cannot be completed, or if the next move needs a wider architecture decision.
 
 ## High-Risk LFES Deviation
 
@@ -169,20 +169,22 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-Phase 9E local extraction is complete.
+Phase 17C operation-timeout extraction is complete.
 
 Next recommended phase:
 
-- package/upload LFES Phase 9E to GitHub Pages, then live verify.
+- choose the next explicit boundary before moving code.
+- candidate 1: form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`).
+- candidate 2: public URL/QR helpers.
+- both require targeted behavior smokes beyond resource loading.
 
-Phase 9E deployment verification must confirm:
+The next boundary plan must confirm:
 
-- package includes `src/render/iconDisplay.js`.
-- live `index.html` references `src/render/iconDisplay.js?v=lfes-phase-9e-icons-1`.
-- live `index.html` references `app.js?v=lfes-phase-9e-icons-1`.
-- live helper script returns HTTP 200.
-- signed-in live smoke verifies Taylor Metal Products, Salem, My Work, Work Orders, Equipment, Parts, Team, Settings, nav icons, segment icons, no missing scripts, and no visible app errors.
-- GitHub Actions Resource Load Smoke passes after push.
+- exactly which functions move.
+- which call sites are affected.
+- which workflow/path proves behavior stayed intact.
+- cache tags and hosted resources after deploy.
+- whether GitHub Actions actually ran and passed or remained not verified.
 
 ## Response Style Going Forward
 

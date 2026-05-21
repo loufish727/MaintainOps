@@ -2,6 +2,13 @@
 
 This file summarizes important QA passes and remaining test priorities.
 
+## Current Latest QA Entries
+
+- 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
+- 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
+- 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
+- Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
 ## LFES QA / Audit Notes
 
 2026-05-19 LFES Phase 4B technician-role guardrail verification partial pass:
@@ -9336,6 +9343,130 @@ Conclusion:
 
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
+
+## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
+
+Scope:
+
+- Extracted schema error predicates into `src/utils/schemaErrors.js`.
+- Extracted the setup error response wrapper into `src/utils/operationResults.js`.
+- Stopped with `ACTION NEEDED` after Phase 16I because remaining candidates crossed into mutation payloads, auth/public flows, readiness side effects, or workflow state.
+
+Shipped commits:
+
+- `f78d84a` - `Extract schema error utility helpers`
+- `abb1b80` - `Extract setup error response helper`
+- `4bc023e` - `Document phase 16 utility safety stop`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260521-085044`
+- package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+
+TEST:
+Phase 16I static, helper, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/schemaErrors.js`: PASS.
+- `node --check src/utils/operationResults.js`: PASS.
+- direct helper-output smokes passed.
+- local resource checks passed before package/upload.
+- hosted GitHub Pages resources passed after propagation.
+- live app showed authenticated shell with Louie, Work, Parts, and Team visible.
+- hosted files confirmed `src/utils/operationResults.js` exported `MaintainOpsOperationResults`, live `app.js` imported it, and the old inline `withSetupError` function was absent.
+
+Notes:
+
+- GitHub connector returned no workflow runs for the latest app/doc commits. This is not a GitHub Actions PASS.
+- Behavior changed: no observed behavior change.
+
+Conclusion:
+
+- Phase 16D through 16I closed with an intentional `ACTION NEEDED` safety stop.
+
+## LFES Phase 17A Through 17C Operation Timeout Boundary - 2026-05-21
+
+Scope:
+
+- After architecture review, extracted only `withOperationTimeout` into `src/utils/operationTimeout.js`.
+- Did not change timeout values, call sites, Supabase calls, mutation handlers, auth flows, storage flows, public QR flows, message flows, work-order workflow logic, readiness flags, `renderWorkspace()`, or `bindWorkspaceEvents()`.
+
+Shipped commits:
+
+- `db77ffd` - `Extract operation timeout utility`
+- `8764fc5` - `Document operation timeout boundary`
+
+Latest package:
+
+- `MaintainOps-github-clean-20260521-090143`
+- package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`
+
+TEST:
+Phase 17C static, timeout helper, hosted resource, and signed-in live smoke
+
+RESULT:
+PASS
+
+Verified:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/operationTimeout.js`: PASS.
+- direct timeout helper smoke passed for resolved promise and timeout rejection message.
+- local resource smoke passed.
+- hosted resource checks passed after GitHub Pages propagation.
+- live signed-in smoke passed with authenticated shell, Louie, Work, Parts, and Team visible.
+- hosted files confirmed `src/utils/operationTimeout.js` exported `MaintainOpsOperationTimeout`, live `app.js` imported it, and the old inline `withOperationTimeout` function was absent.
+
+Notes:
+
+- Browser page-global probing was unreliable in the in-app browser, but resource/file probes and successful app boot verified the script/import path.
+- GitHub connector returned no workflow runs for `db77ffd`. This is not a GitHub Actions PASS.
+- `app.js` line count after Phase 17B: 9,677.
+- Behavior changed: no observed behavior change.
+
+Conclusion:
+
+- Phase 17C closed cleanly.
+- Next extraction must be an explicit boundary with targeted behavior smoke, not another automatic 21-phase run.
+
+## LFES Documentation Source-of-Truth Cleanup - 2026-05-21
+
+Scope:
+
+- Reviewed LFES process, standards, case studies, documentation entry points, package artifacts, and GitHub/repo reviewability before high-risk work.
+- Restored full LFES standards to the current top-level `docs/LFES` tree.
+- Removed tracked `MaintainOps-github-clean-*` package snapshots from the publish repo.
+- Added package artifact ignore rules.
+- Documented why the drift happened and how to prevent it.
+
+TEST:
+Documentation/process consistency review
+
+RESULT:
+PASS WITH CORRECTIONS
+
+Corrected:
+
+- `docs/CURRENT_HANDOFF.md` now points at Phase 17C state instead of stale Phase 16C state.
+- `docs/NEXT_STEPS.md` now names the current explicit-boundary decision instead of stale Phase 9P work.
+- `docs/LFES/context/CODEX_LFES_EXECUTION_HANDOFF.md` now reflects the post-Phase-17C process.
+- `docs/LFES/CORE_STANDARD.md`, `docs/LFES/GOLD_STANDARD.md`, `docs/LFES/standards/*`, `docs/LFES/audit/*`, `docs/LFES/templates/*`, and `docs/LFES/traceability/*` are present at top level.
+- `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md` records the root cause and prevention rule.
+- `.gitignore` excludes future `MaintainOps-github-clean-*` folders and zips.
+
+Notes:
+
+- Root cause: package/export artifacts were committed into the publish repo, and rapid phase execution updated the modularization plan more consistently than restart docs and QA log.
+- External package artifacts remain available under `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+
+Conclusion:
+
+- The LFES work discipline held, but documentation entry points drifted. This cleanup restores source-of-truth clarity before high-risk items.
 
 ## LFES Phase 15X Through 16C Error Display Extraction - 2026-05-20
 
