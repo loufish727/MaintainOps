@@ -178,17 +178,39 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-Small event-binding hard-boundary work-order detail field-jump extraction is complete.
+`bindWorkspaceEvents()` filter/pagination authority extraction is complete.
 
 Next recommended phase:
 
-- choose the next explicit boundary before moving code.
+- choose the next explicit `bindWorkspaceEvents()` group before moving code.
 - public URL/QR helpers are already extracted and live verified.
 - maintenance schedule date helper is already extracted and live verified.
 - work-order query filter/sort orchestration is already extracted and live verified.
 - work-order detail field-jump event binding is already extracted and live verified.
+- workspace search/exact-search events are already extracted and live verified.
+- workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
+
+Best next candidates:
+
+- detail/open navigation group with visible card/detail/back smoke.
+- part inventory and asset status filters if kept read-only.
+- team member work-view bridge as a medium-risk UI-state boundary.
+
+Still blocked until separate planning:
+
+- command routing.
+- message center send/reply.
+- work-order mutation/status/assignment/delete/downtime flows.
+- request conversion, Quick Fix, request delete.
+- part inventory mutations and document/source flows.
+- asset/PM/procedure/team/settings forms.
+- auth/session/company/location startup.
+- public QR submit/admin.
+- storage/photo/document/logo flows.
+- SQL/RLS.
+- broad `renderWorkspace()` or broad `bindWorkspaceEvents()` extraction.
 
 The next boundary plan must confirm:
 

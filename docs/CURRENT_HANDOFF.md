@@ -4851,7 +4851,25 @@ Implementation:
 
 ## Next Action
 
-Run QA on the Mobile tech location lock flow.
+Continue LFES hard-boundary authority reduction.
+
+Latest completed hard-boundary extraction:
+
+- `bindWorkspaceEvents()` filter/pagination group was extracted into `src/utils/workspaceFilterPaginationEvents.js`.
+- App deploy commit: `ceb8ba6`.
+- Docs update commit follows the app deploy.
+- Current app cache tag: `app.js?v=lfes-authority-filter-pagination-events-1`.
+- Current `app.js` line count: 9,046.
+- Signed-in live smoke passed with the dedicated QA/test account.
+- GitHub Actions workflow runs: none returned for `ceb8ba6`.
+
+Next safest candidates:
+
+- Detail/open navigation group if planned with visible card/detail/back smoke.
+- Part inventory and asset status filters if kept read-only.
+- Team member work-view bridge as a medium-risk UI-state boundary.
+
+Do not move yet: command routing, message center send/reply, work-order mutation/status/assignment/delete/downtime flows, request conversion/Quick Fix/delete, parts mutation/document/source flows, asset/PM/procedure/team/settings forms, auth/session/company/location startup, public QR submit/admin, storage/photo/document/logo flows, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()`.
 
 Before and after any new feature or fix, use `docs/FEATURE_CHANGE_PROCESS.md` and `docs/DEBUG_PROCESS.md` so changes are scoped, tested, documented, and packaged the same way every time.
 

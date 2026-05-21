@@ -3543,3 +3543,42 @@ add column if not exists mobile_tech boolean not null default false;
 
 notify pgrst, 'reload schema';
 ```
+
+## Current LFES Position - 2026-05-21
+
+Latest completed hard-boundary extraction:
+
+- `bindWorkspaceEvents()` filter/pagination group extracted into `src/utils/workspaceFilterPaginationEvents.js`.
+- App deploy commit: `ceb8ba6`.
+- Cache tag: `app.js?v=lfes-authority-filter-pagination-events-1`.
+- `app.js` line count: 9,046.
+- Signed-in live smoke passed with the dedicated QA/test account.
+- GitHub Actions workflow runs: none returned for `ceb8ba6`.
+
+Current safe sequence:
+
+1. Continue decomposing `bindWorkspaceEvents()` one named group at a time.
+2. Keep `app.js` as state owner unless a separate state-boundary phase is explicitly planned.
+3. Require targeted mock-DOM event smoke before deploy for every event extraction.
+4. Require signed-in live smoke after deploy for every medium/high-risk event extraction.
+5. Keep credentials in local-only storage or environment only; do not commit passwords, tokens, recovery links, or browser storage states.
+
+Next candidate options:
+
+- Detail/open navigation group: `.work-card`, `.asset-card`, `[data-open-asset]`, `[data-asset-id]`, `[data-mini-work-order]`, and back buttons. Medium-risk because it changes active-detail UI state but does not mutate business data.
+- Local pagination/filter follow-up group: part inventory filter and asset status filter. Safe-to-medium if kept read-only and verified with localStorage/render smoke.
+- Team member work-view group. Medium-risk because it bridges Team and Work views.
+
+Do not choose yet:
+
+- command routing,
+- message sending/reply forms,
+- work-order assignment/status/delete flows,
+- request conversion/Quick Fix/delete flows,
+- parts use/restock/edit/delete/document flows,
+- asset/PM/procedure/team/settings forms,
+- auth/session/company/location startup,
+- public QR submit/admin flows,
+- storage/photo/document/logo flows,
+- SQL/RLS,
+- broad `renderWorkspace()` or broad `bindWorkspaceEvents()` movement.

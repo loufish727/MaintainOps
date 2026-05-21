@@ -3974,3 +3974,64 @@ Authority reduced:
 ### Recommended Next Phase
 
 Choose one next authority-map boundary. Good next candidates are local read-only navigation/card openers or pagination/filter events. Keep command routing, message sending, form submissions, mutations, deletes, uploads, auth/startup, storage/photo/document flows, Quick Fix, and request conversion blocked until individually planned.
+
+## Hard-Boundary Authority Reduction - Workspace Filter/Pagination Events - 2026-05-21
+
+The safe render-helper reduction boundary has been reached. The active strategy is now controlled authority reduction, not aggressive line count reduction.
+
+First `bindWorkspaceEvents()` decomposition pass:
+
+- Mapped 121 selector bindings inside the 934-line `bindWorkspaceEvents()` authority block.
+- Selected the largest recoverable medium-risk group with direct smoke coverage: workspace filter/pagination events.
+- Extracted into `src/utils/workspaceFilterPaginationEvents.js`.
+- App deploy commit: `ceb8ba6`.
+- `app.js` line count after extraction: 9,046.
+
+Moved event authority:
+
+- Work/request status filters.
+- My Work filter.
+- Work-order filter and assignee-filter clearing.
+- Work-order sort.
+- Request queue filter.
+- Work, parts, assets, and generic list pagination.
+
+Boundary design:
+
+- The module owns only event binding and local event orchestration.
+- `app.js` remains the state owner through injected getters/setters.
+- Business-data mutations remain blocked.
+- No selector contracts changed.
+- No form submissions, deletes, uploads, auth/session/company/location startup, public QR submit, Quick Fix, request conversion, storage/photo/document flows, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+
+Required smoke pattern for future event extractions:
+
+1. Map selectors and state touched.
+2. Classify the group as safe-to-medium, medium-risk, high-risk, or do-not-touch.
+3. Define rollback path before edits.
+4. Add a targeted mock-DOM smoke covering each moved selector and each state/storage/reload/render side effect.
+5. Run syntax checks and local resource smoke.
+6. Deploy only after local verification passes.
+7. Run hosted resource smoke.
+8. Run signed-in live behavior smoke with the dedicated QA/test account.
+9. Document behavior and LFES catches without committing credentials.
+
+Next best candidates:
+
+- Detail/open navigation group if a visible smoke can confirm card/detail open and back behavior.
+- Part inventory and asset status filters if kept read-only.
+- Team member work-view bridge if planned as a medium-risk UI-state boundary.
+
+Blocked until separate planning:
+
+- command routing,
+- message center send/reply,
+- work-order mutation/status/assignment/delete/downtime flows,
+- request conversion, Quick Fix, request delete,
+- part inventory mutations and document/source flows,
+- asset/PM/procedure/team/settings forms,
+- auth/session/company/location startup,
+- public QR submit/admin,
+- storage/photo/document/logo flows,
+- SQL/RLS,
+- broad render/event extraction.

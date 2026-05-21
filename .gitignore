@@ -1,4 +1,5 @@
 supabase-config.js
+.env.local
 verify-*.png
 node_modules/
 test-results/

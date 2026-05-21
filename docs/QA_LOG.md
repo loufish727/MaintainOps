@@ -9773,6 +9773,69 @@ Conclusion:
 - The requested 21 phase steps completed without an `ACTION NEEDED` stop.
 - Behavior changed: no observed behavior change.
 
+## Medium-Risk Authority Boundary - Workspace Filter/Pagination Events - 2026-05-21
+
+Scope:
+
+- Started the `bindWorkspaceEvents()` hard-zone decomposition under LFES controls.
+- Mapped the current `bindWorkspaceEvents()` selector surface before implementation: 934 function lines and 121 selector bindings.
+- Extracted one named event-binding group only: workspace filter and pagination events.
+- Added `src/utils/workspaceFilterPaginationEvents.js?v=lfes-authority-filter-pagination-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-filter-pagination-events-1`.
+- Updated hosted resource smoke coverage.
+- Added `.env.local` to `.gitignore` for local-only test credential config. No password or token was committed.
+
+Hard-boundary ranking:
+
+- Safe-to-medium: already isolated workspace search/exact search, global search navigation, work-section jumps, and future pure read-only local navigation helpers.
+- Medium-risk: filter/pagination events, detail/open navigation, team member work-view filters.
+- High-risk: command routing, message center, work-order status/assignment/delete/downtime, request conversion/Quick Fix/delete, parts restock/use/edit/delete/documents, asset/PM/procedure/team/settings forms.
+- Do-not-touch-yet: auth/session/company/location startup, Quick Fix creation flow, request conversion, public QR submit/admin flow, storage/photo/document/logo flows, SQL/RLS, broad `renderWorkspace()`, broad `bindWorkspaceEvents()`.
+
+Selected boundary:
+
+- `[data-status-filter]`
+- `[data-my-work-filter]`
+- `[data-work-order-filter]`
+- `[data-clear-assignee-filter]`
+- `[data-work-sort]`
+- `[data-request-filter]`
+- `[data-work-page]`
+- `[data-parts-page]`
+- `[data-assets-page]`
+- `[data-list-page]`
+
+Why it is hard:
+
+- The moved listeners mutate local view/page/filter state, persist localStorage keys, invalidate exact-search cache state, and choose between `reloadWorkOrderQueue()`, `reloadRequestQueue()`, and `renderWorkspace()`.
+
+Why it is recoverable:
+
+- The boundary is non-mutating against business data and does not submit forms, delete, upload, route auth/startup, alter SQL/RLS, convert requests, create Quick Fix work, or move broad render/event authority.
+- `app.js` still owns state through injected getters/setters.
+- Rollback is direct: revert `ceb8ba6`, or remove the module/script/resource-smoke entry and restore the original listener blocks plus prior cache tag.
+
+Verification:
+
+- static JS checks: PASS for `app.js`, `src/utils/workspaceFilterPaginationEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM smoke: PASS for all ten moved selector groups, including disabled request-filter no-op behavior, request pagination reload behavior, page increments, storage writes/removals, cache invalidation, and render/reload call choices.
+- local browser boot smoke: PASS with the new script/cache tags present and the binder available on `window`.
+- local hosted resource smoke: PASS.
+- live GitHub Pages resource smoke: PASS.
+- signed-in live smoke using the dedicated QA/test account: PASS.
+- live smoke verified deployed script tags, successful login, Work Orders sort storage, Work Orders filter storage, Requests status switch, request filter storage, and no relevant page errors.
+- GitHub Actions resource smoke: NOT AVAILABLE; GitHub connector returned no workflow runs for `ceb8ba6`.
+
+Result:
+
+- deploy commit: `ceb8ba6` (`Extract workspace filter pagination events`).
+- `app.js` line count moved from 9,093 to 9,046.
+- Behavior changed: no observed behavior change.
+
+LFES catch:
+
+- Copied browser profiles were unreliable for fresh auth because active browser storage did not flush predictably. The stable path is to use the dedicated QA/test account directly for Playwright login while keeping credentials out of committed docs/code.
+
 ## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
 
 Scope:
