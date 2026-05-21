@@ -3584,3 +3584,32 @@ Boundary preserved:
 ### ACTION NEEDED
 
 Pause additional automated phase extraction before continuing. The next apparent helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`, auth URL helpers, public URL/QR helpers, readiness wrappers, and queue/detail helpers) now intersect mutation payloads, auth/public flows, readiness side effects, or workflow state. Continuing safely requires an explicit architecture/review decision for the next module boundary rather than another low-risk display-helper style extraction.
+
+## Phase 17A Through 17C Operation Timeout Boundary - 2026-05-21
+
+Completed one deliberate medium/high-risk infrastructure extraction after architecture review:
+
+- Phase 17A/17B/17C: extracted `withOperationTimeout` into `src/utils/operationTimeout.js`; deploy commit `db77ffd`.
+
+Final verification:
+
+- final package: `MaintainOps-github-clean-20260521-090143`.
+- final package path: `C:\Users\louie\Documents\Codex\2026-05-20\3-maintain-ops-continuation-build\packages`.
+- final cache tag: `app.js?v=lfes-phase-17b-operation-timeout-1`.
+- static checks: PASS for `app.js` and `src/utils/operationTimeout.js`.
+- direct timeout helper smoke: PASS for resolved promise and timeout rejection message.
+- local resource smoke: PASS.
+- hosted resource checks: PASS.
+- live signed-in smoke: PASS.
+- live app showed authenticated shell with Louie, Work, Parts, and Team visible.
+- hosted files confirmed `src/utils/operationTimeout.js` exports `MaintainOpsOperationTimeout`, live `app.js` imports it, and the old inline `withOperationTimeout` function is absent.
+- GitHub connector returned no workflow runs for `db77ffd`.
+- `app.js` line count after Phase 17B: 9,677.
+
+Boundary preserved:
+
+- No timeout values, call sites, Supabase calls, mutation handlers, auth flows, storage flows, public QR flows, message flows, work-order workflow logic, readiness flags, `renderWorkspace()`, or `bindWorkspaceEvents()` were changed.
+
+### Recommended Next Phase
+
+Pause before another extraction and choose the next explicit boundary. The next viable candidates are form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) or public URL/QR helpers, both of which require targeted behavior smokes beyond resource loading.
