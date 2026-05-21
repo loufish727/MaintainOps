@@ -178,7 +178,7 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-`bindWorkspaceEvents()` filter/pagination authority extraction is complete.
+`bindWorkspaceEvents()` detail/open navigation authority extraction is complete.
 
 Next recommended phase:
 
@@ -189,14 +189,15 @@ Next recommended phase:
 - work-order detail field-jump event binding is already extracted and live verified.
 - workspace search/exact-search events are already extracted and live verified.
 - workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
+- workspace detail/open navigation events are already extracted and live verified in app commit `ef69559`.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
 - any new boundary requires targeted behavior smokes beyond resource loading before deploy.
 
 Best next candidates:
 
-- detail/open navigation group with visible card/detail/back smoke.
 - part inventory and asset status filters if kept read-only.
 - team member work-view bridge as a medium-risk UI-state boundary.
+- message read-only navigation only after mapping thread/read-state side effects.
 
 Still blocked until separate planning:
 

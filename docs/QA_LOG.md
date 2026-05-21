@@ -9836,6 +9836,58 @@ LFES catch:
 
 - Copied browser profiles were unreliable for fresh auth because active browser storage did not flush predictably. The stable path is to use the dedicated QA/test account directly for Playwright login while keeping credentials out of committed docs/code.
 
+## Medium-Risk Authority Boundary - Workspace Detail Navigation Events - 2026-05-21
+
+Scope:
+
+- Continued `bindWorkspaceEvents()` hard-zone decomposition under LFES controls.
+- Extracted one named event-binding group only: workspace detail/open navigation events.
+- Added `src/utils/workspaceDetailNavigationEvents.js?v=lfes-authority-detail-navigation-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-detail-navigation-events-1`.
+- Updated hosted resource smoke coverage.
+
+Selected boundary:
+
+- `#back-to-my-work`
+- `#back-to-equipment`
+- `.work-card`
+- `.asset-card`
+- `[data-open-asset]`
+- `[data-asset-id]`
+- `[data-mini-work-order]`
+
+Why it is hard:
+
+- The moved listeners change active detail state, active section state, pending delete state, Quick Fix/create mode flags, issue-report mode, localStorage active-section persistence, and `renderWorkspace()` sequencing.
+
+Why it is recoverable:
+
+- The boundary is UI navigation only and does not mutate business data.
+- No form submit, delete, upload, auth/session/company/location startup, public QR submit, Quick Fix creation, request conversion, storage/photo/document flow, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+- `app.js` remains the state owner through injected getters/setters.
+- Rollback is direct: revert `ef69559`, or remove the module/script/resource-smoke entry and restore the original listener blocks plus prior cache tag.
+
+Verification:
+
+- static JS checks: PASS for `app.js`, `src/utils/workspaceDetailNavigationEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- targeted mock-DOM smoke: PASS for all moved selector groups, including back actions, work-card open, asset-card open, inline asset open with stop propagation, `[data-asset-id]` click and keyboard activation, non-open keyboard no-op, mini work-order open, storage writes, and render calls.
+- local browser boot smoke: PASS with the new script/cache tags present and the binder available on `window`.
+- local hosted resource smoke: PASS.
+- live GitHub Pages resource smoke: PASS.
+- signed-in live smoke using the dedicated QA/test account: PASS.
+- live smoke verified deployed script tags, successful login, Work Orders card open/back behavior, Equipment card open/back behavior, active Assets section persistence, and no relevant page errors.
+- GitHub Actions resource smoke: NOT AVAILABLE; GitHub connector returned no workflow runs for `ef69559`.
+
+Result:
+
+- deploy commit: `ef69559` (`Extract workspace detail navigation events`).
+- `app.js` line count moved from 9,046 to 8,986.
+- Behavior changed: no observed behavior change.
+
+LFES catch:
+
+- Work-order detail open state is not persisted to localStorage. Live smoke must assert visible detail/back-button DOM state for work detail navigation rather than expecting a storage key.
+
 ## LFES Phase 16D Through 16I Utility Extraction - 2026-05-21
 
 Scope:

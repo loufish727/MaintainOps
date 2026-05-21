@@ -4855,19 +4855,19 @@ Continue LFES hard-boundary authority reduction.
 
 Latest completed hard-boundary extraction:
 
-- `bindWorkspaceEvents()` filter/pagination group was extracted into `src/utils/workspaceFilterPaginationEvents.js`.
-- App deploy commit: `ceb8ba6`.
+- `bindWorkspaceEvents()` detail/open navigation group was extracted into `src/utils/workspaceDetailNavigationEvents.js`.
+- App deploy commit: `ef69559`.
 - Docs update commit follows the app deploy.
-- Current app cache tag: `app.js?v=lfes-authority-filter-pagination-events-1`.
-- Current `app.js` line count: 9,046.
+- Current app cache tag: `app.js?v=lfes-authority-detail-navigation-events-1`.
+- Current `app.js` line count: 8,986.
 - Signed-in live smoke passed with the dedicated QA/test account.
-- GitHub Actions workflow runs: none returned for `ceb8ba6`.
+- GitHub Actions workflow runs: none returned for `ef69559`.
 
 Next safest candidates:
 
-- Detail/open navigation group if planned with visible card/detail/back smoke.
 - Part inventory and asset status filters if kept read-only.
 - Team member work-view bridge as a medium-risk UI-state boundary.
+- Message read-only navigation sub-boundary only after mapping read-state side effects; send/reply forms remain blocked.
 
 Do not move yet: command routing, message center send/reply, work-order mutation/status/assignment/delete/downtime flows, request conversion/Quick Fix/delete, parts mutation/document/source flows, asset/PM/procedure/team/settings forms, auth/session/company/location startup, public QR submit/admin, storage/photo/document/logo flows, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()`.
 

@@ -4035,3 +4035,48 @@ Blocked until separate planning:
 - storage/photo/document/logo flows,
 - SQL/RLS,
 - broad render/event extraction.
+
+## Hard-Boundary Authority Reduction - Workspace Detail Navigation Events - 2026-05-21
+
+Second `bindWorkspaceEvents()` decomposition pass:
+
+- Selected a medium-risk UI navigation group with visible smoke coverage.
+- Extracted into `src/utils/workspaceDetailNavigationEvents.js`.
+- App deploy commit: `ef69559`.
+- `app.js` line count after extraction: 8,986.
+
+Moved event authority:
+
+- Back from work detail.
+- Back from equipment detail.
+- Work-card open.
+- Asset-card open.
+- Inline asset open.
+- Keyboard/click asset open from `[data-asset-id]`.
+- Mini work-order open.
+
+Boundary design:
+
+- The module owns event binding and UI navigation orchestration only.
+- `app.js` remains the state owner through injected getters/setters.
+- The boundary intentionally leaves Quick Fix creation, quick status mutation, delete flows, and global-search navigation outside this module.
+- No selector contracts changed.
+- No business-data mutations, form submissions, deletes, uploads, auth/session/company/location startup, public QR submit, request conversion, storage/photo/document flows, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` movement occurred.
+
+Verification:
+
+- Targeted mock-DOM smoke covered all moved selectors, keyboard behavior, stop propagation, storage writes, and render calls.
+- Local resource and boot smokes passed.
+- Hosted resource smoke passed.
+- Signed-in live smoke opened and backed out of a real Work Order detail and a real Equipment detail with no relevant page errors.
+- GitHub Actions returned no workflow runs for `ef69559`.
+
+LFES catch:
+
+- Work-order detail open state is not persisted to localStorage; live behavior evidence should use visible DOM/back-button state for this path.
+
+Next best candidates:
+
+- Part inventory and asset status filters if kept read-only.
+- Team member work-view bridge as a medium-risk UI-state boundary.
+- Message read-only navigation only after mapping thread/read-state effects; send/reply forms stay blocked.

@@ -3548,12 +3548,12 @@ notify pgrst, 'reload schema';
 
 Latest completed hard-boundary extraction:
 
-- `bindWorkspaceEvents()` filter/pagination group extracted into `src/utils/workspaceFilterPaginationEvents.js`.
-- App deploy commit: `ceb8ba6`.
-- Cache tag: `app.js?v=lfes-authority-filter-pagination-events-1`.
-- `app.js` line count: 9,046.
+- `bindWorkspaceEvents()` detail/open navigation group extracted into `src/utils/workspaceDetailNavigationEvents.js`.
+- App deploy commit: `ef69559`.
+- Cache tag: `app.js?v=lfes-authority-detail-navigation-events-1`.
+- `app.js` line count: 8,986.
 - Signed-in live smoke passed with the dedicated QA/test account.
-- GitHub Actions workflow runs: none returned for `ceb8ba6`.
+- GitHub Actions workflow runs: none returned for `ef69559`.
 
 Current safe sequence:
 
@@ -3565,9 +3565,9 @@ Current safe sequence:
 
 Next candidate options:
 
-- Detail/open navigation group: `.work-card`, `.asset-card`, `[data-open-asset]`, `[data-asset-id]`, `[data-mini-work-order]`, and back buttons. Medium-risk because it changes active-detail UI state but does not mutate business data.
 - Local pagination/filter follow-up group: part inventory filter and asset status filter. Safe-to-medium if kept read-only and verified with localStorage/render smoke.
 - Team member work-view group. Medium-risk because it bridges Team and Work views.
+- Message read-only navigation sub-boundary may be considered only after mapping thread/read-state effects; sending/reply forms remain blocked.
 
 Do not choose yet:
 
