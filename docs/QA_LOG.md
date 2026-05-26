@@ -54,7 +54,44 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Equipment confirm-delete event boundary extracted and live verified with disposable equipment permanent delete plus data-layer proof.
 - 2026-05-26: LFES Request confirm-delete event boundary extracted and live verified with disposable request permanent delete plus data-layer proof.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
+- 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Procedure Confirm-Delete Events - 2026-05-26
+
+Boundary selected:
+
+- Procedure permanent delete event binding for `[data-confirm-delete-procedure]`, added to the existing Procedure delete module.
+
+Operational risk:
+
+- High.
+- This is an irreversible delete control, but the boundary only calls the app-owned `deleteProcedureTemplate` callback. Blocker verification, Supabase mutation sequencing, procedure step cleanup, state updates, notices, and render stay in `app.js`.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Moved `[data-confirm-delete-procedure]` binding into the module.
+- Kept app-owned `deleteProcedureTemplate` as an injected callback.
+- Kept permanent delete implementation, blocker verification, procedure data/steps, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-procedure-delete-confirm-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceProcedureDeleteCancelEvents.js`, and `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Procedure delete event smoke: PASS for warning opener callback, cancel pending-state clear, confirm-delete callback, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Procedure confirm-delete script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable procedure `LFES disposable procedure delete confirm 1779829924465` was created, Delete Procedure rendered Cancel and Permanently Delete, Permanently Delete removed the disposable from Procedures, and no unrelated procedure was touched.
+- Cleanup verification: PASS. Data-layer check for disposable procedure `ce2d93ad-b88d-46d6-abeb-9ebaaf34ac0e` returned `remaining: 0`.
+- GitHub Actions: pending follow-up verifier after the docs commit.
+
+Result:
+
+- App deploy commit: `492d9bb` (`Extract workspace procedure delete confirm events`).
+- `app.js` line count after extraction: 8,060.
+- Behavior changed: no observed behavior change.
 
 ## LFES Boundary - Equipment Confirm-Delete Events - 2026-05-26
 

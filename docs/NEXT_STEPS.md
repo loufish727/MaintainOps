@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `a192f51` (`Extract workspace schedule delete confirm events`).
+- Latest app behavior commit: `492d9bb` (`Extract workspace procedure delete confirm events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-schedule-delete-confirm-events-1`.
-- Current `app.js` line count: 8,062.
+- Latest deployed cache tag: `app.js?v=lfes-authority-procedure-delete-confirm-events-1`.
+- Current `app.js` line count: 8,060.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -54,7 +54,7 @@ Recommended immediate next controlled phase:
 - Equipment delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
 - Request delete warning opener/cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
 - PM schedule delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete implementation, PM generation, schedule data, render, auth/company/location state, and Supabase access.
-- Procedure delete warning opener/cancel event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
+- Procedure delete warning opener/cancel/confirm event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete implementation, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
 - Textarea auto-grow UI binding is extracted into `src/utils/workspaceTextareaAutoGrow.js` and live verified. `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
 - Team invite cancel-warning UI binding is extracted into `src/utils/workspaceTeamInviteCancelEvents.js` and live verified. `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
 - Quick Fix command-opener binding is extracted into `src/utils/workspaceQuickFixCommandEvents.js` and live verified. `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
@@ -116,6 +116,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Request delete-cancel smoke, manager/admin live disposable request delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26469402958` passed for the Request delete-cancel boundary.
 - Hosted resource checks, targeted mock-DOM PM schedule delete-cancel smoke, manager/admin live disposable PM schedule delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26469751689` passed for the PM schedule delete-cancel boundary.
 - Hosted resource checks, targeted mock-DOM Procedure delete-cancel smoke, manager/admin live disposable procedure delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26470365077` passed for the Procedure delete-cancel boundary.
+- Hosted resource checks, targeted mock-DOM Procedure confirm-delete smoke, manager/admin live disposable procedure permanent-delete smoke, and data-layer cleanup proof passed for `492d9bb`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM textarea auto-grow smoke, and signed-in live Report Issue textarea growth smoke passed for the textarea auto-grow boundary. The unauthenticated GitHub Actions API verifier was rate-limited, so use the public workflow page fallback or a later docs commit run for Actions proof.
 - Hosted resource checks, targeted mock-DOM Team invite cancel-warning smoke, and signed-in live Team invite Cancel Invite -> Keep smoke passed for the Team invite cancel-warning boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM Quick Fix command smoke, and signed-in live Quick Fix open-form/no-submit smoke passed for the Quick Fix command boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.

@@ -5675,7 +5675,20 @@ Verification:
 Result:
 
 - Behavior changed: no observed behavior change.
-- Reassess before continuing into mutation, auth/startup, or conversion workflows.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
+## Procedure Confirm-Delete Events Boundary - 2026-05-26
+
+- Risk: High. The control performs an irreversible procedure delete, but the boundary only transfers event binding and calls the app-owned `deleteProcedureTemplate` callback.
+- Scope: moved `[data-confirm-delete-procedure]` into `src/utils/workspaceProcedureDeleteCancelEvents.js`; permanent delete implementation, blocker verification, procedure data/steps, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM Procedure delete event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable procedure `LFES disposable procedure delete confirm 1779829924465` was permanently deleted with data-layer verification for `ce2d93ad-b88d-46d6-abeb-9ebaaf34ac0e` returning `remaining: 0`.
+- App deploy commit: `492d9bb` (`Extract workspace procedure delete confirm events`).
+- `app.js` line count after extraction: 8,060.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
