@@ -65,6 +65,7 @@ const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspace
 const { createWorkspaceWorkOrderDeleteEvents } = window.MaintainOpsWorkspaceWorkOrderDeleteEvents;
 const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkViewEvents;
 const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
+const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4756,27 +4757,6 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-message-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      messageThreadFilter = button.dataset.messageFilter;
-      localStorage.setItem("maintainops.messageThreadFilter", messageThreadFilter);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-open-linked-work-order]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeWorkOrderId = button.dataset.openLinkedWorkOrder;
-      activeAssetId = null;
-      activePartId = null;
-      quickFixMode = false;
-      createWorkOrderMode = false;
-      activeSection = "work";
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
-  });
-
   bindWorkSectionJumpEvents();
 
   document.querySelectorAll("[data-start-work-message]").forEach((button) => {
@@ -4804,41 +4784,9 @@ function bindWorkspaceEvents() {
     });
   });
 
-  const clearMessageWorkLink = document.querySelector("[data-clear-message-work-link]");
-  if (clearMessageWorkLink) {
-    clearMessageWorkLink.addEventListener("click", () => {
-      messageComposerWorkOrderId = "";
-      localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
-      renderWorkspace();
-    });
-  }
-
-  const messageSearch = document.querySelector("#message-search");
-  if (messageSearch) {
-    messageSearch.addEventListener("input", () => {
-      messageSearchQuery = messageSearch.value;
-      localStorage.setItem("maintainops.messageSearchQuery", messageSearchQuery);
-      renderWorkspace();
-      const nextSearch = document.querySelector("#message-search");
-      nextSearch.focus();
-      nextSearch.setSelectionRange(messageSearchQuery.length, messageSearchQuery.length);
-    });
-  }
-
   const messageThreadForm = document.querySelector("#message-thread-form");
   if (messageThreadForm) {
     messageThreadForm.addEventListener("submit", createMessageThread);
-    const typeSelect = messageThreadForm.querySelector("#message-thread-type");
-    const directField = messageThreadForm.querySelector(".message-direct-field");
-    const scopeNote = messageThreadForm.querySelector("#message-scope-note");
-    const syncMessageComposer = () => {
-      const isDirect = typeSelect.value === "direct";
-      directField.classList.toggle("hidden-section", !isDirect);
-      directField.querySelector("select").disabled = !isDirect;
-      scopeNote.textContent = messageComposerScopeNote(typeSelect.value);
-    };
-    typeSelect.addEventListener("change", syncMessageComposer);
-    syncMessageComposer();
   }
 
   const messageReplyForm = document.querySelector("#message-reply-form");
@@ -4846,16 +4794,21 @@ function bindWorkspaceEvents() {
     messageReplyForm.addEventListener("submit", sendThreadReply);
   }
 
-  document.querySelectorAll("[data-quick-reply]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const replyForm = document.querySelector("#message-reply-form");
-      const field = replyForm?.querySelector("textarea[name='body']");
-      if (!field) return;
-      const prefix = field.value.trim();
-      field.value = prefix ? `${prefix}\n${button.dataset.quickReply}` : button.dataset.quickReply;
-      field.focus();
-      autoGrowTextarea(field);
-    });
+  bindWorkspaceMessageUiEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActivePartId: (value) => { activePartId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setMessageComposerWorkOrderId: (value) => { messageComposerWorkOrderId = value; },
+      setMessageSearchQuery: (value) => { messageSearchQuery = value; },
+      setMessageThreadFilter: (value) => { messageThreadFilter = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+    },
+    autoGrowTextarea,
+    messageComposerScopeNote,
+    renderWorkspace,
   });
 
   bindWorkspaceDetailNavigationEvents({
