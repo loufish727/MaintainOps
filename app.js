@@ -76,6 +76,7 @@ const { bindWorkspaceReportIssueCommandEvents } = window.MaintainOpsWorkspaceRep
 const { bindWorkspaceSubmitRequestCommandEvents } = window.MaintainOpsWorkspaceSubmitRequestCommandEvents;
 const { bindWorkspaceNewWorkOrderCommandEvents } = window.MaintainOpsWorkspaceNewWorkOrderCommandEvents;
 const { bindWorkspaceExportCsvCommandEvents } = window.MaintainOpsWorkspaceExportCsvCommandEvents;
+const { bindWorkspaceAssetDeleteCancelEvents } = window.MaintainOpsWorkspaceAssetDeleteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4931,12 +4932,11 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-cancel-delete-asset]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      pendingDeleteAssetId = null;
-      renderWorkspace();
-    });
+  bindWorkspaceAssetDeleteCancelEvents({
+    state: {
+      setPendingDeleteAssetId: (value) => { pendingDeleteAssetId = value; },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-confirm-delete-asset]").forEach((button) => {
