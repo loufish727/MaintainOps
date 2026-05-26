@@ -79,6 +79,7 @@ const { bindWorkspaceExportCsvCommandEvents } = window.MaintainOpsWorkspaceExpor
 const { bindWorkspaceAssetDeleteCancelEvents } = window.MaintainOpsWorkspaceAssetDeleteCancelEvents;
 const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRequestDeleteCancelEvents;
 const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
+const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5154,11 +5155,11 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", async () => requestDeleteProcedureTemplate(button.dataset.deleteProcedure));
   });
 
-  document.querySelectorAll("[data-cancel-delete-procedure]").forEach((button) => {
-    button.addEventListener("click", () => {
-      pendingDeleteProcedureId = null;
-      renderWorkspace();
-    });
+  bindWorkspaceProcedureDeleteCancelEvents({
+    state: {
+      setPendingDeleteProcedureId: (value) => { pendingDeleteProcedureId = value; },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-confirm-delete-procedure]").forEach((button) => {
