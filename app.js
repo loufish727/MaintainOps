@@ -87,7 +87,6 @@ const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQui
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
 const { bindWorkspaceRequestConversionEvents } = window.MaintainOpsWorkspaceRequestConversionEvents;
 const { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerationEvents;
-const { bindWorkspaceFollowUpWorkEvents } = window.MaintainOpsWorkspaceFollowUpWorkEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
@@ -5104,8 +5103,8 @@ function bindWorkspaceEvents() {
     renderWorkspace,
   });
 
-  bindWorkspaceFollowUpWorkEvents({
-    createFollowUpWorkOrder,
+  document.querySelectorAll("[data-create-follow-up]").forEach((button) => {
+    button.addEventListener("click", () => createFollowUpWorkOrder(button.dataset.createFollowUp));
   });
 
   const procedureForm = document.querySelector("#create-procedure-form");
