@@ -4128,3 +4128,51 @@ Next candidates:
 - Continue work-order hard-boundary decomposition only one subcluster at a time.
 - Good candidates to map next: assignment group or downtime-copy group.
 - Keep delete, completion, Quick Fix, request conversion, storage/photo/document, auth/session/company/location startup, Supabase SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` blocked until separately planned.
+
+## High-Risk Work-Order Assignment Event Boundary - 2026-05-26
+
+Selected boundary:
+
+- `bindWorkspaceEvents()` work-order assignment event wiring:
+  - `[data-assign-me]`
+  - `[data-card-assign]`
+
+Why this is hard:
+
+- The event wiring triggers real work-order assignment mutations.
+- `assignWorkOrderToMe` and `assignWorkOrderFromCard` remain in `app.js` and still own permissions, Supabase update sequencing, description note handling, work-order event recording, notices, state, and render.
+
+Why this is recoverable:
+
+- The extraction moved only event binding, not mutation logic or selectors.
+- Status, delete, downtime, completion, and detail update flows were left untouched.
+- Rollback is one app commit or a small manual restoration of the original listener blocks.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderAssignmentEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderAssignmentEvents.js?v=lfes-authority-work-assignment-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-assignment-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `892f4c2` (`Extract workspace work order assignment events`).
+- `app.js` line count moved from 8,965 to 8,955.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderAssignmentEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Mock-DOM event smoke: PASS for assign-to-me click, card assignment submit, click stopPropagation, assigned_to change auto-submit, and unrelated change ignored.
+- Local resource smoke: PASS.
+- Local boot smoke: PASS.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `892f4c2`, run `https://github.com/loufish727/MaintainOps/actions/runs/26455282763`.
+- Dedicated QA/test account smoke: PASS for hidden assignment controls.
+- Manager/admin signed-in assignment/restore smoke: PASS. `Hydralic Leak` changed from Lee Gaede to Louie Fisher through `Assign To Me`, then restored to Lee Gaede through the card assignment control.
+
+LFES catch:
+
+- Assignment verification is role-sensitive. A technician-style QA account can prove controls are hidden, but manager/admin live smoke is required for assignment mutation and restore behavior.
+
+Next candidates:
+
+- Downtime-copy event group is the next lower-risk work-order hard boundary because it is visible and non-mutating.
+- Delete and completion flows remain higher-risk and should not be combined with another group.

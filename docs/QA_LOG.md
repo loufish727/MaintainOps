@@ -16,7 +16,55 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES authority map created for `renderWorkspace()` and `bindWorkspaceEvents()`; next recommended boundary is workspace search/exact work-search read-only events.
 - 2026-05-21: LFES medium-risk workspace search/exact work-search event boundary extracted and live verified.
 - 2026-05-26: LFES high-risk quick work-order status event boundary extracted and live verified; first live smoke caught a bad test assumption and the corrected mutation/restore smoke passed.
+- 2026-05-26: LFES high-risk work-order assignment event boundary extracted and live verified with manager/admin mutation plus restore.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES High-Risk Boundary - Work-Order Assignment Events - 2026-05-26
+
+Boundary selected:
+
+- Work-order assignment event wiring from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- High.
+- The moved binding triggers assignment mutations through app.js-owned `assignWorkOrderToMe` and `assignWorkOrderFromCard`.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderAssignmentEvents.js`.
+- Moved only `[data-assign-me]` click binding and `[data-card-assign]` submit/click/change binding.
+- Injected `assignWorkOrderToMe` and `assignWorkOrderFromCard`.
+- Left assignment mutation logic, permission checks, Supabase/RLS, status changes, delete flows, downtime copy, completion flow, auth/startup, and state ownership in `app.js`.
+- Added `src/utils/workspaceWorkOrderAssignmentEvents.js?v=lfes-authority-work-assignment-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-assignment-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `892f4c2`, or remove `src/utils/workspaceWorkOrderAssignmentEvents.js`, restore the original `[data-assign-me]` and `[data-card-assign]` listener blocks in `bindWorkspaceEvents()`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderAssignmentEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS.
+- Targeted mock-DOM event smoke: PASS for assign-to-me click, card assignment submit, card click stopPropagation, assigned_to change auto-submit, and unrelated change ignored.
+- Local resource smoke: PASS against `http://127.0.0.1:4178/`.
+- Local browser boot smoke: PASS; reached login screen with clean logs and new script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `892f4c2`, run `https://github.com/loufish727/MaintainOps/actions/runs/26455282763`.
+- Dedicated QA/test account smoke: PASS for hidden assignment controls on non-manager/non-admin role.
+- Manager/admin signed-in live smoke: PASS. `Hydralic Leak` changed from Lee Gaede to Louie Fisher via `Assign To Me`, showed the changed owner in Work Order Detail, then restored to Lee Gaede through the card assignment control.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Assignment live smoke requires role-aware coverage. The QA/test account correctly hides assignment controls, so mutation/restore coverage needs a manager/admin session while the QA/test account remains useful for denied/hidden-control verification.
 
 ## LFES High-Risk Boundary - Quick Work-Order Status Events - 2026-05-26
 

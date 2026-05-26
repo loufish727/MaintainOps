@@ -4,6 +4,18 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-26 - Assignment Smoke Needed Role-Aware Coverage
+
+- Date: 2026-05-26.
+- Phase/build: high-risk work-order assignment event-boundary extraction.
+- Issue discovered: the dedicated QA/test account correctly had no assignment controls for the live `Hydralic Leak` work order, so it could not provide assignment mutation/restore coverage.
+- How it was discovered: the signed-in smoke found zero `[data-card-assign]` and zero `[data-assign-me]` controls for the QA/test role, while a manager/admin browser session showed both controls.
+- Operational risk: using only one test role can make a mutation path look untestable or broken when authorization is actually working. Conversely, testing only manager/admin could miss hidden-control expectations for lower-privilege users.
+- What LFES principle exposed it: role-aware verification, permission-boundary visibility, and targeted live smoke.
+- What prevented escalation: the phase stopped after the insufficient-coverage finding, then split coverage by role: QA/test account for hidden controls and manager/admin session for mutation plus restore.
+- Fix applied or recommended: future assignment smokes must state the role used. Use technician-style accounts for denied/hidden-control checks and manager/admin sessions for mutation/restore checks.
+- Lessons learned: mutation-adjacent event extraction must verify both event behavior and permission visibility. The right smoke account is part of the contract.
+
 ## 2026-05-26 - Quick Status Smoke Expected The Wrong Post-Mutation Surface
 
 - Date: 2026-05-26.

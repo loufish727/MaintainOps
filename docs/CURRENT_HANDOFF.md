@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed first high-risk mutation-adjacent event extraction from `bindWorkspaceEvents()`: quick work-order status events.
+Completed second high-risk mutation-adjacent event extraction from `bindWorkspaceEvents()`: work-order assignment events.
 
 - Latest app behavior commit:
-  - `5828262` (`Extract workspace work order status events`)
+  - `892f4c2` (`Extract workspace work order assignment events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-status-events-1`
+  - `app.js?v=lfes-authority-work-assignment-events-1`
 - Current `app.js` line count:
-  - 8,965 lines.
+  - 8,955 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -54,22 +54,25 @@ Completed first high-risk mutation-adjacent event extraction from `bindWorkspace
   - Measurable reduction run moved request query filters to `src/utils/requestQueryFilters.js`, exact/related work-order search helpers to `src/utils/workOrderSearch.js`, and global/planning/follow-up list builders to `src/utils/workspaceListBuilders.js`.
   - Medium-risk authority run moved workspace search/exact work-search open/close event binding to `src/utils/workspaceSearchEvents.js`.
   - Event-boundary runs moved workspace filter/pagination, detail navigation, and inventory/equipment filter bindings to `src/utils/workspaceFilterPaginationEvents.js`, `src/utils/workspaceDetailNavigationEvents.js`, and `src/utils/workspaceInventoryFilterEvents.js`.
-  - High-risk work-order mutation-adjacent run moved only quick status button binding to `src/utils/workspaceWorkOrderStatusEvents.js`; `app.js` still owns `setWorkOrderStatus`, Supabase mutation sequencing, status guards, record events, render, assignment, delete, and downtime flows.
+  - High-risk work-order mutation-adjacent run moved only quick status button binding to `src/utils/workspaceWorkOrderStatusEvents.js`; `app.js` still owns `setWorkOrderStatus`, Supabase mutation sequencing, status guards, record events, and render.
+  - High-risk work-order mutation-adjacent run moved assignment event wiring to `src/utils/workspaceWorkOrderAssignmentEvents.js`; `app.js` still owns `assignWorkOrderToMe`, `assignWorkOrderFromCard`, Supabase mutation sequencing, permission checks, record events, render, status, delete, and downtime flows.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderStatusEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed for quick status success, false return, thrown error, stopPropagation, disabled/Saving state, restoration, and warning notice behavior.
-  - local resource smoke passed against `http://127.0.0.1:4177/`.
-  - local browser boot smoke passed with the new workspace work-order status event script and cache tag present.
+  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderAssignmentEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed for assign-to-me click, card assignment submit, card click stopPropagation, assigned_to change auto-submit, and non-assignment change ignored.
+  - local resource smoke passed against `http://127.0.0.1:4178/`.
+  - local browser boot smoke reached the login screen with the new assignment event script and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed with the dedicated QA/test account on `https://loufish727.github.io/MaintainOps/`.
-  - live quick-status smoke changed `Hydralic Leak` from `in_progress` to `open`, observed the expected Work Order Detail render with status `open`, restored it to `in_progress`, and observed status `in_progress` again.
-  - live `index.html` referenced `src/utils/workspaceWorkOrderStatusEvents.js?v=lfes-authority-work-status-events-1` and `app.js?v=lfes-authority-work-status-events-1`.
-  - GitHub Actions verifier passed for `5828262`: `https://github.com/loufish727/MaintainOps/actions/runs/26454460812`.
+  - dedicated QA/test account smoke confirmed assignment controls are correctly hidden for that role.
+  - manager/admin live smoke changed `Hydralic Leak` assignment from Lee Gaede to Louie Fisher via `Assign To Me`, observed Work Order Detail owner/assignment changed, then restored the card assignment to Lee Gaede.
+  - live `index.html` referenced `src/utils/workspaceWorkOrderAssignmentEvents.js?v=lfes-authority-work-assignment-events-1` and `app.js?v=lfes-authority-work-assignment-events-1`.
+  - GitHub Actions verifier passed for `892f4c2`: `https://github.com/loufish727/MaintainOps/actions/runs/26455282763`.
   - fresh live console sample had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
 - LFES catch:
   - the first live smoke expectation was wrong. Quick status mutations intentionally set the active work order and re-render into Work Order Detail, so future work-order quick-status smoke must assert the detail status after mutation rather than expecting the list card to remain visible.
+  - the dedicated QA/test account is not a manager/admin assignment actor, so assignment controls are hidden there. Assignment mutation smoke requires a manager/admin session plus restore, while the QA/test account remains useful for denied/hidden-control verification.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -78,12 +81,12 @@ Completed first high-risk mutation-adjacent event extraction from `bindWorkspace
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status event binding is implemented and live verified.
+  - quick work-order status and assignment event bindings are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
-  - assignment, delete, downtime, detail status dropdown, and completion flows remain separate targets.
+  - delete, downtime, detail status dropdown, and completion flows remain separate targets.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
-Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, assignment controls, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.
+Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.
 
 ## Prior Recent Change
 
