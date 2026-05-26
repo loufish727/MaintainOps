@@ -266,3 +266,12 @@ Phase 6D update:
 - What prevented escalation: LFES stopped the phase, attempted cleanup, observed direct REST cleanup was blocked by RLS for the setup auth context, reverted the behavior commit, and documented the smoke/setup mismatch before moving on.
 - Fix or mitigation: do not use direct REST inserts as follow-up smoke setup unless the test also proves the row is loaded into the `workOrders` state consumed by `followUpItems()`. The corrected smoke used an active follow-up-needed disposable source so Planning rendered a visible `Create Work` button, then cleaned up through manager/admin UI with data-layer proof.
 - Lessons learned: setup data is not automatically smoke data. For state-derived UI lists, the setup path must prove both persistence and presence in the exact client-side state slice that renders the control under test.
+
+## 2026-05-26 - Comment Submit Smoke - Collapsed Details Hide The Form
+
+- Issue discovered: the work-order comment form exists in the DOM while its parent Comments `details` section is collapsed, so the textarea is not visible/editable until the section is opened.
+- How it was discovered: the first live comment smoke opened the disposable work order detail but timed out filling `#comment-form textarea[name="body"]` because the element was hidden.
+- Operational risk: a smoke can falsely report a broken submit binding when the form was simply collapsed. This is especially easy to miss because the selector resolves to a real textarea.
+- What prevented escalation: the same disposable work order was reused, the Comments section was opened before filling, the submit produced a comment row, the record was reopened to verify the comment rendered, and cleanup removed the work order plus comment.
+- Fix or mitigation: comment smokes must open `#work-order-comments-target` before filling the comment form and should verify rendered output after reopening.
+- Lessons learned: selector existence is not visibility. For accordion/detail UIs, the smoke contract must include the disclosure state before interacting with nested forms.

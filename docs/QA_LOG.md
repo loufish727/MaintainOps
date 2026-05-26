@@ -5,6 +5,7 @@ This file summarizes important QA passes and remaining test priorities.
 ## Current Latest QA Entries
 
 - 2026-05-26: LFES follow-up work event extraction was retried and live verified after the first setup path was rejected. The passing smoke used a visible active follow-up-needed disposable source, clicked Planning `Create Work`, verified source `follow_up_needed=false`, verified the generated follow-up work order, and cleaned all disposable rows through admin UI with data-layer proof.
+- 2026-05-26: LFES work-order comment submit event extraction live verified with a disposable work order, visible reopened comment proof, admin UI cleanup, and data-layer `remainingWork=0` / `remainingComments=0`.
 - 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
@@ -103,6 +104,45 @@ LFES catch:
 Next:
 
 - Continue with one contained boundary at a time. Direct REST cleanup remains insufficient for some work-order rows under the QA token; use manager/admin UI cleanup plus data-layer proof when RLS blocks delete cleanup.
+
+## LFES Boundary - Work-Order Comment Events - 2026-05-26
+
+Boundary selected:
+
+- `#comment-form` submit event binding.
+
+Operational risk:
+
+- High. Submitting the form creates a work-order comment, records activity, reloads comments/history state, and re-renders the active work order.
+
+Implementation scope:
+
+- Added `src/utils/workspaceCommentEvents.js`.
+- Added `tests/smoke/workspace-comment-events-smoke.js`.
+- Moved only the `#comment-form` submit binding into the module.
+- Kept `createComment`, comment insert, activity logging, comment reload, render, auth/company/location state, Supabase/RLS, and work-order data ownership in `app.js`.
+
+Verification:
+
+- Static JS checks: PASS for `app.js`, `src/utils/workspaceCommentEvents.js`, `tests/smoke/workspace-comment-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM smoke: PASS for submit callback binding and missing-callback no-op.
+- Local resource smoke: PASS.
+- Hosted resource smoke: PASS after Pages propagation.
+- Signed-in live smoke: PASS. Disposable work order `LFES disposable comment source 1779833704646` (`8ae75ce8-cf97-46fc-a6eb-ba1ca6e24ab6`) accepted comment `LFES disposable comment 1779833704646`; data-layer comment row `a42bf5e3-9596-4cd8-a88f-a712b7ca3c4c` was created.
+- Reopened UI visual check: PASS. The comment appeared in the Work Order Detail Comments section after reopening the record.
+- Cleanup: PASS. Admin UI deleted the disposable work order; data-layer verification returned `remainingWork=0` and `remainingComments=0`.
+
+Behavior changed:
+
+- No intended behavior change.
+
+LFES catch:
+
+- Comment form textarea is inside a collapsed `details` section. Live smokes must open the Comments section before filling the form, then reopen the record to verify rendered comment output.
+
+Next:
+
+- Continue only with another single contained boundary. Storage/photo/document flows, auth/session/company/location startup, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain blocked.
 
 ## LFES Boundary - PM Generation Events - 2026-05-26
 
