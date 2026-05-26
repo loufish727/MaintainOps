@@ -81,6 +81,7 @@ const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRe
 const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
 const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
 const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
+const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5191,20 +5192,12 @@ function bindWorkspaceEvents() {
   const inviteForm = document.querySelector("#team-invite-form");
   if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
 
-  document.querySelectorAll("[data-cancel-invite]").forEach((button) => {
-    button.addEventListener("click", () => {
-      teamInviteCancelError = "";
-      pendingCancelInviteId = button.dataset.cancelInvite;
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-cancel-invite-cancel]").forEach((button) => {
-    button.addEventListener("click", () => {
-      teamInviteCancelError = "";
-      pendingCancelInviteId = null;
-      renderWorkspace();
-    });
+  bindWorkspaceTeamInviteCancelEvents({
+    state: {
+      setPendingCancelInviteId: (value) => { pendingCancelInviteId = value; },
+      setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-confirm-cancel-invite]").forEach((button) => {
