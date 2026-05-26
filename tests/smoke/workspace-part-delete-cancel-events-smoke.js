@@ -14,10 +14,11 @@ function createButton(dataset = {}) {
   };
 }
 
-function createDocument({ deleteButtons = [], cancelButtons = [] }) {
+function createDocument({ deleteButtons = [], permanentDeleteButtons = [], cancelButtons = [] }) {
   return {
     querySelectorAll(selector) {
       if (selector === "[data-delete-part]:not(.permanent-delete-button)") return deleteButtons;
+      if (selector === "[data-delete-part].permanent-delete-button") return permanentDeleteButtons;
       if (selector === "[data-cancel-delete-part]") return cancelButtons;
       return [];
     },
@@ -41,6 +42,7 @@ let requestedDeletePartId = null;
 bindWorkspacePartDeleteCancelEvents({
   documentRef: createDocument({
     deleteButtons: [deleteButton],
+    permanentDeleteButtons: [permanentDeleteButton],
     cancelButtons: [cancelButton],
   }),
   requestDeletePart: (id) => {
@@ -60,7 +62,7 @@ deleteButton.dispatch("click");
 assert.equal(requestedDeletePartId, "part-2");
 
 permanentDeleteButton.dispatch("click");
-assert.equal(requestedDeletePartId, "part-2");
+assert.equal(requestedDeletePartId, "part-3");
 
 cancelButton.dispatch("click");
 assert.equal(pendingDeletePartId, null);
