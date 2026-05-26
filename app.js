@@ -5101,11 +5101,8 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => generatePreventiveWorkOrder(button.dataset.generatePm));
   });
 
-  document.querySelectorAll("[data-delete-schedule]").forEach((button) => {
-    button.addEventListener("click", () => requestDeletePreventiveSchedule(button.dataset.deleteSchedule));
-  });
-
   bindWorkspaceScheduleDeleteCancelEvents({
+    requestDeletePreventiveSchedule,
     state: {
       setPendingDeleteScheduleId: (value) => { pendingDeleteScheduleId = value; },
     },

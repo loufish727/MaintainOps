@@ -1,8 +1,9 @@
 const assert = require("node:assert/strict");
 
-function createButton() {
+function createButton(dataset = {}) {
   const listeners = {};
   return {
+    dataset,
     addEventListener(type, handler) {
       listeners[type] = listeners[type] || [];
       listeners[type].push(handler);
@@ -13,27 +14,37 @@ function createButton() {
   };
 }
 
-function createDocument(buttons) {
+function createDocument({ deleteButtons = [], cancelButtons = [] }) {
   return {
     querySelectorAll(selector) {
-      return selector === "[data-cancel-delete-schedule]" ? buttons : [];
+      if (selector === "[data-delete-schedule]") return deleteButtons;
+      if (selector === "[data-cancel-delete-schedule]") return cancelButtons;
+      return [];
     },
   };
 }
 
 global.window = {};
-global.document = createDocument([]);
+global.document = createDocument({});
 
 require("../../src/utils/workspaceScheduleDeleteCancelEvents.js");
 
 const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
 
+const deleteButton = createButton({ deleteSchedule: "schedule-2" });
 const cancelButton = createButton();
 let pendingDeleteScheduleId = "schedule-1";
 let renderCount = 0;
+let requestedDeleteScheduleId = null;
 
 bindWorkspaceScheduleDeleteCancelEvents({
-  documentRef: createDocument([cancelButton]),
+  documentRef: createDocument({
+    deleteButtons: [deleteButton],
+    cancelButtons: [cancelButton],
+  }),
+  requestDeletePreventiveSchedule: (id) => {
+    requestedDeleteScheduleId = id;
+  },
   state: {
     setPendingDeleteScheduleId: (value) => {
       pendingDeleteScheduleId = value;
@@ -44,12 +55,15 @@ bindWorkspaceScheduleDeleteCancelEvents({
   },
 });
 
+deleteButton.dispatch("click");
+assert.equal(requestedDeleteScheduleId, "schedule-2");
+
 cancelButton.dispatch("click");
 assert.equal(pendingDeleteScheduleId, null);
 assert.equal(renderCount, 1);
 
 bindWorkspaceScheduleDeleteCancelEvents({
-  documentRef: createDocument([cancelButton]),
+  documentRef: createDocument({ cancelButtons: [cancelButton] }),
   state: null,
   renderWorkspace: () => {
     throw new Error("missing state should not render");
