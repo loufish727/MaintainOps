@@ -90,6 +90,7 @@ const { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerat
 const { bindWorkspaceFollowUpWorkEvents } = window.MaintainOpsWorkspaceFollowUpWorkEvents;
 const { bindWorkspaceCommentEvents } = window.MaintainOpsWorkspaceCommentEvents;
 const { bindWorkspaceQuickUpdateEvents } = window.MaintainOpsWorkspaceQuickUpdateEvents;
+const { bindWorkspaceWorkOrderEditEvents } = window.MaintainOpsWorkspaceWorkOrderEditEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
@@ -5050,8 +5051,9 @@ function bindWorkspaceEvents() {
     renderWorkspace,
   });
 
-  const editForm = document.querySelector("#edit-work-order-form");
-  if (editForm) editForm.addEventListener("submit", updateWorkOrderDetails);
+  bindWorkspaceWorkOrderEditEvents({
+    updateWorkOrderDetails,
+  });
 
   bindWorkspaceQuickUpdateEvents({
     updateWorkOrderQuickView,
