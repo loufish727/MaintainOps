@@ -30,14 +30,14 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Export CSV command boundary extraction from `bindWorkspaceEvents()`.
+Completed the Equipment delete-cancel boundary extraction from `bindWorkspaceEvents()` and resolved the live-smoke hard stop with a disposable unlinked equipment record.
 
 - Latest app behavior commit:
-  - `dd307da` (`Extract workspace export csv command events`)
+  - `52086d2` (`Extract workspace asset delete cancel events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-export-csv-command-events-1`
+  - `app.js?v=lfes-authority-asset-delete-cancel-events-1`
 - Current `app.js` line count:
   - 8,754 lines.
 - Latest deployment:
@@ -73,16 +73,18 @@ Completed the Export CSV command boundary extraction from `bindWorkspaceEvents()
   - Medium-risk Submit Request command-opener boundary moved `[data-command-action="request"]` to `src/utils/workspaceSubmitRequestCommandEvents.js`; `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
   - Medium-risk New Work Order command-opener boundary moved `[data-command-action="create-work-order"]` to `src/utils/workspaceNewWorkOrderCommandEvents.js`; `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
   - Medium-risk Export CSV command boundary moved `[data-command-action="export-csv"]` to `src/utils/workspaceExportCsvCommandEvents.js`; `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
+  - Medium-risk Equipment delete-cancel boundary moved `[data-cancel-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceExportCsvCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-export-csv-command-events-smoke.js`.
-  - targeted mock-DOM Export CSV command smoke passed for invoking the injected export callback and missing-callback no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Equipment delete-cancel smoke passed for stopping propagation, clearing pending delete state, rendering, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Export CSV command event script/cache tag present and no browser warning/error logs.
+  - local browser boot smoke loaded the app shell with the new Equipment delete-cancel script/cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Export CSV command smoke used a download-capable authenticated headless browser, opened Equipment, opened `More`, clicked Export CSV, and captured a generated `equipment.csv` blob-link export with no dialogs and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceExportCsvCommandEvents.js?v=lfes-authority-export-csv-command-events-1` and `app.js?v=lfes-authority-export-csv-command-events-1`.
-  - `npm run test:smoke:github-actions` passed for `dd307da`: Resource Load Smoke `26462940370` completed successfully. Pages build/deployment `26462939393` also completed successfully.
+  - live Equipment delete-cancel smoke created disposable unlinked equipment `LFES disposable equipment 1779822012824`, opened its detail in the manager/admin session, clicked Delete Equipment, confirmed Cancel and Permanently Delete rendered, clicked Cancel, confirmed the warning cleared and Delete Equipment returned, then re-opened the warning and permanently deleted only the disposable record.
+  - cleanup verification confirmed `LFES disposable equipment 1779822012824` no longer appeared in the app, with no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspaceAssetDeleteCancelEvents.js?v=lfes-authority-asset-delete-cancel-events-1` and `app.js?v=lfes-authority-asset-delete-cancel-events-1`.
+  - `npm run test:smoke:github-actions` passed for `52086d2`: Resource Load Smoke `26463455097` completed successfully. Pages build/deployment `26463454051` also completed successfully.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -98,6 +100,7 @@ Completed the Export CSV command boundary extraction from `bindWorkspaceEvents()
   - Work Order detail accordions can place the target below the viewport; record visible summary/button rects, scroll as needed, and use coordinate clicks only after proving the intended control and avoiding submit/mutation actions.
   - Disclosure-hosted command controls need the disclosure state verified before targeting nested buttons; open `More` first before clicking Submit Request/New Work Order/Export CSV controls.
   - The in-app browser download event API does not support file downloads; export/download smokes need a download-capable Playwright browser or a browser-side anchor/blob capture.
+  - Equipment delete controls are role-gated and data-gated. The QA/test login can create equipment but does not expose delete controls; manager/admin live smoke is required. Existing linked equipment may correctly disable delete, so use a disposable unlinked equipment record for delete-warning/cancel verification and clean it up immediately.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -106,7 +109,7 @@ Completed the Export CSV command boundary extraction from `bindWorkspaceEvents()
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, and Export CSV command boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Export CSV command, and Equipment delete-cancel boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

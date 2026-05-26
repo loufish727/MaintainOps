@@ -4929,3 +4929,52 @@ LFES catch:
 Next candidates:
 
 - Quick Fix is now the remaining shared command opener, but it is higher-risk and should be mapped separately before extraction.
+
+## Equipment Delete-Cancel Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Equipment delete warning cancel binding inside `bindWorkspaceEvents()`:
+  - `[data-cancel-delete-asset]`
+
+Why this is hard:
+
+- It is inside a delete flow and depends on pending delete state, role permissions, and link-count delete guards.
+
+Why this is recoverable:
+
+- The extraction moved only the cancel event binding.
+- Delete request, permanent delete, link-count guards, permission checks, equipment data, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- No permanent delete occurs during the cancel verification; the later cleanup delete is limited to the disposable smoke record.
+- Rollback is one app commit or restoration of the original `[data-cancel-delete-asset]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Updated `index.html` with `src/utils/workspaceAssetDeleteCancelEvents.js?v=lfes-authority-asset-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-asset-delete-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- App deploy commit: `52086d2` (`Extract workspace asset delete cancel events`).
+- `app.js` line count remained 8,754.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Equipment delete-cancel smoke: PASS for `stopPropagation`, pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Equipment delete-cancel script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26463455097`, and Pages build/deployment run `26463454051` completed successfully for `52086d2`.
+- Signed-in live Equipment delete-cancel smoke: PASS. Disposable equipment `LFES disposable equipment 1779822012824` was created, opened in the manager/admin session, Delete Equipment rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete Equipment, then the disposable record was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable equipment 1779822012824` no longer appeared in the app and no browser warning/error logs appeared.
+
+LFES catch:
+
+- Existing linked equipment correctly disables delete and cannot exercise the cancel path.
+- Equipment delete controls are role-gated. The QA/test login can create equipment but does not expose delete controls; manager/admin verification is required.
+- Disposable equipment setup is acceptable for this boundary as long as the record is unlinked and cleanup is verified.
+
+Next candidates:
+
+- Consider only another cancel-only delete sub-boundary if a safe disposable/visible record exists. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

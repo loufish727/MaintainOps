@@ -34,7 +34,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Submit Request command boundary extracted and live verified with More -> Submit Request open-form smoke.
 - 2026-05-26: LFES New Work Order command boundary extracted and live verified with More -> New Work Order open-form smoke.
 - 2026-05-26: LFES Export CSV command boundary extracted and live verified with authenticated Equipment export blob-capture smoke.
+- 2026-05-26: LFES Equipment delete-cancel boundary extracted and live verified with disposable unlinked equipment warning/cancel/cleanup smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- Equipment delete warning cancel event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path is inside a delete flow, but this boundary only clears pending delete state and re-renders. It does not request delete, confirm delete, delete equipment, clean storage, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Moved only `[data-cancel-delete-asset]`.
+- Injected app-owned pending delete setter, `renderWorkspace`, and document.
+- Kept `[data-delete-asset]`, `[data-confirm-delete-asset]`, link-count guards, permanent delete, permission checks, equipment data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceAssetDeleteCancelEvents.js?v=lfes-authority-asset-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-asset-delete-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Equipment delete-cancel smoke: PASS for `stopPropagation`, pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Equipment delete-cancel script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26463455097`, and Pages build/deployment run `26463454051` completed successfully for `52086d2`.
+- Signed-in live smoke: PASS. Disposable equipment `LFES disposable equipment 1779822012824` was created to expose the delete warning path, opened in the manager/admin session, Delete Equipment rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete Equipment, then the disposable record was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable equipment 1779822012824` no longer appeared in the app and no browser warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Existing live equipment can be correctly delete-blocked by linked work orders, so it cannot exercise cancel controls.
+- The QA/test login can create equipment but does not expose delete controls. Equipment delete/cancel smoke requires a manager/admin session plus a disposable unlinked equipment record.
+- In-app browser text entry can fail due the virtual clipboard layer. It is acceptable to create the disposable setup record with a text-entry-capable browser, then verify the delete/cancel behavior in the manager/admin app session.
+
+Next:
+
+- Request delete-cancel, schedule delete-cancel, or procedure delete-cancel may be considered if a disposable/visible safe record exists. Do not combine request delete/confirm, request conversion, Quick Fix, storage/photo/document, auth/company/location, or broad render/event movement with another extraction.
 
 ## LFES Boundary - Export CSV Command Events - 2026-05-26
 
