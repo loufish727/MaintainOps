@@ -5562,6 +5562,55 @@ Verification:
 - Cleanup: PASS; manager/admin UI permanently deleted disposable procedure `2be4f6f4-c79c-4d8f-8ae5-d5f3d8a85345`, and data-layer verification returned `remaining: 0`.
 - GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
+## Part Delete-Request Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium/high.
+- The control is inside an irreversible part delete flow with inventory and document cleanup, but the selected boundary only opens the app-owned warning state and does not perform the permanent delete.
+
+Intended boundary:
+
+- Move only `[data-delete-part]:not(.permanent-delete-button)` warning-opener binding into `src/utils/workspacePartDeleteCancelEvents.js`.
+- Keep `requestDeletePart` as an app-owned injected callback for opener behavior.
+- Keep `.permanent-delete-button` binding, permanent delete, permission checks, part data, document cleanup, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- Part detail Delete Part warning opener and cancel behavior.
+- No permanent delete ownership, no document cleanup ownership, no Supabase mutation ownership transfer.
+
+Rollback path:
+
+- Restore the original non-permanent `[data-delete-part]` opener loop in `bindWorkspaceEvents()`.
+- Revert `src/utils/workspacePartDeleteCancelEvents.js` to cancel-only ownership.
+- Revert cache tags to the previous known-good value.
+
+Implementation result:
+
+- Expanded `src/utils/workspacePartDeleteCancelEvents.js`.
+- Expanded `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+- Updated `index.html` and hosted cache tags to `lfes-authority-part-delete-request-events-1`.
+- App deploy commit: `130b6e6` (`Keep part permanent delete binding in app`), correcting the initial selector split from `38abae3`.
+- `app.js` line count after corrected extraction: 8,071.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspacePartDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/workspace-part-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-part-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspacePartDeleteCancelEvents.js?v=lfes-authority-part-delete-request-events-1` and `app.js?v=lfes-authority-part-delete-request-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS.
+- Signed-in live smoke: PASS; disposable part `LFES disposable part delete request 1779828398671 hose` opened Delete Part warning, Cancel restored only the non-permanent Delete Part button, and no permanent delete occurred during the boundary check.
+- Cleanup: PASS; manager/admin UI permanently deleted disposable part `b60bc539-c336-4a77-bd6e-df939cc7431b`, and data-layer verification returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+LFES catch:
+
+- Part delete uses `data-delete-part` for both warning opener and permanent delete. The boundary must exclude `.permanent-delete-button`, and `app.js` must retain the permanent delete binding.
+
 Result:
 
 - Behavior changed: no observed behavior change.
