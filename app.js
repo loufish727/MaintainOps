@@ -57,6 +57,7 @@ const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
+const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4936,30 +4937,9 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-quick-status]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      const originalText = button.textContent;
-      button.disabled = true;
-      button.textContent = "Saving...";
-      try {
-        const saved = await setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
-        if (!saved && button.isConnected) {
-          button.disabled = false;
-          button.textContent = originalText;
-        }
-      } catch (error) {
-        showNotice(`Could not update status: ${error.message || error}`, "warning");
-        if (button.isConnected) {
-          button.disabled = false;
-          button.textContent = originalText;
-        }
-      }
-      if (button.isConnected) {
-        button.disabled = false;
-        button.textContent = originalText;
-      }
-    });
+  bindWorkspaceWorkOrderStatusEvents({
+    setWorkOrderStatus,
+    showNotice,
   });
 
   document.querySelectorAll("[data-assign-me]").forEach((button) => {
