@@ -61,6 +61,7 @@ const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOr
 const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
 const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
 const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
+const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5126,12 +5127,25 @@ function bindWorkspaceEvents() {
   const quickUpdateForm = document.querySelector("#quick-update-work-order-form");
   if (quickUpdateForm) quickUpdateForm.addEventListener("submit", updateWorkOrderQuickView);
 
-  const completionForm = document.querySelector("#complete-work-order-form");
-  if (completionForm) completionForm.addEventListener("submit", completeWorkOrder);
-
-  document.querySelectorAll('input[name="safety_devices_checked"]').forEach((field) => {
-    field.addEventListener("change", syncSafetyDeviceChecks);
-  });
+  createWorkspaceWorkOrderCompletionEvents({
+    alertRef: alert,
+    applySafetyCheckPayload,
+    applySafetyRequirementPayload,
+    documentRef: document,
+    friendlyWorkOrderSaveError,
+    getActiveWorkOrderId: () => activeWorkOrderId,
+    getProcedureById: (id) => procedureTemplates.find((template) => template.id === id),
+    getWorkOrderById: (id) => workOrders.find((item) => item.id === id),
+    hasCompletedSafetyDeviceCheck,
+    recordWorkOrderEvent,
+    render,
+    requiredChecklistProgress,
+    requiresSafetyDeviceCheck,
+    setWorkOrderActionWarning,
+    showNotice,
+    updateWorkOrderSafely,
+    withOperationTimeout,
+  }).bindWorkspaceWorkOrderCompletionEvents();
 
   bindWorkspaceWorkOrderDetailStatusEvents({ updateWorkOrderStatus });
 
@@ -7872,69 +7886,6 @@ async function updateWorkOrderQuickView(event) {
   }
 }
 
-async function completeWorkOrder(event) {
-  event.preventDefault();
-  const formElement = event.target;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const errorTarget = document.querySelector("#completion-error");
-  const workOrder = workOrders.find((item) => item.id === activeWorkOrderId);
-  const procedure = procedureTemplates.find((template) => template.id === workOrder?.procedure_template_id);
-  const requiredProgress = procedure ? requiredChecklistProgress(workOrder, procedure) : { done: 0, total: 0 };
-  if (requiredProgress.done < requiredProgress.total) {
-    if (errorTarget) errorTarget.textContent = `Complete required checklist steps first (${requiredProgress.done}/${requiredProgress.total}).`;
-    return;
-  }
-  const form = new FormData(event.target);
-  const safetyChecked = form.get("safety_devices_checked") === "on" || currentSafetyCheckboxCheckedForWorkOrder(activeWorkOrderId) || hasCompletedSafetyDeviceCheck(workOrder);
-  if (requiresSafetyDeviceCheck(workOrder) && !safetyChecked) {
-    if (errorTarget) errorTarget.textContent = "Check safety devices before completing equipment work.";
-    return;
-  }
-
-  submitButton.disabled = true;
-  submitButton.textContent = "Completing...";
-  if (errorTarget) errorTarget.textContent = "";
-
-  try {
-    const payload = {
-      status: "completed",
-      asset_id: workOrder?.asset_id || null,
-      actual_minutes: Number(form.get("actual_minutes")) || 0,
-      failure_cause: form.get("failure_cause") || null,
-      resolution_summary: form.get("resolution_summary") || null,
-      follow_up_needed: form.get("follow_up_needed") === "on",
-      completion_notes: form.get("completion_notes") || null,
-      completed_at: new Date().toISOString(),
-    };
-    applySafetyRequirementPayload(payload);
-    applySafetyCheckPayload(payload, payload.safety_check_required && safetyChecked);
-    delete payload.asset_id;
-    const { error } = await withOperationTimeout(
-      updateWorkOrderSafely(payload, activeWorkOrderId),
-      "Complete work save timed out. Check your connection and try again.",
-      20000
-    );
-    if (error) {
-      if (errorTarget) errorTarget.textContent = `Could not complete work order: ${friendlyWorkOrderSaveError(error)}`;
-      return;
-    }
-    const logError = await withOperationTimeout(
-      recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed."),
-      "Activity log timed out.",
-      8000
-    ).catch((error) => error);
-    setWorkOrderActionWarning("", "");
-    showNotice(logError ? `Work order completed, but history did not update: ${logError.message}` : "Work order completed.", logError ? "warning" : "success");
-    await render();
-  } catch (error) {
-    if (errorTarget) errorTarget.textContent = `Could not complete work order: ${error.message || error}`;
-    else alert(error.message || error);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Complete Work Order";
-  }
-}
-
 function renderRequestForm() {
   const detailPanel = document.querySelector("#detail-panel");
   detailPanel.innerHTML = renderRequestFormContent();
@@ -8776,12 +8727,6 @@ function hasCompletedSafetyDeviceCheck(workOrderOrPayload) {
 function currentSafetyCheckboxCheckedForWorkOrder(id) {
   if (activeWorkOrderId !== id) return false;
   return Array.from(document.querySelectorAll('#complete-work-order-form input[name="safety_devices_checked"], #quick-update-work-order-form input[name="safety_devices_checked"]')).some((field) => field.checked);
-}
-
-function syncSafetyDeviceChecks(event) {
-  document.querySelectorAll('input[name="safety_devices_checked"]').forEach((field) => {
-    field.checked = event.target.checked;
-  });
 }
 
 function applySafetyCheckPayload(payload, checked) {

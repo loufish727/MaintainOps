@@ -23,6 +23,7 @@ const requiredResources = [
   "src/utils/workspaceWorkOrderAssignmentEvents.js",
   "src/utils/workspaceWorkOrderDowntimeEvents.js",
   "src/utils/workspaceWorkOrderDetailStatusEvents.js",
+  "src/utils/workspaceWorkOrderCompletionEvents.js",
   "src/utils/requestQueryFilters.js",
   "src/utils/workOrderSearch.js",
   "src/utils/workspaceListBuilders.js",
