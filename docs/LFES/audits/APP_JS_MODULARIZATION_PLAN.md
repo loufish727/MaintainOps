@@ -5230,3 +5230,54 @@ Result:
 
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
+## Quick Fix Command Opener Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Main Quick Fix command opener:
+  - `[data-command-action="quick-fix"]`
+
+Risk:
+
+- High-risk but contained. It enters a mutation-capable form, but the selected boundary only opens that form and clears conflicting UI state.
+
+Intended boundary:
+
+- Move only the main Quick Fix command opener to `src/utils/workspaceQuickFixCommandEvents.js`.
+- Keep Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `fc21d6e` or restore the original `[data-command-action="quick-fix"]` branch in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceQuickFixCommandEvents.js`.
+- Added `tests/smoke/workspace-quick-fix-command-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-quick-fix-command-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `fc21d6e` (`Extract workspace quick fix command events`).
+- `app.js` line count is 8,084.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceQuickFixCommandEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-quick-fix-command-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-quick-fix-command-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Main Quick Fix rendered `#quick-fix-form`; Work Order create and Report Issue forms did not render; no Quick Fix submit occurred.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- Quick Fix command smoke must remain open-form/no-submit unless a separate phase explicitly selects Quick Fix submit/mutation.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.

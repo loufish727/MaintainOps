@@ -40,6 +40,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Procedure delete-cancel boundary extracted and live verified with disposable unlinked procedure warning/cancel/cleanup smoke.
 - 2026-05-26: LFES textarea auto-grow UI boundary extracted and live verified with Report Issue textarea resize smoke.
 - 2026-05-26: LFES Team invite cancel-warning UI boundary extracted and live verified with Cancel Invite -> Keep smoke.
+- 2026-05-26: LFES Quick Fix command-opener boundary extracted and live verified with open-form/no-submit smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -261,6 +262,50 @@ LFES catch:
 Next:
 
 - Continue only with another bounded local UI/read-only event seam. Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Quick Fix Command Opener - 2026-05-26
+
+Boundary selected:
+
+- Main Quick Fix command opener:
+  - `[data-command-action="quick-fix"]`
+
+Operational risk:
+
+- High-risk but contained.
+- The opener enters a mutation-capable Quick Fix form, but this boundary only opens the form and clears conflicting UI modes. It does not submit Quick Fix, create work, convert requests, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceQuickFixCommandEvents.js`.
+- Moved only the main Quick Fix command branch.
+- Injected app-owned UI state setters, `setWorkOrderSearchMode`, `renderWorkspace`, localStorage, and document.
+- Kept Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceQuickFixCommandEvents.js?v=lfes-authority-quick-fix-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-quick-fix-command-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceQuickFixCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-quick-fix-command-events-smoke.js`.
+- Targeted mock-DOM Quick Fix command smoke: PASS for clearing conflicting modes/details, entering Quick Fix mode, switching to My Work, persisting active section, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Quick Fix command script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Main Quick Fix rendered `#quick-fix-form`; Work Order create and Report Issue forms did not render; no Quick Fix submit occurred.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Quick Fix command smoke must stop at form-open verification unless the phase explicitly selects Quick Fix submit/mutation. Do not submit the form in this boundary.
+
+Next:
+
+- Continue only with another bounded local UI/read-only event seam. Request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
