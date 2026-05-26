@@ -62,6 +62,7 @@ const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWo
 const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
 const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
 const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
+const { createWorkspaceWorkOrderDeleteEvents } = window.MaintainOpsWorkspaceWorkOrderDeleteEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4951,27 +4952,30 @@ function bindWorkspaceEvents() {
     assignWorkOrderFromCard,
   });
 
-  document.querySelectorAll("[data-delete-work-order]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      requestDeleteWorkOrder(button.dataset.deleteWorkOrder);
-    });
-  });
+  createWorkspaceWorkOrderDeleteEvents({
+    alertRef: alert,
+    canDeleteWorkOrders,
+    deleteWorkOrderRecord: (id) => supabaseClient
+      .from("work_orders")
+      .delete()
+      .eq("id", id)
+      .eq("company_id", activeCompanyId),
+    documentRef: document,
+    friendlyWorkOrderSaveError,
+    getPhotoPathsByWorkOrder: (id) => (photosByWorkOrder[id] || [])
+      .map((photo) => photo.storage_path)
+      .filter(Boolean),
+    removeWorkOrderPhotoStorage: (photoPaths) => supabaseClient.storage.from("work-order-photos").remove(photoPaths),
+    render,
+    renderWorkspace,
+    setActiveAssetId: (id) => { activeAssetId = id; },
+    setActiveWorkOrderId: (id) => { activeWorkOrderId = id; },
+    setPendingDeleteWorkOrderId: (id) => { pendingDeleteWorkOrderId = id; },
+    showNotice,
+    warnRef: console.warn.bind(console),
+    withOperationTimeout,
+  }).bindWorkspaceWorkOrderDeleteEvents();
 
-  document.querySelectorAll("[data-cancel-delete-work-order]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      pendingDeleteWorkOrderId = null;
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-confirm-delete-work-order]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      await deleteWorkOrder(button.dataset.confirmDeleteWorkOrder);
-    });
-  });
 
   document.querySelectorAll("[data-delete-asset]").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -8206,62 +8210,6 @@ async function setWorkOrderStatus(id, status) {
   showNotice(`Status changed to ${statusLabel(status)}.`);
   await render();
   return true;
-}
-
-function requestDeleteWorkOrder(id) {
-  if (!canDeleteWorkOrders()) {
-    alert("Only company admins can delete work orders.");
-    return;
-  }
-
-  pendingDeleteWorkOrderId = id;
-  renderWorkspace();
-}
-
-async function deleteWorkOrder(id) {
-  if (!canDeleteWorkOrders()) {
-    alert("Only company admins can delete work orders.");
-    return;
-  }
-
-  try {
-    const photoPaths = (photosByWorkOrder[id] || [])
-      .map((photo) => photo.storage_path)
-      .filter(Boolean);
-    if (photoPaths.length) {
-      const storageDelete = await withOperationTimeout(
-        supabaseClient.storage.from("work-order-photos").remove(photoPaths),
-        "Work order photo cleanup timed out.",
-        15000
-      );
-      if (storageDelete.error) {
-        console.warn("Work order photo storage cleanup failed", storageDelete.error);
-      }
-    }
-
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("work_orders")
-        .delete()
-        .eq("id", id)
-        .eq("company_id", activeCompanyId),
-      "Work order delete timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      alert(`Could not delete work order: ${friendlyWorkOrderSaveError(error)}`);
-      return;
-    }
-
-    activeWorkOrderId = null;
-    activeAssetId = null;
-    pendingDeleteWorkOrderId = null;
-    showNotice("Work order deleted.");
-    await render();
-  } catch (error) {
-    alert(`Could not delete work order: ${error.message || error}`);
-  }
 }
 
 async function assignWorkOrderToMe(id) {
