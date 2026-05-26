@@ -4582,3 +4582,45 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Message Center Thread Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Message Center thread open/read-state bindings inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- Opening a thread is not purely navigational; it updates active thread state, persists thread state, may switch to Messages, closes composer state for work-linked threads, calls read-state write logic, and renders.
+
+Why this is recoverable:
+
+- The extraction moved only thread-open event wiring and injected the read-state callback.
+- The Supabase read-state implementation stayed in `app.js`.
+- No create-thread, send-reply, message body mutation, auth/session/company/location, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original thread listener blocks.
+
+Implementation:
+
+- Added `src/utils/workspaceMessageThreadEvents.js`.
+- Updated `index.html` with `src/utils/workspaceMessageThreadEvents.js?v=lfes-authority-message-thread-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-message-thread-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-message-thread-events-smoke.js`.
+- App deploy commit: `04f4a58` (`Extract workspace message thread events`).
+- `app.js` line count moved from 8,763 to 8,753.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceMessageThreadEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-message-thread-events-smoke.js`.
+- Targeted mock-DOM Message thread smoke: PASS for thread open, work-linked thread open, read-state callback ordering, storage persistence, composer close, section switch, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4188/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Message thread script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit; public Actions list was stale for this phase. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live Message thread smoke: PASS. Messages opened, QA Phase 9I thread opened, thread detail/reply box rendered, new script/cache tags were present, and no browser warning/error logs appeared.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine create-thread, send-reply, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

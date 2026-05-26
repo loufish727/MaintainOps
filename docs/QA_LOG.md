@@ -26,7 +26,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Message Center local UI boundary extracted and live verified with Messages filter and quick-reply UI smoke; read-state writes stayed in `app.js`.
 - 2026-05-26: LFES Parts search boundary extracted and live verified with manual text-entry smoke due browser virtual clipboard limitation.
 - 2026-05-26: LFES workspace section navigation boundary extracted and live verified with Work Orders, Requests, and Parts navigation smoke.
+- 2026-05-26: LFES Message Center thread open/read-state boundary extracted and live verified with QA thread open smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Message Center Thread Events - 2026-05-26
+
+Boundary selected:
+
+- Message Center thread open/read-state event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium/high.
+- The path changes active thread state, persists thread/section state, closes the composer for work-linked threads, calls `markMessageThreadRead`, and renders.
+
+Implementation scope:
+
+- Added `src/utils/workspaceMessageThreadEvents.js`.
+- Moved only `[data-message-thread]` and `[data-open-work-message-thread]` bindings.
+- Injected app-owned state setters, storage, `markMessageThreadRead`, `renderWorkspace`, and document.
+- Kept `markMessageThreadRead` implementation, Supabase read-state write, create-thread submit, send-reply submit, message data loading, render ownership, auth/company/location state, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceMessageThreadEvents.js?v=lfes-authority-message-thread-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-message-thread-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `04f4a58`, or remove `src/utils/workspaceMessageThreadEvents.js`, restore the original thread listener blocks in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceMessageThreadEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-message-thread-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-message-thread-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4188/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit; public Actions list was stale for this phase. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live smoke: PASS. Messages opened, QA Phase 9I thread opened, thread detail/reply box rendered, new script/cache tags were present, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Continue the LFES batch with another contained boundary. Keep create-thread, send-reply, Quick Fix, request conversion, storage/photo/document flows, mutation forms, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Workspace Section Navigation Events - 2026-05-26
 

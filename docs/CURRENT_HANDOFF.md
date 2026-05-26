@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the workspace section navigation boundary extraction from `bindWorkspaceEvents()`.
+Completed the Message Center thread open/read-state boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `f3ea2e6` (`Extract workspace section navigation events`)
+  - `04f4a58` (`Extract workspace message thread events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-section-navigation-events-1`
+  - `app.js?v=lfes-authority-message-thread-events-1`
 - Current `app.js` line count:
-  - 8,763 lines.
+  - 8,753 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -65,16 +65,17 @@ Completed the workspace section navigation boundary extraction from `bindWorkspa
   - Medium-risk Message Center local UI boundary moved `[data-message-filter]`, `[data-open-linked-work-order]`, `[data-clear-message-work-link]`, `#message-search`, `#message-thread-type` composer sync, and `[data-quick-reply]` to `src/utils/workspaceMessageUiEvents.js`; `app.js` still owns thread open/read-state writes, create thread, send reply, message data, render, and Supabase mutations.
   - Medium-low-risk Parts search boundary moved `#part-search-form` input/submit handling to `src/utils/workspacePartSearchEvents.js`; `app.js` still owns part data, forms, restock/use/edit/delete, source rename, document upload, render, and Supabase mutations.
   - Medium-risk workspace section navigation boundary moved `[data-section]` to `src/utils/workspaceSectionNavigationEvents.js`; `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
+  - Medium/high-risk Message Center thread open/read-state boundary moved `[data-message-thread]` and `[data-open-work-message-thread]` to `src/utils/workspaceMessageThreadEvents.js`; `app.js` still owns `markMessageThreadRead`, Supabase read-state write implementation, create thread, send reply, message data, render, auth/company/location state, and RLS.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceSectionNavigationEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-section-navigation-events-smoke.js`.
-  - targeted mock-DOM section navigation smoke passed for allowed/blocked sections, state clearing, search-mode reset, storage persistence, work/request queue reloads, render, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4187/`.
-  - local browser boot smoke reached the login screen with the new section navigation event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspaceMessageThreadEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-message-thread-events-smoke.js`.
+  - targeted mock-DOM Message thread smoke passed for thread open, work-linked thread open, read-state callback ordering, storage persistence, composer close, section switch, render, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4188/`.
+  - local browser boot smoke reached the login screen with the new Message thread event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live section navigation smoke clicked Work Orders, Requests, and Parts; each rendered the expected section heading, with new script/cache tags and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceSectionNavigationEvents.js?v=lfes-authority-section-navigation-events-1` and `app.js?v=lfes-authority-section-navigation-events-1`.
-  - GitHub Actions local verifier hit API rate limit after finding the run in progress; public run page verified Resource Load Smoke success for `f3ea2e6`, run `https://github.com/loufish727/MaintainOps/actions/runs/26460676489`.
+  - live Message thread smoke opened Messages, clicked the QA Phase 9I thread, rendered the thread detail and reply box, with new script/cache tags and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspaceMessageThreadEvents.js?v=lfes-authority-message-thread-events-1` and `app.js?v=lfes-authority-message-thread-events-1`.
+  - GitHub Actions local verifier was unavailable due unauthenticated API rate limit, and the public Actions list was stale; hosted resource smoke passed directly for `04f4a58`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -94,7 +95,7 @@ Completed the workspace section navigation boundary extraction from `bindWorkspa
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, and workspace section navigation boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, and Message Center thread open/read-state boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
