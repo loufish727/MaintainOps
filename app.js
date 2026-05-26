@@ -64,6 +64,7 @@ const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspace
 const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
 const { createWorkspaceWorkOrderDeleteEvents } = window.MaintainOpsWorkspaceWorkOrderDeleteEvents;
 const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkViewEvents;
+const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5337,32 +5338,17 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-open-part]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activePartId = button.dataset.openPart;
-      renderWorkspace();
-    });
-    button.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      activePartId = button.dataset.openPart;
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-close-part-detail]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activePartId = null;
-      showPartSourceManager = false;
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-toggle-part-sources]").forEach((button) => {
-    button.addEventListener("click", () => {
-      showPartSourceManager = !showPartSourceManager;
-      renderWorkspace();
-    });
+  bindWorkspacePartDetailEvents({
+    state: {
+      getShowPartSourceManager: () => showPartSourceManager,
+      setActivePartId: (value) => {
+        activePartId = value;
+      },
+      setShowPartSourceManager: (value) => {
+        showPartSourceManager = value;
+      },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-rename-part-source]").forEach((form) => {
