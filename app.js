@@ -80,6 +80,7 @@ const { bindWorkspaceAssetDeleteCancelEvents } = window.MaintainOpsWorkspaceAsse
 const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRequestDeleteCancelEvents;
 const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
 const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
+const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -3090,15 +3091,7 @@ function setWorkOrderActionWarning(id, message) {
 }
 
 function bindAutoGrowTextareas() {
-  document.querySelectorAll("textarea").forEach((field) => {
-    autoGrowTextarea(field);
-    field.addEventListener("input", () => autoGrowTextarea(field));
-  });
-}
-
-function autoGrowTextarea(field) {
-  field.style.height = "auto";
-  field.style.height = `${field.scrollHeight}px`;
+  bindWorkspaceTextareaAutoGrow();
 }
 
 function renderAssetDetail() {

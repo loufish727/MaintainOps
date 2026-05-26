@@ -42,6 +42,7 @@ const requiredResources = [
   "src/utils/workspaceRequestDeleteCancelEvents.js",
   "src/utils/workspaceScheduleDeleteCancelEvents.js",
   "src/utils/workspaceProcedureDeleteCancelEvents.js",
+  "src/utils/workspaceTextareaAutoGrow.js",
   "src/utils/requestQueryFilters.js",
   "src/utils/workOrderSearch.js",
   "src/utils/workspaceListBuilders.js",
