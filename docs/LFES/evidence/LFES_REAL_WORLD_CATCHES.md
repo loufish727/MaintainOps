@@ -284,3 +284,12 @@ Phase 6D update:
 - What prevented escalation: the reopened smoke switched to `inputValue()` for the Quick Update resolution textarea and priority select, confirming both values matched the saved data before cleanup.
 - Fix or mitigation: for forms, verify saved textarea/select values with control-value checks, not only rendered body text.
 - Lessons learned: visible summary chips and form control values are different behavior surfaces. Mutation smokes should verify the surface the user actually edits.
+
+## 2026-05-26 - Full Work Order Edit Smoke - Reopen Click Can Be Automation-Only Fragile
+
+- Issue discovered: a reopened exact-search result card resolved to the correct disposable work order but Playwright considered it not visible during a non-mutating value-check reopen.
+- How it was discovered: the first reopened value-check attempt timed out clicking the card, even though the selector resolved to the expected `data-id` and title.
+- Operational risk: an automation visibility issue during verification can be mistaken for an app regression, or a verifier can overcompensate by using unsafe forced clicks for mutation actions.
+- What prevented escalation: the forced click was used only for the non-mutating reopen/value-check step after selector and title proof; the actual edit mutation was performed through visible form controls.
+- Fix or mitigation: forced clicks are acceptable only for non-mutating reopen/inspection steps after DOM proof. Mutation controls still require visible, enabled controls and normal interaction.
+- Lessons learned: separate workflow mutation evidence from verifier navigation mechanics. The interaction that changes data must stay strict; navigation used only to inspect saved values can tolerate a documented automation fallback.
