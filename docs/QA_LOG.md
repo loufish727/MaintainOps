@@ -37,6 +37,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Equipment delete-cancel boundary extracted and live verified with disposable unlinked equipment warning/cancel/cleanup smoke.
 - 2026-05-26: LFES Request delete-cancel boundary extracted and live verified with disposable request warning/cancel/cleanup smoke.
 - 2026-05-26: LFES PM schedule delete-cancel boundary extracted and live verified with disposable PM schedule warning/cancel/cleanup smoke.
+- 2026-05-26: LFES Procedure delete-cancel boundary extracted and live verified with disposable unlinked procedure warning/cancel/cleanup smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -127,6 +128,50 @@ LFES catch:
 Next:
 
 - Procedure delete-cancel may be considered only if a safe disposable/visible record exists. Do not combine delete-confirm, PM generation, Quick Fix, storage/photo/document, auth/company/location, or broad render/event movement with another extraction.
+
+## LFES Boundary - Procedure Delete-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- Procedure delete warning cancel event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path is inside a procedure delete flow with blocker verification for linked work orders and PM schedules, but this boundary only clears pending delete state and re-renders. It does not request delete, confirm delete, verify blockers, delete procedures/steps, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Moved only `[data-cancel-delete-procedure]`.
+- Injected app-owned pending delete setter, `renderWorkspace`, and document.
+- Kept `[data-delete-procedure]`, `[data-confirm-delete-procedure]`, blocker verification, permanent delete, procedure data/steps, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceProcedureDeleteCancelEvents.js?v=lfes-authority-procedure-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-procedure-delete-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceProcedureDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Procedure delete-cancel smoke: PASS for pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Procedure delete-cancel script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26470365077` completed successfully for `d776856`.
+- Signed-in live smoke: PASS. Disposable procedure `LFES disposable procedure 1779823870455` was created to expose the procedure delete warning path, opened in the manager/admin session, Delete Procedure rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete Procedure, then the disposable procedure was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable procedure 1779823870455` no longer appeared in the app.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Procedure delete-cancel requires an unlinked disposable procedure. Linked procedures may correctly block permanent delete and are not appropriate for this cancel-boundary smoke.
+
+Next:
+
+- Reassess the next boundary from the authority map. Remaining delete-confirm, PM generation, Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 

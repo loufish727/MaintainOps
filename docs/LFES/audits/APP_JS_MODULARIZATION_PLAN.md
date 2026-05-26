@@ -5077,3 +5077,54 @@ Result:
 
 - Behavior changed: no observed behavior change.
 - Proceed only to another single bounded delete-cancel or local UI boundary unless a separate high-risk plan is written.
+
+## Procedure Delete-Cancel Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Procedure delete warning cancel binding inside `bindWorkspaceEvents()`:
+  - `[data-cancel-delete-procedure]`
+
+Risk:
+
+- Medium risk. It is delete-adjacent and role-gated, and it lives beside blocker verification and permanent-delete controls.
+
+Intended boundary:
+
+- Move only the cancel listener that clears pending procedure delete state and re-renders.
+- Keep delete request, permanent delete, blocker verification, procedure data/steps, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `d776856` or restore the original `[data-cancel-delete-procedure]` listener block in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Added `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-procedure-delete-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `d776856` (`Extract workspace procedure delete cancel events`).
+- `app.js` line count is 8,099.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceProcedureDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS for Resource Load Smoke run `26470365077`.
+- Manager/admin live smoke: PASS. Disposable procedure `LFES disposable procedure 1779823870455` rendered the delete warning, Cancel cleared it and restored Delete Procedure, and cleanup permanent delete removed only that disposable procedure.
+
+Catch:
+
+- Procedure delete-cancel smoke needs an unlinked disposable procedure; linked procedures can correctly block delete and are not suitable for the cancel-boundary proof.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Reassess the next authority-map boundary before moving beyond cancel-only delete flows.

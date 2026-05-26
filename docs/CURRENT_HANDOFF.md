@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the PM schedule delete-cancel boundary extraction from `bindWorkspaceEvents()`.
+Completed the Procedure delete-cancel boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `f76c15b` (`Extract workspace schedule delete cancel events`)
+  - `d776856` (`Extract workspace procedure delete cancel events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-schedule-delete-cancel-events-1`
+  - `app.js?v=lfes-authority-procedure-delete-cancel-events-1`
 - Current `app.js` line count:
-  - 8,098 lines.
+  - 8,099 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -76,17 +76,18 @@ Completed the PM schedule delete-cancel boundary extraction from `bindWorkspaceE
   - Medium-risk Equipment delete-cancel boundary moved `[data-cancel-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
   - Medium-risk Request delete-cancel boundary moved `[data-cancel-delete-request]` to `src/utils/workspaceRequestDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
   - Medium-risk PM schedule delete-cancel boundary moved `[data-cancel-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
+  - Medium-risk Procedure delete-cancel boundary moved `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceScheduleDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
-  - targeted mock-DOM PM schedule delete-cancel smoke passed for clearing pending delete state, rendering, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceProcedureDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Procedure delete-cancel smoke passed for clearing pending delete state, rendering, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new PM schedule delete-cancel script/cache tag present and no browser warning/error logs.
+  - local browser boot smoke loaded the app shell with the new Procedure delete-cancel script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live PM schedule delete-cancel smoke created disposable schedule `LFES disposable PM schedule 1779823426651`, opened PM in the manager/admin session, clicked Delete, confirmed Cancel and Permanently Delete rendered, clicked Cancel, confirmed the warning cleared and Delete returned, then re-opened the warning and permanently deleted only the disposable schedule.
-  - cleanup verification confirmed `LFES disposable PM schedule 1779823426651` no longer appeared in the app.
-  - live `index.html` referenced `src/utils/workspaceScheduleDeleteCancelEvents.js?v=lfes-authority-schedule-delete-cancel-events-1` and `app.js?v=lfes-authority-schedule-delete-cancel-events-1`.
-  - `npm run test:smoke:github-actions` passed for `f76c15b`: Resource Load Smoke `26469751689` completed successfully.
+  - live Procedure delete-cancel smoke created disposable procedure `LFES disposable procedure 1779823870455`, opened Procedures in the manager/admin session, clicked Delete Procedure, confirmed Cancel and Permanently Delete rendered, clicked Cancel, confirmed the warning cleared and Delete Procedure returned, then re-opened the warning and permanently deleted only the disposable procedure.
+  - cleanup verification confirmed `LFES disposable procedure 1779823870455` no longer appeared in the app.
+  - live `index.html` referenced `src/utils/workspaceProcedureDeleteCancelEvents.js?v=lfes-authority-procedure-delete-cancel-events-1` and `app.js?v=lfes-authority-procedure-delete-cancel-events-1`.
+  - `npm run test:smoke:github-actions` passed for `d776856`: Resource Load Smoke `26470365077` completed successfully.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -112,7 +113,7 @@ Completed the PM schedule delete-cancel boundary extraction from `bindWorkspaceE
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Export CSV command, Equipment delete-cancel, Request delete-cancel, and PM schedule delete-cancel boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Export CSV command, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, and Procedure delete-cancel boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
