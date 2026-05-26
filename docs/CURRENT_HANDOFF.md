@@ -30,14 +30,14 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Quick Fix command-opener boundary extraction.
+Completed the asset-specific Quick Fix opener boundary extraction.
 
 - Latest app behavior commit:
-  - `fc21d6e` (`Extract workspace quick fix command events`)
+  - `73f9246` (`Extract workspace asset quick fix events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-quick-fix-command-events-1`
+  - `app.js?v=lfes-authority-asset-quick-fix-events-1`
 - Current `app.js` line count:
   - 8,084 lines.
 - Latest deployment:
@@ -80,16 +80,17 @@ Completed the Quick Fix command-opener boundary extraction.
   - Medium-low-risk textarea auto-grow UI boundary moved `autoGrowTextarea` and global textarea input binding to `src/utils/workspaceTextareaAutoGrow.js`; `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
   - Medium-risk Team invite cancel-warning UI boundary moved `[data-cancel-invite]` and `[data-cancel-invite-cancel]` to `src/utils/workspaceTeamInviteCancelEvents.js`; `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
   - High-risk-but-contained Quick Fix command-opener boundary moved the main `[data-command-action="quick-fix"]` branch to `src/utils/workspaceQuickFixCommandEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
+  - High-risk-but-contained asset-specific Quick Fix opener boundary moved `[data-quick-fix-asset]` to `src/utils/workspaceAssetQuickFixEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceQuickFixCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-quick-fix-command-events-smoke.js`.
-  - targeted mock-DOM Quick Fix command smoke passed for clearing conflicting modes/details, entering Quick Fix mode, switching to My Work, persisting active section, render, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceAssetQuickFixEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-quick-fix-events-smoke.js`.
+  - targeted mock-DOM asset Quick Fix smoke passed for setting the selected asset, clearing request/detail state, entering Quick Fix mode, switching to My Work, persisting active section, render, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Quick Fix command script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new asset Quick Fix script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Quick Fix command smoke clicked the main Quick Fix button, verified `#quick-fix-form` rendered, and verified Work Order create/report forms did not render. No Quick Fix submit was performed.
-  - live `index.html` referenced `src/utils/workspaceQuickFixCommandEvents.js?v=lfes-authority-quick-fix-command-events-1` and `app.js?v=lfes-authority-quick-fix-command-events-1`.
-  - hosted resource smoke passed for `fc21d6e`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
+  - live asset Quick Fix smoke opened Equipment detail for `New thalmann`, clicked Quick Fix For This Equipment, verified `#quick-fix-form` rendered with `New thalmann` selected, and verified Work Order create/report forms did not render. No Quick Fix submit was performed.
+  - live `index.html` referenced `src/utils/workspaceAssetQuickFixEvents.js?v=lfes-authority-asset-quick-fix-events-1` and `app.js?v=lfes-authority-asset-quick-fix-events-1`.
+  - hosted resource smoke passed for `73f9246`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -107,6 +108,7 @@ Completed the Quick Fix command-opener boundary extraction.
   - The in-app browser download event API does not support file downloads; export/download smokes need a download-capable Playwright browser or a browser-side anchor/blob capture.
   - Equipment delete controls are role-gated and data-gated. The QA/test login can create equipment but does not expose delete controls; manager/admin live smoke is required. Existing linked equipment may correctly disable delete, so use a disposable unlinked equipment record for delete-warning/cancel verification and clean it up immediately.
   - Request delete-cancel smoke may require scrolling the disposable request card into the viewport before coordinate clicking lower card controls.
+  - Equipment list cards open detail through the `.asset-card`/`[data-asset-id]` card itself, not `[data-open-asset]`; asset Quick Fix smoke should open the card before targeting `[data-quick-fix-asset]`.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -115,7 +117,7 @@ Completed the Quick Fix command-opener boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, Export CSV command, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, Export CSV command, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

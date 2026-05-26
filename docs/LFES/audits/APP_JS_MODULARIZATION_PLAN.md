@@ -5231,6 +5231,57 @@ Result:
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## Asset-Specific Quick Fix Opener Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Asset-specific Quick Fix opener:
+  - `[data-quick-fix-asset]`
+
+Risk:
+
+- High-risk but contained. It enters a mutation-capable form with an equipment preselected, but the selected boundary only opens that form.
+
+Intended boundary:
+
+- Move only the asset-specific Quick Fix opener to `src/utils/workspaceAssetQuickFixEvents.js`.
+- Keep Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `73f9246` or restore the original `[data-quick-fix-asset]` listener block in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceAssetQuickFixEvents.js`.
+- Added `tests/smoke/workspace-asset-quick-fix-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-asset-quick-fix-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `73f9246` (`Extract workspace asset quick fix events`).
+- `app.js` line count is 8,084.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceAssetQuickFixEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-asset-quick-fix-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-asset-quick-fix-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Equipment detail for `New thalmann` opened Quick Fix For This Equipment, rendered `#quick-fix-form` with `New thalmann` selected, and did not render Work Order create or Report Issue forms. No Quick Fix submit occurred.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- Equipment list cards open detail through the `.asset-card`/`[data-asset-id]` card itself, not `[data-open-asset]`; open the card before targeting `[data-quick-fix-asset]`.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
 ## Quick Fix Command Opener Boundary - 2026-05-26
 
 Hard boundary selected:

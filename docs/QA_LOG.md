@@ -41,6 +41,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES textarea auto-grow UI boundary extracted and live verified with Report Issue textarea resize smoke.
 - 2026-05-26: LFES Team invite cancel-warning UI boundary extracted and live verified with Cancel Invite -> Keep smoke.
 - 2026-05-26: LFES Quick Fix command-opener boundary extracted and live verified with open-form/no-submit smoke.
+- 2026-05-26: LFES asset-specific Quick Fix opener boundary extracted and live verified with Equipment detail open-form/no-submit smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -306,6 +307,50 @@ LFES catch:
 Next:
 
 - Continue only with another bounded local UI/read-only event seam. Request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Asset-Specific Quick Fix Opener - 2026-05-26
+
+Boundary selected:
+
+- Asset-specific Quick Fix opener:
+  - `[data-quick-fix-asset]`
+
+Operational risk:
+
+- High-risk but contained.
+- The opener enters a mutation-capable Quick Fix form with an equipment preselected, but this boundary only opens the form. It does not submit Quick Fix, create work, convert requests, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceAssetQuickFixEvents.js`.
+- Moved only the asset-specific Quick Fix opener.
+- Injected app-owned UI state setters, `renderWorkspace`, localStorage, and document.
+- Kept Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceAssetQuickFixEvents.js?v=lfes-authority-asset-quick-fix-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-asset-quick-fix-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetQuickFixEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-quick-fix-events-smoke.js`.
+- Targeted mock-DOM asset Quick Fix smoke: PASS for setting selected asset, clearing request/detail state, entering Quick Fix mode, switching to My Work, persisting active section, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the asset Quick Fix script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Equipment detail for `New thalmann` opened Quick Fix For This Equipment, rendered `#quick-fix-form` with `New thalmann` selected, and did not render Work Order create or Report Issue forms. No Quick Fix submit occurred.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Equipment list cards open detail through the `.asset-card`/`[data-asset-id]` card itself, not `[data-open-asset]`; open the card before targeting `[data-quick-fix-asset]`.
+
+Next:
+
+- Continue only with another bounded local UI/read-only event seam. Request-specific Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
