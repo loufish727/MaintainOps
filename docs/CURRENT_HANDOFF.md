@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed detail status dropdown event extraction from `bindWorkspaceEvents()`.
+Completed the first full work-order completion boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `d0bf9dd` (`Extract workspace work order detail status events`)
+  - `d9a1922` (`Extract workspace work order completion events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-detail-status-events-1`
+  - `app.js?v=lfes-authority-work-completion-events-1`
 - Current `app.js` line count:
-  - 8,948 lines.
+  - 8,893 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -58,23 +58,26 @@ Completed detail status dropdown event extraction from `bindWorkspaceEvents()`.
   - High-risk work-order mutation-adjacent run moved assignment event wiring to `src/utils/workspaceWorkOrderAssignmentEvents.js`; `app.js` still owns `assignWorkOrderToMe`, `assignWorkOrderFromCard`, Supabase mutation sequencing, permission checks, record events, render, status, delete, and downtime flows.
   - Non-mutating work-order boundary moved downtime copy button wiring to `src/utils/workspaceWorkOrderDowntimeEvents.js`; `app.js` still owns downtime subject/body builders and clipboard implementation.
   - Detail status dropdown boundary moved only `#status-select` binding to `src/utils/workspaceWorkOrderDetailStatusEvents.js`; `app.js` still owns `updateWorkOrderStatus`, `setWorkOrderStatus`, status guards, Supabase mutation sequencing, event recording, and render.
+  - High-risk completion boundary moved full Work Order Detail completion submit handling and safety checkbox sync to `src/utils/workspaceWorkOrderCompletionEvents.js`; `app.js` still owns the injected Supabase mutation callback, activity logger, safety payload helpers, render, state arrays, and shared current-safety helper used by quick-update/status paths.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderDetailStatusEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed for `#status-select` change binding and missing-select no-op.
-  - local resource smoke passed against `http://127.0.0.1:4180/`.
-  - local browser boot smoke reached the login screen with the new detail-status event script and cache tag present.
+  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderCompletionEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM completion smoke passed for success payload/update/log/render/button restore, checklist gate, safety-device gate, update-error path, log-warning path, submit binding, and safety checkbox sync.
+  - local resource smoke passed against `http://127.0.0.1:4181/`.
+  - local browser boot smoke reached the login screen with the new completion event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live detail status dropdown smoke opened `Hydralic Leak`, changed status from `in_progress` to `open`, observed Work Order Detail status `open`, restored to `in_progress`, and observed Work Order Detail status `in_progress`.
-  - live `index.html` referenced `src/utils/workspaceWorkOrderDetailStatusEvents.js?v=lfes-authority-work-detail-status-events-1` and `app.js?v=lfes-authority-work-detail-status-events-1`.
-  - GitHub Actions public run listing showed Resource Load Smoke #130 for `d0bf9dd` completed; the local verifier was blocked by GitHub API rate limiting.
-  - fresh live console sample had no relevant warning/error logs.
+  - live completion smoke created disposable Quick Fix work order `QA LFES completion smoke 2026-05-26T15-16-53-084Z`, completed it through the extracted completion path, observed Work Order Detail status `Completed`, timestamp/minutes, notes, and resolution, then permanently deleted the disposable record through the app UI.
+  - live `index.html` referenced `src/utils/workspaceWorkOrderCompletionEvents.js?v=lfes-authority-work-completion-events-1` and `app.js?v=lfes-authority-work-completion-events-1`.
+  - GitHub Actions public run listing showed Resource Load Smoke #132 for `d9a1922` completed successfully and Pages build/deployment #180 completed successfully; the local verifier was blocked by GitHub API rate limiting.
+  - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
 - LFES catch:
   - the first live smoke expectation was wrong. Quick status mutations intentionally set the active work order and re-render into Work Order Detail, so future work-order quick-status smoke must assert the detail status after mutation rather than expecting the list card to remain visible.
   - the dedicated QA/test account is not a manager/admin assignment actor, so assignment controls are hidden there. Assignment mutation smoke requires a manager/admin session plus restore, while the QA/test account remains useful for denied/hidden-control verification.
   - clipboard fallback can settle slower than the nominal 1600ms reset delay in automation; downtime-copy smoke should wait for reset labels conditionally instead of using a brittle fixed sleep.
+  - completion smoke must use an `actual_minutes` value compatible with the form step (`5`, `10`, etc.); invalid step values are blocked by native browser validation before the submit handler runs.
+  - in-app browser high-level locator clicks can hang on lower-page operational buttons; when DOM state is clear and the action is authorized, scroll the target into view and use coordinate click only after recording the locator/rect evidence.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -83,9 +86,9 @@ Completed detail status dropdown event extraction from `bindWorkspaceEvents()`.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, and detail status dropdown event bindings are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, and completion boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
-  - delete and completion flows remain separate targets.
+  - delete remains the next highest-risk work-order target and must be separately mapped before implementation.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.

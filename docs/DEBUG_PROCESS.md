@@ -303,6 +303,22 @@ Check:
 - error path shows the error and re-enables the button.
 - form still exists before trying to update button text.
 
+### Submit Button Appears To Do Nothing
+
+Check:
+
+- Native form validation first:
+  - required fields,
+  - `type="number"` min/max/step,
+  - date format.
+- Whether the submit handler actually ran:
+  - button text changes,
+  - error target changes,
+  - network/write side effect,
+  - render or notice occurs.
+- For completion smoke, use `actual_minutes` values compatible with `step="5"` such as `5`, `10`, or `15`.
+- If automation click stalls on a lower-page button, record DOM/rect evidence, scroll the target into view, and retry through a visible coordinate click only for an authorized disposable smoke path.
+
 ### Supabase Write Fails
 
 Check:

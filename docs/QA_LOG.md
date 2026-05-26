@@ -19,7 +19,59 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES high-risk work-order assignment event boundary extracted and live verified with manager/admin mutation plus restore.
 - 2026-05-26: LFES work-order downtime copy event boundary extracted and live verified; smoke timing was corrected to wait for reset labels conditionally.
 - 2026-05-26: LFES detail status dropdown event boundary extracted and live verified with status mutation plus restore.
+- 2026-05-26: LFES high-risk work-order completion boundary extracted and live verified with disposable completion plus cleanup.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Work-Order Completion Events - 2026-05-26
+
+Boundary selected:
+
+- Work Order Detail completion form submit handling and safety checkbox sync from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- High.
+- This path builds the completion payload, calls an injected Supabase update, records work-order history, applies safety payload helpers, updates form error/button UI, shows notices, and renders.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderCompletionEvents.js`.
+- Moved full `completeWorkOrder(event)` behavior and `syncSafetyDeviceChecks(event)`.
+- Injected app-owned dependencies: active work-order lookup, procedure lookup, checklist/safety helpers, update callback, activity logger, timeout wrapper, notice/error helpers, render, and document.
+- Kept Supabase access, auth/company/location state, work-order arrays, safety payload helpers, shared quick-update/status current-safety helper, delete, Quick Fix, request conversion, storage/photo/document flows, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceWorkOrderCompletionEvents.js?v=lfes-authority-work-completion-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-completion-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `d9a1922`, or remove `src/utils/workspaceWorkOrderCompletionEvents.js`, restore the original completion form and safety checkbox listener blocks plus `completeWorkOrder` and `syncSafetyDeviceChecks` in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderCompletionEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS, with only existing CRLF warnings.
+- Targeted mock-DOM completion smoke: PASS for success payload/update/log/render/button restore, checklist gate, safety gate, update-error path, log-warning path, submit binding, and safety checkbox sync.
+- Local resource smoke: PASS against `http://127.0.0.1:4181/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions public run-list verification: PASS for Resource Load Smoke #132 on `d9a1922`; Pages build/deployment #180 also completed successfully. Local verifier hit GitHub API rate limiting.
+- Signed-in manager/admin live smoke: PASS. Created disposable Quick Fix work order `QA LFES completion smoke 2026-05-26T15-16-53-084Z`, completed it through the extracted completion path with `actual_minutes = 5`, verified Detail status `Completed`, timestamp/minutes, notes, and resolution, then permanently deleted the disposable record through the app UI.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catches:
+
+- Completion smoke must use `actual_minutes` values compatible with the rendered `step="5"` input. Invalid values such as `3` are blocked by native browser validation before the handler runs.
+- Lower-page operational buttons can stall with high-level browser locator clicks in the in-app browser. For authorized disposable smokes, record DOM/rect evidence, scroll the target into view, and use coordinate click only after the locator path stalls.
+
+Next:
+
+- Delete remains the next high-risk work-order target. Map cascade, rollback, cleanup, and smoke coverage before any implementation.
 
 ## LFES Boundary - Work-Order Detail Status Dropdown Events - 2026-05-26
 

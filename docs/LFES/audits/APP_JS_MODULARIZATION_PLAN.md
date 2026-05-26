@@ -4261,5 +4261,54 @@ Verification:
 
 Next candidates:
 
-- Delete and completion remain the two higher-risk work-order event zones.
-- Do not combine delete and completion. Map one full path, smoke it with restore/cleanup, and stop if mutation sequencing or cleanup is unclear.
+- Completion is now extracted and live verified. Delete remains the next higher-risk work-order event zone.
+- Do not combine delete with another workflow. Map the full delete path, smoke it only with a disposable record and cleanup proof, and stop if mutation sequencing or cleanup is unclear.
+
+## High-Risk Work-Order Completion Boundary - 2026-05-26
+
+Selected boundary:
+
+- Work Order Detail completion submit handling and safety checkbox sync:
+  - `#complete-work-order-form`
+  - `input[name="safety_devices_checked"]`
+
+Why this is hard:
+
+- This is the first extracted work-order handler in this run that owns the completion payload and calls an injected Supabase mutation callback.
+- The path also records activity, gates required checklist completion, gates equipment safety checks, updates button/error UI, clears work-order action warnings, shows notices, and triggers render.
+
+Why this is recoverable:
+
+- Supabase access, auth/company/location state, work-order arrays, safety payload helpers, event logging, and render stayed in `app.js` and are injected.
+- `syncSafetyDeviceChecks` moved with the completion module, but `currentSafetyCheckboxCheckedForWorkOrder` intentionally remains in `app.js` because quick-update/status paths still use the shared helper.
+- Delete, Quick Fix creation, request conversion, storage/photo/document flows, SQL/RLS, auth/session/company/location startup, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` were left untouched.
+- Rollback is one app commit or restoration of the original completion form and safety checkbox listener blocks plus the original `completeWorkOrder` / `syncSafetyDeviceChecks` functions.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderCompletionEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderCompletionEvents.js?v=lfes-authority-work-completion-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-completion-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `d9a1922` (`Extract workspace work order completion events`).
+- `app.js` line count moved from 8,948 to 8,893.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderCompletionEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM completion smoke: PASS for success payload/update/log/render/button restore, checklist gate, safety-device gate, update-error path, log-warning path, submit binding, and safety checkbox sync.
+- Local resource smoke: PASS against `http://127.0.0.1:4181/`.
+- Local browser boot smoke: PASS. Login screen loaded with the completion script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- Public GitHub Actions run-list verification: PASS for Resource Load Smoke #132 on `d9a1922`; Pages build/deployment #180 also completed successfully. The local verifier was blocked by GitHub API rate limiting.
+- Signed-in manager/admin live completion smoke: PASS. Created disposable Quick Fix work order `QA LFES completion smoke 2026-05-26T15-16-53-084Z`, completed it through the extracted completion path, observed Detail status `Completed`, completed timestamp/minutes, notes, and resolution, then permanently deleted the disposable record through the app UI.
+
+LFES catches:
+
+- Completion smoke must respect the native `actual_minutes` field step. A value like `3` is invalid for `step="5"` and the browser blocks submission before the handler runs; use `5`, `10`, etc.
+- In-app browser high-level locator clicks can hang on lower-page operational buttons. For authorized disposable smoke cleanup, record the button rect/DOM evidence, scroll into view, then use coordinate click if the locator click stalls.
+
+Next candidates:
+
+- Delete remains the next high-risk work-order boundary, but it must be mapped separately with cascade/rollback/cleanup evidence before implementation.
+- Do not combine delete with completion, status, assignment, request conversion, Quick Fix, storage/photo/document flows, or any broad render/event movement.

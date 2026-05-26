@@ -221,3 +221,21 @@ Phase 6D update:
 - What prevented escalation: the failure was investigated before reporting success, live `index.html` and `src/render/iconDisplay.js` were checked directly, and the smoke test was updated to retry while Pages catches up.
 - Fix applied or recommended: updated `tests/smoke/resource-load.spec.js` to retry hosted resource checks for a short window before failing.
 - Lessons learned: hosted smoke tests that validate GitHub Pages must account for publish lag, especially when a push triggers the smoke workflow and Pages deployment concurrently.
+
+## 2026-05-26 - Work-Order Completion Smoke - Native Step Validation Can Block Handler Evidence
+
+- Issue discovered: a live completion smoke used `actual_minutes = 3`, but the completion form input has `step="5"`, so native browser validation blocked form submission before the extracted handler ran.
+- How it was discovered: the disposable work order remained `New`, no completion notice appeared, and there were no console errors. Inspecting the form showed `actual_minutes` was the invalid field.
+- Operational risk: a smoke can falsely report a handler regression when the browser never dispatched submit. This is especially easy to miss after handler extraction because the form values remain visible and the page looks idle rather than broken.
+- What prevented escalation: the disposable work order was still safe to reuse, the smoke was rerun with `actual_minutes = 5`, and the completion path then moved the record to `Completed` with timestamp, minutes, notes, and resolution visible.
+- Fix or mitigation: future completion smokes must use step-compatible minute values such as `5`, `10`, or `15`, or explicitly assert native validation when testing invalid inputs.
+- Lessons learned: mutation smokes must respect the rendered form contract, not just the JavaScript handler contract.
+
+## 2026-05-26 - Work-Order Completion Cleanup - Lower-Page Locator Clicks Can Stall
+
+- Issue discovered: high-level browser locator clicks intermittently stalled on lower-page operational buttons such as `Complete Work Order`, `Delete Work Order`, and `Permanently Delete`, even though DOM evidence showed the buttons existed and were enabled.
+- How it was discovered: live completion and cleanup smokes timed out while waiting on locator click commands. Coordinate clicks worked after recording button rect evidence and scrolling the target into view.
+- Operational risk: a valid workflow can look blocked because automation cannot click a lower-page control, especially during cleanup of disposable mutation records.
+- What prevented escalation: no app code change was made for the automation limitation; the smoke recorded DOM/rect state, used valid form input, scrolled the confirmation button into view, completed the disposable work order, and deleted it through the app UI.
+- Fix or mitigation: for authorized disposable live smokes, prefer stable locators first. If a lower-page locator click stalls, record DOM/rect evidence, scroll into view, use coordinate click, and document the deviation.
+- Lessons learned: automation mechanics are part of the smoke contract. A click timeout is not automatically an app regression, but it must be diagnosed before proceeding.
