@@ -6,10 +6,11 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `d1cef34` (`Extract workspace PM generation events`).
+- Latest app behavior commit: `2814088` (`Extract workspace work order edit events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
-- Current `app.js` line count: 8,057.
+- Current `app.js` line count: 8,064.
+- Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -22,6 +23,10 @@ Current state as of 2026-05-26:
 Recommended immediate next controlled phase:
 
 - The project has crossed from safe line reduction into authority reduction. Do not chase another line-count target.
+- The recommended direction is now security/source-of-truth cleanup first, then client state ownership.
+- RLS source audit result: app-used data tables and storage buckets are covered in source, but two app-used RPC dependencies are not present in checked SQL source: `cancel_company_invite` and `record_work_order_part_usage`.
+- Before touching team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, or related SQL/RLS work, resolve or explicitly accept that RPC source gap.
+- Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
 - Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
 - Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.

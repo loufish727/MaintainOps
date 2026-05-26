@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Full Work Order Details submit event boundary.
+Completed the Full Work Order Details submit event boundary, then paused extraction momentum for an LFES RLS source audit checkpoint before deeper auth/public/storage/mutation work.
 
 - Latest app behavior commit:
   - `2814088` (`Extract workspace work order edit events`)
@@ -39,7 +39,13 @@ Completed the Full Work Order Details submit event boundary.
 - Latest live cache tag:
   - `app.js?v=lfes-authority-work-order-edit-events-1`
 - Current `app.js` line count:
-  - 8,704 lines.
+  - 8,064 lines.
+- Current security checkpoint:
+  - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
+  - App-used data tables have RLS/policy coverage in source.
+  - App-used storage buckets are private with storage policy coverage in source.
+  - Public QR anonymous access remains scoped to expected RPC grants, not direct table grants.
+  - `cancel_company_invite` and `record_work_order_part_usage` are app-used RPCs without definitions/grants found in the checked SQL source. Treat this as a source-of-truth gap before touching team invite cancel or parts-used mutation boundaries.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -104,6 +110,9 @@ Completed the Full Work Order Details submit event boundary.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
+- LFES RLS audit catch:
+  - the source tree broadly matches the established RLS posture, but repository SQL is not sufficient to reconstruct two app-used RPC dependencies: `cancel_company_invite` and `record_work_order_part_usage`.
+  - do not start auth/session, public QR submit, storage/photo/document, team invite cancel, or parts-used mutation extraction until this gap is resolved or explicitly accepted.
 - LFES catch:
   - the first live smoke expectation was wrong. Quick status mutations intentionally set the active work order and re-render into Work Order Detail, so future work-order quick-status smoke must assert the detail status after mutation rather than expecting the list card to remain visible.
   - the dedicated QA/test account is not a manager/admin assignment actor, so assignment controls are hidden there. Assignment mutation smoke requires a manager/admin session plus restore, while the QA/test account remains useful for denied/hidden-control verification.
