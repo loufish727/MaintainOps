@@ -5178,3 +5178,55 @@ Result:
 
 - Behavior changed: no observed behavior change.
 - Do not enter Quick Fix/request conversion/delete-confirm/storage/photo/document/broad form work without a separate high-risk plan.
+
+## Team Invite Cancel-Warning UI Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Team invite cancel-warning and keep/dismiss bindings:
+  - `[data-cancel-invite]`
+  - `[data-cancel-invite-cancel]`
+
+Risk:
+
+- Medium risk. It is adjacent to a real invite-cancel mutation, but the selected boundary only opens and dismisses warning state.
+
+Intended boundary:
+
+- Move only the warning-open and keep/dismiss event bindings to `src/utils/workspaceTeamInviteCancelEvents.js`.
+- Keep confirm cancel, invite creation, invite data, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `4874c96` or restore the original `[data-cancel-invite]` and `[data-cancel-invite-cancel]` listener blocks in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceTeamInviteCancelEvents.js`.
+- Added `tests/smoke/workspace-team-invite-cancel-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-team-invite-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `4874c96` (`Extract workspace team invite cancel events`).
+- `app.js` line count is 8,087.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceTeamInviteCancelEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-team-invite-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-team-invite-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Existing pending invite `jeffrey.kinkaid@taylormetal.com` opened the warning, rendered Keep and confirm Cancel Invite, then Keep dismissed the warning and restored the original Cancel Invite without mutating the invite.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- Existing pending invites allow a non-destructive smoke for warning/keep behavior. Confirm-cancel remains a separate mutation boundary and must not be clicked in this phase.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.

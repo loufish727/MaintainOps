@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Textarea auto-grow UI boundary extraction.
+Completed the Team invite cancel-warning UI boundary extraction.
 
 - Latest app behavior commit:
-  - `b9e037d` (`Extract workspace textarea auto grow events`)
+  - `4874c96` (`Extract workspace team invite cancel events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-textarea-auto-grow-1`
+  - `app.js?v=lfes-authority-team-invite-cancel-events-1`
 - Current `app.js` line count:
-  - 8,093 lines.
+  - 8,087 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -78,16 +78,17 @@ Completed the Textarea auto-grow UI boundary extraction.
   - Medium-risk PM schedule delete-cancel boundary moved `[data-cancel-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
   - Medium-risk Procedure delete-cancel boundary moved `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
   - Medium-low-risk textarea auto-grow UI boundary moved `autoGrowTextarea` and global textarea input binding to `src/utils/workspaceTextareaAutoGrow.js`; `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
+  - Medium-risk Team invite cancel-warning UI boundary moved `[data-cancel-invite]` and `[data-cancel-invite-cancel]` to `src/utils/workspaceTeamInviteCancelEvents.js`; `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceTextareaAutoGrow.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-textarea-auto-grow-smoke.js`.
-  - targeted mock-DOM textarea auto-grow smoke passed for initial sizing, input resizing, and null no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceTeamInviteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-team-invite-cancel-events-smoke.js`.
+  - targeted mock-DOM Team invite cancel-warning smoke passed for opening the pending cancel state, clearing cancel errors, keeping the invite, render calls, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new textarea auto-grow script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new Team invite cancel-warning script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live textarea auto-grow smoke opened Report Issue, filled the details textarea with 12 lines, and verified inline height grew from 94px to 218px with no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceTextareaAutoGrow.js?v=lfes-authority-textarea-auto-grow-1` and `app.js?v=lfes-authority-textarea-auto-grow-1`.
-  - hosted resource smoke passed for `b9e037d`; the unauthenticated GitHub Actions API verifier was rate-limited, so Actions verification used the public workflow page fallback where available.
+  - live Team invite cancel-warning smoke opened Team, used the existing pending invite for `jeffrey.kinkaid@taylormetal.com`, clicked Cancel Invite, verified Keep and confirm Cancel Invite rendered, clicked Keep, and verified the original Cancel Invite returned without mutating the invite.
+  - live `index.html` referenced `src/utils/workspaceTeamInviteCancelEvents.js?v=lfes-authority-team-invite-cancel-events-1` and `app.js?v=lfes-authority-team-invite-cancel-events-1`.
+  - hosted resource smoke passed for `4874c96`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -113,7 +114,7 @@ Completed the Textarea auto-grow UI boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Export CSV command, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, and textarea auto-grow boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Export CSV command, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

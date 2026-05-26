@@ -39,6 +39,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule delete-cancel boundary extracted and live verified with disposable PM schedule warning/cancel/cleanup smoke.
 - 2026-05-26: LFES Procedure delete-cancel boundary extracted and live verified with disposable unlinked procedure warning/cancel/cleanup smoke.
 - 2026-05-26: LFES textarea auto-grow UI boundary extracted and live verified with Report Issue textarea resize smoke.
+- 2026-05-26: LFES Team invite cancel-warning UI boundary extracted and live verified with Cancel Invite -> Keep smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -215,6 +216,51 @@ LFES catch:
 Next:
 
 - Reassess before another extraction. Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Team Invite Cancel-Warning UI - 2026-05-26
+
+Boundary selected:
+
+- Team invite cancel-warning and keep/dismiss bindings:
+  - `[data-cancel-invite]`
+  - `[data-cancel-invite-cancel]`
+
+Operational risk:
+
+- Medium.
+- The controls are adjacent to a real invite-cancel mutation, but this boundary only opens and dismisses the warning state. It does not confirm cancel, create invites, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceTeamInviteCancelEvents.js`.
+- Moved only the warning-open and keep/dismiss Team invite bindings.
+- Injected app-owned pending invite setter, local cancel-error setter, `renderWorkspace`, and document.
+- Kept `[data-confirm-cancel-invite]`, `cancelTeamInvite`, invite creation, invite data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceTeamInviteCancelEvents.js?v=lfes-authority-team-invite-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-team-invite-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceTeamInviteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-team-invite-cancel-events-smoke.js`.
+- Targeted mock-DOM Team invite cancel-warning smoke: PASS for opening pending cancel state, clearing errors, keeping/dismissing the warning, render calls, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Team invite cancel-warning script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Existing pending invite `jeffrey.kinkaid@taylormetal.com` opened the warning, rendered Keep and confirm Cancel Invite, then Keep dismissed the warning and restored the original Cancel Invite without mutating the invite.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Team invite cancel-warning smoke can stay non-destructive when an existing pending invite is present. Do not click `[data-confirm-cancel-invite]` during this boundary smoke.
+
+Next:
+
+- Continue only with another bounded local UI/read-only event seam. Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
