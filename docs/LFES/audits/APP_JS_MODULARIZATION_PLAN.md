@@ -4978,3 +4978,51 @@ LFES catch:
 Next candidates:
 
 - Consider only another cancel-only delete sub-boundary if a safe disposable/visible record exists. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Request Delete-Cancel Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Request delete warning cancel binding inside `bindWorkspaceEvents()`:
+  - `[data-cancel-delete-request]`
+
+Why this is hard:
+
+- It is inside the request delete flow and lives beside request conversion and Quick Fix-from-request controls.
+
+Why this is recoverable:
+
+- The extraction moved only the cancel event binding.
+- Delete request, permanent delete, request conversion, Quick Fix from request, request data, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- No permanent delete occurs during cancel verification; the later cleanup delete is limited to the disposable smoke request.
+- Rollback is one app commit or restoration of the original `[data-cancel-delete-request]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceRequestDeleteCancelEvents.js`.
+- Updated `index.html` with `src/utils/workspaceRequestDeleteCancelEvents.js?v=lfes-authority-request-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-request-delete-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
+- App deploy commit: `a9fcf55` (`Extract workspace request delete cancel events`).
+- `app.js` line count moved from 8,754 to 8,755 because the injected adapter is larger than the removed branch.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceRequestDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Request delete-cancel smoke: PASS for pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Request delete-cancel script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26469402958` completed successfully for `a9fcf55`.
+- Signed-in live Request delete-cancel smoke: PASS. Disposable request `LFES disposable request 1779822739298` was created, opened in the manager/admin session, Delete rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete, then the disposable request was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable request 1779822739298` no longer appeared in the app and no browser warning/error logs appeared.
+
+LFES catch:
+
+- Request card controls may require scrolling into the viewport before safe coordinate clicking.
+- Disposable request setup is acceptable for this boundary as long as cleanup is verified.
+
+Next candidates:
+
+- Consider PM schedule delete-cancel or procedure delete-cancel only if a safe disposable/visible record exists. Do not combine delete-confirm, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

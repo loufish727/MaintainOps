@@ -35,7 +35,53 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES New Work Order command boundary extracted and live verified with More -> New Work Order open-form smoke.
 - 2026-05-26: LFES Export CSV command boundary extracted and live verified with authenticated Equipment export blob-capture smoke.
 - 2026-05-26: LFES Equipment delete-cancel boundary extracted and live verified with disposable unlinked equipment warning/cancel/cleanup smoke.
+- 2026-05-26: LFES Request delete-cancel boundary extracted and live verified with disposable request warning/cancel/cleanup smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- Request delete warning cancel event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path is inside a request delete flow, but this boundary only clears pending delete state and re-renders. It does not request delete, confirm delete, delete requests, convert requests, open Quick Fix, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceRequestDeleteCancelEvents.js`.
+- Moved only `[data-cancel-delete-request]`.
+- Injected app-owned pending delete setter, `renderWorkspace`, and document.
+- Kept `[data-delete-request]`, `[data-confirm-delete-request]`, permanent delete, request conversion, Quick Fix from request, request data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceRequestDeleteCancelEvents.js?v=lfes-authority-request-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-request-delete-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceRequestDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Request delete-cancel smoke: PASS for pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Request delete-cancel script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26469402958` completed successfully for `a9fcf55`.
+- Signed-in live smoke: PASS. Disposable request `LFES disposable request 1779822739298` was created to expose the request delete warning path, opened in the manager/admin session, Delete rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete, then the disposable request was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable request 1779822739298` no longer appeared in the app and no browser warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Request card controls can sit below the current in-app viewport. Scroll the disposable request card into view before coordinate clicking lower controls.
+- Use a disposable request for request delete-cancel smoke, then clean it up immediately.
+
+Next:
+
+- PM schedule delete-cancel or procedure delete-cancel may be considered if a safe disposable/visible record exists. Do not combine delete-confirm, request conversion, Quick Fix, storage/photo/document, auth/company/location, or broad render/event movement with another extraction.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 

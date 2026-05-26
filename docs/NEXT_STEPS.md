@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `52086d2` (`Extract workspace asset delete cancel events`).
+- Latest app behavior commit: `a9fcf55` (`Extract workspace request delete cancel events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-asset-delete-cancel-events-1`.
-- Current `app.js` line count: 8,754.
+- Latest deployed cache tag: `app.js?v=lfes-authority-request-delete-cancel-events-1`.
+- Current `app.js` line count: 8,755.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -52,6 +52,7 @@ Recommended immediate next controlled phase:
 - New Work Order command-opener event binding is extracted into `src/utils/workspaceNewWorkOrderCommandEvents.js` and live verified. `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
 - Export CSV command event binding is extracted into `src/utils/workspaceExportCsvCommandEvents.js` and live verified. `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
 - Equipment delete-cancel event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns delete request, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
+- Request delete-cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns delete request, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -102,6 +103,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM New Work Order command smoke, signed-in live More -> New Work Order open-form smoke, `npm run test:smoke:github-actions` for Resource Load Smoke run `26462656699`, and Pages deployment run `26462655467` passed for the New Work Order command boundary.
 - Hosted resource checks, targeted mock-DOM Export CSV command smoke, authenticated Equipment export blob-capture smoke, `npm run test:smoke:github-actions` for Resource Load Smoke run `26462940370`, and Pages deployment run `26462939393` passed for the Export CSV command boundary.
 - Hosted resource checks, targeted mock-DOM Equipment delete-cancel smoke, manager/admin live disposable equipment delete-warning/cancel/cleanup smoke, `npm run test:smoke:github-actions` for Resource Load Smoke run `26463455097`, and Pages deployment run `26463454051` passed for the Equipment delete-cancel boundary.
+- Hosted resource checks, targeted mock-DOM Request delete-cancel smoke, manager/admin live disposable request delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26469402958` passed for the Request delete-cancel boundary.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.
@@ -110,6 +112,7 @@ Verification note:
 - Disclosure command catch: open and verify `More` before targeting nested command buttons such as Submit Request, New Work Order, or Export CSV.
 - Download smoke catch: the in-app browser does not support download events; export/download checks need a download-capable Playwright browser or browser-side anchor/blob capture.
 - Equipment delete-cancel smoke catch: delete controls are role-gated and link-count gated. Use a manager/admin session and a disposable unlinked equipment record, then clean up the record immediately.
+- Request delete-cancel smoke catch: use a disposable request and scroll lower card controls into the viewport before coordinate clicking.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - Use `npm run test:smoke:github-actions` for current GitHub Actions verification; do not rely on the PR-oriented connector workflow lookup for push runs.
 
