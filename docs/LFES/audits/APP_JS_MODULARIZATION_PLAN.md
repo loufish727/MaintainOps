@@ -5372,7 +5372,7 @@ Verification:
 - Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceAssetLocationWarningEvents.js?v=lfes-authority-asset-location-warning-events-1` and `app.js?v=lfes-authority-asset-location-warning-events-1`.
 - Hosted resource smoke against GitHub Pages: PASS.
 - Signed-in live smoke: PASS; the live app exposed two `[data-location-sensitive-asset]` controls, selecting `New thalmann` in the request form left warning text blank as expected for the available same-location asset, and no submit/mutation occurred.
-- GitHub Actions: PASS at current docs checkpoint. Resource Load Smoke passed for `96de48c` in run `26474526945`; the earlier unauthenticated API rate-limit gap is clear at the current checkpoint.
+- GitHub Actions: PASS after the earlier unauthenticated API rate-limit gap cleared. Verified runs included `96de48c` (`26474526945`) and the follow-up docs checkpoint `1f2b80f` (`26474583585`).
 
 LFES catch:
 
