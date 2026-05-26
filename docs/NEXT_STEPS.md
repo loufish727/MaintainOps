@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `91a4dff` (`Extract workspace part delete confirm events`).
+- Latest app behavior commit: `e0d7d79` (`Bump request conversion event cache tag`) after `012466b` and `f69e96f`.
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-part-delete-confirm-events-1`.
-- Current `app.js` line count: 8,055.
+- Latest deployed cache tag: `app.js?v=lfes-authority-request-conversion-events-2`.
+- Current `app.js` line count: 8,056.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -60,6 +60,7 @@ Recommended immediate next controlled phase:
 - Quick Fix command-opener binding is extracted into `src/utils/workspaceQuickFixCommandEvents.js` and live verified. `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
 - Asset-specific Quick Fix opener binding is extracted into `src/utils/workspaceAssetQuickFixEvents.js` and live verified. `app.js` still owns Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render, auth/company/location state, and Supabase access.
 - Public request link copy-button binding is extracted into `src/utils/workspacePublicRequestLinkCopyEvents.js` and live verified. `app.js` still owns link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render, auth/company/location state, and Supabase access.
+- Request conversion event binding is extracted into `src/utils/workspaceRequestConversionEvents.js` and live verified. `app.js` still owns work-order creation, request status update, activity logging, request/work-order data, render, auth/company/location state, and Supabase access.
 - Request-origin Quick Fix opener binding is extracted into `src/utils/workspaceRequestQuickFixEvents.js` and live verified. `app.js` still owns `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render, auth/company/location state, and Supabase access.
 - Public QR print-button binding is extracted into `src/utils/publicQrPrintEvents.js` and live verified. `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
 - Asset-location warning binding is extracted into `src/utils/workspaceAssetLocationWarningEvents.js` and live verified. `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
@@ -121,6 +122,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Team invite cancel-warning smoke, and signed-in live Team invite Cancel Invite -> Keep smoke passed for the Team invite cancel-warning boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM Team invite confirm-cancel smoke, manager/admin live disposable invite cancel-confirm smoke, and data-layer lookup proof passed for `e984132`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM Part confirm-delete smoke, manager/admin live disposable part permanent-delete smoke, and data-layer cleanup proof passed for `91a4dff`; run GitHub Actions verifier after the follow-up docs commit lands.
+- Hosted resource checks, targeted mock-DOM Request conversion smoke, manager/admin live disposable request conversion smoke, UI cleanup, and data-layer cleanup proof passed for `e0d7d79`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM Quick Fix command smoke, and signed-in live Quick Fix open-form/no-submit smoke passed for the Quick Fix command boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM asset Quick Fix smoke, and signed-in live Equipment detail -> Quick Fix For This Equipment open-form/no-submit smoke passed for the asset Quick Fix boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM public request link copy smoke, and signed-in live Settings copy-button feedback/reset smoke passed for the public request link copy boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.

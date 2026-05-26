@@ -5718,6 +5718,21 @@ Result:
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## Request Conversion Events Boundary - 2026-05-26
+
+- Risk: High. The control enters request-to-work-order workflow mutation, but the boundary only transfers event binding and calls the injected `convertRequestToWorkOrder` callback.
+- Scope: moved `[data-convert-request]` into `src/utils/workspaceRequestConversionEvents.js`; work-order creation, request status update, activity logging, request/work-order data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM Request conversion event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable request `LFES disposable request conversion 1779831207568` converted to work order `e9bd306d-4339-4fc5-a4d1-7300d378eee3`.
+- Cleanup: PASS. The created work order and converted request were removed through the manager/admin UI, and data-layer checks returned `remainingRequests: 0` and `remainingWorkOrders: 0`.
+- App deploy commits: `012466b` (`Extract workspace request conversion events`), `f69e96f` (`Fix request conversion event binder import`), and `e0d7d79` (`Bump request conversion event cache tag`).
+- `app.js` line count after extraction/fix: 8,056.
+- LFES catches: new event modules need both script tag and app-level destructuring alias; GitHub Pages can serve a new module with old index/app cache tags briefly; converted request cleanup should prefer manager/admin UI when direct RLS cleanup hits related event-row grants.
+
+Result:
+
+- Behavior changed: no observed behavior change after the binder/cache fix.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
 Hard boundary selected:

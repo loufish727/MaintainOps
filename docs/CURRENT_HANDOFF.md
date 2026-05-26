@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Part confirm-delete event boundary extraction.
+Completed the Request conversion event boundary extraction.
 
 - Latest app behavior commit:
-  - `91a4dff` (`Extract workspace part delete confirm events`)
+  - `e0d7d79` (`Bump request conversion event cache tag`) after `012466b` and `f69e96f`
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-part-delete-confirm-events-1`
+  - `app.js?v=lfes-authority-request-conversion-events-2`
 - Current `app.js` line count:
-  - 8,055 lines.
+  - 8,056 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -82,18 +82,19 @@ Completed the Part confirm-delete event boundary extraction.
   - High-risk-but-contained Quick Fix command-opener boundary moved the main `[data-command-action="quick-fix"]` branch to `src/utils/workspaceQuickFixCommandEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
   - High-risk-but-contained asset-specific Quick Fix opener boundary moved `[data-quick-fix-asset]` to `src/utils/workspaceAssetQuickFixEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render, auth/company/location state, and Supabase access.
   - Medium-risk public request link copy-button boundary moved `[data-copy-public-request-link]` to `src/utils/workspacePublicRequestLinkCopyEvents.js`; `app.js` still owns link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render, auth/company/location state, and Supabase access.
+  - High-risk Request conversion event boundary moved `[data-convert-request]` to `src/utils/workspaceRequestConversionEvents.js`; `app.js` still owns work-order creation, request status update, activity logging, request/work-order data, render, auth/company/location state, and Supabase access.
   - High-risk-but-contained request-origin Quick Fix opener boundary moved `[data-quick-fix-request]` to `src/utils/workspaceRequestQuickFixEvents.js`; `app.js` still owns `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render, auth/company/location state, and Supabase access.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspacePartDeleteCancelEvents.js`, and `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
-  - targeted mock-DOM Part delete event smoke passed for warning opener callback, permanent-button callback, cancel pending-state clear, render, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceRequestConversionEvents.js`, `tests/smoke/workspace-request-conversion-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM Request conversion event smoke passed for conversion callback and missing-callback no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Part confirm-delete script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new Request conversion script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Part confirm-delete smoke created disposable part `LFES disposable part delete confirm 1779830808353 hose`, verified Delete Part opened Cancel/Permanently Delete warning, clicked Permanently Delete, verified the disposable disappeared from Parts, and verified data-layer id `68c6da30-91e7-42f0-87ce-6ae472365893` returned `remaining: 0`.
-  - hosted resource smoke passed for `91a4dff`.
+  - live Request conversion smoke created disposable request `LFES disposable request conversion 1779831207568`, clicked Convert to Work Order, verified the request became `converted` with work order `e9bd306d-4339-4fc5-a4d1-7300d378eee3`, cleaned up the created work order and converted request through the app, and verified data-layer `remainingRequests: 0` / `remainingWorkOrders: 0`.
+  - hosted resource smoke passed for `e0d7d79`.
   - GitHub Actions Resource Load Smoke passed after the earlier unauthenticated API rate-limit gap cleared; verified runs included `96de48c` (`26474526945`) and the follow-up docs checkpoint `1f2b80f` (`26474583585`).
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
@@ -107,6 +108,8 @@ Completed the Part confirm-delete event boundary extraction.
   - in-app browser high-level locator clicks can hang on lower-page operational buttons; when DOM state is clear and the action is authorized, scroll the target into view and use coordinate click only after recording the locator/rect evidence.
   - the in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, a disposable work order may be created through an authenticated Supabase setup step, but the changed delete behavior must still be verified through the app UI.
   - when the in-app browser virtual clipboard blocks `fill`/`type`, raw keypress entry can still exercise text fields; verify the typed value before submitting.
+  - new event modules require both the `index.html` script tag and the top-level `app.js` destructuring alias. Missing the alias produced `Workspace Load Stopped`; the smallest stable fix was adding the alias and bumping the cache tag from request-conversion-events-1 to request-conversion-events-2.
+  - GitHub Pages can serve a new module and old `index.html` briefly; verify the hosted index references the expected cache tag before retrying a failed live smoke.
   - `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Use the existing local Node static-server method for future local resource/browser smokes.
   - delete-warning live smokes can have more than one generic `Cancel` button visible. Use scoped data selectors such as `[data-cancel-delete-part]` for cancel-only verification and never click permanent delete in a cancel-boundary smoke.
   - Work Order detail accordions can place the target below the viewport; record visible summary/button rects, scroll as needed, and use coordinate clicks only after proving the intended control and avoiding submit/mutation actions.
@@ -127,7 +130,7 @@ Completed the Part confirm-delete event boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, request conversion, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

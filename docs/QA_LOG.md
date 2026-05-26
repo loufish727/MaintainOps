@@ -43,6 +43,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Quick Fix command-opener boundary extracted and live verified with open-form/no-submit smoke.
 - 2026-05-26: LFES asset-specific Quick Fix opener boundary extracted and live verified with Equipment detail open-form/no-submit smoke.
 - 2026-05-26: LFES public request link copy-button boundary extracted and live verified with Settings copy feedback/reset smoke.
+- 2026-05-26: LFES Request conversion event boundary extracted and live verified with disposable request conversion, UI cleanup, and data-layer proof.
 - 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
 - 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
 - 2026-05-26: LFES asset-location warning event boundary extracted and live verified with signed-in request-form same-location warning smoke.
@@ -58,6 +59,49 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Request Conversion Events - 2026-05-26
+
+Boundary selected:
+
+- Request conversion event binding for `[data-convert-request]`.
+
+Operational risk:
+
+- High.
+- This enters a workflow mutation that creates a work order, marks a request converted, and records activity, but the boundary only transfers event binding and calls the injected `convertRequestToWorkOrder` callback. Workflow mutation sequencing stays in `app.js`.
+
+Implementation scope:
+
+- Added `src/utils/workspaceRequestConversionEvents.js`.
+- Added `tests/smoke/workspace-request-conversion-events-smoke.js`.
+- Moved `[data-convert-request]` binding into the module.
+- Kept app-owned `convertRequestToWorkOrder` as an injected callback.
+- Kept work-order creation, request status update, activity logging, request/work-order data, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-request-conversion-events-2`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceRequestConversionEvents.js`, `tests/smoke/workspace-request-conversion-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM Request conversion event smoke: PASS for conversion callback and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Request conversion script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable request `LFES disposable request conversion 1779831207568` was converted to work order `e9bd306d-4339-4fc5-a4d1-7300d378eee3`.
+- Cleanup verification: PASS. The created work order and converted request were removed through the manager/admin UI, and data-layer checks returned `remainingRequests: 0` and `remainingWorkOrders: 0`.
+- GitHub Actions: pending follow-up verifier after the docs commit.
+
+LFES catches:
+
+- New event modules need both the `index.html` script tag and the top-level `app.js` destructuring alias. Missing the alias caused `Workspace Load Stopped` until fixed in `f69e96f`.
+- The browser cached the broken `app.js` under the first request-conversion tag, so the recovery required bumping to `lfes-authority-request-conversion-events-2`.
+- Direct cleanup for converted request artifacts can be blocked by RLS/grants on related event rows; manager/admin UI cleanup plus data-layer proof was the stable cleanup path.
+
+Result:
+
+- App deploy commits: `012466b` (`Extract workspace request conversion events`), `f69e96f` (`Fix request conversion event binder import`), and `e0d7d79` (`Bump request conversion event cache tag`).
+- `app.js` line count after extraction/fix: 8,056.
+- Behavior changed: no observed behavior change after the binder/cache fix.
 
 ## LFES Boundary - Part Confirm-Delete Events - 2026-05-26
 
