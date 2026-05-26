@@ -5329,6 +5329,55 @@ Catch:
 
 - The in-app browser evaluate sandbox could not add print-stub state for this public page. Use Playwright Chromium for public QR print smoke and stub `window.print` before clicking.
 
+## Asset Location Warning Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium.
+- The warning is workflow-adjacent because it protects cross-location equipment routing, but this boundary only owns event binding and calls the app-owned warning updater.
+
+Intended boundary:
+
+- Move only `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`.
+- Keep cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- Equipment select warning behavior in request, PM, and work-order forms that render `[data-location-sensitive-asset]`.
+- No business record mutation, no delete, no submit, no upload, no auth/session/company/location startup changes.
+
+Rollback path:
+
+- Remove `src/utils/workspaceAssetLocationWarningEvents.js` from `index.html` and the resource smoke list.
+- Restore the original `[data-location-sensitive-asset]` loop in `bindWorkspaceEvents()`.
+- Revert the `app.js` cache tag.
+
+Implementation result:
+
+- Added `src/utils/workspaceAssetLocationWarningEvents.js`.
+- Added `tests/smoke/workspace-asset-location-warning-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-asset-location-warning-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `62c24c2` (`Extract workspace asset location warning events`).
+- `app.js` line count after extraction: 8,081.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceAssetLocationWarningEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-asset-location-warning-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-asset-location-warning-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceAssetLocationWarningEvents.js?v=lfes-authority-asset-location-warning-events-1` and `app.js?v=lfes-authority-asset-location-warning-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS.
+- Signed-in live smoke: PASS; the live app exposed two `[data-location-sensitive-asset]` controls, selecting `New thalmann` in the request form left warning text blank as expected for the available same-location asset, and no submit/mutation occurred.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+LFES catch:
+
+- The live dataset did not expose a cross-location equipment option in the request form during this smoke. Treat this as a same-location binding verification, not a mismatch-message proof. A later cross-location smoke should create or select a controlled cross-location fixture if that text path needs live proof.
+
 Result:
 
 - Behavior changed: no observed behavior change.

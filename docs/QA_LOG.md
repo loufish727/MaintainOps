@@ -45,7 +45,43 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES public request link copy-button boundary extracted and live verified with Settings copy feedback/reset smoke.
 - 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
 - 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
+- 2026-05-26: LFES asset-location warning event boundary extracted and live verified with signed-in request-form same-location warning smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Asset Location Warning Events - 2026-05-26
+
+Boundary selected:
+
+- Asset/location warning event binding for `[data-location-sensitive-asset]`.
+
+Operational risk:
+
+- Medium.
+- This warning is workflow-adjacent because it tells users when selected equipment belongs to a different location, but this boundary only runs the existing warning updater on initial bind and select changes. It does not submit forms, confirm cross-location saves, mutate records, or touch Supabase/RLS.
+
+Implementation scope:
+
+- Added `src/utils/workspaceAssetLocationWarningEvents.js`.
+- Moved only `[data-location-sensitive-asset]` initial/change event binding.
+- Injected app-owned `updateAssetLocationWarning`.
+- Kept cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceAssetLocationWarningEvents.js?v=lfes-authority-asset-location-warning-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-asset-location-warning-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetLocationWarningEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-location-warning-events-smoke.js`.
+- Targeted mock-DOM asset-location warning smoke: PASS for initial bind, change callback, and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the asset-location warning script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. The live app exposed two `[data-location-sensitive-asset]` controls, the request form equipment select was changed to `New thalmann`, and the warning remained blank as expected for the available same-location asset.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+LFES catch:
+
+- The live dataset did not expose a cross-location equipment option in the request form during this smoke. The phase verifies the live selector/change binding and expected blank same-location warning state; mismatch text remains app-owned and should be covered by a dedicated cross-location smoke if a disposable cross-location fixture is created later.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
 

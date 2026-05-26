@@ -6,9 +6,9 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `54d14e0` (`Extract public QR print events`).
+- Latest app behavior commit: `62c24c2` (`Extract workspace asset location warning events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-public-qr-print-events-1`.
+- Latest deployed cache tag: `app.js?v=lfes-authority-asset-location-warning-events-1`.
 - Current `app.js` line count: 8,081.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
@@ -62,6 +62,7 @@ Recommended immediate next controlled phase:
 - Public request link copy-button binding is extracted into `src/utils/workspacePublicRequestLinkCopyEvents.js` and live verified. `app.js` still owns link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render, auth/company/location state, and Supabase access.
 - Request-origin Quick Fix opener binding is extracted into `src/utils/workspaceRequestQuickFixEvents.js` and live verified. `app.js` still owns `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render, auth/company/location state, and Supabase access.
 - Public QR print-button binding is extracted into `src/utils/publicQrPrintEvents.js` and live verified. `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
+- Asset-location warning binding is extracted into `src/utils/workspaceAssetLocationWarningEvents.js` and live verified. `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -122,6 +123,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM public request link copy smoke, and signed-in live Settings copy-button feedback/reset smoke passed for the public request link copy boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM request Quick Fix smoke, signed-in live disposable request Quick Fix open-form/no-submit smoke, and disposable request cleanup passed for the request-origin Quick Fix boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM public QR print smoke, and hosted QR page print-stub smoke passed for the public QR print boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+- Hosted resource checks, targeted mock-DOM asset-location warning smoke, and signed-in live request-form same-location equipment warning smoke passed for the asset-location warning boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.
