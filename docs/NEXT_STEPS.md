@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `b5328a7` (`Extract workspace submit request command events`).
+- Latest app behavior commit: `b9931f3` (`Extract workspace new work order command events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-submit-request-command-events-1`.
-- Current `app.js` line count: 8,750.
+- Latest deployed cache tag: `app.js?v=lfes-authority-new-work-order-command-events-1`.
+- Current `app.js` line count: 8,752.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -49,6 +49,7 @@ Recommended immediate next controlled phase:
 - Work Order Message Team start-composer event binding is extracted into `src/utils/workspaceWorkMessageStartEvents.js` and live verified. `app.js` still owns create thread, send reply, read-state writes, work-order/message data, render, auth/company/location state, and Supabase access.
 - Report Issue command-opener event binding is extracted into `src/utils/workspaceReportIssueCommandEvents.js` and live verified. `app.js` still owns the other command actions, issue creation, issue status mutation, render, auth/company/location state, and Supabase access.
 - Submit Request command-opener event binding is extracted into `src/utils/workspaceSubmitRequestCommandEvents.js` and live verified. `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
+- New Work Order command-opener event binding is extracted into `src/utils/workspaceNewWorkOrderCommandEvents.js` and live verified. `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -96,6 +97,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Work Message Start smoke, and signed-in live Hydralic Leak Message Team composer smoke passed for the Work Message Start boundary. GitHub Actions verifier was unavailable due unauthenticated API rate limit for this phase.
 - Hosted resource checks, targeted mock-DOM Report Issue command smoke, and signed-in live Report Issue open/cancel smoke passed for the Report Issue command boundary. GitHub Actions verifier was unavailable due unauthenticated API rate limit for this phase.
 - Hosted resource checks, targeted mock-DOM Submit Request command smoke, signed-in live More -> Submit Request open-form smoke, `npm run test:smoke:github-actions` for Resource Load Smoke run `26462192835`, and Pages deployment run `26462191804` passed for the Submit Request command boundary.
+- Hosted resource checks, targeted mock-DOM New Work Order command smoke, signed-in live More -> New Work Order open-form smoke, `npm run test:smoke:github-actions` for Resource Load Smoke run `26462656699`, and Pages deployment run `26462655467` passed for the New Work Order command boundary.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.

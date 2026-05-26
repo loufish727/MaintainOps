@@ -32,7 +32,48 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Work Order Message Team start-composer boundary extracted and live verified with Hydralic Leak composer-link smoke.
 - 2026-05-26: LFES Report Issue command boundary extracted and live verified with Report Issue open/cancel smoke.
 - 2026-05-26: LFES Submit Request command boundary extracted and live verified with More -> Submit Request open-form smoke.
+- 2026-05-26: LFES New Work Order command boundary extracted and live verified with More -> New Work Order open-form smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - New Work Order Command Events - 2026-05-26
+
+Boundary selected:
+
+- `New Work Order` command-opener event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path clears active detail/form modes, opens create-work-order mode, switches to Work Orders, persists active section, and renders a mutation-capable form, but does not submit the form.
+
+Implementation scope:
+
+- Added `src/utils/workspaceNewWorkOrderCommandEvents.js`.
+- Moved only `[data-command-action="create-work-order"]`.
+- Injected app-owned state setters, `setWorkOrderSearchMode`, `renderWorkspace`, storage, and document.
+- Kept work-order create submit, validation, Quick Fix, request conversion, Export CSV, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceNewWorkOrderCommandEvents.js?v=lfes-authority-new-work-order-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-new-work-order-command-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceNewWorkOrderCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-new-work-order-command-events-smoke.js`.
+- Targeted mock-DOM New Work Order command smoke: PASS for clearing active detail/mode state, entering create-work-order mode, switching to Work Orders, persisting active section, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the New Work Order command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462656699`, and Pages build/deployment run `26462655467` completed successfully for `b9931f3`.
+- Signed-in live smoke: PASS. Opened `More`, clicked New Work Order, confirmed `#create-work-order-form` rendered, confirmed Quick Fix form did not render, new script/cache tags were present, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Export CSV remains a download side effect and should be planned separately.
+- Quick Fix remains higher-risk and should not be combined with another change.
 
 ## LFES Boundary - Submit Request Command Events - 2026-05-26
 

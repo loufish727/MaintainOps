@@ -4842,3 +4842,44 @@ LFES catch:
 Next candidates:
 
 - Reassess before continuing. New Work Order and Export CSV are broader form/download boundaries. Quick Fix remains higher-risk and should not be combined with another extraction.
+
+## New Work Order Command Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- `New Work Order` command-opener binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It lives in the shared command-action router and opens a mutation-capable work-order form.
+
+Why this is recoverable:
+
+- The extraction moved only the New Work Order opener.
+- No work order is submitted, Quick Fix is not opened, and no records are mutated.
+- Work-order create submit, validation, Quick Fix, request conversion, Export CSV, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- Rollback is one app commit or restoration of the original create-work-order command branch.
+
+Implementation:
+
+- Added `src/utils/workspaceNewWorkOrderCommandEvents.js`.
+- Updated `index.html` with `src/utils/workspaceNewWorkOrderCommandEvents.js?v=lfes-authority-new-work-order-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-new-work-order-command-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-new-work-order-command-events-smoke.js`.
+- App deploy commit: `b9931f3` (`Extract workspace new work order command events`).
+- `app.js` line count moved from 8,750 to 8,752 because the injected adapter is larger than the removed branch.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceNewWorkOrderCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-new-work-order-command-events-smoke.js`.
+- Targeted mock-DOM New Work Order command smoke: PASS for clearing active detail/mode state, entering create-work-order mode, switching to Work Orders, persisting active section, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the New Work Order command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462656699`, and Pages build/deployment run `26462655467` completed successfully for `b9931f3`.
+- Signed-in live New Work Order command smoke: PASS. `More` was opened, New Work Order rendered `#create-work-order-form`, Quick Fix form did not render, new script/cache tags were present, and no browser warning/error logs appeared.
+
+Next candidates:
+
+- Reassess before continuing. Export CSV has a download side effect and Quick Fix remains higher-risk. Do not combine either with another extraction.
