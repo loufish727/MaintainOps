@@ -5231,6 +5231,57 @@ Result:
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## Public Request Link Copy Button Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Public request link copy button:
+  - `[data-copy-public-request-link]`
+
+Risk:
+
+- Medium risk. It is in the QR/public request settings area and touches clipboard feedback, but the selected boundary only copies an existing URL and resets button text.
+
+Intended boundary:
+
+- Move only the copy-button binding and temporary label feedback to `src/utils/workspacePublicRequestLinkCopyEvents.js`.
+- Keep link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `e38e537` or restore the original `[data-copy-public-request-link]` listener block in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspacePublicRequestLinkCopyEvents.js`.
+- Added `tests/smoke/workspace-public-request-link-copy-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-public-request-link-copy-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `e38e537` (`Extract workspace public request link copy events`).
+- `app.js` line count is 8,079.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspacePublicRequestLinkCopyEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-public-request-link-copy-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-public-request-link-copy-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Settings had enabled Copy QR Link buttons; clicking one produced `Copy failed` in the clipboard-limited in-app browser and reset to `Copy QR Link`, with no link mutation.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- In the in-app browser clipboard-limited environment, `Copy failed` is acceptable for this smoke if the temporary feedback/reset behavior is correct. Clipboard success itself belongs to browser capability, not app data behavior.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
 ## Asset-Specific Quick Fix Opener Boundary - 2026-05-26
 
 Hard boundary selected:

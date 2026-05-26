@@ -42,6 +42,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Team invite cancel-warning UI boundary extracted and live verified with Cancel Invite -> Keep smoke.
 - 2026-05-26: LFES Quick Fix command-opener boundary extracted and live verified with open-form/no-submit smoke.
 - 2026-05-26: LFES asset-specific Quick Fix opener boundary extracted and live verified with Equipment detail open-form/no-submit smoke.
+- 2026-05-26: LFES public request link copy-button boundary extracted and live verified with Settings copy feedback/reset smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -351,6 +352,50 @@ LFES catch:
 Next:
 
 - Continue only with another bounded local UI/read-only event seam. Request-specific Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Public Request Link Copy Button - 2026-05-26
+
+Boundary selected:
+
+- Public request link copy button:
+  - `[data-copy-public-request-link]`
+
+Operational risk:
+
+- Medium.
+- The binding is in the public QR/link settings area and touches clipboard feedback, but this boundary only copies an existing URL and updates temporary button text. It does not create, enable, disable, regenerate, or save links.
+
+Implementation scope:
+
+- Added `src/utils/workspacePublicRequestLinkCopyEvents.js`.
+- Moved only the copy-button binding and temporary label feedback.
+- Injected the existing `copyTextToClipboard` helper.
+- Kept link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspacePublicRequestLinkCopyEvents.js?v=lfes-authority-public-request-link-copy-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-public-request-link-copy-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePublicRequestLinkCopyEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-public-request-link-copy-events-smoke.js`.
+- Targeted mock-DOM public request link copy smoke: PASS for success/failure labels, reset timer behavior, copied URL injection, and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the public request link copy script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Settings had enabled Copy QR Link buttons; clicking one produced `Copy failed` in the clipboard-limited in-app browser and reset to `Copy QR Link`, with no link mutation.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- In the in-app browser clipboard-limited environment, `Copy failed` is an acceptable label if it resets to `Copy QR Link`; this boundary verifies feedback/reset and binding, not OS clipboard success.
+
+Next:
+
+- Continue only with another bounded local UI/read-only event seam. Public link create/enable/disable/regenerate, request-specific Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
