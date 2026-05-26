@@ -6,12 +6,12 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `1794209` (`Add workspace UI state factory scaffold`).
+- Latest app behavior commit: `5f77e9e` (`Wire workspace filter state to UI factory`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
 - Current `app.js` line count: 8,055.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, and workspace filter/pagination state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, and workspace filter/pagination state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke passed for `15e4c49`.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`

@@ -17,6 +17,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 - First wired state slice moved Parts/Equipment UI state (`partsPage`, `assetsPage`, `partSearchQuery`, `partInventoryFilter`, `assetStatusFilter`) into `workspaceUiState`.
 - Commit `17003ed` passed static checks, targeted state smokes, local/hosted resource smoke, local boot assertion, signed-in live Parts search / Equipment status-filter smoke, and GitHub Actions Resource Load Smoke.
 - Second wired state slice moved workspace filter/pagination state (`activeStatusFilter`, `myWorkFilter`, `workOrderFilter`, `workOrderAssigneeFilter`, `workSort`, `workOrderPage`, `requestViewFilter`, `requestsPage`, `schedulesPage`, `proceduresPage`, `membersPage`) into `workspaceUiState`.
+- Commit `15e4c49` fixed the required app cache tag for this `app.js` change and passed hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke.
 - `app.js` still owns unrelated legacy UI state variables. The next state-boundary phase should wire one extracted UI event group to the factory at a time instead of broad variable replacement.
 - Blocked until RPC source gap is resolved or explicitly accepted: team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, and SQL/RLS work.
 

@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, added the first workspace UI state factory scaffold, wired the Parts/Equipment filter-search state slice, then wired workspace filter/pagination state to the factory.
 
 - Latest app behavior commit:
-  - `1794209` (`Add workspace UI state factory scaffold`)
+  - `5f77e9e` (`Wire workspace filter state to UI factory`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
@@ -57,6 +57,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - Added `tests/smoke/workspace-filter-pagination-state-smoke.js`.
   - `app.js` still owns unrelated legacy UI state variables until follow-up wiring phases move selected event modules to the factory.
   - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
+  - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke passed for `15e4c49`.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
