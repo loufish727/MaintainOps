@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: pending current workspace search state commit.
+- Latest app behavior commit: `a0e8171` (`Wire workspace search state to UI factory`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
 - Current `app.js` line count: 8,050.

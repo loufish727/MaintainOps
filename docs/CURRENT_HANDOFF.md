@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, added the first workspace UI state factory scaffold, wired Parts/Equipment filter-search state, wired workspace filter/pagination state, then wired workspace search state to the factory.
 
 - Latest app behavior commit:
-  - pending current workspace search state commit
+  - `a0e8171` (`Wire workspace search state to UI factory`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
