@@ -4,7 +4,7 @@ This file summarizes important QA passes and remaining test priorities.
 
 ## Current Latest QA Entries
 
-- 2026-05-26: LFES follow-up work event extraction was rolled back because live smoke coverage was insufficient. The disposable completed source work order created through authenticated REST did not appear in the Planning follow-up list, no `[data-create-follow-up]` control rendered, and direct REST cleanup was blocked by RLS for the setup auth context.
+- 2026-05-26: LFES follow-up work event extraction was retried and live verified after the first setup path was rejected. The passing smoke used a visible active follow-up-needed disposable source, clicked Planning `Create Work`, verified source `follow_up_needed=false`, verified the generated follow-up work order, and cleaned all disposable rows through admin UI with data-layer proof.
 - 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
@@ -62,7 +62,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
-## LFES Boundary - Follow-Up Work Events Rolled Back - 2026-05-26
+## LFES Boundary - Follow-Up Work Events - 2026-05-26
 
 Boundary selected:
 
@@ -86,14 +86,15 @@ Verification before deploy:
 
 Live smoke result:
 
-- FAIL / insufficient coverage. Disposable source work order `LFES disposable follow-up source 1779832299049` (`478c1984-353a-4bbd-9c3b-3430baaee17e`) did not appear in the Planning follow-up list, and no `[data-create-follow-up]` button rendered in the live manager/admin session.
-- Direct REST cleanup using the setup auth context left `remainingSource: 1`, matching the existing RLS cleanup-risk pattern.
+- Initial attempt: FAIL / insufficient coverage. Disposable completed source work order `LFES disposable follow-up source 1779832299049` (`478c1984-353a-4bbd-9c3b-3430baaee17e`) did not appear in the Planning follow-up list, and no `[data-create-follow-up]` button rendered in the live manager/admin session.
+- Corrected attempt: PASS. Disposable active source `LFES disposable follow-up active source 1779833256477` (`0768bea7-2cec-4524-8d6f-b0ec79455696`) rendered a visible Planning `Create Work` button. Clicking it created follow-up work order `3bd86d0a-7e73-4444-b24b-ab04222e0dd0` titled `Follow-up: LFES disposable follow-up active source 1779833256477` and updated the source to `follow_up_needed=false`.
+- Cleanup: PASS. Admin UI deleted the corrected source, generated follow-up, and earlier retry source `8d64d576-342e-48ad-afad-86d5b183c694`; data-layer verification returned `remainingCount: 0`.
 
-Rollback:
+Rollback/retry:
 
 - Behavior commit `0046fc2` (`Extract workspace follow up work events`) was reverted with `fbcc7c3`.
-- Live cache tag returned to `app.js?v=lfes-authority-pm-generation-events-1`, the last fully verified boundary.
-- The source record remains as a cleanup item until a manager/admin UI or approved admin cleanup path can remove it.
+- After admin login exposed a cleanup path, the boundary was reapplied with `dd75658` (`Reapply "Extract workspace follow up work events"`).
+- Live cache tag is `app.js?v=lfes-authority-follow-up-work-events-1`.
 
 LFES catch:
 
@@ -101,7 +102,7 @@ LFES catch:
 
 Next:
 
-- Do not retry `[data-create-follow-up]` until a supported setup path creates or exposes a visible follow-up item and cleanup can be completed through an authorized path.
+- Continue with one contained boundary at a time. Direct REST cleanup remains insufficient for some work-order rows under the QA token; use manager/admin UI cleanup plus data-layer proof when RLS blocks delete cleanup.
 
 ## LFES Boundary - PM Generation Events - 2026-05-26
 
