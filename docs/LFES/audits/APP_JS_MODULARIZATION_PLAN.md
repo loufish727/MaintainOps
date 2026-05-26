@@ -4666,3 +4666,48 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine app issue creation/status mutation, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Part Delete-Cancel Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Part delete warning cancel binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It lives inside a destructive delete zone and shares visual space with the permanent delete action.
+
+Why this is recoverable:
+
+- The extraction moved only cancel behavior that clears pending delete state and renders.
+- No delete request, permanent delete, permission check, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original `[data-cancel-delete-part]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspacePartDeleteCancelEvents.js`.
+- Updated `index.html` with `src/utils/workspacePartDeleteCancelEvents.js?v=lfes-authority-part-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-delete-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+- App deploy commit: `e8a0b66` (`Extract workspace part delete cancel events`).
+- `app.js` line count moved from 8,746 to 8,747 because the injected adapter is slightly larger than the inline cancel block.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePartDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Part delete-cancel smoke: PASS for pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4190/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Part delete-cancel script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live Part delete-cancel smoke: PASS. Parts opened at Auburn, `hydralic hose` detail opened, `Delete Part` opened the warning, scoped `[data-cancel-delete-part]` cleared the warning, `Delete Part` returned, no deletion occurred, and no browser warning/error logs appeared.
+
+LFES catch:
+
+- The page had two generic `Cancel` buttons, so live smoke needed the scoped `[data-cancel-delete-part]` selector. Danger-zone cancel smokes should scope by data selector, not button text.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine permanent delete, request delete, mutation forms, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

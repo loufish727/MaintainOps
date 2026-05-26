@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the issue/admin local UI boundary extraction from `bindWorkspaceEvents()`.
+Completed the Part delete-cancel boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `9e80f0b` (`Extract workspace issue admin UI events`)
+  - `e8a0b66` (`Extract workspace part delete cancel events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-issue-admin-ui-events-1`
+  - `app.js?v=lfes-authority-part-delete-cancel-events-1`
 - Current `app.js` line count:
-  - 8,746 lines.
+  - 8,747 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -67,16 +67,17 @@ Completed the issue/admin local UI boundary extraction from `bindWorkspaceEvents
   - Medium-risk workspace section navigation boundary moved `[data-section]` to `src/utils/workspaceSectionNavigationEvents.js`; `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
   - Medium/high-risk Message Center thread open/read-state boundary moved `[data-message-thread]` and `[data-open-work-message-thread]` to `src/utils/workspaceMessageThreadEvents.js`; `app.js` still owns `markMessageThreadRead`, Supabase read-state write implementation, create thread, send reply, message data, render, auth/company/location state, and RLS.
   - Medium-low-risk issue/admin local UI boundary moved `[data-cancel-app-issue-report]` and local `[data-setup-action="confirm-admin-delete-sql"]` handling to `src/utils/workspaceIssueAdminUiEvents.js`; `app.js` still owns create issue report, issue status mutation, setup item rendering, admin data, render, auth/company/location state, and Supabase access.
+  - Medium-risk Part delete-cancel boundary moved `[data-cancel-delete-part]` to `src/utils/workspacePartDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, permission checks, part data, document cleanup, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceIssueAdminUiEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-issue-admin-ui-events-smoke.js`.
-  - targeted mock-DOM issue/admin UI smoke passed for report-issue cancel, ignored setup action, confirm admin delete SQL localStorage/notice/render, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4189/`.
-  - local browser boot smoke reached the login screen with the new issue/admin UI event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspacePartDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Part delete-cancel smoke passed for pending delete clear, render, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4190/`.
+  - local browser boot smoke reached the login screen with the new Part delete-cancel event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live issue/admin UI smoke opened Report Issue, confirmed the issue form appeared, clicked Cancel, confirmed the form closed, with new script/cache tags and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceIssueAdminUiEvents.js?v=lfes-authority-issue-admin-ui-events-1` and `app.js?v=lfes-authority-issue-admin-ui-events-1`.
-  - GitHub Actions local verifier was unavailable due unauthenticated API rate limit; hosted resource smoke passed directly for `9e80f0b`.
+  - live Part delete-cancel smoke opened Parts at Auburn, opened `hydralic hose`, clicked `Delete Part` to show the warning, clicked scoped `[data-cancel-delete-part]`, confirmed the warning cleared and `Delete Part` returned, with no deletion and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspacePartDeleteCancelEvents.js?v=lfes-authority-part-delete-cancel-events-1` and `app.js?v=lfes-authority-part-delete-cancel-events-1`.
+  - GitHub Actions local verifier remained unavailable due unauthenticated API rate limit; hosted resource smoke passed directly for `e8a0b66`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -88,6 +89,7 @@ Completed the issue/admin local UI boundary extraction from `bindWorkspaceEvents
   - in-app browser high-level locator clicks can hang on lower-page operational buttons; when DOM state is clear and the action is authorized, scroll the target into view and use coordinate click only after recording the locator/rect evidence.
   - the in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, a disposable work order may be created through an authenticated Supabase setup step, but the changed delete behavior must still be verified through the app UI.
   - `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Use the existing local Node static-server method for future local resource/browser smokes.
+  - delete-warning live smokes can have more than one generic `Cancel` button visible. Use scoped data selectors such as `[data-cancel-delete-part]` for cancel-only verification and never click permanent delete in a cancel-boundary smoke.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -96,7 +98,7 @@ Completed the issue/admin local UI boundary extraction from `bindWorkspaceEvents
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, and issue/admin local UI boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, and Part delete-cancel boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

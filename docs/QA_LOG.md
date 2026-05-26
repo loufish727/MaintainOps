@@ -28,7 +28,58 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES workspace section navigation boundary extracted and live verified with Work Orders, Requests, and Parts navigation smoke.
 - 2026-05-26: LFES Message Center thread open/read-state boundary extracted and live verified with QA thread open smoke.
 - 2026-05-26: LFES issue/admin local UI boundary extracted and live verified with Report Issue open/cancel smoke.
+- 2026-05-26: LFES Part delete-cancel boundary extracted and live verified with non-destructive delete warning/cancel smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Part Delete-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- Part delete warning cancel event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path sits inside a destructive delete zone, but the moved behavior only clears pending delete warning state and renders.
+
+Implementation scope:
+
+- Added `src/utils/workspacePartDeleteCancelEvents.js`.
+- Moved only `[data-cancel-delete-part]`.
+- Injected app-owned pending delete setter, `renderWorkspace`, and document.
+- Kept delete request, permanent delete, permission checks, part data, document cleanup, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspacePartDeleteCancelEvents.js?v=lfes-authority-part-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-delete-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `e8a0b66`, or remove `src/utils/workspacePartDeleteCancelEvents.js`, restore the original `[data-cancel-delete-part]` listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspacePartDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-part-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-part-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4190/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live smoke: PASS. Parts opened at Auburn, `hydralic hose` detail opened, `Delete Part` opened the warning, scoped `[data-cancel-delete-part]` cleared the warning, `Delete Part` returned, no deletion occurred, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The page had two generic `Cancel` buttons, so the live smoke had to scope the cancel click to `[data-cancel-delete-part]`. Future cancel-boundary smokes should avoid generic button labels when danger zones are visible.
+
+Next:
+
+- Continue the LFES batch with another contained boundary. Keep permanent delete, request delete, mutation forms, Quick Fix, request conversion, storage/photo/document flows, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Issue/Admin Local UI Events - 2026-05-26
 
