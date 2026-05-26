@@ -5222,11 +5222,8 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", updatePart);
   });
 
-  document.querySelectorAll("[data-delete-part]").forEach((button) => {
-    button.addEventListener("click", () => requestDeletePart(button.dataset.deletePart));
-  });
-
   bindWorkspacePartDeleteCancelEvents({
+    requestDeletePart,
     state: {
       setPendingDeletePartId: (value) => { pendingDeletePartId = value; },
     },

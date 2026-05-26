@@ -1,8 +1,9 @@
 const assert = require("node:assert/strict");
 
-function createButton() {
+function createButton(dataset = {}) {
   const listeners = {};
   return {
+    dataset,
     addEventListener(type, handler) {
       listeners[type] = listeners[type] || [];
       listeners[type].push(handler);
@@ -13,27 +14,37 @@ function createButton() {
   };
 }
 
-function createDocument(buttons) {
+function createDocument({ deleteButtons = [], cancelButtons = [] }) {
   return {
     querySelectorAll(selector) {
-      return selector === "[data-cancel-delete-part]" ? buttons : [];
+      if (selector === "[data-delete-part]") return deleteButtons;
+      if (selector === "[data-cancel-delete-part]") return cancelButtons;
+      return [];
     },
   };
 }
 
 global.window = {};
-global.document = createDocument([]);
+global.document = createDocument({});
 
 require("../../src/utils/workspacePartDeleteCancelEvents.js");
 
 const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartDeleteCancelEvents;
 
+const deleteButton = createButton({ deletePart: "part-2" });
 const cancelButton = createButton();
 let pendingDeletePartId = "part-1";
 let renderCount = 0;
+let requestedDeletePartId = null;
 
 bindWorkspacePartDeleteCancelEvents({
-  documentRef: createDocument([cancelButton]),
+  documentRef: createDocument({
+    deleteButtons: [deleteButton],
+    cancelButtons: [cancelButton],
+  }),
+  requestDeletePart: (id) => {
+    requestedDeletePartId = id;
+  },
   state: {
     setPendingDeletePartId: (value) => {
       pendingDeletePartId = value;
@@ -44,12 +55,15 @@ bindWorkspacePartDeleteCancelEvents({
   },
 });
 
+deleteButton.dispatch("click");
+assert.equal(requestedDeletePartId, "part-2");
+
 cancelButton.dispatch("click");
 assert.equal(pendingDeletePartId, null);
 assert.equal(renderCount, 1);
 
 bindWorkspacePartDeleteCancelEvents({
-  documentRef: createDocument([cancelButton]),
+  documentRef: createDocument({ cancelButtons: [cancelButton] }),
   state: null,
   renderWorkspace: () => {
     throw new Error("missing state should not render");

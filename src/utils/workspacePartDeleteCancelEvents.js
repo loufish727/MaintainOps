@@ -1,14 +1,22 @@
 (function () {
   /*
-   * LFES contract: owns Parts delete-cancel event binding only.
-   * Requires app.js-owned pending delete setter, render callback, and document.
-   * May clear the pending part delete warning and render.
-   * Must not request delete, confirm delete, delete records, upload documents,
-   * touch Supabase/RLS, or own inventory data.
+   * LFES contract: owns Parts delete warning open/cancel event binding only.
+   * Requires app.js-owned delete-request callback, pending delete setter, render callback, and document.
+   * May request app-owned warning state, clear the warning, and render.
+   * Must not confirm delete, delete records, upload documents, touch Supabase/RLS,
+   * or own inventory data.
    */
   function bindWorkspacePartDeleteCancelEvents(options = {}) {
     const doc = options.documentRef || document;
     const state = options.state;
+
+    if (typeof options.requestDeletePart === "function") {
+      doc.querySelectorAll("[data-delete-part]").forEach((button) => {
+        button.addEventListener("click", () => {
+          options.requestDeletePart(button.dataset.deletePart);
+        });
+      });
+    }
 
     if (!state || typeof options.renderWorkspace !== "function") return;
 
