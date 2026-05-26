@@ -74,6 +74,7 @@ const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartD
 const { bindWorkspaceWorkMessageStartEvents } = window.MaintainOpsWorkspaceWorkMessageStartEvents;
 const { bindWorkspaceReportIssueCommandEvents } = window.MaintainOpsWorkspaceReportIssueCommandEvents;
 const { bindWorkspaceSubmitRequestCommandEvents } = window.MaintainOpsWorkspaceSubmitRequestCommandEvents;
+const { bindWorkspaceNewWorkOrderCommandEvents } = window.MaintainOpsWorkspaceNewWorkOrderCommandEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4686,20 +4687,6 @@ function bindWorkspaceEvents() {
         renderWorkspace();
         return;
       }
-      if (button.dataset.commandAction === "create-work-order") {
-        activeWorkOrderId = null;
-        activeAssetId = null;
-        createWorkOrderMode = true;
-        quickFixMode = false;
-        reportIssueMode = false;
-        quickFixAssetId = null;
-        quickFixRequestId = null;
-        activeSection = "work";
-        setWorkOrderSearchMode(false);
-        localStorage.setItem("maintainops.activeSection", activeSection);
-        renderWorkspace();
-        return;
-      }
       if (button.dataset.commandAction === "export-csv") {
         exportActiveSectionCsv();
       }
@@ -4731,6 +4718,21 @@ function bindWorkspaceEvents() {
     },
     reloadRequestQueue,
     resetRequestsPage,
+    setWorkOrderSearchMode,
+  });
+
+  bindWorkspaceNewWorkOrderCommandEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+    },
+    renderWorkspace,
     setWorkOrderSearchMode,
   });
 
