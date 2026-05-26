@@ -5038,14 +5038,11 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceRequestDeleteCancelEvents({
     requestDeleteMaintenanceRequest,
+    deleteMaintenanceRequest,
     state: {
       setPendingDeleteRequestId: (value) => { pendingDeleteRequestId = value; },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-confirm-delete-request]").forEach((button) => {
-    button.addEventListener("click", () => deleteMaintenanceRequest(button.dataset.confirmDeleteRequest));
   });
 
   const editForm = document.querySelector("#edit-work-order-form");

@@ -14,11 +14,12 @@ function createButton(dataset = {}) {
   };
 }
 
-function createDocument({ deleteButtons = [], cancelButtons = [] }) {
+function createDocument({ deleteButtons = [], cancelButtons = [], confirmButtons = [] }) {
   return {
     querySelectorAll(selector) {
       if (selector === "[data-delete-request]") return deleteButtons;
       if (selector === "[data-cancel-delete-request]") return cancelButtons;
+      if (selector === "[data-confirm-delete-request]") return confirmButtons;
       return [];
     },
   };
@@ -33,17 +34,23 @@ const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRe
 
 const deleteButton = createButton({ deleteRequest: "request-2" });
 const cancelButton = createButton();
+const confirmButton = createButton({ confirmDeleteRequest: "request-3" });
 let pendingDeleteRequestId = "request-1";
 let renderCount = 0;
 let requestedDeleteRequestId = null;
+let confirmedDeleteRequestId = null;
 
 bindWorkspaceRequestDeleteCancelEvents({
   documentRef: createDocument({
     deleteButtons: [deleteButton],
     cancelButtons: [cancelButton],
+    confirmButtons: [confirmButton],
   }),
   requestDeleteMaintenanceRequest: (id) => {
     requestedDeleteRequestId = id;
+  },
+  deleteMaintenanceRequest: (id) => {
+    confirmedDeleteRequestId = id;
   },
   state: {
     setPendingDeleteRequestId: (value) => {
@@ -61,6 +68,9 @@ assert.equal(requestedDeleteRequestId, "request-2");
 cancelButton.dispatch("click");
 assert.equal(pendingDeleteRequestId, null);
 assert.equal(renderCount, 1);
+
+confirmButton.dispatch("click");
+assert.equal(confirmedDeleteRequestId, "request-3");
 
 bindWorkspaceRequestDeleteCancelEvents({
   documentRef: createDocument({ cancelButtons: [cancelButton] }),
