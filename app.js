@@ -71,6 +71,7 @@ const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSect
 const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
 const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
 const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartDeleteCancelEvents;
+const { bindWorkspaceWorkMessageStartEvents } = window.MaintainOpsWorkspaceWorkMessageStartEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4756,17 +4757,14 @@ function bindWorkspaceEvents() {
 
   bindWorkSectionJumpEvents();
 
-  document.querySelectorAll("[data-start-work-message]").forEach((button) => {
-    button.addEventListener("click", () => {
-      messageComposerWorkOrderId = button.dataset.startWorkMessage;
-      messageComposerOpen = true;
-      activeMessageThreadId = "";
-      activeSection = "messages";
-      localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-      renderWorkspace();
-    });
+  bindWorkspaceWorkMessageStartEvents({
+    state: {
+      setActiveMessageThreadId: (value) => { activeMessageThreadId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setMessageComposerOpen: (value) => { messageComposerOpen = value; },
+      setMessageComposerWorkOrderId: (value) => { messageComposerWorkOrderId = value; },
+    },
+    renderWorkspace,
   });
 
   const messageThreadForm = document.querySelector("#message-thread-form");
