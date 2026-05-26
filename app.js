@@ -69,6 +69,7 @@ const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEve
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
+const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4729,25 +4730,17 @@ function bindWorkspaceEvents() {
   const appIssueReportForm = document.querySelector("#app-issue-report-form");
   if (appIssueReportForm) appIssueReportForm.addEventListener("submit", createAppIssueReport);
 
-  document.querySelectorAll("[data-cancel-app-issue-report]").forEach((button) => {
-    button.addEventListener("click", () => {
-      reportIssueMode = false;
-      renderWorkspace();
-    });
-  });
-
   document.querySelectorAll("[data-app-issue-status]").forEach((form) => {
     form.addEventListener("submit", updateAppIssueReportStatus);
   });
 
-  document.querySelectorAll("[data-setup-action]").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (button.dataset.setupAction !== "confirm-admin-delete-sql") return;
-      adminDeleteSqlConfirmed = true;
-      localStorage.setItem("maintainops.adminDeleteSqlConfirmed", "true");
-      showNotice("Admin delete SQL marked as applied.");
-      renderWorkspace();
-    });
+  bindWorkspaceIssueAdminUiEvents({
+    state: {
+      setAdminDeleteSqlConfirmed: (value) => { adminDeleteSqlConfirmed = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+    },
+    renderWorkspace,
+    showNotice,
   });
 
   bindWorkspaceMessageThreadEvents({
