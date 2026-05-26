@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the public request link copy-button boundary extraction.
+Completed the request-origin Quick Fix opener boundary extraction.
 
 - Latest app behavior commit:
-  - `e38e537` (`Extract workspace public request link copy events`)
+  - `a2f5435` (`Extract workspace request quick fix events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-public-request-link-copy-events-1`
+  - `app.js?v=lfes-authority-request-quick-fix-events-1`
 - Current `app.js` line count:
-  - 8,079 lines.
+  - 8,080 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -82,16 +82,18 @@ Completed the public request link copy-button boundary extraction.
   - High-risk-but-contained Quick Fix command-opener boundary moved the main `[data-command-action="quick-fix"]` branch to `src/utils/workspaceQuickFixCommandEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
   - High-risk-but-contained asset-specific Quick Fix opener boundary moved `[data-quick-fix-asset]` to `src/utils/workspaceAssetQuickFixEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, validation, created work records, asset data, render, auth/company/location state, and Supabase access.
   - Medium-risk public request link copy-button boundary moved `[data-copy-public-request-link]` to `src/utils/workspacePublicRequestLinkCopyEvents.js`; `app.js` still owns link creation, enable/disable/regeneration, public request link data, clipboard helper implementation, render, auth/company/location state, and Supabase access.
+  - High-risk-but-contained request-origin Quick Fix opener boundary moved `[data-quick-fix-request]` to `src/utils/workspaceRequestQuickFixEvents.js`; `app.js` still owns `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspacePublicRequestLinkCopyEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-public-request-link-copy-events-smoke.js`.
-  - targeted mock-DOM public request link copy smoke passed for success/failure labels, reset timer behavior, copied URL injection, and missing-callback no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceRequestQuickFixEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-request-quick-fix-events-smoke.js`.
+  - targeted mock-DOM request Quick Fix smoke passed for invoking the injected opener with the request id and missing-callback no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new public request link copy script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new request Quick Fix script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live public request link copy smoke opened Settings, clicked an enabled Copy QR Link button, observed `Copy failed` in the in-app browser clipboard-limited environment, and verified the label reset to `Copy QR Link` without mutating link records.
-  - live `index.html` referenced `src/utils/workspacePublicRequestLinkCopyEvents.js?v=lfes-authority-public-request-link-copy-events-1` and `app.js?v=lfes-authority-public-request-link-copy-events-1`.
-  - hosted resource smoke passed for `e38e537`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
+  - live request Quick Fix smoke created disposable request `LFES disposable request quick fix 1779825953666`, opened Requests, clicked Quick Fix on that request, verified `#quick-fix-form` rendered with the request context and description, and verified Work Order create/report forms did not render. No Quick Fix submit was performed.
+  - cleanup verification permanently deleted only disposable request `LFES disposable request quick fix 1779825953666` and confirmed it no longer appeared in the app.
+  - live `index.html` referenced `src/utils/workspaceRequestQuickFixEvents.js?v=lfes-authority-request-quick-fix-events-1` and `app.js?v=lfes-authority-request-quick-fix-events-1`.
+  - hosted resource smoke passed for `a2f5435`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -119,7 +121,7 @@ Completed the public request link copy-button boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, Export CSV command, public request link copy, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

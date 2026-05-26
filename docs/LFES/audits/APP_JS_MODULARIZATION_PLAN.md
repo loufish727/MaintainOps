@@ -5231,6 +5231,58 @@ Result:
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## Request-Origin Quick Fix Opener Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Request-origin Quick Fix opener:
+  - `[data-quick-fix-request]`
+
+Risk:
+
+- High-risk but contained. It enters a mutation-capable form from request context, but the selected boundary only calls the existing opener callback.
+
+Intended boundary:
+
+- Move only the request-origin Quick Fix binding to `src/utils/workspaceRequestQuickFixEvents.js`.
+- Keep `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `a2f5435` or restore the original `[data-quick-fix-request]` listener block in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceRequestQuickFixEvents.js`.
+- Added `tests/smoke/workspace-request-quick-fix-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-request-quick-fix-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `a2f5435` (`Extract workspace request quick fix events`).
+- `app.js` line count is 8,080.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceRequestQuickFixEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-request-quick-fix-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-request-quick-fix-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable request `LFES disposable request quick fix 1779825953666` opened Quick Fix from the request card, rendered `#quick-fix-form` with request context and description, and did not render Work Order create or Report Issue forms. No Quick Fix submit occurred.
+- Cleanup verification: PASS. Disposable request `LFES disposable request quick fix 1779825953666` was permanently deleted and no longer appeared in the app.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- Request-origin Quick Fix smoke needs a disposable request if no active requests exist. The smoke must stop at open-form/no-submit, then clean up the disposable request separately.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Reassess before continuing into mutation or conversion workflows.
+
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
 Hard boundary selected:

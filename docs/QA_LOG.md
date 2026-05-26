@@ -43,6 +43,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Quick Fix command-opener boundary extracted and live verified with open-form/no-submit smoke.
 - 2026-05-26: LFES asset-specific Quick Fix opener boundary extracted and live verified with Equipment detail open-form/no-submit smoke.
 - 2026-05-26: LFES public request link copy-button boundary extracted and live verified with Settings copy feedback/reset smoke.
+- 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -396,6 +397,51 @@ LFES catch:
 Next:
 
 - Continue only with another bounded local UI/read-only event seam. Public link create/enable/disable/regenerate, request-specific Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Request-Origin Quick Fix Opener - 2026-05-26
+
+Boundary selected:
+
+- Request-origin Quick Fix opener:
+  - `[data-quick-fix-request]`
+
+Operational risk:
+
+- High-risk but contained.
+- The opener enters a mutation-capable Quick Fix form from request context, but this boundary only calls the existing opener. It does not submit Quick Fix, convert/delete requests, create work, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceRequestQuickFixEvents.js`.
+- Moved only the request-origin Quick Fix event binding.
+- Injected the existing `openQuickFixForRequest` callback.
+- Kept `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceRequestQuickFixEvents.js?v=lfes-authority-request-quick-fix-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-request-quick-fix-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceRequestQuickFixEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-request-quick-fix-events-smoke.js`.
+- Targeted mock-DOM request Quick Fix smoke: PASS for invoking the injected opener with the request id and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the request Quick Fix script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable request `LFES disposable request quick fix 1779825953666` opened Quick Fix from the request card, rendered `#quick-fix-form` with request context and description, and did not render Work Order create or Report Issue forms. No Quick Fix submit occurred.
+- Cleanup verification: PASS. Disposable request `LFES disposable request quick fix 1779825953666` was permanently deleted and no longer appeared in the app.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Request-origin Quick Fix smoke needs a disposable request if no active requests exist. The smoke must stop at open-form/no-submit, then clean up the disposable request separately.
+
+Next:
+
+- Reassess before continuing. Quick Fix submit, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
