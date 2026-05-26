@@ -77,6 +77,7 @@ const { bindWorkspaceSubmitRequestCommandEvents } = window.MaintainOpsWorkspaceS
 const { bindWorkspaceNewWorkOrderCommandEvents } = window.MaintainOpsWorkspaceNewWorkOrderCommandEvents;
 const { bindWorkspaceExportCsvCommandEvents } = window.MaintainOpsWorkspaceExportCsvCommandEvents;
 const { bindWorkspaceAssetDeleteCancelEvents } = window.MaintainOpsWorkspaceAssetDeleteCancelEvents;
+const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRequestDeleteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5061,11 +5062,11 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => requestDeleteMaintenanceRequest(button.dataset.deleteRequest));
   });
 
-  document.querySelectorAll("[data-cancel-delete-request]").forEach((button) => {
-    button.addEventListener("click", () => {
-      pendingDeleteRequestId = null;
-      renderWorkspace();
-    });
+  bindWorkspaceRequestDeleteCancelEvents({
+    state: {
+      setPendingDeleteRequestId: (value) => { pendingDeleteRequestId = value; },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-confirm-delete-request]").forEach((button) => {
