@@ -1,0 +1,74 @@
+const assert = require("node:assert/strict");
+
+global.window = {};
+global.localStorage = null;
+
+const { createWorkspaceUiState } = require("../../src/utils/workspaceUiState.js");
+
+function createStorage(initial = {}) {
+  return {
+    values: { ...initial },
+    getItem(key) {
+      return Object.prototype.hasOwnProperty.call(this.values, key) ? this.values[key] : null;
+    },
+    setItem(key, value) {
+      this.values[key] = String(value);
+    },
+    removeItem(key) {
+      delete this.values[key];
+    },
+  };
+}
+
+const storage = createStorage({
+  "maintainops.activeSection": "work",
+  "maintainops.searchQuery": "pump",
+  "maintainops.workOrderSearchMode": "true",
+  "maintainops.workOrderPage": "3",
+  "maintainops.partsPage": "2",
+  "maintainops.assetStatusFilter": "inactive",
+  "maintainops.partInventoryFilter": "low",
+  "maintainops.partSearchQuery": "hose",
+});
+
+const state = createWorkspaceUiState({ storage });
+
+assert.equal(state.getActiveSection(), "mywork");
+assert.equal(storage.values["maintainops.activeSection"], "mywork");
+assert.equal(storage.values["maintainops.sectionSplitDone"], "true");
+assert.equal(state.getSearchQuery(), "pump");
+assert.equal(state.getWorkOrderSearchMode(), true);
+assert.equal(state.getWorkOrderPage(), 3);
+assert.equal(state.getPartsPage(), 2);
+assert.equal(state.getAssetStatusFilter(), "inactive");
+assert.equal(state.getPartInventoryFilter(), "low");
+assert.equal(state.getPartSearchQuery(), "hose");
+
+state.setActiveSection("parts");
+state.setSearchQuery("motor");
+state.setWorkOrderSearchMode(false);
+state.setWorkOrderAssigneeFilter("user-1");
+state.resetWorkOrderPage();
+state.resetPartsPage();
+state.setPartSearchQuery("belt");
+state.setWorkOrderAssigneeFilter("");
+
+assert.equal(state.getActiveSection(), "parts");
+assert.equal(storage.values["maintainops.activeSection"], "parts");
+assert.equal(state.getSearchQuery(), "motor");
+assert.equal(storage.values["maintainops.searchQuery"], "motor");
+assert.equal(state.getWorkOrderSearchMode(), false);
+assert.equal(storage.values["maintainops.workOrderSearchMode"], "false");
+assert.equal(state.getWorkOrderPage(), 1);
+assert.equal(storage.values["maintainops.workOrderPage"], "1");
+assert.equal(state.getPartsPage(), 1);
+assert.equal(storage.values["maintainops.partsPage"], "1");
+assert.equal(state.getPartSearchQuery(), "belt");
+assert.equal(storage.values["maintainops.partSearchQuery"], "belt");
+assert.equal(state.getWorkOrderAssigneeFilter(), "");
+assert.equal(storage.values["maintainops.workOrderAssigneeFilter"], undefined);
+
+const snapshot = state.snapshot();
+assert.equal(snapshot.activeSection, "parts");
+assert.equal(snapshot.searchQuery, "motor");
+assert.equal(snapshot.partSearchQuery, "belt");

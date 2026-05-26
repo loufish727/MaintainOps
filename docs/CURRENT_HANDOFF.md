@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Full Work Order Details submit event boundary, then paused extraction momentum for an LFES RLS source audit checkpoint before deeper auth/public/storage/mutation work.
+Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, then added the first workspace UI state factory scaffold.
 
 - Latest app behavior commit:
   - `2814088` (`Extract workspace work order edit events`)
@@ -46,6 +46,11 @@ Completed the Full Work Order Details submit event boundary, then paused extract
   - App-used storage buckets are private with storage policy coverage in source.
   - Public QR anonymous access remains scoped to expected RPC grants, not direct table grants.
   - `cancel_company_invite` and `record_work_order_part_usage` are app-used RPCs without definitions/grants found in the checked SQL source. Treat this as a source-of-truth gap before touching team invite cancel or parts-used mutation boundaries.
+- Current state-boundary checkpoint:
+  - Added `src/utils/workspaceUiState.js` as the first client-only workspace UI state factory scaffold.
+  - Added `tests/smoke/workspace-ui-state-smoke.js`.
+  - `index.html` now loads `src/utils/workspaceUiState.js?v=lfes-state-workspace-ui-state-1` before workspace event modules.
+  - No app behavior was changed yet; `app.js` still owns legacy UI state variables until a follow-up wiring phase moves selected event modules to the factory.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -110,6 +115,8 @@ Completed the Full Work Order Details submit event boundary, then paused extract
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
+- LFES state-boundary catch:
+  - first factory pass intentionally stopped at contract/scaffold plus smoke instead of broad variable replacement. The safe next step is wiring extracted search/filter/pagination/inventory/part-search event modules to the factory slice by slice.
 - LFES RLS audit catch:
   - the source tree broadly matches the established RLS posture, but repository SQL is not sufficient to reconstruct two app-used RPC dependencies: `cancel_company_invite` and `record_work_order_part_usage`.
   - do not start auth/session, public QR submit, storage/photo/document, team invite cancel, or parts-used mutation extraction until this gap is resolved or explicitly accepted.

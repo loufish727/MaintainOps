@@ -6,6 +6,16 @@ This is a plan only. Do not modularize `app.js` until approved.
 
 The purpose is not cosmetic cleanup or trendy architecture. The purpose is to preserve engineering understanding, reduce responsibility concentration, improve controlled evolution, reduce reviewer cognitive load, and preserve operational traceability.
 
+## Current Checkpoint - 2026-05-26
+
+- `app.js` line count: 8,064.
+- RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
+- First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
+- Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.
+- `index.html` loads the state factory before workspace event modules.
+- `app.js` still owns legacy UI state variables. The next state-boundary phase should wire one extracted UI event group to the factory at a time instead of broad variable replacement.
+- Blocked until RPC source gap is resolved or explicitly accepted: team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, and SQL/RLS work.
+
 ## Current Responsibilities Inside app.js
 
 `app.js` currently owns:
