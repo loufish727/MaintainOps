@@ -36,6 +36,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Export CSV command boundary extracted and live verified with authenticated Equipment export blob-capture smoke.
 - 2026-05-26: LFES Equipment delete-cancel boundary extracted and live verified with disposable unlinked equipment warning/cancel/cleanup smoke.
 - 2026-05-26: LFES Request delete-cancel boundary extracted and live verified with disposable request warning/cancel/cleanup smoke.
+- 2026-05-26: LFES PM schedule delete-cancel boundary extracted and live verified with disposable PM schedule warning/cancel/cleanup smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -82,6 +83,50 @@ LFES catch:
 Next:
 
 - PM schedule delete-cancel or procedure delete-cancel may be considered if a safe disposable/visible record exists. Do not combine delete-confirm, request conversion, Quick Fix, storage/photo/document, auth/company/location, or broad render/event movement with another extraction.
+
+## LFES Boundary - PM Schedule Delete-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- PM schedule delete warning cancel event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path is inside a preventive-maintenance delete flow beside PM generation and permanent delete controls, but this boundary only clears pending delete state and re-renders. It does not request delete, confirm delete, delete schedules, generate PM work, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceScheduleDeleteCancelEvents.js`.
+- Moved only `[data-cancel-delete-schedule]`.
+- Injected app-owned pending delete setter, `renderWorkspace`, and document.
+- Kept `[data-delete-schedule]`, `[data-confirm-delete-schedule]`, permanent delete, PM generation, schedule data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceScheduleDeleteCancelEvents.js?v=lfes-authority-schedule-delete-cancel-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-schedule-delete-cancel-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceScheduleDeleteCancelEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM PM schedule delete-cancel smoke: PASS for pending delete clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the PM schedule delete-cancel script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26469751689` completed successfully for `f76c15b`.
+- Signed-in live smoke: PASS. Disposable schedule `LFES disposable PM schedule 1779823426651` was created to expose the PM schedule delete warning path, opened in the manager/admin session, Delete rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete, then the disposable schedule was permanently deleted.
+- Cleanup verification: PASS. `LFES disposable PM schedule 1779823426651` no longer appeared in the app.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The in-app browser text-entry path can block PM schedule setup when its virtual clipboard is unavailable. Creating a disposable schedule through authenticated Playwright setup is acceptable if the changed delete-cancel behavior is still verified through the manager/admin app UI and cleanup is verified.
+
+Next:
+
+- Procedure delete-cancel may be considered only if a safe disposable/visible record exists. Do not combine delete-confirm, PM generation, Quick Fix, storage/photo/document, auth/company/location, or broad render/event movement with another extraction.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 

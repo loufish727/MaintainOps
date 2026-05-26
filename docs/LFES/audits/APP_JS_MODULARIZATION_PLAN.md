@@ -5026,3 +5026,54 @@ LFES catch:
 Next candidates:
 
 - Consider PM schedule delete-cancel or procedure delete-cancel only if a safe disposable/visible record exists. Do not combine delete-confirm, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## PM Schedule Delete-Cancel Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- PM schedule delete warning cancel binding inside `bindWorkspaceEvents()`:
+  - `[data-cancel-delete-schedule]`
+
+Risk:
+
+- Medium risk. It is delete-adjacent and role-gated, and it lives beside PM generation/permanent-delete controls.
+
+Intended boundary:
+
+- Move only the cancel listener that clears pending schedule delete state and re-renders.
+- Keep delete request, permanent delete, PM generation, schedule data, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `f76c15b` or restore the original `[data-cancel-delete-schedule]` listener block in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceScheduleDeleteCancelEvents.js`.
+- Added `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-schedule-delete-cancel-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `f76c15b` (`Extract workspace schedule delete cancel events`).
+- `app.js` line count is 8,098.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceScheduleDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS for Resource Load Smoke run `26469751689`.
+- Manager/admin live smoke: PASS. Disposable schedule `LFES disposable PM schedule 1779823426651` rendered the delete warning, Cancel cleared it and restored Delete, and cleanup permanent delete removed only that disposable schedule.
+
+Catch:
+
+- The in-app browser text-entry path can fail during setup when the virtual clipboard is unavailable. Use authenticated Playwright setup for disposable records when necessary, then verify the changed behavior through the app UI and confirm cleanup.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Proceed only to another single bounded delete-cancel or local UI boundary unless a separate high-risk plan is written.
