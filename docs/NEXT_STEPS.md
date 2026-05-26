@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `130b6e6` (`Keep part permanent delete binding in app`).
+- Latest app behavior commit: `a08c847` (`Extract workspace asset delete confirm events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-part-delete-request-events-1`.
-- Current `app.js` line count: 8,071.
+- Latest deployed cache tag: `app.js?v=lfes-authority-asset-delete-confirm-events-1`.
+- Current `app.js` line count: 8,066.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -51,7 +51,7 @@ Recommended immediate next controlled phase:
 - Submit Request command-opener event binding is extracted into `src/utils/workspaceSubmitRequestCommandEvents.js` and live verified. `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
 - New Work Order command-opener event binding is extracted into `src/utils/workspaceNewWorkOrderCommandEvents.js` and live verified. `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
 - Export CSV command event binding is extracted into `src/utils/workspaceExportCsvCommandEvents.js` and live verified. `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
-- Equipment delete warning opener/cancel event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns request-delete blocker checks, pending delete state, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
+- Equipment delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
 - Request delete warning opener/cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
 - PM schedule delete warning opener/cancel event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
 - Procedure delete warning opener/cancel event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
@@ -129,6 +129,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM PM schedule delete warning/cancel smoke, manager/admin live disposable PM schedule delete-warning/cancel smoke, manager/admin UI cleanup, and data-layer cleanup verification passed for the PM schedule delete-request boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM Procedure delete warning/cancel smoke, manager/admin live disposable procedure delete-warning/cancel smoke, manager/admin UI cleanup, and data-layer cleanup verification passed for the Procedure delete-request boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM Part delete warning/cancel smoke, manager/admin live disposable part delete-warning/cancel smoke, manager/admin UI cleanup, and data-layer cleanup verification passed for the Part delete-request boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+- Hosted resource checks, targeted mock-DOM Equipment delete confirm smoke, manager/admin live disposable equipment permanent delete smoke, and data-layer deletion verification passed for the Equipment confirm-delete boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - LFES catch: Part delete uses `data-delete-part` for both opener and permanent delete; always keep `.permanent-delete-button` binding in `app.js`.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.

@@ -51,7 +51,38 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule delete-request warning opener boundary extracted and live verified with disposable PM schedule warning/cancel plus cleanup.
 - 2026-05-26: LFES Procedure delete-request warning opener boundary extracted and live verified with disposable procedure warning/cancel plus cleanup.
 - 2026-05-26: LFES Part delete-request warning opener boundary extracted and live verified with disposable part warning/cancel plus cleanup; selector catch corrected so permanent delete binding remains in `app.js`.
+- 2026-05-26: LFES Equipment confirm-delete event boundary extracted and live verified with disposable equipment permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Equipment Confirm-Delete Events - 2026-05-26
+
+Boundary selected:
+
+- Equipment permanent delete event binding for `[data-confirm-delete-asset]`, added to the existing Equipment delete module.
+
+Operational risk:
+
+- High.
+- This is an irreversible delete control, but the boundary only calls the app-owned `deleteAsset` callback. Supabase mutation sequencing, permission checks, link-count guards, storage cleanup, state updates, notices, and render stay in `app.js`.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Moved `[data-confirm-delete-asset]` binding into the module.
+- Kept app-owned `deleteAsset` as an injected callback.
+- Kept permanent delete implementation, permission checks, link-count guards, equipment data, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-asset-delete-confirm-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Equipment delete event smoke: PASS for warning opener callback, cancel pending-state clear, confirm-delete callback, render, propagation stop, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Equipment confirm-delete script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable equipment `LFES disposable asset delete confirm 1779828673007` was created, Delete Equipment rendered Cancel and Permanently Delete, Permanently Delete removed the disposable from Equipment, and no unrelated equipment was touched.
+- Cleanup verification: PASS. Data-layer check for disposable asset `9fb2daa2-1e13-4fbe-8d8d-52a2dd0591e2` returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
 ## LFES Boundary - Part Delete-Request Events - 2026-05-26
 
