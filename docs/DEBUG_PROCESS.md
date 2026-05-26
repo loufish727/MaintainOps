@@ -319,6 +319,17 @@ Check:
 - For completion smoke, use `actual_minutes` values compatible with `step="5"` such as `5`, `10`, or `15`.
 - If automation click stalls on a lower-page button, record DOM/rect evidence, scroll the target into view, and retry through a visible coordinate click only for an authorized disposable smoke path.
 
+### Browser Text Entry Fails During Smoke
+
+Check:
+
+- The field is visible/focused and the page has no app warning/error logs.
+- The failure is from browser automation setup, such as unavailable virtual clipboard, not native form validation or app code.
+- If the workflow under test is delete-only or another non-creation boundary, create disposable setup data through an authenticated API path only when:
+  - the changed behavior is still verified through the app UI,
+  - cleanup is completed through the intended app path,
+  - data-layer proof confirms no disposable row remains.
+
 ### Supabase Write Fails
 
 Check:

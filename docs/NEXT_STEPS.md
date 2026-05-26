@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `d9a1922` (`Extract workspace work order completion events`).
+- Latest app behavior commit: `171037e` (`Extract workspace work order delete events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-work-completion-events-1`.
-- Current `app.js` line count: 8,893.
+- Latest deployed cache tag: `app.js?v=lfes-authority-work-delete-events-1`.
+- Current `app.js` line count: 8,841.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -37,8 +37,9 @@ Recommended immediate next controlled phase:
 - Work-order downtime copy event wiring is extracted into `src/utils/workspaceWorkOrderDowntimeEvents.js` and live verified. `app.js` still owns downtime subject/body builders and clipboard implementation.
 - Work-order detail status dropdown wiring is extracted into `src/utils/workspaceWorkOrderDetailStatusEvents.js` and live verified. `app.js` still owns status mutation logic, guards, event recording, render, and state changes.
 - Work-order completion submit handling and safety checkbox sync are extracted into `src/utils/workspaceWorkOrderCompletionEvents.js` and live verified. `app.js` still injects mutation, logging, safety-payload, render, and state access dependencies.
+- Work-order delete request/cancel/confirm orchestration is extracted into `src/utils/workspaceWorkOrderDeleteEvents.js` and live verified. `app.js` still injects permission checks, Supabase row delete, photo storage cleanup, active state setters, render, notices, and timeout wrapper.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
-- Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. The likely next work-order hard target is delete, but it must be mapped independently before implementation.
+- Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
 
 Keep blocked until explicitly approved:
@@ -56,7 +57,6 @@ Keep blocked until explicitly approved:
 - public QR submission flows.
 - PM generation.
 - forms with mutations.
-- work-order delete flow until separately mapped.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
 
@@ -73,7 +73,9 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM copy smoke, signed-in live downtime copy smoke, and public GitHub Actions run verification passed for the work-order downtime copy event boundary.
 - Hosted resource checks, targeted mock-DOM status-select smoke, signed-in live detail status mutation/restore smoke, and public GitHub Actions run-list verification passed for the detail status dropdown event boundary.
 - Hosted resource checks, targeted mock-DOM completion smoke, signed-in live disposable completion/cleanup smoke, and public GitHub Actions run-list verification passed for the completion boundary.
+- Hosted resource checks, targeted mock-DOM delete smoke, signed-in live disposable delete/cancel/confirm smoke, authenticated data-layer deletion verification, and `npm run test:smoke:github-actions` passed for the delete boundary.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
+- Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - Use `npm run test:smoke:github-actions` for current GitHub Actions verification; do not rely on the PR-oriented connector workflow lookup for push runs.
 

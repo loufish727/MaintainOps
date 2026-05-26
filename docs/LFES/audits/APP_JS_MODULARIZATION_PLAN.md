@@ -4310,5 +4310,53 @@ LFES catches:
 
 Next candidates:
 
-- Delete remains the next high-risk work-order boundary, but it must be mapped separately with cascade/rollback/cleanup evidence before implementation.
-- Do not combine delete with completion, status, assignment, request conversion, Quick Fix, storage/photo/document flows, or any broad render/event movement.
+- Delete is now extracted and live verified. Select the next hard boundary from the authority map, and do not combine request conversion, Quick Fix, storage/photo/document flows, broad forms, or broad render/event movement with another change.
+
+## High-Risk Work-Order Delete Boundary - 2026-05-26
+
+Selected boundary:
+
+- Work Order Detail delete request/cancel/confirm orchestration:
+  - `[data-delete-work-order]`
+  - `[data-cancel-delete-work-order]`
+  - `[data-confirm-delete-work-order]`
+
+Why this is hard:
+
+- The flow permanently deletes a real work order.
+- It performs best-effort photo storage cleanup before deleting the row.
+- Deleting `work_orders` cascades database child rows for comments, photo records, parts used, and events through schema foreign keys.
+
+Why this is recoverable:
+
+- The extraction moved delete orchestration and event binding, but direct Supabase row delete, storage cleanup, permission checks, notices, state setters, render, and timeout wrapper stayed injected from `app.js`.
+- The live smoke used a disposable work order and verified deletion through both the UI and authenticated data-layer lookup.
+- Rollback is one app commit or restoration of the original listener blocks plus `requestDeleteWorkOrder` and `deleteWorkOrder` in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderDeleteEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderDeleteEvents.js?v=lfes-authority-work-delete-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-delete-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `171037e` (`Extract workspace work order delete events`).
+- `app.js` line count moved from 8,893 to 8,841.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderDeleteEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM delete smoke: PASS for request, cancel, confirm, denied permission, storage-warning continuation, delete-error path, thrown-error path, state clearing, notice, and render.
+- Local resource smoke: PASS against `http://127.0.0.1:4182/`.
+- Local browser boot smoke: PASS. Login screen loaded with the delete script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `171037e`, run `https://github.com/loufish727/MaintainOps/actions/runs/26458080821`.
+- Signed-in manager/admin live delete smoke: PASS. Created disposable work order `QA LFES delete smoke 2026-05-26T15-33-07-546Z`, opened Work Order Detail, opened permanent-delete warning, canceled once, reopened the warning, permanently deleted it through the app UI, verified it disappeared from Work Orders, and verified authenticated REST lookup returned no row.
+
+LFES catch:
+
+- The in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, creating the disposable setup record through authenticated Supabase REST is acceptable, but the changed delete behavior must still be verified through the app UI.
+
+Next candidates:
+
+- Select the next hard boundary from the authority map.
+- Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

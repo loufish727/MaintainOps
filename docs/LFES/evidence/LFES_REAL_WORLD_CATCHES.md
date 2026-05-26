@@ -239,3 +239,12 @@ Phase 6D update:
 - What prevented escalation: no app code change was made for the automation limitation; the smoke recorded DOM/rect state, used valid form input, scrolled the confirmation button into view, completed the disposable work order, and deleted it through the app UI.
 - Fix or mitigation: for authorized disposable live smokes, prefer stable locators first. If a lower-page locator click stalls, record DOM/rect evidence, scroll into view, use coordinate click, and document the deviation.
 - Lessons learned: automation mechanics are part of the smoke contract. A click timeout is not automatically an app regression, but it must be diagnosed before proceeding.
+
+## 2026-05-26 - Work-Order Delete Smoke - Browser Text Entry Can Be Blocked By Clipboard Layer
+
+- Issue discovered: the in-app browser could click and inspect the live app, but `fill`, `type`, and DOM text-entry paths failed because the browser automation virtual clipboard was unavailable.
+- How it was discovered: the Quick Fix issue field focused correctly, the page had no warning/error logs, but text entry failed before the disposable delete-smoke record could be created through the UI.
+- Operational risk: a live smoke can become blocked by automation setup even when the app workflow under test is healthy. For delete testing, this is risky because an abandoned disposable setup record would pollute live queues.
+- What prevented escalation: a disposable work order was created through authenticated Supabase REST as setup only, then all changed delete behavior was verified through the live app UI: detail open, delete warning, cancel, reopen warning, permanent delete, list disappearance, and authenticated data-layer deletion proof.
+- Fix or mitigation: if browser text entry is unavailable, setup data may be created through an authenticated API path only when the actual boundary under test is still exercised through the app UI and cleanup/deletion proof is recorded.
+- Lessons learned: distinguish setup mechanics from the workflow boundary under test. The setup path may vary when automation is degraded, but the changed operational path still needs live UI evidence.

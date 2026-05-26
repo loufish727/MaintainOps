@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the first full work-order completion boundary extraction from `bindWorkspaceEvents()`.
+Completed the high-risk work-order delete boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `d9a1922` (`Extract workspace work order completion events`)
+  - `171037e` (`Extract workspace work order delete events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-completion-events-1`
+  - `app.js?v=lfes-authority-work-delete-events-1`
 - Current `app.js` line count:
-  - 8,893 lines.
+  - 8,841 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -59,16 +59,17 @@ Completed the first full work-order completion boundary extraction from `bindWor
   - Non-mutating work-order boundary moved downtime copy button wiring to `src/utils/workspaceWorkOrderDowntimeEvents.js`; `app.js` still owns downtime subject/body builders and clipboard implementation.
   - Detail status dropdown boundary moved only `#status-select` binding to `src/utils/workspaceWorkOrderDetailStatusEvents.js`; `app.js` still owns `updateWorkOrderStatus`, `setWorkOrderStatus`, status guards, Supabase mutation sequencing, event recording, and render.
   - High-risk completion boundary moved full Work Order Detail completion submit handling and safety checkbox sync to `src/utils/workspaceWorkOrderCompletionEvents.js`; `app.js` still owns the injected Supabase mutation callback, activity logger, safety payload helpers, render, state arrays, and shared current-safety helper used by quick-update/status paths.
+  - High-risk delete boundary moved Work Order Detail delete request/cancel/confirm orchestration to `src/utils/workspaceWorkOrderDeleteEvents.js`; `app.js` still injects permission checks, Supabase row delete, photo storage cleanup, active state setters, render, notices, and timeout wrapper.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderCompletionEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM completion smoke passed for success payload/update/log/render/button restore, checklist gate, safety-device gate, update-error path, log-warning path, submit binding, and safety checkbox sync.
-  - local resource smoke passed against `http://127.0.0.1:4181/`.
-  - local browser boot smoke reached the login screen with the new completion event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderDeleteEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM delete smoke passed for request, cancel, confirm, denied permission, storage-warning continuation, delete-error path, thrown-error path, state clearing, notice, and render.
+  - local resource smoke passed against `http://127.0.0.1:4182/`.
+  - local browser boot smoke reached the login screen with the new delete event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live completion smoke created disposable Quick Fix work order `QA LFES completion smoke 2026-05-26T15-16-53-084Z`, completed it through the extracted completion path, observed Work Order Detail status `Completed`, timestamp/minutes, notes, and resolution, then permanently deleted the disposable record through the app UI.
-  - live `index.html` referenced `src/utils/workspaceWorkOrderCompletionEvents.js?v=lfes-authority-work-completion-events-1` and `app.js?v=lfes-authority-work-completion-events-1`.
-  - GitHub Actions public run listing showed Resource Load Smoke #132 for `d9a1922` completed successfully and Pages build/deployment #180 completed successfully; the local verifier was blocked by GitHub API rate limiting.
+  - live delete smoke used disposable work order `QA LFES delete smoke 2026-05-26T15-33-07-546Z`, opened Work Order Detail, opened the permanent-delete warning, canceled once, reopened, permanently deleted it, verified it disappeared from Work Orders, and verified the row was gone through authenticated Supabase REST.
+  - live `index.html` referenced `src/utils/workspaceWorkOrderDeleteEvents.js?v=lfes-authority-work-delete-events-1` and `app.js?v=lfes-authority-work-delete-events-1`.
+  - `npm run test:smoke:github-actions` passed for `171037e`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458080821`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -78,6 +79,7 @@ Completed the first full work-order completion boundary extraction from `bindWor
   - clipboard fallback can settle slower than the nominal 1600ms reset delay in automation; downtime-copy smoke should wait for reset labels conditionally instead of using a brittle fixed sleep.
   - completion smoke must use an `actual_minutes` value compatible with the form step (`5`, `10`, etc.); invalid step values are blocked by native browser validation before the submit handler runs.
   - in-app browser high-level locator clicks can hang on lower-page operational buttons; when DOM state is clear and the action is authorized, scroll the target into view and use coordinate click only after recording the locator/rect evidence.
+  - the in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, a disposable work order may be created through an authenticated Supabase setup step, but the changed delete behavior must still be verified through the app UI.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -86,12 +88,12 @@ Completed the first full work-order completion boundary extraction from `bindWor
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, and completion boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, and delete boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
-  - delete remains the next highest-risk work-order target and must be separately mapped before implementation.
+  - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
-Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.
+Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.
 
 ## Prior Recent Change
 

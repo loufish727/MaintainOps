@@ -20,7 +20,59 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES work-order downtime copy event boundary extracted and live verified; smoke timing was corrected to wait for reset labels conditionally.
 - 2026-05-26: LFES detail status dropdown event boundary extracted and live verified with status mutation plus restore.
 - 2026-05-26: LFES high-risk work-order completion boundary extracted and live verified with disposable completion plus cleanup.
+- 2026-05-26: LFES high-risk work-order delete boundary extracted and live verified with disposable request/cancel/confirm delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Work-Order Delete Events - 2026-05-26
+
+Boundary selected:
+
+- Work Order Detail delete request/cancel/confirm orchestration from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- High.
+- The path permanently deletes a work order, performs best-effort photo storage cleanup, and relies on database cascade for linked comments, events, parts used, and photo records.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderDeleteEvents.js`.
+- Moved `requestDeleteWorkOrder(id)`, `deleteWorkOrder(id)`, and the three delete event bindings.
+- Injected app-owned dependencies: permission check, alert, Supabase row delete callback, photo storage cleanup callback, photo path lookup, state setters, notice, render, renderWorkspace, timeout wrapper, friendly save error, and warning logger.
+- Kept direct Supabase client access, auth/company/location state, photo maps, render ownership, SQL/RLS, storage policies, other delete flows, Quick Fix, request conversion, storage/photo/document upload flows, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceWorkOrderDeleteEvents.js?v=lfes-authority-work-delete-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-delete-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `171037e`, or remove `src/utils/workspaceWorkOrderDeleteEvents.js`, restore the original delete listener blocks plus `requestDeleteWorkOrder` and `deleteWorkOrder` in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderDeleteEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS, with only existing CRLF warnings.
+- Targeted mock-DOM delete smoke: PASS for request, cancel, confirm, denied permission, storage-warning continuation, delete-error path, thrown-error path, state clearing, notice, and render.
+- Local resource smoke: PASS against `http://127.0.0.1:4182/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `171037e`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458080821`.
+- Signed-in manager/admin live smoke: PASS. Disposable work order `QA LFES delete smoke 2026-05-26T15-33-07-546Z` was created through authenticated Supabase REST because browser text entry was unavailable, then the app UI opened detail, opened the permanent-delete warning, canceled once, reopened, permanently deleted it, returned to Work Orders, and no longer showed the disposable title.
+- Data-layer proof: authenticated Supabase REST lookup for `cb06e316-fb24-434c-82b4-5c2f4be8a650` returned `rows: []`.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, an authenticated setup insert may create the disposable record, but the changed delete behavior must still be verified through the app UI and followed by data-layer deletion proof.
+
+Next:
+
+- Select the next hard boundary from the authority map. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
 
 ## LFES Boundary - Work-Order Completion Events - 2026-05-26
 
