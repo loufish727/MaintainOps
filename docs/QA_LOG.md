@@ -52,11 +52,52 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule delete-request warning opener boundary extracted and live verified with disposable PM schedule warning/cancel plus cleanup.
 - 2026-05-26: LFES Procedure delete-request warning opener boundary extracted and live verified with disposable procedure warning/cancel plus cleanup.
 - 2026-05-26: LFES Part delete-request warning opener boundary extracted and live verified with disposable part warning/cancel plus cleanup; selector catch corrected so permanent delete binding remains in `app.js`.
+- 2026-05-26: LFES Part confirm-delete event boundary extracted and live verified with disposable part permanent delete plus data-layer proof.
 - 2026-05-26: LFES Equipment confirm-delete event boundary extracted and live verified with disposable equipment permanent delete plus data-layer proof.
 - 2026-05-26: LFES Request confirm-delete event boundary extracted and live verified with disposable request permanent delete plus data-layer proof.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Part Confirm-Delete Events - 2026-05-26
+
+Boundary selected:
+
+- Part permanent delete event binding for `[data-delete-part].permanent-delete-button`, added to the existing Part delete module.
+
+Operational risk:
+
+- High.
+- This confirms an irreversible inventory part delete through the existing app-owned `requestDeletePart` path, but the boundary only transfers event binding. Permission checks, deletion, document cleanup, state updates, notices, and render stay in `app.js`.
+
+Implementation scope:
+
+- Expanded `src/utils/workspacePartDeleteCancelEvents.js`.
+- Moved `[data-delete-part].permanent-delete-button` binding into the module.
+- Kept app-owned `requestDeletePart` as an injected callback for both opener and permanent-button behavior.
+- Kept pending delete state, permanent delete implementation, permission checks, part data, document cleanup, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-part-delete-confirm-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePartDeleteCancelEvents.js`, and `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Part delete event smoke: PASS for warning opener callback, permanent-button callback, cancel pending-state clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Part confirm-delete script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable part `LFES disposable part delete confirm 1779830808353 hose` was created, Delete Part rendered Cancel and Permanently Delete, Permanently Delete removed the disposable from Parts, and no unrelated part was touched.
+- Cleanup verification: PASS. Data-layer check for disposable part `68c6da30-91e7-42f0-87ce-6ae472365893` returned `remaining: 0`.
+- GitHub Actions: pending follow-up verifier after the docs commit.
+
+LFES catch:
+
+- Part cards must be opened before detail-only delete controls are available; list cards expose the part but do not render `[data-delete-part]` buttons.
+
+Result:
+
+- App deploy commit: `91a4dff` (`Extract workspace part delete confirm events`).
+- `app.js` line count after extraction: 8,055.
+- Behavior changed: no observed behavior change.
 
 ## LFES Boundary - Team Invite Confirm-Cancel Events - 2026-05-26
 

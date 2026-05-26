@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Team invite confirm-cancel event boundary extraction.
+Completed the Part confirm-delete event boundary extraction.
 
 - Latest app behavior commit:
-  - `e984132` (`Extract workspace team invite confirm events`)
+  - `91a4dff` (`Extract workspace part delete confirm events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-team-invite-confirm-events-1`
+  - `app.js?v=lfes-authority-part-delete-confirm-events-1`
 - Current `app.js` line count:
-  - 8,058 lines.
+  - 8,055 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -67,7 +67,7 @@ Completed the Team invite confirm-cancel event boundary extraction.
   - Medium-risk workspace section navigation boundary moved `[data-section]` to `src/utils/workspaceSectionNavigationEvents.js`; `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
   - Medium/high-risk Message Center thread open/read-state boundary moved `[data-message-thread]` and `[data-open-work-message-thread]` to `src/utils/workspaceMessageThreadEvents.js`; `app.js` still owns `markMessageThreadRead`, Supabase read-state write implementation, create thread, send reply, message data, render, auth/company/location state, and RLS.
   - Medium-low-risk issue/admin local UI boundary moved `[data-cancel-app-issue-report]` and local `[data-setup-action="confirm-admin-delete-sql"]` handling to `src/utils/workspaceIssueAdminUiEvents.js`; `app.js` still owns create issue report, issue status mutation, setup item rendering, admin data, render, auth/company/location state, and Supabase access.
-  - Medium/high-risk Part delete warning opener/cancel boundary moved `[data-delete-part]:not(.permanent-delete-button)` and `[data-cancel-delete-part]` to `src/utils/workspacePartDeleteCancelEvents.js`; `app.js` still owns the `.permanent-delete-button` binding, pending delete state, permanent delete, permission checks, part data, document cleanup, render, auth/company/location state, and Supabase access.
+  - High-risk Part delete warning opener/cancel/confirm boundary moved `[data-delete-part]:not(.permanent-delete-button)`, `[data-delete-part].permanent-delete-button`, and `[data-cancel-delete-part]` to `src/utils/workspacePartDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete implementation, permission checks, part data, document cleanup, render, auth/company/location state, and Supabase access.
   - Medium-risk Work Order Message Team start-composer boundary moved `[data-start-work-message]` to `src/utils/workspaceWorkMessageStartEvents.js`; `app.js` still owns create thread, send reply, read-state writes, work-order/message data, render, auth/company/location state, and Supabase access.
   - Medium-low-risk Report Issue command-opener boundary moved `[data-command-action="report-issue"]` to `src/utils/workspaceReportIssueCommandEvents.js`; `app.js` still owns the other command actions, issue creation, issue status mutation, render, auth/company/location state, and Supabase access.
   - Medium-risk Submit Request command-opener boundary moved `[data-command-action="request"]` to `src/utils/workspaceSubmitRequestCommandEvents.js`; `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
@@ -86,14 +86,14 @@ Completed the Team invite confirm-cancel event boundary extraction.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceTeamInviteCancelEvents.js`, and `tests/smoke/workspace-team-invite-cancel-events-smoke.js`.
-  - targeted mock-DOM Team invite cancel event smoke passed for warning opener, keep/cancel reset, confirm-cancel callback, render, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspacePartDeleteCancelEvents.js`, and `tests/smoke/workspace-part-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Part delete event smoke passed for warning opener callback, permanent-button callback, cancel pending-state clear, render, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Team invite confirm script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new Part confirm-delete script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Team invite confirm-cancel smoke created disposable invite `lfes.invite.confirm.1779830518673@maintainops.test`, verified Cancel Invite opened Keep/Cancel Invite warning, clicked confirm, verified the disposable disappeared from Pending Invites, and verified a data-layer lookup returned `remainingVisible: 0`.
-  - hosted resource smoke passed for `e984132`.
+  - live Part confirm-delete smoke created disposable part `LFES disposable part delete confirm 1779830808353 hose`, verified Delete Part opened Cancel/Permanently Delete warning, clicked Permanently Delete, verified the disposable disappeared from Parts, and verified data-layer id `68c6da30-91e7-42f0-87ce-6ae472365893` returned `remaining: 0`.
+  - hosted resource smoke passed for `91a4dff`.
   - GitHub Actions Resource Load Smoke passed after the earlier unauthenticated API rate-limit gap cleared; verified runs included `96de48c` (`26474526945`) and the follow-up docs checkpoint `1f2b80f` (`26474583585`).
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
@@ -127,7 +127,7 @@ Completed the Team invite confirm-cancel event boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

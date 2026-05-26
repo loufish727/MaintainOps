@@ -5704,6 +5704,20 @@ Result:
 - Behavior changed: no observed behavior change.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## Part Confirm-Delete Events Boundary - 2026-05-26
+
+- Risk: High. The control confirms an irreversible inventory part delete, but the boundary only transfers event binding and calls the injected `requestDeletePart` callback.
+- Scope: moved `[data-delete-part].permanent-delete-button` into `src/utils/workspacePartDeleteCancelEvents.js`; pending delete state, permanent delete implementation, permission checks, part data, document cleanup, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM Part delete event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable part `LFES disposable part delete confirm 1779830808353 hose` was permanently deleted with data-layer verification for `68c6da30-91e7-42f0-87ce-6ae472365893` returning `remaining: 0`.
+- App deploy commit: `91a4dff` (`Extract workspace part delete confirm events`).
+- `app.js` line count after extraction: 8,055.
+- LFES catch: Part cards must be opened before detail-only delete controls are available; list cards expose the part but do not render `[data-delete-part]` buttons.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
 Hard boundary selected:
