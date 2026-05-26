@@ -5733,6 +5733,21 @@ Result:
 - Behavior changed: no observed behavior change after the binder/cache fix.
 - Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
 
+## PM Generation Events Boundary - 2026-05-26
+
+- Risk: High. The control enters PM-to-work-order workflow mutation, but the boundary only transfers event binding and calls the injected `generatePreventiveWorkOrder` callback.
+- Scope: moved `[data-generate-pm]` into `src/utils/workspacePmGenerationEvents.js`; generated work-order creation, schedule next-due update, PM schedule data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM PM generation event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable PM schedule `LFES disposable PM generation 1779831850436` generated work order `c62cc130-9c2e-49c2-9404-e8b25f44fb7e` while advancing next due from `2026-06-15` to `2026-07-15`.
+- Cleanup: PASS. The generated work order and PM schedule were removed through the manager/admin UI, and data-layer checks returned `remainingSchedules: 0` and `remainingWorkOrders: 0`.
+- App deploy commit: `d1cef34` (`Extract workspace PM generation events`).
+- `app.js` line count after extraction: 8,057.
+- LFES catch: direct REST cleanup can be silently blocked by RLS for generated PM artifacts; manager/admin UI cleanup plus data-layer proof is the stable cleanup path.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Continue only with another bounded local UI/read-only event seam unless a separate high-risk plan is written.
+
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
 Hard boundary selected:

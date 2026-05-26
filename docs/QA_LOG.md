@@ -37,6 +37,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Equipment delete-cancel boundary extracted and live verified with disposable unlinked equipment warning/cancel/cleanup smoke.
 - 2026-05-26: LFES Request delete-cancel boundary extracted and live verified with disposable request warning/cancel/cleanup smoke.
 - 2026-05-26: LFES PM schedule delete-cancel boundary extracted and live verified with disposable PM schedule warning/cancel/cleanup smoke.
+- 2026-05-26: LFES PM generation event boundary extracted and live verified with disposable PM generation plus data-layer cleanup proof.
 - 2026-05-26: LFES Procedure delete-cancel boundary extracted and live verified with disposable unlinked procedure warning/cancel/cleanup smoke.
 - 2026-05-26: LFES textarea auto-grow UI boundary extracted and live verified with Report Issue textarea resize smoke.
 - 2026-05-26: LFES Team invite cancel-warning UI boundary extracted and live verified with Cancel Invite -> Keep smoke.
@@ -59,6 +60,47 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - PM Generation Events - 2026-05-26
+
+Boundary selected:
+
+- PM Generate Work event binding for `[data-generate-pm]`.
+
+Operational risk:
+
+- High.
+- This enters a workflow mutation that creates a preventive work order and advances the PM schedule next-due date, but the boundary only transfers event binding and calls the injected `generatePreventiveWorkOrder` callback. Workflow mutation sequencing stays in `app.js`.
+
+Implementation scope:
+
+- Added `src/utils/workspacePmGenerationEvents.js`.
+- Added `tests/smoke/workspace-pm-generation-events-smoke.js`.
+- Moved `[data-generate-pm]` binding into the module.
+- Kept app-owned `generatePreventiveWorkOrder` as an injected callback.
+- Kept generated work-order creation, schedule next-due update, PM schedule data, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-pm-generation-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePmGenerationEvents.js`, `tests/smoke/workspace-pm-generation-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM PM generation event smoke: PASS for generation callback and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the PM generation script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable PM schedule `LFES disposable PM generation 1779831850436` generated work order `c62cc130-9c2e-49c2-9404-e8b25f44fb7e`, and schedule next due advanced from `2026-06-15` to `2026-07-15`.
+- Cleanup verification: PASS. The generated work order and PM schedule were removed through the manager/admin UI, and data-layer checks returned `remainingSchedules: 0` and `remainingWorkOrders: 0`.
+- GitHub Actions: pending follow-up verifier after the docs commit.
+
+LFES catch:
+
+- Direct REST cleanup can be silently blocked by RLS for generated PM artifacts; manager/admin UI cleanup plus data-layer proof is the stable cleanup path.
+
+Result:
+
+- App deploy commit: `d1cef34` (`Extract workspace PM generation events`).
+- `app.js` line count after extraction: 8,057.
+- Behavior changed: no observed behavior change.
 
 ## LFES Boundary - Request Conversion Events - 2026-05-26
 

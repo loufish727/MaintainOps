@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `e0d7d79` (`Bump request conversion event cache tag`) after `012466b` and `f69e96f`.
+- Latest app behavior commit: `d1cef34` (`Extract workspace PM generation events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-request-conversion-events-2`.
-- Current `app.js` line count: 8,056.
+- Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
+- Current `app.js` line count: 8,057.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -54,6 +54,7 @@ Recommended immediate next controlled phase:
 - Equipment delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
 - Request delete warning opener/cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
 - PM schedule delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete implementation, PM generation, schedule data, render, auth/company/location state, and Supabase access.
+- PM generation event binding is extracted into `src/utils/workspacePmGenerationEvents.js` and live verified. `app.js` still owns generated work-order creation, schedule next-due update, PM schedule data, render, auth/company/location state, and Supabase access.
 - Procedure delete warning opener/cancel/confirm event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete implementation, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
 - Textarea auto-grow UI binding is extracted into `src/utils/workspaceTextareaAutoGrow.js` and live verified. `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
 - Team invite cancel-warning/confirm UI binding is extracted into `src/utils/workspaceTeamInviteCancelEvents.js` and live verified. `app.js` still owns invite creation, the cancel RPC implementation, team invite data/reload, render, auth/company/location state, and Supabase access.
@@ -123,6 +124,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Team invite confirm-cancel smoke, manager/admin live disposable invite cancel-confirm smoke, and data-layer lookup proof passed for `e984132`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM Part confirm-delete smoke, manager/admin live disposable part permanent-delete smoke, and data-layer cleanup proof passed for `91a4dff`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM Request conversion smoke, manager/admin live disposable request conversion smoke, UI cleanup, and data-layer cleanup proof passed for `e0d7d79`; run GitHub Actions verifier after the follow-up docs commit lands.
+- Hosted resource checks, targeted mock-DOM PM generation smoke, manager/admin live disposable PM generation smoke, UI cleanup, and data-layer cleanup proof passed for `d1cef34`; run GitHub Actions verifier after the follow-up docs commit lands.
 - Hosted resource checks, targeted mock-DOM Quick Fix command smoke, and signed-in live Quick Fix open-form/no-submit smoke passed for the Quick Fix command boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM asset Quick Fix smoke, and signed-in live Equipment detail -> Quick Fix For This Equipment open-form/no-submit smoke passed for the asset Quick Fix boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 - Hosted resource checks, targeted mock-DOM public request link copy smoke, and signed-in live Settings copy-button feedback/reset smoke passed for the public request link copy boundary. GitHub Actions verification remains deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.

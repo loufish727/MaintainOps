@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Request conversion event boundary extraction.
+Completed the PM generation event boundary extraction.
 
 - Latest app behavior commit:
-  - `e0d7d79` (`Bump request conversion event cache tag`) after `012466b` and `f69e96f`
+  - `d1cef34` (`Extract workspace PM generation events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-request-conversion-events-2`
+  - `app.js?v=lfes-authority-pm-generation-events-1`
 - Current `app.js` line count:
-  - 8,056 lines.
+  - 8,057 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -76,6 +76,7 @@ Completed the Request conversion event boundary extraction.
   - High-risk Equipment delete event boundary moved `[data-delete-asset]`, `[data-cancel-delete-asset]`, and `[data-confirm-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
   - High-risk Request delete event boundary moved `[data-delete-request]`, `[data-cancel-delete-request]`, and `[data-confirm-delete-request]` to `src/utils/workspaceRequestDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete implementation, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
   - High-risk PM schedule delete event boundary moved `[data-delete-schedule]`, `[data-cancel-delete-schedule]`, and `[data-confirm-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete implementation, PM generation, schedule data, render, auth/company/location state, and Supabase access.
+  - High-risk PM generation event boundary moved `[data-generate-pm]` to `src/utils/workspacePmGenerationEvents.js`; `app.js` still owns generated work-order creation, schedule next-due update, PM schedule data, render, auth/company/location state, and Supabase access.
   - Medium/high-risk Procedure delete warning opener/cancel boundary moved `[data-delete-procedure]` and `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
   - Medium-low-risk textarea auto-grow UI boundary moved `autoGrowTextarea` and global textarea input binding to `src/utils/workspaceTextareaAutoGrow.js`; `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
   - High-risk Team invite cancel-warning/confirm UI boundary moved `[data-cancel-invite]`, `[data-cancel-invite-cancel]`, and `[data-confirm-cancel-invite]` to `src/utils/workspaceTeamInviteCancelEvents.js`; `app.js` still owns invite creation, the cancel RPC implementation, team invite data/reload, render, auth/company/location state, and Supabase access.
@@ -87,14 +88,14 @@ Completed the Request conversion event boundary extraction.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceRequestConversionEvents.js`, `tests/smoke/workspace-request-conversion-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM Request conversion event smoke passed for conversion callback and missing-callback no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspacePmGenerationEvents.js`, `tests/smoke/workspace-pm-generation-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM PM generation event smoke passed for generation callback and missing-callback no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Request conversion script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new PM generation script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Request conversion smoke created disposable request `LFES disposable request conversion 1779831207568`, clicked Convert to Work Order, verified the request became `converted` with work order `e9bd306d-4339-4fc5-a4d1-7300d378eee3`, cleaned up the created work order and converted request through the app, and verified data-layer `remainingRequests: 0` / `remainingWorkOrders: 0`.
-  - hosted resource smoke passed for `e0d7d79`.
+  - live PM generation smoke created disposable schedule `LFES disposable PM generation 1779831850436`, clicked Generate Work, verified schedule next due advanced from `2026-06-15` to `2026-07-15` and generated work order `c62cc130-9c2e-49c2-9404-e8b25f44fb7e`, cleaned up the generated work order and PM schedule through the app, and verified data-layer `remainingSchedules: 0` / `remainingWorkOrders: 0`.
+  - hosted resource smoke passed for `d1cef34`.
   - GitHub Actions Resource Load Smoke passed after the earlier unauthenticated API rate-limit gap cleared; verified runs included `96de48c` (`26474526945`) and the follow-up docs checkpoint `1f2b80f` (`26474583585`).
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
@@ -110,6 +111,7 @@ Completed the Request conversion event boundary extraction.
   - when the in-app browser virtual clipboard blocks `fill`/`type`, raw keypress entry can still exercise text fields; verify the typed value before submitting.
   - new event modules require both the `index.html` script tag and the top-level `app.js` destructuring alias. Missing the alias produced `Workspace Load Stopped`; the smallest stable fix was adding the alias and bumping the cache tag from request-conversion-events-1 to request-conversion-events-2.
   - GitHub Pages can serve a new module and old `index.html` briefly; verify the hosted index references the expected cache tag before retrying a failed live smoke.
+  - PM generation cleanup may be silently blocked by direct RLS deletes; use manager/admin UI cleanup for generated work orders and schedules, then verify data-layer removal.
   - `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Use the existing local Node static-server method for future local resource/browser smokes.
   - delete-warning live smokes can have more than one generic `Cancel` button visible. Use scoped data selectors such as `[data-cancel-delete-part]` for cancel-only verification and never click permanent delete in a cancel-boundary smoke.
   - Work Order detail accordions can place the target below the viewport; record visible summary/button rects, scroll as needed, and use coordinate clicks only after proving the intended control and avoiding submit/mutation actions.
@@ -130,7 +132,7 @@ Completed the Request conversion event boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, request conversion, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, request conversion, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm/generation, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
