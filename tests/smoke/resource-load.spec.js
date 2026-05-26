@@ -11,6 +11,7 @@ const requiredResources = [
   "src/utils/operationResults.js",
   "src/utils/operationTimeout.js",
   "src/utils/publicUrlQr.js",
+  "src/utils/publicQrPrintEvents.js",
   "src/utils/maintenanceScheduleDates.js",
   "src/utils/workOrderQueryFilters.js",
   "src/utils/workSectionJumpEvents.js",

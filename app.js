@@ -86,6 +86,7 @@ const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickF
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
+const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -1573,7 +1574,7 @@ async function renderPublicRequestQrPage(token) {
     </section>
   `;
 
-  document.querySelector("#print-public-qr").addEventListener("click", () => window.print());
+  bindPublicQrPrintEvents();
 }
 
 async function renderPublicRequestIntake(token) {
