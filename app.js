@@ -5117,14 +5117,11 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceProcedureDeleteCancelEvents({
     requestDeleteProcedureTemplate,
+    deleteProcedureTemplate,
     state: {
       setPendingDeleteProcedureId: (value) => { pendingDeleteProcedureId = value; },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-confirm-delete-procedure]").forEach((button) => {
-    button.addEventListener("click", async () => deleteProcedureTemplate(button.dataset.confirmDeleteProcedure));
   });
 
   document.querySelectorAll("[data-step-result]").forEach((field) => {

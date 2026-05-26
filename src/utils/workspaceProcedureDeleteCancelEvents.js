@@ -1,9 +1,11 @@
 (function () {
   /*
-   * LFES contract: owns procedure delete warning open/cancel event binding only.
-   * Requires app.js-owned delete-request callback, pending delete setter, render callback, and document.
-   * May request app-owned warning state, clear the warning, and render.
-   * Must not confirm delete, verify blockers, delete records, touch Supabase/RLS,
+   * LFES contract: owns procedure delete event binding only.
+   * Requires app.js-owned delete-request callback, confirm-delete callback,
+   * pending delete setter, render callback, and document.
+   * May request app-owned warning state, clear the warning, render, and call
+   * the app-owned permanent delete callback.
+   * Must not verify blockers, delete records directly, touch Supabase/RLS,
    * or own procedure/work-order/PM schedule data.
    */
   function bindWorkspaceProcedureDeleteCancelEvents(options = {}) {
@@ -26,6 +28,14 @@
         options.renderWorkspace();
       });
     });
+
+    if (typeof options.deleteProcedureTemplate === "function") {
+      doc.querySelectorAll("[data-confirm-delete-procedure]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          await options.deleteProcedureTemplate(button.dataset.confirmDeleteProcedure);
+        });
+      });
+    }
   }
 
   window.MaintainOpsWorkspaceProcedureDeleteCancelEvents = {
