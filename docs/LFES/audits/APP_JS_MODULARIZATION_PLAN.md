@@ -5472,6 +5472,51 @@ Verification:
 - Cleanup: PASS; manager/admin UI permanently deleted disposable request `dc7062dc-298f-4027-b9c3-b9518d98dd9d`, and data-layer verification returned `remaining: 0`.
 - GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
+## PM Schedule Delete-Request Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium/high.
+- The control is inside an irreversible PM schedule delete flow, but the selected boundary only opens the app-owned warning state and does not perform the permanent delete.
+
+Intended boundary:
+
+- Move `[data-delete-schedule]` warning-opener binding into `src/utils/workspaceScheduleDeleteCancelEvents.js`.
+- Keep `requestDeletePreventiveSchedule` as an app-owned injected callback.
+- Keep `[data-confirm-delete-schedule]`, permanent delete, PM generation, schedule data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- PM schedule card Delete warning opener and cancel behavior.
+- No permanent delete ownership, no PM generation ownership, no Supabase mutation ownership transfer.
+
+Rollback path:
+
+- Restore the original `[data-delete-schedule]` loop in `bindWorkspaceEvents()`.
+- Revert `src/utils/workspaceScheduleDeleteCancelEvents.js` to cancel-only ownership.
+- Revert cache tags to the previous known-good value.
+
+Implementation result:
+
+- Expanded `src/utils/workspaceScheduleDeleteCancelEvents.js`.
+- Expanded `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
+- Updated `index.html` and hosted cache tags to `lfes-authority-schedule-delete-request-events-1`.
+- App deploy commit: `57de17f` (`Extract workspace schedule delete request events`).
+- `app.js` line count after extraction: 8,072.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceScheduleDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceScheduleDeleteCancelEvents.js?v=lfes-authority-schedule-delete-request-events-1` and `app.js?v=lfes-authority-schedule-delete-request-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS.
+- Signed-in live smoke: PASS; disposable PM schedule `LFES disposable schedule delete request 1779827709348` opened Delete warning, Cancel restored Delete, and no permanent delete occurred during the boundary check.
+- Cleanup: PASS; manager/admin UI permanently deleted disposable schedule `7369cc0d-6462-4047-8f7e-8930009a7a32`, and data-layer verification returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
 Result:
 
 - Behavior changed: no observed behavior change.
