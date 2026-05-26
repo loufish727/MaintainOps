@@ -67,6 +67,7 @@ const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkV
 const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
 const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
+const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4643,26 +4644,25 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => supabaseClient.auth.signOut());
   });
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
-  document.querySelectorAll("[data-section]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      if (!visibleNavItems().some(([id]) => id === button.dataset.section)) return;
-      activeSection = button.dataset.section;
-      activeWorkOrderId = null;
-      activeAssetId = null;
-      activePartId = null;
-      showPartSourceManager = false;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      reportIssueMode = false;
-      quickFixAssetId = null;
-      quickFixRequestId = null;
-      if (activeSection !== "work") setWorkOrderSearchMode(false);
-      resetWorkOrderPage();
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-      await reloadWorkOrderQueue();
-      if (activeSection === "requests") await reloadRequestQueue();
-    });
+  bindWorkspaceSectionNavigationEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActivePartId: (value) => { activePartId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+      setShowPartSourceManager: (value) => { showPartSourceManager = value; },
+    },
+    reloadRequestQueue,
+    reloadWorkOrderQueue,
+    renderWorkspace,
+    resetWorkOrderPage,
+    setWorkOrderSearchMode,
+    visibleNavItems,
   });
   document.querySelectorAll("[data-command-action]").forEach((button) => {
     button.addEventListener("click", async () => {
