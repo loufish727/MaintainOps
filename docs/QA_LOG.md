@@ -47,7 +47,38 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
 - 2026-05-26: LFES asset-location warning event boundary extracted and live verified with signed-in request-form same-location warning smoke.
 - 2026-05-26: LFES Equipment delete-request warning opener boundary extracted and live verified with disposable equipment warning/cancel plus cleanup.
+- 2026-05-26: LFES Request delete-request warning opener boundary extracted and live verified with disposable request warning/cancel plus cleanup.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Request Delete-Request Events - 2026-05-26
+
+Boundary selected:
+
+- Request delete warning opener event binding for `[data-delete-request]`, added to the existing Request delete-cancel module.
+
+Operational risk:
+
+- Medium/high.
+- The path is inside an irreversible delete flow, but this boundary only calls the app-owned warning opener and stops at Cancel. It does not confirm delete, convert requests, open Quick Fix, delete requests, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceRequestDeleteCancelEvents.js`.
+- Moved `[data-delete-request]` warning-opener binding into the module.
+- Kept app-owned `requestDeleteMaintenanceRequest` as an injected callback.
+- Kept `[data-confirm-delete-request]`, permanent delete, request conversion, request-origin Quick Fix, request data, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-request-delete-request-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceRequestDeleteCancelEvents.js`, and `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Request delete warning/cancel smoke: PASS for delete-request callback, cancel pending-state clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Request delete-request script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable request `LFES disposable request delete request 1779827484622` was created, Delete rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete, then the disposable request was permanently deleted through the manager/admin UI.
+- Cleanup verification: PASS. Data-layer check for disposable request `dc7062dc-298f-4027-b9c3-b9518d98dd9d` returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
 ## LFES Boundary - Equipment Delete-Request Events - 2026-05-26
 

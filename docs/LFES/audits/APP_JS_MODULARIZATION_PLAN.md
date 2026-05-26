@@ -5427,6 +5427,51 @@ LFES catch:
 
 - Test-account direct REST cleanup for disposable equipment may be RLS-blocked even after a successful insert. Use manager/admin cleanup for delete-flow smokes unless delete permission is explicitly verified, and always confirm disposable removal at the data layer.
 
+## Request Delete-Request Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium/high.
+- The control is inside an irreversible request delete flow, but the selected boundary only opens the app-owned warning state and does not perform the permanent delete.
+
+Intended boundary:
+
+- Move `[data-delete-request]` warning-opener binding into `src/utils/workspaceRequestDeleteCancelEvents.js`.
+- Keep `requestDeleteMaintenanceRequest` as an app-owned injected callback.
+- Keep `[data-confirm-delete-request]`, permanent delete, request conversion, request-origin Quick Fix, request data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- Request card Delete warning opener and cancel behavior.
+- No permanent delete ownership, no conversion/Quick Fix ownership, no Supabase mutation ownership transfer.
+
+Rollback path:
+
+- Restore the original `[data-delete-request]` loop in `bindWorkspaceEvents()`.
+- Revert `src/utils/workspaceRequestDeleteCancelEvents.js` to cancel-only ownership.
+- Revert cache tags to the previous known-good value.
+
+Implementation result:
+
+- Expanded `src/utils/workspaceRequestDeleteCancelEvents.js`.
+- Expanded `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
+- Updated `index.html` and hosted cache tags to `lfes-authority-request-delete-request-events-1`.
+- App deploy commit: `7483792` (`Extract workspace request delete request events`).
+- `app.js` line count after extraction: 8,074.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceRequestDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/workspace-request-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-request-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceRequestDeleteCancelEvents.js?v=lfes-authority-request-delete-request-events-1` and `app.js?v=lfes-authority-request-delete-request-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS.
+- Signed-in live smoke: PASS; disposable request `LFES disposable request delete request 1779827484622` opened Delete warning, Cancel restored Delete, and no permanent delete occurred during the boundary check.
+- Cleanup: PASS; manager/admin UI permanently deleted disposable request `dc7062dc-298f-4027-b9c3-b9518d98dd9d`, and data-layer verification returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
 Result:
 
 - Behavior changed: no observed behavior change.
