@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed medium-risk authority reduction for workspace search/exact work-search events.
+Completed first high-risk mutation-adjacent event extraction from `bindWorkspaceEvents()`: quick work-order status events.
 
 - Latest app behavior commit:
-  - `61f6387` (`Extract workspace search events`)
+  - `5828262` (`Extract workspace work order status events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-workspace-search-events-1`
+  - `app.js?v=lfes-authority-work-status-events-1`
 - Current `app.js` line count:
-  - 9,093 lines.
+  - 8,965 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -53,19 +53,23 @@ Completed medium-risk authority reduction for workspace search/exact work-search
   - Hard-boundary run moved global search result navigation events to `src/utils/globalSearchNavigationEvents.js`.
   - Measurable reduction run moved request query filters to `src/utils/requestQueryFilters.js`, exact/related work-order search helpers to `src/utils/workOrderSearch.js`, and global/planning/follow-up list builders to `src/utils/workspaceListBuilders.js`.
   - Medium-risk authority run moved workspace search/exact work-search open/close event binding to `src/utils/workspaceSearchEvents.js`.
+  - Event-boundary runs moved workspace filter/pagination, detail navigation, and inventory/equipment filter bindings to `src/utils/workspaceFilterPaginationEvents.js`, `src/utils/workspaceDetailNavigationEvents.js`, and `src/utils/workspaceInventoryFilterEvents.js`.
+  - High-risk work-order mutation-adjacent run moved only quick status button binding to `src/utils/workspaceWorkOrderStatusEvents.js`; `app.js` still owns `setWorkOrderStatus`, Supabase mutation sequencing, status guards, record events, render, assignment, delete, and downtime flows.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceSearchEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed for search input, exact work-search entry, exact work-search close, storage writes, read reload calls, page resets, cache invalidation, and focus restoration.
-  - local resource smoke passed against `http://127.0.0.1:4187/`.
-  - local browser boot smoke passed with the new workspace search event script and cache tag present.
+  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderStatusEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed for quick status success, false return, thrown error, stopPropagation, disabled/Saving state, restoration, and warning notice behavior.
+  - local resource smoke passed against `http://127.0.0.1:4177/`.
+  - local browser boot smoke passed with the new workspace work-order status event script and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live smoke passed on `https://loufish727.github.io/MaintainOps/?qa_bust=live-workspace-search-events-61f6387`.
-  - live `index.html` referenced `src/utils/workspaceSearchEvents.js?v=lfes-authority-workspace-search-events-1` and `app.js?v=lfes-authority-workspace-search-events-1`.
-  - live search for `Hydralic` showed global search preview with `Hydralic Leak`, entered exact work-search mode, showed `Matching Work Orders`, then returned to search preview via Back.
-  - GitHub connector returned no workflow runs for `61f6387`; GitHub Actions resource smoke is NOT AVAILABLE, not PASS.
-  - fresh live console sample had only the existing missing-resource 404 pattern; no app runtime error or page error was observed.
+  - signed-in live smoke passed with the dedicated QA/test account on `https://loufish727.github.io/MaintainOps/`.
+  - live quick-status smoke changed `Hydralic Leak` from `in_progress` to `open`, observed the expected Work Order Detail render with status `open`, restored it to `in_progress`, and observed status `in_progress` again.
+  - live `index.html` referenced `src/utils/workspaceWorkOrderStatusEvents.js?v=lfes-authority-work-status-events-1` and `app.js?v=lfes-authority-work-status-events-1`.
+  - GitHub Actions verifier passed for `5828262`: `https://github.com/loufish727/MaintainOps/actions/runs/26454460812`.
+  - fresh live console sample had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
+- LFES catch:
+  - the first live smoke expectation was wrong. Quick status mutations intentionally set the active work order and re-render into Work Order Detail, so future work-order quick-status smoke must assert the detail status after mutation rather than expecting the list card to remain visible.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -74,11 +78,12 @@ Completed medium-risk authority reduction for workspace search/exact work-search
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - workspace search/exact work-search event boundary is implemented and live verified.
-  - choose the next boundary from the authority map; do not combine with mutation/form/delete/storage/auth flows.
+  - quick work-order status event binding is implemented and live verified.
+  - continue high-risk work-order decomposition only one subcluster at a time.
+  - assignment, delete, downtime, detail status dropdown, and completion flows remain separate targets.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
-Still do not move workflow logic, mutations, auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, delete actions, delete confirmations, public QR flows, PM generation, forms with mutations, assignment controls, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Event-binding extraction is allowed only when explicitly selected as a hard boundary with visible smoke coverage and direct rollback.
+Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, assignment controls, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.
 
 ## Prior Recent Change
 

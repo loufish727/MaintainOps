@@ -4,6 +4,18 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-26 - Quick Status Smoke Expected The Wrong Post-Mutation Surface
+
+- Date: 2026-05-26.
+- Phase/build: high-risk quick work-order status event-boundary extraction.
+- Issue discovered: the first signed-in live smoke treated the status list card as the expected post-click surface after a quick-status mutation. The app actually sets `activeWorkOrderId` and re-renders Work Order Detail after a successful status change.
+- How it was discovered: the smoke changed `Hydralic Leak` from `in_progress` to `open`, then failed while waiting for the list card to reflect the new status. Live diagnosis showed the mutation had succeeded and the app had moved to Work Order Detail with status `open`.
+- Operational risk: a false failed smoke could trigger an unnecessary rollback or hide the real post-mutation contract. For mutation-adjacent refactors, the smoke itself can become stale if it does not model the workflow's intended navigation.
+- What LFES principle exposed it: observable behavior over assumptions, targeted live smoke, and verification-scope clarity.
+- What prevented escalation: LFES stopped the phase after the smoke failure, diagnosed before further extraction, confirmed no app regression, restored the work order to `in_progress`, and reran a corrected mutation/restore smoke.
+- Fix applied or recommended: future quick-status smokes must assert Work Order Detail status after mutation and restore using the detail quick-status control. Do not require the original list card to remain visible after this workflow.
+- Lessons learned: high-risk event extraction can preserve code behavior while exposing stale test assumptions. Mutation smokes must verify the actual user journey, not only the selector surface that starts the mutation.
+
 ## 2026-05-21 - Documentation Source-of-Truth Drift Before High-Risk Work
 
 - Date: 2026-05-21.

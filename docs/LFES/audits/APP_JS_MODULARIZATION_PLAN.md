@@ -4081,3 +4081,50 @@ Next best candidates:
 - Workspace UI state factory as the first explicit state-boundary phase, if the next goal is authority reduction rather than more surface extraction. See `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`. The part inventory and asset status filter events are now extracted in `2b4ad8e`, so the planned factory no longer needs to own those states while their handlers remain in `app.js`.
 - Team member work-view bridge as a medium-risk UI-state boundary.
 - Message read-only navigation only after mapping thread/read-state effects; send/reply forms stay blocked.
+
+## High-Risk Work-Order Status Event Boundary - 2026-05-26
+
+Selected boundary:
+
+- `bindWorkspaceEvents()` quick status button binding only:
+  - `[data-quick-status]`
+
+Why this is hard:
+
+- The button binding triggers a real work-order status mutation through injected `setWorkOrderStatus`.
+- `setWorkOrderStatus` remains in `app.js` and still owns workflow guards, Supabase update sequencing, work-order event recording, notices, active work-order state, and render.
+
+Why this is recoverable:
+
+- The extraction moved only event binding, not mutation logic or selectors.
+- Assignment, delete, downtime, completion, and detail status dropdown flows were left untouched.
+- Rollback is one app commit or a small manual restoration of the original listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderStatusEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderStatusEvents.js?v=lfes-authority-work-status-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-status-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `5828262` (`Extract workspace work order status events`).
+- `app.js` line count moved from 8,985 to 8,965.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderStatusEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Mock-DOM event smoke: PASS for success, false return, thrown error, stopPropagation, disabled/Saving state, restoration, and warning notice.
+- Local resource smoke: PASS.
+- Local boot smoke: PASS.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `5828262`, run `https://github.com/loufish727/MaintainOps/actions/runs/26454460812`.
+- Signed-in live mutation/restore smoke: PASS. The QA account changed `Hydralic Leak` from `in_progress` to `open`, observed Work Order Detail status `open`, restored it to `in_progress`, and observed Work Order Detail status `in_progress`.
+
+LFES catch:
+
+- The initial live smoke failed because it expected the list card to stay visible after a successful quick-status mutation. The app intentionally sets `activeWorkOrderId` and renders Work Order Detail after status changes. Future quick-status smokes must assert the detail status and restore from detail.
+
+Next candidates:
+
+- Continue work-order hard-boundary decomposition only one subcluster at a time.
+- Good candidates to map next: assignment group or downtime-copy group.
+- Keep delete, completion, Quick Fix, request conversion, storage/photo/document, auth/session/company/location startup, Supabase SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` blocked until separately planned.

@@ -15,7 +15,55 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES measurable app.js reduction run moved read-only query/search/list helpers and met the 300-line target.
 - 2026-05-21: LFES authority map created for `renderWorkspace()` and `bindWorkspaceEvents()`; next recommended boundary is workspace search/exact work-search read-only events.
 - 2026-05-21: LFES medium-risk workspace search/exact work-search event boundary extracted and live verified.
+- 2026-05-26: LFES high-risk quick work-order status event boundary extracted and live verified; first live smoke caught a bad test assumption and the corrected mutation/restore smoke passed.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES High-Risk Boundary - Quick Work-Order Status Events - 2026-05-26
+
+Boundary selected:
+
+- Quick work-order status buttons from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- High.
+- The moved binding triggers `setWorkOrderStatus`, which performs status guards, Supabase mutation through `updateWorkOrderSafely`, work-order event recording, notice display, active work-order state update, and render.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderStatusEvents.js`.
+- Moved only `[data-quick-status]` click binding.
+- Injected `setWorkOrderStatus` and `showNotice`.
+- Left status mutation logic, assignment, delete, downtime copy, detail status dropdown, completion flow, Supabase/RLS, auth/startup, and state ownership in `app.js`.
+- Added `src/utils/workspaceWorkOrderStatusEvents.js?v=lfes-authority-work-status-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-status-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `5828262`, or remove `src/utils/workspaceWorkOrderStatusEvents.js`, restore the original `[data-quick-status]` listener block in `bindWorkspaceEvents()`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderStatusEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS.
+- Targeted mock-DOM event smoke: PASS for success, false return, thrown error, stopPropagation, disabled/Saving state, restoration, and warning notice.
+- Local resource smoke: PASS against `http://127.0.0.1:4177/`.
+- Local browser boot smoke: PASS.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `5828262`, run `https://github.com/loufish727/MaintainOps/actions/runs/26454460812`.
+- Signed-in live smoke with QA/test account: PASS after correcting the smoke expectation.
+- Live mutation/restore path changed `Hydralic Leak` from `in_progress` to `open`, observed Work Order Detail status `open`, restored to `in_progress`, and observed Work Order Detail status `in_progress`.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The first live smoke failed because it expected the list card to remain visible after a quick-status mutation. Actual app behavior intentionally sets `activeWorkOrderId` and renders Work Order Detail after status change. Future quick-status smoke should assert the detail status after mutation, then restore through the detail quick-status control.
 
 ## LFES Medium-Risk Authority Boundary - Workspace Search Events - 2026-05-21
 
