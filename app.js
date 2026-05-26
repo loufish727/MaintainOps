@@ -83,6 +83,7 @@ const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspace
 const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
 const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
+const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4870,18 +4871,17 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
   });
 
-  document.querySelectorAll("[data-quick-fix-asset]").forEach((button) => {
-    button.addEventListener("click", () => {
-      quickFixAssetId = button.dataset.quickFixAsset;
-      quickFixRequestId = null;
-      activeAssetId = null;
-      activeWorkOrderId = null;
-      createWorkOrderMode = false;
-      quickFixMode = true;
-      activeSection = "mywork";
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      renderWorkspace();
-    });
+  bindWorkspaceAssetQuickFixEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+    },
+    renderWorkspace,
   });
 
   bindWorkspaceWorkOrderStatusEvents({
