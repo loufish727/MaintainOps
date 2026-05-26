@@ -30,7 +30,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, added the first workspace UI state factory scaffold, then wired the Parts/Equipment filter-search state slice to the factory.
+Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, added the first workspace UI state factory scaffold, wired the Parts/Equipment filter-search state slice, then wired workspace filter/pagination state to the factory.
 
 - Latest app behavior commit:
   - `1794209` (`Add workspace UI state factory scaffold`)
@@ -39,7 +39,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
 - Latest live cache tag:
   - `app.js?v=lfes-authority-work-order-edit-events-1`
 - Current `app.js` line count:
-  - 8,060 lines.
+  - 8,055 lines.
 - Current security checkpoint:
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
   - App-used data tables have RLS/policy coverage in source.
@@ -51,7 +51,9 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - Added `tests/smoke/workspace-ui-state-smoke.js`.
   - `index.html` now loads `src/utils/workspaceUiState.js?v=lfes-state-workspace-ui-state-1` before workspace event modules.
   - Parts/Equipment UI state now reads/writes `partsPage`, `assetsPage`, `partSearchQuery`, `partInventoryFilter`, and `assetStatusFilter` through `workspaceUiState`.
+  - Workspace filter/pagination state now reads/writes `activeStatusFilter`, `myWorkFilter`, `workOrderFilter`, `workOrderAssigneeFilter`, `workSort`, `workOrderPage`, `requestViewFilter`, `requestsPage`, `schedulesPage`, `proceduresPage`, and `membersPage` through `workspaceUiState`.
   - Added `tests/smoke/workspace-inventory-filter-state-smoke.js`.
+  - Added `tests/smoke/workspace-filter-pagination-state-smoke.js`.
   - `app.js` still owns unrelated legacy UI state variables until follow-up wiring phases move selected event modules to the factory.
   - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
 - Latest deployment:
@@ -120,7 +122,8 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - no observed behavior change.
 - LFES state-boundary catch:
   - first factory pass intentionally stopped at contract/scaffold plus smoke instead of broad variable replacement.
-  - first wiring pass moved only Parts/Equipment filter-search state into the factory; the safe next step is another small extracted UI group, not broad variable replacement.
+  - first wiring pass moved only Parts/Equipment filter-search state into the factory.
+  - second wiring pass moved workspace filter/pagination state into the factory. The safe next step is another small extracted UI group, not broad variable replacement.
 - LFES RLS audit catch:
   - the source tree broadly matches the established RLS posture, but repository SQL is not sufficient to reconstruct two app-used RPC dependencies: `cancel_company_invite` and `record_work_order_part_usage`.
   - do not start auth/session, public QR submit, storage/photo/document, team invite cancel, or parts-used mutation extraction until this gap is resolved or explicitly accepted.

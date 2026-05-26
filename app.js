@@ -199,22 +199,22 @@ const {
   activeCompanyId: () => activeCompanyId,
   activeLocationId: () => activeLocationId,
   activeSection: () => activeSection,
-  activeStatusFilter: () => activeStatusFilter,
+  activeStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
   daysAgoDate,
   isoDate,
   isoDateTime,
   locationsReady: () => locationsReady,
   monthStartDate,
-  myWorkFilter: () => myWorkFilter,
+  myWorkFilter: () => workspaceUiState.getMyWorkFilter(),
   OUTSIDE_VENDOR_NOTE,
   postgrestSearchTerm,
   searchQuery: () => searchQuery,
   session: () => session,
   startOfToday,
-  workOrderAssigneeFilter: () => workOrderAssigneeFilter,
-  workOrderFilter: () => workOrderFilter,
+  workOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
+  workOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
   workOrderRelatedSearch: () => workOrderRelatedSearch,
-  workSort: () => workSort,
+  workSort: () => workspaceUiState.getWorkSort(),
 });
 const {
   formatMessageTime,
@@ -309,17 +309,6 @@ const {
   getPublicAppUrlOverride: () => publicAppUrlOverride,
 });
 const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
-let activeStatusFilter = "active";
-let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
-let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
-let workOrderAssigneeFilter = localStorage.getItem("maintainops.workOrderAssigneeFilter") || "";
-let workSort = localStorage.getItem("maintainops.workSort") || "newest";
-let workOrderPage = Number(localStorage.getItem("maintainops.workOrderPage")) || 1;
-let requestsPage = Number(localStorage.getItem("maintainops.requestsPage")) || 1;
-let requestViewFilter = localStorage.getItem("maintainops.requestViewFilter") || "active";
-let schedulesPage = Number(localStorage.getItem("maintainops.schedulesPage")) || 1;
-let proceduresPage = Number(localStorage.getItem("maintainops.proceduresPage")) || 1;
-let membersPage = Number(localStorage.getItem("maintainops.membersPage")) || 1;
 let activeSection = localStorage.getItem("maintainops.activeSection") || "mywork";
 if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "work") {
   activeSection = "mywork";
@@ -347,8 +336,8 @@ const {
   prioritySortValue,
   completedSortValue,
 } = createWorkOrderSortDisplayHelpers({
-  getActiveStatusFilter: () => activeStatusFilter,
-  getWorkSort: () => workSort,
+  getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
+  getWorkSort: () => workspaceUiState.getWorkSort(),
 });
 const {
   recordLocationId,
@@ -366,7 +355,7 @@ const { applyRequestQueryFilters } = createRequestQueryFilterHelpers({
   matchesQuery,
   parentAssetFor: () => parentAssetFor,
   postgrestSearchTerm,
-  requestViewFilter: () => requestViewFilter,
+  requestViewFilter: () => workspaceUiState.getRequestViewFilter(),
   SEARCH_ID_PAGE_SIZE,
   searchQuery: () => searchQuery,
 });
@@ -421,18 +410,17 @@ const {
   SEARCH_ID_CHUNK_SIZE,
   setExactWorkOrderSearchCache: (value) => { exactWorkOrderSearchCache = value; },
   setWorkOrderPage: (value) => {
-    workOrderPage = value;
-    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+    workspaceUiState.setWorkOrderPage(value);
   },
   setWorkOrderRelatedSearch: (value) => { workOrderRelatedSearch = value; },
   supabaseClient: () => supabaseClient,
   warn: console.warn,
-  workOrderPage: () => workOrderPage,
+  workOrderPage: () => workspaceUiState.getWorkOrderPage(),
   WORK_ORDER_FALLBACK_SELECT: () => WORK_ORDER_FALLBACK_SELECT,
   WORK_ORDER_RELATION_SELECT: () => WORK_ORDER_RELATION_SELECT,
   WORK_ORDERS_PER_PAGE,
   workOrderSearchMode: () => workOrderSearchMode,
-  workSort: () => workSort,
+  workSort: () => workspaceUiState.getWorkSort(),
 });
 const {
   globalSearchResults,
@@ -512,7 +500,7 @@ const {
 } = createRequestQueueDisplayHelpers({
   getMaintenanceRequests: () => maintenanceRequests,
   getProfilesByUserId: () => profilesByUserId,
-  getRequestViewFilter: () => requestViewFilter,
+  getRequestViewFilter: () => workspaceUiState.getRequestViewFilter(),
   getRequestDashboardCounts: () => requestDashboardCounts,
   matchesActiveLocation,
   matchesSearch,
@@ -562,7 +550,7 @@ const {
 } = relationshipDisplayHelpers;
 const dashboardDisplayHelpers = createDashboardDisplayHelpers({
   escapeHtml,
-  getActiveStatusFilter: () => activeStatusFilter,
+  getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
   getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
   getWorkOrders: () => workOrders,
   getPreventiveSchedules: () => preventiveSchedules,
@@ -618,10 +606,10 @@ const {
 } = createWorkQueueDisplayHelpers({
   statusLabel,
   teamMemberName,
-  getWorkOrderAssigneeFilter: () => workOrderAssigneeFilter,
-  getWorkOrderFilter: () => workOrderFilter,
-  getActiveStatusFilter: () => activeStatusFilter,
-  getMyWorkFilter: () => myWorkFilter,
+  getWorkOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
+  getWorkOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
+  getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
+  getMyWorkFilter: () => workspaceUiState.getMyWorkFilter(),
   getActiveSection: () => activeSection,
 });
 const {
@@ -652,7 +640,7 @@ const {
   PARTS_PER_PAGE,
   ASSETS_PER_PAGE,
   LIST_ITEMS_PER_PAGE,
-  getWorkOrderPage: () => workOrderPage,
+  getWorkOrderPage: () => workspaceUiState.getWorkOrderPage(),
   getPartsPage: () => workspaceUiState.getPartsPage(),
   getAssetsPage: () => workspaceUiState.getAssetsPage(),
 });
@@ -873,7 +861,7 @@ const {
 const {
   workOrderMatchesStatusFilter,
 } = createWorkOrderStatusFilterDisplayHelpers({
-  getActiveStatusFilter: () => activeStatusFilter,
+  getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
   getDueState,
   isCompletedThisMonth,
   isCompletedThisWeek,
@@ -896,7 +884,7 @@ const {
 } = createMyWorkQueueDisplayHelpers({
   getWorkOrders: () => workOrders,
   getCurrentUser: () => session?.user,
-  getMyWorkFilter: () => myWorkFilter,
+  getMyWorkFilter: () => workspaceUiState.getMyWorkFilter(),
   matchesActiveLocation,
   matchesSearch,
   workOrderSearchValues,
@@ -1969,7 +1957,7 @@ const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name)";
 const REQUEST_FALLBACK_SELECT = "*";
 
 async function loadServerRequestSlice() {
-  const activeFilter = requestViewFilter || "active";
+  const activeFilter = workspaceUiState.getRequestViewFilter() || "active";
   const [pageResponse, counts] = await Promise.all([
     fetchRequestPage(activeFilter),
     loadRequestDashboardCounts(),
@@ -1982,8 +1970,8 @@ async function loadServerRequestSlice() {
   return pageResponse;
 }
 
-async function fetchRequestPage(filter = requestViewFilter, options = {}) {
-  const page = Math.max(1, requestsPage);
+async function fetchRequestPage(filter = workspaceUiState.getRequestViewFilter(), options = {}) {
+  const page = Math.max(1, workspaceUiState.getRequestsPage());
   const from = (page - 1) * LIST_ITEMS_PER_PAGE;
   const to = from + LIST_ITEMS_PER_PAGE - 1;
   const selectClause = options.includeRelations === false
@@ -2008,8 +1996,7 @@ async function fetchRequestPage(filter = requestViewFilter, options = {}) {
     return fetchRequestPage(filter, { includeRelations: false });
   }
   if (!response.error && response.count && page > 1 && from >= response.count) {
-    requestsPage = Math.max(1, Math.ceil(response.count / LIST_ITEMS_PER_PAGE));
-    localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+    workspaceUiState.setRequestsPage(Math.max(1, Math.ceil(response.count / LIST_ITEMS_PER_PAGE)));
     return fetchRequestPage(filter, options);
   }
   return response;
@@ -2043,7 +2030,7 @@ async function fetchWorkOrderPage(options = {}) {
     return fetchExactSearchedWorkOrderPage(options);
   }
 
-  const page = Math.max(1, workOrderPage);
+  const page = Math.max(1, workspaceUiState.getWorkOrderPage());
   const from = (page - 1) * WORK_ORDERS_PER_PAGE;
   const to = from + WORK_ORDERS_PER_PAGE - 1;
   const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
@@ -2053,8 +2040,7 @@ async function fetchWorkOrderPage(options = {}) {
     .range(from, to);
 
   if (!response.error && response.count && page > 1 && from >= response.count) {
-    workOrderPage = Math.max(1, Math.ceil(response.count / WORK_ORDERS_PER_PAGE));
-    localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+    workspaceUiState.setWorkOrderPage(Math.max(1, Math.ceil(response.count / WORK_ORDERS_PER_PAGE)));
     return fetchWorkOrderPage(options);
   }
 
@@ -2510,9 +2496,15 @@ function renderWorkspace() {
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed_month", "completed_week"];
-  if (activeSection === "mywork" && !myWorkGaugeFilters.includes(activeStatusFilter)) {
-    activeStatusFilter = "active";
+  if (activeSection === "mywork" && !myWorkGaugeFilters.includes(workspaceUiState.getActiveStatusFilter())) {
+    workspaceUiState.setActiveStatusFilter("active");
   }
+  const activeStatusFilter = workspaceUiState.getActiveStatusFilter();
+  const myWorkFilter = workspaceUiState.getMyWorkFilter();
+  const workOrderFilter = workspaceUiState.getWorkOrderFilter();
+  const workOrderAssigneeFilter = workspaceUiState.getWorkOrderAssigneeFilter();
+  const workSort = workspaceUiState.getWorkSort();
+  const requestViewFilter = workspaceUiState.getRequestViewFilter();
   const isViewingWorkOrderSearch = activeSection === "work" && workOrderSearchMode && Boolean(searchQuery.trim());
   const profile = profilesByUserId[session.user.id] || {};
   const canSwitchLocation = canSwitchLocations();
@@ -2530,8 +2522,8 @@ function renderWorkspace() {
   const visibleWorkOrders = workOrders;
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
-  if (workOrderPage > totalWorkOrderPages) workOrderPage = totalWorkOrderPages;
-  if (workOrderPage < 1) workOrderPage = 1;
+  if (workspaceUiState.getWorkOrderPage() > totalWorkOrderPages) workspaceUiState.setWorkOrderPage(totalWorkOrderPages);
+  if (workspaceUiState.getWorkOrderPage() < 1) workspaceUiState.setWorkOrderPage(1);
   const pagedWorkOrders = visibleWorkOrders;
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
@@ -2554,20 +2546,24 @@ function renderWorkspace() {
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
   const visibleMembers = filteredMembers();
   const totalRequestPages = Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE));
-  if (requestsPage > totalRequestPages) requestsPage = totalRequestPages;
-  if (requestsPage < 1) requestsPage = 1;
+  if (workspaceUiState.getRequestsPage() > totalRequestPages) workspaceUiState.setRequestsPage(totalRequestPages);
+  if (workspaceUiState.getRequestsPage() < 1) workspaceUiState.setRequestsPage(1);
+  const requestsPage = workspaceUiState.getRequestsPage();
   const pagedRequests = visibleRequests;
   const totalSchedulePages = Math.max(1, Math.ceil(visibleSchedules.length / LIST_ITEMS_PER_PAGE));
-  if (schedulesPage > totalSchedulePages) schedulesPage = totalSchedulePages;
-  if (schedulesPage < 1) schedulesPage = 1;
+  if (workspaceUiState.getSchedulesPage() > totalSchedulePages) workspaceUiState.setSchedulesPage(totalSchedulePages);
+  if (workspaceUiState.getSchedulesPage() < 1) workspaceUiState.setSchedulesPage(1);
+  const schedulesPage = workspaceUiState.getSchedulesPage();
   const pagedSchedules = visibleSchedules.slice((schedulesPage - 1) * LIST_ITEMS_PER_PAGE, schedulesPage * LIST_ITEMS_PER_PAGE);
   const totalProcedurePages = Math.max(1, Math.ceil(visibleProcedures.length / LIST_ITEMS_PER_PAGE));
-  if (proceduresPage > totalProcedurePages) proceduresPage = totalProcedurePages;
-  if (proceduresPage < 1) proceduresPage = 1;
+  if (workspaceUiState.getProceduresPage() > totalProcedurePages) workspaceUiState.setProceduresPage(totalProcedurePages);
+  if (workspaceUiState.getProceduresPage() < 1) workspaceUiState.setProceduresPage(1);
+  const proceduresPage = workspaceUiState.getProceduresPage();
   const pagedProcedures = visibleProcedures.slice((proceduresPage - 1) * LIST_ITEMS_PER_PAGE, proceduresPage * LIST_ITEMS_PER_PAGE);
   const totalMemberPages = Math.max(1, Math.ceil(visibleMembers.length / LIST_ITEMS_PER_PAGE));
-  if (membersPage > totalMemberPages) membersPage = totalMemberPages;
-  if (membersPage < 1) membersPage = 1;
+  if (workspaceUiState.getMembersPage() > totalMemberPages) workspaceUiState.setMembersPage(totalMemberPages);
+  if (workspaceUiState.getMembersPage() < 1) workspaceUiState.setMembersPage(1);
+  const membersPage = workspaceUiState.getMembersPage();
   const pagedMembers = visibleMembers.slice((membersPage - 1) * LIST_ITEMS_PER_PAGE, membersPage * LIST_ITEMS_PER_PAGE);
   const renderCommandStack = (variant = "desktop") => {
     const isMobile = variant === "mobile";
@@ -2990,6 +2986,9 @@ function filteredWorkOrders() {
   return workOrders.filter((workOrder) => {
     if (!matchesActiveLocation(workOrder)) return false;
     const statusMatch = workOrderMatchesStatusFilter(workOrder);
+    const myWorkFilter = workspaceUiState.getMyWorkFilter();
+    const workOrderAssigneeFilter = workspaceUiState.getWorkOrderAssigneeFilter();
+    const workOrderFilter = workspaceUiState.getWorkOrderFilter();
     const queueMatch = activeSection === "mywork"
       ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
       : workOrderAssigneeFilter
@@ -3003,8 +3002,7 @@ function filteredWorkOrders() {
 }
 
 function resetWorkOrderPage() {
-  workOrderPage = 1;
-  localStorage.setItem("maintainops.workOrderPage", String(workOrderPage));
+  workspaceUiState.resetWorkOrderPage();
 }
 
 function setWorkOrderSearchMode(enabled) {
@@ -3025,8 +3023,7 @@ function resetPartsPage() {
 }
 
 function resetRequestsPage() {
-  requestsPage = 1;
-  localStorage.setItem("maintainops.requestsPage", String(requestsPage));
+  workspaceUiState.resetRequestsPage();
 }
 
 function clearPartSearchState() {
@@ -4935,32 +4932,32 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceFilterPaginationEvents({
     state: {
-      getActiveStatusFilter: () => activeStatusFilter,
+      getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
       setActiveStatusFilter: (value) => {
-        activeStatusFilter = value;
+        workspaceUiState.setActiveStatusFilter(value);
       },
-      getMyWorkFilter: () => myWorkFilter,
+      getMyWorkFilter: () => workspaceUiState.getMyWorkFilter(),
       setMyWorkFilter: (value) => {
-        myWorkFilter = value;
+        workspaceUiState.setMyWorkFilter(value);
       },
-      getWorkOrderFilter: () => workOrderFilter,
+      getWorkOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
       setWorkOrderFilter: (value) => {
-        workOrderFilter = value;
+        workspaceUiState.setWorkOrderFilter(value);
       },
       setWorkOrderAssigneeFilter: (value) => {
-        workOrderAssigneeFilter = value;
+        workspaceUiState.setWorkOrderAssigneeFilter(value);
       },
-      getWorkSort: () => workSort,
+      getWorkSort: () => workspaceUiState.getWorkSort(),
       setWorkSort: (value) => {
-        workSort = value;
+        workspaceUiState.setWorkSort(value);
       },
-      getRequestViewFilter: () => requestViewFilter,
+      getRequestViewFilter: () => workspaceUiState.getRequestViewFilter(),
       setRequestViewFilter: (value) => {
-        requestViewFilter = value;
+        workspaceUiState.setRequestViewFilter(value);
       },
-      getWorkOrderPage: () => workOrderPage,
+      getWorkOrderPage: () => workspaceUiState.getWorkOrderPage(),
       setWorkOrderPage: (value) => {
-        workOrderPage = value;
+        workspaceUiState.setWorkOrderPage(value);
       },
       getPartsPage: () => workspaceUiState.getPartsPage(),
       setPartsPage: (value) => {
@@ -4970,21 +4967,21 @@ function bindWorkspaceEvents() {
       setAssetsPage: (value) => {
         workspaceUiState.setAssetsPage(value);
       },
-      getRequestsPage: () => requestsPage,
+      getRequestsPage: () => workspaceUiState.getRequestsPage(),
       setRequestsPage: (value) => {
-        requestsPage = value;
+        workspaceUiState.setRequestsPage(value);
       },
-      getSchedulesPage: () => schedulesPage,
+      getSchedulesPage: () => workspaceUiState.getSchedulesPage(),
       setSchedulesPage: (value) => {
-        schedulesPage = value;
+        workspaceUiState.setSchedulesPage(value);
       },
-      getProceduresPage: () => proceduresPage,
+      getProceduresPage: () => workspaceUiState.getProceduresPage(),
       setProceduresPage: (value) => {
-        proceduresPage = value;
+        workspaceUiState.setProceduresPage(value);
       },
-      getMembersPage: () => membersPage,
+      getMembersPage: () => workspaceUiState.getMembersPage(),
       setMembersPage: (value) => {
-        membersPage = value;
+        workspaceUiState.setMembersPage(value);
       },
     },
     invalidateExactWorkOrderSearchCache,
@@ -5144,11 +5141,11 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: (value) => { activeAssetId = value; },
       setActiveSection: (value) => { activeSection = value; },
-      setActiveStatusFilter: (value) => { activeStatusFilter = value; },
+      setActiveStatusFilter: (value) => { workspaceUiState.setActiveStatusFilter(value); },
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
-      setWorkOrderAssigneeFilter: (value) => { workOrderAssigneeFilter = value; },
+      setWorkOrderAssigneeFilter: (value) => { workspaceUiState.setWorkOrderAssigneeFilter(value); },
     },
     renderWorkspace,
     resetWorkOrderPage,
@@ -7809,11 +7806,9 @@ async function createRequestFromForm(formElement) {
       if (photoError) photoWarning = ` Photo did not upload: ${photoError.message || photoError}`;
     }
     activeSection = "requests";
-    requestViewFilter = "active";
-    requestsPage = 1;
+    workspaceUiState.setRequestViewFilter("active");
+    workspaceUiState.resetRequestsPage();
     localStorage.setItem("maintainops.activeSection", activeSection);
-    localStorage.setItem("maintainops.requestViewFilter", requestViewFilter);
-    localStorage.setItem("maintainops.requestsPage", String(requestsPage));
     showNotice(`Request submitted.${photoWarning}`, photoWarning ? "warning" : "success");
     await render();
   } catch (error) {
