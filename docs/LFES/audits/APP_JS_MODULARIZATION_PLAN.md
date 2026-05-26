@@ -4711,3 +4711,48 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine permanent delete, request delete, mutation forms, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Work Message Start Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Work Order `Message Team` start-composer binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It crosses from Work Order detail into Messages, modifies composer/thread state, persists message/workspace state, and renders.
+
+Why this is recoverable:
+
+- The extraction moved only start-composer event wiring.
+- No thread creation, reply send, read-state write, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original `[data-start-work-message]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkMessageStartEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkMessageStartEvents.js?v=lfes-authority-work-message-start-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-message-start-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-work-message-start-events-smoke.js`.
+- App deploy commit: `9b0381b` (`Extract workspace work message start events`).
+- `app.js` line count moved from 8,747 to 8,745.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkMessageStartEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-work-message-start-events-smoke.js`.
+- Targeted mock-DOM Work Message Start smoke: PASS for composer work-order id, composer open state, active thread clear, section switch, storage persistence, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4191/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Work Message Start script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live Work Message Start smoke: PASS. Hydralic Leak detail opened, Messages accordion opened, Message Team opened the Messages composer with Hydralic Leak linked, no send mutation occurred, and no browser warning/error logs appeared.
+
+LFES catch:
+
+- Work Order detail accordion controls can be below the viewport. The live smoke recorded summary/button rects, scrolled, and used coordinate clicks only for non-submit UI controls.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine create-thread, send-reply, read-state writes, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

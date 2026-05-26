@@ -29,7 +29,58 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Message Center thread open/read-state boundary extracted and live verified with QA thread open smoke.
 - 2026-05-26: LFES issue/admin local UI boundary extracted and live verified with Report Issue open/cancel smoke.
 - 2026-05-26: LFES Part delete-cancel boundary extracted and live verified with non-destructive delete warning/cancel smoke.
+- 2026-05-26: LFES Work Order Message Team start-composer boundary extracted and live verified with Hydralic Leak composer-link smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Work Message Start Events - 2026-05-26
+
+Boundary selected:
+
+- Work Order `Message Team` start-composer event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path switches to Messages, opens the composer, links a work order, clears the active thread, persists state, and renders, but does not send or create a message thread.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkMessageStartEvents.js`.
+- Moved only `[data-start-work-message]`.
+- Injected app-owned message/workspace state setters, storage, `renderWorkspace`, and document.
+- Kept create-thread submit, send-reply submit, read-state writes, work-order/message data, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceWorkMessageStartEvents.js?v=lfes-authority-work-message-start-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-message-start-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `9b0381b`, or remove `src/utils/workspaceWorkMessageStartEvents.js`, restore the original `[data-start-work-message]` listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkMessageStartEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-work-message-start-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-work-message-start-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4191/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live smoke: PASS. Hydralic Leak detail opened, Messages accordion opened, Message Team opened the Messages composer with Hydralic Leak linked, no send mutation occurred, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Work Order detail accordion controls can be below the viewport. The live smoke recorded summary/button rects, scrolled, and used coordinate clicks only for non-submit UI controls.
+
+Next:
+
+- Continue the LFES batch with another contained boundary. Keep create-thread, send-reply, read-state writes, Quick Fix, request conversion, storage/photo/document flows, mutation forms, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Part Delete-Cancel Events - 2026-05-26
 
