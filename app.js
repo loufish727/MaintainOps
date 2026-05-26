@@ -70,6 +70,7 @@ const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchE
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
 const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
+const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartDeleteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5250,11 +5251,11 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => requestDeletePart(button.dataset.deletePart));
   });
 
-  document.querySelectorAll("[data-cancel-delete-part]").forEach((button) => {
-    button.addEventListener("click", () => {
-      pendingDeletePartId = null;
-      renderWorkspace();
-    });
+  bindWorkspacePartDeleteCancelEvents({
+    state: {
+      setPendingDeletePartId: (value) => { pendingDeletePartId = value; },
+    },
+    renderWorkspace,
   });
 
   bindWorkspacePartDetailEvents({
