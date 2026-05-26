@@ -82,7 +82,7 @@ Verification:
 - Hosted GitHub Pages resource smoke: PASS.
 - Signed-in live smoke: PASS. Disposable equipment `LFES disposable asset delete confirm 1779828673007` was created, Delete Equipment rendered Cancel and Permanently Delete, Permanently Delete removed the disposable from Equipment, and no unrelated equipment was touched.
 - Cleanup verification: PASS. Data-layer check for disposable asset `9fb2daa2-1e13-4fbe-8d8d-52a2dd0591e2` returned `remaining: 0`.
-- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+- GitHub Actions: PASS at current docs checkpoint. Resource Load Smoke passed for `96de48c` in run `26474526945`; the earlier unauthenticated API rate-limit gap is clear at the current checkpoint.
 
 ## LFES Boundary - Part Delete-Request Events - 2026-05-26
 

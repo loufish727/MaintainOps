@@ -93,7 +93,8 @@ Completed the Equipment confirm-delete event boundary extraction.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
   - live Equipment confirm-delete smoke created disposable asset `LFES disposable asset delete confirm 1779828673007`, verified Delete Equipment opened Cancel/Permanently Delete warning, clicked Permanently Delete, verified the disposable disappeared from Equipment, and verified data-layer `remaining: 0`.
-  - hosted resource smoke passed for `a08c847`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
+  - hosted resource smoke passed for `a08c847`.
+  - GitHub Actions Resource Load Smoke passed for docs checkpoint `96de48c` in run `26474526945`; the earlier unauthenticated API rate-limit gap is clear at the current checkpoint.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
