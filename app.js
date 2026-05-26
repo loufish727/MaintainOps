@@ -82,6 +82,7 @@ const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceS
 const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
 const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
 const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
+const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4670,23 +4671,19 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
     visibleNavItems,
   });
-  document.querySelectorAll("[data-command-action]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      if (button.dataset.commandAction === "quick-fix") {
-        activeWorkOrderId = null;
-        activeAssetId = null;
-        createWorkOrderMode = false;
-        quickFixMode = true;
-        reportIssueMode = false;
-        quickFixAssetId = null;
-        quickFixRequestId = null;
-        activeSection = "mywork";
-        setWorkOrderSearchMode(false);
-        localStorage.setItem("maintainops.activeSection", activeSection);
-        renderWorkspace();
-        return;
-      }
-    });
+  bindWorkspaceQuickFixCommandEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+    },
+    renderWorkspace,
+    setWorkOrderSearchMode,
   });
 
   bindWorkspaceReportIssueCommandEvents({
