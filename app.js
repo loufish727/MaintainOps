@@ -86,6 +86,7 @@ const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickF
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
 const { bindWorkspaceRequestConversionEvents } = window.MaintainOpsWorkspaceRequestConversionEvents;
+const { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerationEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
@@ -5089,8 +5090,8 @@ function bindWorkspaceEvents() {
   const pmForm = document.querySelector("#create-pm-form");
   if (pmForm) pmForm.addEventListener("submit", createPreventiveSchedule);
 
-  document.querySelectorAll("[data-generate-pm]").forEach((button) => {
-    button.addEventListener("click", () => generatePreventiveWorkOrder(button.dataset.generatePm));
+  bindWorkspacePmGenerationEvents({
+    generatePreventiveWorkOrder,
   });
 
   bindWorkspaceScheduleDeleteCancelEvents({
