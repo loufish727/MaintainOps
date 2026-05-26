@@ -52,6 +52,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Procedure delete-request warning opener boundary extracted and live verified with disposable procedure warning/cancel plus cleanup.
 - 2026-05-26: LFES Part delete-request warning opener boundary extracted and live verified with disposable part warning/cancel plus cleanup; selector catch corrected so permanent delete binding remains in `app.js`.
 - 2026-05-26: LFES Equipment confirm-delete event boundary extracted and live verified with disposable equipment permanent delete plus data-layer proof.
+- 2026-05-26: LFES Request confirm-delete event boundary extracted and live verified with disposable request permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Equipment Confirm-Delete Events - 2026-05-26

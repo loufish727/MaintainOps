@@ -5656,6 +5656,14 @@ Verification:
 - Cleanup/data-layer verification: PASS; disposable equipment `9fb2daa2-1e13-4fbe-8d8d-52a2dd0591e2` returned `remaining: 0`.
 - GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
+## Request Confirm-Delete Events Boundary - 2026-05-26
+
+- Risk: High. The control performs an irreversible request delete, but the boundary only transfers event binding and calls the app-owned `deleteMaintenanceRequest` callback.
+- Scope: moved `[data-confirm-delete-request]` into `src/utils/workspaceRequestDeleteCancelEvents.js`; permanent delete implementation, request conversion, request-origin Quick Fix, request data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM Request delete event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable request `LFES disposable request delete confirm 1779829050535` was permanently deleted with data-layer verification for `d5459c21-ce23-4292-a113-87dcb776078a` returning `remaining: 0`.
+- App deploy commit: `ee4fd54` (`Extract workspace request delete confirm events`).
+- `app.js` line count after extraction: 8,064.
+
 Result:
 
 - Behavior changed: no observed behavior change.

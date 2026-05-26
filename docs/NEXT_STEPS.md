@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `a08c847` (`Extract workspace asset delete confirm events`).
+- Latest app behavior commit: `ee4fd54` (`Extract workspace request delete confirm events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-asset-delete-confirm-events-1`.
-- Current `app.js` line count: 8,066.
+- Latest deployed cache tag: `app.js?v=lfes-authority-request-delete-confirm-events-1`.
+- Current `app.js` line count: 8,064.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
