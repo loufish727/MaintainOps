@@ -4540,3 +4540,45 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Workspace Section Navigation Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Main workspace `[data-section]` navigation binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It changes shared workspace state, clears multiple detail/form modes, resets paging, persists active section, renders, and triggers queue reloads.
+
+Why this is recoverable:
+
+- The extraction moved only section-navigation wiring and injected every app-owned dependency.
+- No records are mutated.
+- No command actions, Quick Fix, request conversion, forms, deletes, uploads, auth/session/company/location, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original `[data-section]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceSectionNavigationEvents.js`.
+- Updated `index.html` with `src/utils/workspaceSectionNavigationEvents.js?v=lfes-authority-section-navigation-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-section-navigation-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-section-navigation-events-smoke.js`.
+- App deploy commit: `f3ea2e6` (`Extract workspace section navigation events`).
+- `app.js` line count stayed at 8,763 because the injected adapter roughly replaced the inline block.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceSectionNavigationEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-section-navigation-events-smoke.js`.
+- Targeted mock-DOM section navigation smoke: PASS for allowed/blocked sections, state clearing, search-mode reset, storage persistence, work/request queue reloads, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4187/`.
+- Local browser boot smoke: PASS. Login screen loaded with the section navigation script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: local verifier hit unauthenticated API rate limit after seeing the run in progress; public run page verified `Status Success` for `f3ea2e6`, run `https://github.com/loufish727/MaintainOps/actions/runs/26460676489`.
+- Signed-in live section navigation smoke: PASS. Work Orders, Requests, and Parts each rendered expected headings with no browser warning/error logs.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

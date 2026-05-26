@@ -25,7 +25,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Parts detail UI boundary extracted and live verified with Parts -> hydralic hose detail/source-manager/back navigation.
 - 2026-05-26: LFES Message Center local UI boundary extracted and live verified with Messages filter and quick-reply UI smoke; read-state writes stayed in `app.js`.
 - 2026-05-26: LFES Parts search boundary extracted and live verified with manual text-entry smoke due browser virtual clipboard limitation.
+- 2026-05-26: LFES workspace section navigation boundary extracted and live verified with Work Orders, Requests, and Parts navigation smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Workspace Section Navigation Events - 2026-05-26
+
+Boundary selected:
+
+- Main workspace `[data-section]` navigation event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path changes active section, clears detail/form modes, resets work paging, persists active section, renders, and reloads work/request queues.
+
+Implementation scope:
+
+- Added `src/utils/workspaceSectionNavigationEvents.js`.
+- Moved only `[data-section]` binding and its non-mutating UI-state orchestration.
+- Injected app-owned state setters, `visibleNavItems`, `setWorkOrderSearchMode`, `resetWorkOrderPage`, `renderWorkspace`, `reloadWorkOrderQueue`, `reloadRequestQueue`, storage, and document.
+- Kept visible-nav rules, queue loader implementations, command actions, mutations, auth/company/location state, render ownership, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceSectionNavigationEvents.js?v=lfes-authority-section-navigation-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-section-navigation-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `f3ea2e6`, or remove `src/utils/workspaceSectionNavigationEvents.js`, restore the original `[data-section]` listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceSectionNavigationEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-section-navigation-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-section-navigation-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4187/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: local verifier hit unauthenticated API rate limit after seeing the run in progress; public run page verified `Status Success` for `f3ea2e6`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26460676489`.
+- Signed-in live smoke: PASS. Work Orders, Requests, and Parts navigation each rendered expected section headings with no warning/error logs.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Continue the LFES batch with another contained boundary. Keep command actions, Quick Fix, request conversion, storage/photo/document flows, mutation forms, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Parts Search Events - 2026-05-26
 

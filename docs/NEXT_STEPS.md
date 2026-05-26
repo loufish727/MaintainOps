@@ -6,9 +6,9 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `72ef610` (`Extract workspace part search events`).
+- Latest app behavior commit: `f3ea2e6` (`Extract workspace section navigation events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-part-search-events-1`.
+- Latest deployed cache tag: `app.js?v=lfes-authority-section-navigation-events-1`.
 - Current `app.js` line count: 8,763.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
@@ -42,6 +42,7 @@ Recommended immediate next controlled phase:
 - Parts detail UI event binding is extracted into `src/utils/workspacePartDetailEvents.js` and live verified. `app.js` still owns part data, source data, forms, inventory mutations, document upload, delete flow, and render.
 - Message Center local UI event binding is extracted into `src/utils/workspaceMessageUiEvents.js` and live verified. `app.js` still owns thread open/read-state writes, create thread, send reply, message data, render, and Supabase mutations.
 - Parts search event binding is extracted into `src/utils/workspacePartSearchEvents.js` and live verified. `app.js` still owns part data, forms, restock/use/edit/delete, source rename, document upload, render, and Supabase mutations.
+- Workspace section navigation event binding is extracted into `src/utils/workspaceSectionNavigationEvents.js` and live verified. `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -82,6 +83,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Parts detail smoke, signed-in live Parts -> hydralic hose detail/source-manager/back smoke, and `npm run test:smoke:github-actions` passed for the Parts detail UI boundary.
 - Hosted resource checks, targeted mock-DOM Message UI smoke, signed-in live Messages filter/quick-reply smoke, and `npm run test:smoke:github-actions` passed for the Message Center local UI boundary.
 - Hosted resource checks, targeted mock-DOM Parts search smoke, signed-in live manual Parts search smoke, and `npm run test:smoke:github-actions` passed for the Parts search boundary.
+- Hosted resource checks, targeted mock-DOM section navigation smoke, signed-in live Work Orders/Requests/Parts navigation smoke, and public GitHub Actions run-page verification passed for the workspace section navigation boundary.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.
