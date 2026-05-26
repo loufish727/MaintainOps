@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Request confirm-delete event boundary extraction.
+Completed the PM schedule confirm-delete event boundary extraction.
 
 - Latest app behavior commit:
-  - `ee4fd54` (`Extract workspace request delete confirm events`)
+  - `a192f51` (`Extract workspace schedule delete confirm events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-request-delete-confirm-events-1`
+  - `app.js?v=lfes-authority-schedule-delete-confirm-events-1`
 - Current `app.js` line count:
-  - 8,064 lines.
+  - 8,062 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -75,7 +75,7 @@ Completed the Request confirm-delete event boundary extraction.
   - Medium-risk Export CSV command boundary moved `[data-command-action="export-csv"]` to `src/utils/workspaceExportCsvCommandEvents.js`; `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
   - High-risk Equipment delete event boundary moved `[data-delete-asset]`, `[data-cancel-delete-asset]`, and `[data-confirm-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
   - High-risk Request delete event boundary moved `[data-delete-request]`, `[data-cancel-delete-request]`, and `[data-confirm-delete-request]` to `src/utils/workspaceRequestDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete implementation, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
-  - Medium/high-risk PM schedule delete warning opener/cancel boundary moved `[data-delete-schedule]` and `[data-cancel-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
+  - High-risk PM schedule delete event boundary moved `[data-delete-schedule]`, `[data-cancel-delete-schedule]`, and `[data-confirm-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete implementation, PM generation, schedule data, render, auth/company/location state, and Supabase access.
   - Medium/high-risk Procedure delete warning opener/cancel boundary moved `[data-delete-procedure]` and `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
   - Medium-low-risk textarea auto-grow UI boundary moved `autoGrowTextarea` and global textarea input binding to `src/utils/workspaceTextareaAutoGrow.js`; `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
   - Medium-risk Team invite cancel-warning UI boundary moved `[data-cancel-invite]` and `[data-cancel-invite-cancel]` to `src/utils/workspaceTeamInviteCancelEvents.js`; `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
@@ -86,14 +86,14 @@ Completed the Request confirm-delete event boundary extraction.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceRequestDeleteCancelEvents.js`, and `tests/smoke/workspace-request-delete-cancel-events-smoke.js`.
-  - targeted mock-DOM Request delete event smoke passed for warning opener callback, cancel pending-state clear, confirm-delete callback, render, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceScheduleDeleteCancelEvents.js`, and `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM PM schedule delete event smoke passed for warning opener callback, cancel pending-state clear, confirm-delete callback, render, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new Request confirm-delete script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new PM schedule confirm-delete script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Request confirm-delete smoke created disposable request `LFES disposable request delete confirm 1779829050535`, verified Delete opened Cancel/Permanently Delete warning, clicked Permanently Delete, verified the disposable disappeared from Requests, and verified data-layer `remaining: 0`.
-  - hosted resource smoke passed for `ee4fd54`.
+  - live PM schedule confirm-delete smoke created disposable schedule `LFES disposable schedule delete confirm 1779829718646`, verified Delete opened Cancel/Permanently Delete warning, clicked Permanently Delete, verified the disposable disappeared from PM, and verified data-layer `remaining: 0`.
+  - hosted resource smoke passed for `a192f51`.
   - GitHub Actions Resource Load Smoke passed after the earlier unauthenticated API rate-limit gap cleared; verified runs included `96de48c` (`26474526945`) and the follow-up docs checkpoint `1f2b80f` (`26474583585`).
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
@@ -4953,3 +4953,4 @@ Read these in order:
 6. `docs/FEATURE_CHANGE_PROCESS.md`
 7. `docs/DEBUG_PROCESS.md`
 8. `docs/SUPABASE_SETUP.md`
+

@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `ee4fd54` (`Extract workspace request delete confirm events`).
+- Latest app behavior commit: `a192f51` (`Extract workspace schedule delete confirm events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-request-delete-confirm-events-1`.
-- Current `app.js` line count: 8,064.
+- Latest deployed cache tag: `app.js?v=lfes-authority-schedule-delete-confirm-events-1`.
+- Current `app.js` line count: 8,062.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -53,7 +53,7 @@ Recommended immediate next controlled phase:
 - Export CSV command event binding is extracted into `src/utils/workspaceExportCsvCommandEvents.js` and live verified. `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
 - Equipment delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceAssetDeleteCancelEvents.js` and live verified. `app.js` still owns request-delete blocker checks, pending delete state, permanent delete implementation, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
 - Request delete warning opener/cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
-- PM schedule delete warning opener/cancel event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
+- PM schedule delete opener/cancel/confirm event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete implementation, PM generation, schedule data, render, auth/company/location state, and Supabase access.
 - Procedure delete warning opener/cancel event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
 - Textarea auto-grow UI binding is extracted into `src/utils/workspaceTextareaAutoGrow.js` and live verified. `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
 - Team invite cancel-warning UI binding is extracted into `src/utils/workspaceTeamInviteCancelEvents.js` and live verified. `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
@@ -3670,3 +3670,4 @@ Do not choose yet:
 - storage/photo/document/logo flows,
 - SQL/RLS,
 - broad `renderWorkspace()` or broad `bindWorkspaceEvents()` movement.
+

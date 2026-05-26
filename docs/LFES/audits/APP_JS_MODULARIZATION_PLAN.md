@@ -5664,6 +5664,14 @@ Verification:
 - App deploy commit: `ee4fd54` (`Extract workspace request delete confirm events`).
 - `app.js` line count after extraction: 8,064.
 
+## PM Schedule Confirm-Delete Events Boundary - 2026-05-26
+
+- Risk: High. The control performs an irreversible PM schedule delete, but the boundary only transfers event binding and calls the app-owned `deletePreventiveSchedule` callback.
+- Scope: moved `[data-confirm-delete-schedule]` into `src/utils/workspaceScheduleDeleteCancelEvents.js`; permanent delete implementation, PM generation, schedule data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain in `app.js`.
+- Verification: static checks passed, targeted mock-DOM PM schedule delete event smoke passed, local resource and local browser boot smokes passed, hosted resource smoke passed, and signed-in live disposable PM schedule `LFES disposable schedule delete confirm 1779829718646` was permanently deleted with data-layer verification for `41647041-eeb1-45ad-801d-e8a3431bc842` returning `remaining: 0`.
+- App deploy commit: `a192f51` (`Extract workspace schedule delete confirm events`).
+- `app.js` line count after extraction: 8,062.
+
 Result:
 
 - Behavior changed: no observed behavior change.
