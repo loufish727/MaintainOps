@@ -5283,6 +5283,57 @@ Result:
 - Behavior changed: no observed behavior change.
 - Reassess before continuing into mutation or conversion workflows.
 
+## Public QR Print Button Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Public QR print button:
+  - `#print-public-qr`
+
+Risk:
+
+- Medium-low risk. It is on the public QR path, but the selected boundary only invokes print and does not submit or mutate records.
+
+Intended boundary:
+
+- Move only the public QR print button binding to `src/utils/publicQrPrintEvents.js`.
+- Keep public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, render ownership, and Supabase access in `app.js`.
+
+Rollback path:
+
+- Revert `54d14e0` or restore the original `#print-public-qr` listener in `app.js`.
+
+Implementation:
+
+- Added `src/utils/publicQrPrintEvents.js`.
+- Added `tests/smoke/public-qr-print-events-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-public-qr-print-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `54d14e0` (`Extract public QR print events`).
+- `app.js` line count is 8,081.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/publicQrPrintEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/public-qr-print-events-smoke.js`: PASS.
+- `node tests/smoke/public-qr-print-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Hosted public QR live smoke: PASS. QR page for token `zGl_nSkBQp9WkId5zg15ewHr` loaded with the new script/cache tags; Playwright Chromium stubbed `window.print`, clicked Print / Save PDF, and verified the print callback fired once with no browser warning/error logs.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Catch:
+
+- The in-app browser evaluate sandbox could not add print-stub state for this public page. Use Playwright Chromium for public QR print smoke and stub `window.print` before clicking.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Reassess before continuing into mutation, auth/startup, or conversion workflows.
+
 ## Public Request Link Copy Button Boundary - 2026-05-26
 
 Hard boundary selected:

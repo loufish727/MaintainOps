@@ -44,6 +44,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES asset-specific Quick Fix opener boundary extracted and live verified with Equipment detail open-form/no-submit smoke.
 - 2026-05-26: LFES public request link copy-button boundary extracted and live verified with Settings copy feedback/reset smoke.
 - 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
+- 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -442,6 +443,49 @@ LFES catch:
 Next:
 
 - Reassess before continuing. Quick Fix submit, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Public QR Print Button - 2026-05-26
+
+Boundary selected:
+
+- Public QR print button:
+  - `#print-public-qr`
+
+Operational risk:
+
+- Medium-low.
+- The binding lives on the public QR page, but it only invokes print. It does not submit public requests, change QR/public request link records, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/publicQrPrintEvents.js`.
+- Moved only the public QR print button binding.
+- Kept public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, render ownership, and Supabase access in `app.js`.
+- Added `src/utils/publicQrPrintEvents.js?v=lfes-authority-public-qr-print-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-public-qr-print-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/publicQrPrintEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/public-qr-print-events-smoke.js`.
+- Targeted mock-DOM public QR print smoke: PASS for invoking the injected print callback and missing-button no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the public QR print script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Hosted public QR live smoke: PASS. QR page for token `zGl_nSkBQp9WkId5zg15ewHr` loaded with the new script/cache tags; Playwright Chromium stubbed `window.print`, clicked Print / Save PDF, and verified the print callback fired once with no browser warning/error logs.
+- GitHub Actions verifier: deferred until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The in-app browser evaluate sandbox could not add print-stub state for this public page. Use Playwright Chromium for public QR print smoke and stub `window.print` before clicking.
+
+Next:
+
+- Reassess before continuing. Public request submit, Quick Fix submit, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, invite confirm-cancel, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 
