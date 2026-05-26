@@ -88,6 +88,7 @@ const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspace
 const { bindWorkspaceRequestConversionEvents } = window.MaintainOpsWorkspaceRequestConversionEvents;
 const { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerationEvents;
 const { bindWorkspaceFollowUpWorkEvents } = window.MaintainOpsWorkspaceFollowUpWorkEvents;
+const { bindWorkspaceCommentEvents } = window.MaintainOpsWorkspaceCommentEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
@@ -5076,8 +5077,9 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceWorkOrderDetailStatusEvents({ updateWorkOrderStatus });
 
-  const commentForm = document.querySelector("#comment-form");
-  if (commentForm) commentForm.addEventListener("submit", createComment);
+  bindWorkspaceCommentEvents({
+    createComment,
+  });
 
   const photoForm = document.querySelector("#photo-form");
   if (photoForm) photoForm.addEventListener("submit", uploadPhoto);

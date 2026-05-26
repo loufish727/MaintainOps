@@ -51,6 +51,7 @@ const requiredResources = [
   "src/utils/workspaceRequestConversionEvents.js",
   "src/utils/workspacePmGenerationEvents.js",
   "src/utils/workspaceFollowUpWorkEvents.js",
+  "src/utils/workspaceCommentEvents.js",
   "src/utils/workspaceRequestQuickFixEvents.js",
   "src/utils/workspaceAssetLocationWarningEvents.js",
   "src/utils/requestQueryFilters.js",
