@@ -22,7 +22,59 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES high-risk work-order completion boundary extracted and live verified with disposable completion plus cleanup.
 - 2026-05-26: LFES high-risk work-order delete boundary extracted and live verified with disposable request/cancel/confirm delete plus data-layer proof.
 - 2026-05-26: LFES Team work-view boundary extracted and live verified with Team -> Lee Gaede Work navigation.
+- 2026-05-26: LFES Parts detail UI boundary extracted and live verified with Parts -> hydralic hose detail/source-manager/back navigation.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Parts Detail UI Events - 2026-05-26
+
+Boundary selected:
+
+- Parts detail open/close and source-manager toggle event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path changes active part detail state and part source-manager UI visibility inside the inventory screen, but does not mutate business records.
+
+Implementation scope:
+
+- Added `src/utils/workspacePartDetailEvents.js`.
+- Moved only `[data-open-part]`, `[data-close-part-detail]`, and `[data-toggle-part-sources]` bindings.
+- Injected `activePartId` and `showPartSourceManager` UI-state access plus `renderWorkspace`.
+- Kept part data, source data, inventory mutations, source rename forms, part document upload, delete flow, auth/company/location state, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspacePartDetailEvents.js?v=lfes-authority-part-detail-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-detail-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `3a99bfd`, or remove `src/utils/workspacePartDetailEvents.js`, restore the original part detail listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspacePartDetailEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-part-detail-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-part-detail-events-smoke.js`: PASS.
+- `git diff --check`: PASS, with only existing CRLF warnings.
+- Local resource smoke: PASS against `http://127.0.0.1:4184/` after switching from unavailable `python -m http.server` to the local Node static-server method.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `3a99bfd`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26459512566`.
+- Signed-in live smoke: PASS. Parts opened at Auburn, `hydralic hose` opened into Part Detail, `Edit Sources` revealed source-manager UI, `Back to parts` returned to Parts Inventory, and the `hydralic hose` card was visible again.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Future local resource/browser smokes should use the existing local Node static-server method.
+
+Next:
+
+- Select the next hard boundary from the authority map. Message navigation remains mutation-adjacent because opening a thread marks it read; send/reply forms stay blocked.
 
 ## LFES Boundary - Team Work-View Events - 2026-05-26
 

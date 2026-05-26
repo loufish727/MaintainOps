@@ -4404,3 +4404,50 @@ Next candidates:
 - Select the next hard boundary from the authority map.
 - Message read-only navigation can be considered only after mapping read-state effects; send/reply forms stay blocked.
 - Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Parts Detail UI Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Parts detail open/close and source-manager toggle binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- The event changes UI authority inside the inventory/detail screen by setting active part detail state and source-manager visibility, and the same screen contains inventory mutations, source rename forms, document upload, and delete controls nearby.
+
+Why this is recoverable:
+
+- The extraction moved only local UI state transitions and render calls.
+- No part records are mutated.
+- No source rename, restock/use, update, delete, upload, auth/session/company/location, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original part detail listener block.
+
+Implementation:
+
+- Added `src/utils/workspacePartDetailEvents.js`.
+- Updated `index.html` with `src/utils/workspacePartDetailEvents.js?v=lfes-authority-part-detail-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-detail-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-part-detail-events-smoke.js`.
+- App deploy commit: `3a99bfd` (`Extract workspace part detail events`).
+- `app.js` line count moved from 8,841 to 8,827.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePartDetailEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-detail-events-smoke.js`.
+- Targeted mock-DOM Parts detail smoke: PASS for click open, keyboard open, irrelevant-key no-op, close detail, source-manager toggle, render calls, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4184/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Parts detail script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `3a99bfd`, run `https://github.com/loufish727/MaintainOps/actions/runs/26459512566`.
+- Signed-in live Parts detail smoke: PASS. Parts opened at Auburn, `hydralic hose` opened into Part Detail, `Edit Sources` revealed the source-manager UI, and `Back to parts` returned to Parts Inventory with the `hydralic hose` card visible.
+
+LFES catch:
+
+- Local resource smoke initially timed out because `python -m http.server` is unavailable in this Windows environment; `python` resolves to the Microsoft Store shim. The smoke passed after using the local Node static-server method.
+
+Next candidates:
+
+- Select the next hard boundary from the authority map.
+- Message navigation remains mutation-adjacent because thread opening marks read state; split message filter/search/local composer UI from send/reply/read-state writes if choosing Messages.
+- Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

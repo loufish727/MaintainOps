@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Team work-view bridge boundary extraction from `bindWorkspaceEvents()`.
+Completed the Parts detail UI boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `0d67122` (`Extract workspace team work-view events`)
+  - `3a99bfd` (`Extract workspace part detail events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-team-work-view-events-1`
+  - `app.js?v=lfes-authority-part-detail-events-1`
 - Current `app.js` line count:
-  - 8,841 lines.
+  - 8,827 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -61,16 +61,17 @@ Completed the Team work-view bridge boundary extraction from `bindWorkspaceEvent
   - High-risk completion boundary moved full Work Order Detail completion submit handling and safety checkbox sync to `src/utils/workspaceWorkOrderCompletionEvents.js`; `app.js` still owns the injected Supabase mutation callback, activity logger, safety payload helpers, render, state arrays, and shared current-safety helper used by quick-update/status paths.
   - High-risk delete boundary moved Work Order Detail delete request/cancel/confirm orchestration to `src/utils/workspaceWorkOrderDeleteEvents.js`; `app.js` still injects permission checks, Supabase row delete, photo storage cleanup, active state setters, render, notices, and timeout wrapper.
   - Medium-risk Team work-view boundary moved `[data-view-member-work]` to `src/utils/workspaceTeamWorkViewEvents.js`; `app.js` still owns state variables, page reset, render, team data, and work-order filtering.
+  - Medium-risk Parts detail UI boundary moved `[data-open-part]`, `[data-close-part-detail]`, and `[data-toggle-part-sources]` to `src/utils/workspacePartDetailEvents.js`; `app.js` still owns part data, source data, forms, inventory mutations, document upload, delete flow, and render.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceTeamWorkViewEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM Team work-view smoke passed for state setters, localStorage persistence, work-page reset, render, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4183/`.
-  - local browser boot smoke reached the login screen with the new Team work-view event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspacePartDetailEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-detail-events-smoke.js`.
+  - targeted mock-DOM Parts detail smoke passed for click open, keyboard open, irrelevant-key no-op, close detail, source-manager toggle, render calls, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4184/`.
+  - local browser boot smoke reached the login screen with the new Parts detail event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Team work-view smoke opened Team, clicked Lee Gaede `View Work`, landed on Work Orders, observed `Lee Gaede Work`, `Assigned to Lee Gaede`, and `Hydralic Leak`.
-  - live `index.html` referenced `src/utils/workspaceTeamWorkViewEvents.js?v=lfes-authority-team-work-view-events-1` and `app.js?v=lfes-authority-team-work-view-events-1`.
-  - `npm run test:smoke:github-actions` passed for `0d67122`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458707591`.
+  - live Parts detail smoke opened Parts at Auburn, opened `hydralic hose`, observed `Part Detail`, toggled `Edit Sources`, observed `.part-source-manager`/rename text, clicked `Back to parts`, and observed `Parts Inventory` plus the `hydralic hose` card again.
+  - live `index.html` referenced `src/utils/workspacePartDetailEvents.js?v=lfes-authority-part-detail-events-1` and `app.js?v=lfes-authority-part-detail-events-1`.
+  - `npm run test:smoke:github-actions` passed for `3a99bfd`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26459512566`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -81,6 +82,7 @@ Completed the Team work-view bridge boundary extraction from `bindWorkspaceEvent
   - completion smoke must use an `actual_minutes` value compatible with the form step (`5`, `10`, etc.); invalid step values are blocked by native browser validation before the submit handler runs.
   - in-app browser high-level locator clicks can hang on lower-page operational buttons; when DOM state is clear and the action is authorized, scroll the target into view and use coordinate click only after recording the locator/rect evidence.
   - the in-app browser text-entry path can fail when its virtual clipboard is unavailable. For delete-only live smoke, a disposable work order may be created through an authenticated Supabase setup step, but the changed delete behavior must still be verified through the app UI.
+  - `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Use the existing local Node static-server method for future local resource/browser smokes.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -89,7 +91,7 @@ Completed the Team work-view bridge boundary extraction from `bindWorkspaceEvent
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, and Team work-view boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, and Parts detail UI boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

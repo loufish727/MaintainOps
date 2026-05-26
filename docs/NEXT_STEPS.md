@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `0d67122` (`Extract workspace team work-view events`).
+- Latest app behavior commit: `3a99bfd` (`Extract workspace part detail events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-team-work-view-events-1`.
-- Current `app.js` line count: 8,841.
+- Latest deployed cache tag: `app.js?v=lfes-authority-part-detail-events-1`.
+- Current `app.js` line count: 8,827.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -39,6 +39,7 @@ Recommended immediate next controlled phase:
 - Work-order completion submit handling and safety checkbox sync are extracted into `src/utils/workspaceWorkOrderCompletionEvents.js` and live verified. `app.js` still injects mutation, logging, safety-payload, render, and state access dependencies.
 - Work-order delete request/cancel/confirm orchestration is extracted into `src/utils/workspaceWorkOrderDeleteEvents.js` and live verified. `app.js` still injects permission checks, Supabase row delete, photo storage cleanup, active state setters, render, notices, and timeout wrapper.
 - Team work-view event binding is extracted into `src/utils/workspaceTeamWorkViewEvents.js` and live verified. `app.js` still owns state variables, page reset, render, team data, and work-order filtering.
+- Parts detail UI event binding is extracted into `src/utils/workspacePartDetailEvents.js` and live verified. `app.js` still owns part data, source data, forms, inventory mutations, document upload, delete flow, and render.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -76,8 +77,10 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM completion smoke, signed-in live disposable completion/cleanup smoke, and public GitHub Actions run-list verification passed for the completion boundary.
 - Hosted resource checks, targeted mock-DOM delete smoke, signed-in live disposable delete/cancel/confirm smoke, authenticated data-layer deletion verification, and `npm run test:smoke:github-actions` passed for the delete boundary.
 - Hosted resource checks, targeted mock-DOM Team work-view smoke, signed-in live Team -> Lee Gaede Work smoke, and `npm run test:smoke:github-actions` passed for the Team work-view boundary.
+- Hosted resource checks, targeted mock-DOM Parts detail smoke, signed-in live Parts -> hydralic hose detail/source-manager/back smoke, and `npm run test:smoke:github-actions` passed for the Parts detail UI boundary.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
+- Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - Use `npm run test:smoke:github-actions` for current GitHub Actions verification; do not rely on the PR-oriented connector workflow lookup for push runs.
 

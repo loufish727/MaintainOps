@@ -330,6 +330,14 @@ Check:
   - cleanup is completed through the intended app path,
   - data-layer proof confirms no disposable row remains.
 
+### Local Static Server Does Not Start
+
+Check:
+
+- Whether `python` resolves to a real Python runtime or the Windows Microsoft Store shim.
+- Whether the local resource smoke is timing out because the server never started rather than because an app resource is missing.
+- If `python -m http.server` is unavailable, use the local Node static-server method already proven for LFES localhost resource/browser smokes.
+
 ### Supabase Write Fails
 
 Check:

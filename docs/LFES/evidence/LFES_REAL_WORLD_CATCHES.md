@@ -248,3 +248,12 @@ Phase 6D update:
 - What prevented escalation: a disposable work order was created through authenticated Supabase REST as setup only, then all changed delete behavior was verified through the live app UI: detail open, delete warning, cancel, reopen warning, permanent delete, list disappearance, and authenticated data-layer deletion proof.
 - Fix or mitigation: if browser text entry is unavailable, setup data may be created through an authenticated API path only when the actual boundary under test is still exercised through the app UI and cleanup/deletion proof is recorded.
 - Lessons learned: distinguish setup mechanics from the workflow boundary under test. The setup path may vary when automation is degraded, but the changed operational path still needs live UI evidence.
+
+## 2026-05-26 - Parts Detail Local Smoke - Python Server Shim Caused Timeout
+
+- Issue discovered: local resource smoke timed out because `python -m http.server` did not start a server; on this Windows machine `python` resolves to the Microsoft Store shim.
+- How it was discovered: direct `Invoke-WebRequest` checks to `http://127.0.0.1:4184/` failed, and the server stderr reported that Python was not found.
+- Operational risk: a verifier infrastructure failure can look like an app/resource regression and waste the timeout window, especially when the smoke loops for Pages-style propagation.
+- What prevented escalation: the failed local server was diagnosed before deployment, a local Node static-server method was used instead, and the same resource smoke passed against localhost before hosted verification.
+- Fix or mitigation: do not use `python -m http.server` in this environment. Use the established local Node static-server method for future local LFES smokes.
+- Lessons learned: when a local resource smoke times out, first prove the server is listening and serving the new resource before investigating application code.
