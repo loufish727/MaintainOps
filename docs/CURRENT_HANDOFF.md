@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Message Center local UI boundary extraction from `bindWorkspaceEvents()`.
+Completed the Parts search boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `d4a8503` (`Extract workspace message UI events`)
+  - `72ef610` (`Extract workspace part search events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-message-ui-events-1`
+  - `app.js?v=lfes-authority-part-search-events-1`
 - Current `app.js` line count:
-  - 8,780 lines.
+  - 8,763 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -63,16 +63,17 @@ Completed the Message Center local UI boundary extraction from `bindWorkspaceEve
   - Medium-risk Team work-view boundary moved `[data-view-member-work]` to `src/utils/workspaceTeamWorkViewEvents.js`; `app.js` still owns state variables, page reset, render, team data, and work-order filtering.
   - Medium-risk Parts detail UI boundary moved `[data-open-part]`, `[data-close-part-detail]`, and `[data-toggle-part-sources]` to `src/utils/workspacePartDetailEvents.js`; `app.js` still owns part data, source data, forms, inventory mutations, document upload, delete flow, and render.
   - Medium-risk Message Center local UI boundary moved `[data-message-filter]`, `[data-open-linked-work-order]`, `[data-clear-message-work-link]`, `#message-search`, `#message-thread-type` composer sync, and `[data-quick-reply]` to `src/utils/workspaceMessageUiEvents.js`; `app.js` still owns thread open/read-state writes, create thread, send reply, message data, render, and Supabase mutations.
+  - Medium-low-risk Parts search boundary moved `#part-search-form` input/submit handling to `src/utils/workspacePartSearchEvents.js`; `app.js` still owns part data, forms, restock/use/edit/delete, source rename, document upload, render, and Supabase mutations.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceMessageUiEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-message-ui-events-smoke.js`.
-  - targeted mock-DOM Message UI smoke passed for filter state/storage/render, linked work navigation state, clear composer work link, search persistence/focus, composer type sync, quick-reply text insertion/autogrow, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4185/`.
-  - local browser boot smoke reached the login screen with the new Message UI event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspacePartSearchEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-search-events-smoke.js`.
+  - targeted mock-DOM Parts search smoke passed for input persistence, page reset, render, focus/cursor restore, submit prevention, submit persistence, list scroll, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4186/`.
+  - local browser boot smoke reached the login screen with the new Parts search event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Message UI smoke opened Messages, verified filter controls remained usable, clicked quick reply `On it`, observed active reply textbox value `On it`, and confirmed no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceMessageUiEvents.js?v=lfes-authority-message-ui-events-1` and `app.js?v=lfes-authority-message-ui-events-1`.
-  - `npm run test:smoke:github-actions` passed for `d4a8503`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26459972613`.
+  - live Parts search smoke passed with manual text entry because browser automation text entry was blocked by the known virtual clipboard limitation; observed `Search parts` value `hose`, visible `hydralic hose` card, new script/cache tags, and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspacePartSearchEvents.js?v=lfes-authority-part-search-events-1` and `app.js?v=lfes-authority-part-search-events-1`.
+  - `npm run test:smoke:github-actions` passed for `72ef610`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26460275221`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -92,7 +93,7 @@ Completed the Message Center local UI boundary extraction from `bindWorkspaceEve
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, and Message Center local UI boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, and Parts search boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

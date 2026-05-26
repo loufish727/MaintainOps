@@ -4498,3 +4498,45 @@ Next candidates:
 - Select the next hard boundary from the authority map.
 - Message thread-open/read-state writes remain mutation-adjacent and should be planned separately from send/reply forms.
 - Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Parts Search Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Parts Inventory search input and submit binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It controls persisted search state, page reset, render timing, focus restoration, and list scroll inside a screen that also contains inventory mutations, source management, document upload, and delete controls.
+
+Why this is recoverable:
+
+- The extraction moved only search input/submit UI behavior.
+- No inventory records are mutated.
+- No create/restock/use/edit/delete, source rename, document upload, auth/session/company/location, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original `#part-search-form` listener block.
+
+Implementation:
+
+- Added `src/utils/workspacePartSearchEvents.js`.
+- Updated `index.html` with `src/utils/workspacePartSearchEvents.js?v=lfes-authority-part-search-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-search-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-part-search-events-smoke.js`.
+- App deploy commit: `72ef610` (`Extract workspace part search events`).
+- `app.js` line count moved from 8,780 to 8,763.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspacePartSearchEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-part-search-events-smoke.js`.
+- Targeted mock-DOM Parts search smoke: PASS for input persistence, page reset, render, focus/cursor restore, submit prevention, submit persistence, list scroll, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4186/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Parts search script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `72ef610`, run `https://github.com/loufish727/MaintainOps/actions/runs/26460275221`.
+- Signed-in live Parts search smoke: PASS. Browser automation text entry hit the known virtual clipboard limitation, so the user manually entered `hose`; verification observed `Search parts` value `hose`, visible `hydralic hose` card, new script/cache tags, and no browser warning/error logs.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

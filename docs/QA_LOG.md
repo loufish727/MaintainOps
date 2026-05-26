@@ -24,7 +24,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Team work-view boundary extracted and live verified with Team -> Lee Gaede Work navigation.
 - 2026-05-26: LFES Parts detail UI boundary extracted and live verified with Parts -> hydralic hose detail/source-manager/back navigation.
 - 2026-05-26: LFES Message Center local UI boundary extracted and live verified with Messages filter and quick-reply UI smoke; read-state writes stayed in `app.js`.
+- 2026-05-26: LFES Parts search boundary extracted and live verified with manual text-entry smoke due browser virtual clipboard limitation.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Parts Search Events - 2026-05-26
+
+Boundary selected:
+
+- Parts Inventory search input and submit event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium-low.
+- The path updates search text, persists localStorage, resets parts pagination, renders, restores search focus/cursor, and scrolls back to the parts list on submit.
+
+Implementation scope:
+
+- Added `src/utils/workspacePartSearchEvents.js`.
+- Moved only `#part-search-form` input and submit handling.
+- Injected app-owned part search state setter, `resetPartsPage`, `renderWorkspace`, storage, document, and testable `FormData` dependency.
+- Kept part data, create/restock/use/edit/delete forms, source rename, part document upload, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspacePartSearchEvents.js?v=lfes-authority-part-search-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-part-search-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `72ef610`, or remove `src/utils/workspacePartSearchEvents.js`, restore the original `#part-search-form` listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspacePartSearchEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-part-search-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-part-search-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4186/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `72ef610`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26460275221`.
+- Signed-in live smoke: PASS. Browser automation text entry hit the known virtual clipboard limitation, so the user manually entered `hose`; verified `Search parts` value `hose`, visible `hydralic hose` card, new script/cache tags, and no warning/error logs.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Continue the LFES batch with another contained event boundary. Keep part mutation forms, source rename, document upload, delete, Quick Fix, request conversion, storage/photo/document flows, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Message Center Local UI Events - 2026-05-26
 
