@@ -66,6 +66,7 @@ const { createWorkspaceWorkOrderDeleteEvents } = window.MaintainOpsWorkspaceWork
 const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkViewEvents;
 const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
 const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
+const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5242,31 +5243,13 @@ function bindWorkspaceEvents() {
     resetPartsPage,
   });
 
-  const partSearchForm = document.querySelector("#part-search-form");
-  if (partSearchForm) {
-    const partSearchInput = partSearchForm.querySelector("input[name='part_search']");
-    if (partSearchInput) {
-      partSearchInput.addEventListener("input", () => {
-        partSearchQuery = partSearchInput.value || "";
-        localStorage.setItem("maintainops.partSearchQuery", partSearchQuery);
-        resetPartsPage();
-        renderWorkspace();
-        const nextPartSearchInput = document.querySelector("#part-search");
-        if (!nextPartSearchInput) return;
-        nextPartSearchInput.focus();
-        const cursorPosition = nextPartSearchInput.value.length;
-        nextPartSearchInput.setSelectionRange(cursorPosition, cursorPosition);
-      });
-    }
-    partSearchForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      partSearchQuery = new FormData(partSearchForm).get("part_search") || "";
-      localStorage.setItem("maintainops.partSearchQuery", partSearchQuery);
-      resetPartsPage();
-      renderWorkspace();
-      document.querySelector("#parts-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
+  bindWorkspacePartSearchEvents({
+    state: {
+      setPartSearchQuery: (value) => { partSearchQuery = value; },
+    },
+    renderWorkspace,
+    resetPartsPage,
+  });
 
   document.querySelectorAll("[data-restock-part]").forEach((form) => {
     form.addEventListener("submit", restockPart);
