@@ -4,6 +4,18 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-26 - Clipboard Copy Smoke Needed Conditional Reset Wait
+
+- Date: 2026-05-26.
+- Phase/build: work-order downtime copy event-boundary extraction.
+- Issue discovered: the first signed-in live smoke sampled the copy buttons after a fixed sleep and saw `Copy failed` still displayed.
+- How it was discovered: diagnostic inspection shortly afterward showed both buttons had reset to `Copy Subject` and `Copy Email Body`. A corrected smoke that waited conditionally for the reset labels passed.
+- Operational risk: fixed sleeps can create false failures around browser clipboard fallback behavior, especially when automation permission or focus causes `document.execCommand("copy")` to take longer than expected.
+- What LFES principle exposed it: targeted live smoke, observable behavior over timing assumptions, and verification-scope clarity.
+- What prevented escalation: the failed smoke stopped the phase, diagnosis proved the app had reset correctly, and the smoke was corrected before closeout.
+- Fix applied or recommended: future clipboard/copy smokes should assert immediate result state, then wait for the final label condition with a timeout instead of sleeping for the nominal reset delay.
+- Lessons learned: browser APIs can make UI feedback timing less deterministic than the code's timer value suggests. Smokes should wait for user-visible end states.
+
 ## 2026-05-26 - Assignment Smoke Needed Role-Aware Coverage
 
 - Date: 2026-05-26.

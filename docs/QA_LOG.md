@@ -17,7 +17,55 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-21: LFES medium-risk workspace search/exact work-search event boundary extracted and live verified.
 - 2026-05-26: LFES high-risk quick work-order status event boundary extracted and live verified; first live smoke caught a bad test assumption and the corrected mutation/restore smoke passed.
 - 2026-05-26: LFES high-risk work-order assignment event boundary extracted and live verified with manager/admin mutation plus restore.
+- 2026-05-26: LFES work-order downtime copy event boundary extracted and live verified; smoke timing was corrected to wait for reset labels conditionally.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Work-Order Downtime Copy Events - 2026-05-26
+
+Boundary selected:
+
+- Work-order downtime email copy buttons from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The moved binding is non-mutating but touches clipboard behavior and temporary button state.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderDowntimeEvents.js`.
+- Moved only `[data-copy-downtime]` click binding.
+- Injected work-order lookup, `downtimeEmailSubject`, `downtimeEmailBody`, and `copyTextToClipboard`.
+- Left subject/body builders, clipboard implementation, work-order state, Supabase/RLS, status, assignment, delete, completion, and auth/startup in `app.js`.
+- Added `src/utils/workspaceWorkOrderDowntimeEvents.js?v=lfes-authority-work-downtime-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-downtime-events-1`.
+- Updated hosted resource smoke resource list.
+- Added the role-gated smoke rule to `docs/DEBUG_PROCESS.md`.
+
+Rollback path:
+
+- Revert `9eac566`, or remove `src/utils/workspaceWorkOrderDowntimeEvents.js`, restore the original `[data-copy-downtime]` listener block in `bindWorkspaceEvents()`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderDowntimeEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS.
+- Targeted mock-DOM event smoke: PASS for subject copy success, body copy failure state, reset labels, and missing-work-order no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4179/`.
+- Local browser boot smoke: PASS; reached login screen with clean logs and new script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions public run verification: PASS for `9eac566`, run `https://github.com/loufish727/MaintainOps/actions/runs/26455942889`. The local verifier hit GitHub API rate limiting while pending.
+- Signed-in live smoke: PASS. `Hydralic Leak` Work Order Detail showed copy buttons; `Copy Subject` and `Copy Email Body` changed to a copy result state and reset to their original labels.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Clipboard fallback can settle slower than a fixed sleep in browser automation. Future copy-button smoke should wait conditionally for the reset label rather than sleeping for the nominal timeout.
 
 ## LFES High-Risk Boundary - Work-Order Assignment Events - 2026-05-26
 

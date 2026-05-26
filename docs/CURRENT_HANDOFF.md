@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed second high-risk mutation-adjacent event extraction from `bindWorkspaceEvents()`: work-order assignment events.
+Completed non-mutating work-order downtime copy event extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `892f4c2` (`Extract workspace work order assignment events`)
+  - `9eac566` (`Extract workspace work order downtime events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-assignment-events-1`
+  - `app.js?v=lfes-authority-work-downtime-events-1`
 - Current `app.js` line count:
-  - 8,955 lines.
+  - 8,948 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -56,23 +56,24 @@ Completed second high-risk mutation-adjacent event extraction from `bindWorkspac
   - Event-boundary runs moved workspace filter/pagination, detail navigation, and inventory/equipment filter bindings to `src/utils/workspaceFilterPaginationEvents.js`, `src/utils/workspaceDetailNavigationEvents.js`, and `src/utils/workspaceInventoryFilterEvents.js`.
   - High-risk work-order mutation-adjacent run moved only quick status button binding to `src/utils/workspaceWorkOrderStatusEvents.js`; `app.js` still owns `setWorkOrderStatus`, Supabase mutation sequencing, status guards, record events, and render.
   - High-risk work-order mutation-adjacent run moved assignment event wiring to `src/utils/workspaceWorkOrderAssignmentEvents.js`; `app.js` still owns `assignWorkOrderToMe`, `assignWorkOrderFromCard`, Supabase mutation sequencing, permission checks, record events, render, status, delete, and downtime flows.
+  - Non-mutating work-order boundary moved downtime copy button wiring to `src/utils/workspaceWorkOrderDowntimeEvents.js`; `app.js` still owns downtime subject/body builders and clipboard implementation.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderAssignmentEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM event smoke passed for assign-to-me click, card assignment submit, card click stopPropagation, assigned_to change auto-submit, and non-assignment change ignored.
-  - local resource smoke passed against `http://127.0.0.1:4178/`.
-  - local browser boot smoke reached the login screen with the new assignment event script and cache tag present.
+  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderDowntimeEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM event smoke passed for subject copy, body copy failure state, reset labels, and missing-work-order no-op.
+  - local resource smoke passed against `http://127.0.0.1:4179/`.
+  - local browser boot smoke reached the login screen with the new downtime event script and cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
-  - signed-in live smoke passed with the dedicated QA/test account on `https://loufish727.github.io/MaintainOps/`.
-  - dedicated QA/test account smoke confirmed assignment controls are correctly hidden for that role.
-  - manager/admin live smoke changed `Hydralic Leak` assignment from Lee Gaede to Louie Fisher via `Assign To Me`, observed Work Order Detail owner/assignment changed, then restored the card assignment to Lee Gaede.
-  - live `index.html` referenced `src/utils/workspaceWorkOrderAssignmentEvents.js?v=lfes-authority-work-assignment-events-1` and `app.js?v=lfes-authority-work-assignment-events-1`.
-  - GitHub Actions verifier passed for `892f4c2`: `https://github.com/loufish727/MaintainOps/actions/runs/26455282763`.
+  - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
+  - live downtime copy smoke opened `Hydralic Leak`, clicked `Copy Subject` and `Copy Email Body`, observed copy result text, and verified both labels reset.
+  - live `index.html` referenced `src/utils/workspaceWorkOrderDowntimeEvents.js?v=lfes-authority-work-downtime-events-1` and `app.js?v=lfes-authority-work-downtime-events-1`.
+  - GitHub Actions public run passed for `9eac566`: `https://github.com/loufish727/MaintainOps/actions/runs/26455942889`. The local verifier hit GitHub API rate limiting while the run was pending, so the run page was used for verification.
   - fresh live console sample had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
 - LFES catch:
   - the first live smoke expectation was wrong. Quick status mutations intentionally set the active work order and re-render into Work Order Detail, so future work-order quick-status smoke must assert the detail status after mutation rather than expecting the list card to remain visible.
   - the dedicated QA/test account is not a manager/admin assignment actor, so assignment controls are hidden there. Assignment mutation smoke requires a manager/admin session plus restore, while the QA/test account remains useful for denied/hidden-control verification.
+  - clipboard fallback can settle slower than the nominal 1600ms reset delay in automation; downtime-copy smoke should wait for reset labels conditionally instead of using a brittle fixed sleep.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -81,9 +82,9 @@ Completed second high-risk mutation-adjacent event extraction from `bindWorkspac
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status and assignment event bindings are implemented and live verified.
+  - quick work-order status, assignment, and downtime-copy event bindings are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
-  - delete, downtime, detail status dropdown, and completion flows remain separate targets.
+  - delete, detail status dropdown, and completion flows remain separate targets.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
 
 Still do not move auth/session/company/location logic, Supabase SQL/RLS, storage/photo/document flows, Quick Fix, request conversion, public QR flows, PM generation, broad forms with mutations, delete actions, delete confirmations, `renderWorkspace()`, or broad `bindWorkspaceEvents()`. Work-order mutation-adjacent event-binding extraction is allowed only when explicitly selected as one subcluster with visible smoke coverage and direct rollback.

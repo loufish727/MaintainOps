@@ -4176,3 +4176,49 @@ Next candidates:
 
 - Downtime-copy event group is the next lower-risk work-order hard boundary because it is visible and non-mutating.
 - Delete and completion flows remain higher-risk and should not be combined with another group.
+
+## Work-Order Downtime Copy Event Boundary - 2026-05-26
+
+Selected boundary:
+
+- `bindWorkspaceEvents()` downtime email copy buttons:
+  - `[data-copy-downtime]`
+
+Why this is hard:
+
+- The binding touches browser clipboard behavior and temporary button feedback, which can behave differently in automation and live browsers.
+
+Why this is recoverable:
+
+- It is non-mutating.
+- The extraction moved only event binding, not downtime text builders or clipboard implementation.
+- Status, assignment, delete, completion, and Supabase/RLS flows were left untouched.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderDowntimeEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderDowntimeEvents.js?v=lfes-authority-work-downtime-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-downtime-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added the role-gated smoke rule to `docs/DEBUG_PROCESS.md`.
+- App deploy commit: `9eac566` (`Extract workspace work order downtime events`).
+- `app.js` line count moved from 8,955 to 8,948.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderDowntimeEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Mock-DOM event smoke: PASS for subject copy, body copy failure state, reset labels, and missing-work-order no-op.
+- Local resource smoke: PASS.
+- Local boot smoke: PASS.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions public run verification: PASS for `9eac566`, run `https://github.com/loufish727/MaintainOps/actions/runs/26455942889`. The local verifier hit GitHub API rate limiting while the run was pending.
+- Signed-in live downtime copy smoke: PASS. `Copy Subject` and `Copy Email Body` changed to a result state and reset to their original labels with clean logs.
+
+LFES catch:
+
+- Fixed sleeps are brittle around clipboard fallback timing. Copy-button smokes should wait for the final label condition instead of assuming the nominal reset timeout is exact.
+
+Next candidates:
+
+- Detail status dropdown is a contained mutation-adjacent boundary if treated separately from quick status.
+- Delete and completion remain higher-risk and should not be combined with another group.
