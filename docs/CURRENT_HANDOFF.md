@@ -37,7 +37,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-order-edit-events-1`
+  - `app.js?v=lfes-state-filter-pagination-1`
 - Current `app.js` line count:
   - 8,055 lines.
 - Current security checkpoint:
@@ -52,6 +52,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - `index.html` now loads `src/utils/workspaceUiState.js?v=lfes-state-workspace-ui-state-1` before workspace event modules.
   - Parts/Equipment UI state now reads/writes `partsPage`, `assetsPage`, `partSearchQuery`, `partInventoryFilter`, and `assetStatusFilter` through `workspaceUiState`.
   - Workspace filter/pagination state now reads/writes `activeStatusFilter`, `myWorkFilter`, `workOrderFilter`, `workOrderAssigneeFilter`, `workSort`, `workOrderPage`, `requestViewFilter`, `requestsPage`, `schedulesPage`, `proceduresPage`, and `membersPage` through `workspaceUiState`.
+  - `index.html` app cache tag was bumped to `app.js?v=lfes-state-filter-pagination-1` because this phase changed `app.js`.
   - Added `tests/smoke/workspace-inventory-filter-state-smoke.js`.
   - Added `tests/smoke/workspace-filter-pagination-state-smoke.js`.
   - `app.js` still owns unrelated legacy UI state variables until follow-up wiring phases move selected event modules to the factory.
