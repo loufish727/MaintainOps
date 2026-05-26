@@ -5028,8 +5028,8 @@ function bindWorkspaceEvents() {
     copyTextToClipboard,
   });
 
-  document.querySelectorAll("[data-convert-request]").forEach((button) => {
-    button.addEventListener("click", () => convertRequestToWorkOrder(button.dataset.convertRequest));
+  bindWorkspaceRequestConversionEvents({
+    convertRequestToWorkOrder,
   });
 
   bindWorkspaceRequestQuickFixEvents({

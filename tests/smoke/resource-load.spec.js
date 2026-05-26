@@ -48,6 +48,7 @@ const requiredResources = [
   "src/utils/workspaceQuickFixCommandEvents.js",
   "src/utils/workspaceAssetQuickFixEvents.js",
   "src/utils/workspacePublicRequestLinkCopyEvents.js",
+  "src/utils/workspaceRequestConversionEvents.js",
   "src/utils/workspaceRequestQuickFixEvents.js",
   "src/utils/workspaceAssetLocationWarningEvents.js",
   "src/utils/requestQueryFilters.js",
