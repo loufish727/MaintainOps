@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the New Work Order command-opener boundary extraction from `bindWorkspaceEvents()`.
+Completed the Export CSV command boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `b9931f3` (`Extract workspace new work order command events`)
+  - `dd307da` (`Extract workspace export csv command events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-new-work-order-command-events-1`
+  - `app.js?v=lfes-authority-export-csv-command-events-1`
 - Current `app.js` line count:
-  - 8,752 lines.
+  - 8,754 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -72,16 +72,17 @@ Completed the New Work Order command-opener boundary extraction from `bindWorksp
   - Medium-low-risk Report Issue command-opener boundary moved `[data-command-action="report-issue"]` to `src/utils/workspaceReportIssueCommandEvents.js`; `app.js` still owns the other command actions, issue creation, issue status mutation, render, auth/company/location state, and Supabase access.
   - Medium-risk Submit Request command-opener boundary moved `[data-command-action="request"]` to `src/utils/workspaceSubmitRequestCommandEvents.js`; `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
   - Medium-risk New Work Order command-opener boundary moved `[data-command-action="create-work-order"]` to `src/utils/workspaceNewWorkOrderCommandEvents.js`; `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
+  - Medium-risk Export CSV command boundary moved `[data-command-action="export-csv"]` to `src/utils/workspaceExportCsvCommandEvents.js`; `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceNewWorkOrderCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-new-work-order-command-events-smoke.js`.
-  - targeted mock-DOM New Work Order command smoke passed for clearing active detail/mode state, entering create-work-order mode, switching to Work Orders, persisting active section, and rendering.
+  - static JS checks passed for `app.js`, `src/utils/workspaceExportCsvCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-export-csv-command-events-smoke.js`.
+  - targeted mock-DOM Export CSV command smoke passed for invoking the injected export callback and missing-callback no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new New Work Order command event script/cache tag present and no browser warning/error logs.
+  - local browser boot smoke loaded the app shell with the new Export CSV command event script/cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live New Work Order command smoke opened the `More` disclosure, clicked New Work Order, confirmed `#create-work-order-form` rendered, confirmed Quick Fix form did not render, with new script/cache tags and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceNewWorkOrderCommandEvents.js?v=lfes-authority-new-work-order-command-events-1` and `app.js?v=lfes-authority-new-work-order-command-events-1`.
-  - `npm run test:smoke:github-actions` passed for `b9931f3`: Resource Load Smoke `26462656699` completed successfully. Pages build/deployment `26462655467` also completed successfully.
+  - live Export CSV command smoke used a download-capable authenticated headless browser, opened Equipment, opened `More`, clicked Export CSV, and captured a generated `equipment.csv` blob-link export with no dialogs and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspaceExportCsvCommandEvents.js?v=lfes-authority-export-csv-command-events-1` and `app.js?v=lfes-authority-export-csv-command-events-1`.
+  - `npm run test:smoke:github-actions` passed for `dd307da`: Resource Load Smoke `26462940370` completed successfully. Pages build/deployment `26462939393` also completed successfully.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -96,6 +97,7 @@ Completed the New Work Order command-opener boundary extraction from `bindWorksp
   - delete-warning live smokes can have more than one generic `Cancel` button visible. Use scoped data selectors such as `[data-cancel-delete-part]` for cancel-only verification and never click permanent delete in a cancel-boundary smoke.
   - Work Order detail accordions can place the target below the viewport; record visible summary/button rects, scroll as needed, and use coordinate clicks only after proving the intended control and avoiding submit/mutation actions.
   - Disclosure-hosted command controls need the disclosure state verified before targeting nested buttons; open `More` first before clicking Submit Request/New Work Order/Export CSV controls.
+  - The in-app browser download event API does not support file downloads; export/download smokes need a download-capable Playwright browser or a browser-side anchor/blob capture.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -104,7 +106,7 @@ Completed the New Work Order command-opener boundary extraction from `bindWorksp
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, and New Work Order command boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, and Export CSV command boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

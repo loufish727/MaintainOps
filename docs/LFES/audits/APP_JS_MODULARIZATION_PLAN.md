@@ -4883,3 +4883,49 @@ Verification:
 Next candidates:
 
 - Reassess before continuing. Export CSV has a download side effect and Quick Fix remains higher-risk. Do not combine either with another extraction.
+
+## Export CSV Command Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- `Export CSV` command binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It lives in the shared command-action router and triggers a download side effect.
+
+Why this is recoverable:
+
+- The extraction moved only the Export CSV click binding.
+- Export row construction, filename selection, blob generation, active-section state, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- No app data is mutated.
+- Rollback is one app commit or restoration of the original export-csv command branch.
+
+Implementation:
+
+- Added `src/utils/workspaceExportCsvCommandEvents.js`.
+- Updated `index.html` with `src/utils/workspaceExportCsvCommandEvents.js?v=lfes-authority-export-csv-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-export-csv-command-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-export-csv-command-events-smoke.js`.
+- App deploy commit: `dd307da` (`Extract workspace export csv command events`).
+- `app.js` line count moved from 8,752 to 8,754 because the injected adapter is larger than the removed branch.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceExportCsvCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-export-csv-command-events-smoke.js`.
+- Targeted mock-DOM Export CSV command smoke: PASS for invoking the injected export callback and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Export CSV command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462940370`, and Pages build/deployment run `26462939393` completed successfully for `dd307da`.
+- Signed-in live Export CSV command smoke: PASS. A download-capable authenticated browser opened Equipment, opened `More`, clicked Export CSV, and captured a generated `equipment.csv` blob-link export with no dialogs and no browser warning/error logs.
+
+LFES catch:
+
+- The in-app browser does not support download events; export/download smokes need a download-capable Playwright browser or a browser-side anchor/blob capture.
+- Empty-section export intentionally alerts instead of downloading. Choose a known non-empty section for CSV-path verification.
+
+Next candidates:
+
+- Quick Fix is now the remaining shared command opener, but it is higher-risk and should be mapped separately before extraction.

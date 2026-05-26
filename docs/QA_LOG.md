@@ -33,7 +33,52 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Report Issue command boundary extracted and live verified with Report Issue open/cancel smoke.
 - 2026-05-26: LFES Submit Request command boundary extracted and live verified with More -> Submit Request open-form smoke.
 - 2026-05-26: LFES New Work Order command boundary extracted and live verified with More -> New Work Order open-form smoke.
+- 2026-05-26: LFES Export CSV command boundary extracted and live verified with authenticated Equipment export blob-capture smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Export CSV Command Events - 2026-05-26
+
+Boundary selected:
+
+- `Export CSV` command event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path invokes a download side effect, but does not mutate app data, Supabase, auth, company, or location state.
+
+Implementation scope:
+
+- Added `src/utils/workspaceExportCsvCommandEvents.js`.
+- Moved only `[data-command-action="export-csv"]`.
+- Injected the app-owned `exportActiveSectionCsv` callback.
+- Kept export row construction, active-section selection, filename selection, CSV/blob generation, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceExportCsvCommandEvents.js?v=lfes-authority-export-csv-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-export-csv-command-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceExportCsvCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-export-csv-command-events-smoke.js`.
+- Targeted mock-DOM Export CSV command smoke: PASS for invoking the injected export callback and missing-callback no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Export CSV command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462940370`, and Pages build/deployment run `26462939393` completed successfully for `dd307da`.
+- Signed-in live smoke: PASS. A download-capable authenticated browser opened Equipment, opened `More`, clicked Export CSV, and captured a generated `equipment.csv` blob-link export with no dialogs and no warning/error logs.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The in-app browser does not support download events. Export/download smokes need a download-capable Playwright browser or a browser-side capture of generated anchor/blob behavior.
+- Exporting an empty section intentionally shows `Nothing to export in this section yet.`; choose a section with known rows, such as Equipment in the current test company, when verifying the CSV path.
+
+Next:
+
+- Quick Fix is now the only remaining shared command opener in this router and remains higher-risk. Map it separately before touching it.
 
 ## LFES Boundary - New Work Order Command Events - 2026-05-26
 
