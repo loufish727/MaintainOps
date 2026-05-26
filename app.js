@@ -58,6 +58,7 @@ const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilte
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
+const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4942,11 +4943,9 @@ function bindWorkspaceEvents() {
     showNotice,
   });
 
-  document.querySelectorAll("[data-assign-me]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      await assignWorkOrderToMe(button.dataset.assignMe);
-    });
+  bindWorkspaceWorkOrderAssignmentEvents({
+    assignWorkOrderToMe,
+    assignWorkOrderFromCard,
   });
 
   document.querySelectorAll("[data-delete-work-order]").forEach((button) => {
@@ -4990,15 +4989,6 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
       await deleteAsset(button.dataset.confirmDeleteAsset);
-    });
-  });
-
-  document.querySelectorAll("[data-card-assign]").forEach((form) => {
-    form.addEventListener("submit", assignWorkOrderFromCard);
-    form.addEventListener("click", (event) => event.stopPropagation());
-    form.addEventListener("change", (event) => {
-      event.stopPropagation();
-      if (event.target?.name === "assigned_to") form.requestSubmit();
     });
   });
 
