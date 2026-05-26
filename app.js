@@ -1,4 +1,4 @@
-﻿const app = document.querySelector("#app");
+const app = document.querySelector("#app");
 
 const {
   STATUS_OPTIONS,
@@ -208,7 +208,7 @@ const {
   myWorkFilter: () => workspaceUiState.getMyWorkFilter(),
   OUTSIDE_VENDOR_NOTE,
   postgrestSearchTerm,
-  searchQuery: () => searchQuery,
+  searchQuery: () => workspaceUiState.getSearchQuery(),
   session: () => session,
   startOfToday,
   workOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
@@ -315,8 +315,6 @@ if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "
   localStorage.setItem("maintainops.activeSection", activeSection);
   localStorage.setItem("maintainops.sectionSplitDone", "true");
 }
-let searchQuery = localStorage.getItem("maintainops.searchQuery") || "";
-let workOrderSearchMode = localStorage.getItem("maintainops.workOrderSearchMode") === "true";
 let appError = "";
 let appNotice = "";
 let appNoticeTone = "success";
@@ -328,7 +326,7 @@ const {
   matchesSearch,
   matchesQuery,
 } = createSearchFilterDisplayHelpers({
-  getSearchQuery: () => searchQuery,
+  getSearchQuery: () => workspaceUiState.getSearchQuery(),
 });
 const {
   compareWorkOrders,
@@ -357,7 +355,7 @@ const { applyRequestQueryFilters } = createRequestQueryFilterHelpers({
   postgrestSearchTerm,
   requestViewFilter: () => workspaceUiState.getRequestViewFilter(),
   SEARCH_ID_PAGE_SIZE,
-  searchQuery: () => searchQuery,
+  searchQuery: () => workspaceUiState.getSearchQuery(),
 });
 const {
   teamMemberName,
@@ -406,7 +404,7 @@ const {
   parts: () => parts,
   postgrestSearchTerm,
   procedureTemplates: () => procedureTemplates,
-  searchQuery: () => searchQuery,
+  searchQuery: () => workspaceUiState.getSearchQuery(),
   SEARCH_ID_CHUNK_SIZE,
   setExactWorkOrderSearchCache: (value) => { exactWorkOrderSearchCache = value; },
   setWorkOrderPage: (value) => {
@@ -419,7 +417,7 @@ const {
   WORK_ORDER_FALLBACK_SELECT: () => WORK_ORDER_FALLBACK_SELECT,
   WORK_ORDER_RELATION_SELECT: () => WORK_ORDER_RELATION_SELECT,
   WORK_ORDERS_PER_PAGE,
-  workOrderSearchMode: () => workOrderSearchMode,
+  workOrderSearchMode: () => workspaceUiState.getWorkOrderSearchMode(),
   workSort: () => workspaceUiState.getWorkSort(),
 });
 const {
@@ -439,7 +437,7 @@ const {
   preventiveSchedules: () => preventiveSchedules,
   procedureTemplates: () => procedureTemplates,
   profilesByUserId: () => profilesByUserId,
-  searchQuery: () => searchQuery,
+  searchQuery: () => workspaceUiState.getSearchQuery(),
   SEARCH_PREVIEW_LIMIT,
   startOfToday,
   workOrders: () => workOrders,
@@ -572,7 +570,7 @@ const {
   preventiveDueSoon,
 } = dashboardDisplayHelpers;
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
-  getSearchQuery: () => searchQuery,
+  getSearchQuery: () => workspaceUiState.getSearchQuery(),
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
   getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
@@ -596,7 +594,7 @@ const {
   statusLabel,
   assignmentLabel,
   activeLocationName,
-  getSearchQuery: () => searchQuery,
+  getSearchQuery: () => workspaceUiState.getSearchQuery(),
 });
 const {
   workOrdersPanelTitle,
@@ -2026,7 +2024,7 @@ async function countRequests(filter) {
 }
 
 async function fetchWorkOrderPage(options = {}) {
-  if (workOrderSearchMode && searchQuery.trim()) {
+  if (workspaceUiState.getWorkOrderSearchMode() && workspaceUiState.getSearchQuery().trim()) {
     return fetchExactSearchedWorkOrderPage(options);
   }
 
@@ -2505,6 +2503,8 @@ function renderWorkspace() {
   const workOrderAssigneeFilter = workspaceUiState.getWorkOrderAssigneeFilter();
   const workSort = workspaceUiState.getWorkSort();
   const requestViewFilter = workspaceUiState.getRequestViewFilter();
+  const searchQuery = workspaceUiState.getSearchQuery();
+  const workOrderSearchMode = workspaceUiState.getWorkOrderSearchMode();
   const isViewingWorkOrderSearch = activeSection === "work" && workOrderSearchMode && Boolean(searchQuery.trim());
   const profile = profilesByUserId[session.user.id] || {};
   const canSwitchLocation = canSwitchLocations();
@@ -3006,12 +3006,7 @@ function resetWorkOrderPage() {
 }
 
 function setWorkOrderSearchMode(enabled) {
-  workOrderSearchMode = Boolean(enabled && searchQuery.trim());
-  if (workOrderSearchMode) {
-    localStorage.setItem("maintainops.workOrderSearchMode", "true");
-  } else {
-    localStorage.removeItem("maintainops.workOrderSearchMode");
-  }
+  workspaceUiState.setWorkOrderSearchMode(Boolean(enabled && workspaceUiState.getSearchQuery().trim()));
 }
 
 function invalidateExactWorkOrderSearchCache() {
@@ -4288,7 +4283,7 @@ function renderWorkOrderDetail() {
         <h2>${escapeHtml(workOrder.title)}</h2>
         <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
         ${renderRelationshipChips(workOrder)}
-        ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} Â· ${workOrder.actual_minutes || 0} min</p>` : ""}
+        ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
         ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
         ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
       </div>
@@ -4412,7 +4407,7 @@ function renderWorkOrderDetail() {
           <summary>Procedure Checklist</summary>
           <div class="panel-header compact-header">
             <h3>${escapeHtml(procedure.name)}</h3>
-            <span>${progress.done} of ${progress.total} complete Â· required ${requiredProgress.done}/${requiredProgress.total}</span>
+            <span>${progress.done} of ${progress.total} complete · required ${requiredProgress.done}/${requiredProgress.total}</span>
           </div>
           <div class="checklist-list">
             ${procedure.procedure_steps.map((step) => renderChecklistStep(workOrder, step)).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
@@ -4841,7 +4836,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceSearchEvents({
     state: {
       getActiveSection: () => activeSection,
-      getSearchQuery: () => searchQuery,
+      getSearchQuery: () => workspaceUiState.getSearchQuery(),
       setActiveAssetId: (value) => { activeAssetId = value; },
       setActivePartId: (value) => { activePartId = value; },
       setActiveSection: (value) => { activeSection = value; },
@@ -4850,7 +4845,7 @@ function bindWorkspaceEvents() {
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
       setQuickFixRequestId: (value) => { quickFixRequestId = value; },
-      setSearchQuery: (value) => { searchQuery = value; },
+      setSearchQuery: (value) => { workspaceUiState.setSearchQuery(value); },
     },
     invalidateExactWorkOrderSearchCache,
     reloadRequestQueue,
@@ -4867,7 +4862,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: (value) => { activeAssetId = value; },
       setActivePartId: (value) => { activePartId = value; },
       setActiveSection: (value) => { activeSection = value; },
-      setSearchQuery: (value) => { searchQuery = value; },
+      setSearchQuery: (value) => { workspaceUiState.setSearchQuery(value); },
     },
     renderWorkspace,
     setWorkOrderSearchMode,

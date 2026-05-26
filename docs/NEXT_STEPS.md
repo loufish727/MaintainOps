@@ -6,12 +6,12 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `5f77e9e` (`Wire workspace filter state to UI factory`).
+- Latest app behavior commit: pending current workspace search state commit.
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
-- Current `app.js` line count: 8,055.
+- Current `app.js` line count: 8,050.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, and workspace filter/pagination state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke passed for `15e4c49`.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, and workspace search state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke passed for `15e4c49`.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -28,7 +28,7 @@ Recommended immediate next controlled phase:
 - RLS source audit result: app-used data tables and storage buckets are covered in source, but two app-used RPC dependencies are not present in checked SQL source: `cancel_company_invite` and `record_work_order_part_usage`.
 - Before touching team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, or related SQL/RLS work, resolve or explicitly accept that RPC source gap.
 - Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.
-- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, and workspace filter/pagination state is wired. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`, likely workspace search state. Do not replace broad `app.js` variables in one move.
+- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, and workspace search state is wired. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; detail/navigation or section-navigation state is the likely next candidate. Do not replace broad `app.js` variables in one move.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
 - Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
 - Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.
