@@ -50,6 +50,7 @@ const {
 const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
+const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
@@ -307,22 +308,18 @@ const {
 } = window.MaintainOpsPublicUrlQr.createPublicUrlQrHelpers({
   getPublicAppUrlOverride: () => publicAppUrlOverride,
 });
+const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
 let activeStatusFilter = "active";
 let myWorkFilter = localStorage.getItem("maintainops.myWorkFilter") || "assigned";
 let workOrderFilter = localStorage.getItem("maintainops.workOrderFilter") || "all";
 let workOrderAssigneeFilter = localStorage.getItem("maintainops.workOrderAssigneeFilter") || "";
 let workSort = localStorage.getItem("maintainops.workSort") || "newest";
 let workOrderPage = Number(localStorage.getItem("maintainops.workOrderPage")) || 1;
-let partsPage = Number(localStorage.getItem("maintainops.partsPage")) || 1;
-let assetsPage = Number(localStorage.getItem("maintainops.assetsPage")) || 1;
 let requestsPage = Number(localStorage.getItem("maintainops.requestsPage")) || 1;
 let requestViewFilter = localStorage.getItem("maintainops.requestViewFilter") || "active";
 let schedulesPage = Number(localStorage.getItem("maintainops.schedulesPage")) || 1;
 let proceduresPage = Number(localStorage.getItem("maintainops.proceduresPage")) || 1;
 let membersPage = Number(localStorage.getItem("maintainops.membersPage")) || 1;
-let assetStatusFilter = localStorage.getItem("maintainops.assetStatusFilter") || "all";
-let partInventoryFilter = localStorage.getItem("maintainops.partInventoryFilter") || "all";
-let partSearchQuery = localStorage.getItem("maintainops.partSearchQuery") || "";
 let activeSection = localStorage.getItem("maintainops.activeSection") || "mywork";
 if (!localStorage.getItem("maintainops.sectionSplitDone") && activeSection === "work") {
   activeSection = "mywork";
@@ -496,8 +493,8 @@ const {
   partSourceOptions,
 } = createPartInventoryDisplayHelpers({
   getParts: () => parts,
-  getPartInventoryFilter: () => partInventoryFilter,
-  getPartSearchQuery: () => partSearchQuery,
+  getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
+  getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   matchesActiveLocation,
 });
 const {
@@ -531,7 +528,7 @@ const {
   isAssetDescendantOf,
 } = createAssetHierarchyDisplayHelpers({
   getAssets: () => assets,
-  getAssetStatusFilter: () => assetStatusFilter,
+  getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
   matchesActiveLocation,
   matchesSearch,
 });
@@ -588,9 +585,9 @@ const {
 } = dashboardDisplayHelpers;
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
   getSearchQuery: () => searchQuery,
-  getAssetStatusFilter: () => assetStatusFilter,
-  getPartSearchQuery: () => partSearchQuery,
-  getPartInventoryFilter: () => partInventoryFilter,
+  getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
+  getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
+  getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
   assetStatusLabel,
 });
 const {
@@ -656,8 +653,8 @@ const {
   ASSETS_PER_PAGE,
   LIST_ITEMS_PER_PAGE,
   getWorkOrderPage: () => workOrderPage,
-  getPartsPage: () => partsPage,
-  getAssetsPage: () => assetsPage,
+  getPartsPage: () => workspaceUiState.getPartsPage(),
+  getAssetsPage: () => workspaceUiState.getAssetsPage(),
 });
 const {
   renderPart,
@@ -670,8 +667,8 @@ const {
   matchesActiveLocation,
   getParts: () => parts,
   getPartCostsReady: () => partCostsReady,
-  getPartInventoryFilter: () => partInventoryFilter,
-  getPartSearchQuery: () => partSearchQuery,
+  getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
+  getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
 });
 const {
   renderLocationOptions,
@@ -2546,12 +2543,14 @@ function renderWorkspace() {
   const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
-  if (partsPage > totalPartsPages) partsPage = totalPartsPages;
-  if (partsPage < 1) partsPage = 1;
+  if (workspaceUiState.getPartsPage() > totalPartsPages) workspaceUiState.setPartsPage(totalPartsPages);
+  if (workspaceUiState.getPartsPage() < 1) workspaceUiState.setPartsPage(1);
+  const partsPage = workspaceUiState.getPartsPage();
   const pagedParts = visibleParts.slice((partsPage - 1) * PARTS_PER_PAGE, partsPage * PARTS_PER_PAGE);
   const totalAssetPages = Math.max(1, Math.ceil(visibleAssets.length / ASSETS_PER_PAGE));
-  if (assetsPage > totalAssetPages) assetsPage = totalAssetPages;
-  if (assetsPage < 1) assetsPage = 1;
+  if (workspaceUiState.getAssetsPage() > totalAssetPages) workspaceUiState.setAssetsPage(totalAssetPages);
+  if (workspaceUiState.getAssetsPage() < 1) workspaceUiState.setAssetsPage(1);
+  const assetsPage = workspaceUiState.getAssetsPage();
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
   const visibleMembers = filteredMembers();
   const totalRequestPages = Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE));
@@ -2796,7 +2795,7 @@ function renderWorkspace() {
             <p class="error-text" id="asset-create-error"></p>
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
-                <button class="asset-health ${status} ${assetStatusFilter === status ? "active" : ""}" data-asset-status-filter="${status}" type="button">
+                <button class="asset-health ${status} ${workspaceUiState.getAssetStatusFilter() === status ? "active" : ""}" data-asset-status-filter="${status}" type="button">
                   <span>${assetStatusLabel(status)}</span>
                   <strong>${assets.filter((asset) => matchesActiveLocation(asset) && asset.status === status).length}</strong>
                 </button>
@@ -3022,8 +3021,7 @@ function invalidateExactWorkOrderSearchCache() {
 }
 
 function resetPartsPage() {
-  partsPage = 1;
-  localStorage.setItem("maintainops.partsPage", String(partsPage));
+  workspaceUiState.resetPartsPage();
 }
 
 function resetRequestsPage() {
@@ -3032,14 +3030,12 @@ function resetRequestsPage() {
 }
 
 function clearPartSearchState() {
-  partSearchQuery = "";
-  localStorage.setItem("maintainops.partSearchQuery", "");
+  workspaceUiState.setPartSearchQuery("");
   resetPartsPage();
 }
 
 function resetAssetsPage() {
-  assetsPage = 1;
-  localStorage.setItem("maintainops.assetsPage", String(assetsPage));
+  workspaceUiState.resetAssetsPage();
 }
 
 function activeLocationDatabaseId() {
@@ -4966,13 +4962,13 @@ function bindWorkspaceEvents() {
       setWorkOrderPage: (value) => {
         workOrderPage = value;
       },
-      getPartsPage: () => partsPage,
+      getPartsPage: () => workspaceUiState.getPartsPage(),
       setPartsPage: (value) => {
-        partsPage = value;
+        workspaceUiState.setPartsPage(value);
       },
-      getAssetsPage: () => assetsPage,
+      getAssetsPage: () => workspaceUiState.getAssetsPage(),
       setAssetsPage: (value) => {
-        assetsPage = value;
+        workspaceUiState.setAssetsPage(value);
       },
       getRequestsPage: () => requestsPage,
       setRequestsPage: (value) => {
@@ -5179,13 +5175,13 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceInventoryFilterEvents({
     state: {
-      getAssetStatusFilter: () => assetStatusFilter,
+      getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
       setAssetStatusFilter: (value) => {
-        assetStatusFilter = value;
+        workspaceUiState.setAssetStatusFilter(value);
       },
-      getPartInventoryFilter: () => partInventoryFilter,
+      getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
       setPartInventoryFilter: (value) => {
-        partInventoryFilter = value;
+        workspaceUiState.setPartInventoryFilter(value);
       },
     },
     renderWorkspace,
@@ -5195,7 +5191,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspacePartSearchEvents({
     state: {
-      setPartSearchQuery: (value) => { partSearchQuery = value; },
+      setPartSearchQuery: (value) => { workspaceUiState.setPartSearchQuery(value); },
     },
     renderWorkspace,
     resetPartsPage,
