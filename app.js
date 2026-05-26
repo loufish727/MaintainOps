@@ -60,6 +60,7 @@ const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInvent
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
 const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
 const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
+const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5132,8 +5133,7 @@ function bindWorkspaceEvents() {
     field.addEventListener("change", syncSafetyDeviceChecks);
   });
 
-  const statusSelect = document.querySelector("#status-select");
-  if (statusSelect) statusSelect.addEventListener("change", updateWorkOrderStatus);
+  bindWorkspaceWorkOrderDetailStatusEvents({ updateWorkOrderStatus });
 
   const commentForm = document.querySelector("#comment-form");
   if (commentForm) commentForm.addEventListener("submit", createComment);
