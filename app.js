@@ -85,6 +85,7 @@ const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamI
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
+const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5042,8 +5043,8 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => convertRequestToWorkOrder(button.dataset.convertRequest));
   });
 
-  document.querySelectorAll("[data-quick-fix-request]").forEach((button) => {
-    button.addEventListener("click", () => openQuickFixForRequest(button.dataset.quickFixRequest));
+  bindWorkspaceRequestQuickFixEvents({
+    openQuickFixForRequest,
   });
 
   document.querySelectorAll("[data-delete-request]").forEach((button) => {
