@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the PM generation event boundary extraction.
+Rolled back the follow-up work event boundary after a live-smoke coverage stop.
 
 - Latest app behavior commit:
-  - `d1cef34` (`Extract workspace PM generation events`)
+  - `fbcc7c3` (`Revert "Extract workspace follow up work events"`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
   - `app.js?v=lfes-authority-pm-generation-events-1`
 - Current `app.js` line count:
-  - 8,057 lines.
+  - 8,703 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -87,6 +87,7 @@ Completed the PM generation event boundary extraction.
   - High-risk-but-contained request-origin Quick Fix opener boundary moved `[data-quick-fix-request]` to `src/utils/workspaceRequestQuickFixEvents.js`; `app.js` still owns `openQuickFixForRequest`, Quick Fix submit, request conversion/deletion, request data, created work records, render, auth/company/location state, and Supabase access.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
+  - Attempted high-risk follow-up work event boundary `[data-create-follow-up]` was reverted because live smoke could not render a visible follow-up control from the disposable setup record. Do not retry until a supported setup path produces a visible follow-up card and an authorized cleanup path is confirmed.
 - Verification:
   - static JS checks passed for `app.js`, `src/utils/workspacePmGenerationEvents.js`, `tests/smoke/workspace-pm-generation-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
   - targeted mock-DOM PM generation event smoke passed for generation callback and missing-callback no-op.
@@ -112,6 +113,7 @@ Completed the PM generation event boundary extraction.
   - new event modules require both the `index.html` script tag and the top-level `app.js` destructuring alias. Missing the alias produced `Workspace Load Stopped`; the smallest stable fix was adding the alias and bumping the cache tag from request-conversion-events-1 to request-conversion-events-2.
   - GitHub Pages can serve a new module and old `index.html` briefly; verify the hosted index references the expected cache tag before retrying a failed live smoke.
   - PM generation cleanup may be silently blocked by direct RLS deletes; use manager/admin UI cleanup for generated work orders and schedules, then verify data-layer removal.
+  - follow-up work smoke cannot assume a completed source inserted through REST will enter the Planning follow-up list. The UI renders from the loaded `workOrders` state slice; the setup row must be visible before `[data-create-follow-up]` is covered.
   - `python -m http.server` is not available in this Windows environment because `python` resolves to the Microsoft Store shim. Use the existing local Node static-server method for future local resource/browser smokes.
   - delete-warning live smokes can have more than one generic `Cancel` button visible. Use scoped data selectors such as `[data-cancel-delete-part]` for cancel-only verification and never click permanent delete in a cancel-boundary smoke.
   - Work Order detail accordions can place the target below the viewport; record visible summary/button rects, scroll as needed, and use coordinate clicks only after proving the intended control and avoiding submit/mutation actions.
@@ -133,6 +135,7 @@ Completed the PM generation event boundary extraction.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
   - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete warning/cancel/confirm, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, request conversion, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete opener/cancel/confirm, Request delete warning/cancel/confirm, PM schedule delete warning/cancel/confirm/generation, Procedure delete warning/cancel/confirm, textarea auto-grow, and Team invite cancel-warning/confirm boundaries are implemented and live verified.
+  - follow-up work event extraction is explicitly not implemented; last attempt was rolled back after insufficient live smoke coverage.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

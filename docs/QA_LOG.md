@@ -4,6 +4,7 @@ This file summarizes important QA passes and remaining test priorities.
 
 ## Current Latest QA Entries
 
+- 2026-05-26: LFES follow-up work event extraction was rolled back because live smoke coverage was insufficient. The disposable completed source work order created through authenticated REST did not appear in the Planning follow-up list, no `[data-create-follow-up]` control rendered, and direct REST cleanup was blocked by RLS for the setup auth context.
 - 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
@@ -60,6 +61,47 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Follow-Up Work Events Rolled Back - 2026-05-26
+
+Boundary selected:
+
+- `[data-create-follow-up]` follow-up work creation event binding.
+
+Why it was high risk:
+
+- The button starts a follow-up work-order creation flow, clears `follow_up_needed` on the source work order, records activity, refreshes state/render, and depends on loaded work-order visibility.
+
+Implementation attempted:
+
+- Moved only the click binding to `src/utils/workspaceFollowUpWorkEvents.js`.
+- Kept `createFollowUpWorkOrder`, work-order creation, source update, event logging, state, render, auth/company/location, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Verification before deploy:
+
+- Static checks: PASS for `app.js`, the new module, the targeted smoke, and resource-load smoke.
+- Targeted mock-DOM smoke: PASS for callback dispatch and missing-callback no-op.
+- Local resource and local browser tag smokes: PASS.
+- Hosted resource smoke after behavior push: PASS.
+
+Live smoke result:
+
+- FAIL / insufficient coverage. Disposable source work order `LFES disposable follow-up source 1779832299049` (`478c1984-353a-4bbd-9c3b-3430baaee17e`) did not appear in the Planning follow-up list, and no `[data-create-follow-up]` button rendered in the live manager/admin session.
+- Direct REST cleanup using the setup auth context left `remainingSource: 1`, matching the existing RLS cleanup-risk pattern.
+
+Rollback:
+
+- Behavior commit `0046fc2` (`Extract workspace follow up work events`) was reverted with `fbcc7c3`.
+- Live cache tag returned to `app.js?v=lfes-authority-pm-generation-events-1`, the last fully verified boundary.
+- The source record remains as a cleanup item until a manager/admin UI or approved admin cleanup path can remove it.
+
+LFES catch:
+
+- Do not smoke follow-up creation by inserting a completed source record directly through REST unless the test also proves that record enters the loaded `workOrders` slice used by `followUpItems()`. Follow-up event extraction needs a visible, UI-loaded follow-up card before deployment can be considered verified.
+
+Next:
+
+- Do not retry `[data-create-follow-up]` until a supported setup path creates or exposes a visible follow-up item and cleanup can be completed through an authorized path.
 
 ## LFES Boundary - PM Generation Events - 2026-05-26
 

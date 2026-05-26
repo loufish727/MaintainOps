@@ -257,3 +257,12 @@ Phase 6D update:
 - What prevented escalation: the failed local server was diagnosed before deployment, a local Node static-server method was used instead, and the same resource smoke passed against localhost before hosted verification.
 - Fix or mitigation: do not use `python -m http.server` in this environment. Use the established local Node static-server method for future local LFES smokes.
 - Lessons learned: when a local resource smoke times out, first prove the server is listening and serving the new resource before investigating application code.
+
+## 2026-05-26 - Follow-Up Work Event Smoke - Setup Record Was Not UI-Visible
+
+- Issue discovered: a completed source work order inserted through authenticated REST did not appear in the Planning follow-up list, so no `[data-create-follow-up]` button rendered for live verification.
+- How it was discovered: hosted resources loaded correctly and the signed-in manager/admin workspace opened, but the Planning section contained no follow-up controls and did not show the disposable source title.
+- Operational risk: an event-binding extraction for a mutation path could appear technically correct while the real live smoke never exercises the changed handler. Continuing would leave an unverified mutation boundary deployed.
+- What prevented escalation: LFES stopped the phase, attempted cleanup, observed direct REST cleanup was blocked by RLS for the setup auth context, reverted the behavior commit, and documented the smoke/setup mismatch before moving on.
+- Fix or mitigation: do not use direct REST inserts as follow-up smoke setup unless the test also proves the row is loaded into the `workOrders` state consumed by `followUpItems()`. Follow-up extraction requires a visible follow-up card and an authorized cleanup path before deploy.
+- Lessons learned: setup data is not automatically smoke data. For state-derived UI lists, the setup path must prove both persistence and presence in the exact client-side state slice that renders the control under test.

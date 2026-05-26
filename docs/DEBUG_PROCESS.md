@@ -350,6 +350,17 @@ Check:
 
 If schema/RLS changes are required, provide exact SQL.
 
+### Setup Record Does Not Appear In UI
+
+Check:
+
+- Whether the UI renders from a loaded client-side state slice rather than querying the table directly.
+- Whether the setup row matches the active company, active location, status filters, search filters, and list limits for the current view.
+- Whether the setup auth context can also clean up the row; direct REST inserts can succeed while REST deletes are blocked by RLS.
+- If the target control does not render, stop the phase. Do not count hosted resource success as behavior verification for mutation-adjacent boundaries.
+
+For follow-up work smoke, a source work order must be visible in the Planning follow-up list before `[data-create-follow-up]` can be considered covered.
+
 ### GitHub Pages Works Differently Than Local
 
 Check:
