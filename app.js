@@ -73,6 +73,7 @@ const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdmi
 const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartDeleteCancelEvents;
 const { bindWorkspaceWorkMessageStartEvents } = window.MaintainOpsWorkspaceWorkMessageStartEvents;
 const { bindWorkspaceReportIssueCommandEvents } = window.MaintainOpsWorkspaceReportIssueCommandEvents;
+const { bindWorkspaceSubmitRequestCommandEvents } = window.MaintainOpsWorkspaceSubmitRequestCommandEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4699,21 +4700,6 @@ function bindWorkspaceEvents() {
         renderWorkspace();
         return;
       }
-      if (button.dataset.commandAction === "request") {
-        activeWorkOrderId = null;
-        activeAssetId = null;
-        createWorkOrderMode = false;
-        quickFixMode = false;
-        reportIssueMode = false;
-        quickFixAssetId = null;
-        quickFixRequestId = null;
-        activeSection = "requests";
-        setWorkOrderSearchMode(false);
-        localStorage.setItem("maintainops.activeSection", activeSection);
-        resetRequestsPage();
-        await reloadRequestQueue();
-        return;
-      }
       if (button.dataset.commandAction === "export-csv") {
         exportActiveSectionCsv();
       }
@@ -4730,6 +4716,22 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
+  });
+
+  bindWorkspaceSubmitRequestCommandEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+    },
+    reloadRequestQueue,
+    resetRequestsPage,
+    setWorkOrderSearchMode,
   });
 
   const appIssueReportForm = document.querySelector("#app-issue-report-form");
