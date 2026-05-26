@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `d776856` (`Extract workspace procedure delete cancel events`).
+- Latest app behavior commit: `b9e037d` (`Extract workspace textarea auto grow events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-procedure-delete-cancel-events-1`.
-- Current `app.js` line count: 8,099.
+- Latest deployed cache tag: `app.js?v=lfes-authority-textarea-auto-grow-1`.
+- Current `app.js` line count: 8,093.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -55,6 +55,7 @@ Recommended immediate next controlled phase:
 - Request delete-cancel event binding is extracted into `src/utils/workspaceRequestDeleteCancelEvents.js` and live verified. `app.js` still owns delete request, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
 - PM schedule delete-cancel event binding is extracted into `src/utils/workspaceScheduleDeleteCancelEvents.js` and live verified. `app.js` still owns delete request, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
 - Procedure delete-cancel event binding is extracted into `src/utils/workspaceProcedureDeleteCancelEvents.js` and live verified. `app.js` still owns delete request, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
+- Textarea auto-grow UI binding is extracted into `src/utils/workspaceTextareaAutoGrow.js` and live verified. `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -108,6 +109,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Request delete-cancel smoke, manager/admin live disposable request delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26469402958` passed for the Request delete-cancel boundary.
 - Hosted resource checks, targeted mock-DOM PM schedule delete-cancel smoke, manager/admin live disposable PM schedule delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26469751689` passed for the PM schedule delete-cancel boundary.
 - Hosted resource checks, targeted mock-DOM Procedure delete-cancel smoke, manager/admin live disposable procedure delete-warning/cancel/cleanup smoke, and `npm run test:smoke:github-actions` for Resource Load Smoke run `26470365077` passed for the Procedure delete-cancel boundary.
+- Hosted resource checks, targeted mock-DOM textarea auto-grow smoke, and signed-in live Report Issue textarea growth smoke passed for the textarea auto-grow boundary. The unauthenticated GitHub Actions API verifier was rate-limited, so use the public workflow page fallback or a later docs commit run for Actions proof.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.

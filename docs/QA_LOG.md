@@ -38,6 +38,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Request delete-cancel boundary extracted and live verified with disposable request warning/cancel/cleanup smoke.
 - 2026-05-26: LFES PM schedule delete-cancel boundary extracted and live verified with disposable PM schedule warning/cancel/cleanup smoke.
 - 2026-05-26: LFES Procedure delete-cancel boundary extracted and live verified with disposable unlinked procedure warning/cancel/cleanup smoke.
+- 2026-05-26: LFES textarea auto-grow UI boundary extracted and live verified with Report Issue textarea resize smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
 
 ## LFES Boundary - Request Delete-Cancel Events - 2026-05-26
@@ -172,6 +173,48 @@ LFES catch:
 Next:
 
 - Reassess the next boundary from the authority map. Remaining delete-confirm, PM generation, Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
+
+## LFES Boundary - Textarea Auto-Grow UI - 2026-05-26
+
+Boundary selected:
+
+- Textarea auto-grow helper and global textarea input binding.
+
+Operational risk:
+
+- Medium-low.
+- The behavior touches many forms, but only updates textarea inline height. It does not submit forms, mutate records, render, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Added `src/utils/workspaceTextareaAutoGrow.js`.
+- Moved `autoGrowTextarea` and the global `textarea` input binding out of `app.js`.
+- Kept all form submits, field payloads, validation, mutations, render ownership, auth/company/location state, and Supabase/RLS in `app.js`.
+- Added `src/utils/workspaceTextareaAutoGrow.js?v=lfes-authority-textarea-auto-grow-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-textarea-auto-grow-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceTextareaAutoGrow.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-textarea-auto-grow-smoke.js`.
+- Targeted mock-DOM textarea auto-grow smoke: PASS for initial sizing, input resizing, and null no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the textarea auto-grow script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Report Issue details textarea grew from 94px to 218px after 12 lines of input, with `src/utils/workspaceTextareaAutoGrow.js` and the textarea cache tag present and no browser warning/error logs.
+- GitHub Actions verifier: the unauthenticated API was rate-limited. Use the public workflow page fallback or the next docs commit run to verify the current tree.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The public GitHub Actions page is the fallback when the unauthenticated API verifier is rate-limited; if it has not refreshed for a behavior commit, verify the current tree on the following docs commit before advancing into higher-risk work.
+
+Next:
+
+- Reassess before another extraction. Quick Fix, request conversion, storage/photo/document, broad forms, auth/company/location, delete confirmations, PM generation, and broad render/event movement remain blocked unless explicitly selected with a separate high-risk plan.
 
 ## LFES Boundary - Equipment Delete-Cancel Events - 2026-05-26
 

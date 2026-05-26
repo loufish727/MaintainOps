@@ -5128,3 +5128,53 @@ Result:
 
 - Behavior changed: no observed behavior change.
 - Reassess the next authority-map boundary before moving beyond cancel-only delete flows.
+
+## Textarea Auto-Grow UI Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Textarea auto-grow helper and global textarea input binding.
+
+Risk:
+
+- Medium-low risk. It touches many forms but only owns textarea height updates, not data, submissions, renders, or mutations.
+
+Intended boundary:
+
+- Move `autoGrowTextarea` and the global `textarea` input binding to `src/utils/workspaceTextareaAutoGrow.js`.
+- Keep form submits, field payloads, validation, mutations, render ownership, auth/company/location, Supabase/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Rollback path:
+
+- Revert `b9e037d` or restore the original helper and `document.querySelectorAll("textarea")` binding in `app.js`.
+
+Implementation:
+
+- Added `src/utils/workspaceTextareaAutoGrow.js`.
+- Added `tests/smoke/workspace-textarea-auto-grow-smoke.js`.
+- Updated `index.html` and the hosted cache tags to `lfes-authority-textarea-auto-grow-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `b9e037d` (`Extract workspace textarea auto grow events`).
+- `app.js` line count is 8,093.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceTextareaAutoGrow.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-textarea-auto-grow-smoke.js`: PASS.
+- `node tests/smoke/workspace-textarea-auto-grow-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS with script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Report Issue details textarea grew from 94px to 218px after 12 lines of input, with no browser warning/error logs.
+- GitHub Actions verifier: the unauthenticated API was rate-limited. Use public workflow page fallback or verify the current tree on the following docs commit before advancing into higher-risk work.
+
+Catch:
+
+- GitHub Actions verification now needs a formal fallback path when API rate limits block the script. Public workflow page verification is acceptable when it shows the target/current-tree commit; otherwise verify the current tree on the next docs commit.
+
+Result:
+
+- Behavior changed: no observed behavior change.
+- Do not enter Quick Fix/request conversion/delete-confirm/storage/photo/document/broad form work without a separate high-risk plan.
