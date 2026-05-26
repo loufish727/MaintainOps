@@ -275,3 +275,12 @@ Phase 6D update:
 - What prevented escalation: the same disposable work order was reused, the Comments section was opened before filling, the submit produced a comment row, the record was reopened to verify the comment rendered, and cleanup removed the work order plus comment.
 - Fix or mitigation: comment smokes must open `#work-order-comments-target` before filling the comment form and should verify rendered output after reopening.
 - Lessons learned: selector existence is not visibility. For accordion/detail UIs, the smoke contract must include the disclosure state before interacting with nested forms.
+
+## 2026-05-26 - Quick Update Smoke - Textarea Values Are Not Body Text
+
+- Issue discovered: after Quick Update saved successfully, the new resolution value did not appear in `document.body.innerText` even though the database row was updated.
+- How it was discovered: the live smoke saved a disposable work-order resolution and priority, data-layer verification passed, but a reopened body-text check still did not include the resolution.
+- Operational risk: body-text-only smoke can falsely flag a form-value regression when textarea/select values are present as control values rather than rendered text.
+- What prevented escalation: the reopened smoke switched to `inputValue()` for the Quick Update resolution textarea and priority select, confirming both values matched the saved data before cleanup.
+- Fix or mitigation: for forms, verify saved textarea/select values with control-value checks, not only rendered body text.
+- Lessons learned: visible summary chips and form control values are different behavior surfaces. Mutation smokes should verify the surface the user actually edits.

@@ -6,6 +6,7 @@ This file summarizes important QA passes and remaining test priorities.
 
 - 2026-05-26: LFES follow-up work event extraction was retried and live verified after the first setup path was rejected. The passing smoke used a visible active follow-up-needed disposable source, clicked Planning `Create Work`, verified source `follow_up_needed=false`, verified the generated follow-up work order, and cleaned all disposable rows through admin UI with data-layer proof.
 - 2026-05-26: LFES work-order comment submit event extraction live verified with a disposable work order, visible reopened comment proof, admin UI cleanup, and data-layer `remainingWork=0` / `remainingComments=0`.
+- 2026-05-26: LFES work-order Quick Update submit event extraction live verified with a disposable work order, reopened form value proof for resolution/priority, admin UI cleanup, and data-layer `remainingWork=0` / `remainingEvents=0`.
 - 2026-05-21: LFES Phase 16D through 16I utility extraction closed with an intentional `ACTION NEEDED` safety stop.
 - 2026-05-21: LFES Phase 17A through 17C operation-timeout boundary closed cleanly.
 - 2026-05-21: LFES documentation source-of-truth cleanup restored top-level standards, updated restart docs, removed tracked package snapshots, and added package artifact policy.
@@ -143,6 +144,45 @@ LFES catch:
 Next:
 
 - Continue only with another single contained boundary. Storage/photo/document flows, auth/session/company/location startup, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain blocked.
+
+## LFES Boundary - Work-Order Quick Update Events - 2026-05-26
+
+Boundary selected:
+
+- `#quick-update-work-order-form` submit event binding.
+
+Operational risk:
+
+- High. Quick Update mutates work-order title/status/priority/assignment/resolution fields, may create equipment, may mark equipment down, records activity, and re-renders the active work order.
+
+Implementation scope:
+
+- Added `src/utils/workspaceQuickUpdateEvents.js`.
+- Added `tests/smoke/workspace-quick-update-events-smoke.js`.
+- Moved only the `#quick-update-work-order-form` submit binding into the module.
+- Kept `updateWorkOrderQuickView`, work-order updates, equipment creation/status updates, activity logging, render, auth/company/location state, Supabase/RLS, and work-order data ownership in `app.js`.
+
+Verification:
+
+- Static JS checks: PASS for `app.js`, `src/utils/workspaceQuickUpdateEvents.js`, `tests/smoke/workspace-quick-update-events-smoke.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM smoke: PASS for submit callback binding and missing-callback no-op.
+- Local resource smoke: PASS.
+- Hosted resource smoke: PASS after Pages propagation.
+- Signed-in live smoke: PASS. Disposable work order `LFES disposable quick update source 1779834147629` (`90f8e997-0774-421c-83aa-3bad99802d0d`) saved resolution `LFES quick update resolution 1779834147629`, priority `medium`, and one `quick_update` event.
+- Reopened UI value check: PASS. The Quick Update form resolution textarea value and priority select value matched the saved data.
+- Cleanup: PASS. Admin UI deleted the disposable work order; data-layer verification returned `remainingWork=0` and `remainingEvents=0`.
+
+Behavior changed:
+
+- No intended behavior change.
+
+LFES catch:
+
+- Textarea values are not visible in `innerText`. Reopened Quick Update smokes should verify `inputValue()` for textarea/select fields, while visible chips can verify summary values such as priority.
+
+Next:
+
+- Continue only with another single contained boundary. Creating equipment through Quick Update, completion, storage/photo/document flows, auth/session/company/location startup, SQL/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` remain blocked unless selected separately.
 
 ## LFES Boundary - PM Generation Events - 2026-05-26
 
