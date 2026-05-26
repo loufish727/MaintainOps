@@ -4922,14 +4922,8 @@ function bindWorkspaceEvents() {
   }).bindWorkspaceWorkOrderDeleteEvents();
 
 
-  document.querySelectorAll("[data-delete-asset]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      await requestDeleteAsset(button.dataset.deleteAsset);
-    });
-  });
-
   bindWorkspaceAssetDeleteCancelEvents({
+    requestDeleteAsset,
     state: {
       setPendingDeleteAssetId: (value) => { pendingDeleteAssetId = value; },
     },
