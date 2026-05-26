@@ -84,6 +84,7 @@ const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWo
 const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
+const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5033,14 +5034,8 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => regeneratePublicRequestLink(button.dataset.regeneratePublicRequestLink));
   });
 
-  document.querySelectorAll("[data-copy-public-request-link]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const copied = await copyTextToClipboard(button.dataset.copyPublicRequestLink);
-      button.textContent = copied ? "Copied" : "Copy failed";
-      setTimeout(() => {
-        button.textContent = "Copy QR Link";
-      }, 1600);
-    });
+  bindWorkspacePublicRequestLinkCopyEvents({
+    copyTextToClipboard,
   });
 
   document.querySelectorAll("[data-convert-request]").forEach((button) => {
