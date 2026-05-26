@@ -4756,3 +4756,44 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine create-thread, send-reply, read-state writes, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Report Issue Command Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- `Report Issue` command-opener binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It lives in the shared command-action router beside Quick Fix, New Work Order, Submit Request, and Export CSV, which are broader workflow/download boundaries.
+
+Why this is recoverable:
+
+- The extraction moved only the local Report Issue opener.
+- No issue report is submitted.
+- Other command actions, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- Rollback is one app commit or restoration of the original report-issue branch.
+
+Implementation:
+
+- Added `src/utils/workspaceReportIssueCommandEvents.js`.
+- Updated `index.html` with `src/utils/workspaceReportIssueCommandEvents.js?v=lfes-authority-report-issue-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-report-issue-command-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-report-issue-command-events-smoke.js`.
+- App deploy commit: `6c0ab08` (`Extract workspace report issue command events`).
+- `app.js` line count moved from 8,745 to 8,748 because the injected adapter is larger than the removed branch.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceReportIssueCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-report-issue-command-events-smoke.js`.
+- Targeted mock-DOM Report Issue command smoke: PASS for clearing active detail/form modes, entering report mode, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4192/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Report Issue command script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live Report Issue command smoke: PASS. Report Issue opened the issue form, scoped cancel closed it, new script/cache tags were present, and no browser warning/error logs appeared.
+
+Next candidates:
+
+- Reassess before continuing. Quick Fix, New Work Order, Submit Request, and Export CSV are broader workflow/download boundaries and should not be combined with another change.

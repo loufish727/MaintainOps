@@ -30,7 +30,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES issue/admin local UI boundary extracted and live verified with Report Issue open/cancel smoke.
 - 2026-05-26: LFES Part delete-cancel boundary extracted and live verified with non-destructive delete warning/cancel smoke.
 - 2026-05-26: LFES Work Order Message Team start-composer boundary extracted and live verified with Hydralic Leak composer-link smoke.
+- 2026-05-26: LFES Report Issue command boundary extracted and live verified with Report Issue open/cancel smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Report Issue Command Events - 2026-05-26
+
+Boundary selected:
+
+- `Report Issue` command-opener event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium-low.
+- The path clears active detail/form modes, opens report issue mode, and renders, but does not submit the issue report.
+
+Implementation scope:
+
+- Added `src/utils/workspaceReportIssueCommandEvents.js`.
+- Moved only `[data-command-action="report-issue"]`.
+- Injected app-owned state setters, `renderWorkspace`, and document.
+- Kept Quick Fix, New Work Order, Submit Request, Export CSV, issue creation, issue status mutation, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceReportIssueCommandEvents.js?v=lfes-authority-report-issue-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-report-issue-command-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `6c0ab08`, or remove `src/utils/workspaceReportIssueCommandEvents.js`, restore the original report-issue branch in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceReportIssueCommandEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-report-issue-command-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-report-issue-command-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4192/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live smoke: PASS. Report Issue opened the issue form, scoped cancel closed it, new script/cache tags were present, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Continue only after reassessing remaining command clusters. Quick Fix, New Work Order, Submit Request, and Export CSV are broader workflow/download boundaries and should not be combined with another change.
 
 ## LFES Boundary - Work Message Start Events - 2026-05-26
 

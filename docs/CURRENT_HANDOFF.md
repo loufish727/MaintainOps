@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Work Order Message Team start-composer boundary extraction from `bindWorkspaceEvents()`.
+Completed the Report Issue command-opener boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `9b0381b` (`Extract workspace work message start events`)
+  - `6c0ab08` (`Extract workspace report issue command events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-message-start-events-1`
+  - `app.js?v=lfes-authority-report-issue-command-events-1`
 - Current `app.js` line count:
-  - 8,745 lines.
+  - 8,748 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -69,16 +69,17 @@ Completed the Work Order Message Team start-composer boundary extraction from `b
   - Medium-low-risk issue/admin local UI boundary moved `[data-cancel-app-issue-report]` and local `[data-setup-action="confirm-admin-delete-sql"]` handling to `src/utils/workspaceIssueAdminUiEvents.js`; `app.js` still owns create issue report, issue status mutation, setup item rendering, admin data, render, auth/company/location state, and Supabase access.
   - Medium-risk Part delete-cancel boundary moved `[data-cancel-delete-part]` to `src/utils/workspacePartDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, permission checks, part data, document cleanup, render, auth/company/location state, and Supabase access.
   - Medium-risk Work Order Message Team start-composer boundary moved `[data-start-work-message]` to `src/utils/workspaceWorkMessageStartEvents.js`; `app.js` still owns create thread, send reply, read-state writes, work-order/message data, render, auth/company/location state, and Supabase access.
+  - Medium-low-risk Report Issue command-opener boundary moved `[data-command-action="report-issue"]` to `src/utils/workspaceReportIssueCommandEvents.js`; `app.js` still owns the other command actions, issue creation, issue status mutation, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkMessageStartEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-work-message-start-events-smoke.js`.
-  - targeted mock-DOM Work Message Start smoke passed for composer work-order id, composer open state, active thread clear, section switch, storage persistence, render, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4191/`.
-  - local browser boot smoke reached the login screen with the new Work Message Start event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspaceReportIssueCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-report-issue-command-events-smoke.js`.
+  - targeted mock-DOM Report Issue command smoke passed for clearing active detail/form modes, entering report mode, render, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4192/`.
+  - local browser boot smoke reached the login screen with the new Report Issue command event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Work Message Start smoke opened Hydralic Leak, opened the Messages detail section, clicked Message Team, confirmed Messages composer opened with Hydralic Leak linked, with no send mutation and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceWorkMessageStartEvents.js?v=lfes-authority-work-message-start-events-1` and `app.js?v=lfes-authority-work-message-start-events-1`.
-  - GitHub Actions local verifier remained unavailable due unauthenticated API rate limit; hosted resource smoke passed directly for `9b0381b`.
+  - live Report Issue command smoke clicked Report Issue, confirmed `#app-issue-report-form` opened, clicked scoped cancel, confirmed the form closed, with new script/cache tags and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspaceReportIssueCommandEvents.js?v=lfes-authority-report-issue-command-events-1` and `app.js?v=lfes-authority-report-issue-command-events-1`.
+  - GitHub Actions local verifier remained unavailable due unauthenticated API rate limit; hosted resource smoke passed directly for `6c0ab08`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -100,7 +101,7 @@ Completed the Work Order Message Team start-composer boundary extraction from `b
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, and Work Message Start boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, and Report Issue command boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
