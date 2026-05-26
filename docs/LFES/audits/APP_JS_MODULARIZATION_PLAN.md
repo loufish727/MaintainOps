@@ -19,6 +19,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 - Second wired state slice moved workspace filter/pagination state (`activeStatusFilter`, `myWorkFilter`, `workOrderFilter`, `workOrderAssigneeFilter`, `workSort`, `workOrderPage`, `requestViewFilter`, `requestsPage`, `schedulesPage`, `proceduresPage`, `membersPage`) into `workspaceUiState`.
 - Commit `15e4c49` fixed the required app cache tag for this `app.js` change and passed hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke.
 - Third wired state slice moved workspace search state (`searchQuery`, `workOrderSearchMode`) into `workspaceUiState`; app cache tag bumped to `app.js?v=lfes-state-workspace-search-1`.
+- Commit `222f308` passed hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live workspace search preview / exact Work Orders search smoke after a Pages propagation retry showed the expected app cache tag.
 - `app.js` still owns unrelated legacy UI state variables. The next state-boundary phase should wire one extracted UI event group to the factory at a time instead of broad variable replacement.
 - Blocked until RPC source gap is resolved or explicitly accepted: team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, and SQL/RLS work.
 

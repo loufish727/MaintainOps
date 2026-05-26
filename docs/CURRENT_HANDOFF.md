@@ -61,6 +61,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - `app.js` still owns unrelated legacy UI state variables until follow-up wiring phases move selected event modules to the factory.
   - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
   - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Work Orders Vendor filter / Due sort smoke passed for `15e4c49`.
+  - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live workspace search preview / exact Work Orders search smoke passed for `222f308`.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -130,6 +131,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - first wiring pass moved only Parts/Equipment filter-search state into the factory.
   - second wiring pass moved workspace filter/pagination state into the factory. The safe next step is another small extracted UI group, not broad variable replacement.
   - third wiring pass moved workspace search state into the factory.
+  - GitHub Pages briefly served the previous app cache tag on first reload; retry confirmed `app.js?v=lfes-state-workspace-search-1` before live smoke.
 - LFES RLS audit catch:
   - the source tree broadly matches the established RLS posture, but repository SQL is not sufficient to reconstruct two app-used RPC dependencies: `cancel_company_invite` and `record_work_order_part_usage`.
   - do not start auth/session, public QR submit, storage/photo/document, team invite cancel, or parts-used mutation extraction until this gap is resolved or explicitly accepted.
