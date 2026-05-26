@@ -86,6 +86,7 @@ const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickF
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
+const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
@@ -4646,9 +4647,8 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-location-sensitive-asset]").forEach((select) => {
-    updateAssetLocationWarning(select);
-    select.addEventListener("change", () => updateAssetLocationWarning(select));
+  bindWorkspaceAssetLocationWarningEvents({
+    updateAssetLocationWarning,
   });
 
   document.querySelectorAll("[data-sign-out]").forEach((button) => {
