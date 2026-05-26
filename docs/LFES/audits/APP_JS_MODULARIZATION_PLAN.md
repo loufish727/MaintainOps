@@ -4659,7 +4659,7 @@ Verification:
 - Local resource smoke: PASS against `http://127.0.0.1:4189/`.
 - Local browser boot smoke: PASS. Login screen loaded with the issue/admin UI script and cache tag present and no browser warning/error logs.
 - Hosted GitHub Pages resource smoke: PASS.
-- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462192835`, and Pages build/deployment run `26462191804` completed successfully for `b5328a7`.
 - Signed-in live issue/admin UI smoke: PASS. Report Issue opened the issue form, Cancel closed it, new script/cache tags were present, and no browser warning/error logs appeared.
 
 Next candidates:
@@ -4797,3 +4797,48 @@ Verification:
 Next candidates:
 
 - Reassess before continuing. Quick Fix, New Work Order, Submit Request, and Export CSV are broader workflow/download boundaries and should not be combined with another change.
+
+## Submit Request Command Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- `Submit Request` command-opener binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It lives in the shared command-action router and changes multiple workspace UI state values before reloading the request queue.
+
+Why this is recoverable:
+
+- The extraction moved only the Submit Request opener.
+- No request is submitted, converted, deleted, or uploaded.
+- Quick Fix, New Work Order, Export CSV, request form submit, public QR intake, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` logic stayed in `app.js`.
+- Rollback is one app commit or restoration of the original request command branch.
+
+Implementation:
+
+- Added `src/utils/workspaceSubmitRequestCommandEvents.js`.
+- Updated `index.html` with `src/utils/workspaceSubmitRequestCommandEvents.js?v=lfes-authority-submit-request-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-submit-request-command-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-submit-request-command-events-smoke.js`.
+- App deploy commit: `b5328a7` (`Extract workspace submit request command events`).
+- `app.js` line count moved from 8,748 to 8,750 because the injected adapter is larger than the removed branch.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceSubmitRequestCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-submit-request-command-events-smoke.js`.
+- Targeted mock-DOM Submit Request command smoke: PASS for clearing active detail/form modes, switching to Requests, resetting request paging, persisting active section, request queue reload, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Submit Request command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live Submit Request command smoke: PASS. `More` was opened, Submit Request rendered the Requests form, new script/cache tags were present, and no browser warning/error logs appeared.
+
+LFES catch:
+
+- Disclosure-hosted commands need an explicit open/visibility step before targeting nested controls. Future command-boundary smokes should open `More` first and verify the intended nested command is visible before clicking.
+
+Next candidates:
+
+- Reassess before continuing. New Work Order and Export CSV are broader form/download boundaries. Quick Fix remains higher-risk and should not be combined with another extraction.

@@ -31,7 +31,51 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Part delete-cancel boundary extracted and live verified with non-destructive delete warning/cancel smoke.
 - 2026-05-26: LFES Work Order Message Team start-composer boundary extracted and live verified with Hydralic Leak composer-link smoke.
 - 2026-05-26: LFES Report Issue command boundary extracted and live verified with Report Issue open/cancel smoke.
+- 2026-05-26: LFES Submit Request command boundary extracted and live verified with More -> Submit Request open-form smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Submit Request Command Events - 2026-05-26
+
+Boundary selected:
+
+- `Submit Request` command-opener event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path clears active detail/form modes, switches to Requests, resets request paging, persists active section, and reloads the request queue, but does not submit a request, convert a request, or mutate a record.
+
+Implementation scope:
+
+- Added `src/utils/workspaceSubmitRequestCommandEvents.js`.
+- Moved only `[data-command-action="request"]`.
+- Injected app-owned state setters, `setWorkOrderSearchMode`, `resetRequestsPage`, `reloadRequestQueue`, storage, and document.
+- Kept request submit, request conversion, request deletion, public QR intake, Quick Fix, New Work Order, Export CSV, render ownership, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceSubmitRequestCommandEvents.js?v=lfes-authority-submit-request-command-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-submit-request-command-events-1`.
+- Updated hosted resource smoke resource list.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceSubmitRequestCommandEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-submit-request-command-events-smoke.js`.
+- Targeted mock-DOM Submit Request command smoke: PASS for clearing active detail/form modes, switching to Requests, resetting request paging, persisting active section, request queue reload, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Submit Request command script/cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions: PASS. `npm run test:smoke:github-actions` verified Resource Load Smoke run `26462192835`, and Pages build/deployment run `26462191804` completed successfully for `b5328a7`.
+- Signed-in live smoke: PASS. Opened `More`, clicked Submit Request, confirmed Requests rendered with the request form, new script/cache tags were present, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- Command buttons inside the `More` disclosure need the disclosure state verified before clicking nested controls. Direct targeting can hit duplicate/hidden responsive controls or stale geometry. Future command-boundary smokes should open `More` first and confirm the nested command is visible.
+
+Next:
+
+- Continue only after reassessing remaining command clusters. New Work Order and Export CSV are broader form/download boundaries. Quick Fix remains higher-risk and should not be combined with another change.
 
 ## LFES Boundary - Report Issue Command Events - 2026-05-26
 
