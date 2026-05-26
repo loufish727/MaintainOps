@@ -59,6 +59,7 @@ const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetai
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
 const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
+const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5054,19 +5055,11 @@ function bindWorkspaceEvents() {
     resetWorkOrderPage,
   });
 
-  document.querySelectorAll("[data-copy-downtime]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const workOrder = workOrders.find((item) => item.id === button.dataset.id);
-      if (!workOrder) return;
-      const text = button.dataset.copyDowntime === "subject"
-        ? downtimeEmailSubject(workOrder)
-        : downtimeEmailBody(workOrder);
-      const copied = await copyTextToClipboard(text);
-      button.textContent = copied ? "Copied" : "Copy failed";
-      setTimeout(() => {
-        button.textContent = button.dataset.copyDowntime === "subject" ? "Copy Subject" : "Copy Email Body";
-      }, 1600);
-    });
+  bindWorkspaceWorkOrderDowntimeEvents({
+    getWorkOrderById: (id) => workOrders.find((item) => item.id === id),
+    downtimeEmailSubject,
+    downtimeEmailBody,
+    copyTextToClipboard,
   });
 
   bindAutoGrowTextareas();

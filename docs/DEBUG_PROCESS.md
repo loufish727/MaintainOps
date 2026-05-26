@@ -33,6 +33,7 @@ Use this process after every new feature, fix, Supabase change, or GitHub upload
 - On dense responsive screens, the same control may exist more than once. Before clicking, filling, or asserting a control by label, inspect the visible DOM and use the visible target when generic locators are ambiguous.
 - For hard-boundary extractions, make hidden global dependencies explicit through small dependency objects or getter functions. Do not move code into a module while leaving important app state reads invisible.
 - A hard-boundary smoke should prove the behavior surface that owns the moved contract, not only that the page loaded.
+- For role-gated controls, define the smoke role before implementation. Use manager/admin sessions for allowed mutation or management paths, and use restricted-role accounts for hidden/denied controls. If either side cannot be verified, mark that side NOT VERIFIED instead of treating the boundary as fully proven.
 - Copied-browser-profile auth is environment-dependent. If a copied profile has a stale Supabase refresh token, switch to another valid copied profile or report verification as blocked; do not treat copied-profile auth failure alone as a product regression.
 
 ## Debug Packet
