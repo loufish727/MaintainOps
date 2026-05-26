@@ -14,11 +14,12 @@ function createButton(dataset = {}) {
   };
 }
 
-function createDocument(cancelButtons, keepButtons) {
+function createDocument(cancelButtons, keepButtons, confirmButtons = []) {
   return {
     querySelectorAll(selector) {
       if (selector === "[data-cancel-invite]") return cancelButtons;
       if (selector === "[data-cancel-invite-cancel]") return keepButtons;
+      if (selector === "[data-confirm-cancel-invite]") return confirmButtons;
       return [];
     },
   };
@@ -33,12 +34,14 @@ const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamI
 
 const cancelButton = createButton({ cancelInvite: "invite-1" });
 const keepButton = createButton();
+const confirmButton = createButton({ confirmCancelInvite: "invite-1" });
 let pendingCancelInviteId = null;
 let teamInviteCancelError = "Previous error";
 let renderCount = 0;
+let canceledInviteId = null;
 
 bindWorkspaceTeamInviteCancelEvents({
-  documentRef: createDocument([cancelButton], [keepButton]),
+  documentRef: createDocument([cancelButton], [keepButton], [confirmButton]),
   state: {
     setPendingCancelInviteId: (value) => {
       pendingCancelInviteId = value;
@@ -49,6 +52,9 @@ bindWorkspaceTeamInviteCancelEvents({
   },
   renderWorkspace: () => {
     renderCount += 1;
+  },
+  cancelTeamInvite: (id) => {
+    canceledInviteId = id;
   },
 });
 
@@ -63,8 +69,11 @@ assert.equal(pendingCancelInviteId, null);
 assert.equal(teamInviteCancelError, "");
 assert.equal(renderCount, 2);
 
+confirmButton.dispatch("click");
+assert.equal(canceledInviteId, "invite-1");
+
 bindWorkspaceTeamInviteCancelEvents({
-  documentRef: createDocument([cancelButton], [keepButton]),
+  documentRef: createDocument([cancelButton], [keepButton], [confirmButton]),
   state: null,
   renderWorkspace: () => {
     throw new Error("missing state should not render");

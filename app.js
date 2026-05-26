@@ -5162,10 +5162,7 @@ function bindWorkspaceEvents() {
       setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-confirm-cancel-invite]").forEach((button) => {
-    button.addEventListener("click", () => cancelTeamInvite(button.dataset.confirmCancelInvite));
+    cancelTeamInvite,
   });
 
   const partForm = document.querySelector("#create-part-form");

@@ -1,9 +1,9 @@
 (function () {
   /*
-   * LFES contract: owns Team invite cancel-warning UI binding only.
+   * LFES contract: owns Team invite cancel-warning and confirm event binding only.
    * May set/clear pending invite-cancel state, clear the local cancel error,
-   * and render. Must not confirm/cancel invites, submit invite forms,
-   * touch Supabase/RLS, or own team invite data.
+   * render, and call the app-owned cancel callback.
+   * Must not submit invite forms, touch Supabase/RLS, or own team invite data.
    */
   function bindWorkspaceTeamInviteCancelEvents(options = {}) {
     const doc = options.documentRef || document;
@@ -26,6 +26,14 @@
         options.renderWorkspace();
       });
     });
+
+    if (typeof options.cancelTeamInvite === "function") {
+      doc.querySelectorAll("[data-confirm-cancel-invite]").forEach((button) => {
+        button.addEventListener("click", () => {
+          options.cancelTeamInvite(button.dataset.confirmCancelInvite);
+        });
+      });
+    }
   }
 
   window.MaintainOpsWorkspaceTeamInviteCancelEvents = {
