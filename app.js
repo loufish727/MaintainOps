@@ -72,6 +72,7 @@ const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageT
 const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
 const { bindWorkspacePartDeleteCancelEvents } = window.MaintainOpsWorkspacePartDeleteCancelEvents;
 const { bindWorkspaceWorkMessageStartEvents } = window.MaintainOpsWorkspaceWorkMessageStartEvents;
+const { bindWorkspaceReportIssueCommandEvents } = window.MaintainOpsWorkspaceReportIssueCommandEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4713,20 +4714,22 @@ function bindWorkspaceEvents() {
         await reloadRequestQueue();
         return;
       }
-      if (button.dataset.commandAction === "report-issue") {
-        activeWorkOrderId = null;
-        activeAssetId = null;
-        activePartId = null;
-        createWorkOrderMode = false;
-        quickFixMode = false;
-        reportIssueMode = true;
-        renderWorkspace();
-        return;
-      }
       if (button.dataset.commandAction === "export-csv") {
         exportActiveSectionCsv();
       }
     });
+  });
+
+  bindWorkspaceReportIssueCommandEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActivePartId: (value) => { activePartId = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setReportIssueMode: (value) => { reportIssueMode = value; },
+    },
+    renderWorkspace,
   });
 
   const appIssueReportForm = document.querySelector("#app-issue-report-form");
