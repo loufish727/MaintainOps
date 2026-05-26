@@ -78,6 +78,7 @@ const { bindWorkspaceNewWorkOrderCommandEvents } = window.MaintainOpsWorkspaceNe
 const { bindWorkspaceExportCsvCommandEvents } = window.MaintainOpsWorkspaceExportCsvCommandEvents;
 const { bindWorkspaceAssetDeleteCancelEvents } = window.MaintainOpsWorkspaceAssetDeleteCancelEvents;
 const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRequestDeleteCancelEvents;
+const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5124,11 +5125,11 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => requestDeletePreventiveSchedule(button.dataset.deleteSchedule));
   });
 
-  document.querySelectorAll("[data-cancel-delete-schedule]").forEach((button) => {
-    button.addEventListener("click", () => {
-      pendingDeleteScheduleId = null;
-      renderWorkspace();
-    });
+  bindWorkspaceScheduleDeleteCancelEvents({
+    state: {
+      setPendingDeleteScheduleId: (value) => { pendingDeleteScheduleId = value; },
+    },
+    renderWorkspace,
   });
 
   document.querySelectorAll("[data-confirm-delete-schedule]").forEach((button) => {
