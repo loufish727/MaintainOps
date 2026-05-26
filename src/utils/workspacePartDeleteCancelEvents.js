@@ -11,7 +11,7 @@
     const state = options.state;
 
     if (typeof options.requestDeletePart === "function") {
-      doc.querySelectorAll("[data-delete-part]").forEach((button) => {
+      doc.querySelectorAll("[data-delete-part]:not(.permanent-delete-button)").forEach((button) => {
         button.addEventListener("click", () => {
           options.requestDeletePart(button.dataset.deletePart);
         });

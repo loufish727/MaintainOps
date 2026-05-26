@@ -5230,6 +5230,10 @@ function bindWorkspaceEvents() {
     renderWorkspace,
   });
 
+  document.querySelectorAll("[data-delete-part].permanent-delete-button").forEach((button) => {
+    button.addEventListener("click", () => requestDeletePart(button.dataset.deletePart));
+  });
+
   bindWorkspacePartDetailEvents({
     state: {
       getShowPartSourceManager: () => showPartSourceManager,
