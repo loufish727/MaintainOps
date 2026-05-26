@@ -11,7 +11,7 @@ Current state as of 2026-05-26:
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
 - Current `app.js` line count: 8,060.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, and first Parts/Equipment filter-search state wiring.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, and first Parts/Equipment filter-search state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`

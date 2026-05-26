@@ -15,6 +15,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 - `index.html` loads the state factory before workspace event modules.
 - Commit `1794209` passed local targeted state smoke, local/hosted resource smoke, hosted boot assertion, and GitHub Actions Resource Load Smoke.
 - First wired state slice moved Parts/Equipment UI state (`partsPage`, `assetsPage`, `partSearchQuery`, `partInventoryFilter`, `assetStatusFilter`) into `workspaceUiState`.
+- Commit `17003ed` passed static checks, targeted state smokes, local/hosted resource smoke, local boot assertion, signed-in live Parts search / Equipment status-filter smoke, and GitHub Actions Resource Load Smoke.
 - `app.js` still owns unrelated legacy UI state variables. The next state-boundary phase should wire one extracted UI event group to the factory at a time instead of broad variable replacement.
 - Blocked until RPC source gap is resolved or explicitly accepted: team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, and SQL/RLS work.
 

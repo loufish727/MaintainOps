@@ -53,6 +53,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - Parts/Equipment UI state now reads/writes `partsPage`, `assetsPage`, `partSearchQuery`, `partInventoryFilter`, and `assetStatusFilter` through `workspaceUiState`.
   - Added `tests/smoke/workspace-inventory-filter-state-smoke.js`.
   - `app.js` still owns unrelated legacy UI state variables until follow-up wiring phases move selected event modules to the factory.
+  - Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live Parts search / Equipment status-filter smoke passed for `17003ed`.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
