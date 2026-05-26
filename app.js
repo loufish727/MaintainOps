@@ -75,6 +75,7 @@ const { bindWorkspaceWorkMessageStartEvents } = window.MaintainOpsWorkspaceWorkM
 const { bindWorkspaceReportIssueCommandEvents } = window.MaintainOpsWorkspaceReportIssueCommandEvents;
 const { bindWorkspaceSubmitRequestCommandEvents } = window.MaintainOpsWorkspaceSubmitRequestCommandEvents;
 const { bindWorkspaceNewWorkOrderCommandEvents } = window.MaintainOpsWorkspaceNewWorkOrderCommandEvents;
+const { bindWorkspaceExportCsvCommandEvents } = window.MaintainOpsWorkspaceExportCsvCommandEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4687,9 +4688,6 @@ function bindWorkspaceEvents() {
         renderWorkspace();
         return;
       }
-      if (button.dataset.commandAction === "export-csv") {
-        exportActiveSectionCsv();
-      }
     });
   });
 
@@ -4734,6 +4732,10 @@ function bindWorkspaceEvents() {
     },
     renderWorkspace,
     setWorkOrderSearchMode,
+  });
+
+  bindWorkspaceExportCsvCommandEvents({
+    exportActiveSectionCsv,
   });
 
   const appIssueReportForm = document.querySelector("#app-issue-report-form");
