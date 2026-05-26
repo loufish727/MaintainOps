@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the asset-location warning event boundary extraction.
+Completed the Equipment delete-request warning opener boundary extraction.
 
 - Latest app behavior commit:
-  - `62c24c2` (`Extract workspace asset location warning events`)
+  - `3c0ce6d` (`Extract workspace asset delete request events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-asset-location-warning-events-1`
+  - `app.js?v=lfes-authority-asset-delete-request-events-1`
 - Current `app.js` line count:
-  - 8,081 lines.
+  - 8,076 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -73,7 +73,7 @@ Completed the asset-location warning event boundary extraction.
   - Medium-risk Submit Request command-opener boundary moved `[data-command-action="request"]` to `src/utils/workspaceSubmitRequestCommandEvents.js`; `app.js` still owns request submit, request conversion, request deletion, public QR intake, Quick Fix, new work-order creation, Export CSV, render, auth/company/location state, and Supabase access.
   - Medium-risk New Work Order command-opener boundary moved `[data-command-action="create-work-order"]` to `src/utils/workspaceNewWorkOrderCommandEvents.js`; `app.js` still owns work-order creation submit, validation, Quick Fix, request conversion, Export CSV, render, auth/company/location state, and Supabase access.
   - Medium-risk Export CSV command boundary moved `[data-command-action="export-csv"]` to `src/utils/workspaceExportCsvCommandEvents.js`; `app.js` still owns export row construction, filename selection, CSV/blob generation, active-section state, render, auth/company/location state, and Supabase access.
-  - Medium-risk Equipment delete-cancel boundary moved `[data-cancel-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
+  - Medium/high-risk Equipment delete warning opener/cancel boundary moved `[data-delete-asset]` and `[data-cancel-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns request-delete blocker checks, pending delete state, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
   - Medium-risk Request delete-cancel boundary moved `[data-cancel-delete-request]` to `src/utils/workspaceRequestDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
   - Medium-risk PM schedule delete-cancel boundary moved `[data-cancel-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
   - Medium-risk Procedure delete-cancel boundary moved `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
@@ -86,14 +86,14 @@ Completed the asset-location warning event boundary extraction.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceAssetLocationWarningEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-asset-location-warning-events-smoke.js`.
-  - targeted mock-DOM asset-location warning smoke passed for initial bind, change callback, and missing-callback no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Equipment delete warning/cancel smoke passed for delete-request callback, cancel pending-state clear, render, propagation stop, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new asset-location warning script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new Equipment delete-request script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live asset-location warning smoke verified `src/utils/workspaceAssetLocationWarningEvents.js?v=lfes-authority-asset-location-warning-events-1` and `app.js?v=lfes-authority-asset-location-warning-events-1`, found two `[data-location-sensitive-asset]` controls, selected `New thalmann` in the request form, and confirmed the warning remained blank for the available same-location asset.
-  - hosted resource smoke passed for `62c24c2`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
+  - live Equipment delete-request smoke created disposable asset `LFES disposable asset delete request 1779827205046`, verified Delete Equipment opened Cancel/Permanently Delete warning, clicked Cancel, verified Delete Equipment returned, then cleaned the disposable through the manager UI and verified data-layer `remaining: 0`.
+  - hosted resource smoke passed for `3c0ce6d`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -115,6 +115,7 @@ Completed the asset-location warning event boundary extraction.
   - Equipment list cards open detail through the `.asset-card`/`[data-asset-id]` card itself, not `[data-open-asset]`; asset Quick Fix smoke should open the card before targeting `[data-quick-fix-asset]`.
   - the in-app browser evaluate sandbox could not add print-stub state for the public QR page; public QR print smoke should use Playwright Chromium with `window.print` stubbed before clicking.
   - live asset-location warning smoke had only a same-location asset option available, so it proves the live selector/change path and expected blank warning state, while mismatch text remains covered by existing app-owned calculation paths rather than this binding module.
+  - test-account direct REST cleanup for a disposable equipment record can be silently blocked by RLS even when setup insert succeeds. For delete-flow cleanup, use the manager/admin UI path or verify the cleanup auth context can actually delete, then confirm removal at the data layer.
 - Safety stop carried forward:
   - form/payload validation is not the next safe extraction boundary yet. Blank Quick Fix required-field behavior stayed blocked by native validation, but the invalid-date UI smoke created a disposable work order instead of cleanly blocking. The disposable smoke artifact was permanently deleted. Treat `requiredText`, `workOrderDateValue`, and `procedureColumn` as blocked pending a narrower validation contract/smoke.
 - Process cleanup:
@@ -123,7 +124,7 @@ Completed the asset-location warning event boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete-cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete warning/cancel, Request delete-cancel, PM schedule delete-cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

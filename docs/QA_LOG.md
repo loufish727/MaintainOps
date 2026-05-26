@@ -46,7 +46,42 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
 - 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
 - 2026-05-26: LFES asset-location warning event boundary extracted and live verified with signed-in request-form same-location warning smoke.
+- 2026-05-26: LFES Equipment delete-request warning opener boundary extracted and live verified with disposable equipment warning/cancel plus cleanup.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Equipment Delete-Request Events - 2026-05-26
+
+Boundary selected:
+
+- Equipment delete warning opener event binding for `[data-delete-asset]`, added to the existing Equipment delete-cancel module.
+
+Operational risk:
+
+- Medium/high.
+- The path is inside an irreversible delete flow, but this boundary only calls the app-owned warning opener and stops at Cancel. It does not confirm delete, delete equipment, clean storage, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Moved `[data-delete-asset]` warning-opener binding into the module.
+- Kept app-owned `requestDeleteAsset` as an injected callback.
+- Kept `[data-confirm-delete-asset]`, permanent delete, permission checks, blocker/link-count logic, equipment data, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-asset-delete-request-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceAssetDeleteCancelEvents.js`, and `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Equipment delete warning/cancel smoke: PASS for delete-request callback, cancel pending-state clear, render, propagation stop, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Equipment delete-request script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable equipment `LFES disposable asset delete request 1779827205046` was created, opened in Equipment detail, Delete Equipment rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete Equipment, then the disposable equipment was permanently deleted through the manager/admin UI.
+- Cleanup verification: PASS. Data-layer check for disposable asset `7656adb0-ee1e-4125-8715-9940dd26a5f2` returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+LFES catch:
+
+- Test-account direct REST cleanup for a disposable equipment record can be silently blocked by RLS even when setup insert succeeds. For delete-flow cleanup, use the manager/admin UI path or verify the cleanup auth context can actually delete, then confirm removal at the data layer.
 
 ## LFES Boundary - Asset Location Warning Events - 2026-05-26
 

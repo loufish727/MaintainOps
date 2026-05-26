@@ -5378,6 +5378,55 @@ LFES catch:
 
 - The live dataset did not expose a cross-location equipment option in the request form during this smoke. Treat this as a same-location binding verification, not a mismatch-message proof. A later cross-location smoke should create or select a controlled cross-location fixture if that text path needs live proof.
 
+## Equipment Delete-Request Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium/high.
+- The control is inside an irreversible delete flow, but the selected boundary only opens the app-owned warning state and does not perform the permanent delete.
+
+Intended boundary:
+
+- Move `[data-delete-asset]` warning-opener binding into `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Keep `requestDeleteAsset` as an app-owned injected callback.
+- Keep `[data-confirm-delete-asset]`, permanent delete, permission checks, blocker/link-count logic, equipment data, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- Equipment Detail Delete Equipment warning opener and cancel behavior.
+- No permanent delete ownership, no storage cleanup, no Supabase mutation ownership transfer.
+
+Rollback path:
+
+- Restore the original `[data-delete-asset]` loop in `bindWorkspaceEvents()`.
+- Revert `src/utils/workspaceAssetDeleteCancelEvents.js` to cancel-only ownership.
+- Revert cache tags to the previous known-good value.
+
+Implementation result:
+
+- Expanded `src/utils/workspaceAssetDeleteCancelEvents.js`.
+- Expanded `tests/smoke/workspace-asset-delete-cancel-events-smoke.js`.
+- Updated `index.html` and hosted cache tags to `lfes-authority-asset-delete-request-events-1`.
+- App deploy commit: `3c0ce6d` (`Extract workspace asset delete request events`).
+- `app.js` line count after extraction: 8,076.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceAssetDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/workspace-asset-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-asset-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceAssetDeleteCancelEvents.js?v=lfes-authority-asset-delete-request-events-1` and `app.js?v=lfes-authority-asset-delete-request-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS after Pages propagation.
+- Signed-in live smoke: PASS; disposable equipment `LFES disposable asset delete request 1779827205046` opened Delete Equipment warning, Cancel restored Delete Equipment, and no permanent delete occurred during the boundary check.
+- Cleanup: PASS; manager/admin UI permanently deleted disposable asset `7656adb0-ee1e-4125-8715-9940dd26a5f2`, and data-layer verification returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
+LFES catch:
+
+- Test-account direct REST cleanup for disposable equipment may be RLS-blocked even after a successful insert. Use manager/admin cleanup for delete-flow smokes unless delete permission is explicitly verified, and always confirm disposable removal at the data layer.
+
 Result:
 
 - Behavior changed: no observed behavior change.
