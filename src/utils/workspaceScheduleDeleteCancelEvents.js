@@ -1,9 +1,11 @@
 (function () {
   /*
-   * LFES contract: owns PM schedule delete warning open/cancel event binding only.
-   * Requires app.js-owned delete-request callback, pending delete setter, render callback, and document.
-   * May request app-owned warning state, clear the warning, and render.
-   * Must not confirm delete, generate PM work, delete records, touch Supabase/RLS,
+   * LFES contract: owns PM schedule delete event binding only.
+   * Requires app.js-owned delete-request callback, confirm-delete callback,
+   * pending delete setter, render callback, and document.
+   * May request app-owned warning state, clear the warning, render, and call
+   * the app-owned permanent delete callback.
+   * Must not delete records directly, generate PM work, touch Supabase/RLS,
    * or own schedule/procedure data.
    */
   function bindWorkspaceScheduleDeleteCancelEvents(options = {}) {
@@ -26,6 +28,14 @@
         options.renderWorkspace();
       });
     });
+
+    if (typeof options.deletePreventiveSchedule === "function") {
+      doc.querySelectorAll("[data-confirm-delete-schedule]").forEach((button) => {
+        button.addEventListener("click", () => {
+          options.deletePreventiveSchedule(button.dataset.confirmDeleteSchedule);
+        });
+      });
+    }
   }
 
   window.MaintainOpsWorkspaceScheduleDeleteCancelEvents = {

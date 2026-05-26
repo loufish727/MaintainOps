@@ -5094,14 +5094,11 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceScheduleDeleteCancelEvents({
     requestDeletePreventiveSchedule,
+    deletePreventiveSchedule,
     state: {
       setPendingDeleteScheduleId: (value) => { pendingDeleteScheduleId = value; },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-confirm-delete-schedule]").forEach((button) => {
-    button.addEventListener("click", () => deletePreventiveSchedule(button.dataset.confirmDeleteSchedule));
   });
 
   document.querySelectorAll("[data-create-follow-up]").forEach((button) => {

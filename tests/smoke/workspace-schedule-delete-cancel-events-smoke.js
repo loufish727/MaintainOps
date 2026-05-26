@@ -14,11 +14,12 @@ function createButton(dataset = {}) {
   };
 }
 
-function createDocument({ deleteButtons = [], cancelButtons = [] }) {
+function createDocument({ deleteButtons = [], cancelButtons = [], confirmButtons = [] }) {
   return {
     querySelectorAll(selector) {
       if (selector === "[data-delete-schedule]") return deleteButtons;
       if (selector === "[data-cancel-delete-schedule]") return cancelButtons;
+      if (selector === "[data-confirm-delete-schedule]") return confirmButtons;
       return [];
     },
   };
@@ -33,17 +34,23 @@ const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceS
 
 const deleteButton = createButton({ deleteSchedule: "schedule-2" });
 const cancelButton = createButton();
+const confirmButton = createButton({ confirmDeleteSchedule: "schedule-3" });
 let pendingDeleteScheduleId = "schedule-1";
 let renderCount = 0;
 let requestedDeleteScheduleId = null;
+let confirmedDeleteScheduleId = null;
 
 bindWorkspaceScheduleDeleteCancelEvents({
   documentRef: createDocument({
     deleteButtons: [deleteButton],
     cancelButtons: [cancelButton],
+    confirmButtons: [confirmButton],
   }),
   requestDeletePreventiveSchedule: (id) => {
     requestedDeleteScheduleId = id;
+  },
+  deletePreventiveSchedule: (id) => {
+    confirmedDeleteScheduleId = id;
   },
   state: {
     setPendingDeleteScheduleId: (value) => {
@@ -61,6 +68,9 @@ assert.equal(requestedDeleteScheduleId, "schedule-2");
 cancelButton.dispatch("click");
 assert.equal(pendingDeleteScheduleId, null);
 assert.equal(renderCount, 1);
+
+confirmButton.dispatch("click");
+assert.equal(confirmedDeleteScheduleId, "schedule-3");
 
 bindWorkspaceScheduleDeleteCancelEvents({
   documentRef: createDocument({ cancelButtons: [cancelButton] }),
