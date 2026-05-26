@@ -4222,3 +4222,44 @@ Next candidates:
 
 - Detail status dropdown is a contained mutation-adjacent boundary if treated separately from quick status.
 - Delete and completion remain higher-risk and should not be combined with another group.
+
+## Work-Order Detail Status Dropdown Event Boundary - 2026-05-26
+
+Selected boundary:
+
+- `bindWorkspaceEvents()` Work Order Detail status dropdown:
+  - `#status-select`
+
+Why this is hard:
+
+- The dropdown triggers the real status mutation path through `updateWorkOrderStatus` and `setWorkOrderStatus`.
+
+Why this is recoverable:
+
+- The extraction moved only a one-control event binding.
+- The mutation logic, guards, Supabase update, event recording, render behavior, quick status buttons, delete, assignment, and completion flows stayed in `app.js`.
+- Rollback is one app commit or restoration of the original two-line listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceWorkOrderDetailStatusEvents.js`.
+- Updated `index.html` with `src/utils/workspaceWorkOrderDetailStatusEvents.js?v=lfes-authority-work-detail-status-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-detail-status-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `d0bf9dd` (`Extract workspace work order detail status events`).
+- `app.js` line count stayed at 8,948 because the original listener was already very thin.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceWorkOrderDetailStatusEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Mock-DOM event smoke: PASS for `#status-select` change binding and missing-select no-op.
+- Local resource smoke: PASS.
+- Local boot smoke: PASS.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions public run-list verification: PASS for Resource Load Smoke #130 on `d0bf9dd`; local verifier was blocked by GitHub API rate limiting.
+- Signed-in live detail status smoke: PASS. `Hydralic Leak` changed from `in_progress` to `open`, then restored to `in_progress`, with clean logs.
+
+Next candidates:
+
+- Delete and completion remain the two higher-risk work-order event zones.
+- Do not combine delete and completion. Map one full path, smoke it with restore/cleanup, and stop if mutation sequencing or cleanup is unclear.

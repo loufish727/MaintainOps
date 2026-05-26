@@ -18,7 +18,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES high-risk quick work-order status event boundary extracted and live verified; first live smoke caught a bad test assumption and the corrected mutation/restore smoke passed.
 - 2026-05-26: LFES high-risk work-order assignment event boundary extracted and live verified with manager/admin mutation plus restore.
 - 2026-05-26: LFES work-order downtime copy event boundary extracted and live verified; smoke timing was corrected to wait for reset labels conditionally.
+- 2026-05-26: LFES detail status dropdown event boundary extracted and live verified with status mutation plus restore.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Work-Order Detail Status Dropdown Events - 2026-05-26
+
+Boundary selected:
+
+- Work Order Detail status dropdown binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- High.
+- The moved binding triggers `updateWorkOrderStatus`, which delegates to `setWorkOrderStatus` and the real Supabase-backed status mutation path.
+
+Implementation scope:
+
+- Added `src/utils/workspaceWorkOrderDetailStatusEvents.js`.
+- Moved only `#status-select` change binding.
+- Injected `updateWorkOrderStatus`.
+- Left status mutation logic, status guards, Supabase/RLS, quick status buttons, assignment, delete, completion, auth/startup, and state ownership in `app.js`.
+- Added `src/utils/workspaceWorkOrderDetailStatusEvents.js?v=lfes-authority-work-detail-status-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-work-detail-status-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `d0bf9dd`, or remove `src/utils/workspaceWorkOrderDetailStatusEvents.js`, restore the original `#status-select` listener block in `bindWorkspaceEvents()`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceWorkOrderDetailStatusEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS.
+- Targeted mock-DOM event smoke: PASS for `#status-select` change binding and missing-select no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4180/`.
+- Local browser boot smoke: PASS; reached login screen with clean logs and new script/cache tags present.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions public run-list verification: PASS for Resource Load Smoke #130 on `d0bf9dd`; local verifier was blocked by GitHub API rate limiting.
+- Signed-in live smoke: PASS. `Hydralic Leak` Work Order Detail status changed from `in_progress` to `open`, then restored to `in_progress`, with clean logs.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Process note:
+
+- This boundary did not reduce `app.js` line count because the old listener was already a thin delegated wrapper. The value is reduced concentrated event authority, not line reduction.
 
 ## LFES Boundary - Work-Order Downtime Copy Events - 2026-05-26
 

@@ -6,9 +6,9 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `9eac566` (`Extract workspace work order downtime events`).
+- Latest app behavior commit: `d0bf9dd` (`Extract workspace work order detail status events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-work-downtime-events-1`.
+- Latest deployed cache tag: `app.js?v=lfes-authority-work-detail-status-events-1`.
 - Current `app.js` line count: 8,948.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
@@ -35,6 +35,7 @@ Recommended immediate next controlled phase:
 - Quick work-order status button binding is extracted into `src/utils/workspaceWorkOrderStatusEvents.js` and live verified. `app.js` still owns the actual `setWorkOrderStatus` mutation, guards, event recording, render, and state changes.
 - Work-order assignment event wiring is extracted into `src/utils/workspaceWorkOrderAssignmentEvents.js` and live verified. `app.js` still owns assignment mutation logic, permission checks, event recording, render, and state changes.
 - Work-order downtime copy event wiring is extracted into `src/utils/workspaceWorkOrderDowntimeEvents.js` and live verified. `app.js` still owns downtime subject/body builders and clipboard implementation.
+- Work-order detail status dropdown wiring is extracted into `src/utils/workspaceWorkOrderDetailStatusEvents.js` and live verified. `app.js` still owns status mutation logic, guards, event recording, render, and state changes.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -54,7 +55,7 @@ Keep blocked until explicitly approved:
 - public QR submission flows.
 - PM generation.
 - forms with mutations.
-- work-order delete/downtime/completion/status-dropdown flows until separately mapped.
+- work-order delete/completion flows until separately mapped.
 - `renderWorkspace()`.
 - `bindWorkspaceEvents()`.
 
@@ -69,6 +70,7 @@ Verification note:
 - Hosted resource checks, corrected signed-in live quick-status mutation/restore smoke, and `npm run test:smoke:github-actions` passed for the quick work-order status event boundary.
 - Hosted resource checks, targeted mock-DOM event smoke, manager/admin signed-in assignment/restore smoke, and `npm run test:smoke:github-actions` passed for the work-order assignment event boundary.
 - Hosted resource checks, targeted mock-DOM copy smoke, signed-in live downtime copy smoke, and public GitHub Actions run verification passed for the work-order downtime copy event boundary.
+- Hosted resource checks, targeted mock-DOM status-select smoke, signed-in live detail status mutation/restore smoke, and public GitHub Actions run-list verification passed for the detail status dropdown event boundary.
 - The form/payload validation smoke did not pass cleanly; the disposable work order artifact created during the failed invalid-date smoke was permanently deleted.
 - Use `npm run test:smoke:github-actions` for current GitHub Actions verification; do not rely on the PR-oriented connector workflow lookup for push runs.
 
