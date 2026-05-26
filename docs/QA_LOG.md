@@ -46,6 +46,7 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES request-origin Quick Fix opener boundary extracted and live verified with disposable request open-form/no-submit smoke plus cleanup.
 - 2026-05-26: LFES public QR print-button boundary extracted and live verified with hosted QR page print-stub smoke.
 - 2026-05-26: LFES asset-location warning event boundary extracted and live verified with signed-in request-form same-location warning smoke.
+- 2026-05-26: LFES Team invite confirm-cancel event boundary extracted and live verified with disposable invite cancel-confirm plus data-layer lookup proof.
 - 2026-05-26: LFES Equipment delete-request warning opener boundary extracted and live verified with disposable equipment warning/cancel plus cleanup.
 - 2026-05-26: LFES Request delete-request warning opener boundary extracted and live verified with disposable request warning/cancel plus cleanup.
 - 2026-05-26: LFES PM schedule delete-request warning opener boundary extracted and live verified with disposable PM schedule warning/cancel plus cleanup.
@@ -56,6 +57,46 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES PM schedule confirm-delete event boundary extracted and live verified with disposable PM schedule permanent delete plus data-layer proof.
 - 2026-05-26: LFES Procedure confirm-delete event boundary extracted and live verified with disposable procedure permanent delete plus data-layer proof.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Team Invite Confirm-Cancel Events - 2026-05-26
+
+Boundary selected:
+
+- Team invite confirm-cancel event binding for `[data-confirm-cancel-invite]`, added to the existing Team invite cancel module.
+
+Operational risk:
+
+- High.
+- This confirms an invite cancellation through an app-owned RPC path, but the boundary only transfers event binding and calls the injected `cancelTeamInvite` callback. Invite creation, RPC implementation, reload, render, auth/company/location state, and Supabase/RLS stay in `app.js`.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceTeamInviteCancelEvents.js`.
+- Moved `[data-confirm-cancel-invite]` binding into the module.
+- Kept app-owned `cancelTeamInvite` as an injected callback.
+- Kept invite creation, cancel RPC implementation, team invite data/reload, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-team-invite-confirm-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceTeamInviteCancelEvents.js`, and `tests/smoke/workspace-team-invite-cancel-events-smoke.js`.
+- Targeted mock-DOM Team invite cancel event smoke: PASS for warning opener, keep/cancel reset, confirm-cancel callback, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Team invite confirm script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable invite `lfes.invite.confirm.1779830518673@maintainops.test` was created, Cancel Invite rendered Keep and Cancel Invite warning controls, confirm removed the disposable from Pending Invites, and no unrelated invite was touched.
+- Cleanup verification: PASS. Data-layer lookup for `lfes.invite.confirm.1779830518673@maintainops.test` returned `remainingVisible: 0`.
+- GitHub Actions: pending follow-up verifier after the docs commit.
+
+LFES catch:
+
+- The in-app browser virtual clipboard blocked `fill`/`type` for the email field, but raw keypress entry worked. Verify the typed field value before submitting when using this fallback.
+
+Result:
+
+- App deploy commit: `e984132` (`Extract workspace team invite confirm events`).
+- `app.js` line count after extraction: 8,058.
+- Behavior changed: no observed behavior change.
 
 ## LFES Boundary - Procedure Confirm-Delete Events - 2026-05-26
 
