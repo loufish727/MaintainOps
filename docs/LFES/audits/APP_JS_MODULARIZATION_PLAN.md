@@ -5517,6 +5517,51 @@ Verification:
 - Cleanup: PASS; manager/admin UI permanently deleted disposable schedule `7369cc0d-6462-4047-8f7e-8930009a7a32`, and data-layer verification returned `remaining: 0`.
 - GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
+## Procedure Delete-Request Events Boundary - 2026-05-26
+
+Risk:
+
+- Medium/high.
+- The control is inside an irreversible procedure delete flow with blocker checks, but the selected boundary only opens the app-owned warning state and does not perform the permanent delete.
+
+Intended boundary:
+
+- Move `[data-delete-procedure]` warning-opener binding into `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Keep `requestDeleteProcedureTemplate` as an app-owned injected callback.
+- Keep `[data-confirm-delete-procedure]`, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+
+Blast radius:
+
+- Procedure card Delete Procedure warning opener and cancel behavior.
+- No permanent delete ownership, no blocker verification ownership, no Supabase mutation ownership transfer.
+
+Rollback path:
+
+- Restore the original `[data-delete-procedure]` loop in `bindWorkspaceEvents()`.
+- Revert `src/utils/workspaceProcedureDeleteCancelEvents.js` to cancel-only ownership.
+- Revert cache tags to the previous known-good value.
+
+Implementation result:
+
+- Expanded `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Expanded `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+- Updated `index.html` and hosted cache tags to `lfes-authority-procedure-delete-request-events-1`.
+- App deploy commit: `5f51dc9` (`Extract workspace procedure delete request events`).
+- `app.js` line count after extraction: 8,070.
+
+Verification:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceProcedureDeleteCancelEvents.js`: PASS.
+- `node --check tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`: PASS.
+- Local resource smoke against `http://127.0.0.1:4193/`: PASS.
+- Local browser boot smoke: PASS; `index.html` referenced `src/utils/workspaceProcedureDeleteCancelEvents.js?v=lfes-authority-procedure-delete-request-events-1` and `app.js?v=lfes-authority-procedure-delete-request-events-1`.
+- Hosted resource smoke against GitHub Pages: PASS.
+- Signed-in live smoke: PASS; disposable procedure `LFES disposable procedure delete request 1779827915362` opened Delete Procedure warning, Cancel restored Delete Procedure, and no permanent delete occurred during the boundary check.
+- Cleanup: PASS; manager/admin UI permanently deleted disposable procedure `2be4f6f4-c79c-4d8f-8ae5-d5f3d8a85345`, and data-layer verification returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
+
 Result:
 
 - Behavior changed: no observed behavior change.

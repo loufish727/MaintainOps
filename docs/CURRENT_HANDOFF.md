@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the PM schedule delete-request warning opener boundary extraction.
+Completed the Procedure delete-request warning opener boundary extraction.
 
 - Latest app behavior commit:
-  - `57de17f` (`Extract workspace schedule delete request events`)
+  - `5f51dc9` (`Extract workspace procedure delete request events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-schedule-delete-request-events-1`
+  - `app.js?v=lfes-authority-procedure-delete-request-events-1`
 - Current `app.js` line count:
-  - 8,072 lines.
+  - 8,070 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -76,7 +76,7 @@ Completed the PM schedule delete-request warning opener boundary extraction.
   - Medium/high-risk Equipment delete warning opener/cancel boundary moved `[data-delete-asset]` and `[data-cancel-delete-asset]` to `src/utils/workspaceAssetDeleteCancelEvents.js`; `app.js` still owns request-delete blocker checks, pending delete state, permanent delete, permission checks, link-count guards, equipment data, render, auth/company/location state, and Supabase access.
   - Medium/high-risk Request delete warning opener/cancel boundary moved `[data-delete-request]` and `[data-cancel-delete-request]` to `src/utils/workspaceRequestDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, request conversion, Quick Fix from request, request data, render, auth/company/location state, and Supabase access.
   - Medium/high-risk PM schedule delete warning opener/cancel boundary moved `[data-delete-schedule]` and `[data-cancel-delete-schedule]` to `src/utils/workspaceScheduleDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, PM generation, schedule data, render, auth/company/location state, and Supabase access.
-  - Medium-risk Procedure delete-cancel boundary moved `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns delete request, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
+  - Medium/high-risk Procedure delete warning opener/cancel boundary moved `[data-delete-procedure]` and `[data-cancel-delete-procedure]` to `src/utils/workspaceProcedureDeleteCancelEvents.js`; `app.js` still owns pending delete state, permanent delete, blocker verification, procedure data/steps, render, auth/company/location state, and Supabase access.
   - Medium-low-risk textarea auto-grow UI boundary moved `autoGrowTextarea` and global textarea input binding to `src/utils/workspaceTextareaAutoGrow.js`; `app.js` still owns form submits, field data, render, mutations, auth/company/location state, and Supabase access.
   - Medium-risk Team invite cancel-warning UI boundary moved `[data-cancel-invite]` and `[data-cancel-invite-cancel]` to `src/utils/workspaceTeamInviteCancelEvents.js`; `app.js` still owns invite creation, confirm cancel mutation, team invite data, render, auth/company/location state, and Supabase access.
   - High-risk-but-contained Quick Fix command-opener boundary moved the main `[data-command-action="quick-fix"]` branch to `src/utils/workspaceQuickFixCommandEvents.js`; `app.js` still owns Quick Fix submit, request-specific Quick Fix, asset-specific Quick Fix, validation, created work records, render, auth/company/location state, and Supabase access.
@@ -86,14 +86,14 @@ Completed the PM schedule delete-request warning opener boundary extraction.
   - Medium-low-risk public QR print-button boundary moved `#print-public-qr` to `src/utils/publicQrPrintEvents.js`; `app.js` still owns public QR lookup, QR/request URL generation, public request intake/submit, auth/session startup, and Supabase access.
   - Medium-risk asset-location warning boundary moved `[data-location-sensitive-asset]` initial/change warning binding to `src/utils/workspaceAssetLocationWarningEvents.js`; `app.js` still owns cross-location mismatch calculation, warning text, confirmation gates, asset/location state, form submits, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceScheduleDeleteCancelEvents.js`, and `tests/smoke/workspace-schedule-delete-cancel-events-smoke.js`.
-  - targeted mock-DOM PM schedule delete warning/cancel smoke passed for delete-request callback, cancel pending-state clear, render, and missing-state no-op.
+  - static JS checks passed for `app.js`, `src/utils/workspaceProcedureDeleteCancelEvents.js`, and `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+  - targeted mock-DOM Procedure delete warning/cancel smoke passed for delete-request callback, cancel pending-state clear, render, and missing-state no-op.
   - local resource smoke passed against `http://127.0.0.1:4193/`.
-  - local browser boot smoke loaded the app shell with the new PM schedule delete-request script/cache tag present.
+  - local browser boot smoke loaded the app shell with the new Procedure delete-request script/cache tag present.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live PM schedule delete-request smoke created disposable schedule `LFES disposable schedule delete request 1779827709348`, verified Delete opened Cancel/Permanently Delete warning, clicked Cancel, verified Delete returned, then cleaned the disposable through the manager UI and verified data-layer `remaining: 0`.
-  - hosted resource smoke passed for `57de17f`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
+  - live Procedure delete-request smoke created disposable procedure `LFES disposable procedure delete request 1779827915362`, verified Delete Procedure opened Cancel/Permanently Delete warning, clicked Cancel, verified Delete Procedure returned, then cleaned the disposable through the manager UI and verified data-layer `remaining: 0`.
+  - hosted resource smoke passed for `5f51dc9`; GitHub Actions verification remains deferred because the unauthenticated GitHub API verifier is rate-limited.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -124,7 +124,7 @@ Completed the PM schedule delete-request warning opener boundary extraction.
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete warning/cancel, Request delete warning/cancel, PM schedule delete warning/cancel, Procedure delete-cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, issue/admin local UI, Part delete-cancel, Work Message Start, Report Issue command, Submit Request command, New Work Order command, Quick Fix command, asset Quick Fix opener, request Quick Fix opener, Export CSV command, public request link copy, public QR print, asset-location warning, Equipment delete warning/cancel, Request delete warning/cancel, PM schedule delete warning/cancel, Procedure delete warning/cancel, textarea auto-grow, and Team invite cancel-warning boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

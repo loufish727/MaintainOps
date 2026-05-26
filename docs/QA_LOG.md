@@ -49,7 +49,38 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Equipment delete-request warning opener boundary extracted and live verified with disposable equipment warning/cancel plus cleanup.
 - 2026-05-26: LFES Request delete-request warning opener boundary extracted and live verified with disposable request warning/cancel plus cleanup.
 - 2026-05-26: LFES PM schedule delete-request warning opener boundary extracted and live verified with disposable PM schedule warning/cancel plus cleanup.
+- 2026-05-26: LFES Procedure delete-request warning opener boundary extracted and live verified with disposable procedure warning/cancel plus cleanup.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Procedure Delete-Request Events - 2026-05-26
+
+Boundary selected:
+
+- Procedure delete warning opener event binding for `[data-delete-procedure]`, added to the existing Procedure delete-cancel module.
+
+Operational risk:
+
+- Medium/high.
+- The path is inside an irreversible delete flow with blocker checks, but this boundary only calls the app-owned warning opener and stops at Cancel. It does not confirm delete, verify blockers, delete procedure records, delete steps, or touch Supabase/RLS directly.
+
+Implementation scope:
+
+- Expanded `src/utils/workspaceProcedureDeleteCancelEvents.js`.
+- Moved `[data-delete-procedure]` warning-opener binding into the module.
+- Kept app-owned `requestDeleteProcedureTemplate` as an injected callback.
+- Kept `[data-confirm-delete-procedure]`, permanent delete, blocker verification, procedure data/steps, render ownership, auth/company/location state, Supabase/RLS, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Updated cache tags to `lfes-authority-procedure-delete-request-events-1`.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceProcedureDeleteCancelEvents.js`, and `tests/smoke/workspace-procedure-delete-cancel-events-smoke.js`.
+- Targeted mock-DOM Procedure delete warning/cancel smoke: PASS for delete-request callback, cancel pending-state clear, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4193/`.
+- Local browser boot smoke: PASS. The app shell loaded with the Procedure delete-request script/cache tag present.
+- Hosted GitHub Pages resource smoke: PASS.
+- Signed-in live smoke: PASS. Disposable procedure `LFES disposable procedure delete request 1779827915362` was created, Delete Procedure rendered Cancel and Permanently Delete, Cancel cleared the warning and restored Delete Procedure, then the disposable procedure was permanently deleted through the manager/admin UI.
+- Cleanup verification: PASS. Data-layer check for disposable procedure `2be4f6f4-c79c-4d8f-8ae5-d5f3d8a85345` returned `remaining: 0`.
+- GitHub Actions: DEFERRED until after the current 21-run because the unauthenticated GitHub API verifier is rate-limited.
 
 ## LFES Boundary - PM Schedule Delete-Request Events - 2026-05-26
 
