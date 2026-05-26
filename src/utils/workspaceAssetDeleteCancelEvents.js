@@ -1,9 +1,11 @@
 (function () {
   /*
-   * LFES contract: owns Equipment delete warning open/cancel event binding only.
-   * Requires app.js-owned delete-request callback, pending delete setter, render callback, and document.
-   * May stop event propagation, request the app-owned warning state, clear warning state, and render.
-   * Must not confirm delete, delete records, touch Supabase/RLS, clean up storage,
+   * LFES contract: owns Equipment delete event binding only.
+   * Requires app.js-owned delete-request callback, confirm-delete callback,
+   * pending delete setter, render callback, and document.
+   * May stop event propagation, request app-owned warning state, clear warning state,
+   * render, and call the app-owned permanent delete callback.
+   * Must not delete records directly, touch Supabase/RLS, clean up storage,
    * or own equipment data.
    */
   function bindWorkspaceAssetDeleteCancelEvents(options = {}) {
@@ -28,6 +30,15 @@
         options.renderWorkspace();
       });
     });
+
+    if (typeof options.deleteAsset === "function") {
+      doc.querySelectorAll("[data-confirm-delete-asset]").forEach((button) => {
+        button.addEventListener("click", async (event) => {
+          if (event && typeof event.stopPropagation === "function") event.stopPropagation();
+          await options.deleteAsset(button.dataset.confirmDeleteAsset);
+        });
+      });
+    }
   }
 
   window.MaintainOpsWorkspaceAssetDeleteCancelEvents = {

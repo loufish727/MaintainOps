@@ -4924,17 +4924,11 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceAssetDeleteCancelEvents({
     requestDeleteAsset,
+    deleteAsset,
     state: {
       setPendingDeleteAssetId: (value) => { pendingDeleteAssetId = value; },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-confirm-delete-asset]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      await deleteAsset(button.dataset.confirmDeleteAsset);
-    });
   });
 
   bindWorkspaceFilterPaginationEvents({
