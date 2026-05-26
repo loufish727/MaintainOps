@@ -68,6 +68,7 @@ const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailE
 const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
+const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -4749,13 +4750,14 @@ function bindWorkspaceEvents() {
     });
   });
 
-  document.querySelectorAll("[data-message-thread]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      activeMessageThreadId = button.dataset.messageThread;
-      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-      await markMessageThreadRead(activeMessageThreadId);
-      renderWorkspace();
-    });
+  bindWorkspaceMessageThreadEvents({
+    state: {
+      setActiveMessageThreadId: (value) => { activeMessageThreadId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setMessageComposerOpen: (value) => { messageComposerOpen = value; },
+    },
+    markMessageThreadRead,
+    renderWorkspace,
   });
 
   bindWorkSectionJumpEvents();
@@ -4769,18 +4771,6 @@ function bindWorkspaceEvents() {
       localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
       localStorage.setItem("maintainops.activeSection", activeSection);
       localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-      renderWorkspace();
-    });
-  });
-
-  document.querySelectorAll("[data-open-work-message-thread]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      activeMessageThreadId = button.dataset.openWorkMessageThread;
-      messageComposerOpen = false;
-      activeSection = "messages";
-      localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      await markMessageThreadRead(activeMessageThreadId);
       renderWorkspace();
     });
   });
