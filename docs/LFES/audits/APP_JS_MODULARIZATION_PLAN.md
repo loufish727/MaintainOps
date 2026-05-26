@@ -4360,3 +4360,47 @@ Next candidates:
 
 - Select the next hard boundary from the authority map.
 - Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Medium-Risk Team Work-View Boundary - 2026-05-26
+
+Selected boundary:
+
+- Team member work-view bridge:
+  - `[data-view-member-work]`
+
+Why this is hard:
+
+- The event crosses from Team into Work Orders and changes multiple UI state variables.
+- It applies an assignee filter, resets the work-order page, persists active section/filter state, clears active detail/form modes, and renders.
+
+Why this is recoverable:
+
+- The extraction moved only event binding and state orchestration.
+- No business records are mutated.
+- No forms, deletes, uploads, auth/session/company/location startup, SQL/RLS, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` moved.
+- Rollback is one app commit or restoration of the original `[data-view-member-work]` listener block.
+
+Implementation:
+
+- Added `src/utils/workspaceTeamWorkViewEvents.js`.
+- Updated `index.html` with `src/utils/workspaceTeamWorkViewEvents.js?v=lfes-authority-team-work-view-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-team-work-view-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- App deploy commit: `0d67122` (`Extract workspace team work-view events`).
+- `app.js` line count stayed at 8,841 because the injected adapter roughly replaced the inline block.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceTeamWorkViewEvents.js`, and `tests/smoke/resource-load.spec.js`.
+- Targeted mock-DOM Team work-view smoke: PASS for state setters, localStorage persistence, work-page reset, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4183/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Team work-view script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `0d67122`, run `https://github.com/loufish727/MaintainOps/actions/runs/26458707591`.
+- Signed-in live Team work-view smoke: PASS. Team opened, Lee Gaede `View Work` was clicked, Work Orders rendered `Lee Gaede Work`, `Assigned to Lee Gaede`, and `Hydralic Leak`.
+
+Next candidates:
+
+- Select the next hard boundary from the authority map.
+- Message read-only navigation can be considered only after mapping read-state effects; send/reply forms stay blocked.
+- Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

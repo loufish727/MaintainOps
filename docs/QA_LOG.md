@@ -21,7 +21,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES detail status dropdown event boundary extracted and live verified with status mutation plus restore.
 - 2026-05-26: LFES high-risk work-order completion boundary extracted and live verified with disposable completion plus cleanup.
 - 2026-05-26: LFES high-risk work-order delete boundary extracted and live verified with disposable request/cancel/confirm delete plus data-layer proof.
+- 2026-05-26: LFES Team work-view boundary extracted and live verified with Team -> Lee Gaede Work navigation.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Team Work-View Events - 2026-05-26
+
+Boundary selected:
+
+- Team member `View Work` event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path crosses from Team into Work Orders, applies the assignee filter, resets work-order paging, persists state, clears active detail/form modes, and renders.
+
+Implementation scope:
+
+- Added `src/utils/workspaceTeamWorkViewEvents.js`.
+- Moved only `[data-view-member-work]` binding and its UI-state orchestration.
+- Injected state setters, `resetWorkOrderPage`, `renderWorkspace`, storage, and document.
+- Kept state ownership, team data, work-order filtering, rendering, forms, mutations, auth/company/location state, SQL/RLS, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceTeamWorkViewEvents.js?v=lfes-authority-team-work-view-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-team-work-view-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `0d67122`, or remove `src/utils/workspaceTeamWorkViewEvents.js`, restore the original `[data-view-member-work]` listener block in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceTeamWorkViewEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `git diff --check`: PASS, with only existing CRLF warnings.
+- Targeted mock-DOM Team work-view smoke: PASS for state setters, localStorage persistence, work-page reset, render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4183/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `0d67122`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458707591`.
+- Signed-in live smoke: PASS. Team opened, Lee Gaede `View Work` was clicked, and Work Orders rendered `Lee Gaede Work`, `Assigned to Lee Gaede`, and `Hydralic Leak`.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Select the next hard boundary from the authority map. Message read-only navigation may be considered only after mapping read-state effects; send/reply forms stay blocked.
 
 ## LFES Boundary - Work-Order Delete Events - 2026-05-26
 

@@ -30,14 +30,14 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the high-risk work-order delete boundary extraction from `bindWorkspaceEvents()`.
+Completed the Team work-view bridge boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `171037e` (`Extract workspace work order delete events`)
+  - `0d67122` (`Extract workspace team work-view events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-work-delete-events-1`
+  - `app.js?v=lfes-authority-team-work-view-events-1`
 - Current `app.js` line count:
   - 8,841 lines.
 - Latest deployment:
@@ -60,16 +60,17 @@ Completed the high-risk work-order delete boundary extraction from `bindWorkspac
   - Detail status dropdown boundary moved only `#status-select` binding to `src/utils/workspaceWorkOrderDetailStatusEvents.js`; `app.js` still owns `updateWorkOrderStatus`, `setWorkOrderStatus`, status guards, Supabase mutation sequencing, event recording, and render.
   - High-risk completion boundary moved full Work Order Detail completion submit handling and safety checkbox sync to `src/utils/workspaceWorkOrderCompletionEvents.js`; `app.js` still owns the injected Supabase mutation callback, activity logger, safety payload helpers, render, state arrays, and shared current-safety helper used by quick-update/status paths.
   - High-risk delete boundary moved Work Order Detail delete request/cancel/confirm orchestration to `src/utils/workspaceWorkOrderDeleteEvents.js`; `app.js` still injects permission checks, Supabase row delete, photo storage cleanup, active state setters, render, notices, and timeout wrapper.
+  - Medium-risk Team work-view boundary moved `[data-view-member-work]` to `src/utils/workspaceTeamWorkViewEvents.js`; `app.js` still owns state variables, page reset, render, team data, and work-order filtering.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceWorkOrderDeleteEvents.js`, and `tests/smoke/resource-load.spec.js`.
-  - targeted mock-DOM delete smoke passed for request, cancel, confirm, denied permission, storage-warning continuation, delete-error path, thrown-error path, state clearing, notice, and render.
-  - local resource smoke passed against `http://127.0.0.1:4182/`.
-  - local browser boot smoke reached the login screen with the new delete event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspaceTeamWorkViewEvents.js`, and `tests/smoke/resource-load.spec.js`.
+  - targeted mock-DOM Team work-view smoke passed for state setters, localStorage persistence, work-page reset, render, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4183/`.
+  - local browser boot smoke reached the login screen with the new Team work-view event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live delete smoke used disposable work order `QA LFES delete smoke 2026-05-26T15-33-07-546Z`, opened Work Order Detail, opened the permanent-delete warning, canceled once, reopened, permanently deleted it, verified it disappeared from Work Orders, and verified the row was gone through authenticated Supabase REST.
-  - live `index.html` referenced `src/utils/workspaceWorkOrderDeleteEvents.js?v=lfes-authority-work-delete-events-1` and `app.js?v=lfes-authority-work-delete-events-1`.
-  - `npm run test:smoke:github-actions` passed for `171037e`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458080821`.
+  - live Team work-view smoke opened Team, clicked Lee Gaede `View Work`, landed on Work Orders, observed `Lee Gaede Work`, `Assigned to Lee Gaede`, and `Hydralic Leak`.
+  - live `index.html` referenced `src/utils/workspaceTeamWorkViewEvents.js?v=lfes-authority-team-work-view-events-1` and `app.js?v=lfes-authority-team-work-view-events-1`.
+  - `npm run test:smoke:github-actions` passed for `0d67122`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26458707591`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -88,7 +89,7 @@ Completed the high-risk work-order delete boundary extraction from `bindWorkspac
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, and delete boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, and Team work-view boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.
