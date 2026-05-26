@@ -63,6 +63,7 @@ const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWork
 const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
 const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
 const { createWorkspaceWorkOrderDeleteEvents } = window.MaintainOpsWorkspaceWorkOrderDeleteEvents;
+const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkViewEvents;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -5227,21 +5228,20 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", updateCompanyMemberRole);
   });
 
-  document.querySelectorAll("[data-view-member-work]").forEach((button) => {
-    button.addEventListener("click", () => {
-      workOrderAssigneeFilter = button.dataset.viewMemberWork;
-      activeSection = "work";
-      activeStatusFilter = "active";
-      activeWorkOrderId = null;
-      activeAssetId = null;
-      createWorkOrderMode = false;
-      quickFixMode = false;
-      localStorage.setItem("maintainops.activeSection", activeSection);
-      localStorage.setItem("maintainops.workOrderAssigneeFilter", workOrderAssigneeFilter);
-      resetWorkOrderPage();
-      renderWorkspace();
-    });
+  bindWorkspaceTeamWorkViewEvents({
+    state: {
+      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveSection: (value) => { activeSection = value; },
+      setActiveStatusFilter: (value) => { activeStatusFilter = value; },
+      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+      setQuickFixMode: (value) => { quickFixMode = value; },
+      setWorkOrderAssigneeFilter: (value) => { workOrderAssigneeFilter = value; },
+    },
+    renderWorkspace,
+    resetWorkOrderPage,
   });
+
 
   const profileForm = document.querySelector("#profile-form");
   if (profileForm) profileForm.addEventListener("submit", updateMyProfile);
