@@ -5042,11 +5042,8 @@ function bindWorkspaceEvents() {
     openQuickFixForRequest,
   });
 
-  document.querySelectorAll("[data-delete-request]").forEach((button) => {
-    button.addEventListener("click", () => requestDeleteMaintenanceRequest(button.dataset.deleteRequest));
-  });
-
   bindWorkspaceRequestDeleteCancelEvents({
+    requestDeleteMaintenanceRequest,
     state: {
       setPendingDeleteRequestId: (value) => { pendingDeleteRequestId = value; },
     },
