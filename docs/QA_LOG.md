@@ -23,7 +23,58 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES high-risk work-order delete boundary extracted and live verified with disposable request/cancel/confirm delete plus data-layer proof.
 - 2026-05-26: LFES Team work-view boundary extracted and live verified with Team -> Lee Gaede Work navigation.
 - 2026-05-26: LFES Parts detail UI boundary extracted and live verified with Parts -> hydralic hose detail/source-manager/back navigation.
+- 2026-05-26: LFES Message Center local UI boundary extracted and live verified with Messages filter and quick-reply UI smoke; read-state writes stayed in `app.js`.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Message Center Local UI Events - 2026-05-26
+
+Boundary selected:
+
+- Message Center local UI event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium.
+- The path updates message filter/search/composer UI state and linked work-order navigation, but deliberately avoids thread open/read-state writes and message send/create mutations.
+
+Implementation scope:
+
+- Added `src/utils/workspaceMessageUiEvents.js`.
+- Moved only `[data-message-filter]`, `[data-open-linked-work-order]`, `[data-clear-message-work-link]`, `#message-search`, `#message-thread-type` composer sync, and `[data-quick-reply]`.
+- Injected app-owned state setters, storage, `renderWorkspace`, `messageComposerScopeNote`, and `autoGrowTextarea`.
+- Kept `[data-message-thread]`, `[data-open-work-message-thread]`, `markMessageThreadRead`, `#message-thread-form` submit, `#message-reply-form` submit, message data loading, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceMessageUiEvents.js?v=lfes-authority-message-ui-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-message-ui-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `d4a8503`, or remove `src/utils/workspaceMessageUiEvents.js`, restore the original Message UI listener blocks in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceMessageUiEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-message-ui-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-message-ui-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4185/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `d4a8503`, Resource Load Smoke run `https://github.com/loufish727/MaintainOps/actions/runs/26459972613`.
+- Signed-in live smoke: PASS. Messages opened, filter controls remained usable, quick reply `On it` inserted into the active reply textbox, and console stayed quiet.
+
+Behavior changed:
+
+- No observed behavior change.
+
+LFES catch:
+
+- The browser read-only evaluation scope could not read `localStorage` during live smoke, so live verification used visible DOM evidence instead. The targeted mock smoke remains the storage-state proof for this boundary.
+
+Next:
+
+- Select the next hard boundary from the authority map. Message thread-open/read-state writes remain mutation-adjacent and should be planned separately from send/reply forms.
 
 ## LFES Boundary - Parts Detail UI Events - 2026-05-26
 

@@ -4451,3 +4451,50 @@ Next candidates:
 - Select the next hard boundary from the authority map.
 - Message navigation remains mutation-adjacent because thread opening marks read state; split message filter/search/local composer UI from send/reply/read-state writes if choosing Messages.
 - Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Message Center Local UI Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- Message Center local UI binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- The Message Center mixes read-navigation, local composer state, quick-reply UI, read-state writes, and send/create message mutations in one render/event area.
+
+Why this is recoverable:
+
+- The extraction moved only local UI state and navigation wiring.
+- Thread-open/read-state writes, create-thread submit, send-reply submit, message data loading, Supabase/RLS, and render ownership stayed in `app.js`.
+- Rollback is one app commit or restoration of the original local Message UI listener blocks.
+
+Implementation:
+
+- Added `src/utils/workspaceMessageUiEvents.js`.
+- Moved `[data-message-filter]`, `[data-open-linked-work-order]`, `[data-clear-message-work-link]`, `#message-search`, `#message-thread-type` composer sync, and `[data-quick-reply]`.
+- Updated `index.html` with `src/utils/workspaceMessageUiEvents.js?v=lfes-authority-message-ui-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-message-ui-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-message-ui-events-smoke.js`.
+- App deploy commit: `d4a8503` (`Extract workspace message UI events`).
+- `app.js` line count moved from 8,827 to 8,780.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceMessageUiEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-message-ui-events-smoke.js`.
+- Targeted mock-DOM Message UI smoke: PASS for filter state/storage/render, linked work navigation state, clear composer work link, search persistence/focus, composer type sync, quick-reply text insertion/autogrow, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4185/`.
+- Local browser boot smoke: PASS. Login screen loaded with the Message UI script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: PASS for `d4a8503`, run `https://github.com/loufish727/MaintainOps/actions/runs/26459972613`.
+- Signed-in live Message UI smoke: PASS. Messages opened, filter controls remained usable, quick reply `On it` inserted into the active reply textbox, and console stayed quiet.
+
+LFES catch:
+
+- Live browser read-only evaluation could not read `localStorage`, so visible DOM evidence was used for live verification while the targeted mock smoke covered storage updates.
+
+Next candidates:
+
+- Select the next hard boundary from the authority map.
+- Message thread-open/read-state writes remain mutation-adjacent and should be planned separately from send/reply forms.
+- Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
