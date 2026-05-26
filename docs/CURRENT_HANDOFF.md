@@ -30,16 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Message Center thread open/read-state boundary extraction from `bindWorkspaceEvents()`.
+Completed the issue/admin local UI boundary extraction from `bindWorkspaceEvents()`.
 
 - Latest app behavior commit:
-  - `04f4a58` (`Extract workspace message thread events`)
+  - `9e80f0b` (`Extract workspace issue admin UI events`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-authority-message-thread-events-1`
+  - `app.js?v=lfes-authority-issue-admin-ui-events-1`
 - Current `app.js` line count:
-  - 8,753 lines.
+  - 8,746 lines.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
@@ -66,16 +66,17 @@ Completed the Message Center thread open/read-state boundary extraction from `bi
   - Medium-low-risk Parts search boundary moved `#part-search-form` input/submit handling to `src/utils/workspacePartSearchEvents.js`; `app.js` still owns part data, forms, restock/use/edit/delete, source rename, document upload, render, and Supabase mutations.
   - Medium-risk workspace section navigation boundary moved `[data-section]` to `src/utils/workspaceSectionNavigationEvents.js`; `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
   - Medium/high-risk Message Center thread open/read-state boundary moved `[data-message-thread]` and `[data-open-work-message-thread]` to `src/utils/workspaceMessageThreadEvents.js`; `app.js` still owns `markMessageThreadRead`, Supabase read-state write implementation, create thread, send reply, message data, render, auth/company/location state, and RLS.
+  - Medium-low-risk issue/admin local UI boundary moved `[data-cancel-app-issue-report]` and local `[data-setup-action="confirm-admin-delete-sql"]` handling to `src/utils/workspaceIssueAdminUiEvents.js`; `app.js` still owns create issue report, issue status mutation, setup item rendering, admin data, render, auth/company/location state, and Supabase access.
 - Verification:
-  - static JS checks passed for `app.js`, `src/utils/workspaceMessageThreadEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-message-thread-events-smoke.js`.
-  - targeted mock-DOM Message thread smoke passed for thread open, work-linked thread open, read-state callback ordering, storage persistence, composer close, section switch, render, and missing-state no-op.
-  - local resource smoke passed against `http://127.0.0.1:4188/`.
-  - local browser boot smoke reached the login screen with the new Message thread event script and cache tag present and no browser warning/error logs.
+  - static JS checks passed for `app.js`, `src/utils/workspaceIssueAdminUiEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-issue-admin-ui-events-smoke.js`.
+  - targeted mock-DOM issue/admin UI smoke passed for report-issue cancel, ignored setup action, confirm admin delete SQL localStorage/notice/render, and missing-state no-op.
+  - local resource smoke passed against `http://127.0.0.1:4189/`.
+  - local browser boot smoke reached the login screen with the new issue/admin UI event script and cache tag present and no browser warning/error logs.
   - hosted GitHub Pages resource smoke passed after Pages propagation.
   - signed-in live smoke passed in the manager/admin browser session on `https://loufish727.github.io/MaintainOps/`.
-  - live Message thread smoke opened Messages, clicked the QA Phase 9I thread, rendered the thread detail and reply box, with new script/cache tags and no browser warning/error logs.
-  - live `index.html` referenced `src/utils/workspaceMessageThreadEvents.js?v=lfes-authority-message-thread-events-1` and `app.js?v=lfes-authority-message-thread-events-1`.
-  - GitHub Actions local verifier was unavailable due unauthenticated API rate limit, and the public Actions list was stale; hosted resource smoke passed directly for `04f4a58`.
+  - live issue/admin UI smoke opened Report Issue, confirmed the issue form appeared, clicked Cancel, confirmed the form closed, with new script/cache tags and no browser warning/error logs.
+  - live `index.html` referenced `src/utils/workspaceIssueAdminUiEvents.js?v=lfes-authority-issue-admin-ui-events-1` and `app.js?v=lfes-authority-issue-admin-ui-events-1`.
+  - GitHub Actions local verifier was unavailable due unauthenticated API rate limit; hosted resource smoke passed directly for `9e80f0b`.
   - fresh live console samples had no relevant warning/error logs.
 - Behavior changed:
   - no observed behavior change.
@@ -95,7 +96,7 @@ Completed the Message Center thread open/read-state boundary extraction from `bi
   - documented why the drift happened and the prevention rule in `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`.
 - Recommended next step:
   - use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map.
-  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, and Message Center thread open/read-state boundaries are implemented and live verified.
+  - quick work-order status, assignment, downtime-copy, detail status dropdown, completion, delete, Team work-view, Parts detail UI, Message Center local UI, Parts search, workspace section navigation, Message Center thread open/read-state, and issue/admin local UI boundaries are implemented and live verified.
   - continue high-risk work-order decomposition only one subcluster at a time.
   - next hard target should be selected from the authority map; do not combine request conversion, Quick Fix, storage/photo/document, or broad render/event movement with another change.
   - do not choose form/payload validation until its Quick Fix/date behavior smoke is narrowed and passes.

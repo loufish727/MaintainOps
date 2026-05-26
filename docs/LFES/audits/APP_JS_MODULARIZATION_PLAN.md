@@ -4624,3 +4624,45 @@ Next candidates:
 
 - Continue with another contained event boundary.
 - Do not combine create-thread, send-reply, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.
+
+## Issue/Admin Local UI Event Boundary - 2026-05-26
+
+Hard boundary selected:
+
+- App issue report cancel and local admin setup action binding inside `bindWorkspaceEvents()`.
+
+Why this is hard:
+
+- It sits beside issue-report creation, issue-status mutation, setup/admin checklist behavior, and localStorage-backed readiness state.
+
+Why this is recoverable:
+
+- The extraction moved only local UI state and local checklist flag handling.
+- No issue reports are created or updated.
+- No SQL, Supabase/RLS, auth/session/company/location, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` logic moved.
+- Rollback is one app commit or restoration of the original listener blocks.
+
+Implementation:
+
+- Added `src/utils/workspaceIssueAdminUiEvents.js`.
+- Updated `index.html` with `src/utils/workspaceIssueAdminUiEvents.js?v=lfes-authority-issue-admin-ui-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-issue-admin-ui-events-1`.
+- Updated `tests/smoke/resource-load.spec.js`.
+- Added `tests/smoke/workspace-issue-admin-ui-events-smoke.js`.
+- App deploy commit: `9e80f0b` (`Extract workspace issue admin UI events`).
+- `app.js` line count moved from 8,753 to 8,746.
+
+Verification:
+
+- Static checks: PASS for `app.js`, `src/utils/workspaceIssueAdminUiEvents.js`, `tests/smoke/resource-load.spec.js`, and `tests/smoke/workspace-issue-admin-ui-events-smoke.js`.
+- Targeted mock-DOM issue/admin UI smoke: PASS for report-issue cancel, ignored setup action, confirm admin delete SQL localStorage/notice/render, and missing-state no-op.
+- Local resource smoke: PASS against `http://127.0.0.1:4189/`.
+- Local browser boot smoke: PASS. Login screen loaded with the issue/admin UI script and cache tag present and no browser warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live issue/admin UI smoke: PASS. Report Issue opened the issue form, Cancel closed it, new script/cache tags were present, and no browser warning/error logs appeared.
+
+Next candidates:
+
+- Continue with another contained event boundary.
+- Do not combine app issue creation/status mutation, command actions, request conversion, Quick Fix, storage/photo/document, broad forms, broad `renderWorkspace()`, or broad `bindWorkspaceEvents()` with another extraction.

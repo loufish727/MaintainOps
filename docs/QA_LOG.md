@@ -27,7 +27,54 @@ This file summarizes important QA passes and remaining test priorities.
 - 2026-05-26: LFES Parts search boundary extracted and live verified with manual text-entry smoke due browser virtual clipboard limitation.
 - 2026-05-26: LFES workspace section navigation boundary extracted and live verified with Work Orders, Requests, and Parts navigation smoke.
 - 2026-05-26: LFES Message Center thread open/read-state boundary extracted and live verified with QA thread open smoke.
+- 2026-05-26: LFES issue/admin local UI boundary extracted and live verified with Report Issue open/cancel smoke.
 - Full details are recorded later in this log and in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`.
+
+## LFES Boundary - Issue/Admin Local UI Events - 2026-05-26
+
+Boundary selected:
+
+- App issue report cancel and local admin setup action event binding from `bindWorkspaceEvents()`.
+
+Operational risk:
+
+- Medium-low.
+- The path closes the report-issue panel and marks the local admin delete SQL setup checklist flag; it does not create issue reports or update issue statuses.
+
+Implementation scope:
+
+- Added `src/utils/workspaceIssueAdminUiEvents.js`.
+- Moved only `[data-cancel-app-issue-report]` and `[data-setup-action="confirm-admin-delete-sql"]` local UI handling.
+- Injected app-owned state setters, storage, `showNotice`, `renderWorkspace`, and document.
+- Kept `#app-issue-report-form` submit, `[data-app-issue-status]` submit, setup rendering, admin data, Supabase/RLS, auth/company/location state, broad `renderWorkspace()`, and broad `bindWorkspaceEvents()` in `app.js`.
+- Added `src/utils/workspaceIssueAdminUiEvents.js?v=lfes-authority-issue-admin-ui-events-1`.
+- Updated `app.js` cache tag to `app.js?v=lfes-authority-issue-admin-ui-events-1`.
+- Updated hosted resource smoke resource list.
+
+Rollback path:
+
+- Revert `9e80f0b`, or remove `src/utils/workspaceIssueAdminUiEvents.js`, restore the original listener blocks in `app.js`, remove the resource-smoke entry, and restore the previous cache tag.
+
+Smoke results:
+
+- `node --check app.js`: PASS.
+- `node --check src/utils/workspaceIssueAdminUiEvents.js`: PASS.
+- `node --check tests/smoke/resource-load.spec.js`: PASS.
+- `node --check tests/smoke/workspace-issue-admin-ui-events-smoke.js`: PASS.
+- `node tests/smoke/workspace-issue-admin-ui-events-smoke.js`: PASS.
+- Local resource smoke: PASS against `http://127.0.0.1:4189/`.
+- Local browser boot smoke: PASS; reached login screen with new script/cache tags present and no warning/error logs.
+- Hosted GitHub Pages resource smoke: PASS.
+- GitHub Actions verifier: unavailable due unauthenticated API rate limit. Direct hosted resource smoke passed for the deployed commit.
+- Signed-in live smoke: PASS. Report Issue opened the issue form, Cancel closed it, new script/cache tags were present, and no warning/error logs appeared.
+
+Behavior changed:
+
+- No observed behavior change.
+
+Next:
+
+- Continue the LFES batch with another contained boundary. Keep app issue creation/status mutations, command actions, Quick Fix, request conversion, storage/photo/document flows, mutation forms, and broad render/event movement blocked unless individually planned.
 
 ## LFES Boundary - Message Center Thread Events - 2026-05-26
 

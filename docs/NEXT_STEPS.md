@@ -6,10 +6,10 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `04f4a58` (`Extract workspace message thread events`).
+- Latest app behavior commit: `9e80f0b` (`Extract workspace issue admin UI events`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-message-thread-events-1`.
-- Current `app.js` line count: 8,753.
+- Latest deployed cache tag: `app.js?v=lfes-authority-issue-admin-ui-events-1`.
+- Current `app.js` line count: 8,746.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -44,6 +44,7 @@ Recommended immediate next controlled phase:
 - Parts search event binding is extracted into `src/utils/workspacePartSearchEvents.js` and live verified. `app.js` still owns part data, forms, restock/use/edit/delete, source rename, document upload, render, and Supabase mutations.
 - Workspace section navigation event binding is extracted into `src/utils/workspaceSectionNavigationEvents.js` and live verified. `app.js` still owns visible-nav rules, queue loaders, state variables, render, command actions, mutations, auth/company/location state, and Supabase access.
 - Message Center thread open/read-state event binding is extracted into `src/utils/workspaceMessageThreadEvents.js` and live verified. `app.js` still owns `markMessageThreadRead`, Supabase read-state write implementation, create thread, send reply, message data, render, auth/company/location state, and RLS.
+- Issue/admin local UI event binding is extracted into `src/utils/workspaceIssueAdminUiEvents.js` and live verified. `app.js` still owns create issue report, issue status mutation, setup rendering, admin data, render, auth/company/location state, and Supabase access.
 - Form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) remain blocked until the Quick Fix/date validation behavior smoke is narrowed and passes.
 - Choose the next hard boundary only after targeted behavior smokes prove it and rollback is explicit. Do not combine request conversion, Quick Fix, storage/photo/document, broad forms, or broad render/event movement with another change.
 - For quick status and similar work-order mutations, smoke must account for the expected active-detail render after mutation. Do not require the list card to stay visible if the app intentionally moves to Work Order Detail.
@@ -86,6 +87,7 @@ Verification note:
 - Hosted resource checks, targeted mock-DOM Parts search smoke, signed-in live manual Parts search smoke, and `npm run test:smoke:github-actions` passed for the Parts search boundary.
 - Hosted resource checks, targeted mock-DOM section navigation smoke, signed-in live Work Orders/Requests/Parts navigation smoke, and public GitHub Actions run-page verification passed for the workspace section navigation boundary.
 - Hosted resource checks, targeted mock-DOM Message thread smoke, and signed-in live QA thread open/read smoke passed for the Message Center thread boundary. GitHub Actions verifier was unavailable due unauthenticated API rate limit for this phase.
+- Hosted resource checks, targeted mock-DOM issue/admin UI smoke, and signed-in live Report Issue open/cancel smoke passed for the issue/admin local UI boundary. GitHub Actions verifier was unavailable due unauthenticated API rate limit for this phase.
 - Completion smoke catch: use valid `actual_minutes` step values such as `5`; invalid values are stopped by native browser validation before the submit handler runs.
 - Delete smoke catch: if browser text entry is blocked by the virtual clipboard layer, create the disposable setup record through authenticated Supabase REST, then verify request/cancel/confirm deletion through the app UI.
 - Local server catch: `python -m http.server` is unavailable in this Windows environment because `python` resolves to the Microsoft Store shim. Use the local Node static-server method for future localhost smokes.
