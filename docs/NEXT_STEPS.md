@@ -6,12 +6,12 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `2814088` (`Extract workspace work order edit events`).
+- Latest app behavior commit: `1794209` (`Add workspace UI state factory scaffold`).
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
 - Current `app.js` line count: 8,064.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold and `tests/smoke/workspace-ui-state-smoke.js`.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold and `tests/smoke/workspace-ui-state-smoke.js`; hosted Resource Load Smoke and GitHub Actions Resource Load Smoke passed for `1794209`.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`

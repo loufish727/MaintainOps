@@ -5,7 +5,7 @@ This file summarizes important QA passes and remaining test priorities.
 ## Current Latest QA Entries
 
 - 2026-05-26: LFES RLS source audit checkpoint added. App-used data tables and storage buckets have source RLS/policy coverage; anonymous access remains scoped to expected public QR/photo RPCs; source gap found for app-used RPCs `cancel_company_invite` and `record_work_order_part_usage`.
-- 2026-05-26: LFES workspace UI state factory scaffold added with targeted smoke. No app behavior changed; next state pass should wire one extracted UI event group at a time.
+- 2026-05-26: LFES workspace UI state factory scaffold added with targeted smoke, local/hosted resource smoke, hosted boot assertion, and GitHub Actions Resource Load Smoke for `1794209`. No app behavior changed; next state pass should wire one extracted UI event group at a time.
 - 2026-05-26: LFES follow-up work event extraction was retried and live verified after the first setup path was rejected. The passing smoke used a visible active follow-up-needed disposable source, clicked Planning `Create Work`, verified source `follow_up_needed=false`, verified the generated follow-up work order, and cleaned all disposable rows through admin UI with data-layer proof.
 - 2026-05-26: LFES work-order comment submit event extraction live verified with a disposable work order, visible reopened comment proof, admin UI cleanup, and data-layer `remainingWork=0` / `remainingComments=0`.
 - 2026-05-26: LFES work-order Quick Update submit event extraction live verified with a disposable work order, reopened form value proof for resolution/priority, admin UI cleanup, and data-layer `remainingWork=0` / `remainingEvents=0`.

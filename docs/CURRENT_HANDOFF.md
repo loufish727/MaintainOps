@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, then added the first workspace UI state factory scaffold.
 
 - Latest app behavior commit:
-  - `2814088` (`Extract workspace work order edit events`)
+  - `1794209` (`Add workspace UI state factory scaffold`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
@@ -51,6 +51,7 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - Added `tests/smoke/workspace-ui-state-smoke.js`.
   - `index.html` now loads `src/utils/workspaceUiState.js?v=lfes-state-workspace-ui-state-1` before workspace event modules.
   - No app behavior was changed yet; `app.js` still owns legacy UI state variables until a follow-up wiring phase moves selected event modules to the factory.
+  - Hosted Resource Load Smoke and GitHub Actions Resource Load Smoke passed for `1794209`.
 - Latest deployment:
   - pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Latest modularization state:
