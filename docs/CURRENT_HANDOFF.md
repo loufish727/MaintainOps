@@ -30,19 +30,25 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Ran the 2026-05-27 LFES active-work-order state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset state passes.
+Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset/active-work-order state passes.
 
 - Latest app behavior commit:
-  - `94bb07d` (`Wire active work order state to UI factory`).
+  - pending commit for message UI state wiring.
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - deployed: `app.js?v=lfes-state-active-work-order-1`
+  - pending deployment: `app.js?v=lfes-state-message-ui-1`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
+  - Message UI state is now initialized from `workspaceUiState`: `activeMessageThreadId`, `messageThreadFilter`, `messageSearchQuery`, `messageComposerWorkOrderId`, and `messageComposerOpen`.
+  - Added setter helpers in `app.js` so message UI changes update both legacy local variables and `workspaceUiState`.
+  - Existing extracted message event modules still own their event contracts and localStorage writes; this pass only synchronizes app-owned state through the factory.
+  - `index.html` cache tags are bumped for both `src/utils/workspaceUiState.js` and `app.js` to `lfes-state-message-ui-1`.
+  - Behavior intent: no UI behavior change; this only reduces message UI state ownership drift while `app.js` still owns read-state writes, create thread, send reply, message data, render, auth/company/location state, and Supabase access.
+- Prior active-work-order state-boundary checkpoint:
   - `activeWorkOrderId` is now initialized from `workspaceUiState.getActiveWorkOrderId()`.
   - Added `setActiveWorkOrderIdState(...)` in `app.js` so active-work-order changes update both the legacy local variable and `workspaceUiState`.
   - Extracted event module setters and app-owned work-order open/clear paths now route through `setActiveWorkOrderIdState(...)`.

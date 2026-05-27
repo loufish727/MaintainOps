@@ -257,11 +257,31 @@ let messageWorkOrderLinksReady = true;
 let appIssueReports = [];
 let appIssueReportsReady = true;
 let reportIssueMode = false;
-let activeMessageThreadId = localStorage.getItem("maintainops.activeMessageThreadId") || "";
-let messageThreadFilter = localStorage.getItem("maintainops.messageThreadFilter") || "all";
-let messageSearchQuery = localStorage.getItem("maintainops.messageSearchQuery") || "";
-let messageComposerWorkOrderId = localStorage.getItem("maintainops.messageComposerWorkOrderId") || "";
-let messageComposerOpen = false;
+let activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
+function setActiveMessageThreadIdState(value) {
+  activeMessageThreadId = value;
+  workspaceUiState.setActiveMessageThreadId(value);
+}
+let messageThreadFilter = workspaceUiState.getMessageThreadFilter();
+function setMessageThreadFilterState(value) {
+  messageThreadFilter = value;
+  workspaceUiState.setMessageThreadFilter(value);
+}
+let messageSearchQuery = workspaceUiState.getMessageSearchQuery();
+function setMessageSearchQueryState(value) {
+  messageSearchQuery = value;
+  workspaceUiState.setMessageSearchQuery(value);
+}
+let messageComposerWorkOrderId = workspaceUiState.getMessageComposerWorkOrderId();
+function setMessageComposerWorkOrderIdState(value) {
+  messageComposerWorkOrderId = value;
+  workspaceUiState.setMessageComposerWorkOrderId(value);
+}
+let messageComposerOpen = workspaceUiState.getMessageComposerOpen();
+function setMessageComposerOpenState(value) {
+  messageComposerOpen = Boolean(value);
+  workspaceUiState.setMessageComposerOpen(value);
+}
 let parts = [];
 let partCostsReady = true;
 let partSuppliersReady = true;
@@ -2234,7 +2254,7 @@ async function loadMessageCenter() {
 
   messageThreads = threads || [];
   if (!messageThreads.length) {
-    activeMessageThreadId = "";
+    setActiveMessageThreadIdState("");
     localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
     return;
   }
@@ -2277,7 +2297,7 @@ async function loadMessageCenter() {
   }, {});
 
   if (!activeMessageThreadId || !messageThreads.some((thread) => thread.id === activeMessageThreadId)) {
-    activeMessageThreadId = messageThreads[0]?.id || "";
+    setActiveMessageThreadIdState(messageThreads[0]?.id || "");
     localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
   }
 }
@@ -4759,9 +4779,9 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceMessageThreadEvents({
     state: {
-      setActiveMessageThreadId: (value) => { activeMessageThreadId = value; },
+      setActiveMessageThreadId: setActiveMessageThreadIdState,
       setActiveSection: setActiveSectionState,
-      setMessageComposerOpen: (value) => { messageComposerOpen = value; },
+      setMessageComposerOpen: setMessageComposerOpenState,
     },
     markMessageThreadRead,
     renderWorkspace,
@@ -4771,10 +4791,10 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceWorkMessageStartEvents({
     state: {
-      setActiveMessageThreadId: (value) => { activeMessageThreadId = value; },
+      setActiveMessageThreadId: setActiveMessageThreadIdState,
       setActiveSection: setActiveSectionState,
-      setMessageComposerOpen: (value) => { messageComposerOpen = value; },
-      setMessageComposerWorkOrderId: (value) => { messageComposerWorkOrderId = value; },
+      setMessageComposerOpen: setMessageComposerOpenState,
+      setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
     },
     renderWorkspace,
   });
@@ -4796,9 +4816,9 @@ function bindWorkspaceEvents() {
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
-      setMessageComposerWorkOrderId: (value) => { messageComposerWorkOrderId = value; },
-      setMessageSearchQuery: (value) => { messageSearchQuery = value; },
-      setMessageThreadFilter: (value) => { messageThreadFilter = value; },
+      setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
+      setMessageSearchQuery: setMessageSearchQueryState,
+      setMessageThreadFilter: setMessageThreadFilterState,
       setQuickFixMode: (value) => { quickFixMode = value; },
     },
     autoGrowTextarea,
@@ -6128,9 +6148,9 @@ async function createMessageThread(event) {
     const { error: messageError } = await insertThreadMessage(thread.id, body);
     if (messageError) throw messageError;
 
-    activeMessageThreadId = thread.id;
-    messageComposerWorkOrderId = "";
-    messageComposerOpen = false;
+    setActiveMessageThreadIdState(thread.id);
+    setMessageComposerWorkOrderIdState("");
+    setMessageComposerOpenState(false);
     localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
     localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
     await markMessageThreadRead(thread.id);
