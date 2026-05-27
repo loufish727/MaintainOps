@@ -30,22 +30,26 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Ran the 2026-05-27 LFES RLS/security follow-up audit, added missing SQL source/hardening files, applied the reviewed SQL in Supabase, and verified anonymous/internal RPC and tenant-isolation behavior. App behavior was not intentionally changed.
+Ran the 2026-05-27 LFES active-section state wiring pass after closing the RLS hardening checkpoint.
 
 - Latest app behavior commit:
-  - `a0e8171` (`Wire workspace search state to UI factory`)
-- Latest local security source additions:
-  - `supabase/step-next-invite-default-location.sql`
-  - `supabase/step-next-cancel-team-invites.sql`
-  - `supabase/step-next-record-work-order-part-usage.sql`
-  - `supabase/step-next-rpc-execute-hardening.sql`
-  - `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`
+  - pending commit for active-section state wiring.
+- Latest pushed security/documentation commit:
+  - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - `app.js?v=lfes-state-workspace-search-1`
+  - pending deployment: `app.js?v=lfes-state-active-section-1`
 - Current `app.js` line count:
-  - 8,050 lines.
+  - 8,042 lines.
+- Current state-boundary checkpoint:
+  - `activeSection` is now initialized from `workspaceUiState.getActiveSection()`.
+  - Added `setActiveSectionState(...)` in `app.js` so active-section changes update both the legacy local variable and `workspaceUiState`.
+  - Extracted event modules and app-owned paths that change active section now route through `setActiveSectionState(...)`.
+  - Removed redundant direct `localStorage.setItem("maintainops.activeSection", activeSection)` writes from app-owned paths touched by this phase.
+  - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-section-1`.
+  - Behavior intent: no UI behavior change; this only reduces active-section state ownership drift.
+  - Verification passed: static checks, workspace UI state smoke, section navigation smoke, search/filter state smokes, command/navigation regression smokes, hosted resource smoke, local boot smoke with the new cache tag, and GitHub Actions verifier for latest pushed commit.
 - Current security checkpoint:
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
   - Follow-up RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
@@ -58,7 +62,7 @@ Ran the 2026-05-27 LFES RLS/security follow-up audit, added missing SQL source/h
   - QA account for `QA Test Facility` sees only QA company data across app-used tables. Taylor-prefixed storage list probes return empty arrays.
   - Taylor technician account sees only main Taylor company rows or empty result sets across app-used tables, cannot read QA Facility rows, and is denied manager/admin-only RPCs for invite creation, public request link creation, role update, and invite cancel.
   - Remaining optional symmetry gap before auth/session, public QR submit, or storage/photo/document changes: QA Facility technician smoke.
-- Current state-boundary checkpoint:
+- Prior state-boundary checkpoint:
   - Added `src/utils/workspaceUiState.js` as the first client-only workspace UI state factory scaffold.
   - Added `tests/smoke/workspace-ui-state-smoke.js`.
   - `index.html` now loads `src/utils/workspaceUiState.js?v=lfes-state-workspace-ui-state-1` before workspace event modules.

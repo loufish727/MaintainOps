@@ -7,6 +7,7 @@ This is the recommended restart point for the next session.
 Current state as of 2026-05-26:
 
 - Latest app behavior commit: `a0e8171` (`Wire workspace search state to UI factory`).
+- Latest local app behavior phase: active-section state wiring to `workspaceUiState`; pending commit/deploy.
 - Latest RLS/security source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Latest local SQL source additions:
   - `supabase/step-next-invite-default-location.sql`
@@ -32,7 +33,7 @@ Recommended immediate next controlled phase:
 - QA-company read isolation, Taylor technician role-denial, and anonymous internal RPC execute hardening are now verified.
 - Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry, but the primary RLS checkpoint is now materially closed.
 - Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.
-- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, and workspace search state is wired. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; detail/navigation or section-navigation state is the likely next candidate. Do not replace broad `app.js` variables in one move.
+- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, workspace search state is wired, and active-section writes now route through `workspaceUiState`. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; avoid broad variable replacement.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
 - Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
 - Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.
