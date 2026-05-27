@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: `b5b10aa` (`Extract quick fix renderer`).
+- Latest app behavior change: Quick Fix submit workflow extraction pending commit.
 - Previous app behavior commit: `c60cf05` (`Extract create work order renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
@@ -21,10 +21,10 @@ Current state as of 2026-05-27:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest local cache tag: `app.js?v=lfes-hard-quick-fix-render-1`; `src/render/quickFixDisplay.js?v=lfes-hard-quick-fix-render-1`.
+- Latest local cache tag: `app.js?v=lfes-quick-fix-workflow-1`; `src/workflows/quickFixWorkflow.js?v=lfes-quick-fix-workflow-1`.
 - Latest deployed auth cache tag before this run: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 7,569 after the Quick Fix renderer extraction.
+- Current `app.js` line count: 7,442 after the Quick Fix submit workflow extraction.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -41,8 +41,11 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current hard-boundary extraction completed and deployed in `b5b10aa`: `renderQuickFixForm` moved into `src/render/quickFixDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke #265 passed.
-- The full `createQuickFix` submit mutation remains in `app.js` and should not move until a dedicated disposable mutation/cleanup smoke is planned.
+- Current HIGH-risk boundary completed locally and awaiting deploy verification: `createQuickFix` moved into `src/workflows/quickFixWorkflow.js` with explicit dependency injection. Static checks, workflow mock smoke, renderer smoke, Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, and local boot smoke passed. Pre-extraction hosted disposable lifecycle smoke passed.
+- Do not move adjacent storage/photo internals, request conversion internals, part usage internals, auth/session/company/location startup, SQL/RLS, or broad render in the same phase.
+- Current run caught and fixed renderer initialization-order drift; future factory-created renderer extractions must review startup order and forward dependency reads.
+- Current run also reinforced that every `app.js` behavior fix must bump the app cache tag in `index.html`.
+- Previous hard-boundary extraction completed and deployed in `b5b10aa`: `renderQuickFixForm` moved into `src/render/quickFixDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke #265 passed.
 - Previous hard-boundary extraction completed and deployed in `c60cf05`: `renderCreateWorkOrder` moved into `src/render/createWorkOrderDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted New Work Order / Asset location warning smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed by browser proof after the local unauthenticated verifier hit API rate limit.
 - Previous hard-boundary extraction completed and deployed in `e4380ec`: `renderMessageCenter` moved into `src/render/messageCenterDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Message event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
 - Previous hard-boundary extraction completed and deployed in `c58aa67`: `renderAssetDetail` moved into `src/render/assetDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Asset Detail event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.

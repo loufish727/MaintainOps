@@ -4,6 +4,30 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-27 - Renderer Factory Extraction Changed Startup Hoisting Assumptions
+
+- Date: 2026-05-27.
+- Phase/build: hard-boundary renderer extraction run after Quick Fix renderer deployment.
+- Issue discovered: the hosted app stopped workspace boot with `Cannot access 'renderMessageCenter' before initialization`, then a headless browser smoke exposed `Cannot access 'renderCreateWorkOrder' before initialization`.
+- How it was discovered: the planned live Quick Fix lifecycle smoke hit the signed-in app after the renderer extractions and found the workspace load stopped / blank app state before any mutation work continued.
+- Operational risk: moving function declarations to factory-created `const` renderers removes declaration hoisting. Startup or dependency-object construction can read a renderer before initialization even when static checks and isolated renderer smokes pass.
+- What LFES principle exposed it: live signed-in smoke before high-risk mutation extraction, then headless boot smoke to isolate the current page error.
+- What prevented escalation: mutation extraction stopped immediately; startup was fixed by moving `init()` after all renderer factory initialization and by making the Asset Detail missing-asset fallback depend on a lazy `renderCreateWorkOrder` callback.
+- Fix applied or recommended: when replacing hoisted render functions with factory-created `const` bindings, review both startup order and dependency-object reads. Use lazy callbacks for forward renderer dependencies or initialize the dependency first.
+- Lessons learned: renderer extraction can be operationally risky even without changing markup if it changes JavaScript initialization semantics.
+
+## 2026-05-27 - App.js-Only Fix Still Requires Cache Tag Bump
+
+- Date: 2026-05-27.
+- Phase/build: startup fix after renderer extraction.
+- Issue discovered: `app.js` was fixed and pushed, but live `index.html` still referenced the prior `app.js?v=lfes-hard-quick-fix-render-1`, so the browser kept loading the broken startup bundle.
+- How it was discovered: hosted resource smoke passed, but signed-in live boot still showed the old startup error. Direct script inspection showed the stale app cache tag.
+- Operational risk: an app-only hotfix can look deployed in Git and Actions while browsers continue running the old broken `app.js` if `index.html` does not change the cache query string.
+- What LFES principle exposed it: cache-tag verification in the live browser, not just file-exists resource checks.
+- What prevented escalation: the cache tag was bumped, deployed, and then polled until GitHub Pages served the updated tag before continuing.
+- Fix applied or recommended: every `app.js` behavior fix must include an `index.html` app cache-tag bump, even when no new script file is added.
+- Lessons learned: resource-load smoke verifies availability; cache-tag smoke verifies the browser is actually directed to the intended version.
+
 ## 2026-05-27 - State Factory Instance Must Exist Before First State Read
 
 - Date: 2026-05-27.

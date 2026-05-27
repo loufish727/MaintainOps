@@ -58,6 +58,7 @@ const requiredResources = [
   "src/utils/workspaceWorkOrderEditEvents.js",
   "src/utils/workspaceRequestQuickFixEvents.js",
   "src/utils/workspaceAssetLocationWarningEvents.js",
+  "src/workflows/quickFixWorkflow.js",
   "src/utils/requestQueryFilters.js",
   "src/utils/workOrderSearch.js",
   "src/utils/workspaceListBuilders.js",
