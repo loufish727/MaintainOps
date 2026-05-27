@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns textarea auto-grow UI behavior only.
+   * Module contract: owns textarea auto-grow UI behavior only.
    * May update textarea inline height on initial bind and input.
    * Must not submit forms, mutate app state, touch Supabase/RLS, or render.
    */

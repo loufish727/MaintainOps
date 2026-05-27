@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns local Message Center UI event binding only.
+   * Module contract: owns local Message Center UI event binding only.
    * Requires app.js-owned state access, storage, render callback, composer note helper,
    * and textarea auto-grow helper.
    * May update message filter/search state, clear local work-order composer link,

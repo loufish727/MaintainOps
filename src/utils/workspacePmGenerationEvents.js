@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns PM Generate Work button event binding only.
+   * Module contract: owns PM Generate Work button event binding only.
    * Requires an app.js-owned generate callback.
    * Must not create work orders, update schedules, touch Supabase/RLS, or own PM data.
    */

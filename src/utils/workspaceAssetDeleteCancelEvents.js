@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Equipment delete event binding only.
+   * Module contract: owns Equipment delete event binding only.
    * Requires app.js-owned delete-request callback, confirm-delete callback,
    * pending delete setter, render callback, and document.
    * May stop event propagation, request app-owned warning state, clear warning state,

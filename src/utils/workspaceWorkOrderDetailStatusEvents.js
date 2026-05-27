@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds the Work Order Detail status dropdown only.
+   * Module contract: binds the Work Order Detail status dropdown only.
    * Requires app.js-owned updateWorkOrderStatus callback.
    * May attach a change listener to #status-select.
    * Must not own status mutation logic, quick status buttons, assignment,

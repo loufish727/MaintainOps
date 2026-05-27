@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Parts Inventory search event binding only.
+   * Module contract: owns Parts Inventory search event binding only.
    * Requires app.js-owned search state, page reset, render callback, storage, and document.
    * May persist part search text, reset parts pagination, render, restore search focus,
    * and scroll back to the parts list on search submit.

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds quick work-order status buttons only.
+   * Module contract: binds quick work-order status buttons only.
    * Requires injected setWorkOrderStatus and showNotice callbacks from app.js.
    * May disable/update the clicked button while the injected mutation runs.
    * Must not own status mutation logic, assign work, delete work, copy downtime text,

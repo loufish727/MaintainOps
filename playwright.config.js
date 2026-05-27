@@ -1,4 +1,4 @@
-// LFES Phase 7D: resource-load smoke only. No auth, secrets, or data mutations.
+// Resource-load smoke only. No auth, secrets, or data mutations.
 module.exports = {
   testDir: "./tests",
   reporter: "list",

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the Report Issue command opener only.
+   * Module contract: owns the Report Issue command opener only.
    * Requires app.js-owned UI state setters, render callback, and document.
    * May clear active detail/form modes, enter report issue mode, and render.
    * Must not create issue reports, update issue status, submit forms, touch

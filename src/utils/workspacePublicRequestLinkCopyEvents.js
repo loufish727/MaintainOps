@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns public request link copy-button UI binding only.
+   * Module contract: owns public request link copy-button UI binding only.
    * Requires an injected clipboard copy callback. May update temporary button text.
    * Must not create, enable, disable, regenerate links, touch Supabase/RLS,
    * or own public request link data.

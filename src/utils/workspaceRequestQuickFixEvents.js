@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns request-origin Quick Fix opener binding only.
+   * Module contract: owns request-origin Quick Fix opener binding only.
    * Requires injected request Quick Fix opener callback and document.
    * Must not submit Quick Fix, convert/delete requests, create work,
    * touch Supabase/RLS, or own request/work-order data.

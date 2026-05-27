@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: renders Create Work Order form markup and existing contracts only.
+   * Module contract: renders Create Work Order form markup and existing contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
    * bind events, build submit payloads, mutate records, call Supabase, touch auth/session
    * startup, storage/photo flows, public QR submit, SQL, or RLS.

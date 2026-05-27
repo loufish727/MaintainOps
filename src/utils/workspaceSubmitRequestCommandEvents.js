@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the Submit Request command opener only.
+   * Module contract: owns the Submit Request command opener only.
    * Requires app.js-owned UI state setters, storage, request reset/reload, and document.
    * May switch to Requests, clear conflicting modes, persist active section, reset request
    * paging, and reload the request queue.

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: renders Message Center markup and existing data-* contracts only.
+   * Module contract: renders Message Center markup and existing data-* contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
    * bind events, mutate records, call Supabase, touch auth/session startup, storage,
    * public QR submit, SQL, or RLS.

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns request conversion button event binding only.
+   * Module contract: owns request conversion button event binding only.
    * Requires an app.js-owned convert callback.
    * Must not create work orders, update requests, touch Supabase/RLS, or own request data.
    */

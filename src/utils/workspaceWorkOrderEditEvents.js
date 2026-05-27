@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Full Work Order Details submit binding only.
+   * Module contract: owns Full Work Order Details submit binding only.
    * Requires an app.js-owned submit callback.
    * Must not update work orders, record activity, render, touch Supabase/RLS, or own work-order data.
    */

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds work-order downtime email copy buttons only.
+   * Module contract: binds work-order downtime email copy buttons only.
    * Requires injected work-order lookup, subject/body builders, and clipboard copy callback.
    * May read the selected work order, copy derived text, and temporarily update button text.
    * Must not mutate work orders, record events, change status/assignment/delete flows,

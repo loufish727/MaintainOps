@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns asset-specific Quick Fix opener only.
+   * Module contract: owns asset-specific Quick Fix opener only.
    * Requires app.js-owned UI state setters, storage, render, and document.
    * May set the Quick Fix asset id, switch to My Work, clear active details,
    * and render. Must not submit Quick Fix, create work, convert requests,

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Work Order -> Message Team start-composer binding only.
+   * Module contract: owns Work Order -> Message Team start-composer binding only.
    * Requires app.js-owned message/workspace state, storage, render callback, and document.
    * May open the message composer for a work order, clear active thread, switch to
    * Messages, persist local state, and render.

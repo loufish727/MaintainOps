@@ -25,22 +25,18 @@ Open [index.html](index.html) in a browser or serve the repo with a local web se
 
 ## Reviewer Starting Points
 
-For current project handoff, start with:
+For a concise external review, start with:
 
-- [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md)
+- [docs/REVIEW_PACKET.md](docs/REVIEW_PACKET.md)
 - [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
-- [docs/QA_LOG.md](docs/QA_LOG.md)
-- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
-- [docs/DEBUG_PROCESS.md](docs/DEBUG_PROCESS.md)
+- [docs/ENGINEERING_PROCESS.md](docs/ENGINEERING_PROCESS.md)
 - [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 
 ## Engineering Notes
 
-MaintainOps is being hardened with a controlled engineering process: scoped changes, smoke checks, live verification where needed, and documented handoff notes.
-
-Detailed internal process notes are kept in the project docs for continuity, but the public README stays focused on the product, setup path, and reviewer entry points.
+MaintainOps is being hardened with scoped changes, smoke checks, live verification where needed, and documented public checkpoints. Detailed internal process notes are kept outside the public repository.
 
 Original planning docs:
 

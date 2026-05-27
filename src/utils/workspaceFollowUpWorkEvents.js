@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns follow-up Create Work button event binding only.
+   * Module contract: owns follow-up Create Work button event binding only.
    * Requires an app.js-owned follow-up callback.
    * Must not create work orders, update source work, touch Supabase/RLS, or own work-order data.
    */

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds workspace detail/open navigation controls only.
+   * Module contract: binds workspace detail/open navigation controls only.
    * Requires app.js-owned active-detail/create/quick-fix state setters plus render callback.
    * May update UI navigation state, active-section storage, and render the workspace.
    * Must not mutate business records, change selectors, submit forms, delete, upload,

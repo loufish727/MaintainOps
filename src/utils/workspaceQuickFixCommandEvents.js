@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the main Quick Fix command opener only.
+   * Module contract: owns the main Quick Fix command opener only.
    * Requires app.js-owned UI state setters, storage, render, and document.
    * May switch to My Work, clear conflicting modes/details, persist active section,
    * and render. Must not submit Quick Fix, create work, convert requests,

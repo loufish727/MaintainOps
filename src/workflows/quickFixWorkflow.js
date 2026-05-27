@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the Quick Fix submit workflow only.
+   * Module contract: owns the Quick Fix submit workflow only.
    * Dependencies are injected from app.js so this module does not own auth/session,
    * company/location startup, renderWorkspace, storage policy, SQL, or RLS.
    */

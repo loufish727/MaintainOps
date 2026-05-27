@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Work Order comment form submit binding only.
+   * Module contract: owns Work Order comment form submit binding only.
    * Requires an app.js-owned submit callback.
    * Must not create comments, record activity, reload comments, render, touch Supabase/RLS, or own work-order data.
    */

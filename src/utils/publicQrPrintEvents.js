@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns public QR print-button binding only.
+   * Module contract: owns public QR print-button binding only.
    * May invoke the injected print callback. Must not submit public requests,
    * change auth/session state, touch Supabase/RLS, or own QR/request data.
    */

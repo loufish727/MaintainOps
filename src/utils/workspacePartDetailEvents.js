@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Parts Inventory detail navigation event binding only.
+   * Module contract: owns Parts Inventory detail navigation event binding only.
    * Requires app.js-owned state setters/getters and render callback.
    * May open a part detail, close part detail, and toggle the part source manager.
    * Must not mutate part records, submit forms, delete, upload, touch Supabase/RLS,

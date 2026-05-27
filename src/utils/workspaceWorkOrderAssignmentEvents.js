@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds work-order assignment event wiring only.
+   * Module contract: binds work-order assignment event wiring only.
    * Requires app.js-owned assignment mutation callbacks.
    * May stop propagation, call assign-to-me, submit card assignment forms,
    * and auto-submit card assignment when the assigned_to select changes.

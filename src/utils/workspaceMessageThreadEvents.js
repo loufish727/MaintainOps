@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Message Center thread-open event binding only.
+   * Module contract: owns Message Center thread-open event binding only.
    * Requires app.js-owned state setters, storage, render callback, and read-state callback.
    * May set active thread, close composer, switch to Messages, persist state,
    * call the injected read-state marker, and render.

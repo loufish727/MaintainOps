@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds read-only inventory/equipment filter controls only.
+   * Module contract: binds read-only inventory/equipment filter controls only.
    * Requires app.js-owned filter state setters/getters plus page reset and render callbacks.
    * May update local filter state, persist matching localStorage keys, reset pages, and render.
    * Must not mutate business records, change selectors, submit forms, delete, upload,

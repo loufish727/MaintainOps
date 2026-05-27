@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: binds equipment/location warning UI updates only.
+   * Module contract: binds equipment/location warning UI updates only.
    * Requires app.js-owned warning calculation/updater callback.
    * May run the callback on initial bind and on select changes.
    * Must not mutate business records, submit forms, delete, upload, render,

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the Export CSV command click binding only.
+   * Module contract: owns the Export CSV command click binding only.
    * Requires app.js-owned export callback and document.
    * May invoke the injected export callback.
    * Must not own export row construction, download filename selection, state, auth,

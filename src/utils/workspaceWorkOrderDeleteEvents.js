@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Work Order Detail delete request/cancel/confirm event handling.
+   * Module contract: owns Work Order Detail delete request/cancel/confirm event handling.
    * Requires app.js-injected permission, storage cleanup, row delete, state setters, notices, render, and timeout wrapper.
    * May set/clear the pending work-order delete id, remove injected photo storage paths before deletion,
    * call the injected work-order delete callback, clear active detail state, show delete notices, and render.

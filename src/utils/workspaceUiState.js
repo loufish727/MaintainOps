@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns client-only workspace UI state defaults, getters,
+   * Module contract: owns client-only workspace UI state defaults, getters,
    * setters, page reset helpers, and localStorage persistence keys.
    * Must not render, mutate business records, call Supabase, touch auth/session
    * startup, public QR submit, storage uploads, SQL, or RLS.

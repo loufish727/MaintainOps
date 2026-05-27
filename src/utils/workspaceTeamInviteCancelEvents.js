@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Team invite cancel-warning and confirm event binding only.
+   * Module contract: owns Team invite cancel-warning and confirm event binding only.
    * May set/clear pending invite-cancel state, clear the local cancel error,
    * render, and call the app-owned cancel callback.
    * Must not submit invite forms, touch Supabase/RLS, or own team invite data.

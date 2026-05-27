@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Work Order Quick Update form submit binding only.
+   * Module contract: owns Work Order Quick Update form submit binding only.
    * Requires an app.js-owned submit callback.
    * Must not update work orders, create equipment, record activity, render, touch Supabase/RLS, or own work-order data.
    */

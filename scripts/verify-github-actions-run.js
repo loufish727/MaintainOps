@@ -15,7 +15,7 @@ function requestJson(url) {
   return new Promise((resolve, reject) => {
     const headers = {
       "Accept": "application/vnd.github+json",
-      "User-Agent": "MaintainOps-LFES-Actions-Smoke",
+      "User-Agent": "MaintainOps-Actions-Smoke",
       "X-GitHub-Api-Version": "2022-11-28",
     };
     if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;

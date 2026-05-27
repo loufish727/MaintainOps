@@ -938,7 +938,7 @@ const {
   isColumnSchemaError,
 });
 
-// LFES-OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
+// OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
 function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
   return companyId && userId
     ? `${ACTIVE_LOCATION_STORAGE_KEY}:${userId}:${companyId}`
@@ -1761,7 +1761,7 @@ function renderPublicRequestError(message) {
   `;
 }
 
-// LFES-SECURITY: Public QR intake is intentionally anonymous; all company/location authority must stay inside scoped Supabase RPCs.
+// SECURITY: Public QR intake is intentionally anonymous; all company/location authority must stay inside scoped Supabase RPCs.
 async function submitPublicRequest(event, token, intake) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -3161,7 +3161,7 @@ function assetLocationRoutingMessage(assetId) {
   return `${mismatch.asset.name} belongs to ${mismatch.assetLocationName}. This will save to ${mismatch.assetLocationName}, not ${mismatch.activeLocationName}.`;
 }
 
-// LFES-TRACEABILITY: Cross-location equipment routing is allowed only with visible user intent because it changes where work lands.
+// TRACEABILITY: Cross-location equipment routing is allowed only with visible user intent because it changes where work lands.
 function confirmAssetLocationRouting(assetId, actionLabel, errorTarget) {
   const message = assetLocationRoutingMessage(assetId);
   if (!message) return true;
@@ -4866,7 +4866,7 @@ function assetHasDeleteBlockers(assetId) {
   return Object.values(blockers).some(Boolean);
 }
 
-// LFES-RELIABILITY: Delete guards query live linked counts because paged client lists can hide traceability blockers.
+// RELIABILITY: Delete guards query live linked counts because paged client lists can hide traceability blockers.
 async function loadAssetDeleteBlockers(assetId) {
   const [workOrdersCount, schedulesCount, requestsCount] = await Promise.all([
     countAssetLinkedRows("work_orders", assetId),
@@ -5461,7 +5461,7 @@ async function updateMyProfile(event) {
   }
 }
 
-// LFES-TRACEABILITY: Invite default location is onboarding state; acceptance must preserve the intended starting location.
+// TRACEABILITY: Invite default location is onboarding state; acceptance must preserve the intended starting location.
 async function createTeamInvite(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -7156,7 +7156,7 @@ async function createRequestFromForm(formElement) {
   }
 }
 
-// LFES-EVOLUTION: Request conversion is a workflow mutation boundary; preserve source request context and location when changing it.
+// WORKFLOW NOTE: Request conversion is a workflow mutation boundary; preserve source request context and location when changing it.
 async function convertRequestToWorkOrder(requestId) {
   const request = maintenanceRequests.find((item) => item.id === requestId);
   if (!request) return;

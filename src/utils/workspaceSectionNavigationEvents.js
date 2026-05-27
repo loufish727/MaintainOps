@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns main workspace section navigation binding only.
+   * Module contract: owns main workspace section navigation binding only.
    * Requires app.js-owned state setters, visible-nav guard, render callback, queue reloaders,
    * search-mode setter, page reset, storage, and document.
    * May switch active section, clear detail/form modes, reset work paging, persist the

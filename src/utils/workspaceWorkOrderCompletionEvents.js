@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Work Order Detail completion submit handling and safety checkbox sync.
+   * Module contract: owns Work Order Detail completion submit handling and safety checkbox sync.
    * Requires app.js-injected state lookup, safety helpers, mutation callbacks, timeout wrapper, notices, and render.
    * May build the completion payload, call injected work-order update/event callbacks, sync safety checkboxes,
    * update completion form button/error UI, show completion notices, and trigger render.

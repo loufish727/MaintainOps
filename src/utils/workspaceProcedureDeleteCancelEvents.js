@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns procedure delete event binding only.
+   * Module contract: owns procedure delete event binding only.
    * Requires app.js-owned delete-request callback, confirm-delete callback,
    * pending delete setter, render callback, and document.
    * May request app-owned warning state, clear the warning, render, and call

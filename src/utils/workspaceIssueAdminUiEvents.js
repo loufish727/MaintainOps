@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns local issue/admin setup UI event binding only.
+   * Module contract: owns local issue/admin setup UI event binding only.
    * Requires app.js-owned UI state setters, storage, notice, render callback, and document.
    * May close the app issue report panel and mark the local admin delete SQL checklist
    * item as applied.

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns public request link admin button binding only.
+   * Module contract: owns public request link admin button binding only.
    * Requires injected app-owned callbacks for create, disable, enable, and regenerate.
    * Must not own public request link data, token generation, Supabase/RLS, or public intake submit.
    */

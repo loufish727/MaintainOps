@@ -9,7 +9,7 @@ if (!email || !password) {
   process.exit(2);
 }
 
-const token = `LFES disposable quick fix ${Date.now()}`;
+const token = `QA disposable quick fix ${Date.now()}`;
 
 (async () => {
   const browser = await chromium.launch({ headless: true });

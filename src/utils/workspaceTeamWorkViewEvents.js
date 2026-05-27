@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns Team -> View Work event binding only.
+   * Module contract: owns Team -> View Work event binding only.
    * Requires app.js-owned state setters, page reset, storage, and render callback.
    * May switch to Work Orders, apply the selected assignee filter, clear detail/form modes,
    * persist active section and assignee filter, reset the work page, and render.

@@ -1,6 +1,6 @@
 (function () {
   /*
-   * LFES contract: owns the New Work Order command opener only.
+   * Module contract: owns the New Work Order command opener only.
    * Requires app.js-owned UI state setters, storage, render, and document.
    * May switch to Work Orders, clear conflicting modes, persist active section, and render.
    * Must not submit work orders, create Quick Fix work, export data, touch Supabase/RLS
