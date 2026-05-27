@@ -3205,7 +3205,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getLocations: () => locations,
   getActiveLocationId: () => activeLocationId,
-  renderCreateWorkOrder,
+  renderCreateWorkOrder: (...args) => renderCreateWorkOrder(...args),
   parentAssetFor,
   childAssetsFor,
   escapeHtml,
