@@ -4,6 +4,7 @@ const requiredResources = [
   "app.js",
   "styles.css",
   "supabase-config.js",
+  "src/utils/authRedirects.js",
   "src/utils/constants.js",
   "src/utils/dom.js",
   "src/utils/formatting.js",
@@ -129,6 +130,11 @@ const requiredResources = [
   "src/render/messageDisplay.js",
 ];
 
+const additionalResources = [
+  "auth/callback/index.html",
+  "auth/callback/callback.js",
+];
+
 test.describe("MaintainOps hosted resource smoke", () => {
   test("live GitHub Pages serves required app resources", async ({ request, baseURL }) => {
     test.setTimeout(180000);
@@ -145,6 +151,11 @@ test.describe("MaintainOps hosted resource smoke", () => {
         for (const resource of requiredResources) {
           expect(indexHtml, `index.html should reference ${resource}`).toContain(resource);
 
+          const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke-${attempt}`);
+          expect(response.status(), `${resource} should load`).toBe(200);
+        }
+
+        for (const resource of additionalResources) {
           const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke-${attempt}`);
           expect(response.status(), `${resource} should load`).toBe(200);
         }

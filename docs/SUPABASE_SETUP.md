@@ -13,6 +13,18 @@ window.SUPABASE_URL = "https://lbphkzznvvumemdkqoay.supabase.co";
 window.SUPABASE_ANON_KEY = "your-publishable-anon-key";
 ```
 
+## Auth Redirect Configuration
+
+MaintainOps uses a dedicated verification callback page so Supabase email-confirmation links return users to the app instead of a dead-end Supabase page.
+
+Supabase Dashboard > Authentication > URL Configuration:
+
+- Site URL: `https://loufish727.github.io/MaintainOps/`
+- Redirect URLs:
+  - `https://loufish727.github.io/MaintainOps/auth/callback/`
+
+The signup form passes `emailRedirectTo` with the same callback URL. The callback page exchanges Supabase `code` links or hash-token links into a browser session, then redirects to the MaintainOps workspace. Password-reset emails still return to the main app so the existing reset-password form can accept the recovery session.
+
 Do not commit private service-role keys.
 
 ## Current Known Project URL

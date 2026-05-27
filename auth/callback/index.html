@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verifying MaintainOps</title>
+    <link rel="stylesheet" href="../../styles.css?v=auth-callback-1">
+  </head>
+  <body>
+    <main id="app" class="app">
+      <section class="auth-shell">
+        <div class="auth-card">
+          <div class="brand-row">
+            <span class="brand-mark">MO</span>
+            <div>
+              <h1>Verifying Your Account</h1>
+              <p id="auth-callback-message">Finishing secure sign in...</p>
+            </div>
+          </div>
+          <p class="muted auth-status">You will be redirected to MaintainOps automatically.</p>
+          <p class="error-text" id="auth-callback-error"></p>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
+    <script src="../../supabase-config.js?v=mobile-nav-tiles-1"></script>
+    <script src="../../src/utils/authRedirects.js?v=auth-callback-1"></script>
+    <script src="./callback.js?v=auth-callback-1"></script>
+  </body>
+</html>

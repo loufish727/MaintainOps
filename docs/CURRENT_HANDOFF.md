@@ -30,6 +30,27 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Ran the HIGH-risk auth verification callback phase after closing the RLS checkpoint.
+
+- Latest app behavior commit:
+  - auth verification callback phase; use `git log -1 --oneline` for the exact commit after this handoff is committed.
+- Auth verification state:
+  - Added `auth/callback/index.html` and `auth/callback/callback.js`.
+  - Added `src/utils/authRedirects.js`.
+  - `index.html` now loads `authRedirects.js` before `app.js`; `app.js` cache tag is `auth-callback-1`.
+  - Signup now passes `emailRedirectTo: https://loufish727.github.io/MaintainOps/auth/callback/`.
+  - `/auth/callback/` exchanges Supabase `code` links or hash token links into a session, shows verification loading/error UI, and redirects to the MaintainOps app with `?auth=verified`.
+  - Root app startup also handles callback params as a fallback if Supabase sends verification tokens to the main app.
+  - Password recovery no longer treats `type=signup` tokens as password-reset links; only `type=recovery` or legacy no-type token pairs enter the reset flow.
+  - Password reset redirect remains on the main app route so the existing reset-password form still works.
+  - Supabase Dashboard Auth URL Configuration was updated:
+    - Site URL: `https://loufish727.github.io/MaintainOps/`
+    - Redirect URL: `https://loufish727.github.io/MaintainOps/auth/callback/`
+  - Verification passed locally: static checks for `app.js`, `authRedirects.js`, and callback JS; `tests/smoke/auth-callback-smoke.js`; local callback invalid-link UI smoke; root signup-token fallback smoke; local resource smoke.
+  - Still needed after deploy: hosted resource smoke, hosted callback invalid-link smoke, signed-in normal-login smoke, and GitHub Actions Resource Load Smoke.
+
+## Previous Change
+
 Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset/active-work-order state passes.
 
 - Latest app behavior commit:

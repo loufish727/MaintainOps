@@ -1013,6 +1013,10 @@ async function init() {
       await startPasswordRecovery(recoveryParams);
       return;
     }
+    if (isAuthCallbackParams(recoveryParams)) {
+      await startAuthCallback(recoveryParams);
+      return;
+    }
     const qrToken = publicRequestQrTokenFromUrl();
     if (qrToken) {
       await renderPublicRequestQrPage(qrToken);
@@ -1200,7 +1204,14 @@ function renderAuth(mode, initialError = "") {
     try {
       const response = isSignup
         ? await withOperationTimeout(
-          supabaseClient.auth.signUp({ email, password, options: { data: { full_name: fullName } } }),
+          supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { full_name: fullName },
+              emailRedirectTo: authCallbackRedirectUrl(),
+            },
+          }),
           "Sign up timed out. Check your connection and try again.",
           20000
         )
@@ -1214,7 +1225,7 @@ function renderAuth(mode, initialError = "") {
 
       if (isSignup && !response.data.session) {
         if (statusTarget) statusTarget.textContent = "";
-        errorTarget.textContent = "Check your email to confirm your account, then log in.";
+        errorTarget.textContent = "Check your email to confirm your account. The verification link will bring you back into MaintainOps automatically.";
         return;
       }
 
@@ -1243,14 +1254,7 @@ function passwordRecoveryParamsFromUrl() {
 }
 
 function passwordRecoveryParamsFromHref(href) {
-  const url = new URL(href);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const queryParams = url.searchParams;
-  return {
-    type: hashParams.get("type") || queryParams.get("type") || "",
-    accessToken: hashParams.get("access_token") || queryParams.get("access_token") || "",
-    refreshToken: hashParams.get("refresh_token") || queryParams.get("refresh_token") || "",
-  };
+  return window.MaintainOpsAuthRedirects.authParamsFromHref(href);
 }
 
 function isPasswordRecoveryUrl() {
@@ -1258,37 +1262,103 @@ function isPasswordRecoveryUrl() {
 }
 
 function isPasswordRecoveryParams(params) {
-  return params.type === "recovery" || Boolean(params.accessToken && params.refreshToken);
+  return window.MaintainOpsAuthRedirects.isPasswordRecoveryParams(params);
+}
+
+function isAuthCallbackParams(params) {
+  return window.MaintainOpsAuthRedirects.isAuthCallbackParams(params);
+}
+
+function authCallbackRedirectUrl() {
+  return window.MaintainOpsAuthRedirects.authCallbackUrl(window.location, window.PUBLIC_APP_URL);
 }
 
 function passwordResetRedirectUrl() {
-  const url = new URL(window.location.href);
-  [
-    "access_token",
-    "expires_at",
-    "expires_in",
-    "refresh_token",
-    "token_type",
-    "type",
-    "sb",
-  ].forEach((key) => url.searchParams.delete(key));
-  url.hash = "";
-  return url.href;
+  return window.MaintainOpsAuthRedirects.cleanAuthUrl(window.location);
 }
 
 function clearPasswordRecoveryUrl() {
-  const url = new URL(window.location.href);
-  [
-    "access_token",
-    "expires_at",
-    "expires_in",
-    "refresh_token",
-    "token_type",
-    "type",
-    "sb",
-  ].forEach((key) => url.searchParams.delete(key));
-  url.hash = "";
-  window.history.replaceState({}, document.title, url.href);
+  window.history.replaceState({}, document.title, window.MaintainOpsAuthRedirects.cleanAuthUrl(window.location));
+}
+
+async function startAuthCallback(params) {
+  renderAuthCallback("Verifying your account...");
+
+  try {
+    if (params.error || params.errorDescription) {
+      throw new Error(params.errorDescription || params.error || "This verification link is invalid or expired.");
+    }
+
+    let callbackSession = null;
+    if (params.code) {
+      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(params.code);
+      if (error) throw error;
+      callbackSession = data?.session || null;
+    } else if (params.accessToken && params.refreshToken) {
+      const { data, error } = await supabaseClient.auth.setSession({
+        access_token: params.accessToken,
+        refresh_token: params.refreshToken,
+      });
+      if (error) throw error;
+      callbackSession = data?.session || null;
+    }
+
+    if (!callbackSession) {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      callbackSession = data?.session || null;
+    }
+
+    if (!callbackSession) {
+      throw new Error("The verification link did not create a session. Request a new verification email and try again.");
+    }
+
+    session = callbackSession;
+    clearPasswordRecoveryUrl();
+    renderAuthCallback("Verification complete. Loading workspace...");
+    await render();
+  } catch (error) {
+    clearPasswordRecoveryUrl();
+    renderAuthCallbackError(error.message || "This verification link is invalid or expired.");
+  }
+}
+
+function renderAuthCallback(message) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <div class="auth-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Verifying Your Account</h1>
+            <p>${escapeHtml(message)}</p>
+          </div>
+        </div>
+        <p class="muted auth-status">You will be redirected into MaintainOps automatically.</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderAuthCallbackError(message) {
+  document.body.classList.remove("public-qr-mode");
+  app.innerHTML = `
+    <section class="auth-shell">
+      <div class="auth-card">
+        <div class="brand-row">
+          <span class="brand-mark">MO</span>
+          <div>
+            <h1>Verification Link Problem</h1>
+            <p>We could not finish verification from this link.</p>
+          </div>
+        </div>
+        <p class="error-text">${escapeHtml(message)}</p>
+        <button class="primary-button" id="auth-back-to-login" type="button">Back to Sign In</button>
+      </div>
+    </section>
+  `;
+  document.querySelector("#auth-back-to-login").addEventListener("click", () => renderAuth("login"));
 }
 
 async function startPasswordRecovery(params = passwordRecoveryParamsFromUrl()) {

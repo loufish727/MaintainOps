@@ -31,6 +31,11 @@ Current state as of 2026-05-26:
 
 Recommended immediate next controlled phase:
 
+- Finish verification for the auth callback phase after deploy:
+  - hosted resource smoke;
+  - hosted `/auth/callback/` invalid-link smoke;
+  - signed-in normal-login smoke;
+  - GitHub Actions Resource Load Smoke.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
 - RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Dashboard/admin SQL hardening is complete for the current app-used table/RPC/storage surface: no direct anon table grants, no unexpected anon RPC execute, RLS/policies present, approved public RPC grants present, security-definer search paths pinned, storage buckets private, and storage policies present.
 - QA-company read isolation, Taylor role-denial, `ensure_location_request_link` denial against a real QA Facility location, anonymous table denial, anonymous internal RPC denial, and invalid-token public QR intake are now verified.
