@@ -30,6 +30,27 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Continued the app-focused public request intake hardening path with a contained helper extraction.
+
+- Latest app behavior commit:
+  - Pending commit after local verification.
+- app.js authority reduction:
+  - Added `src/utils/publicRequestTokens.js`.
+  - Moved public request token generation out of `app.js` while leaving public request-link RPC updates, link data, auth/company/location state, public intake submit, SQL/RLS, and render behavior in `app.js`.
+  - Added `tests/smoke/public-request-token-smoke.js`.
+  - Added the module to `index.html` and hosted resource smoke list.
+  - Cache tag: `public-request-token-helper-1`.
+  - `app.js` line count is now 7,430.
+- Verification passed:
+  - static checks for `app.js`, `src/utils/publicRequestTokens.js`, and the new token smoke.
+  - `tests/smoke/public-request-token-smoke.js`.
+  - `tests/smoke/workspace-public-request-link-admin-events-smoke.js`.
+  - `tests/smoke/workspace-public-request-link-copy-events-smoke.js`.
+  - `tests/smoke/public-qr-print-events-smoke.js`.
+  - `tests/smoke/workspace-submit-request-command-events-smoke.js`.
+
+## Previous Change
+
 Ran a five-part readiness pass covering operational readiness scoping, app.js authority reduction, public intake posture, mutation smoke coverage, and public exposure review.
 
 - Latest app behavior commit:

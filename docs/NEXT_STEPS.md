@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior change: `1e91b02` (`Add readiness plans and public request link admin events`).
+- Latest app behavior change: pending commit after local verification for public request token helper extraction.
 - Previous app behavior commit: `b5b10aa` (`Extract quick fix renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
@@ -21,10 +21,10 @@ Current state as of 2026-05-27:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest local cache tag: `app.js?v=readiness-public-request-link-admin-events-1`; `src/utils/workspacePublicRequestLinkAdminEvents.js?v=readiness-public-request-link-admin-events-1`.
+- Latest local cache tag: `app.js?v=readiness-public-request-link-admin-events-1`; `src/utils/publicRequestTokens.js?v=public-request-token-helper-1`; `src/utils/workspacePublicRequestLinkAdminEvents.js?v=readiness-public-request-link-admin-events-1`.
 - Latest deployed auth cache tag before this run: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 7,437 after the public request-link admin event binding extraction.
+- Current `app.js` line count: 7,430 after the public request token helper extraction.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -41,7 +41,8 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current readiness pass completed and deployed in `1e91b02`. It identifies backup/restore, incident response, public request intake hardening, and public exposure review as ongoing production-readiness workstreams without promoting detailed internal runbooks in the public repo. It also moves public request-link admin button binding into `src/utils/workspacePublicRequestLinkAdminEvents.js` with a targeted smoke. `app.js` still owns public request-link RPC updates, token generation, link data, auth/company/location state, public intake submit, SQL/RLS, and render behavior. Static checks, targeted public request-link / QR / submit-command / Quick Fix workflow smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
+- Current public request hardening pass added `src/utils/publicRequestTokens.js` and `tests/smoke/public-request-token-smoke.js`. Token generation is now a focused utility with format/randomness/fallback smoke coverage. `app.js` still owns public request-link RPC updates, link data, auth/company/location state, public intake submit, SQL/RLS, and render behavior. Static checks and targeted public request-link / QR / submit-command smokes passed locally.
+- Previous readiness pass completed and deployed in `1e91b02`. It identifies backup/restore, incident response, public request intake hardening, and public exposure review as ongoing production-readiness workstreams without promoting detailed internal runbooks in the public repo. It also moves public request-link admin button binding into `src/utils/workspacePublicRequestLinkAdminEvents.js` with a targeted smoke. Static checks, targeted public request-link / QR / submit-command / Quick Fix workflow smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
 - Next code phase should either continue reducing one narrow event/workflow boundary from `app.js` or add deeper public-intake mutation/e2e coverage. Do not combine public intake submit, storage/photo upload, auth/session startup, and SQL/RLS changes in one pass.
 - Current HIGH-risk boundary completed, deployed, and live verified in `954466c`: `createQuickFix` moved into `src/workflows/quickFixWorkflow.js` with explicit dependency injection. Static checks, workflow mock smoke, renderer smoke, Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, local boot smoke, hosted resource smoke, GitHub Actions Resource Load Smoke #271, and hosted disposable Quick Fix lifecycle smoke passed. The hosted lifecycle smoke created `LFES disposable quick fix 1779910619626`, verified status `open`, deleted it through the app UI, confirmed `remainingHeading: 0`, served `app.js?v=lfes-quick-fix-workflow-1`, and captured no browser logs.
 - Do not move adjacent storage/photo internals, request conversion internals, part usage internals, auth/session/company/location startup, SQL/RLS, or broad render in the same phase.
@@ -63,7 +64,7 @@ Recommended immediate next controlled phase:
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
 - Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
 - Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.
-- Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified.
+- Public URL/QR helpers are already extracted into `src/utils/publicUrlQr.js` and live verified. Public request token generation is extracted into `src/utils/publicRequestTokens.js` with targeted smoke coverage.
 - Maintenance schedule date helper `nextDueDate` is already extracted into `src/utils/maintenanceScheduleDates.js` and live verified with a passive PM smoke.
 - Work-order query filter/sort orchestration is already extracted into `src/utils/workOrderQueryFilters.js` and live verified with My Work, Work Orders, and Overdue-filter read-path smokes.
 - Work-order detail field-jump event binding is already extracted into `src/utils/workSectionJumpEvents.js` and live verified with `Go To Completion`.

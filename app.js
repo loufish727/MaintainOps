@@ -96,6 +96,7 @@ const { bindWorkspaceWorkOrderEditEvents } = window.MaintainOpsWorkspaceWorkOrde
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
+const { generatePublicRequestToken } = window.MaintainOpsPublicRequestTokens;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -6088,16 +6089,6 @@ async function updatePublicRequestLink(linkId, patch, successMessage) {
   } catch (error) {
     if (errorElement) errorElement.textContent = error.message || "Could not update the request link.";
   }
-}
-
-function generatePublicRequestToken() {
-  if (window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(18);
-    window.crypto.getRandomValues(bytes);
-    return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-  }
-
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
 }
 
 function savePublicAppUrl(event) {

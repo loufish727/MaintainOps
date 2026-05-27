@@ -49,6 +49,7 @@ const requiredResources = [
   "src/utils/workspaceTeamInviteCancelEvents.js",
   "src/utils/workspaceQuickFixCommandEvents.js",
   "src/utils/workspaceAssetQuickFixEvents.js",
+  "src/utils/publicRequestTokens.js",
   "src/utils/workspacePublicRequestLinkCopyEvents.js",
   "src/utils/workspacePublicRequestLinkAdminEvents.js",
   "src/utils/workspaceRequestConversionEvents.js",

@@ -8,8 +8,16 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 7,442 after the Quick Fix submit workflow extraction.
-- Current app behavior checkpoint: `954466c` (`Extract quick fix submit workflow`).
+- `app.js` line count: 7,430 after the public request token helper extraction.
+- Current app behavior checkpoint: pending commit after local verification for public request token helper extraction.
+- Latest contained public request hardening:
+  - added `src/utils/publicRequestTokens.js`.
+  - moved token generation out of `app.js`.
+  - added `tests/smoke/public-request-token-smoke.js`.
+  - public request-link RPC updates, link data, auth/company/location state, public intake submit, SQL/RLS, and render behavior remain in `app.js`.
+  - static checks and targeted public request-link / QR / submit-command smokes passed locally.
+- Previous public request admin event checkpoint: `1e91b02` (`Add readiness plans and public request link admin events`).
+- Previous high-risk Quick Fix behavior checkpoint: `954466c` (`Extract quick fix submit workflow`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - RLS live hardening checkpoint is documented in `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
