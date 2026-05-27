@@ -282,7 +282,11 @@ let stepResultsByWorkOrder = {};
 let profilesByUserId = {};
 let commentsError = "";
 let requestPhotosReady = true;
-let activeWorkOrderId = null;
+let activeWorkOrderId = workspaceUiState.getActiveWorkOrderId();
+function setActiveWorkOrderIdState(value) {
+  activeWorkOrderId = value;
+  workspaceUiState.setActiveWorkOrderId(value);
+}
 let activeAssetId = workspaceUiState.getActiveAssetId();
 function setActiveAssetIdState(value) {
   activeAssetId = value;
@@ -4611,7 +4615,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
     activeLocationId = "";
-    activeWorkOrderId = null;
+    setActiveWorkOrderIdState(null);
     createWorkOrderMode = false;
     reportIssueMode = false;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
@@ -4620,7 +4624,7 @@ function bindWorkspaceEvents() {
 
   const switchLocation = async (nextLocationId) => {
       activeLocationId = nextLocationId;
-      activeWorkOrderId = null;
+      setActiveWorkOrderIdState(null);
       setActiveAssetIdState(null);
       setActivePartIdState(null);
       reportIssueMode = false;
@@ -4660,7 +4664,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4679,7 +4683,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4694,7 +4698,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
       setReportIssueMode: (value) => { reportIssueMode = value; },
@@ -4706,7 +4710,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4722,7 +4726,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4790,7 +4794,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setMessageComposerWorkOrderId: (value) => { messageComposerWorkOrderId = value; },
       setMessageSearchQuery: (value) => { messageSearchQuery = value; },
@@ -4808,9 +4812,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => {
-        activeWorkOrderId = value;
-      },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => {
         createWorkOrderMode = value;
       },
@@ -4840,7 +4842,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4858,7 +4860,7 @@ function bindWorkspaceEvents() {
 
   bindGlobalSearchNavigationEvents({
     state: {
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
@@ -4872,7 +4874,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixAssetId: (value) => { quickFixAssetId = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4908,7 +4910,7 @@ function bindWorkspaceEvents() {
     render,
     renderWorkspace,
     setActiveAssetId: setActiveAssetIdState,
-    setActiveWorkOrderId: (id) => { activeWorkOrderId = id; },
+    setActiveWorkOrderId: setActiveWorkOrderIdState,
     setPendingDeleteWorkOrderId: (id) => { pendingDeleteWorkOrderId = id; },
     showNotice,
     warnRef: console.warn.bind(console),
@@ -5137,7 +5139,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveStatusFilter: (value) => { workspaceUiState.setActiveStatusFilter(value); },
-      setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
       setWorkOrderAssigneeFilter: (value) => { workspaceUiState.setWorkOrderAssigneeFilter(value); },
@@ -7167,7 +7169,7 @@ async function generatePreventiveWorkOrder(scheduleId) {
 
     if (error) throw error;
 
-    activeWorkOrderId = data.id;
+    setActiveWorkOrderIdState(data.id);
     setActiveSectionState("work");
     let scheduleWarning = "";
     try {
@@ -7241,7 +7243,7 @@ async function createFollowUpWorkOrder(sourceId) {
     await recordWorkOrderEvent(source.id, "follow_up_created", `Follow-up work order created: ${data.title}.`);
     await recordWorkOrderEvent(data.id, "created", `Created as follow-up from ${source.title}.`);
     setActiveSectionState("work");
-    activeWorkOrderId = data.id;
+    setActiveWorkOrderIdState(data.id);
     await render();
   } catch (error) {
     showNotice(`Could not create follow-up work: ${error.message || error}`, "warning");
@@ -7341,7 +7343,7 @@ async function createWorkOrder(event) {
       else await recordWorkOrderEvent(data.id, "comment_added", "Initial comment added.");
     }
 
-    activeWorkOrderId = data.id;
+    setActiveWorkOrderIdState(data.id);
     createWorkOrderMode = false;
     showNotice(warnings.length ? `Work order created with warning: ${warnings[0]}` : "Work order created.", warnings.length ? "warning" : "success");
     await render();
@@ -7360,7 +7362,7 @@ function openQuickFixForRequest(requestId) {
   quickFixRequestId = requestId;
   quickFixAssetId = request.asset_id || null;
   quickFixMode = true;
-  activeWorkOrderId = null;
+  setActiveWorkOrderIdState(null);
   setActiveAssetIdState(null);
   createWorkOrderMode = false;
   setActiveSectionState("mywork");
@@ -7525,7 +7527,7 @@ async function createQuickFix(event) {
         ).catch((logError) => warnings.push(`history did not update: ${logError.message}`));
       }
     }
-    activeWorkOrderId = data.id;
+    setActiveWorkOrderIdState(data.id);
     setActiveAssetIdState(null);
     createWorkOrderMode = false;
     quickFixMode = false;
@@ -7860,7 +7862,7 @@ async function convertRequestToWorkOrder(requestId) {
     if (updateError) throw updateError;
 
     setActiveSectionState("work");
-    activeWorkOrderId = data.id;
+    setActiveWorkOrderIdState(data.id);
     await withOperationTimeout(
       recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order."),
       "Activity log timed out.",
@@ -8015,7 +8017,7 @@ async function setWorkOrderStatus(id, status) {
   if (status === "completed") {
     const procedureCompletionMessage = blocksProcedureCompletion(workOrder);
     if (procedureCompletionMessage) {
-      activeWorkOrderId = id;
+      setActiveWorkOrderIdState(id);
       setWorkOrderActionWarning(id, procedureCompletionMessage);
       showNotice(procedureCompletionMessage, "warning");
       await render();
@@ -8025,7 +8027,7 @@ async function setWorkOrderStatus(id, status) {
   const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(id);
   const hasSafetyCheck = hasCompletedSafetyDeviceCheck(workOrder) || safetyCheckedNow;
   if (status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasSafetyCheck) {
-    activeWorkOrderId = id;
+    setActiveWorkOrderIdState(id);
     const safetyMessage = "Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.";
     setWorkOrderActionWarning(id, safetyMessage);
     showNotice(safetyMessage, "warning");
@@ -8053,7 +8055,7 @@ async function setWorkOrderStatus(id, status) {
     showNotice(`Could not update status: ${friendlyWorkOrderSaveError(error)}`, "warning");
     return false;
   }
-  activeWorkOrderId = id;
+  setActiveWorkOrderIdState(id);
   setWorkOrderActionWarning("", "");
   await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
   showNotice(`Status changed to ${statusLabel(status)}.`);
@@ -8084,7 +8086,7 @@ async function assignWorkOrderToMe(id) {
     );
 
     if (error) return alert(friendlyWorkOrderSaveError(error));
-    activeWorkOrderId = id;
+    setActiveWorkOrderIdState(id);
     setActiveAssetIdState(null);
     await recordWorkOrderEvent(id, "assigned", "Assigned to self.");
     await render();

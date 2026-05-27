@@ -30,19 +30,25 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Ran the 2026-05-27 LFES active-asset state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part state passes.
+Ran the 2026-05-27 LFES active-work-order state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset state passes.
 
 - Latest app behavior commit:
-  - `db2ba7a` (`Wire active asset state to UI factory`).
+  - pending commit for active-work-order state wiring.
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - deployed: `app.js?v=lfes-state-active-asset-1`
+  - pending deployment: `app.js?v=lfes-state-active-work-order-1`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
+  - `activeWorkOrderId` is now initialized from `workspaceUiState.getActiveWorkOrderId()`.
+  - Added `setActiveWorkOrderIdState(...)` in `app.js` so active-work-order changes update both the legacy local variable and `workspaceUiState`.
+  - Extracted event module setters and app-owned work-order open/clear paths now route through `setActiveWorkOrderIdState(...)`.
+  - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-work-order-1`.
+  - Behavior intent: no UI behavior change; this only reduces active-work-order state ownership drift while `app.js` still owns work-order data, mutations, comments, photos, parts-used, detail forms, render, auth/company/location state, and Supabase access.
+- Prior active-asset state-boundary checkpoint:
   - `activeAssetId` is now initialized from `workspaceUiState.getActiveAssetId()`.
   - Added `setActiveAssetIdState(...)` in `app.js` so active-asset changes update both the legacy local variable and `workspaceUiState`.
   - Extracted event module setters and app-owned paths that clear active equipment now route through `setActiveAssetIdState(...)`.
