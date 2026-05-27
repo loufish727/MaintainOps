@@ -8,7 +8,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 7,706 after the Message Center renderer extraction.
+- `app.js` line count: 7,627 after the Create Work Order renderer extraction.
 - Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
@@ -24,8 +24,15 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
-- Hard-boundary Message Center renderer extraction completed locally:
+- Hard-boundary Create Work Order renderer extraction completed locally:
   - commit pending.
+  - moved `renderCreateWorkOrder` to `src/render/createWorkOrderDisplay.js`.
+  - `app.js` now creates the renderer through explicit dependency injection.
+  - added `tests/smoke/create-work-order-display-smoke.js`.
+  - scope stayed form-renderer-only; no submit handler, payload construction, inserts, photo upload, part usage, comment creation, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
+  - local static checks, renderer contract smoke, New Work Order command opener smoke, and Asset location warning event regression smoke passed.
+- Hard-boundary Message Center renderer extraction completed:
+  - commit `e4380ec` (`Extract message center renderer`).
   - moved `renderMessageCenter` to `src/render/messageCenterDisplay.js`.
   - `app.js` now creates the renderer through explicit dependency injection.
   - added `tests/smoke/message-center-display-smoke.js`.

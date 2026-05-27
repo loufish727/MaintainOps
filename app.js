@@ -192,6 +192,7 @@ const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDis
 const { createWorkOrderDetailDisplayHelpers } = window.MaintainOpsWorkOrderDetailDisplay;
 const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay;
 const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
+const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
 const {
   applyWorkOrderListFilters,
@@ -4022,102 +4023,16 @@ function renderWorkOrderAssignmentField(workOrder, id = "") {
   `;
 }
 
-function renderCreateWorkOrder() {
-  return `
-    <form class="form-grid create-work-order-template relationship-detail asset" id="create-work-order-form">
-      <div>
-        <h3>Create Work Order</h3>
-        <p class="muted">Build a complete work order step by step.</p>
-      </div>
-
-      <div class="form-section-title">1. What needs attention?</div>
-      <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
-      <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
-      <div class="equipment-choice">
-        <label>Machine / equipment
-          <select name="asset_id" data-location-sensitive-asset>
-            <option value="">No machine / equipment - general item or area</option>
-            ${renderAssetOptions()}
-          </select>
-        </label>
-        <span>or</span>
-        <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
-      </div>
-      <p class="error-text" data-asset-location-warning></p>
-
-      <details class="quick-fix-more" open>
-        <summary>2. Priority and timing</summary>
-        <div class="form-grid">
-          <label>Status
-            <select name="status">
-              ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === "open" ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
-            </select>
-          </label>
-          <label>Priority
-            <select name="priority">
-              <option>medium</option>
-              <option>high</option>
-              <option>critical</option>
-              <option>low</option>
-            </select>
-          </label>
-          <label>Type
-            <select name="type">
-              ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
-            </select>
-          </label>
-          <label>Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD"></label>
-        </div>
-      </details>
-
-      <details class="quick-fix-more">
-        <summary>3. People and procedure</summary>
-        <div class="form-grid">
-          <label>Assign to
-            <select name="assigned_to">
-              ${renderAssignmentSelect("", { selfLabel: "Assign to me" })}
-            </select>
-          </label>
-          <label>Procedure
-            <select name="procedure_template_id">
-              ${renderProcedureOptions()}
-            </select>
-          </label>
-        </div>
-      </details>
-
-      <details class="quick-fix-more">
-        <summary>4. Internal notes and completion</summary>
-        <div class="form-grid">
-          <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
-          <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
-          <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
-          <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>
-          <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="0"></label>
-          <label>Completion notes<textarea name="completion_notes" rows="2" placeholder="Final notes if this is already complete."></textarea></label>
-        </div>
-      </details>
-
-      <details class="quick-fix-more">
-        <summary>5. Parts, photo, and first comment</summary>
-        <div class="form-grid">
-          <label>Part used
-            <select name="part_id">
-              <option value="">No part used</option>
-              ${parts.map((part) => `<option value="${part.id}">${escapeHtml(part.name)} (${part.quantity_on_hand} on hand)</option>`).join("")}
-            </select>
-          </label>
-          <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
-          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
-          <label>First comment<textarea name="initial_comment" rows="2" placeholder="Add the first update or note for the record."></textarea></label>
-        </div>
-      </details>
-
-      <p class="error-text" id="create-work-order-error"></p>
-      <button class="primary-button work-action-button quick-fix-submit" type="submit">Create Work Order</button>
-    </form>
-  `;
-}
+const { renderCreateWorkOrder } = createCreateWorkOrderDisplayHelpers({
+  STATUS_OPTIONS,
+  TYPE_OPTIONS,
+  getParts: () => parts,
+  renderAssetOptions,
+  statusLabel,
+  renderAssignmentSelect,
+  renderProcedureOptions,
+  escapeHtml,
+});
 
 function renderQuickFixForm() {
   const selectedAssetId = quickFixAssetId || "";

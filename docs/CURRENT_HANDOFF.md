@@ -30,10 +30,34 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Continued the hard-boundary renderer run with Message Center.
+Continued the hard-boundary renderer run with Create Work Order.
 
 - Latest local behavior change:
-  - Message Center renderer extraction pending commit.
+  - Create Work Order renderer extraction pending commit.
+- Hard boundary selected:
+  - `renderCreateWorkOrder`.
+- Why it is hard:
+  - It emits a mutation form surface, including equipment selection, asset-location warning anchor, status/priority/type fields, assignment/procedure fields, completion metadata, safety checkbox, parts-used/photo/initial-comment fields, and the `#create-work-order-form` submit contract.
+- Why it is recoverable:
+  - The extraction is renderer-only. Event binding, submit handling, payload construction, inserts, photo upload, part usage, comment creation, auth/session/company/location state, storage upload, public QR, SQL, and RLS remain in `app.js` or existing event modules.
+- Implementation:
+  - Added `src/render/createWorkOrderDisplay.js`.
+  - `app.js` now creates `renderCreateWorkOrder` through `createCreateWorkOrderDisplayHelpers(...)` with explicit dependency injection.
+  - Added `tests/smoke/create-work-order-display-smoke.js` to prove the renderer still emits the major Create Work Order form and field contracts.
+  - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
+  - Cache tag: `lfes-hard-create-work-order-render-1` for `app.js` and `createWorkOrderDisplay.js`.
+  - `app.js` line count is now 7,627.
+- Verification passed so far:
+  - static checks for `app.js`, `src/render/createWorkOrderDisplay.js`, and the new smoke.
+  - `tests/smoke/create-work-order-display-smoke.js`.
+  - targeted event regression smokes for New Work Order command opener and Asset location warning.
+
+## Previous Change
+
+Continued the hard-boundary renderer run with Message Center.
+
+- Latest app behavior commit:
+  - `e4380ec` (`Extract message center renderer`).
 - Hard boundary selected:
   - `renderMessageCenter`.
 - Why it is hard:
@@ -46,15 +70,17 @@ Continued the hard-boundary renderer run with Message Center.
   - Added `tests/smoke/message-center-display-smoke.js` to prove the renderer still emits the major Message Center and `data-*` contracts.
   - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
   - Cache tag: `lfes-hard-message-center-render-1` for `app.js` and `messageCenterDisplay.js`.
-  - `app.js` line count is now 7,706.
-- Verification passed so far:
+  - `app.js` line count moved from 7,783 to 7,706.
+- Verification passed:
   - static checks for `app.js`, `src/render/messageCenterDisplay.js`, and the new smoke.
   - `tests/smoke/message-center-display-smoke.js`.
   - targeted event regression smokes for Message UI, Message Thread, and Work Message Start.
+  - hosted resource smoke.
+  - GitHub Actions Resource Load Smoke for `e4380ec`, run `26532554631`.
 - LFES catch:
   - the first extracted renderer version asked for nonessential dependency getters before the messages-not-ready fallback. The module now preserves the old schema/setup fallback behavior before reading message state dependencies.
 
-## Previous Change
+## Earlier Change
 
 Continued the hard-boundary renderer run with Asset Detail.
 
