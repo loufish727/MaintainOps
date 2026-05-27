@@ -366,9 +366,21 @@ const {
   publicRequestForm,
   publicRequestError,
   publicRequestSuccess,
+  publicRequestLinkManager: renderPublicRequestLinkManager,
+  publicRequestLocationCard: renderPublicRequestLocationCard,
 } = window.MaintainOpsPublicRequestDisplay.createPublicRequestDisplayHelpers({
   escapeHtml,
   qrSvgFor,
+  getLocations: () => locations,
+  getPublicRequestLinks: () => publicRequestLinks,
+  getPublicRequestLinksReady: () => publicRequestLinksReady,
+  getPublicAppUrlOverride: () => publicAppUrlOverride,
+  getWindowPublicAppUrl: () => window.PUBLIC_APP_URL,
+  canManageTeam,
+  canAdministerPublicRequestLinks,
+  publicAppBaseUrl,
+  publicRequestUrl,
+  publicRequestQrUrl,
 });
 let activeSection = workspaceUiState.getActiveSection();
 function setActiveSectionState(value) {
@@ -3571,72 +3583,6 @@ function renderPartDangerZone(part) {
         <button class="danger-action-button large-delete-button" data-delete-part="${escapeHtml(part.id)}" type="button">Delete Part</button>
       `}
     </section>
-  `;
-}
-
-function renderPublicRequestLinkManager() {
-  if (!canManageTeam()) return "";
-  const publicBaseUrl = publicAppBaseUrl();
-  return `
-    <section class="settings-summary public-request-links">
-      <div class="settings-section-heading">
-        <h3>Location Request QR Links</h3>
-        <p class="muted">Post these QR codes so operators can submit a location-specific request without app access.</p>
-      </div>
-      <form class="form-grid settings-form public-app-url-form" id="public-app-url-form">
-        <label>Public MaintainOps URL
-          <input name="public_app_url" value="${escapeHtml(publicAppUrlOverride || String(window.PUBLIC_APP_URL || ""))}" placeholder="https://loufish727.github.io/your-maintainops-repo/">
-        </label>
-        <button class="secondary-button request-action-button" type="submit">Save URL</button>
-      </form>
-      <p class="muted">Use the exact GitHub Pages URL where MaintainOps opens. Do not use the root URL if that opens another app.</p>
-      ${publicBaseUrl ? `<p class="muted">QR codes will point to ${escapeHtml(publicBaseUrl)}</p>` : `<p class="warning-text">Set the public MaintainOps URL before copying or printing QR codes from this local app.</p>`}
-      <p class="error-text" id="public-request-link-error">${publicRequestLinksReady ? "" : "Run supabase/step-next-public-request-links.sql before creating QR request links."}</p>
-      <div class="public-request-link-grid">
-        ${locations.map(renderPublicRequestLocationCard).join("") || `<article><strong>No locations yet</strong><span>Add a location before creating request QR codes.</span></article>`}
-      </div>
-    </section>
-  `;
-}
-
-function renderPublicRequestLocationCard(location) {
-  const link = publicRequestLinks.find((item) => item.location_id === location.id);
-  const linkActive = Boolean(link && link.is_active !== false);
-  const canAdministerLinks = canAdministerPublicRequestLinks();
-  const requestUrl = linkActive ? publicRequestUrl(link.token) : "";
-  const qrUrl = linkActive ? publicRequestQrUrl(link.token) : "";
-  const hasUsableUrl = Boolean(requestUrl && qrUrl);
-  return `
-    <article class="public-request-link-card">
-      <div>
-        <strong>${escapeHtml(location.name)}</strong>
-        <span>${linkActive ? "External request link active" : link ? "Request link disabled" : "No request link yet"}</span>
-        ${link?.last_used_at ? `<span>Last used ${new Date(link.last_used_at).toLocaleString()}</span>` : ""}
-      </div>
-      ${linkActive ? `
-        <div class="qr-preview">${hasUsableUrl ? qrSvgFor(requestUrl) : `<div class="qr-fallback">Set URL</div>`}</div>
-        <input class="copy-field" value="${escapeHtml(qrUrl || "Set the public MaintainOps URL first")}" readonly>
-        <div class="button-row">
-          <a class="primary-button request-action-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Open QR Code</a>
-          <button class="secondary-button request-action-button" data-copy-public-request-link="${escapeHtml(qrUrl)}" type="button" ${hasUsableUrl ? "" : "disabled"}>Copy QR Link</button>
-          <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">Test Form</a>
-          ${canAdministerLinks ? `
-            <button class="secondary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
-            <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
-          ` : `<span class="muted">Only admins can replace or disable posted QR codes.</span>`}
-        </div>
-      ` : link ? `
-        <div class="qr-preview inactive-qr-preview"><div class="qr-fallback">Off</div></div>
-        <div class="button-row">
-          ${canAdministerLinks ? `
-            <button class="secondary-button request-action-button" data-enable-public-request-link="${escapeHtml(link.id)}" type="button">Reactivate Same QR</button>
-            <button class="primary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
-          ` : `<span class="muted">Only admins can reactivate or replace this QR code.</span>`}
-        </div>
-      ` : `
-        <button class="secondary-button request-action-button" data-create-public-request-link="${escapeHtml(location.id)}" type="button" ${publicRequestLinksReady ? "" : "disabled"}>Create QR Link</button>
-      `}
-    </article>
   `;
 }
 

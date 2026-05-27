@@ -7,6 +7,23 @@ const { createPublicRequestDisplayHelpers } = require("../../src/render/publicRe
 const helpers = createPublicRequestDisplayHelpers({
   escapeHtml: (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
   qrSvgFor: (value, cellSize) => `<svg data-value="${value}" data-cell-size="${cellSize}"></svg>`,
+  getLocations: () => [
+    { id: "loc-1", name: "QA <Facility>" },
+    { id: "loc-2", name: "Shop Floor" },
+    { id: "loc-3", name: "Inactive Line" },
+  ],
+  getPublicRequestLinks: () => [
+    { id: "link-1", location_id: "loc-1", token: "token-1", is_active: true, last_used_at: "2026-05-27T12:00:00Z" },
+    { id: "link-3", location_id: "loc-3", token: "token-3", is_active: false },
+  ],
+  getPublicRequestLinksReady: () => true,
+  getPublicAppUrlOverride: () => "https://example.com/MaintainOps/",
+  getWindowPublicAppUrl: () => "https://wrong.example/",
+  canManageTeam: () => true,
+  canAdministerPublicRequestLinks: () => true,
+  publicAppBaseUrl: () => "https://example.com/MaintainOps/",
+  publicRequestUrl: (token) => `https://example.com/MaintainOps/?request=${token}`,
+  publicRequestQrUrl: (token) => `https://example.com/MaintainOps/?qr=${token}`,
 });
 
 const intake = {
@@ -39,5 +56,15 @@ assert.match(success, /Request Sent/);
 assert.match(success, /Line &lt;One&gt; maintenance has received it/);
 assert.match(success, /Photo &lt;failed&gt;/);
 assert.match(success, /id="public-request-another"/);
+
+const manager = helpers.publicRequestLinkManager();
+assert.match(manager, /Location Request QR Links/);
+assert.match(manager, /QA &lt;Facility&gt;/);
+assert.match(manager, /https:\/\/example\.com\/MaintainOps\/\?qr=token-1/);
+assert.match(manager, /data-copy-public-request-link/);
+assert.match(manager, /data-regenerate-public-request-link="link-1"/);
+assert.match(manager, /data-disable-public-request-link="link-1"/);
+assert.match(manager, /data-create-public-request-link="loc-2"/);
+assert.match(manager, /data-enable-public-request-link="link-3"/);
 
 console.log("public request display smoke passed");
