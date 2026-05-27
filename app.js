@@ -191,6 +191,7 @@ const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCent
 const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
 const { createWorkOrderDetailDisplayHelpers } = window.MaintainOpsWorkOrderDetailDisplay;
 const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay;
+const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
 const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
 const {
   applyWorkOrderListFilters,
@@ -3610,110 +3611,30 @@ function renderTeamInvites() {
   `;
 }
 
-function renderMessageCenter() {
-  if (!messagesReady) {
-    return `<p class="muted">Run supabase/step-next-message-center.sql to enable company, location, and direct message threads.</p>`;
-  }
-
-  const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
-  const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
-  const visibleThreads = filteredMessageThreads();
-  const linkedDraftWorkOrder = workOrders.find((workOrder) => workOrder.id === messageComposerWorkOrderId);
-
-  return `
-    <section class="message-center">
-      <div class="message-layout">
-        <aside class="message-thread-rail">
-          <div class="message-rail-header">
-            <div>
-              <h3>Messages</h3>
-              <p>${totalUnreadMessages()} unread</p>
-            </div>
-          </div>
-          <form class="message-thread-form" id="message-thread-form">
-            <details ${messageComposerOpen || linkedDraftWorkOrder ? "open" : ""}>
-              <summary>New message</summary>
-              <div class="message-thread-fields">
-                <label>Send to
-                  <select name="thread_type" id="message-thread-type">
-                    <option value="company">Whole company</option>
-                    <option value="location">Current location</option>
-                    <option value="direct">Direct message</option>
-                  </select>
-                </label>
-                <label class="message-direct-field">Person
-                  <select name="direct_user_id">
-                    ${companyMembers.filter((member) => member.user_id !== session.user.id).map((member) => `<option value="${member.user_id}">${escapeHtml(teamMemberName(member.user_id))}</option>`).join("") || `<option value="">No teammates yet</option>`}
-                  </select>
-                </label>
-                <div class="message-scope-note" id="message-scope-note">${messageComposerScopeNote("company")}</div>
-                <label>Subject<input name="title" required placeholder="Thread subject" value="${linkedDraftWorkOrder ? `Work order: ${escapeHtml(linkedDraftWorkOrder.title)}` : ""}"></label>
-                ${linkedDraftWorkOrder ? `
-                  <input name="work_order_id" type="hidden" value="${linkedDraftWorkOrder.id}">
-                  <div class="message-linked-draft">
-                    <span>Linked work order</span>
-                    <strong>${escapeHtml(linkedDraftWorkOrder.title)}</strong>
-                    <button class="text-button" data-clear-message-work-link type="button">Clear</button>
-                  </div>
-                ` : `
-                  <label>Recent work order
-                    <select name="work_order_id" ${messageWorkOrderLinksReady ? "" : "disabled"}>
-                      <option value="">No work order</option>
-                      ${recentMessageLinkWorkOrders().map((workOrder) => `<option value="${workOrder.id}">${escapeHtml(workOrder.title)} - ${statusLabel(workOrder.status)}</option>`).join("")}
-                    </select>
-                  </label>
-                `}
-                <label>Message<textarea name="body" rows="3" required placeholder="Type the first message..."></textarea></label>
-                <p class="error-text" id="message-thread-error">${messageWorkOrderLinksReady ? "" : "Run supabase/step-next-message-work-order-links.sql before linking threads to work orders."}</p>
-                <button class="secondary-button message-action-button" type="submit">Start Thread</button>
-              </div>
-            </details>
-          </form>
-          <label class="message-search">
-            <input id="message-search" type="search" value="${escapeHtml(messageSearchQuery)}" placeholder="Search messages">
-          </label>
-          <div class="message-filter-bar" aria-label="Message thread filter">
-            ${[
-              ["all", "All"],
-              ["unread", "Unread"],
-              ["company", "Company"],
-              ["location", "Location"],
-              ["direct", "Direct"],
-            ].map(([id, label]) => `<button class="${messageThreadFilter === id ? "active" : ""}" data-message-filter="${id}" type="button">${label}</button>`).join("")}
-          </div>
-          <div class="message-thread-list">
-            ${visibleThreads.map(renderMessageThreadButton).join("") || `<p class="muted">No threads match this filter.</p>`}
-          </div>
-        </aside>
-        <section class="message-thread-detail">
-          ${activeThread ? `
-            <div class="message-chat-header">
-              <div>
-                <h3>${escapeHtml(activeThread.title)}</h3>
-                <p class="muted">${messageThreadScopeLabel(activeThread)}</p>
-              </div>
-              <div class="message-header-actions">
-                ${activeThread.work_order_id ? `<button class="secondary-button message-linked-work-button" data-open-linked-work-order="${activeThread.work_order_id}" type="button">Open Work Order</button>` : ""}
-                <span class="chip comment">${threadMessages.length} message${threadMessages.length === 1 ? "" : "s"}</span>
-              </div>
-            </div>
-            <div class="message-list">
-              ${renderMessageList(threadMessages)}
-            </div>
-            <form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
-              <div class="message-quick-replies">
-                ${["On it", "Need more info", "Waiting on parts", "Complete"].map((reply) => `<button data-quick-reply="${escapeHtml(reply)}" type="button">${escapeHtml(reply)}</button>`).join("")}
-              </div>
-              <textarea name="body" rows="2" required placeholder="Reply to this thread..."></textarea>
-              <p class="error-text" id="message-reply-error"></p>
-              <button class="secondary-button message-action-button" type="submit">Send Reply</button>
-            </form>
-          ` : `<p class="muted">Choose or start a thread.</p>`}
-        </section>
-      </div>
-    </section>
-  `;
-}
+const { renderMessageCenter } = createMessageCenterDisplayHelpers({
+  getMessagesReady: () => messagesReady,
+  getMessageThreads: () => messageThreads,
+  getActiveMessageThreadId: () => activeMessageThreadId,
+  getMessagesByThreadId: () => messagesByThreadId,
+  getWorkOrders: () => workOrders,
+  getMessageComposerWorkOrderId: () => messageComposerWorkOrderId,
+  getMessageComposerOpen: () => messageComposerOpen,
+  getCompanyMembers: () => companyMembers,
+  getSession: () => session,
+  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+  getMessageSearchQuery: () => messageSearchQuery,
+  getMessageThreadFilter: () => messageThreadFilter,
+  filteredMessageThreads,
+  totalUnreadMessages,
+  teamMemberName,
+  escapeHtml,
+  messageComposerScopeNote,
+  recentMessageLinkWorkOrders,
+  statusLabel,
+  renderMessageThreadButton,
+  messageThreadScopeLabel,
+  renderMessageList,
+});
 
 function messageThreadMembersForType(threadType, directUserId) {
   if (threadType === "direct") return [session.user.id, directUserId].filter(Boolean);

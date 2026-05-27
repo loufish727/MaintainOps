@@ -30,10 +30,36 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Continued the hard-boundary renderer run with Asset Detail.
+Continued the hard-boundary renderer run with Message Center.
 
 - Latest local behavior change:
-  - Asset Detail renderer extraction pending commit.
+  - Message Center renderer extraction pending commit.
+- Hard boundary selected:
+  - `renderMessageCenter`.
+- Why it is hard:
+  - It emits the Message Center surface, including thread creation form, direct-recipient select, work-order linking controls, search/filter controls, thread buttons, linked-work navigation, reply form, and quick-reply contracts.
+- Why it is recoverable:
+  - The extraction is renderer-only. Event binding, message read-state writes, thread creation, reply submission, Supabase mutations, auth/session/company/location state, storage upload, public QR, SQL, and RLS remain in `app.js` or existing event modules.
+- Implementation:
+  - Added `src/render/messageCenterDisplay.js`.
+  - `app.js` now creates `renderMessageCenter` through `createMessageCenterDisplayHelpers(...)` with explicit dependency injection.
+  - Added `tests/smoke/message-center-display-smoke.js` to prove the renderer still emits the major Message Center and `data-*` contracts.
+  - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
+  - Cache tag: `lfes-hard-message-center-render-1` for `app.js` and `messageCenterDisplay.js`.
+  - `app.js` line count is now 7,706.
+- Verification passed so far:
+  - static checks for `app.js`, `src/render/messageCenterDisplay.js`, and the new smoke.
+  - `tests/smoke/message-center-display-smoke.js`.
+  - targeted event regression smokes for Message UI, Message Thread, and Work Message Start.
+- LFES catch:
+  - the first extracted renderer version asked for nonessential dependency getters before the messages-not-ready fallback. The module now preserves the old schema/setup fallback behavior before reading message state dependencies.
+
+## Previous Change
+
+Continued the hard-boundary renderer run with Asset Detail.
+
+- Latest app behavior commit:
+  - `c58aa67` (`Extract asset detail renderer`).
 - Hard boundary selected:
   - `renderAssetDetail`.
 - Why it is hard:
@@ -46,15 +72,17 @@ Continued the hard-boundary renderer run with Asset Detail.
   - Added `tests/smoke/asset-detail-display-smoke.js` to prove the renderer still emits the major Equipment Detail and `data-*` contracts.
   - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
   - Cache tag: `lfes-hard-asset-detail-render-1` for `app.js` and `assetDetailDisplay.js`.
-  - `app.js` line count is now 7,783.
-- Verification passed so far:
+  - `app.js` line count moved from 7,858 to 7,783.
+- Verification passed:
   - static checks for `app.js`, `src/render/assetDetailDisplay.js`, and the new smoke.
   - `tests/smoke/asset-detail-display-smoke.js`.
   - targeted event regression smokes for Asset Quick Fix, Asset delete/cancel, and Asset location warnings.
+  - hosted resource smoke.
+  - GitHub Actions Resource Load Smoke for `c58aa67`, run `26532350053`.
 - LFES catch:
   - the first extracted renderer version asked for nonessential dependency getters before the missing-asset early return. The smoke caught this; the module now preserves the old create-work-order fallback behavior before reading detail-only dependencies.
 
-## Previous Change
+## Prior Change
 
 Ran the first hard-boundary renderer extraction after the six-phase state-adapter cleanup.
 

@@ -34,7 +34,8 @@ Most recent deployed closed phase:
 
 Most recent local completed phase:
 
-- Hard-boundary Asset Detail renderer extraction is complete locally and pending deployment verification. It moved `renderAssetDetail` to `src/render/assetDetailDisplay.js`, reducing `app.js` to 7,783 lines. The boundary is renderer-only; workflow events, mutations, pending delete state, permissions, blocker counts, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, and Asset Detail event regression smokes passed.
+- Hard-boundary Message Center renderer extraction is complete locally and pending deployment verification. It moved `renderMessageCenter` to `src/render/messageCenterDisplay.js`, reducing `app.js` to 7,706 lines. The boundary is renderer-only; event binding, message read-state writes, thread creation, reply submission, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, and message event regression smokes passed.
+- Hard-boundary Asset Detail renderer extraction in `c58aa67` moved `renderAssetDetail` to `src/render/assetDetailDisplay.js`, reducing `app.js` to 7,783 lines. The boundary is renderer-only; workflow events, mutations, pending delete state, permissions, blocker counts, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, Asset Detail event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
 - Hard-boundary Work Order Detail renderer extraction in `c3d3cf3` moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`, reducing `app.js` to 7,858 lines. The boundary is renderer-only; workflow events and mutations remain in `app.js`/existing event modules. Static checks, targeted renderer/event smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
 - Six-phase state-adapter cleanup in `0512029` reduced `app.js` to 8,059 lines by routing selected event modules directly through `workspaceUiState` and removing redundant localStorage writes already owned by state setters. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed; signed-in live shell/cache smoke passed, while deeper browser click proof was limited by stale workspace search state in the automation session.
 - Documentation drift cleanup in `c5e7500` reconciled current handoff, next steps, RLS live checkpoint, Supabase setup, and the modularization plan after the RLS/auth checkpoints.
@@ -45,9 +46,9 @@ Most recent local completed phase:
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after the Asset Detail renderer extraction:
+Current app.js line count after the Message Center renderer extraction:
 
-- 7,783 lines.
+- 7,706 lines.
 
 Recent extracted/source modules include 57 files under `src/utils`, including:
 
