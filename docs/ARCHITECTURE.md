@@ -10,11 +10,11 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It is intenti
 
 - `app.js`
   - Still owns most app authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, workflow sequencing, event binding, and many Supabase operations.
-  - Current line count is about 7,442 after ongoing modularization work.
+  - Current line count is about 6,506 after ongoing modularization work.
 
 - `src/`
   - Contains extracted render helpers, event-binding groups, UI state helpers, query/list helpers, and selected workflow boundaries.
-  - Recent examples include `src/workflows/quickFixWorkflow.js` and render modules for Work Order Detail, Equipment Detail, Message Center, Create Work Order, and Quick Fix.
+  - Recent examples include `src/workflows/quickFixWorkflow.js`, `src/services/authSessionFlow.js`, and render modules for Work Order Detail, Equipment Detail, Message Center, Create Work Order, and Quick Fix.
 
 - `styles.css`
   - App styling for desktop and mobile.
