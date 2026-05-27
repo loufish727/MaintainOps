@@ -16,7 +16,8 @@
       renderLocationOptions,
       assetStatusLabel,
       renderAssetMiniWorkOrder,
-      renderAssetDangerZone,
+      assetDeleteBlockerMessage,
+      canDeleteEquipment,
     } = deps;
 
     function renderAssetDetail() {
@@ -130,6 +131,53 @@
     
           ${renderAssetDangerZone(asset)}
         </div>
+      `;
+    }
+
+    function renderAssetDangerZone(asset) {
+      const workOrders = deps.getWorkOrders();
+      const preventiveSchedules = deps.getPreventiveSchedules();
+      const assets = deps.getAssets();
+      const activeAssetId = deps.getActiveAssetId();
+      const assetWorkOrderCount = workOrders.filter((workOrder) => workOrder.asset_id === asset.id).length;
+      const scheduleCount = preventiveSchedules.filter((schedule) => schedule.asset_id === asset.id).length;
+      const childCount = assets.filter((item) => item.parent_asset_id === asset.id).length;
+      const requestCount = deps.getMaintenanceRequests().filter((request) => request.asset_id === asset.id).length;
+      const blockerMessage = assetDeleteBlockerMessage({
+        workOrders: assetWorkOrderCount,
+        children: childCount,
+        schedules: scheduleCount,
+        requests: requestCount,
+      });
+      const confirming = deps.getPendingDeleteAssetId() === activeAssetId;
+      if (!canDeleteEquipment()) {
+        return `<p class="muted">Admins and managers can delete unused equipment.</p>`;
+      }
+
+      return `
+        <section class="delete-zone asset-delete-zone">
+          <div>
+            <h3>Delete Equipment</h3>
+            <p>${blockerMessage
+              ? blockerMessage
+              : `This permanently removes "${escapeHtml(asset.name)}" from the equipment list.`}</p>
+          </div>
+          <p class="error-text" id="asset-delete-error"></p>
+          ${blockerMessage ? `
+            <button class="danger-action-button large-delete-button" type="button" disabled>Kept For Traceability</button>
+          ` : confirming ? `
+            <div class="delete-warning-panel">
+              <strong>Permanent Delete Warning</strong>
+              <p>You are about to permanently delete "${escapeHtml(asset.name)}". This cannot be undone.</p>
+              <div class="button-row">
+                <button class="secondary-button" data-cancel-delete-asset type="button">Cancel</button>
+                <button class="danger-action-button confirm-delete-button" data-confirm-delete-asset="${escapeHtml(asset.id)}" type="button">Permanently Delete</button>
+              </div>
+            </div>
+          ` : `
+            <button class="danger-action-button large-delete-button" data-delete-asset="${escapeHtml(asset.id)}" type="button">Delete Equipment</button>
+          `}
+        </section>
       `;
     }
     
