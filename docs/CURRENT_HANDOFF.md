@@ -33,13 +33,13 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the 2026-05-27 LFES active-asset state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part state passes.
 
 - Latest app behavior commit:
-  - pending commit for active-asset state wiring.
+  - `db2ba7a` (`Wire active asset state to UI factory`).
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-active-asset-1`
+  - deployed: `app.js?v=lfes-state-active-asset-1`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
@@ -48,6 +48,8 @@ Ran the 2026-05-27 LFES active-asset state wiring pass after closing the RLS har
   - Extracted event module setters and app-owned paths that clear active equipment now route through `setActiveAssetIdState(...)`.
   - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-asset-1`.
   - Behavior intent: no UI behavior change; this only reduces active-asset state ownership drift while `app.js` still owns equipment data, delete implementation, Quick Fix submit, forms, render, auth/company/location state, and Supabase access.
+  - Verification passed: static checks, workspace UI state smoke, asset delete/cancel smoke, asset location warning smoke, asset Quick Fix smoke, section navigation smoke, search state smoke, hosted resource smoke, GitHub Actions Resource Load Smoke for `db2ba7a`, and signed-in hosted active-asset smoke.
+  - Signed-in hosted active-asset smoke confirmed `app.js?v=lfes-state-active-asset-1`, opened Equipment detail for `New thalmann`, returned to Equipment, verified active section stayed `assets`, and captured no relevant console errors.
 - Prior active-part state-boundary checkpoint:
   - `activePartId` is now initialized from `workspaceUiState.getActivePartId()`.
   - Added `setActivePartIdState(...)` in `app.js` so active-part changes update both the legacy local variable and `workspaceUiState`.
