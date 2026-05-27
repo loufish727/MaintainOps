@@ -24,13 +24,13 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
-- Hard-boundary Quick Fix renderer extraction completed locally:
-  - commit pending.
+- Hard-boundary Quick Fix renderer extraction completed:
+  - commit `b5b10aa` (`Extract quick fix renderer`).
   - moved `renderQuickFixForm` to `src/render/quickFixDisplay.js`.
   - `app.js` now creates the renderer through explicit dependency injection.
   - added `tests/smoke/quick-fix-display-smoke.js`.
   - scope stayed form-renderer-only; no `createQuickFix` submit handler, payload construction, work-order insert, new-equipment creation, photo upload, part usage, request conversion, asset status mutation, activity logging, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
-  - local static checks, renderer contract smoke, Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, and Asset location warning event regression smokes passed.
+  - local static checks, renderer contract smoke, Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke #265 passed.
   - LFES decision: full `createQuickFix` mutation extraction was rejected for this run because it needs a dedicated disposable mutation/cleanup smoke before extraction.
 - Hard-boundary Create Work Order renderer extraction completed:
   - commit `c60cf05` (`Extract create work order renderer`).

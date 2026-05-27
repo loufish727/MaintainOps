@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior change: Quick Fix renderer extraction pending commit.
+- Latest app behavior commit: `b5b10aa` (`Extract quick fix renderer`).
 - Previous app behavior commit: `c60cf05` (`Extract create work order renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
@@ -41,7 +41,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current hard-boundary extraction completed locally: `renderQuickFixForm` moved into `src/render/quickFixDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, and targeted Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes passed. Next deployment verification still needs hosted resource, Actions, and optional signed-in live form-contract smoke after commit/push.
+- Current hard-boundary extraction completed and deployed in `b5b10aa`: `renderQuickFixForm` moved into `src/render/quickFixDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke #265 passed.
 - The full `createQuickFix` submit mutation remains in `app.js` and should not move until a dedicated disposable mutation/cleanup smoke is planned.
 - Previous hard-boundary extraction completed and deployed in `c60cf05`: `renderCreateWorkOrder` moved into `src/render/createWorkOrderDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted New Work Order / Asset location warning smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed by browser proof after the local unauthenticated verifier hit API rate limit.
 - Previous hard-boundary extraction completed and deployed in `e4380ec`: `renderMessageCenter` moved into `src/render/messageCenterDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Message event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.

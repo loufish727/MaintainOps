@@ -32,8 +32,8 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 Continued the hard-boundary renderer run with Quick Fix.
 
-- Latest local behavior change:
-  - Quick Fix renderer extraction pending commit.
+- Latest app behavior commit:
+  - `b5b10aa` (`Extract quick fix renderer`).
 - Hard boundary selected:
   - `renderQuickFixForm`.
 - Why it is hard:
@@ -47,10 +47,12 @@ Continued the hard-boundary renderer run with Quick Fix.
   - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
   - Cache tag: `lfes-hard-quick-fix-render-1` for `app.js` and `quickFixDisplay.js`.
   - `app.js` line count is now 7,569.
-- Verification passed so far:
+- Verification passed:
   - static checks for `app.js`, `src/render/quickFixDisplay.js`, and the new smoke.
   - `tests/smoke/quick-fix-display-smoke.js`.
   - targeted event regression smokes for Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, and Asset location warning.
+  - hosted resource smoke.
+  - GitHub Actions Resource Load Smoke #265 for `b5b10aa`, verified through browser proof after the local unauthenticated verifier hit API rate limit.
 - LFES decision:
   - the full `createQuickFix` mutation boundary was not moved in this run because it spans multiple writes and needs a dedicated disposable mutation/cleanup smoke before extraction.
 
