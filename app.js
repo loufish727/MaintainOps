@@ -283,7 +283,11 @@ let profilesByUserId = {};
 let commentsError = "";
 let requestPhotosReady = true;
 let activeWorkOrderId = null;
-let activeAssetId = null;
+let activeAssetId = workspaceUiState.getActiveAssetId();
+function setActiveAssetIdState(value) {
+  activeAssetId = value;
+  workspaceUiState.setActiveAssetId(value);
+}
 let activePartId = workspaceUiState.getActivePartId();
 function setActivePartIdState(value) {
   activePartId = value;
@@ -4617,7 +4621,7 @@ function bindWorkspaceEvents() {
   const switchLocation = async (nextLocationId) => {
       activeLocationId = nextLocationId;
       activeWorkOrderId = null;
-      activeAssetId = null;
+      setActiveAssetIdState(null);
       setActivePartIdState(null);
       reportIssueMode = false;
       resetWorkOrderPage();
@@ -4653,7 +4657,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   bindWorkspaceSectionNavigationEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
@@ -4673,7 +4677,7 @@ function bindWorkspaceEvents() {
   });
   bindWorkspaceQuickFixCommandEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4688,7 +4692,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceReportIssueCommandEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4700,7 +4704,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceSubmitRequestCommandEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4716,7 +4720,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceNewWorkOrderCommandEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4783,7 +4787,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceMessageUiEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
@@ -4801,9 +4805,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceDetailNavigationEvents({
     state: {
       getActiveSection: () => activeSection,
-      setActiveAssetId: (value) => {
-        activeAssetId = value;
-      },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => {
@@ -4835,7 +4837,7 @@ function bindWorkspaceEvents() {
     state: {
       getActiveSection: () => activeSection,
       getSearchQuery: () => workspaceUiState.getSearchQuery(),
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
@@ -4857,7 +4859,7 @@ function bindWorkspaceEvents() {
   bindGlobalSearchNavigationEvents({
     state: {
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setSearchQuery: (value) => { workspaceUiState.setSearchQuery(value); },
@@ -4868,7 +4870,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceAssetQuickFixEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4905,7 +4907,7 @@ function bindWorkspaceEvents() {
     removeWorkOrderPhotoStorage: (photoPaths) => supabaseClient.storage.from("work-order-photos").remove(photoPaths),
     render,
     renderWorkspace,
-    setActiveAssetId: (id) => { activeAssetId = id; },
+    setActiveAssetId: setActiveAssetIdState,
     setActiveWorkOrderId: (id) => { activeWorkOrderId = id; },
     setPendingDeleteWorkOrderId: (id) => { pendingDeleteWorkOrderId = id; },
     showNotice,
@@ -5132,7 +5134,7 @@ function bindWorkspaceEvents() {
 
   bindWorkspaceTeamWorkViewEvents({
     state: {
-      setActiveAssetId: (value) => { activeAssetId = value; },
+      setActiveAssetId: setActiveAssetIdState,
       setActiveSection: setActiveSectionState,
       setActiveStatusFilter: (value) => { workspaceUiState.setActiveStatusFilter(value); },
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
@@ -5455,7 +5457,7 @@ async function deleteAsset(id) {
         ? "This equipment is linked to records and cannot be deleted."
         : error.message);
     }
-    activeAssetId = null;
+    setActiveAssetIdState(null);
     pendingDeleteAssetId = null;
     setActiveSectionState("assets");
     showNotice("Equipment deleted.");
@@ -7359,7 +7361,7 @@ function openQuickFixForRequest(requestId) {
   quickFixAssetId = request.asset_id || null;
   quickFixMode = true;
   activeWorkOrderId = null;
-  activeAssetId = null;
+  setActiveAssetIdState(null);
   createWorkOrderMode = false;
   setActiveSectionState("mywork");
   renderWorkspace();
@@ -7524,7 +7526,7 @@ async function createQuickFix(event) {
       }
     }
     activeWorkOrderId = data.id;
-    activeAssetId = null;
+    setActiveAssetIdState(null);
     createWorkOrderMode = false;
     quickFixMode = false;
     quickFixAssetId = null;
@@ -8083,7 +8085,7 @@ async function assignWorkOrderToMe(id) {
 
     if (error) return alert(friendlyWorkOrderSaveError(error));
     activeWorkOrderId = id;
-    activeAssetId = null;
+    setActiveAssetIdState(null);
     await recordWorkOrderEvent(id, "assigned", "Assigned to self.");
     await render();
   } catch (error) {
