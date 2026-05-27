@@ -33,13 +33,13 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset/active-work-order state passes.
 
 - Latest app behavior commit:
-  - pending commit for message UI state wiring.
+  - `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-message-ui-1`
+  - deployed: `app.js?v=lfes-state-message-ui-1`; `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
@@ -48,6 +48,9 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Existing extracted message event modules still own their event contracts and localStorage writes; this pass only synchronizes app-owned state through the factory.
   - `index.html` cache tags are bumped for both `src/utils/workspaceUiState.js` and `app.js` to `lfes-state-message-ui-1`.
   - Behavior intent: no UI behavior change; this only reduces message UI state ownership drift while `app.js` still owns read-state writes, create thread, send reply, message data, render, auth/company/location state, and Supabase access.
+  - Verification passed: static checks, workspace UI state smoke, message UI smoke, message thread smoke, work message start smoke, section navigation smoke, hosted resource smoke, and signed-in hosted Messages smoke for `e7c1a70`.
+  - Signed-in hosted Messages smoke confirmed both message-state cache tags, opened a live thread, set the Unread filter, set message search to `qa`, verified localStorage persistence for active section/thread/filter/search, and captured no relevant console errors.
+  - ACTION NEEDED: GitHub Actions verification for `e7c1a70` could not be completed because the unauthenticated GitHub API verifier is rate-limited and `gh` is not installed in this environment. Recover Actions proof before continuing additional phases, or provide an authenticated verifier path.
 - Prior active-work-order state-boundary checkpoint:
   - `activeWorkOrderId` is now initialized from `workspaceUiState.getActiveWorkOrderId()`.
   - Added `setActiveWorkOrderIdState(...)` in `app.js` so active-work-order changes update both the legacy local variable and `workspaceUiState`.
