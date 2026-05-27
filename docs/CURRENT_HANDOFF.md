@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the HIGH-risk auth verification callback phase after closing the RLS checkpoint.
 
 - Latest app behavior commit:
-  - auth verification callback phase; use `git log -1 --oneline` for the exact commit after this handoff is committed.
+  - `41a0fe9` (`Add Supabase auth verification callback`).
 - Auth verification state:
   - Added `auth/callback/index.html` and `auth/callback/callback.js`.
   - Added `src/utils/authRedirects.js`.
@@ -46,8 +46,7 @@ Ran the HIGH-risk auth verification callback phase after closing the RLS checkpo
   - Supabase Dashboard Auth URL Configuration was updated:
     - Site URL: `https://loufish727.github.io/MaintainOps/`
     - Redirect URL: `https://loufish727.github.io/MaintainOps/auth/callback/`
-  - Verification passed locally: static checks for `app.js`, `authRedirects.js`, and callback JS; `tests/smoke/auth-callback-smoke.js`; local callback invalid-link UI smoke; root signup-token fallback smoke; local resource smoke.
-  - Still needed after deploy: hosted resource smoke, hosted callback invalid-link smoke, signed-in normal-login smoke, and GitHub Actions Resource Load Smoke.
+  - Verification passed: static checks for `app.js`, `authRedirects.js`, and callback JS; `tests/smoke/auth-callback-smoke.js`; local callback invalid-link UI smoke; root signup-token fallback smoke; local resource smoke; hosted resource smoke; hosted callback invalid-link smoke; signed-in hosted normal workspace boot; GitHub Actions Resource Load Smoke #253 for `41a0fe9`.
 
 ## Previous Change
 
