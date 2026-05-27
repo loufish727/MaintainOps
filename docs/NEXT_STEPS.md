@@ -12,6 +12,8 @@ Current state as of 2026-05-27:
 - Latest RLS/security checkpoints:
   - `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`
   - `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`
+- Latest documentation drift review:
+  - `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-27.md`
 - Latest local SQL source additions:
   - `supabase/step-next-invite-default-location.sql`
   - `supabase/step-next-cancel-team-invites.sql`
@@ -20,7 +22,7 @@ Current state as of 2026-05-27:
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 8,042.
+- Current `app.js` line count: 8,126 after the auth callback phase.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -32,6 +34,7 @@ Current state as of 2026-05-27:
   - `docs/LFES/GOLD_STANDARD.md`
   - `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
   - `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-21.md`
+  - `docs/LFES/context/DOCUMENTATION_DRIFT_REVIEW_2026-05-27.md`
   - `docs/QA_LOG.md`
 
 Recommended immediate next controlled phase:

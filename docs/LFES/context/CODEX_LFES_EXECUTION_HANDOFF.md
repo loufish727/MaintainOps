@@ -26,26 +26,27 @@ MaintainOps is in supervised pilot territory.
 
 Current active technical direction:
 
-- pause automatic extraction runs and use explicit boundary review for each next module movement.
+- continue explicit boundary review for each next module movement; do not resume automatic large batch extraction unless the boundary is already proven low-risk and smokes are defined.
 
 Most recent deployed closed phase:
 
-- Medium-risk authority reduction for workspace search/exact work-search events.
+- HIGH-risk auth verification callback phase in `41a0fe9` after the RLS hardening checkpoint.
 
 Most recent local completed phase:
 
-- Workspace search/exact work-search event extraction is deployed and live verified.
-- A documentation/process cleanup followed the previous operation-timeout Phase 17C to restore LFES standards to the current docs tree, update stale handoff files, and remove tracked package snapshots from the repo.
+- Documentation drift cleanup in `c5e7500` reconciled current handoff, next steps, RLS live checkpoint, Supabase setup, and the modularization plan after the RLS/auth checkpoints.
+- Auth callback verification is deployed and live verified, including fresh real signup verification returning through MaintainOps.
+- RLS hardening is closed for the current app-used table/RPC/storage surface, with live dashboard summary PASS and direct cross-company/anonymous probes documented.
 
 ## Current App.js Status
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after workspace search event authority extraction:
+Current app.js line count after the auth callback phase:
 
-- 9,093 lines.
+- 8,126 lines.
 
-Recent extraction modules:
+Recent extracted/source modules include 57 files under `src/utils`, including:
 
 - `src/utils/schemaErrors.js`
 - `src/utils/operationResults.js`
@@ -59,6 +60,9 @@ Recent extraction modules:
 - `src/utils/workOrderSearch.js`
 - `src/utils/workspaceListBuilders.js`
 - `src/utils/workspaceSearchEvents.js`
+- workspace event-boundary modules for filters, detail navigation, section navigation, work-order lifecycle seams, request/asset/part/PM/procedure delete-warning seams, command openers, message UI/thread seams, Quick Fix openers, public QR print/copy seams, and state factory support.
+- `src/utils/workspaceUiState.js`
+- `src/utils/authRedirects.js`
 - previous render/display modules listed in `docs/LFES/audits/APP_JS_MODULARIZATION_PLAN.md`
 
 Current strategy:
@@ -144,13 +148,14 @@ Use this only for high-risk sequencing changes, skipped verification, or dangero
 Still open or not fully verified:
 
 - invite acceptance and first-login Salem default for Jeffrey or approved recipient
-- password reset full email/recovery-link round trip after rate limits clear
+- password reset full email/recovery-link round trip remains a lower-priority auth symmetry smoke; signup verification callback is now proven.
 - photo/file upload desktop/mobile verification
 - broader inventory authority beyond work-order part usage RPC
 - backup/export strategy
 - more `app.js` decomposition
 - credentialed Playwright automation
-- mutating automation remains blocked
+- local GitHub Actions verifier still needs `gh` or an authenticated API path; public run-page fallback has been used successfully.
+- mutating automation remains blocked unless separately planned.
 
 ## Pilot State
 
@@ -178,11 +183,12 @@ Current pilot queue after cleanup:
 
 ## Current Next Step
 
-`bindWorkspaceEvents()` detail/open navigation authority extraction is complete.
+RLS/auth checkpoints are closed for the current app-used surface, and workspace UI state factory wiring is the safest next modularization direction if kept client-side.
 
 Next recommended phase:
 
-- choose the next explicit `bindWorkspaceEvents()` group before moving code.
+- choose one explicit state-factory/event-boundary group before moving code.
+- do not combine state wiring with workflow mutation extraction.
 - public URL/QR helpers are already extracted and live verified.
 - maintenance schedule date helper is already extracted and live verified.
 - work-order query filter/sort orchestration is already extracted and live verified.
@@ -191,7 +197,7 @@ Next recommended phase:
 - workspace filter/pagination events are already extracted and live verified in app commit `ceb8ba6`.
 - workspace detail/open navigation events are already extracted and live verified in app commit `ef69559`.
 - workspace inventory/equipment filter events are already extracted and live verified in app commit `2b4ad8e`.
-- GitHub Actions verification gap is closed. Use `npm run test:smoke:github-actions`; direct Actions API verification confirmed `Resource Load Smoke` passed for recent push commits including `ceb8ba6`, `ef69559`, and `9f8bbed`.
+- GitHub Actions proof is available through public run pages for recent RLS/auth checkpoints, but the local unauthenticated API verifier can still rate-limit. Prefer installing/configuring `gh` or using an authenticated verifier path before relying on local automated Actions proof for future high-risk phases.
 - Existing event-boundary modules now have explicit LFES contract comments.
 - First state-boundary planning is documented in `docs/LFES/audits/STATE_BOUNDARY_PLAN_2026-05-21.md`.
 - form/payload validation helpers (`requiredText`, `workOrderDateValue`, `procedureColumn`) are blocked until Quick Fix/date validation behavior is narrowed and passes targeted smoke.
@@ -199,9 +205,9 @@ Next recommended phase:
 
 Best next candidates:
 
-- workspace UI state factory as a medium-risk non-mutating state boundary.
-- team member work-view bridge as a medium-risk UI-state boundary.
-- message read-only navigation only after mapping thread/read-state side effects.
+- one more `workspaceUiState` wiring pass for an already extracted UI module group.
+- QA Facility technician symmetry smoke before touching auth/session, public QR submit, or storage/photo/document flows.
+- a planning-only renderWorkspace segmentation map if the next goal is concentrated authority reduction instead of line count.
 
 Still blocked until separate planning:
 

@@ -60,11 +60,11 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
 - Latest live security state:
   - 2026-05-27 RLS bulletproofing completed in Supabase Dashboard SQL Editor and committed in `49d8961`; Actions proof documented in `105b57e`.
 - Latest documentation/process cleanup:
-  - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
+  - documentation drift after the RLS/auth checkpoints was cleaned up in `c5e7500` (`Clean up docs after auth and RLS checkpoints`); do not use older package snapshots as source of truth.
 - Latest live cache tag:
   - deployed: `app.js?v=lfes-state-message-ui-1`; `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
 - Current `app.js` line count:
-  - 8,042 lines.
+  - 8,126 lines after the auth callback phase.
 - Current state-boundary checkpoint:
   - Message UI state is now initialized from `workspaceUiState`: `activeMessageThreadId`, `messageThreadFilter`, `messageSearchQuery`, `messageComposerWorkOrderId`, and `messageComposerOpen`.
   - Added setter helpers in `app.js` so message UI changes update both legacy local variables and `workspaceUiState`.

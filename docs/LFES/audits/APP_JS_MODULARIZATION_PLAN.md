@@ -6,10 +6,15 @@ This is a plan only. Do not modularize `app.js` until approved.
 
 The purpose is not cosmetic cleanup or trendy architecture. The purpose is to preserve engineering understanding, reduce responsibility concentration, improve controlled evolution, reduce reviewer cognitive load, and preserve operational traceability.
 
-## Current Checkpoint - 2026-05-26
+## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 8,064.
-- RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
+- `app.js` line count: 8,126 after the auth callback phase.
+- Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
+- Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
+- RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
+- RLS live hardening checkpoint is documented in `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
+- RLS hardening is closed for the current app-used surface: dashboard summary checks passed, cross-company Taylor-vs-QA read isolation passed, public request-link role denial against a real QA Facility location passed, anonymous table reads are denied, internal anon RPC execute is denied, approved public RPC paths remain callable, and Actions proof for the hardening checkpoint is documented.
+- Auth verification callback is live: `/auth/callback/` handles Supabase code/hash verification links, app startup includes a fallback callback-token path, Supabase Auth URL Configuration points back to MaintainOps, and a fresh real signup verification path passed.
 - First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
 - Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.
 - `index.html` loads the state factory before workspace event modules.
@@ -21,7 +26,8 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 - Third wired state slice moved workspace search state (`searchQuery`, `workOrderSearchMode`) into `workspaceUiState`; app cache tag bumped to `app.js?v=lfes-state-workspace-search-1`.
 - Commit `222f308` passed hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live workspace search preview / exact Work Orders search smoke after a Pages propagation retry showed the expected app cache tag.
 - `app.js` still owns unrelated legacy UI state variables. The next state-boundary phase should wire one extracted UI event group to the factory at a time instead of broad variable replacement.
-- Blocked until RPC source gap is resolved or explicitly accepted: team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, and SQL/RLS work.
+- The previous RPC source gap is resolved for `cancel_company_invite` and `record_work_order_part_usage`.
+- Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry. Primary RLS blocker is closed for the current app-used surface.
 
 ## Current Responsibilities Inside app.js
 
