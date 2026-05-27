@@ -66,11 +66,11 @@ Manager/admin RPC role-denial probes with Taylor technician token:
 
 `ensure_location_request_link` note:
 
-- QA Facility currently has no visible location rows for the QA admin account, so this RPC could not be tested against a real QA Facility location.
-- A fake location id correctly failed with `Location not found.`, but that is not a role-denial proof.
-- To finish this specific check, create one QA Facility location, then rerun Taylor technician against `ensure_location_request_link(target_location_id := <qa_location_id>)`.
+- The first pass could not prove this path because QA Facility had no location row.
+- A QA Facility location fixture was then created through `supabase/step-next-qa-rls-location-fixture.sql`.
+- The direct post-hardening probe below completed the real-location denial proof.
 
-Conclusion: Taylor technician cannot directly read QA Facility data across app-used tables. Manager/admin RPC denial is confirmed for invite create, role update, and invite cancel. QR-link role denial still needs a real QA location.
+Conclusion: Taylor technician cannot directly read QA Facility data across app-used tables. Manager/admin RPC denial is confirmed for invite create, role update, invite cancel, and public request link creation against a real QA Facility location.
 
 ## Anonymous Table Exposure Sweep
 

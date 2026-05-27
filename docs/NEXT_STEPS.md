@@ -4,22 +4,27 @@ This is the recommended restart point for the next session.
 
 ## Immediate Next Step - Current
 
-Current state as of 2026-05-26:
+Current state as of 2026-05-27:
 
-- Latest app behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
-- Prior app behavior commit: `390a6e2` (`Wire active section state to UI factory`).
-- Latest RLS/security source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
+- Latest app behavior commit: `41a0fe9` (`Add Supabase auth verification callback`).
+- Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
+- Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
+- Latest RLS/security checkpoints:
+  - `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`
+  - `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`
 - Latest local SQL source additions:
   - `supabase/step-next-invite-default-location.sql`
   - `supabase/step-next-cancel-team-invites.sql`
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-state-message-ui-1`; `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
+- Latest deployed cache tag: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
+- Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
 - Current `app.js` line count: 8,042.
-- Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
+- Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, workspace search state wiring, active-section state wiring, active-part state wiring, active-asset state wiring, active-work-order state wiring, and message UI state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live active-section navigation smoke passed for `390a6e2`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-part smoke passed for `99e5af1`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-asset smoke passed for `db2ba7a`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-work-order smoke passed for `94bb07d`; hosted resource smoke and signed-in hosted Messages smoke passed for `e7c1a70`, but GitHub Actions verification for `e7c1a70` is blocked by unauthenticated API rate limit.
+- Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, workspace search state wiring, active-section state wiring, active-part state wiring, active-asset state wiring, active-work-order state wiring, and message UI state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live active-section navigation smoke passed for `390a6e2`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-part smoke passed for `99e5af1`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-asset smoke passed for `db2ba7a`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-work-order smoke passed for `94bb07d`; hosted resource smoke and signed-in hosted Messages smoke passed for `e7c1a70`. GitHub Actions proof for the later auth and RLS checkpoints is recovered; the old unauthenticated verifier limitation is now only a tooling improvement item.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -31,7 +36,7 @@ Current state as of 2026-05-26:
 
 Recommended immediate next controlled phase:
 
-- Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, and GitHub Actions Resource Load Smoke #253 passed.
+- Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
 - RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Dashboard/admin SQL hardening is complete for the current app-used table/RPC/storage surface: no direct anon table grants, no unexpected anon RPC execute, RLS/policies present, approved public RPC grants present, security-definer search paths pinned, storage buckets private, and storage policies present.
 - QA-company read isolation, Taylor role-denial, `ensure_location_request_link` denial against a real QA Facility location, anonymous table denial, anonymous internal RPC denial, and invalid-token public QR intake are now verified.

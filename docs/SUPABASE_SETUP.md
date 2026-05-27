@@ -44,13 +44,17 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 ## Current Step Files
 
 - `step-next-admin-delete-work-orders.sql`
+- `step-next-app-issue-reports.sql`
 - `step-next-asset-hierarchy.sql`
 - `step-next-asset-type-secondary-machine.sql`
 - `step-next-asset-type-shop-item.sql`
+- `step-next-cancel-team-invites.sql`
+- `step-next-cleanup-delete-paths.sql`
 - `step-next-company-logo.sql`
 - `step-next-company-settings.sql`
 - `step-next-equipment-delete.sql`
 - `step-next-explicit-data-api-grants.sql`
+- `step-next-invite-default-location.sql`
 - `step-next-location-integrity.sql`
 - `step-next-locations.sql`
 - `step-next-login-memberships.sql`
@@ -67,7 +71,12 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-photo-metadata.sql`
 - `step-next-preventive-schedules.sql`
 - `step-next-procedures.sql`
+- `step-next-public-request-link-admin-controls.sql`
 - `step-next-public-request-links.sql`
+- `step-next-qa-rls-location-fixture.sql`
+- `step-next-record-work-order-part-usage.sql`
+- `step-next-rls-bulletproof-hardening.sql`
+- `step-next-rpc-execute-hardening.sql`
 - `step-next-safety-check-completion-only.sql`
 - `step-next-safety-checks.sql`
 - `step-next-security-hardening.sql`

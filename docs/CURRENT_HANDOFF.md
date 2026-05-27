@@ -55,10 +55,10 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
 
 - Latest app behavior commit:
   - `e7c1a70` (`Wire message UI state to workspace factory`).
-- Latest pushed security/documentation commit:
-  - `505e9da` (`Document RLS hardening checkpoint`)
+- Latest RLS Actions/documentation proof commit:
+  - `105b57e` (`Document RLS Actions proof`)
 - Latest live security state:
-  - 2026-05-27 RLS bulletproofing completed in Supabase Dashboard SQL Editor after `505e9da`; commit the updated SQL/docs before switching branches or machines.
+  - 2026-05-27 RLS bulletproofing completed in Supabase Dashboard SQL Editor and committed in `49d8961`; Actions proof documented in `105b57e`.
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
@@ -73,7 +73,7 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Behavior intent: no UI behavior change; this only reduces message UI state ownership drift while `app.js` still owns read-state writes, create thread, send reply, message data, render, auth/company/location state, and Supabase access.
   - Verification passed: static checks, workspace UI state smoke, message UI smoke, message thread smoke, work message start smoke, section navigation smoke, hosted resource smoke, and signed-in hosted Messages smoke for `e7c1a70`.
   - Signed-in hosted Messages smoke confirmed both message-state cache tags, opened a live thread, set the Unread filter, set message search to `qa`, verified localStorage persistence for active section/thread/filter/search, and captured no relevant console errors.
-  - ACTION NEEDED: GitHub Actions verification for `e7c1a70` could not be completed because the unauthenticated GitHub API verifier is rate-limited and `gh` is not installed in this environment. Recover Actions proof before continuing additional phases, or provide an authenticated verifier path.
+  - Historical note: GitHub Actions proof for `e7c1a70` was blocked at that moment by the unauthenticated API verifier, but later RLS/auth checkpoints have recovered Actions proof through public run pages. This is no longer a current stop; it remains a tooling improvement to install/configure `gh` or use an authenticated API token.
 - Prior active-work-order state-boundary checkpoint:
   - `activeWorkOrderId` is now initialized from `workspaceUiState.getActiveWorkOrderId()`.
   - Added `setActiveWorkOrderIdState(...)` in `app.js` so active-work-order changes update both the legacy local variable and `workspaceUiState`.
