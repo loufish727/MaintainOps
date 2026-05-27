@@ -31,6 +31,7 @@ Current state as of 2026-05-26:
 Recommended immediate next controlled phase:
 
 - ACTION NEEDED before additional phases: recover GitHub Actions proof for `e7c1a70` or provide an authenticated verifier path. The local `gh` CLI is not installed, and the unauthenticated API verifier is rate-limited.
+- RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Remaining security follow-up: create one QA Facility location to finish `ensure_location_request_link` technician-denial coverage, then run dashboard/admin SQL for exact live policy inventory.
 - QA-company read isolation, Taylor technician role-denial, and anonymous internal RPC execute hardening are now verified.
 - Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry, but the primary RLS checkpoint is now materially closed.
 - Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.

@@ -87,6 +87,12 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Verification passed: static checks, workspace UI state smoke, section navigation smoke, search/filter state smokes, command/navigation regression smokes, hosted resource smoke, local boot smoke with the new cache tag, GitHub Actions Resource Load Smoke for `390a6e2`, and signed-in hosted section navigation smoke.
   - Signed-in hosted section navigation smoke loaded Taylor Metal Products, confirmed `app.js?v=lfes-state-active-section-1`, clicked Work Orders / Requests / Equipment / Parts / Messages, verified active-section persistence values `work`, `requests`, `assets`, `parts`, and `messages`, and captured no relevant console errors.
 - Current security checkpoint:
+  - RLS live checkpoint added at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
+  - Taylor technician direct REST probes returned zero QA Facility rows across app-used tables.
+  - Direct anonymous REST reads to app-used tables returned `401`.
+  - Taylor technician manager/admin RPC denial passed for `create_company_invite`, `update_company_member_role`, and `cancel_company_invite`.
+  - `ensure_location_request_link` role-denial could not be finished because QA Facility currently has no visible location row; create one QA location to finish that single RPC check.
+  - Live policy metadata inventory is blocked from anon/auth client credentials; dashboard/admin SQL is required for exact `pg_tables` / `pg_policies` / function grant / storage policy inventory.
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
   - Follow-up RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
   - App-used data tables have RLS/policy coverage in source.
