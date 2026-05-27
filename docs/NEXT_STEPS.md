@@ -6,8 +6,8 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-26:
 
-- Latest app behavior commit: `a0e8171` (`Wire workspace search state to UI factory`).
-- Latest app behavior commit: `390a6e2` (`Wire active section state to UI factory`).
+- Latest app behavior commit: pending active-part state wiring commit.
+- Prior app behavior commit: `390a6e2` (`Wire active section state to UI factory`).
 - Latest RLS/security source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Latest local SQL source additions:
   - `supabase/step-next-invite-default-location.sql`
@@ -15,10 +15,10 @@ Current state as of 2026-05-26:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
-- Current `app.js` line count: 8,050.
+- Latest pending cache tag: `app.js?v=lfes-state-active-part-1`.
+- Current `app.js` line count: 8,042.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, and workspace search state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live workspace search preview / exact Work Orders search smoke passed for `222f308`.
+- Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, workspace search state wiring, active-section state wiring, and active-part state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live active-section navigation smoke passed for `390a6e2`; active-part deployment/live verification is the current in-progress step.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
   - `docs/CURRENT_HANDOFF.md`
@@ -33,7 +33,7 @@ Recommended immediate next controlled phase:
 - QA-company read isolation, Taylor technician role-denial, and anonymous internal RPC execute hardening are now verified.
 - Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry, but the primary RLS checkpoint is now materially closed.
 - Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.
-- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, workspace search state is wired, and active-section writes now route through `workspaceUiState`. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; avoid broad variable replacement.
+- First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, workspace search state is wired, active-section writes route through `workspaceUiState`, and active-part writes are being routed through `workspaceUiState`. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; avoid broad variable replacement.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.
 - Workspace search and exact work-search read-only events from `bindWorkspaceEvents()` are already extracted into `src/utils/workspaceSearchEvents.js` and live verified.
 - Choose the next boundary from the authority map. Do not combine multiple operational systems in one phase.

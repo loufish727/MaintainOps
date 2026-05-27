@@ -30,19 +30,26 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Ran the 2026-05-27 LFES active-section state wiring pass after closing the RLS hardening checkpoint.
+Ran the 2026-05-27 LFES active-part state wiring pass after closing the RLS hardening checkpoint and the active-section state pass.
 
 - Latest app behavior commit:
-  - pending commit for active-section state wiring.
+  - pending commit for active-part state wiring.
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-active-section-1`
+  - pending deployment: `app.js?v=lfes-state-active-part-1`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
+  - `activePartId` is now initialized from `workspaceUiState.getActivePartId()`.
+  - Added `setActivePartIdState(...)` in `app.js` so active-part changes update both the legacy local variable and `workspaceUiState`.
+  - Extracted part-detail/message/report/section/search paths that set the active part now route through `setActivePartIdState(...)`.
+  - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-part-1`.
+  - Behavior intent: no UI behavior change; this only reduces active-part state ownership drift while `app.js` still owns part data, mutations, document upload, delete flow, render, auth/company/location state, and Supabase access.
+  - Verification passed before deployment commit: static checks, workspace UI state smoke, part-detail event smoke, message UI smoke, report-issue command smoke, section navigation smoke, workspace search state smoke, and hosted resource smoke baseline.
+- Prior active-section state-boundary checkpoint:
   - `activeSection` is now initialized from `workspaceUiState.getActiveSection()`.
   - Added `setActiveSectionState(...)` in `app.js` so active-section changes update both the legacy local variable and `workspaceUiState`.
   - Extracted event modules and app-owned paths that change active section now route through `setActiveSectionState(...)`.

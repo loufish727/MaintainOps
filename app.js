@@ -283,7 +283,11 @@ let commentsError = "";
 let requestPhotosReady = true;
 let activeWorkOrderId = null;
 let activeAssetId = null;
-let activePartId = null;
+let activePartId = workspaceUiState.getActivePartId();
+function setActivePartIdState(value) {
+  activePartId = value;
+  workspaceUiState.setActivePartId(value);
+}
 let pendingDeleteWorkOrderId = null;
 let pendingDeletePartId = null;
 let pendingDeleteAssetId = null;
@@ -3733,7 +3737,7 @@ function renderAppIssueReportForm() {
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
   if (!part) {
-    activePartId = null;
+    setActivePartIdState(null);
     return `<p class="muted">Part not found.</p>`;
   }
   const quantity = Number(part.quantity_on_hand) || 0;
@@ -4614,7 +4618,7 @@ function bindWorkspaceEvents() {
       activeLocationId = nextLocationId;
       activeWorkOrderId = null;
       activeAssetId = null;
-      activePartId = null;
+      setActivePartIdState(null);
       reportIssueMode = false;
       resetWorkOrderPage();
       resetPartsPage();
@@ -4650,7 +4654,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceSectionNavigationEvents({
     state: {
       setActiveAssetId: (value) => { activeAssetId = value; },
-      setActivePartId: (value) => { activePartId = value; },
+      setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4685,7 +4689,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceReportIssueCommandEvents({
     state: {
       setActiveAssetId: (value) => { activeAssetId = value; },
-      setActivePartId: (value) => { activePartId = value; },
+      setActivePartId: setActivePartIdState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
       setQuickFixMode: (value) => { quickFixMode = value; },
@@ -4780,7 +4784,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceMessageUiEvents({
     state: {
       setActiveAssetId: (value) => { activeAssetId = value; },
-      setActivePartId: (value) => { activePartId = value; },
+      setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4800,9 +4804,7 @@ function bindWorkspaceEvents() {
       setActiveAssetId: (value) => {
         activeAssetId = value;
       },
-      setActivePartId: (value) => {
-        activePartId = value;
-      },
+      setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => {
         activeWorkOrderId = value;
@@ -4834,7 +4836,7 @@ function bindWorkspaceEvents() {
       getActiveSection: () => activeSection,
       getSearchQuery: () => workspaceUiState.getSearchQuery(),
       setActiveAssetId: (value) => { activeAssetId = value; },
-      setActivePartId: (value) => { activePartId = value; },
+      setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
@@ -4856,7 +4858,7 @@ function bindWorkspaceEvents() {
     state: {
       setActiveWorkOrderId: (value) => { activeWorkOrderId = value; },
       setActiveAssetId: (value) => { activeAssetId = value; },
-      setActivePartId: (value) => { activePartId = value; },
+      setActivePartId: setActivePartIdState,
       setActiveSection: setActiveSectionState,
       setSearchQuery: (value) => { workspaceUiState.setSearchQuery(value); },
     },
@@ -5208,9 +5210,7 @@ function bindWorkspaceEvents() {
   bindWorkspacePartDetailEvents({
     state: {
       getShowPartSourceManager: () => showPartSourceManager,
-      setActivePartId: (value) => {
-        activePartId = value;
-      },
+      setActivePartId: setActivePartIdState,
       setShowPartSourceManager: (value) => {
         showPartSourceManager = value;
       },
@@ -6692,7 +6692,7 @@ async function createPart(event) {
       throw error;
     }
 
-    activePartId = data?.id || null;
+    setActivePartIdState(data?.id || null);
     clearPartSearchState();
     showNotice("Part added.");
     formElement.reset();
@@ -6830,7 +6830,7 @@ async function updatePart(event) {
 
     if (error) throw error;
 
-    activePartId = null;
+    setActivePartIdState(null);
     clearPartSearchState();
     showNotice("Part saved.");
     await render();
@@ -6943,7 +6943,7 @@ async function deletePart(id) {
       throw new Error("Part delete did not persist in Supabase. Run supabase/step-next-part-delete.sql, then try again.");
     }
 
-    activePartId = null;
+    setActivePartIdState(null);
     pendingDeletePartId = null;
     showNotice("Part deleted.");
     await render();
