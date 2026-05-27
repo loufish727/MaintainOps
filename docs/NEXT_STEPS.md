@@ -7,6 +7,12 @@ This is the recommended restart point for the next session.
 Current state as of 2026-05-26:
 
 - Latest app behavior commit: `a0e8171` (`Wire workspace search state to UI factory`).
+- Latest RLS/security source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
+- Latest local SQL source additions:
+  - `supabase/step-next-invite-default-location.sql`
+  - `supabase/step-next-cancel-team-invites.sql`
+  - `supabase/step-next-record-work-order-part-usage.sql`
+  - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
 - Latest deployed cache tag: `app.js?v=lfes-authority-pm-generation-events-1`.
 - Current `app.js` line count: 8,050.
@@ -23,10 +29,8 @@ Current state as of 2026-05-26:
 
 Recommended immediate next controlled phase:
 
-- The project has crossed from safe line reduction into authority reduction. Do not chase another line-count target.
-- The recommended direction is now security/source-of-truth cleanup first, then client state ownership.
-- RLS source audit result: app-used data tables and storage buckets are covered in source, but two app-used RPC dependencies are not present in checked SQL source: `cancel_company_invite` and `record_work_order_part_usage`.
-- Before touching team invite cancel, parts-used mutation, public QR submit, storage/photo/document flows, auth/session/company/location startup, or related SQL/RLS work, resolve or explicitly accept that RPC source gap.
+- QA-company read isolation, Taylor technician role-denial, and anonymous internal RPC execute hardening are now verified.
+- Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry, but the primary RLS checkpoint is now materially closed.
 - Workspace UI state factory remains the safest next modularization target if it is kept strictly client-side and does not change Supabase access, auth/session startup, public QR submit, storage, RLS, or mutation sequencing.
 - First state-factory scaffold is complete, Parts/Equipment filter-search state is wired, workspace filter/pagination state is wired, and workspace search state is wired. Next state-boundary pass should wire only one more extracted UI module group to `workspaceUiState`; detail/navigation or section-navigation state is the likely next candidate. Do not replace broad `app.js` variables in one move.
 - Use `docs/LFES/audits/AUTHORITY_MAP_RENDER_EVENTS_2026-05-21.md` as the current authority map for `renderWorkspace()` and `bindWorkspaceEvents()`.

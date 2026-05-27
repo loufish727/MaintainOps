@@ -30,10 +30,16 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Completed the Full Work Order Details submit event boundary, paused extraction momentum for an LFES RLS source audit checkpoint, added the first workspace UI state factory scaffold, wired Parts/Equipment filter-search state, wired workspace filter/pagination state, then wired workspace search state to the factory.
+Ran the 2026-05-27 LFES RLS/security follow-up audit, added missing SQL source/hardening files, applied the reviewed SQL in Supabase, and verified anonymous/internal RPC and tenant-isolation behavior. App behavior was not intentionally changed.
 
 - Latest app behavior commit:
   - `a0e8171` (`Wire workspace search state to UI factory`)
+- Latest local security source additions:
+  - `supabase/step-next-invite-default-location.sql`
+  - `supabase/step-next-cancel-team-invites.sql`
+  - `supabase/step-next-record-work-order-part-usage.sql`
+  - `supabase/step-next-rpc-execute-hardening.sql`
+  - `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
@@ -42,10 +48,16 @@ Completed the Full Work Order Details submit event boundary, paused extraction m
   - 8,050 lines.
 - Current security checkpoint:
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
+  - Follow-up RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
   - App-used data tables have RLS/policy coverage in source.
   - App-used storage buckets are private with storage policy coverage in source.
   - Public QR anonymous access remains scoped to expected RPC grants, not direct table grants.
-  - `cancel_company_invite` and `record_work_order_part_usage` are app-used RPCs without definitions/grants found in the checked SQL source. Treat this as a source-of-truth gap before touching team invite cancel or parts-used mutation boundaries.
+  - The prior missing source gap for `cancel_company_invite` and `record_work_order_part_usage` is resolved by new SQL source files.
+  - The reviewed SQL was applied in Supabase after adding explicit `drop function` handling for the existing `cancel_company_invite(uuid, uuid)` return-type mismatch.
+  - Anonymous internal RPC probes now return execute-denied for internal RPCs. Public QR intake remains callable and returns an empty result for an invalid token.
+  - QA account for `QA Test Facility` sees only QA company data across app-used tables. Taylor-prefixed storage list probes return empty arrays.
+  - Taylor technician account sees only main Taylor company rows or empty result sets across app-used tables, cannot read QA Facility rows, and is denied manager/admin-only RPCs for invite creation, public request link creation, role update, and invite cancel.
+  - Remaining optional symmetry gap before auth/session, public QR submit, or storage/photo/document changes: QA Facility technician smoke.
 - Current state-boundary checkpoint:
   - Added `src/utils/workspaceUiState.js` as the first client-only workspace UI state factory scaffold.
   - Added `tests/smoke/workspace-ui-state-smoke.js`.
