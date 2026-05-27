@@ -1,8 +1,14 @@
-# Maintenance Operations App
+# MaintainOps
 
-This project is an early build plan for MaintainOps, an original maintenance operations app for internal work order, asset, parts, and technician workflows.
+MaintainOps is a Supabase-backed maintenance operations app for work orders, equipment, requests, parts, preventive maintenance, team workflows, and field operations.
 
-The first target is a focused MVP for small maintenance teams:
+Live app: [loufish727.github.io/MaintainOps](https://loufish727.github.io/MaintainOps/)
+
+Public front door: [loufish727.github.io](https://loufish727.github.io/)
+
+## Product Scope
+
+MaintainOps is being built for small maintenance teams that need to:
 
 - Create, assign, and complete work orders
 - Track assets and locations
@@ -11,9 +17,13 @@ The first target is a focused MVP for small maintenance teams:
 - Record technician notes, photos, time, and parts used
 - Give managers a clear dashboard of overdue work, downtime, and completion trends
 
-Open [index.html](index.html) in a browser to run the current prototype.
+## Local Setup
 
-The current app is Supabase-backed. Before running it, execute [supabase/schema.sql](supabase/schema.sql), then the current `supabase/step-next-*.sql` files in order, and add your project credentials to [supabase-config.js](supabase-config.js). The current setup order is listed in [docs/supabase-architecture.md](docs/supabase-architecture.md).
+The current app is Supabase-backed. Before running it locally, execute [supabase/schema.sql](supabase/schema.sql), then the current `supabase/step-next-*.sql` files in order, and add your project credentials to [supabase-config.js](supabase-config.js). The current setup order is listed in [docs/supabase-architecture.md](docs/supabase-architecture.md).
+
+Open [index.html](index.html) in a browser or serve the repo with a local web server.
+
+## Reviewer Starting Points
 
 For current project handoff, start with:
 
