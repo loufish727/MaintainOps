@@ -47,6 +47,7 @@ Ran the HIGH-risk auth verification callback phase after closing the RLS checkpo
     - Site URL: `https://loufish727.github.io/MaintainOps/`
     - Redirect URL: `https://loufish727.github.io/MaintainOps/auth/callback/`
   - Verification passed: static checks for `app.js`, `authRedirects.js`, and callback JS; `tests/smoke/auth-callback-smoke.js`; local callback invalid-link UI smoke; root signup-token fallback smoke; local resource smoke; hosted resource smoke; hosted callback invalid-link smoke; signed-in hosted normal workspace boot; GitHub Actions Resource Load Smoke #253 for `41a0fe9`.
+  - Fresh real-world signup verification passed for the Taylor Metal QA test-account path after the earlier root GitHub Pages redirect catch. The newest verification email returned through MaintainOps and completed the create-user path. No test password is stored in docs.
 
 ## Previous Change
 
