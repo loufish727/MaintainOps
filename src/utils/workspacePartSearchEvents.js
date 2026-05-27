@@ -15,13 +15,11 @@
 
     if (!state || typeof renderWorkspace !== "function" || typeof resetPartsPage !== "function") return;
 
-    const storage = options.storage || localStorage;
     const partSearchForm = doc.querySelector("#part-search-form");
     if (!partSearchForm) return;
 
     const persistSearch = (value) => {
       state.setPartSearchQuery(value || "");
-      storage.setItem("maintainops.partSearchQuery", value || "");
       resetPartsPage();
       renderWorkspace();
     };

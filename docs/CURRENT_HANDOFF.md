@@ -30,6 +30,23 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Ran six LFES state-adapter cleanup phases after the auth/RLS documentation review.
+
+- Latest app behavior commit:
+  - pending commit for this state-adapter cleanup run.
+- State-adapter cleanup state:
+  - `app.js` line count is now 8,059.
+  - `bindWorkspaceFilterPaginationEvents` now receives `workspaceUiState` directly instead of an inline getter/setter adapter.
+  - `bindWorkspaceInventoryFilterEvents` now receives `workspaceUiState` directly instead of an inline getter/setter adapter.
+  - `bindWorkspacePartSearchEvents` now receives `workspaceUiState` directly instead of a one-method adapter.
+  - `workspaceFilterPaginationEvents`, `workspaceInventoryFilterEvents`, `workspacePartSearchEvents`, and `workspaceTeamWorkViewEvents` no longer duplicate localStorage writes that are already owned by `workspaceUiState` or the injected state setters.
+  - Message load/start-thread paths no longer duplicate `activeMessageThreadId` / `messageComposerWorkOrderId` localStorage writes after calling the state setter helpers.
+  - Cache tag: `lfes-state-adapter-cleanup-1` for `app.js`, `workspaceFilterPaginationEvents.js`, `workspaceInventoryFilterEvents.js`, `workspacePartSearchEvents.js`, and `workspaceTeamWorkViewEvents.js`.
+  - Scope stayed client-only UI state persistence cleanup: no selector changes, rendered markup changes, Supabase calls, auth/session startup, RLS, storage upload, public QR submit, or mutation sequencing changes.
+  - Verification passed: static checks for `app.js` and changed modules; workspace filter/pagination state smoke; inventory filter state smoke; part-search smoke updated to use the production `workspaceUiState` persistence owner; workspace UI/search/filter/inventory regression smokes; section navigation smoke; message UI/thread smokes; team invite cancel smoke.
+
+## Previous Change
+
 Ran the HIGH-risk auth verification callback phase after closing the RLS checkpoint.
 
 - Latest app behavior commit:
@@ -64,7 +81,7 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
 - Latest live cache tag:
   - deployed: `app.js?v=lfes-state-message-ui-1`; `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
 - Current `app.js` line count:
-  - 8,126 lines after the auth callback phase.
+  - 8,059 lines after the state-adapter cleanup run.
 - Current state-boundary checkpoint:
   - Message UI state is now initialized from `workspaceUiState`: `activeMessageThreadId`, `messageThreadFilter`, `messageSearchQuery`, `messageComposerWorkOrderId`, and `messageComposerOpen`.
   - Added setter helpers in `app.js` so message UI changes update both legacy local variables and `workspaceUiState`.

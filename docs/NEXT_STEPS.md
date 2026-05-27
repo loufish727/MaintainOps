@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: `41a0fe9` (`Add Supabase auth verification callback`).
+- Latest app behavior commit: pending state-adapter cleanup commit after `41a0fe9` (`Add Supabase auth verification callback`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -20,9 +20,10 @@ Current state as of 2026-05-27:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest deployed cache tag: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
+- Latest local cache tag: `app.js?v=lfes-state-adapter-cleanup-1`; selected state event modules also use `lfes-state-adapter-cleanup-1`.
+- Latest deployed auth cache tag before this run: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 8,126 after the auth callback phase.
+- Current `app.js` line count: 8,059 after the state-adapter cleanup run.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -39,6 +40,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
+- Current six-phase cleanup completed locally: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Package/upload/live verification should run after commit if this run is being deployed.
 - Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
 - RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Dashboard/admin SQL hardening is complete for the current app-used table/RPC/storage surface: no direct anon table grants, no unexpected anon RPC execute, RLS/policies present, approved public RPC grants present, security-definer search paths pinned, storage buckets private, and storage policies present.

@@ -40,7 +40,9 @@ function createDocument(selectors) {
 
 global.window = {};
 global.document = createDocument({});
+global.localStorage = null;
 
+const { createWorkspaceUiState } = require("../../src/utils/workspaceUiState.js");
 require("../../src/utils/workspacePartSearchEvents.js");
 
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
@@ -50,10 +52,17 @@ let resetCount = 0;
 let renderCount = 0;
 const storage = {
   values: {},
+  getItem(key) {
+    return Object.prototype.hasOwnProperty.call(this.values, key) ? this.values[key] : null;
+  },
   setItem(key, value) {
-    this.values[key] = value;
+    this.values[key] = String(value);
+  },
+  removeItem(key) {
+    delete this.values[key];
   },
 };
+const state = createWorkspaceUiState({ storage });
 
 const input = createElement({ value: "hose" });
 const form = createElement({
@@ -84,13 +93,8 @@ class FormDataRef {
 
 bindWorkspacePartSearchEvents({
   documentRef: doc,
-  storage,
   FormDataRef,
-  state: {
-    setPartSearchQuery: (value) => {
-      partSearchQuery = value;
-    },
-  },
+  state,
   resetPartsPage: () => {
     resetCount += 1;
   },
@@ -100,6 +104,7 @@ bindWorkspacePartSearchEvents({
 });
 
 input.dispatch("input");
+partSearchQuery = state.getPartSearchQuery();
 assert.equal(partSearchQuery, "hose");
 assert.equal(storage.values["maintainops.partSearchQuery"], "hose");
 assert.equal(resetCount, 1);
@@ -114,6 +119,7 @@ form.dispatch("submit", {
   },
 });
 assert.equal(prevented, true);
+partSearchQuery = state.getPartSearchQuery();
 assert.equal(partSearchQuery, "filter");
 assert.equal(storage.values["maintainops.partSearchQuery"], "filter");
 assert.equal(resetCount, 2);

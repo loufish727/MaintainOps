@@ -8,7 +8,6 @@
    */
   function bindWorkspaceInventoryFilterEvents(options = {}) {
     const doc = options.documentRef || document;
-    const storage = options.storage || localStorage;
     const state = options.state;
 
     if (!state) return;
@@ -16,7 +15,6 @@
     doc.querySelectorAll("[data-part-inventory-filter]").forEach((button) => {
       button.addEventListener("click", () => {
         state.setPartInventoryFilter(button.dataset.partInventoryFilter);
-        storage.setItem("maintainops.partInventoryFilter", state.getPartInventoryFilter());
         options.resetPartsPage();
         options.renderWorkspace();
       });
@@ -28,7 +26,6 @@
           ? "all"
           : button.dataset.assetStatusFilter;
         state.setAssetStatusFilter(nextFilter);
-        storage.setItem("maintainops.assetStatusFilter", state.getAssetStatusFilter());
         options.resetAssetsPage();
         options.renderWorkspace();
       });

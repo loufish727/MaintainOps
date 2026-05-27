@@ -9,7 +9,6 @@
    */
   function bindWorkspaceTeamWorkViewEvents(options = {}) {
     const doc = options.documentRef || document;
-    const storage = options.storage || localStorage;
     const state = options.state;
 
     if (!state) return;
@@ -23,8 +22,6 @@
         state.setActiveAssetId(null);
         state.setCreateWorkOrderMode(false);
         state.setQuickFixMode(false);
-        storage.setItem("maintainops.activeSection", "work");
-        storage.setItem("maintainops.workOrderAssigneeFilter", button.dataset.viewMemberWork);
         options.resetWorkOrderPage();
         options.renderWorkspace();
       });

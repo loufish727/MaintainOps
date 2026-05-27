@@ -2325,7 +2325,6 @@ async function loadMessageCenter() {
   messageThreads = threads || [];
   if (!messageThreads.length) {
     setActiveMessageThreadIdState("");
-    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
     return;
   }
 
@@ -2368,7 +2367,6 @@ async function loadMessageCenter() {
 
   if (!activeMessageThreadId || !messageThreads.some((thread) => thread.id === activeMessageThreadId)) {
     setActiveMessageThreadIdState(messageThreads[0]?.id || "");
-    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
   }
 }
 
@@ -5018,59 +5016,7 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceFilterPaginationEvents({
-    state: {
-      getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
-      setActiveStatusFilter: (value) => {
-        workspaceUiState.setActiveStatusFilter(value);
-      },
-      getMyWorkFilter: () => workspaceUiState.getMyWorkFilter(),
-      setMyWorkFilter: (value) => {
-        workspaceUiState.setMyWorkFilter(value);
-      },
-      getWorkOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
-      setWorkOrderFilter: (value) => {
-        workspaceUiState.setWorkOrderFilter(value);
-      },
-      setWorkOrderAssigneeFilter: (value) => {
-        workspaceUiState.setWorkOrderAssigneeFilter(value);
-      },
-      getWorkSort: () => workspaceUiState.getWorkSort(),
-      setWorkSort: (value) => {
-        workspaceUiState.setWorkSort(value);
-      },
-      getRequestViewFilter: () => workspaceUiState.getRequestViewFilter(),
-      setRequestViewFilter: (value) => {
-        workspaceUiState.setRequestViewFilter(value);
-      },
-      getWorkOrderPage: () => workspaceUiState.getWorkOrderPage(),
-      setWorkOrderPage: (value) => {
-        workspaceUiState.setWorkOrderPage(value);
-      },
-      getPartsPage: () => workspaceUiState.getPartsPage(),
-      setPartsPage: (value) => {
-        workspaceUiState.setPartsPage(value);
-      },
-      getAssetsPage: () => workspaceUiState.getAssetsPage(),
-      setAssetsPage: (value) => {
-        workspaceUiState.setAssetsPage(value);
-      },
-      getRequestsPage: () => workspaceUiState.getRequestsPage(),
-      setRequestsPage: (value) => {
-        workspaceUiState.setRequestsPage(value);
-      },
-      getSchedulesPage: () => workspaceUiState.getSchedulesPage(),
-      setSchedulesPage: (value) => {
-        workspaceUiState.setSchedulesPage(value);
-      },
-      getProceduresPage: () => workspaceUiState.getProceduresPage(),
-      setProceduresPage: (value) => {
-        workspaceUiState.setProceduresPage(value);
-      },
-      getMembersPage: () => workspaceUiState.getMembersPage(),
-      setMembersPage: (value) => {
-        workspaceUiState.setMembersPage(value);
-      },
-    },
+    state: workspaceUiState,
     invalidateExactWorkOrderSearchCache,
     reloadRequestQueue,
     reloadWorkOrderQueue,
@@ -5258,25 +5204,14 @@ function bindWorkspaceEvents() {
   if (partForm) partForm.addEventListener("submit", createPart);
 
   bindWorkspaceInventoryFilterEvents({
-    state: {
-      getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
-      setAssetStatusFilter: (value) => {
-        workspaceUiState.setAssetStatusFilter(value);
-      },
-      getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
-      setPartInventoryFilter: (value) => {
-        workspaceUiState.setPartInventoryFilter(value);
-      },
-    },
+    state: workspaceUiState,
     renderWorkspace,
     resetAssetsPage,
     resetPartsPage,
   });
 
   bindWorkspacePartSearchEvents({
-    state: {
-      setPartSearchQuery: (value) => { workspaceUiState.setPartSearchQuery(value); },
-    },
+    state: workspaceUiState,
     renderWorkspace,
     resetPartsPage,
   });
@@ -6221,8 +6156,6 @@ async function createMessageThread(event) {
     setActiveMessageThreadIdState(thread.id);
     setMessageComposerWorkOrderIdState("");
     setMessageComposerOpenState(false);
-    localStorage.setItem("maintainops.activeMessageThreadId", activeMessageThreadId);
-    localStorage.setItem("maintainops.messageComposerWorkOrderId", messageComposerWorkOrderId);
     await markMessageThreadRead(thread.id);
     showNotice("Thread started.");
     threadStarted = true;

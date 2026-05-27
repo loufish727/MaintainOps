@@ -8,13 +8,20 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 8,126 after the auth callback phase.
+- `app.js` line count: 8,059 after the state-adapter cleanup run.
 - Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - RLS live hardening checkpoint is documented in `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
 - RLS hardening is closed for the current app-used surface: dashboard summary checks passed, cross-company Taylor-vs-QA read isolation passed, public request-link role denial against a real QA Facility location passed, anonymous table reads are denied, internal anon RPC execute is denied, approved public RPC paths remain callable, and Actions proof for the hardening checkpoint is documented.
 - Auth verification callback is live: `/auth/callback/` handles Supabase code/hash verification links, app startup includes a fallback callback-token path, Supabase Auth URL Configuration points back to MaintainOps, and a fresh real signup verification path passed.
+- Six state-adapter cleanup phases completed after auth/RLS docs alignment:
+  - filter/pagination events now receive `workspaceUiState` directly.
+  - inventory filter events now receive `workspaceUiState` directly.
+  - part-search events now receive `workspaceUiState` directly.
+  - filter/pagination, inventory filter, part-search, and team work-view modules no longer duplicate localStorage writes that state setters already own.
+  - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
+  - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
 - First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
 - Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.
 - `index.html` loads the state factory before workspace event modules.

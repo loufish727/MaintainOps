@@ -34,6 +34,7 @@ Most recent deployed closed phase:
 
 Most recent local completed phase:
 
+- Six-phase state-adapter cleanup reduced `app.js` to 8,059 lines by routing selected event modules directly through `workspaceUiState` and removing redundant localStorage writes already owned by state setters.
 - Documentation drift cleanup in `c5e7500` reconciled current handoff, next steps, RLS live checkpoint, Supabase setup, and the modularization plan after the RLS/auth checkpoints.
 - Auth callback verification is deployed and live verified, including fresh real signup verification returning through MaintainOps.
 - RLS hardening is closed for the current app-used table/RPC/storage surface, with live dashboard summary PASS and direct cross-company/anonymous probes documented.
@@ -42,9 +43,9 @@ Most recent local completed phase:
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after the auth callback phase:
+Current app.js line count after the state-adapter cleanup run:
 
-- 8,126 lines.
+- 8,059 lines.
 
 Recent extracted/source modules include 57 files under `src/utils`, including:
 
