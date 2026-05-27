@@ -998,8 +998,6 @@ document.addEventListener("submit", (event) => {
   createRequest(event);
 });
 
-init();
-
 async function init() {
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     renderAuth("login", "Supabase config is missing. Add your project URL and publishable anon key to supabase-config.js.");
@@ -8186,3 +8184,5 @@ function downloadCsv(filename, rows) {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+init();
