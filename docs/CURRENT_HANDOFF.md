@@ -33,13 +33,13 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the 2026-05-27 LFES active-work-order state wiring pass after closing the RLS hardening checkpoint and the active-section/active-part/active-asset state passes.
 
 - Latest app behavior commit:
-  - pending commit for active-work-order state wiring.
+  - `94bb07d` (`Wire active work order state to UI factory`).
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-active-work-order-1`
+  - deployed: `app.js?v=lfes-state-active-work-order-1`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
@@ -48,6 +48,8 @@ Ran the 2026-05-27 LFES active-work-order state wiring pass after closing the RL
   - Extracted event module setters and app-owned work-order open/clear paths now route through `setActiveWorkOrderIdState(...)`.
   - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-work-order-1`.
   - Behavior intent: no UI behavior change; this only reduces active-work-order state ownership drift while `app.js` still owns work-order data, mutations, comments, photos, parts-used, detail forms, render, auth/company/location state, and Supabase access.
+  - Verification passed: static checks, workspace UI state smoke, section navigation smoke, message UI smoke, command/open-form smokes, asset Quick Fix smoke, work-order edit smoke, Quick Update smoke, comment smoke, work message start smoke, hosted resource smoke, GitHub Actions Resource Load Smoke for `94bb07d`, and signed-in hosted active-work-order smoke.
+  - Signed-in hosted active-work-order smoke confirmed `app.js?v=lfes-state-active-work-order-1`, opened Work Order Detail for `Hydralic Leak`, returned to Work Orders, verified active section stayed `work`, and captured no relevant console errors.
 - Prior active-asset state-boundary checkpoint:
   - `activeAssetId` is now initialized from `workspaceUiState.getActiveAssetId()`.
   - Added `setActiveAssetIdState(...)` in `app.js` so active-asset changes update both the legacy local variable and `workspaceUiState`.
