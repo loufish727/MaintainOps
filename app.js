@@ -49,6 +49,7 @@ const {
 } = window.MaintainOpsSchemaErrors;
 const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
+const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -243,6 +244,32 @@ const {
 const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 let supabaseClient;
 let session;
+const {
+  authCallbackRedirectUrl,
+  passwordResetRedirectUrl,
+  clearPasswordRecoveryUrl,
+  startAuthCallback,
+  renderAuthCallback,
+  renderAuthCallbackError,
+  startPasswordRecovery,
+  renderPasswordResetRequest,
+  renderPasswordRecovery,
+} = createAuthSessionFlow({
+  windowRef: window,
+  documentRef: document,
+  app,
+  get supabaseClient() { return supabaseClient; },
+  setSession: (value) => { session = value; },
+  render: (...args) => render(...args),
+  renderAuth: (...args) => renderAuth(...args),
+  resetLoginState: (...args) => resetLoginState(...args),
+  withOperationTimeout,
+  authCallback,
+  authCallbackError,
+  passwordResetRequest,
+  passwordRecovery,
+  passwordRecoveryParamsFromUrl,
+});
 let companies = [];
 let activeCompanyId = localStorage.getItem("maintainops.activeCompanyId");
 let locations = [];
@@ -1325,202 +1352,6 @@ function isPasswordRecoveryParams(params) {
 
 function isAuthCallbackParams(params) {
   return window.MaintainOpsAuthRedirects.isAuthCallbackParams(params);
-}
-
-function authCallbackRedirectUrl() {
-  return window.MaintainOpsAuthRedirects.authCallbackUrl(window.location, window.PUBLIC_APP_URL);
-}
-
-function passwordResetRedirectUrl() {
-  return window.MaintainOpsAuthRedirects.cleanAuthUrl(window.location);
-}
-
-function clearPasswordRecoveryUrl() {
-  window.history.replaceState({}, document.title, window.MaintainOpsAuthRedirects.cleanAuthUrl(window.location));
-}
-
-async function startAuthCallback(params) {
-  renderAuthCallback("Verifying your account...");
-
-  try {
-    if (params.error || params.errorDescription) {
-      throw new Error(params.errorDescription || params.error || "This verification link is invalid or expired.");
-    }
-
-    let callbackSession = null;
-    if (params.code) {
-      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(params.code);
-      if (error) throw error;
-      callbackSession = data?.session || null;
-    } else if (params.accessToken && params.refreshToken) {
-      const { data, error } = await supabaseClient.auth.setSession({
-        access_token: params.accessToken,
-        refresh_token: params.refreshToken,
-      });
-      if (error) throw error;
-      callbackSession = data?.session || null;
-    }
-
-    if (!callbackSession) {
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) throw error;
-      callbackSession = data?.session || null;
-    }
-
-    if (!callbackSession) {
-      throw new Error("The verification link did not create a session. Request a new verification email and try again.");
-    }
-
-    session = callbackSession;
-    clearPasswordRecoveryUrl();
-    renderAuthCallback("Verification complete. Loading workspace...");
-    await render();
-  } catch (error) {
-    clearPasswordRecoveryUrl();
-    renderAuthCallbackError(error.message || "This verification link is invalid or expired.");
-  }
-}
-
-function renderAuthCallback(message) {
-  document.body.classList.remove("public-qr-mode");
-  app.innerHTML = authCallback(message);
-}
-
-function renderAuthCallbackError(message) {
-  document.body.classList.remove("public-qr-mode");
-  app.innerHTML = authCallbackError(message);
-  document.querySelector("#auth-back-to-login").addEventListener("click", () => renderAuth("login"));
-}
-
-async function startPasswordRecovery(params = passwordRecoveryParamsFromUrl()) {
-  let ready = false;
-  let initialError = "";
-
-  if (params.accessToken && params.refreshToken) {
-    const { data, error } = await supabaseClient.auth.setSession({
-      access_token: params.accessToken,
-      refresh_token: params.refreshToken,
-    });
-    ready = Boolean(data?.session && !error);
-    if (error) {
-      initialError = "This reset link is expired or invalid. Send a new password reset email and use the newest link.";
-    }
-  } else {
-    initialError = "This reset link is missing the secure session. Send a new password reset email and use the newest link.";
-  }
-
-  renderPasswordRecovery({ ready, initialError });
-}
-
-function renderPasswordResetRequest(initialError = "", initialStatus = "") {
-  document.body.classList.remove("public-qr-mode");
-  app.innerHTML = passwordResetRequest(initialError, initialStatus);
-
-  document.querySelector("#auth-back-to-login").addEventListener("click", () => renderAuth("login"));
-  document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
-  document.querySelector("#password-reset-request-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formElement = event.target;
-    const submitButton = formElement.querySelector("button[type='submit']");
-    const errorTarget = document.querySelector("#auth-error");
-    const statusTarget = document.querySelector("#auth-status");
-    const email = String(new FormData(formElement).get("email") || "").trim();
-    errorTarget.textContent = "";
-    statusTarget.textContent = "Sending reset link...";
-    submitButton.disabled = true;
-    submitButton.textContent = "Sending...";
-
-    try {
-      const { error } = await withOperationTimeout(
-        supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: passwordResetRedirectUrl() }),
-        "Password reset email timed out. Check your connection and try again.",
-        20000
-      );
-      if (error) {
-        statusTarget.textContent = "";
-        errorTarget.textContent = error.message;
-        return;
-      }
-      statusTarget.textContent = "If that email exists in Supabase, a reset link has been sent.";
-    } catch (error) {
-      statusTarget.textContent = "";
-      errorTarget.textContent = error.message || "Could not send reset link.";
-    } finally {
-      if (document.body.contains(submitButton)) {
-        submitButton.disabled = false;
-        submitButton.textContent = "Send Reset Link";
-      }
-    }
-  });
-}
-
-function renderPasswordRecovery({ ready = false, initialError = "" } = {}) {
-  document.body.classList.remove("public-qr-mode");
-  app.innerHTML = passwordRecovery({ ready, initialError });
-
-  document.querySelector("#auth-back-to-login").addEventListener("click", () => {
-    clearPasswordRecoveryUrl();
-    renderAuth("login");
-  });
-  document.querySelector("#auth-send-new-reset").addEventListener("click", () => {
-    clearPasswordRecoveryUrl();
-    renderPasswordResetRequest();
-  });
-  document.querySelector("#password-recovery-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!ready) return;
-    const formElement = event.target;
-    const submitButton = formElement.querySelector("button[type='submit']");
-    const form = new FormData(formElement);
-    const password = String(form.get("password") || "");
-    const confirmPassword = String(form.get("confirmPassword") || "");
-    const errorTarget = document.querySelector("#auth-error");
-    const statusTarget = document.querySelector("#auth-status");
-    errorTarget.textContent = "";
-
-    if (password.length < 6) {
-      errorTarget.textContent = "Password must be at least 6 characters.";
-      return;
-    }
-    if (password !== confirmPassword) {
-      errorTarget.textContent = "Passwords do not match.";
-      return;
-    }
-
-    statusTarget.textContent = "Updating password...";
-    submitButton.disabled = true;
-    submitButton.textContent = "Updating...";
-
-    try {
-      const { error } = await withOperationTimeout(
-        supabaseClient.auth.updateUser({ password }),
-        "Password update timed out. Try the newest reset link again.",
-        20000
-      );
-      if (error) {
-        statusTarget.textContent = "";
-        errorTarget.textContent = error.message;
-        return;
-      }
-      clearPasswordRecoveryUrl();
-      const { data } = await supabaseClient.auth.getSession();
-      session = data.session;
-      statusTarget.textContent = session ? "Password updated. Loading workspace..." : "Password updated. Sign in with your new password.";
-      if (session) {
-        await render();
-        return;
-      }
-      renderAuth("login", "Password updated. Sign in with your new password.");
-    } catch (error) {
-      statusTarget.textContent = "";
-      errorTarget.textContent = error.message || "Could not update password.";
-    } finally {
-      if (document.body.contains(submitButton)) {
-        submitButton.disabled = false;
-        submitButton.textContent = "Update Password";
-      }
-    }
-  });
 }
 
 async function signInWithPasswordWithFallback(email, password) {
