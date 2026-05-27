@@ -27,6 +27,7 @@ Open [index.html](index.html) in a browser or serve the repo with a local web se
 
 For current project handoff, start with:
 
+- [docs/APP_REVIEW_PACKET.md](docs/APP_REVIEW_PACKET.md)
 - [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md)
 - [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
