@@ -36,6 +36,8 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
+- Latest live security state:
+  - 2026-05-27 RLS bulletproofing completed in Supabase Dashboard SQL Editor after `505e9da`; commit the updated SQL/docs before switching branches or machines.
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
@@ -88,11 +90,15 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Signed-in hosted section navigation smoke loaded Taylor Metal Products, confirmed `app.js?v=lfes-state-active-section-1`, clicked Work Orders / Requests / Equipment / Parts / Messages, verified active-section persistence values `work`, `requests`, `assets`, `parts`, and `messages`, and captured no relevant console errors.
 - Current security checkpoint:
   - RLS live checkpoint added at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
+  - Supabase Dashboard SQL hardening applied: `supabase/step-next-rls-bulletproof-hardening.sql`.
+  - QA Test Facility location fixture added for denial coverage: `supabase/step-next-qa-rls-location-fixture.sql`; created location `8dbfd2c0-a500-4bb9-bedc-887a08b391f8`.
+  - Live dashboard summary now has all 9 checks PASS: RLS enabled, policies present, no direct anon table grants, no unexpected anon RPC execute, approved public RPC grants present, QA location present, security-definer search paths pinned, storage buckets private, and storage policy inventory present.
   - Taylor technician direct REST probes returned zero QA Facility rows across app-used tables.
   - Direct anonymous REST reads to app-used tables returned `401`.
   - Taylor technician manager/admin RPC denial passed for `create_company_invite`, `update_company_member_role`, and `cancel_company_invite`.
-  - `ensure_location_request_link` role-denial could not be finished because QA Facility currently has no visible location row; create one QA location to finish that single RPC check.
-  - Live policy metadata inventory is blocked from anon/auth client credentials; dashboard/admin SQL is required for exact `pg_tables` / `pg_policies` / function grant / storage policy inventory.
+  - `ensure_location_request_link` role-denial is now finished against the QA Facility location; Taylor direct RPC was denied with `Only admins or managers can create public request links.`
+  - Anonymous direct reads remain denied (`401`) for sampled app tables, anonymous internal `ensure_location_request_link` execute is denied, and invalid-token public QR intake remains callable with an empty result.
+  - Live policy metadata remains intentionally unavailable to anon/auth client credentials; use dashboard/admin SQL for exact `pg_tables` / `pg_policies` / function grant / storage policy inventory.
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
   - Follow-up RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
   - App-used data tables have RLS/policy coverage in source.
@@ -103,7 +109,7 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Anonymous internal RPC probes now return execute-denied for internal RPCs. Public QR intake remains callable and returns an empty result for an invalid token.
   - QA account for `QA Test Facility` sees only QA company data across app-used tables. Taylor-prefixed storage list probes return empty arrays.
   - Taylor technician account sees only main Taylor company rows or empty result sets across app-used tables, cannot read QA Facility rows, and is denied manager/admin-only RPCs for invite creation, public request link creation, role update, and invite cancel.
-  - Remaining optional symmetry gap before auth/session, public QR submit, or storage/photo/document changes: QA Facility technician smoke.
+  - Remaining optional symmetry gap before auth/session, public QR submit, or storage/photo/document changes: QA Facility technician smoke. Primary RLS blocker is closed for the current app-used surface.
 - Prior state-boundary checkpoint:
   - Added `src/utils/workspaceUiState.js` as the first client-only workspace UI state factory scaffold.
   - Added `tests/smoke/workspace-ui-state-smoke.js`.
