@@ -127,6 +127,7 @@ const requiredResources = [
   "src/render/messageCenterErrorDisplay.js",
   "src/render/appIssueErrorDisplay.js",
   "src/render/workOrderDetailDisplay.js",
+  "src/render/assetDetailDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

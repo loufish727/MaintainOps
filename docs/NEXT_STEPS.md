@@ -6,7 +6,8 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: `c3d3cf3` (`Extract work order detail renderer`).
+- Latest app behavior change: Asset Detail renderer extraction pending commit.
+- Previous app behavior commit: `c3d3cf3` (`Extract work order detail renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -20,10 +21,10 @@ Current state as of 2026-05-27:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest local cache tag: `app.js?v=lfes-hard-work-order-detail-render-1`; `src/render/workOrderDetailDisplay.js?v=lfes-hard-work-order-detail-render-1`.
+- Latest local cache tag: `app.js?v=lfes-hard-asset-detail-render-1`; `src/render/assetDetailDisplay.js?v=lfes-hard-asset-detail-render-1`.
 - Latest deployed auth cache tag before this run: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 7,858 after the Work Order Detail renderer extraction.
+- Current `app.js` line count: 7,783 after the Asset Detail renderer extraction.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -40,6 +41,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
+- Current hard-boundary extraction completed locally: `renderAssetDetail` moved into `src/render/assetDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, and targeted Asset Detail event regression smokes passed. Next deployment verification still needs hosted resource, Actions, and optional signed-in live detail-contract smoke after commit/push.
 - Current hard-boundary extraction completed and deployed in `c3d3cf3`: `renderWorkOrderDetail` moved into `src/render/workOrderDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Work Order event regression smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
 - Current six-phase cleanup completed and deployed in `0512029`: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; deeper live click smoke was not counted as behavior proof because stale workspace search state could not be cleared reliably by the browser automation tool.
 - Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.

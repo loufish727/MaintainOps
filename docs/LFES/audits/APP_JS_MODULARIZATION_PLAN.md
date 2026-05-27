@@ -8,7 +8,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 7,858 after the Work Order Detail renderer extraction.
+- `app.js` line count: 7,783 after the Asset Detail renderer extraction.
 - Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
@@ -24,7 +24,15 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
-- Hard-boundary Work Order Detail renderer extraction completed locally:
+- Hard-boundary Asset Detail renderer extraction completed locally:
+  - commit pending.
+  - moved `renderAssetDetail` to `src/render/assetDetailDisplay.js`.
+  - `app.js` now creates the renderer through explicit dependency injection.
+  - added `tests/smoke/asset-detail-display-smoke.js`.
+  - scope stayed renderer-only; no event handlers, mutations, pending delete state, permission checks, blocker counts, Supabase calls, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
+  - local static checks, renderer contract smoke, Asset Quick Fix / Asset delete-cancel / Asset location warning event regression smokes passed.
+  - LFES catch: preserve missing-asset early return before reading detail-only dependencies.
+- Hard-boundary Work Order Detail renderer extraction completed:
   - commit `c3d3cf3` (`Extract work order detail renderer`).
   - moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`.
   - `app.js` now creates the renderer through explicit dependency injection.
