@@ -7,7 +7,7 @@ This is the recommended restart point for the next session.
 Current state as of 2026-05-26:
 
 - Latest app behavior commit: `a0e8171` (`Wire workspace search state to UI factory`).
-- Latest local app behavior phase: active-section state wiring to `workspaceUiState`; pending commit/deploy.
+- Latest app behavior commit: `390a6e2` (`Wire active section state to UI factory`).
 - Latest RLS/security source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Latest local SQL source additions:
   - `supabase/step-next-invite-default-location.sql`

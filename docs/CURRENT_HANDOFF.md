@@ -49,7 +49,8 @@ Ran the 2026-05-27 LFES active-section state wiring pass after closing the RLS h
   - Removed redundant direct `localStorage.setItem("maintainops.activeSection", activeSection)` writes from app-owned paths touched by this phase.
   - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-section-1`.
   - Behavior intent: no UI behavior change; this only reduces active-section state ownership drift.
-  - Verification passed: static checks, workspace UI state smoke, section navigation smoke, search/filter state smokes, command/navigation regression smokes, hosted resource smoke, local boot smoke with the new cache tag, and GitHub Actions verifier for latest pushed commit.
+  - Verification passed: static checks, workspace UI state smoke, section navigation smoke, search/filter state smokes, command/navigation regression smokes, hosted resource smoke, local boot smoke with the new cache tag, GitHub Actions Resource Load Smoke for `390a6e2`, and signed-in hosted section navigation smoke.
+  - Signed-in hosted section navigation smoke loaded Taylor Metal Products, confirmed `app.js?v=lfes-state-active-section-1`, clicked Work Orders / Requests / Equipment / Parts / Messages, verified active-section persistence values `work`, `requests`, `assets`, `parts`, and `messages`, and captured no relevant console errors.
 - Current security checkpoint:
   - Source-level RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
   - Follow-up RLS audit added at `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
