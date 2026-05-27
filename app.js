@@ -349,6 +349,17 @@ const {
 } = window.MaintainOpsPublicUrlQr.createPublicUrlQrHelpers({
   getPublicAppUrlOverride: () => publicAppUrlOverride,
 });
+const {
+  loadingQrPage,
+  publicRequestQrPage,
+  loadingRequestForm,
+  publicRequestForm,
+  publicRequestError,
+  publicRequestSuccess,
+} = window.MaintainOpsPublicRequestDisplay.createPublicRequestDisplayHelpers({
+  escapeHtml,
+  qrSvgFor,
+});
 let activeSection = workspaceUiState.getActiveSection();
 function setActiveSectionState(value) {
   activeSection = value;
@@ -1616,19 +1627,7 @@ function publicRequestQrTokenFromUrl() {
 
 async function renderPublicRequestQrPage(token) {
   document.body.classList.add("public-qr-mode");
-  app.innerHTML = `
-    <section class="auth-shell public-request-shell qr-page-shell">
-      <div class="auth-card public-qr-card">
-        <div class="brand-row">
-          <span class="brand-mark">MO</span>
-          <div>
-            <h1>Maintenance Request QR</h1>
-            <p>Loading QR code...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  `;
+  app.innerHTML = loadingQrPage();
 
   let intake = null;
   try {
@@ -1647,48 +1646,14 @@ async function renderPublicRequestQrPage(token) {
   }
 
   const requestUrl = publicRequestUrl(token);
-  app.innerHTML = `
-    <section class="auth-shell public-request-shell qr-page-shell">
-      <article class="auth-card public-qr-card">
-        <div class="public-qr-heading">
-          <span class="brand-mark">MO</span>
-          <div>
-            <h1>${escapeHtml(intake.location_name)}</h1>
-            <p>${escapeHtml(intake.company_name)}</p>
-          </div>
-        </div>
-        <div class="public-qr-code">${qrSvgFor(requestUrl, 8)}</div>
-        <div class="public-qr-instructions">
-          <h2>Scan To Request Maintenance</h2>
-          <p>Point your phone camera at this code and describe what needs attention.</p>
-        </div>
-        <p class="public-qr-url">${escapeHtml(requestUrl)}</p>
-        <div class="button-row no-print">
-          <button class="primary-button request-action-button" id="print-public-qr" type="button">Print / Save PDF</button>
-          <a class="secondary-button" href="${escapeHtml(requestUrl)}" target="_blank" rel="noreferrer">Test Form</a>
-        </div>
-      </article>
-    </section>
-  `;
+  app.innerHTML = publicRequestQrPage(intake, requestUrl);
 
   bindPublicQrPrintEvents();
 }
 
 async function renderPublicRequestIntake(token) {
   document.body.classList.remove("public-qr-mode");
-  app.innerHTML = `
-    <section class="auth-shell public-request-shell">
-      <div class="auth-card public-request-card">
-        <div class="brand-row">
-          <span class="brand-mark">MO</span>
-          <div>
-            <h1>Maintenance Request</h1>
-            <p>Loading request form...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  `;
+  app.innerHTML = loadingRequestForm();
 
   let intake = null;
   try {
@@ -1710,55 +1675,13 @@ async function renderPublicRequestIntake(token) {
     return;
   }
 
-  app.innerHTML = `
-    <section class="auth-shell public-request-shell">
-      <form class="auth-card public-request-card" id="public-request-form">
-        <div class="brand-row">
-          <span class="brand-mark">MO</span>
-          <div>
-            <h1>${escapeHtml(intake.company_name)}</h1>
-            <p>${escapeHtml(intake.location_name)} maintenance request</p>
-          </div>
-        </div>
-        <div class="form-grid">
-          <label>What needs attention?<input name="title" required maxlength="140" placeholder="Short issue description"></label>
-          <label>Machine / area<input name="equipment_note" maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
-          <label>Details<textarea name="description" rows="4" maxlength="1000" placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
-          <label>Your name<input name="requester_name" maxlength="120" placeholder="Optional"></label>
-          <label>Contact<input name="requester_contact" maxlength="160" placeholder="Optional phone, radio, or email"></label>
-          <label>Urgency
-            <select name="priority">
-              <option value="medium">Normal</option>
-              <option value="high">High</option>
-              <option value="critical">Critical / down</option>
-              <option value="low">Low</option>
-            </select>
-          </label>
-        </div>
-        <p class="error-text" id="public-request-error"></p>
-        <button class="primary-button request-action-button" type="submit">Send Request</button>
-      </form>
-    </section>
-  `;
+  app.innerHTML = publicRequestForm(intake);
 
   document.querySelector("#public-request-form").addEventListener("submit", (event) => submitPublicRequest(event, token, intake));
 }
 
 function renderPublicRequestError(message) {
-  app.innerHTML = `
-    <section class="auth-shell public-request-shell">
-      <div class="auth-card public-request-card">
-        <div class="brand-row">
-          <span class="brand-mark">MO</span>
-          <div>
-            <h1>Request Link Unavailable</h1>
-            <p>${escapeHtml(message)}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  `;
+  app.innerHTML = publicRequestError(message);
 }
 
 // SECURITY: Public QR intake is intentionally anonymous; all company/location authority must stay inside scoped Supabase RPCs.
@@ -1796,21 +1719,7 @@ async function submitPublicRequest(event, token, intake) {
       if (photoError) photoWarning = `Request sent, but the photo did not upload: ${photoError.message || photoError}`;
     }
 
-    app.innerHTML = `
-      <section class="auth-shell public-request-shell">
-        <div class="auth-card public-request-card">
-          <div class="brand-row">
-            <span class="brand-mark">MO</span>
-            <div>
-              <h1>Request Sent</h1>
-              <p>${escapeHtml(intake.location_name)} maintenance has received it.</p>
-            </div>
-          </div>
-          ${photoWarning ? `<p class="error-text">${escapeHtml(photoWarning)}</p>` : ""}
-          <button class="secondary-button request-action-button" id="public-request-another" type="button">Send Another Request</button>
-        </div>
-      </section>
-    `;
+    app.innerHTML = publicRequestSuccess(intake, photoWarning);
     document.querySelector("#public-request-another").addEventListener("click", () => renderPublicRequestIntake(token));
   } catch (error) {
     if (errorElement) errorElement.textContent = error.message || "Could not send the request.";
