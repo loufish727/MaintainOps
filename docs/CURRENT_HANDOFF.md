@@ -30,19 +30,19 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Ran a five-part readiness pass covering operations planning, app.js authority reduction, public intake hardening, mutation smoke coverage, and public exposure review.
+Ran a five-part readiness pass covering operational readiness scoping, app.js authority reduction, public intake posture, mutation smoke coverage, and public exposure review.
 
 - Latest app behavior commit:
   - `1e91b02` (`Add readiness plans and public request link admin events`).
 - Operational readiness:
-  - Added `docs/OPERATIONS_BACKUP_RESTORE_INCIDENT_PLAN.md`.
-  - Defines pilot recovery objective, systems in scope, backup sources, restore checklist, severity levels, and current gaps.
-- Public request intake hardening:
-  - Added `docs/PUBLIC_REQUEST_INTAKE_HARDENING.md`.
-  - Documents current scoped-RPC model, verified security posture, production hardening checklist, recommended smokes, and remaining public-intake gaps.
-- Public exposure review:
-  - Added `docs/PUBLIC_EXPOSURE_REVIEW_2026-05-27.md`.
-  - Documents public profile/repo/Pages exposure, expected browser-visible Supabase config, and remaining profile/process-publicity gaps.
+  - Identified backup/restore and incident response as a production-readiness workstream.
+  - Detailed runbook/process content is intentionally not promoted in the public repo.
+- Public request intake posture:
+  - Confirmed the public story should stay high level: scoped RPC model, ongoing hardening, and known production-polish gaps.
+  - Detailed public-intake procedure content is intentionally not promoted in the public repo.
+- Public exposure posture:
+  - Confirmed the public repo/profile/Pages view should support critique without exposing full internal operating procedure.
+  - Detailed exposure/process review content is intentionally not promoted in the public repo.
 - app.js authority reduction:
   - Added `src/utils/workspacePublicRequestLinkAdminEvents.js`.
   - Moved only public request-link admin button binding for create, disable, reactivate, and regenerate actions out of `bindWorkspaceEvents()`.
