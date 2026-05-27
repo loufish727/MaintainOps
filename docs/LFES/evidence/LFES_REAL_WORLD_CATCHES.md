@@ -4,6 +4,30 @@ This file records real engineering discoveries, prevented failures, or operation
 
 Do not add theoretical examples. Only document issues actually observed in MaintainOps.
 
+## 2026-05-27 - State Factory Instance Must Exist Before First State Read
+
+- Date: 2026-05-27.
+- Phase/build: active-part state wiring to `workspaceUiState`.
+- Issue discovered: the first deployed active-part build initialized `activePartId` from `workspaceUiState` before the `workspaceUiState` instance was created.
+- How it was discovered: signed-in hosted smoke found a blank app body and page error `Cannot access 'workspaceUiState' before initialization`.
+- Operational risk: state-boundary wiring can pass syntax and module smokes while still breaking live boot if a first-use read is moved above the factory instance.
+- What LFES principle exposed it: deployed cache-tag verification plus signed-in hosted smoke before continuing.
+- What prevented escalation: the phase stopped at live verification, diagnosed the exact boot exception, moved the factory instantiation above first use, bumped the app cache tag, and redeployed.
+- Fix applied or recommended: when moving any legacy state variable into `workspaceUiState`, instantiate the factory before the first migrated state read, not only before the first setter.
+- Lessons learned: state-boundary phases need initialization-order review in addition to event-contract review.
+
+## 2026-05-27 - Active-Part Smoke Needed Disposable Data When Location Had No Parts
+
+- Date: 2026-05-27.
+- Phase/build: active-part state wiring to `workspaceUiState`.
+- Issue discovered: the signed-in live Parts view had no existing part cards to open, so the initial active-part smoke could not cover the detail-open path.
+- How it was discovered: hosted smoke loaded Parts successfully with the expected cache tag, but the Parts list showed zero openable records for the selected live data slice.
+- Operational risk: data-gated verification can leave a state boundary under-verified even when the UI itself is working.
+- What LFES principle exposed it: visible live smoke with selector and page-text inspection instead of accepting a page-load-only check.
+- What prevented escalation: the smoke created disposable part records through the app UI, opened their detail views to cover active-part behavior, then cleaned them up through the app UI and verified no relevant console errors.
+- Fix applied or recommended: future active-record/detail smokes should either pick a known populated fixture or create disposable data with immediate cleanup when the live slice is empty.
+- Lessons learned: live data availability is part of the smoke contract for detail-state boundaries.
+
 ## 2026-05-26 - Clipboard Copy Smoke Needed Conditional Reset Wait
 
 - Date: 2026-05-26.

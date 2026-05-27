@@ -33,13 +33,13 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the 2026-05-27 LFES active-part state wiring pass after closing the RLS hardening checkpoint and the active-section state pass.
 
 - Latest app behavior commit:
-  - pending commit for active-part state wiring.
+  - `99e5af1` (`Fix active part state initialization order`), after `ea9c10a` (`Wire active part state to UI factory`).
 - Latest pushed security/documentation commit:
   - `505e9da` (`Document RLS hardening checkpoint`)
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-active-part-2`
+  - deployed: `app.js?v=lfes-state-active-part-2`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
@@ -48,8 +48,10 @@ Ran the 2026-05-27 LFES active-part state wiring pass after closing the RLS hard
   - Extracted part-detail/message/report/section/search paths that set the active part now route through `setActivePartIdState(...)`.
   - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-part-2`.
   - Behavior intent: no UI behavior change; this only reduces active-part state ownership drift while `app.js` still owns part data, mutations, document upload, delete flow, render, auth/company/location state, and Supabase access.
-  - Verification passed before deployment commit: static checks, workspace UI state smoke, part-detail event smoke, message UI smoke, report-issue command smoke, section navigation smoke, workspace search state smoke, and hosted resource smoke baseline.
+  - Verification passed: static checks, workspace UI state smoke, part-detail event smoke, message UI smoke, report-issue command smoke, section navigation smoke, workspace search state smoke, hosted resource smoke, GitHub Actions Resource Load Smoke for `99e5af1`, and signed-in hosted active-part smoke.
+  - Signed-in hosted active-part smoke confirmed `app.js?v=lfes-state-active-part-2`, opened two disposable part detail views through the live Parts list, cleaned both disposable parts through the app UI, verified active section stayed `parts`, and captured no relevant console errors.
   - LFES catch: the first active-part deployment initialized `activePartId` before the `workspaceUiState` instance existed, causing live boot to stop with `Cannot access 'workspaceUiState' before initialization`; the fix moved `workspaceUiState` instantiation above first use and bumped the app cache tag.
+  - LFES catch: the default Parts view had no existing part cards for live active-part verification, so the smoke used disposable part setup plus app-UI cleanup instead of leaving a data-gated verification gap.
 - Prior active-section state-boundary checkpoint:
   - `activeSection` is now initialized from `workspaceUiState.getActiveSection()`.
   - Added `setActiveSectionState(...)` in `app.js` so active-section changes update both the legacy local variable and `workspaceUiState`.
