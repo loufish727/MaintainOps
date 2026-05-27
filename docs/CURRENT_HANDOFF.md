@@ -35,6 +35,7 @@ Ran six LFES state-adapter cleanup phases after the auth/RLS documentation revie
 - Latest app behavior commit:
   - pending commit for this state-adapter cleanup run.
 - State-adapter cleanup state:
+  - Commit: `0512029` (`Clean up workspace state adapters`).
   - `app.js` line count is now 8,059.
   - `bindWorkspaceFilterPaginationEvents` now receives `workspaceUiState` directly instead of an inline getter/setter adapter.
   - `bindWorkspaceInventoryFilterEvents` now receives `workspaceUiState` directly instead of an inline getter/setter adapter.
@@ -43,7 +44,8 @@ Ran six LFES state-adapter cleanup phases after the auth/RLS documentation revie
   - Message load/start-thread paths no longer duplicate `activeMessageThreadId` / `messageComposerWorkOrderId` localStorage writes after calling the state setter helpers.
   - Cache tag: `lfes-state-adapter-cleanup-1` for `app.js`, `workspaceFilterPaginationEvents.js`, `workspaceInventoryFilterEvents.js`, `workspacePartSearchEvents.js`, and `workspaceTeamWorkViewEvents.js`.
   - Scope stayed client-only UI state persistence cleanup: no selector changes, rendered markup changes, Supabase calls, auth/session startup, RLS, storage upload, public QR submit, or mutation sequencing changes.
-  - Verification passed: static checks for `app.js` and changed modules; workspace filter/pagination state smoke; inventory filter state smoke; part-search smoke updated to use the production `workspaceUiState` persistence owner; workspace UI/search/filter/inventory regression smokes; section navigation smoke; message UI/thread smokes; team invite cancel smoke.
+  - Verification passed: static checks for `app.js` and changed modules; workspace filter/pagination state smoke; inventory filter state smoke; part-search smoke updated to use the production `workspaceUiState` persistence owner; workspace UI/search/filter/inventory regression smokes; section navigation smoke; message UI/thread smokes; team invite cancel smoke; hosted resource smoke; GitHub Actions Resource Load Smoke for `0512029`.
+  - Signed-in live shell/cache smoke passed for `0512029`: workspace loaded and deployed cache tags were present. Deeper live click smoke was not counted as behavior proof because the browser session had a stale workspace search value and the automation tool could not clear it reliably; targeted local smokes remain the behavior proof for these state-adapter changes.
 
 ## Previous Change
 

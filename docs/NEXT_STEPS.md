@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: pending state-adapter cleanup commit after `41a0fe9` (`Add Supabase auth verification callback`).
+- Latest app behavior commit: `0512029` (`Clean up workspace state adapters`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -40,7 +40,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current six-phase cleanup completed locally: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Package/upload/live verification should run after commit if this run is being deployed.
+- Current six-phase cleanup completed and deployed in `0512029`: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; deeper live click smoke was not counted as behavior proof because stale workspace search state could not be cleared reliably by the browser automation tool.
 - Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
 - RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Dashboard/admin SQL hardening is complete for the current app-used table/RPC/storage surface: no direct anon table grants, no unexpected anon RPC execute, RLS/policies present, approved public RPC grants present, security-definer search paths pinned, storage buckets private, and storage policies present.

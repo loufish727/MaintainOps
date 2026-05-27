@@ -16,12 +16,14 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 - RLS hardening is closed for the current app-used surface: dashboard summary checks passed, cross-company Taylor-vs-QA read isolation passed, public request-link role denial against a real QA Facility location passed, anonymous table reads are denied, internal anon RPC execute is denied, approved public RPC paths remain callable, and Actions proof for the hardening checkpoint is documented.
 - Auth verification callback is live: `/auth/callback/` handles Supabase code/hash verification links, app startup includes a fallback callback-token path, Supabase Auth URL Configuration points back to MaintainOps, and a fresh real signup verification path passed.
 - Six state-adapter cleanup phases completed after auth/RLS docs alignment:
+  - commit `0512029` (`Clean up workspace state adapters`).
   - filter/pagination events now receive `workspaceUiState` directly.
   - inventory filter events now receive `workspaceUiState` directly.
   - part-search events now receive `workspaceUiState` directly.
   - filter/pagination, inventory filter, part-search, and team work-view modules no longer duplicate localStorage writes that state setters already own.
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
+  - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
 - First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
 - Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.
 - `index.html` loads the state factory before workspace event modules.
