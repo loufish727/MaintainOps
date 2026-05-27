@@ -3172,39 +3172,6 @@ async function updateWorkOrderSafely(payload, id) {
   return response;
 }
 
-function renderChecklistStep(workOrder, step) {
-  const result = stepResultsByWorkOrder[workOrder.id]?.[step.id];
-  const value = result?.value || "";
-  const baseAttrs = `data-step-result="${step.id}" data-work-order-id="${workOrder.id}"`;
-  let control = `<input ${baseAttrs} value="${escapeHtml(value)}" placeholder="Result">`;
-
-  if (step.response_type === "checkbox") {
-    control = `<label class="check-row"><input ${baseAttrs} type="checkbox" ${value === "checked" ? "checked" : ""}> Done</label>`;
-  }
-
-  if (step.response_type === "pass_fail") {
-    control = `
-      <select ${baseAttrs}>
-        <option value="">Not checked</option>
-        <option value="pass" ${value === "pass" ? "selected" : ""}>Pass</option>
-        <option value="fail" ${value === "fail" ? "selected" : ""}>Fail</option>
-      </select>
-    `;
-  }
-
-  if (step.response_type === "number") {
-    control = `<input ${baseAttrs} type="number" value="${escapeHtml(value)}" placeholder="Reading">`;
-  }
-
-  return `
-    <div class="checklist-step relationship-detail procedure">
-      <span>${step.position}. ${escapeHtml(step.prompt)} ${step.required ? `<small class="required-mark">Required</small>` : ""}</span>
-      ${control}
-      ${result?.completed_at ? `<small>Recorded ${new Date(result.completed_at).toLocaleString()}</small>` : ""}
-    </div>
-  `;
-}
-
 function checklistProgress(workOrder, procedure) {
   const steps = procedure.procedure_steps || [];
   const results = stepResultsByWorkOrder[workOrder.id] || {};
@@ -3314,6 +3281,8 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   getWorkOrderActionWarningId: () => workOrderActionWarningId,
   getWorkOrderActionWarning: () => workOrderActionWarning,
   getParts: () => parts,
+  getStepResultsByWorkOrder: () => stepResultsByWorkOrder,
+  getPendingDeleteWorkOrderId: () => pendingDeleteWorkOrderId,
   getProfilesByUserId: () => profilesByUserId,
   getCommentsError: () => commentsError,
   renderMissingWorkOrderDetail,
@@ -3335,36 +3304,11 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   requiresSafetyDeviceCheck,
   renderWorkOrderMessages,
   renderProcedureOptions,
-  renderChecklistStep,
   money,
   photoMetaText,
   renderActivityItem,
   canDeleteWorkOrders,
-  renderWorkOrderDangerZone,
 });
-function renderWorkOrderDangerZone(workOrder) {
-  const confirming = pendingDeleteWorkOrderId === workOrder.id;
-  return `
-    <section class="delete-zone">
-      <div>
-        <h3>Delete Work Order</h3>
-        <p>This removes the work order and its linked comments, history, parts used, and photo records.</p>
-      </div>
-      ${confirming ? `
-        <div class="delete-warning-panel">
-          <strong>Permanent Delete Warning</strong>
-          <p>You are about to permanently delete "${escapeHtml(workOrder.title)}". This cannot be undone.</p>
-          <div class="button-row">
-            <button class="secondary-button" data-cancel-delete-work-order type="button">Cancel</button>
-            <button class="danger-action-button confirm-delete-button" data-confirm-delete-work-order="${workOrder.id}" type="button">Permanently Delete</button>
-          </div>
-        </div>
-      ` : `
-        <button class="danger-action-button large-delete-button" data-delete-work-order="${workOrder.id}" type="button">Delete Work Order</button>
-      `}
-    </section>
-  `;
-}
 
 function recommendedWorkOrderStep(workOrder) {
   const orderedFields = [

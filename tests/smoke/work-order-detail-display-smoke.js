@@ -32,6 +32,8 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   getWorkOrderActionWarningId: () => "wo-1",
   getWorkOrderActionWarning: () => "Finish checklist first.",
   getParts: () => [{ id: "part-1", name: "Hose", quantity_on_hand: 3 }],
+  getStepResultsByWorkOrder: () => ({ "wo-1": { "step-1": { value: "checked", completed_at: "2026-05-27T00:00:00Z" } } }),
+  getPendingDeleteWorkOrderId: () => "wo-1",
   getProfilesByUserId: () => ({ "user-1": { full_name: "QA User" } }),
   getCommentsError: () => "",
   renderMissingWorkOrderDetail: () => "<p>Missing</p>",
@@ -53,12 +55,10 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   requiresSafetyDeviceCheck: () => true,
   renderWorkOrderMessages: () => '<section data-test-work-messages></section>',
   renderProcedureOptions: () => '<option value="proc-1" selected>Lockout</option>',
-  renderChecklistStep: () => '<label class="check-row">Check guard</label>',
   money: (value) => `$${Number(value).toFixed(2)}`,
   photoMetaText: () => "uploaded",
   renderActivityItem: () => "<article>Status changed</article>",
   canDeleteWorkOrders: () => true,
-  renderWorkOrderDangerZone: () => '<section class="delete-zone"><button data-delete-work-order="wo-1">Delete</button></section>',
 });
 
 const html = renderWorkOrderDetail();
@@ -73,7 +73,9 @@ assert.match(html, /id="parts-used-form"/);
 assert.match(html, /id="photo-form"/);
 assert.match(html, /id="comment-form"/);
 assert.match(html, /id="work-order-history-target"/);
-assert.match(html, /data-delete-work-order="wo-1"/);
+assert.match(html, /data-cancel-delete-work-order/);
+assert.match(html, /data-confirm-delete-work-order="wo-1"/);
+assert.match(html, /data-step-result="step-1"/);
 assert.match(html, /Finish checklist first\./);
 
 const missingRenderer = createWorkOrderDetailDisplayHelpers({
