@@ -86,6 +86,7 @@ const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamI
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
+const { bindWorkspacePublicRequestLinkAdminEvents } = window.MaintainOpsWorkspacePublicRequestLinkAdminEvents;
 const { bindWorkspaceRequestConversionEvents } = window.MaintainOpsWorkspaceRequestConversionEvents;
 const { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerationEvents;
 const { bindWorkspaceFollowUpWorkEvents } = window.MaintainOpsWorkspaceFollowUpWorkEvents;
@@ -4512,20 +4513,11 @@ function bindWorkspaceEvents() {
   const quickFixForm = document.querySelector("#quick-fix-form");
   if (quickFixForm) quickFixForm.addEventListener("submit", createQuickFix);
 
-  document.querySelectorAll("[data-create-public-request-link]").forEach((button) => {
-    button.addEventListener("click", () => createPublicRequestLink(button.dataset.createPublicRequestLink));
-  });
-
-  document.querySelectorAll("[data-disable-public-request-link]").forEach((button) => {
-    button.addEventListener("click", () => disablePublicRequestLink(button.dataset.disablePublicRequestLink));
-  });
-
-  document.querySelectorAll("[data-enable-public-request-link]").forEach((button) => {
-    button.addEventListener("click", () => setPublicRequestLinkActive(button.dataset.enablePublicRequestLink, true));
-  });
-
-  document.querySelectorAll("[data-regenerate-public-request-link]").forEach((button) => {
-    button.addEventListener("click", () => regeneratePublicRequestLink(button.dataset.regeneratePublicRequestLink));
+  bindWorkspacePublicRequestLinkAdminEvents({
+    createPublicRequestLink,
+    disablePublicRequestLink,
+    setPublicRequestLinkActive,
+    regeneratePublicRequestLink,
   });
 
   bindWorkspacePublicRequestLinkCopyEvents({
