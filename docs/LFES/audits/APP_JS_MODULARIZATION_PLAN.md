@@ -8,7 +8,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 8,059 after the state-adapter cleanup run.
+- `app.js` line count: 7,858 after the Work Order Detail renderer extraction.
 - Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
@@ -24,6 +24,13 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
+- Hard-boundary Work Order Detail renderer extraction completed locally:
+  - moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`.
+  - `app.js` now creates the renderer through explicit dependency injection.
+  - added `tests/smoke/work-order-detail-display-smoke.js`.
+  - scope stayed renderer-only; no event handlers, mutations, Supabase calls, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
+  - local static checks, renderer contract smoke, and Work Order edit / Quick Update / comment / Work Message Start event regression smokes passed.
+  - LFES catch: preserve missing-work-order early return before reading detail-only dependencies.
 - First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
 - Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.
 - `index.html` loads the state factory before workspace event modules.

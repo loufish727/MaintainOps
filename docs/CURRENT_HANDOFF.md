@@ -30,10 +30,36 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
+Ran the first hard-boundary renderer extraction after the six-phase state-adapter cleanup.
+
+- Latest app behavior commit:
+  - pending commit for the Work Order Detail renderer extraction.
+- Hard boundary selected:
+  - `renderWorkOrderDetail`.
+- Why it is hard:
+  - It emits the Work Order Detail surface, including status controls, Quick Update, Full Work Order Details, procedure checklist, completion, parts used, photos, comments, history, and delete-zone event contracts.
+- Why it is recoverable:
+  - The extraction is renderer-only. Event binding, Supabase mutations, workflow sequencing, auth/session/company/location state, storage upload, public QR, SQL, and RLS remain in `app.js`.
+- Implementation:
+  - Added `src/render/workOrderDetailDisplay.js`.
+  - `app.js` now creates `renderWorkOrderDetail` through `createWorkOrderDetailDisplayHelpers(...)` with explicit dependency injection.
+  - Added `tests/smoke/work-order-detail-display-smoke.js` to prove the renderer still emits the major detail-form and `data-*` contracts.
+  - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
+  - Cache tag: `lfes-hard-work-order-detail-render-1` for `app.js` and `workOrderDetailDisplay.js`.
+  - `app.js` line count is now 7,858.
+- Verification passed so far:
+  - static checks for `app.js`, `src/render/workOrderDetailDisplay.js`, and the new smoke.
+  - `tests/smoke/work-order-detail-display-smoke.js`.
+  - targeted event regression smokes for Work Order edit, Quick Update, comment, and Work Message Start.
+- LFES catch:
+  - the first extracted renderer version asked for nonessential dependency getters before the missing-work-order early return. The smoke caught this; the module now preserves the old early-return behavior before reading detail-only dependencies.
+
+## Previous Change
+
 Ran six LFES state-adapter cleanup phases after the auth/RLS documentation review.
 
 - Latest app behavior commit:
-  - pending commit for this state-adapter cleanup run.
+  - `0512029` (`Clean up workspace state adapters`).
 - State-adapter cleanup state:
   - Commit: `0512029` (`Clean up workspace state adapters`).
   - `app.js` line count is now 8,059.
@@ -47,7 +73,7 @@ Ran six LFES state-adapter cleanup phases after the auth/RLS documentation revie
   - Verification passed: static checks for `app.js` and changed modules; workspace filter/pagination state smoke; inventory filter state smoke; part-search smoke updated to use the production `workspaceUiState` persistence owner; workspace UI/search/filter/inventory regression smokes; section navigation smoke; message UI/thread smokes; team invite cancel smoke; hosted resource smoke; GitHub Actions Resource Load Smoke for `0512029`.
   - Signed-in live shell/cache smoke passed for `0512029`: workspace loaded and deployed cache tags were present. Deeper live click smoke was not counted as behavior proof because the browser session had a stale workspace search value and the automation tool could not clear it reliably; targeted local smokes remain the behavior proof for these state-adapter changes.
 
-## Previous Change
+## Prior Change
 
 Ran the HIGH-risk auth verification callback phase after closing the RLS checkpoint.
 

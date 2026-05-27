@@ -126,6 +126,7 @@ const requiredResources = [
   "src/render/myWorkQueueDisplay.js",
   "src/render/messageCenterErrorDisplay.js",
   "src/render/appIssueErrorDisplay.js",
+  "src/render/workOrderDetailDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];

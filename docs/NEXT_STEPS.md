@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: `0512029` (`Clean up workspace state adapters`).
+- Latest app behavior commit: pending Work Order Detail renderer extraction after `0512029` (`Clean up workspace state adapters`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -20,10 +20,10 @@ Current state as of 2026-05-27:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest local cache tag: `app.js?v=lfes-state-adapter-cleanup-1`; selected state event modules also use `lfes-state-adapter-cleanup-1`.
+- Latest local cache tag: `app.js?v=lfes-hard-work-order-detail-render-1`; `src/render/workOrderDetailDisplay.js?v=lfes-hard-work-order-detail-render-1`.
 - Latest deployed auth cache tag before this run: `app.js?v=auth-callback-1`; `src/utils/authRedirects.js?v=auth-callback-1`.
 - Latest state-factory cache tag: `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
-- Current `app.js` line count: 8,059 after the state-adapter cleanup run.
+- Current `app.js` line count: 7,858 after the Work Order Detail renderer extraction.
 - Current RLS source checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current auth checkpoint: dedicated `/auth/callback/` route is live, Supabase Auth URL Configuration points at MaintainOps, and a fresh real signup verification email returned through MaintainOps successfully. Do not store test passwords or auth links in docs.
@@ -40,6 +40,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
+- Current hard-boundary extraction completed locally: `renderWorkOrderDetail` moved into `src/render/workOrderDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, and targeted Work Order event regression smokes passed. Package/upload/live verification should run after commit if this run is being deployed.
 - Current six-phase cleanup completed and deployed in `0512029`: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; deeper live click smoke was not counted as behavior proof because stale workspace search state could not be cleared reliably by the browser automation tool.
 - Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
