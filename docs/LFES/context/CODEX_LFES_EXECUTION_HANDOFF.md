@@ -34,7 +34,8 @@ Most recent deployed closed phase:
 
 Most recent local completed phase:
 
-- Hard-boundary Create Work Order renderer extraction is complete locally and pending deployment verification. It moved `renderCreateWorkOrder` to `src/render/createWorkOrderDisplay.js`, reducing `app.js` to 7,627 lines. The boundary is renderer-only; event binding, submit handling, payload construction, inserts, photo upload, part usage, comment creation, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, and New Work Order / Asset location warning event regression smokes passed.
+- Hard-boundary Quick Fix renderer extraction is complete locally and pending deployment verification. It moved `renderQuickFixForm` to `src/render/quickFixDisplay.js`, reducing `app.js` to 7,569 lines. The boundary is renderer-only; event binding, `createQuickFix` submit handling, payload construction, work-order insert, new-equipment creation, photo upload, part usage, request conversion, asset status mutation, activity logging, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes passed.
+- Hard-boundary Create Work Order renderer extraction in `c60cf05` moved `renderCreateWorkOrder` to `src/render/createWorkOrderDisplay.js`, reducing `app.js` to 7,627 lines. The boundary is renderer-only; event binding, submit handling, payload construction, inserts, photo upload, part usage, comment creation, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, New Work Order / Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed by browser proof after the local unauthenticated verifier hit GitHub API rate limit.
 - Hard-boundary Message Center renderer extraction in `e4380ec` moved `renderMessageCenter` to `src/render/messageCenterDisplay.js`, reducing `app.js` to 7,706 lines. The boundary is renderer-only; event binding, message read-state writes, thread creation, reply submission, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, message event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
 - Hard-boundary Asset Detail renderer extraction in `c58aa67` moved `renderAssetDetail` to `src/render/assetDetailDisplay.js`, reducing `app.js` to 7,783 lines. The boundary is renderer-only; workflow events, mutations, pending delete state, permissions, blocker counts, auth/session/company/location state, storage, public QR, SQL, and RLS remain in `app.js`/existing event modules. Static checks, targeted renderer smoke, Asset Detail event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed.
 - Hard-boundary Work Order Detail renderer extraction in `c3d3cf3` moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`, reducing `app.js` to 7,858 lines. The boundary is renderer-only; workflow events and mutations remain in `app.js`/existing event modules. Static checks, targeted renderer/event smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
@@ -47,9 +48,9 @@ Most recent local completed phase:
 
 `app.js` remains the main structural risk.
 
-Current app.js line count after the Create Work Order renderer extraction:
+Current app.js line count after the Quick Fix renderer extraction:
 
-- 7,627 lines.
+- 7,569 lines.
 
 Recent extracted/source modules include 57 files under `src/utils`, including:
 

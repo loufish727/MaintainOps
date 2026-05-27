@@ -30,10 +30,36 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Continued the hard-boundary renderer run with Create Work Order.
+Continued the hard-boundary renderer run with Quick Fix.
 
 - Latest local behavior change:
-  - Create Work Order renderer extraction pending commit.
+  - Quick Fix renderer extraction pending commit.
+- Hard boundary selected:
+  - `renderQuickFixForm`.
+- Why it is hard:
+  - It emits the Quick Fix mutation form surface, including request-derived defaults, equipment selection, asset-location warning anchor, photo field, machine-down/completed/safety checkboxes, assignment/procedure fields, equipment-status selection, parts-used fields, follow-up flag, and the `#quick-fix-form` submit contract.
+- Why it is recoverable:
+  - The extraction is renderer-only. Event binding, `createQuickFix` submit handling, payload construction, work-order insert, new-equipment creation, photo upload, part usage, request conversion, asset status mutation, activity logging, auth/session/company/location state, storage upload, public QR, SQL, and RLS remain in `app.js` or existing event modules.
+- Implementation:
+  - Added `src/render/quickFixDisplay.js`.
+  - `app.js` now creates `renderQuickFixForm` through `createQuickFixDisplayHelpers(...)` with explicit dependency injection.
+  - Added `tests/smoke/quick-fix-display-smoke.js` to prove the renderer still emits the major Quick Fix form and field contracts.
+  - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
+  - Cache tag: `lfes-hard-quick-fix-render-1` for `app.js` and `quickFixDisplay.js`.
+  - `app.js` line count is now 7,569.
+- Verification passed so far:
+  - static checks for `app.js`, `src/render/quickFixDisplay.js`, and the new smoke.
+  - `tests/smoke/quick-fix-display-smoke.js`.
+  - targeted event regression smokes for Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, and Asset location warning.
+- LFES decision:
+  - the full `createQuickFix` mutation boundary was not moved in this run because it spans multiple writes and needs a dedicated disposable mutation/cleanup smoke before extraction.
+
+## Previous Change
+
+Continued the hard-boundary renderer run with Create Work Order.
+
+- Latest app behavior commit:
+  - `c60cf05` (`Extract create work order renderer`).
 - Hard boundary selected:
   - `renderCreateWorkOrder`.
 - Why it is hard:
@@ -46,13 +72,15 @@ Continued the hard-boundary renderer run with Create Work Order.
   - Added `tests/smoke/create-work-order-display-smoke.js` to prove the renderer still emits the major Create Work Order form and field contracts.
   - Added the new render module to `index.html` and `tests/smoke/resource-load.spec.js`.
   - Cache tag: `lfes-hard-create-work-order-render-1` for `app.js` and `createWorkOrderDisplay.js`.
-  - `app.js` line count is now 7,627.
-- Verification passed so far:
+  - `app.js` line count moved from 7,706 to 7,627.
+- Verification passed:
   - static checks for `app.js`, `src/render/createWorkOrderDisplay.js`, and the new smoke.
   - `tests/smoke/create-work-order-display-smoke.js`.
   - targeted event regression smokes for New Work Order command opener and Asset location warning.
+  - hosted resource smoke.
+  - GitHub Actions Resource Load Smoke for `c60cf05`, run `26532736494`, passed by browser proof after local unauthenticated verifier hit API rate limit.
 
-## Previous Change
+## Earlier Change
 
 Continued the hard-boundary renderer run with Message Center.
 

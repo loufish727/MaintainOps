@@ -8,7 +8,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 
 ## Current Checkpoint - 2026-05-27
 
-- `app.js` line count: 7,627 after the Create Work Order renderer extraction.
+- `app.js` line count: 7,569 after the Quick Fix renderer extraction.
 - Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
@@ -24,8 +24,16 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - message load/start-thread paths no longer duplicate localStorage writes after state setter helper calls.
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
-- Hard-boundary Create Work Order renderer extraction completed locally:
+- Hard-boundary Quick Fix renderer extraction completed locally:
   - commit pending.
+  - moved `renderQuickFixForm` to `src/render/quickFixDisplay.js`.
+  - `app.js` now creates the renderer through explicit dependency injection.
+  - added `tests/smoke/quick-fix-display-smoke.js`.
+  - scope stayed form-renderer-only; no `createQuickFix` submit handler, payload construction, work-order insert, new-equipment creation, photo upload, part usage, request conversion, asset status mutation, activity logging, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
+  - local static checks, renderer contract smoke, Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, and Asset location warning event regression smokes passed.
+  - LFES decision: full `createQuickFix` mutation extraction was rejected for this run because it needs a dedicated disposable mutation/cleanup smoke before extraction.
+- Hard-boundary Create Work Order renderer extraction completed:
+  - commit `c60cf05` (`Extract create work order renderer`).
   - moved `renderCreateWorkOrder` to `src/render/createWorkOrderDisplay.js`.
   - `app.js` now creates the renderer through explicit dependency injection.
   - added `tests/smoke/create-work-order-display-smoke.js`.
