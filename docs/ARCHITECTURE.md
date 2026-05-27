@@ -1,16 +1,20 @@
 # MaintainOps Architecture
 
-MaintainOps is currently a vanilla browser app backed by Supabase. It is intentionally simple: one HTML file, one large JavaScript file, one CSS file, and SQL migration files.
+MaintainOps is currently a vanilla browser app backed by Supabase. It is intentionally simple: static HTML/CSS/JavaScript, browser-loaded modules, SQL migration files, and Supabase services.
 
 ## Frontend Files
 
 - `index.html`
-  - Loads Supabase client, QR code generator, `supabase-config.js`, and `app.js`.
+  - Loads Supabase client, QR code generator, `supabase-config.js`, extracted app modules, and `app.js`.
   - Cache-buster query strings are manually bumped after changes.
 
 - `app.js`
-  - Auth, data loading, rendering, event binding, and Supabase operations.
-  - Major concerns live in this file right now: work orders, parts, equipment, PM, procedures, messages, settings, team, search, and QA support.
+  - Still owns most app authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, workflow sequencing, event binding, and many Supabase operations.
+  - Current line count is about 7,442 after ongoing modularization work.
+
+- `src/`
+  - Contains extracted render helpers, event-binding groups, UI state helpers, query/list helpers, and selected workflow boundaries.
+  - Recent examples include `src/workflows/quickFixWorkflow.js` and render modules for Work Order Detail, Equipment Detail, Message Center, Create Work Order, and Quick Fix.
 
 - `styles.css`
   - App styling for desktop and mobile.
@@ -180,5 +184,7 @@ Known security hardening already addressed:
 - Company names escaped in UI.
 - Some security-definer functions hardened.
 - Message membership policy was tightened.
+- RLS and Data API exposure were reviewed for the current app-used surface.
+- Anonymous direct table access is not part of the intended model.
 
 Do not weaken RLS for convenience.

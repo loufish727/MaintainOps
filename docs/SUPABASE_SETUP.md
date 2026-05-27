@@ -113,11 +113,7 @@ Maintenance request photos:
 
 Run `supabase/step-next-maintenance-request-photos.sql` before testing QR or internal request photo uploads. It adds optional request photo metadata columns, creates the private `maintenance-request-photos` bucket, and installs the public QR upload policy plus the attach RPC.
 
-## Taylor Metal Location Cleanup
-
-Company ID:
-
-`0875d674-7f07-4493-8668-701d192f4421`
+## QA Location Cleanup
 
 Expected locations:
 
@@ -169,9 +165,9 @@ Make a tester manager:
 update public.company_members cm
 set role = 'manager'
 from auth.users u
-where cm.company_id = '0875d674-7f07-4493-8668-701d192f4421'::uuid
+where cm.company_id = '<company-id>'::uuid
   and cm.user_id = u.id
-  and lower(u.email) = lower('louie@taylormetal.com');
+  and lower(u.email) = lower('<tester-email>');
 
 notify pgrst, 'reload schema';
 ```
@@ -186,5 +182,5 @@ select
   cm.role
 from public.company_members cm
 join auth.users u on u.id = cm.user_id
-where lower(u.email) = lower('louie@taylormetal.com');
+where lower(u.email) = lower('<tester-email>');
 ```

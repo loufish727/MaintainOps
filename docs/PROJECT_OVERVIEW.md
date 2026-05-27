@@ -27,16 +27,21 @@ Remove all references to MaintenanceX or Maintenance X. The app must remain orig
 ## App Entry Points
 
 - Main app: `index.html`
-- Main logic: `app.js`
+- Main orchestration: `app.js`
+- Extracted modules: `src/`
 - Styling: `styles.css`
 - Supabase config example: `supabase-config.example.js`
 - Local Supabase config: `supabase-config.js`
 
-## Current Local URL
+## Current Local Testing
 
 Use a cache-bust query when testing after changes:
 
-`file:///C:/Users/louie/Documents/Codex/2026-04-28/theres-an-ap-called-maintenance-x/index.html?qa_bust=handoff`
+`http://127.0.0.1:<port>/?qa_bust=<unique-token>`
+
+The live app is hosted at:
+
+`https://loufish727.github.io/MaintainOps/`
 
 ## Current Important UX Decisions
 
@@ -51,11 +56,11 @@ Use a cache-bust query when testing after changes:
 - Parts are compact tiles that open into detail cards.
 - Warning states should be visually strong. `Critical` and `Overdue` badges should be obvious.
 
-## Current Known Company Data
+## Current QA Data
 
-Company: `Taylor Metal Products`
+The current hosted app has seeded company/location data used for development and smoke testing.
 
-Locations:
+Example location set used during testing:
 
 - Salem, OR
 - Riverside, CA
@@ -63,18 +68,4 @@ Locations:
 - Sacramento, CA
 - Auburn, WA
 
-Company ID currently used during testing:
-
-`0875d674-7f07-4493-8668-701d192f4421`
-
-## Test User
-
-Tester email:
-
-`louie@taylormetal.com`
-
-Known role at last handoff:
-
-`manager`
-
-This user was used to validate technician and manager behavior. Do not assume production-grade real personnel data yet; the project has QA data and stress-test records intentionally left in the database.
+Do not assume production-grade real personnel data yet; the project has QA data and stress-test records intentionally left in the database.

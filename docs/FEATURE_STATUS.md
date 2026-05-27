@@ -37,7 +37,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Team invites.
 - Team role updates.
 - Company logo upload.
-- Public request QR/link concept per location.
+- Public request QR/link intake per location.
 - Location-scoped search.
 - Mobile shell and desktop layout.
 
@@ -62,6 +62,10 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
+- Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
+- RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
+- Quick Fix submit workflow was extracted behind explicit dependency injection.
+- Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.
 - Work-card warning badges made darker.
 - Work-card badge row changed to prevent desktop clipping.
 - Location list changed to Taylor Metal branches.
@@ -85,12 +89,13 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - Current search returns usable previews and paged work-order search.
   - Later add explicit "view all matching results" screens.
 
-- Request external intake final hosting path.
-  - QR code/link concept exists, but GitHub Pages/public path needs final production routing cleanup.
+- Public request production polish.
+  - QR/link intake exists through scoped public RPC paths.
+  - Custom-domain routing, final public-facing copy, and production support process still need a final rollout pass.
 
-- Automated tests.
-  - Current testing is manual/browser/API stress testing.
-  - No formal test runner exists yet.
+- Automated test coverage.
+  - Current coverage includes targeted smoke tests under `tests/smoke`, hosted resource checks, signed-in live lifecycle smokes for selected high-risk paths, and GitHub Actions Resource Load Smoke.
+  - A comprehensive unit/integration/end-to-end suite does not exist yet.
 
 ## UI Direction
 
