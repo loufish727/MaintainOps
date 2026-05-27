@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Ran the first hard-boundary renderer extraction after the six-phase state-adapter cleanup.
 
 - Latest app behavior commit:
-  - pending commit for the Work Order Detail renderer extraction.
+  - `c3d3cf3` (`Extract work order detail renderer`).
 - Hard boundary selected:
   - `renderWorkOrderDetail`.
 - Why it is hard:
@@ -51,6 +51,9 @@ Ran the first hard-boundary renderer extraction after the six-phase state-adapte
   - static checks for `app.js`, `src/render/workOrderDetailDisplay.js`, and the new smoke.
   - `tests/smoke/work-order-detail-display-smoke.js`.
   - targeted event regression smokes for Work Order edit, Quick Update, comment, and Work Message Start.
+  - hosted resource smoke.
+  - GitHub Actions Resource Load Smoke for `c3d3cf3`, run `26531698094`.
+  - signed-in live Work Order Detail renderer smoke: new app/detail module cache tags present; Hydralic Leak detail opened; `#status-select`, Quick Update form, Full Work Order Details form, completion form, parts form, photo form, comment form, history section, and delete contract were present.
 - LFES catch:
   - the first extracted renderer version asked for nonessential dependency getters before the missing-work-order early return. The smoke caught this; the module now preserves the old early-return behavior before reading detail-only dependencies.
 

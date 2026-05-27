@@ -25,11 +25,12 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - scope stayed client-only UI state persistence cleanup; no workflow mutation, selector, render, auth/session, public QR submit, storage, SQL, or RLS changes.
   - static checks, targeted state/event smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; browser automation could not complete deeper live click proof because stale workspace search state could not be cleared reliably in the in-app browser.
 - Hard-boundary Work Order Detail renderer extraction completed locally:
+  - commit `c3d3cf3` (`Extract work order detail renderer`).
   - moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`.
   - `app.js` now creates the renderer through explicit dependency injection.
   - added `tests/smoke/work-order-detail-display-smoke.js`.
   - scope stayed renderer-only; no event handlers, mutations, Supabase calls, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
-  - local static checks, renderer contract smoke, and Work Order edit / Quick Update / comment / Work Message Start event regression smokes passed.
+  - local static checks, renderer contract smoke, Work Order edit / Quick Update / comment / Work Message Start event regression smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
   - LFES catch: preserve missing-work-order early return before reading detail-only dependencies.
 - First workspace UI state factory scaffold is in `src/utils/workspaceUiState.js`.
 - Targeted state factory smoke is in `tests/smoke/workspace-ui-state-smoke.js`.

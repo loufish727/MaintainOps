@@ -34,7 +34,7 @@ Most recent deployed closed phase:
 
 Most recent local completed phase:
 
-- Hard-boundary Work Order Detail renderer extraction moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`, reducing `app.js` to 7,858 lines. The boundary is renderer-only; workflow events and mutations remain in `app.js`/existing event modules.
+- Hard-boundary Work Order Detail renderer extraction in `c3d3cf3` moved `renderWorkOrderDetail` to `src/render/workOrderDetailDisplay.js`, reducing `app.js` to 7,858 lines. The boundary is renderer-only; workflow events and mutations remain in `app.js`/existing event modules. Static checks, targeted renderer/event smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
 - Six-phase state-adapter cleanup in `0512029` reduced `app.js` to 8,059 lines by routing selected event modules directly through `workspaceUiState` and removing redundant localStorage writes already owned by state setters. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed; signed-in live shell/cache smoke passed, while deeper browser click proof was limited by stale workspace search state in the automation session.
 - Documentation drift cleanup in `c5e7500` reconciled current handoff, next steps, RLS live checkpoint, Supabase setup, and the modularization plan after the RLS/auth checkpoints.
 - Auth callback verification is deployed and live verified, including fresh real signup verification returning through MaintainOps.

@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior commit: pending Work Order Detail renderer extraction after `0512029` (`Clean up workspace state adapters`).
+- Latest app behavior commit: `c3d3cf3` (`Extract work order detail renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -40,7 +40,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current hard-boundary extraction completed locally: `renderWorkOrderDetail` moved into `src/render/workOrderDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, and targeted Work Order event regression smokes passed. Package/upload/live verification should run after commit if this run is being deployed.
+- Current hard-boundary extraction completed and deployed in `c3d3cf3`: `renderWorkOrderDetail` moved into `src/render/workOrderDetailDisplay.js` with explicit dependency injection. Static checks, renderer contract smoke, targeted Work Order event regression smokes, hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live detail-contract smoke passed.
 - Current six-phase cleanup completed and deployed in `0512029`: filter/pagination state adapter simplification, inventory filter state adapter simplification, part-search state adapter simplification, team work-view redundant storage cleanup, message load redundant storage cleanup, and message composer redundant storage cleanup. Static checks, targeted smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke passed. Signed-in live shell/cache smoke passed; deeper live click smoke was not counted as behavior proof because stale workspace search state could not be cleared reliably by the browser automation tool.
 - Auth callback phase is complete in `41a0fe9`; hosted resource smoke, hosted `/auth/callback/` invalid-link smoke, signed-in normal workspace boot, GitHub Actions Resource Load Smoke #253, and a fresh real signup verification email path passed.
 - GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
