@@ -6,8 +6,8 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior change: Quick Fix submit workflow extraction pending commit.
-- Previous app behavior commit: `c60cf05` (`Extract create work order renderer`).
+- Latest app behavior change: `954466c` (`Extract quick fix submit workflow`).
+- Previous app behavior commit: `b5b10aa` (`Extract quick fix renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).
 - Latest RLS/security checkpoints:
@@ -41,7 +41,7 @@ Current state as of 2026-05-27:
 
 Recommended immediate next controlled phase:
 
-- Current HIGH-risk boundary completed locally and awaiting deploy verification: `createQuickFix` moved into `src/workflows/quickFixWorkflow.js` with explicit dependency injection. Static checks, workflow mock smoke, renderer smoke, Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, and local boot smoke passed. Pre-extraction hosted disposable lifecycle smoke passed.
+- Current HIGH-risk boundary completed, deployed, and live verified in `954466c`: `createQuickFix` moved into `src/workflows/quickFixWorkflow.js` with explicit dependency injection. Static checks, workflow mock smoke, renderer smoke, Quick Fix opener / Asset Quick Fix opener / Request Quick Fix opener / Asset location warning event regression smokes, local boot smoke, hosted resource smoke, GitHub Actions Resource Load Smoke #271, and hosted disposable Quick Fix lifecycle smoke passed. The hosted lifecycle smoke created `LFES disposable quick fix 1779910619626`, verified status `open`, deleted it through the app UI, confirmed `remainingHeading: 0`, served `app.js?v=lfes-quick-fix-workflow-1`, and captured no browser logs.
 - Do not move adjacent storage/photo internals, request conversion internals, part usage internals, auth/session/company/location startup, SQL/RLS, or broad render in the same phase.
 - Current run caught and fixed renderer initialization-order drift; future factory-created renderer extractions must review startup order and forward dependency reads.
 - Current run also reinforced that every `app.js` behavior fix must bump the app cache tag in `index.html`.

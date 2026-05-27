@@ -9,7 +9,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 ## Current Checkpoint - 2026-05-27
 
 - `app.js` line count: 7,442 after the Quick Fix submit workflow extraction.
-- Current app behavior checkpoint: `41a0fe9` (`Add Supabase auth verification callback`).
+- Current app behavior checkpoint: `954466c` (`Extract quick fix submit workflow`).
 - Current documentation cleanup checkpoint: `c5e7500` (`Clean up docs after auth and RLS checkpoints`).
 - RLS source audit checkpoint is documented in `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-27.md`.
 - RLS live hardening checkpoint is documented in `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`.
@@ -32,12 +32,14 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
   - scope stayed form-renderer-only; no `createQuickFix` submit handler, payload construction, work-order insert, new-equipment creation, photo upload, part usage, request conversion, asset status mutation, activity logging, auth/session/company/location startup, storage upload, public QR submit, SQL, or RLS changes.
   - local static checks, renderer contract smoke, Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, Asset location warning event regression smokes, hosted resource smoke, and GitHub Actions Resource Load Smoke #265 passed.
   - LFES decision: full `createQuickFix` mutation extraction was rejected for this run because it needs a dedicated disposable mutation/cleanup smoke before extraction.
-- High-risk Quick Fix submit workflow extraction is pending deploy verification:
+- High-risk Quick Fix submit workflow extraction completed:
+  - commit `954466c` (`Extract quick fix submit workflow`).
   - moved `createQuickFix` to `src/workflows/quickFixWorkflow.js`.
   - `app.js` now injects all Quick Fix workflow dependencies explicitly and remains owner of auth/session/company/location startup, render orchestration, SQL/RLS, storage policy, and adjacent workflows.
   - added `tests/smoke/quick-fix-workflow-smoke.js` and `tests/smoke/quick-fix-live-lifecycle-smoke.js`.
   - `app.js` moved from 7,569 to 7,442 lines.
-  - pre-extraction hosted disposable Quick Fix lifecycle smoke passed; local static checks, workflow mock smoke, Quick Fix renderer/event regression smokes, and local boot/resource smoke passed after extraction.
+  - pre-extraction hosted disposable Quick Fix lifecycle smoke passed; local static checks, workflow mock smoke, Quick Fix renderer/event regression smokes, local boot/resource smoke, hosted GitHub Pages resource smoke, GitHub Actions Resource Load Smoke #271, and hosted disposable Quick Fix lifecycle smoke passed after extraction.
+  - hosted post-extraction lifecycle proof created `LFES disposable quick fix 1779910619626`, verified status `open`, deleted it through the app UI, confirmed `remainingHeading: 0`, served `app.js?v=lfes-quick-fix-workflow-1`, and captured no browser logs.
   - LFES catches: renderer factory extraction changed startup hoisting assumptions; app-only startup fixes still require hosted cache tag bumps before live proof.
 - Hard-boundary Create Work Order renderer extraction completed:
   - commit `c60cf05` (`Extract create work order renderer`).

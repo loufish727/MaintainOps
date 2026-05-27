@@ -30,10 +30,10 @@ The app is a working Supabase-backed MaintainOps prototype with:
 
 ## Most Recent Change
 
-Started the HIGH-risk Quick Fix submit workflow extraction after proving a disposable lifecycle smoke.
+Completed and deployed the HIGH-risk Quick Fix submit workflow extraction after proving disposable lifecycle coverage.
 
 - Latest app behavior commit:
-  - pending commit.
+  - `954466c` (`Extract quick fix submit workflow`).
 - Hard boundary selected:
   - `createQuickFix` submit workflow.
 - Why it is hard:
@@ -48,12 +48,15 @@ Started the HIGH-risk Quick Fix submit workflow extraction after proving a dispo
   - Added the workflow module to `index.html` and `tests/smoke/resource-load.spec.js`.
   - Cache tag: `lfes-quick-fix-workflow-1` for `app.js` and `quickFixWorkflow.js`.
   - `app.js` line count is now 7,442.
-- Verification passed so far:
+- Verification passed:
   - static checks for `app.js`, `src/workflows/quickFixWorkflow.js`, and the new smoke files.
   - `tests/smoke/quick-fix-workflow-smoke.js`.
   - `tests/smoke/quick-fix-display-smoke.js`.
   - targeted event regression smokes for Quick Fix command opener, Asset Quick Fix opener, Request Quick Fix opener, and Asset location warning.
   - local boot smoke.
+  - hosted GitHub Pages resource smoke.
+  - GitHub Actions Resource Load Smoke #271 passed for `954466c`.
+  - hosted disposable Quick Fix lifecycle smoke passed on deployed tag `app.js?v=lfes-quick-fix-workflow-1`: created `LFES disposable quick fix 1779910619626`, verified Work Order Detail status `open`, deleted it through the app UI, confirmed `remainingHeading: 0`, and captured no browser logs.
 - Live proof before extraction:
   - hosted disposable Quick Fix lifecycle passed with the current app path: created a Quick Fix, verified Work Order Detail status `open`, deleted through app UI, and verified the heading was gone.
 - LFES decision:
