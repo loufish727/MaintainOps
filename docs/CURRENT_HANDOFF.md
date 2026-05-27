@@ -33,7 +33,7 @@ The app is a working Supabase-backed MaintainOps prototype with:
 Continued the app-focused public request intake hardening path with a contained helper extraction.
 
 - Latest app behavior commit:
-  - Pending commit after local verification.
+  - `88ecad0` (`Extract public request token helper`).
 - app.js authority reduction:
   - Added `src/utils/publicRequestTokens.js`.
   - Moved public request token generation out of `app.js` while leaving public request-link RPC updates, link data, auth/company/location state, public intake submit, SQL/RLS, and render behavior in `app.js`.

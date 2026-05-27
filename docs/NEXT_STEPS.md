@@ -6,7 +6,7 @@ This is the recommended restart point for the next session.
 
 Current state as of 2026-05-27:
 
-- Latest app behavior change: pending commit after local verification for public request token helper extraction.
+- Latest app behavior change: `88ecad0` (`Extract public request token helper`).
 - Previous app behavior commit: `b5b10aa` (`Extract quick fix renderer`).
 - Latest documentation checkpoint: `bf4cabe` (`Document real signup verification pass`).
 - Prior state-boundary behavior commit: `e7c1a70` (`Wire message UI state to workspace factory`).

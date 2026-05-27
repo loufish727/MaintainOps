@@ -9,7 +9,7 @@ The purpose is not cosmetic cleanup or trendy architecture. The purpose is to pr
 ## Current Checkpoint - 2026-05-27
 
 - `app.js` line count: 7,430 after the public request token helper extraction.
-- Current app behavior checkpoint: pending commit after local verification for public request token helper extraction.
+- Current app behavior checkpoint: `88ecad0` (`Extract public request token helper`).
 - Latest contained public request hardening:
   - added `src/utils/publicRequestTokens.js`.
   - moved token generation out of `app.js`.
