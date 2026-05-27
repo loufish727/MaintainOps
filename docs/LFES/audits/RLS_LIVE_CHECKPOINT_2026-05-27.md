@@ -4,13 +4,14 @@ Scope: follow-up to the 2026-05-27 RLS hardening work. Requested steps were: rec
 
 ## Step 1 - GitHub Actions Verifier
 
-Result: partially blocked by tooling.
+Result: PASS via public GitHub Actions run page.
 
 - `gh` CLI is not installed in this local environment.
-- The local `npm run test:smoke:github-actions` verifier uses unauthenticated GitHub API calls and is currently rate-limited for this IP.
-- Public GitHub Actions pages are accessible, but the static HTML does not reliably expose the newest run details needed for commit-specific proof.
+- The local `npm run test:smoke:github-actions` verifier still uses unauthenticated GitHub API calls and is rate-limited for this IP.
+- Public GitHub Actions proof was recovered through the run page after propagation.
+- Resource Load Smoke #251 for commit `49d8961` (`Complete live RLS hardening checkpoint`) was triggered by push on May 27, 2026 at 17:52, completed with Status `Success`, and took 21s.
 
-Conclusion: GitHub Actions verification is still a tooling gap for high-risk phases. Use an authenticated GitHub API path or install/configure `gh` before relying on this gate again.
+Conclusion: GitHub Actions proof is complete for the RLS hardening checkpoint. Tooling should still be improved later because the local script remains rate-limited without an authenticated API path.
 
 ## Step 2 - Taylor Technician Against QA Facility
 
@@ -197,6 +198,6 @@ Direct anonymous table reads are denied across app-used tables.
 
 The dashboard/admin SQL audit is now clean for the current app-used RLS, RPC, and storage surface. The immediate RLS blocker is closed.
 
-Remaining non-RLS operational gap:
+Remaining non-RLS operational improvement:
 
-1. Restore authenticated GitHub Actions verification before continuing high-risk modularization phases.
+1. Install/configure `gh` or provide an authenticated GitHub API path so future Actions checks do not depend on public page fallback.

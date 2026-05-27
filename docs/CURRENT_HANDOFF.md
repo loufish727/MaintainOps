@@ -93,6 +93,7 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - Supabase Dashboard SQL hardening applied: `supabase/step-next-rls-bulletproof-hardening.sql`.
   - QA Test Facility location fixture added for denial coverage: `supabase/step-next-qa-rls-location-fixture.sql`; created location `8dbfd2c0-a500-4bb9-bedc-887a08b391f8`.
   - Live dashboard summary now has all 9 checks PASS: RLS enabled, policies present, no direct anon table grants, no unexpected anon RPC execute, approved public RPC grants present, QA location present, security-definer search paths pinned, storage buckets private, and storage policy inventory present.
+  - GitHub Actions proof recovered: Resource Load Smoke #251 for commit `49d8961` completed with Status `Success` in 21s.
   - Taylor technician direct REST probes returned zero QA Facility rows across app-used tables.
   - Direct anonymous REST reads to app-used tables returned `401`.
   - Taylor technician manager/admin RPC denial passed for `create_company_invite`, `update_company_member_role`, and `cancel_company_invite`.
@@ -110,6 +111,7 @@ Ran the 2026-05-27 LFES message UI state wiring pass after closing the RLS harde
   - QA account for `QA Test Facility` sees only QA company data across app-used tables. Taylor-prefixed storage list probes return empty arrays.
   - Taylor technician account sees only main Taylor company rows or empty result sets across app-used tables, cannot read QA Facility rows, and is denied manager/admin-only RPCs for invite creation, public request link creation, role update, and invite cancel.
   - Remaining optional symmetry gap before auth/session, public QR submit, or storage/photo/document changes: QA Facility technician smoke. Primary RLS blocker is closed for the current app-used surface.
+  - Process improvement still pending: install/configure `gh` or use an authenticated GitHub API token so future Actions proof does not rely on public page fallback.
 - Prior state-boundary checkpoint:
   - Added `src/utils/workspaceUiState.js` as the first client-only workspace UI state factory scaffold.
   - Added `tests/smoke/workspace-ui-state-smoke.js`.

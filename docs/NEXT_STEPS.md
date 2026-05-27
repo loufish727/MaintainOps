@@ -18,7 +18,7 @@ Current state as of 2026-05-26:
 - Latest deployed cache tag: `app.js?v=lfes-state-message-ui-1`; `src/utils/workspaceUiState.js?v=lfes-state-message-ui-1`.
 - Current `app.js` line count: 8,042.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
-- Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS.
+- Current live RLS checkpoint: `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`; dashboard/admin SQL hardening now has all 9 summary checks PASS and GitHub Actions Resource Load Smoke #251 passed for `49d8961`.
 - Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, workspace search state wiring, active-section state wiring, active-part state wiring, active-asset state wiring, active-work-order state wiring, and message UI state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live active-section navigation smoke passed for `390a6e2`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-part smoke passed for `99e5af1`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-asset smoke passed for `db2ba7a`; hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in hosted active-work-order smoke passed for `94bb07d`; hosted resource smoke and signed-in hosted Messages smoke passed for `e7c1a70`, but GitHub Actions verification for `e7c1a70` is blocked by unauthenticated API rate limit.
 - Latest deployment pushed directly to GitHub Pages source branch `main`; no in-repo package snapshot was created.
 - Current LFES source-of-truth docs:
@@ -31,7 +31,7 @@ Current state as of 2026-05-26:
 
 Recommended immediate next controlled phase:
 
-- ACTION NEEDED before additional phases: recover GitHub Actions proof for `e7c1a70` or provide an authenticated verifier path. The local `gh` CLI is not installed, and the unauthenticated API verifier is rate-limited.
+- GitHub Actions proof for the latest RLS checkpoint is recovered. The local `gh` CLI is still not installed, and the unauthenticated API verifier is rate-limited; install/configure `gh` or provide an authenticated verifier path as a process improvement before relying on automated local Actions proof for future high-risk phases.
 - RLS live checkpoint is documented at `docs/LFES/audits/RLS_LIVE_CHECKPOINT_2026-05-27.md`. Dashboard/admin SQL hardening is complete for the current app-used table/RPC/storage surface: no direct anon table grants, no unexpected anon RPC execute, RLS/policies present, approved public RPC grants present, security-definer search paths pinned, storage buckets private, and storage policies present.
 - QA-company read isolation, Taylor role-denial, `ensure_location_request_link` denial against a real QA Facility location, anonymous table denial, anonymous internal RPC denial, and invalid-token public QR intake are now verified.
 - Before touching auth/session, public QR submit, or storage/photo/document flows, consider adding a QA Facility technician smoke for symmetry, but the primary RLS checkpoint is closed.
