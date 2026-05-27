@@ -15,7 +15,7 @@ Current state as of 2026-05-26:
   - `supabase/step-next-record-work-order-part-usage.sql`
   - `supabase/step-next-rpc-execute-hardening.sql`
 - Latest documentation/process cleanup: current LFES docs are updated in-place; do not use older package snapshots as source of truth.
-- Latest pending cache tag: `app.js?v=lfes-state-active-part-1`.
+- Latest pending cache tag: `app.js?v=lfes-state-active-part-2`.
 - Current `app.js` line count: 8,042.
 - Current RLS checkpoint: `docs/LFES/audits/RLS_SOURCE_AUDIT_2026-05-26.md`.
 - Current state-boundary checkpoint: `src/utils/workspaceUiState.js` scaffold, `tests/smoke/workspace-ui-state-smoke.js`, Parts/Equipment filter-search state wiring, workspace filter/pagination state wiring, workspace search state wiring, active-section state wiring, and active-part state wiring. Hosted resource smoke, GitHub Actions Resource Load Smoke, and signed-in live active-section navigation smoke passed for `390a6e2`; active-part deployment/live verification is the current in-progress step.

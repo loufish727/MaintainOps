@@ -189,6 +189,7 @@ const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearc
 const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
 const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCenterErrorDisplay;
 const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
+const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
 const {
   applyWorkOrderListFilters,
   applyWorkOrderFilters,
@@ -312,7 +313,6 @@ const {
 } = window.MaintainOpsPublicUrlQr.createPublicUrlQrHelpers({
   getPublicAppUrlOverride: () => publicAppUrlOverride,
 });
-const workspaceUiState = createWorkspaceUiState({ storage: localStorage });
 let activeSection = workspaceUiState.getActiveSection();
 function setActiveSectionState(value) {
   activeSection = value;

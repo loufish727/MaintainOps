@@ -39,16 +39,17 @@ Ran the 2026-05-27 LFES active-part state wiring pass after closing the RLS hard
 - Latest documentation/process cleanup:
   - current LFES docs are updated in the docs commit that edits this handoff; do not use older package snapshots as source of truth.
 - Latest live cache tag:
-  - pending deployment: `app.js?v=lfes-state-active-part-1`
+  - pending deployment: `app.js?v=lfes-state-active-part-2`
 - Current `app.js` line count:
   - 8,042 lines.
 - Current state-boundary checkpoint:
   - `activePartId` is now initialized from `workspaceUiState.getActivePartId()`.
   - Added `setActivePartIdState(...)` in `app.js` so active-part changes update both the legacy local variable and `workspaceUiState`.
   - Extracted part-detail/message/report/section/search paths that set the active part now route through `setActivePartIdState(...)`.
-  - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-part-1`.
+  - `index.html` app cache tag is bumped to `app.js?v=lfes-state-active-part-2`.
   - Behavior intent: no UI behavior change; this only reduces active-part state ownership drift while `app.js` still owns part data, mutations, document upload, delete flow, render, auth/company/location state, and Supabase access.
   - Verification passed before deployment commit: static checks, workspace UI state smoke, part-detail event smoke, message UI smoke, report-issue command smoke, section navigation smoke, workspace search state smoke, and hosted resource smoke baseline.
+  - LFES catch: the first active-part deployment initialized `activePartId` before the `workspaceUiState` instance existed, causing live boot to stop with `Cannot access 'workspaceUiState' before initialization`; the fix moved `workspaceUiState` instantiation above first use and bumped the app cache tag.
 - Prior active-section state-boundary checkpoint:
   - `activeSection` is now initialized from `workspaceUiState.getActiveSection()`.
   - Added `setActiveSectionState(...)` in `app.js` so active-section changes update both the legacy local variable and `workspaceUiState`.
