@@ -50,6 +50,7 @@ const {
 const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
+const { createMessageWorkflow } = window.MaintainOpsMessageWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3059,10 +3060,32 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   renderMessageList,
 });
 
-function messageThreadMembersForType(threadType, directUserId) {
-  if (threadType === "direct") return [session.user.id, directUserId].filter(Boolean);
-  return companyMembers.map((member) => member.user_id);
-}
+const {
+  bindMessageWorkflowEvents,
+  markMessageThreadRead,
+} = createMessageWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  isMissingColumnError,
+  messageCenterErrorState,
+  warn: console.warn,
+  getSession: () => session,
+  getActiveCompanyId: () => activeCompanyId,
+  getCompanyMembers: () => companyMembers,
+  getMessagesReady: () => messagesReady,
+  setMessagesReady: (value) => { messagesReady = value; },
+  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+  setMessageWorkOrderLinksReady: (value) => { messageWorkOrderLinksReady = value; },
+  activeLocationDatabaseId,
+  setActiveMessageThreadId: setActiveMessageThreadIdState,
+  setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
+  setMessageComposerOpen: setMessageComposerOpenState,
+  setMessageThreadRead: (threadId, readRow) => { messageReadsByThreadId[threadId] = readRow; },
+  showNotice,
+  render: () => render(),
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -3366,15 +3389,7 @@ function bindWorkspaceEvents() {
     renderWorkspace,
   });
 
-  const messageThreadForm = document.querySelector("#message-thread-form");
-  if (messageThreadForm) {
-    messageThreadForm.addEventListener("submit", createMessageThread);
-  }
-
-  const messageReplyForm = document.querySelector("#message-reply-form");
-  if (messageReplyForm) {
-    messageReplyForm.addEventListener("submit", sendThreadReply);
-  }
+  bindMessageWorkflowEvents();
 
   bindWorkspaceMessageUiEvents({
     state: {
@@ -4563,187 +4578,6 @@ async function cancelTeamInvite(inviteId) {
     teamInviteCancelError = error.message || "Could not cancel invite.";
     renderWorkspace();
   }
-}
-
-async function createMessageThread(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#message-thread-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (errorElement) errorElement.textContent = "";
-  if (!messagesReady) {
-    if (errorElement) errorElement.textContent = "Run supabase/step-next-message-center.sql before creating threads.";
-    return;
-  }
-
-  const threadType = form.get("thread_type");
-  const directUserId = form.get("direct_user_id");
-  const memberIds = messageThreadMembersForType(threadType, directUserId);
-  const title = String(form.get("title") || "").trim();
-  const body = String(form.get("body") || "").trim();
-  if (threadType === "direct" && !directUserId) {
-    if (errorElement) errorElement.textContent = "Choose a teammate for a direct message.";
-    return;
-  }
-  if (!title || !body) {
-    if (errorElement) errorElement.textContent = "Add a subject and message before starting the thread.";
-    return;
-  }
-  if (!memberIds.includes(session.user.id)) memberIds.push(session.user.id);
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Starting...";
-  }
-
-  let threadStarted = false;
-  try {
-    const workOrderId = form.get("work_order_id") || null;
-    const threadPayload = {
-      company_id: activeCompanyId,
-      location_id: threadType === "location" ? activeLocationDatabaseId() : null,
-      thread_type: threadType,
-      title,
-      created_by: session.user.id,
-    };
-    if (workOrderId && messageWorkOrderLinksReady) {
-      threadPayload.work_order_id = workOrderId;
-    }
-
-    const { data: thread, error: threadError } = await withOperationTimeout(
-      supabaseClient
-        .from("message_threads")
-        .insert(threadPayload)
-        .select("*")
-        .single(),
-      "Message thread save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (threadError) {
-      if (isMissingColumnError(threadError, "work_order_id")) {
-        messageWorkOrderLinksReady = false;
-      }
-      throw threadError;
-    }
-
-    const memberRows = [...new Set(memberIds)].map((userId) => ({
-      company_id: activeCompanyId,
-      thread_id: thread.id,
-      user_id: userId,
-    }));
-    const { error: memberError } = await withOperationTimeout(
-      supabaseClient.from("message_thread_members").insert(memberRows),
-      "Message member save timed out. Check your connection and try again.",
-      15000
-    );
-    if (memberError) throw memberError;
-
-    const { error: messageError } = await insertThreadMessage(thread.id, body);
-    if (messageError) throw messageError;
-
-    setActiveMessageThreadIdState(thread.id);
-    setMessageComposerWorkOrderIdState("");
-    setMessageComposerOpenState(false);
-    await markMessageThreadRead(thread.id);
-    showNotice("Thread started.");
-    threadStarted = true;
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
-  } finally {
-    if (!threadStarted && submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Start Thread";
-    }
-  }
-}
-
-async function sendThreadReply(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#message-reply-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const body = String(new FormData(formElement).get("body") || "").trim();
-  if (!body) return;
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Sending...";
-  }
-
-  let replySent = false;
-  try {
-    const { error } = await insertThreadMessage(formElement.dataset.threadId, body);
-    if (error) throw error;
-
-    showNotice("Message sent.");
-    await markMessageThreadRead(formElement.dataset.threadId);
-    replySent = true;
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
-  } finally {
-    if (!replySent && submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Send Reply";
-    }
-  }
-}
-
-async function markMessageThreadRead(threadId) {
-  if (!messagesReady || !threadId) return;
-  const readAt = new Date().toISOString();
-  messageReadsByThreadId[threadId] = {
-    company_id: activeCompanyId,
-    thread_id: threadId,
-    user_id: session.user.id,
-    last_read_at: readAt,
-  };
-  const { error } = await withOperationTimeout(
-    supabaseClient
-      .from("message_reads")
-      .upsert(messageReadsByThreadId[threadId], { onConflict: "thread_id,user_id" }),
-    "Message read marker timed out.",
-    8000
-  ).catch((error) => ({ error }));
-  if (error) console.warn("Could not mark message thread read", error);
-}
-
-async function insertThreadMessage(threadId, body) {
-  const message = await withOperationTimeout(
-    supabaseClient
-      .from("messages")
-      .insert({
-        company_id: activeCompanyId,
-        thread_id: threadId,
-        sender_id: session.user.id,
-        body,
-      }),
-    "Message save timed out. Check your connection and try again.",
-    15000
-  );
-
-  if (message.error) return { error: message.error };
-
-  const thread = await withOperationTimeout(
-    supabaseClient
-      .from("message_threads")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", threadId)
-      .eq("company_id", activeCompanyId),
-    "Message thread timestamp save timed out.",
-    8000
-  ).catch((error) => ({ error }));
-
-  return { error: thread.error };
-}
-
-function friendlyMessageCenterError(error) {
-  const state = messageCenterErrorState(error);
-  if (state.messagesReady === false) messagesReady = false;
-  return state.message;
 }
 
 async function updateCompanySettings(event) {
