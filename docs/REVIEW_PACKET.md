@@ -69,6 +69,7 @@ Useful entry points:
 - `.github/workflows/resource-load-smoke.yml`
 - `package.json` scripts
 - `docs/APP_JS_AUTHORITY_MAP.md`
+- `docs/SECURITY_VERIFICATION.md`
 
 This is not yet a full automated test suite. A broader integration/e2e suite remains a recommended next maturity step.
 

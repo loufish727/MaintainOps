@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "test:security:static": "node scripts/sql-security-static-audit.js",
+    "test:security:boundary": "node scripts/security-boundary-probe.js",
     "test:smoke:resources": "playwright test tests/smoke/resource-load.spec.js",
     "test:smoke:github-actions": "node scripts/verify-github-actions-run.js"
   },
