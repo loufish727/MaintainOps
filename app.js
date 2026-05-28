@@ -60,6 +60,7 @@ const { createPublicRequestLinkWorkflow } = window.MaintainOpsPublicRequestLinkW
 const { createPartInventoryWorkflow } = window.MaintainOpsPartInventoryWorkflow;
 const { createWorkOrderQuickUpdateWorkflow } = window.MaintainOpsWorkOrderQuickUpdateWorkflow;
 const { createAssetWorkflow } = window.MaintainOpsAssetWorkflow;
+const { createRequestLifecycleWorkflow } = window.MaintainOpsRequestLifecycleWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -4428,19 +4429,6 @@ async function createWorkOrder(event) {
   }
 }
 
-function openQuickFixForRequest(requestId) {
-  const request = maintenanceRequests.find((item) => item.id === requestId);
-  if (!request) return;
-  quickFixRequestId = requestId;
-  quickFixAssetId = request.asset_id || null;
-  quickFixMode = true;
-  setActiveWorkOrderIdState(null);
-  setActiveAssetIdState(null);
-  createWorkOrderMode = false;
-  setActiveSectionState("mywork");
-  renderWorkspace();
-}
-
 const { createQuickFix } = createQuickFixWorkflow({
   documentRef: document,
   FormDataCtor: FormData,
@@ -4480,6 +4468,54 @@ const { createQuickFix } = createQuickFixWorkflow({
   showNotice,
   render,
   alertUser: (message) => alert(message),
+});
+
+const {
+  convertRequestToWorkOrder,
+  createRequest,
+  createRequestFromForm,
+  deleteMaintenanceRequest,
+  openQuickFixForRequest,
+  renderRequestForm,
+  requestDeleteMaintenanceRequest,
+} = createRequestLifecycleWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  alertRef: alert,
+  CSSRef: CSS,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  getActiveCompanyId: () => activeCompanyId,
+  getSession: () => session,
+  getRequestsReady: () => requestsReady,
+  getMaintenanceRequests: () => maintenanceRequests,
+  renderRequestFormContent,
+  confirmAssetLocationRouting,
+  locationIdForAsset,
+  requiredText,
+  isMissingColumnError,
+  databaseSetupRequiredMessage,
+  addPhotoToMaintenanceRequest,
+  setLocationsReady: (value) => { locationsReady = value; },
+  setActiveSection: setActiveSectionState,
+  setActiveWorkOrderId: setActiveWorkOrderIdState,
+  setActiveAssetId: setActiveAssetIdState,
+  setRequestViewFilter: (value) => { workspaceUiState.setRequestViewFilter(value); },
+  resetRequestsPage,
+  descriptionWithRequestPhotoNote,
+  applySafetyRequirementPayload,
+  applySafetyCheckPayload,
+  insertWithOptionalProcedure,
+  recordWorkOrderEvent,
+  setQuickFixRequestId: (value) => { quickFixRequestId = value; },
+  setQuickFixAssetId: (value) => { quickFixAssetId = value; },
+  setQuickFixMode: (value) => { quickFixMode = value; },
+  setCreateWorkOrderMode: (value) => { createWorkOrderMode = value; },
+  setPendingDeleteRequestId: (value) => { pendingDeleteRequestId = value; },
+  canDeleteOperationalRecords,
+  showNotice,
+  render,
+  renderWorkspace,
 });
 
 async function updateWorkOrderDetails(event) {
@@ -4568,214 +4604,6 @@ async function updateWorkOrderDetails(event) {
     if (submitButton && submitButton.isConnected) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Work Order";
-    }
-  }
-}
-
-function renderRequestForm() {
-  const detailPanel = document.querySelector("#detail-panel");
-  detailPanel.innerHTML = renderRequestFormContent();
-}
-
-async function createRequest(event) {
-  event.preventDefault();
-  await createRequestFromForm(event.target);
-}
-
-async function createRequestFromForm(formElement) {
-  const errorElement = document.querySelector("#request-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Submitting...";
-  }
-
-  try {
-    const form = new FormData(formElement);
-    const assetId = form.get("asset_id") || null;
-    if (!confirmAssetLocationRouting(assetId, "submitting this request", errorElement)) return;
-    const requestPayload = {
-      company_id: activeCompanyId,
-      location_id: locationIdForAsset(assetId),
-      title: requiredText(form.get("title"), "Request title"),
-      description: requiredText(form.get("description"), "Request description"),
-      asset_id: assetId,
-      priority: form.get("priority"),
-      status: "submitted",
-      requested_by: session.user.id,
-    };
-
-    if (!requestsReady) {
-      throw new Error("Run supabase/step-next-maintenance-requests.sql before submitting requests.");
-    }
-    const { data, error } = await withOperationTimeout(
-      supabaseClient.from("maintenance_requests").insert(requestPayload).select("*").single(),
-      "Request save timed out. Check your connection and try again.",
-      15000
-    );
-    if (error && isMissingColumnError(error, "location_id")) {
-      locationsReady = false;
-      throw new Error(databaseSetupRequiredMessage("saving requests by location"));
-    }
-    if (error) throw error;
-    const photo = form.get("photo");
-    let photoWarning = "";
-    if (photo && photo.name) {
-      const photoError = await addPhotoToMaintenanceRequest(data.id, photo);
-      if (photoError) photoWarning = ` Photo did not upload: ${photoError.message || photoError}`;
-    }
-    setActiveSectionState("requests");
-    workspaceUiState.setRequestViewFilter("active");
-    workspaceUiState.resetRequestsPage();
-    showNotice(`Request submitted.${photoWarning}`, photoWarning ? "warning" : "success");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not submit request.";
-    else alert(error.message || error);
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Submit Request";
-    }
-  }
-}
-
-// WORKFLOW NOTE: Request conversion is a workflow mutation boundary; preserve source request context and location when changing it.
-async function convertRequestToWorkOrder(requestId) {
-  const request = maintenanceRequests.find((item) => item.id === requestId);
-  if (!request) return;
-  const button = document.querySelector(`[data-convert-request="${CSS.escape(requestId)}"]`);
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Converting...";
-  }
-
-  try {
-    const payload = {
-      company_id: activeCompanyId,
-      location_id: request.location_id || locationIdForAsset(request.asset_id),
-      title: request.title,
-      description: descriptionWithRequestPhotoNote(request.description, request),
-      asset_id: request.asset_id || null,
-      priority: request.priority || "medium",
-      type: "reactive",
-      status: "open",
-      created_by: session.user.id,
-    };
-    applySafetyRequirementPayload(payload);
-    applySafetyCheckPayload(payload, false);
-    const { data, error } = await withOperationTimeout(
-      insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
-      "Request conversion timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-
-    const { error: updateError } = await withOperationTimeout(
-      supabaseClient
-        .from("maintenance_requests")
-        .update({
-          status: "converted",
-          reviewed_by: session.user.id,
-          reviewed_at: new Date().toISOString(),
-          converted_work_order_id: data.id,
-        })
-        .eq("id", requestId)
-        .eq("company_id", activeCompanyId),
-      "Request status update timed out. Check your connection and try again.",
-      15000
-    );
-    if (updateError) throw updateError;
-
-    setActiveSectionState("work");
-    setActiveWorkOrderIdState(data.id);
-    await withOperationTimeout(
-      recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order."),
-      "Activity log timed out.",
-      8000
-    ).catch(() => null);
-    showNotice("Request converted to work order.");
-    await render();
-  } catch (error) {
-    showNotice(`Could not convert request: ${error.message || error}`, "warning");
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Convert to Work Order";
-    }
-  }
-}
-
-function requestDeleteMaintenanceRequest(id) {
-  if (!canDeleteOperationalRecords()) {
-    alert("Only company admins and managers can delete requests.");
-    return;
-  }
-  if (!maintenanceRequests.some((request) => request.id === id)) return;
-  pendingDeleteRequestId = id;
-  renderWorkspace();
-}
-
-async function deleteMaintenanceRequest(id) {
-  if (!canDeleteOperationalRecords()) {
-    alert("Only company admins and managers can delete requests.");
-    return;
-  }
-
-  const request = maintenanceRequests.find((item) => item.id === id);
-  if (!request) return;
-  const button = document.querySelector(`[data-confirm-delete-request="${CSS.escape(id)}"]`);
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Deleting...";
-  }
-
-  try {
-    if (request.photo_storage_path) {
-      const storageDelete = await withOperationTimeout(
-        supabaseClient.storage.from("maintenance-request-photos").remove([request.photo_storage_path]),
-        "Request photo cleanup timed out.",
-        15000
-      );
-      if (storageDelete.error) throw new Error(`Could not remove request photo: ${storageDelete.error.message}`);
-    }
-
-    const { data, error } = await withOperationTimeout(
-      supabaseClient
-        .from("maintenance_requests")
-        .delete()
-        .eq("id", id)
-        .eq("company_id", activeCompanyId)
-        .select("id"),
-      "Request delete timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-    if (!data?.length) {
-      throw new Error("Request was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
-    }
-
-    const verification = await withOperationTimeout(
-      supabaseClient
-        .from("maintenance_requests")
-        .select("id")
-        .eq("id", id)
-        .eq("company_id", activeCompanyId)
-        .maybeSingle(),
-      "Request delete verification timed out. Refresh and check the request list.",
-      15000
-    );
-    if (verification.error) throw new Error(`Request delete verification failed: ${verification.error.message}`);
-    if (verification.data) throw new Error("Request delete did not persist in Supabase.");
-
-    pendingDeleteRequestId = null;
-    showNotice("Request deleted.");
-    await render();
-  } catch (error) {
-    showNotice(error.message || "Could not delete request.", "warning");
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Permanently Delete";
     }
   }
 }
