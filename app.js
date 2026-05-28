@@ -114,6 +114,7 @@ const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceReques
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
 const { generatePublicRequestToken } = window.MaintainOpsPublicRequestTokens;
+const { createCsvExportHelpers } = window.MaintainOpsCsvExport;
 const { createRequestQueryFilterHelpers } = window.MaintainOpsRequestQueryFilters;
 const { createWorkOrderSearchHelpers } = window.MaintainOpsWorkOrderSearch;
 const { createWorkspaceListBuilders } = window.MaintainOpsWorkspaceListBuilders;
@@ -724,6 +725,26 @@ const {
   assetEmptyStateText,
   partEmptyStateText,
 } = emptyStateTextHelpers;
+const {
+  downloadCsv,
+  exportActiveSectionCsv,
+} = createCsvExportHelpers({
+  documentRef: document,
+  URLRef: URL,
+  BlobCtor: Blob,
+  alertRef: alert,
+  getActiveSection: () => activeSection,
+  getWorkOrders: () => workOrders,
+  getAssets: () => assets,
+  getMaintenanceRequests: () => maintenanceRequests,
+  getPreventiveSchedules: () => preventiveSchedules,
+  getParts: () => parts,
+  getProcedureTemplates: () => procedureTemplates,
+  getCompanyMembers: () => companyMembers,
+  getProfilesByUserId: () => profilesByUserId,
+  assignmentLabel,
+  csvCell,
+});
 const {
   renderGlobalSearchResults,
 } = createGlobalSearchDisplayHelpers({
@@ -4770,107 +4791,6 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   } catch (error) {
     console.warn("Could not record work order event", error);
   }
-}
-
-function exportActiveSectionCsv() {
-  const exports = {
-    work: {
-      filename: "work-orders.csv",
-      rows: workOrders.map((workOrder) => ({
-        title: workOrder.title,
-        status: workOrder.status,
-        priority: workOrder.priority,
-        type: workOrder.type || "reactive",
-        equipment: workOrder.assets?.name || "",
-        assigned_to: assignmentLabel(workOrder),
-        due_at: workOrder.due_at || "",
-        completed_at: workOrder.completed_at || "",
-        actual_minutes: workOrder.actual_minutes || 0,
-        failure_cause: workOrder.failure_cause || "",
-        resolution_summary: workOrder.resolution_summary || "",
-        follow_up_needed: Boolean(workOrder.follow_up_needed),
-      })),
-    },
-    assets: {
-      filename: "equipment.csv",
-      rows: assets.map((asset) => ({
-        name: asset.name,
-        equipment_id: asset.asset_code || "",
-        location: asset.location || "",
-        status: asset.status,
-      })),
-    },
-    requests: {
-      filename: "maintenance-requests.csv",
-      rows: maintenanceRequests.map((request) => ({
-        title: request.title,
-        status: request.status,
-        priority: request.priority,
-        equipment: request.assets?.name || "",
-        requested_by: profilesByUserId[request.requested_by]?.full_name || "",
-        created_at: request.created_at || "",
-        converted_work_order_id: request.converted_work_order_id || "",
-      })),
-    },
-    pm: {
-      filename: "preventive-schedules.csv",
-      rows: preventiveSchedules.map((schedule) => ({
-        title: schedule.title,
-        equipment: schedule.assets?.name || "",
-        frequency: schedule.frequency,
-        next_due_at: schedule.next_due_at,
-        active: schedule.active,
-      })),
-    },
-    parts: {
-      filename: "parts.csv",
-      rows: parts.map((part) => ({
-        name: part.name,
-        sku: part.sku || "",
-        supplier_name: part.supplier_name || "",
-        quantity_on_hand: part.quantity_on_hand,
-        reorder_point: part.reorder_point,
-        unit_cost: part.unit_cost || 0,
-      })),
-    },
-    procedures: {
-      filename: "procedures.csv",
-      rows: procedureTemplates.map((template) => ({
-        name: template.name,
-        description: template.description || "",
-        steps: template.procedure_steps?.length || 0,
-      })),
-    },
-    team: {
-      filename: "team.csv",
-      rows: companyMembers.map((member) => ({
-        user_id: member.user_id,
-        name: profilesByUserId[member.user_id]?.full_name || "",
-        role: member.role,
-      })),
-    },
-  };
-
-  const selected = exports[activeSection] || exports.work;
-  if (!selected.rows.length) return alert("Nothing to export in this section yet.");
-  downloadCsv(selected.filename, selected.rows);
-}
-
-function downloadCsv(filename, rows) {
-  const headers = Object.keys(rows[0]);
-  const lines = [
-    headers.join(","),
-    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(",")),
-  ];
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 init();
