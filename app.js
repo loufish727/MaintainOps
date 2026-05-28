@@ -55,6 +55,7 @@ const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMain
 const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
 const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
 const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkflow;
+const { createAppIssueWorkflow } = window.MaintainOpsAppIssueWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3189,6 +3190,31 @@ const {
   render: () => render(),
   renderWorkspace,
 });
+const {
+  bindAppIssueWorkflowEvents,
+  reloadAppIssueReports,
+} = createAppIssueWorkflow({
+  documentRef: document,
+  windowRef: window,
+  FormDataCtor: FormData,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  listAppIssueReports,
+  createAppIssueReportRecord,
+  updateAppIssueReportStatusRecord,
+  appIssueReportErrorState,
+  activeLocationDatabaseId,
+  requiredText,
+  canManageTeam,
+  getSession: () => session,
+  getActiveCompanyId: () => activeCompanyId,
+  getActiveSection: () => activeSection,
+  setAppIssueReportsReady: (value) => { appIssueReportsReady = value; },
+  setAppIssueReports: (value) => { appIssueReports = value; },
+  setReportIssueMode: (value) => { reportIssueMode = value; },
+  showNotice,
+  renderWorkspace,
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -3454,12 +3480,7 @@ function bindWorkspaceEvents() {
     exportActiveSectionCsv,
   });
 
-  const appIssueReportForm = document.querySelector("#app-issue-report-form");
-  if (appIssueReportForm) appIssueReportForm.addEventListener("submit", createAppIssueReport);
-
-  document.querySelectorAll("[data-app-issue-status]").forEach((form) => {
-    form.addEventListener("submit", updateAppIssueReportStatus);
-  });
+  bindAppIssueWorkflowEvents();
 
   bindWorkspaceIssueAdminUiEvents({
     state: {
@@ -4174,107 +4195,6 @@ async function uploadCompanyLogo(event) {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Upload Logo";
-    }
-  }
-}
-
-async function reloadAppIssueReports() {
-  const { data, error } = await withOperationTimeout(
-    listAppIssueReports(supabaseClient, activeCompanyId),
-    "App issue report load timed out. Check your connection and try again.",
-    12000
-  );
-  appIssueReportsReady = !error;
-  appIssueReports = error ? [] : (data || []);
-  if (error) throw error;
-}
-
-function appIssueReportError(error) {
-  const state = appIssueReportErrorState(error);
-  if (state.appIssueReportsReady === false) appIssueReportsReady = false;
-  return state.message;
-}
-
-async function createAppIssueReport(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#app-issue-report-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Sending...";
-  }
-
-  try {
-    const payload = {
-      company_id: activeCompanyId,
-      location_id: activeLocationDatabaseId(),
-      reporter_id: session.user.id,
-      screen: String(form.get("screen") || activeSection || "workspace").slice(0, 80),
-      page_url: window.location.href,
-      severity: String(form.get("severity") || "normal"),
-      title: requiredText(form.get("title"), "Short title").slice(0, 140),
-      details: requiredText(form.get("details"), "Details"),
-      status: "open",
-    };
-
-    const { error } = await withOperationTimeout(
-      createAppIssueReportRecord(supabaseClient, payload),
-      "App issue report save timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-
-    reportIssueMode = false;
-    showNotice("Issue report sent.");
-    await reloadAppIssueReports();
-    renderWorkspace();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = appIssueReportError(error);
-  } finally {
-    if (submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Send Report";
-    }
-  }
-}
-
-async function updateAppIssueReportStatus(event) {
-  event.preventDefault();
-  if (!canManageTeam()) return;
-  const formElement = event.currentTarget;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  try {
-    const nextStatus = String(form.get("status") || "open");
-    const { error } = await withOperationTimeout(
-      updateAppIssueReportStatusRecord(
-        supabaseClient,
-        activeCompanyId,
-        formElement.dataset.appIssueStatus,
-        nextStatus
-      ),
-      "Issue report status save timed out. Check your connection and try again.",
-      12000
-    );
-    if (error) throw error;
-
-    showNotice("Issue report updated.");
-    await reloadAppIssueReports();
-    renderWorkspace();
-  } catch (error) {
-    showNotice(`Could not update issue report: ${appIssueReportError(error)}`, "warning");
-  } finally {
-    if (submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save";
     }
   }
 }
