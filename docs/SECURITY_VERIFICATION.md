@@ -49,6 +49,7 @@ Live authenticated cross-company probe:
 - `parts`: PASS; zero forbidden-company rows visible.
 - `maintenance_requests`: PASS; zero forbidden-company rows visible.
 - `public_request_links`: PASS; zero forbidden-company rows visible.
+- technician-scoped manager/admin mutation probes: PASS; tested with a technician membership and rejected.
 
 Additional live probe expansion:
 
@@ -79,7 +80,14 @@ The boundary probe now includes technician manager/admin rejection checks for:
 - `set_company_logo`
 - `ensure_location_request_link`
 
-These checks run only when `MAINTAINOPS_PROBE_EMAIL` and `MAINTAINOPS_PROBE_PASSWORD` belong to a technician account. The currently tested QA account was an admin, so these technician-specific rejection probes are instrumented but still need a technician test credential.
+These checks run when `MAINTAINOPS_PROBE_EMAIL` and `MAINTAINOPS_PROBE_PASSWORD` belong to a technician account. The probe also supports `MAINTAINOPS_PROBE_COMPANY_ID` so a multi-company user can be tested against the intended company membership.
+
+Latest technician probe result:
+
+- `update_company_member_role`: PASS; rejected.
+- `create_company_invite`: PASS; rejected.
+- `set_company_logo`: PASS; rejected.
+- `ensure_location_request_link`: PASS; rejected.
 
 ## What This Does And Does Not Prove
 

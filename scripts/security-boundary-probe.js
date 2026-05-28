@@ -74,7 +74,10 @@ async function signIn({ url, anonKey, email, password }) {
   if (!result.ok || !result.payload?.access_token) {
     throw new Error(`Auth probe login failed: HTTP ${result.status}`);
   }
-  return result.payload.access_token;
+  return {
+    token: result.payload.access_token,
+    userId: result.payload.user?.id,
+  };
 }
 
 function isDenied(result) {
@@ -194,13 +197,20 @@ async function run() {
 
   const authEmail = process.env.MAINTAINOPS_PROBE_EMAIL;
   const authPassword = process.env.MAINTAINOPS_PROBE_PASSWORD;
+  const probeCompanyId = process.env.MAINTAINOPS_PROBE_COMPANY_ID;
   const forbiddenCompanyId = process.env.MAINTAINOPS_FORBIDDEN_COMPANY_ID;
   let authToken = null;
+  let authUserId = null;
   let authProfile = null;
 
   if (authEmail && authPassword) {
-    authToken = await signIn({ ...config, email: authEmail, password: authPassword });
-    authProfile = await firstRow(config, authToken, "company_members", "select=company_id,user_id,role");
+    const authSession = await signIn({ ...config, email: authEmail, password: authPassword });
+    authToken = authSession.token;
+    authUserId = authSession.userId;
+    const membershipQuery = probeCompanyId
+      ? `company_id=eq.${encodeURIComponent(probeCompanyId)}&user_id=eq.${encodeURIComponent(authUserId)}&select=company_id,user_id,role`
+      : `user_id=eq.${encodeURIComponent(authUserId)}&select=company_id,user_id,role`;
+    authProfile = await firstRow(config, authToken, "company_members", membershipQuery);
     if (authProfile) {
       results.push(info("authenticated_probe_identity", `role=${authProfile.role}; company_id=${authProfile.company_id}`));
     } else {
