@@ -53,7 +53,7 @@
             <div class="form-grid">
               ${isSignup ? `<label>Full name<input name="fullName" required autocomplete="name"></label>` : ""}
               <label>Email<input name="email" type="email" required autocomplete="email"></label>
-              <label>Password<input name="password" type="password" minlength="6" required autocomplete="${isSignup ? "new-password" : "current-password"}"></label>
+              <label>Password<input name="password" type="password" minlength="8" required autocomplete="${isSignup ? "new-password" : "current-password"}"></label>
             </div>
             <p class="error-text" id="auth-error">${escapeHtml(initialError)}</p>
             <p class="muted auth-status" id="auth-status"></p>

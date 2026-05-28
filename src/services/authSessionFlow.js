@@ -155,8 +155,8 @@
         const statusTarget = documentRef.querySelector("#auth-status");
         errorTarget.textContent = "";
 
-        if (password.length < 6) {
-          errorTarget.textContent = "Password must be at least 6 characters.";
+        if (password.length < 8) {
+          errorTarget.textContent = "Password must be at least 8 characters.";
           return;
         }
         if (password !== confirmPassword) {

@@ -5,6 +5,12 @@ const rootDir = path.resolve(__dirname, "..");
 const configPath = path.join(rootDir, "supabase-config.js");
 
 function readBrowserConfig() {
+  const envUrl = process.env.SUPABASE_URL || process.env.MAINTAINOPS_SUPABASE_URL;
+  const envAnonKey = process.env.SUPABASE_ANON_KEY || process.env.MAINTAINOPS_SUPABASE_ANON_KEY;
+  if (envUrl && envAnonKey) {
+    return { url: envUrl.replace(/\/$/, ""), anonKey: envAnonKey };
+  }
+
   const source = fs.readFileSync(configPath, "utf8");
   const url = source.match(/window\.SUPABASE_URL\s*=\s*"([^"]+)"/)?.[1];
   const anonKey = source.match(/window\.SUPABASE_ANON_KEY\s*=\s*"([^"]+)"/)?.[1];
@@ -278,6 +284,25 @@ async function run() {
       } else {
         results.push(fail(probe.name.replace("_denied", "_allowed"), `HTTP ${result.status}; technician manager/admin RPC probe was not rejected.`));
       }
+    }
+
+    const maintenanceRequestDeleteId = process.env.MAINTAINOPS_TECH_DELETE_REQUEST_ID;
+    if (maintenanceRequestDeleteId) {
+      const result = await requestJson({
+        ...config,
+        token: authToken,
+        path: `/rest/v1/maintenance_requests?id=eq.${encodeURIComponent(maintenanceRequestDeleteId)}`,
+        method: "DELETE",
+      });
+      if (isDenied(result)) {
+        results.push(pass("technician_denied:maintenance_requests_delete", `HTTP ${result.status}`));
+      } else if (result.ok && Array.isArray(result.payload) && result.payload.length === 0) {
+        results.push(review("technician_delete_request_inconclusive", "DELETE returned no rows. Use a disposable visible request id to confirm role enforcement."));
+      } else {
+        results.push(fail("technician_allowed:maintenance_requests_delete", `HTTP ${result.status}; technician maintenance request delete probe was not rejected.`));
+      }
+    } else {
+      results.push(info("technician_delete_request_probe_not_run", "Set MAINTAINOPS_TECH_DELETE_REQUEST_ID to a disposable visible maintenance request id to verify technician delete denial."));
     }
   } else {
     results.push(info("technician_role_mutation_probes_not_run", "Set MAINTAINOPS_PROBE_EMAIL/PASSWORD to a technician account to run manager/admin rejection probes."));
