@@ -62,6 +62,7 @@ const { createWorkOrderQuickUpdateWorkflow } = window.MaintainOpsWorkOrderQuickU
 const { createAssetWorkflow } = window.MaintainOpsAssetWorkflow;
 const { createRequestLifecycleWorkflow } = window.MaintainOpsRequestLifecycleWorkflow;
 const { createWorkOrderCreationWorkflow } = window.MaintainOpsWorkOrderCreationWorkflow;
+const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailEditWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -4446,95 +4447,31 @@ const {
   renderWorkspace,
 });
 
-async function updateWorkOrderDetails(event) {
-  event.preventDefault();
-  const formElement = event.target;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const errorTarget = document.querySelector("#work-order-save-error");
-  submitButton.disabled = true;
-  submitButton.textContent = "Saving...";
-  if (errorTarget) errorTarget.textContent = "";
-
-  try {
-    const form = new FormData(event.target);
-    const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
-    const currentStatus = document.querySelector("#status-select")?.value || previous?.status || "open";
-    const payload = {
-      title: requiredText(form.get("title"), "Work order title"),
-      description: descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
-      due_at: workOrderDateValue(form.get("due_at")),
-      location_id: locationIdForAsset(previous?.asset_id || null),
-      status: currentStatus,
-      priority: form.get("priority"),
-      type: form.get("type"),
-      assigned_to: assignedUserFromForm(form),
-      ...procedureColumn(form.get("procedure_template_id")),
-      failure_cause: form.get("failure_cause") || null,
-      resolution_summary: form.get("resolution_summary") || null,
-      follow_up_needed: form.get("follow_up_needed") === "on",
-      actual_minutes: Number(form.get("actual_minutes")) || 0,
-    };
-    payload.safety_check_required = assetRequiresSafety(previous?.asset_id || null);
-    if (payload.status === "completed" && previous?.status !== "completed" && payload.safety_check_required && !hasCompletedSafetyDeviceCheck(previous) && form.get("safety_devices_checked") !== "on") {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Work Order";
-      if (errorTarget) errorTarget.textContent = "Use Complete Work and check safety devices before completing equipment work.";
-      return;
-    }
-    const procedureChanged = (previous?.procedure_template_id || "") !== (payload.procedure_template_id || "");
-    const procedureCompletionMessage = payload.status === "completed" && (previous?.status !== "completed" || procedureChanged)
-      ? blocksProcedureCompletion(previous, payload.procedure_template_id || null)
-      : "";
-    if (procedureCompletionMessage) {
-      setWorkOrderActionWarning(activeWorkOrderId, procedureCompletionMessage);
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Work Order";
-      if (errorTarget) errorTarget.textContent = procedureCompletionMessage;
-      return;
-    }
-    if (payload.status === "completed" && previous?.status !== "completed") {
-      payload.completed_at = new Date().toISOString();
-      applySafetyCheckPayload(payload, payload.safety_check_required && (form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous)));
-    } else if (payload.status !== "completed") {
-      payload.completed_at = null;
-      applySafetyCheckPayload(payload, false);
-    } else if (previous?.status === "completed" && payload.safety_check_required && form.has("safety_devices_checked")) {
-      applySafetyCheckPayload(payload, form.get("safety_devices_checked") === "on" || hasCompletedSafetyDeviceCheck(previous));
-    } else if (previous?.status === "completed" && !payload.safety_check_required) {
-      applySafetyCheckPayload(payload, false);
-    }
-    const { error } = await withOperationTimeout(
-      updateWorkOrderSafely(payload, activeWorkOrderId),
-      "Work order save timed out. Check your connection and try again.",
-      20000
-    );
-    if (error) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Work Order";
-      if (errorTarget) errorTarget.textContent = `Could not save work order: ${friendlyWorkOrderSaveError(error)}`;
-      return;
-    }
-    const changeSnapshot = { ...Object.fromEntries(form.entries()), status: currentStatus };
-    const logError = await withOperationTimeout(
-      recordWorkOrderEvent(activeWorkOrderId, "updated", describeWorkOrderChanges(previous, changeSnapshot)),
-      "Activity log timed out.",
-      8000
-    ).catch((error) => error);
-    setWorkOrderActionWarning("", "");
-    showNotice(logError ? `Work order saved, but history did not update: ${logError.message}` : "Work order saved.", logError ? "warning" : "success");
-    await render();
-  } catch (error) {
-    console.error("Work order save failed", error);
-    submitButton.disabled = false;
-    submitButton.textContent = "Save Work Order";
-    if (errorTarget) errorTarget.textContent = `Could not save work order: ${error.message || error}`;
-  } finally {
-    if (submitButton && submitButton.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Work Order";
-    }
-  }
-}
+const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  consoleRef: console,
+  getActiveWorkOrderId: () => activeWorkOrderId,
+  getWorkOrders: () => workOrders,
+  requiredText,
+  descriptionWithAssignmentNote,
+  workOrderDateValue,
+  locationIdForAsset,
+  assignedUserFromForm,
+  procedureColumn,
+  assetRequiresSafety,
+  hasCompletedSafetyDeviceCheck,
+  blocksProcedureCompletion,
+  setWorkOrderActionWarning,
+  applySafetyCheckPayload,
+  withOperationTimeout,
+  updateWorkOrderSafely,
+  friendlyWorkOrderSaveError,
+  recordWorkOrderEvent,
+  describeWorkOrderChanges,
+  showNotice,
+  render,
+});
 
 async function updateWorkOrderStatus(event) {
   const previous = workOrders.find((item) => item.id === activeWorkOrderId);
