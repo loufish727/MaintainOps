@@ -56,24 +56,19 @@ Additional live probe expansion:
 - anonymous upload to a random `maintenance-request-photos` request path: PASS; rejected.
 - anonymous storage list probes returned no objects for private buckets.
 
-## Current Hard Stop
+## Public Request Photo Attach Hardening
 
 The public request photo attach probe found a live database gap on 2026-05-28:
 
 - `attach_maintenance_request_photo` returned success for a random request id.
 - `attach_maintenance_request_photo` returned success for a mismatched request/photo path.
 
-The repository now includes `supabase/step-next-public-request-photo-attach-hardening.sql`, which recreates the RPC with explicit request existence, path-match, public-request window, company membership, and no-op update checks.
+The fix was applied live through `supabase/step-next-public-request-photo-attach-hardening.sql`. The RPC now has explicit request existence, path-match, public-request window, company membership, and no-op update checks.
 
-ACTION NEEDED:
+Post-fix probe result:
 
-Run `supabase/step-next-public-request-photo-attach-hardening.sql` in the Supabase SQL editor, then rerun:
-
-```bash
-npm run test:security:boundary
-```
-
-The public request photo attach probes should pass after the live RPC is updated.
+- random request id attach: PASS; rejected.
+- mismatched request/photo path attach: PASS; rejected.
 
 ## Technician Role Mutation Probe
 

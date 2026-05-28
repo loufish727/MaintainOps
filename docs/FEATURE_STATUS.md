@@ -65,7 +65,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
 - Security verification commands now cover static SQL/RPC checks, anonymous table-access denial, invalid public request token behavior, and a tested cross-company read probe for selected high-value tables.
-- Public request photo attach probing found a live RPC hardening gap; `supabase/step-next-public-request-photo-attach-hardening.sql` has been added and must be applied before that probe can pass.
+- Public request photo attach probing found a live RPC hardening gap; `supabase/step-next-public-request-photo-attach-hardening.sql` was applied and the random/mismatched request attach probes now pass.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
 - `app.js` is currently about 4,796 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
