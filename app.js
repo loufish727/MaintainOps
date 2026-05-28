@@ -57,6 +57,7 @@ const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
 const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkflow;
 const { createAppIssueWorkflow } = window.MaintainOpsAppIssueWorkflow;
 const { createPublicRequestLinkWorkflow } = window.MaintainOpsPublicRequestLinkWorkflow;
+const { createPartInventoryWorkflow } = window.MaintainOpsPartInventoryWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3234,6 +3235,27 @@ const {
   showNotice,
   render: () => render(),
 });
+const {
+  bindPartInventoryWorkflowEvents,
+} = createPartInventoryWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  activeLocationDatabaseId,
+  isMissingColumnError,
+  databaseSetupRequiredMessage,
+  getActiveCompanyId: () => activeCompanyId,
+  getParts: () => parts,
+  getPartSuppliersReady: () => partSuppliersReady,
+  setLocationsReady: (value) => { locationsReady = value; },
+  setPartSuppliersReady: (value) => { partSuppliersReady = value; },
+  setPartCostsReady: (value) => { partCostsReady = value; },
+  setActivePartId: setActivePartIdState,
+  clearPartSearchState,
+  showNotice,
+  render: () => render(),
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -3828,8 +3850,7 @@ function bindWorkspaceEvents() {
     cancelTeamInvite,
   });
 
-  const partForm = document.querySelector("#create-part-form");
-  if (partForm) partForm.addEventListener("submit", createPart);
+  bindPartInventoryWorkflowEvents();
 
   bindWorkspaceInventoryFilterEvents({
     state: workspaceUiState,
@@ -3842,18 +3863,6 @@ function bindWorkspaceEvents() {
     state: workspaceUiState,
     renderWorkspace,
     resetPartsPage,
-  });
-
-  document.querySelectorAll("[data-restock-part]").forEach((form) => {
-    form.addEventListener("submit", restockPart);
-  });
-
-  document.querySelectorAll("[data-use-part]").forEach((form) => {
-    form.addEventListener("submit", usePartFromInventory);
-  });
-
-  document.querySelectorAll("[data-edit-part]").forEach((form) => {
-    form.addEventListener("submit", updatePart);
   });
 
   bindWorkspacePartDeleteCancelEvents({
@@ -3873,10 +3882,6 @@ function bindWorkspaceEvents() {
       },
     },
     renderWorkspace,
-  });
-
-  document.querySelectorAll("[data-rename-part-source]").forEach((form) => {
-    form.addEventListener("submit", renamePartSource);
   });
 
   document.querySelectorAll("[data-part-document]").forEach((form) => {
@@ -4218,215 +4223,6 @@ async function uploadCompanyLogo(event) {
   }
 }
 
-async function createPart(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#part-create-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Adding...";
-  }
-  let saveTimeoutId;
-
-  try {
-    const payload = {
-      company_id: activeCompanyId,
-      location_id: activeLocationDatabaseId(),
-      name: String(form.get("name") || "").trim(),
-      sku: String(form.get("sku") || "").trim() || null,
-      supplier_name: String(form.get("supplier_name") || "").trim() || null,
-      quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
-      reorder_point: Number(form.get("reorder_point")) || 0,
-      unit_cost: Number(form.get("unit_cost")) || 0,
-    };
-
-    if (!payload.company_id) {
-      throw new Error("Choose a company before adding parts.");
-    }
-    if (!payload.name) {
-      throw new Error("Part name is required.");
-    }
-
-    const saveTimeout = new Promise((_, reject) => {
-      saveTimeoutId = setTimeout(() => reject(new Error("Part save timed out. Check your connection and try again.")), 20000);
-    });
-    const { data, error } = await Promise.race([
-      supabaseClient.from("parts").insert(payload).select("id").single(),
-      saveTimeout,
-    ]);
-    clearTimeout(saveTimeoutId);
-
-    if (error && isMissingColumnError(error, "location_id")) {
-      locationsReady = false;
-      throw new Error(databaseSetupRequiredMessage("saving parts by location"));
-    }
-    if (error && isMissingColumnError(error, "supplier_name")) {
-      partSuppliersReady = false;
-      throw new Error("Source/vendor is not active in Supabase yet. Run supabase/step-next-part-suppliers.sql, then add the part again.");
-    }
-    if (error && isMissingColumnError(error, "unit_cost")) {
-      partCostsReady = false;
-      throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then add the part again.");
-    }
-    if (error) {
-      throw error;
-    }
-
-    setActivePartIdState(data?.id || null);
-    clearPartSearchState();
-    showNotice("Part added.");
-    formElement.reset();
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not add part.";
-  } finally {
-    if (saveTimeoutId) clearTimeout(saveTimeoutId);
-    if (submitButton && submitButton.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Add Part";
-    }
-  }
-}
-
-async function restockPart(event) {
-  event.preventDefault();
-  const formElement = event.target;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const part = parts.find((item) => item.id === formElement.dataset.restockPart);
-  const quantity = Number(new FormData(formElement).get("quantity")) || 0;
-  if (!part || quantity <= 0) return;
-  const originalText = submitButton?.textContent || "Restock";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .update({ quantity_on_hand: (Number(part.quantity_on_hand) || 0) + quantity })
-        .eq("id", part.id)
-        .eq("company_id", activeCompanyId),
-      "Part restock timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-    showNotice("Part restocked.");
-    await render();
-  } catch (error) {
-    showNotice(`Could not restock part: ${error.message || error}`, "warning");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
-  }
-}
-
-async function usePartFromInventory(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const part = parts.find((item) => item.id === formElement.dataset.usePart);
-  const quantity = Number(new FormData(formElement).get("quantity")) || 0;
-  if (!part || quantity <= 0) return;
-  const originalText = submitButton?.textContent || "Use";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  try {
-    const currentQuantity = Number(part.quantity_on_hand) || 0;
-    const nextQuantity = Math.max(0, currentQuantity - quantity);
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .update({ quantity_on_hand: nextQuantity })
-        .eq("id", part.id)
-        .eq("company_id", activeCompanyId),
-      "Part use save timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-    showNotice("Part used.");
-    await render();
-  } catch (error) {
-    showNotice(`Could not use part: ${error.message || error}`, "warning");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
-  }
-}
-
-async function updatePart(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const partId = formElement.dataset.editPart;
-  const errorElement = document.querySelector(`[data-part-edit-error="${partId}"]`);
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (errorElement) errorElement.textContent = "";
-  const originalText = submitButton?.textContent || "Save Part";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  const payload = {
-    name: String(form.get("name") || "").trim(),
-    sku: form.get("sku") || null,
-    supplier_name: form.get("supplier_name") || null,
-    quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
-    reorder_point: Number(form.get("reorder_point")) || 0,
-    unit_cost: Number(form.get("unit_cost")) || 0,
-  };
-
-  try {
-    if (!payload.name) throw new Error("Part name is required.");
-
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .update(payload)
-        .eq("id", partId)
-        .eq("company_id", activeCompanyId),
-      "Part save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error && isMissingColumnError(error, "supplier_name")) {
-      partSuppliersReady = false;
-      throw new Error("Source/vendor is not active in Supabase yet. Run supabase/step-next-part-suppliers.sql, then save again.");
-    }
-
-    if (error && isMissingColumnError(error, "unit_cost")) {
-      partCostsReady = false;
-      throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then save again.");
-    }
-
-    if (error) throw error;
-
-    setActivePartIdState(null);
-    clearPartSearchState();
-    showNotice("Part saved.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not save part.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
-  }
-}
-
 function requestDeletePart(id) {
   if (!canDeleteParts()) {
     alert("Only company admins and managers can delete parts.");
@@ -4538,61 +4334,6 @@ async function deletePart(id) {
     if (confirmButton) {
       confirmButton.disabled = false;
       confirmButton.textContent = "Permanently Delete";
-    }
-  }
-}
-
-async function renamePartSource(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#part-source-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  const oldSource = String(form.get("old_source") || "").trim();
-  const newSource = String(form.get("new_source") || "").trim();
-
-  if (errorElement) errorElement.textContent = "";
-  if (!oldSource) return;
-  if (!partSuppliersReady) {
-    if (errorElement) errorElement.textContent = "Run supabase/step-next-part-suppliers.sql before editing sources.";
-    return;
-  }
-  if (oldSource === newSource) {
-    if (errorElement) errorElement.textContent = "Change the source name before saving.";
-    return;
-  }
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Renaming...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .update({ supplier_name: newSource || null })
-        .eq("company_id", activeCompanyId)
-        .eq("supplier_name", oldSource),
-      "Part source rename timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      if (isMissingColumnError(error, "supplier_name")) partSuppliersReady = false;
-      throw new Error(partSuppliersReady
-        ? error.message
-        : "Run supabase/step-next-part-suppliers.sql before editing sources.");
-    }
-
-    showNotice("Part source updated.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not update part source.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Rename";
     }
   }
 }
