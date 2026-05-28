@@ -54,6 +54,7 @@ const { createMessageWorkflow } = window.MaintainOpsMessageWorkflow;
 const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMaintenanceWorkflow;
 const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
 const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
+const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3166,6 +3167,28 @@ const {
   render: () => render(),
   renderWorkspace,
 });
+const {
+  bindCompanySettingsWorkflowEvents,
+} = createCompanySettingsWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  storage: localStorage,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  requiredText,
+  createLocationRecord,
+  isColumnSchemaError,
+  normalizePublicAppUrl,
+  getActiveCompanyId: () => activeCompanyId,
+  getLocationsReady: () => locationsReady,
+  setLocationsReady: (value) => { locationsReady = value; },
+  setActiveLocationId: (value) => { activeLocationId = value; },
+  setPublicAppUrlOverride: (value) => { publicAppUrlOverride = value; },
+  persistActiveLocationId,
+  showNotice,
+  render: () => render(),
+  renderWorkspace,
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -3823,17 +3846,10 @@ function bindWorkspaceEvents() {
   const partsUsedForm = document.querySelector("#parts-used-form");
   if (partsUsedForm) partsUsedForm.addEventListener("submit", recordPartUsed);
 
-  const settingsForm = document.querySelector("#company-settings-form");
-  if (settingsForm) settingsForm.addEventListener("submit", updateCompanySettings);
+  bindCompanySettingsWorkflowEvents();
 
   const logoForm = document.querySelector("#company-logo-form");
   if (logoForm) logoForm.addEventListener("submit", uploadCompanyLogo);
-
-  const locationForm = document.querySelector("#location-form");
-  if (locationForm) locationForm.addEventListener("submit", createLocation);
-
-  const publicAppUrlForm = document.querySelector("#public-app-url-form");
-  if (publicAppUrlForm) publicAppUrlForm.addEventListener("submit", savePublicAppUrl);
 }
 
 async function createAsset(event) {
@@ -4091,37 +4107,6 @@ async function createQuickFixAsset(name, status = "running") {
   return response;
 }
 
-async function updateCompanySettings(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("companies")
-        .update({ name: requiredText(form.get("name"), "Company name") })
-        .eq("id", activeCompanyId),
-      "Company save timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) throw error;
-    showNotice("Company saved.");
-    await render();
-  } catch (error) {
-    showNotice(`Could not save company: ${error.message || error}`, "warning");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Company";
-    }
-  }
-}
-
 async function uploadCompanyLogo(event) {
   event.preventDefault();
   const formElement = event.currentTarget;
@@ -4189,45 +4174,6 @@ async function uploadCompanyLogo(event) {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = "Upload Logo";
-    }
-  }
-}
-
-async function createLocation(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#location-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const name = String(new FormData(formElement).get("name") || "").trim();
-  if (!name) return;
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Adding...";
-  }
-
-  try {
-    const { data, error } = await withOperationTimeout(
-      createLocationRecord(supabaseClient, activeCompanyId, name),
-      "Location save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      if (isColumnSchemaError(error, ["locations"])) locationsReady = false;
-      throw new Error(locationsReady ? error.message : "Run supabase/step-next-locations.sql before adding locations.");
-    }
-
-    activeLocationId = data.id;
-    persistActiveLocationId(activeLocationId);
-    showNotice("Location added.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not add location.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Add Location";
     }
   }
 }
@@ -4459,32 +4405,6 @@ async function updatePublicRequestLink(linkId, patch, successMessage) {
   } catch (error) {
     if (errorElement) errorElement.textContent = error.message || "Could not update the request link.";
   }
-}
-
-function savePublicAppUrl(event) {
-  event.preventDefault();
-  const errorElement = document.querySelector("#public-request-link-error");
-  const rawUrl = String(new FormData(event.currentTarget).get("public_app_url") || "").trim();
-  if (errorElement) errorElement.textContent = "";
-
-  if (!rawUrl) {
-    publicAppUrlOverride = "";
-    localStorage.removeItem("maintainops.publicAppUrl");
-    showNotice("Public app URL cleared.");
-    renderWorkspace();
-    return;
-  }
-
-  const normalizedUrl = normalizePublicAppUrl(rawUrl);
-  if (!normalizedUrl) {
-    if (errorElement) errorElement.textContent = "Enter the public https:// URL where MaintainOps opens. Localhost, file paths, and private network addresses cannot be used for posted QR codes.";
-    return;
-  }
-
-  publicAppUrlOverride = normalizedUrl;
-  localStorage.setItem("maintainops.publicAppUrl", publicAppUrlOverride);
-  showNotice("Public app URL saved.");
-  renderWorkspace();
 }
 
 async function createPart(event) {
