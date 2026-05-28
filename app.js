@@ -58,6 +58,7 @@ const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkf
 const { createAppIssueWorkflow } = window.MaintainOpsAppIssueWorkflow;
 const { createPublicRequestLinkWorkflow } = window.MaintainOpsPublicRequestLinkWorkflow;
 const { createPartInventoryWorkflow } = window.MaintainOpsPartInventoryWorkflow;
+const { createWorkOrderQuickUpdateWorkflow } = window.MaintainOpsWorkOrderQuickUpdateWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3391,6 +3392,35 @@ function recommendedWorkOrderStep(workOrder) {
   return "";
 }
 
+const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  consoleRef: console,
+  getWorkOrders: () => workOrders,
+  getActiveWorkOrderId: () => activeWorkOrderId,
+  createQuickFixAsset,
+  confirmAssetLocationRouting,
+  requiredText,
+  descriptionWithAssignmentNote,
+  locationIdForAsset,
+  workOrderDateValue,
+  assignedUserFromForm,
+  applySafetyRequirementPayload,
+  blocksProcedureCompletion,
+  setWorkOrderActionWarning,
+  applySafetyCheckPayload,
+  requiresSafetyDeviceCheck,
+  hasCompletedSafetyDeviceCheck,
+  withOperationTimeout,
+  updateWorkOrderSafely,
+  friendlyWorkOrderSaveError,
+  updateAssetStatus,
+  recordWorkOrderEvent,
+  describeWorkOrderChanges,
+  showNotice,
+  render,
+});
+
 function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
@@ -4755,115 +4785,6 @@ async function updateWorkOrderDetails(event) {
       submitButton.disabled = false;
       submitButton.textContent = "Save Work Order";
     }
-  }
-}
-
-async function updateWorkOrderQuickView(event) {
-  event.preventDefault();
-  const formElement = event.target;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const errorTarget = document.querySelector("#quick-update-error");
-  const previous = workOrders.find((workOrder) => workOrder.id === activeWorkOrderId);
-  const form = new FormData(formElement);
-  submitButton.disabled = true;
-  submitButton.textContent = "Saving...";
-  if (errorTarget) errorTarget.textContent = "";
-
-  try {
-    let assetId = form.get("asset_id") || null;
-    const newAssetName = String(form.get("new_asset_name") || "").trim();
-    if (newAssetName) {
-      const { data: newAsset, error: assetError } = await createQuickFixAsset(newAssetName, "running");
-      if (assetError) {
-        submitButton.disabled = false;
-        submitButton.textContent = "Save Quick Update";
-        if (errorTarget) errorTarget.textContent = `Could not add equipment: ${assetError.message}`;
-        return;
-      }
-      assetId = newAsset.id;
-    }
-    if (!newAssetName && !confirmAssetLocationRouting(assetId, "saving this work update", errorTarget)) return;
-    const payload = {
-      title: requiredText(form.get("title"), "Issue"),
-      description: descriptionWithAssignmentNote(previous?.description || "", form.get("assigned_to")),
-      asset_id: assetId,
-      location_id: locationIdForAsset(assetId),
-      due_at: workOrderDateValue(form.get("due_at")),
-      status: form.get("status"),
-      priority: form.get("priority"),
-      assigned_to: assignedUserFromForm(form),
-      resolution_summary: form.get("resolution_summary") || null,
-    };
-    applySafetyRequirementPayload(payload);
-    const safetyChecked = form.get("safety_devices_checked") === "on";
-    if (payload.status === "completed" && previous?.status !== "completed") {
-      const procedureCompletionMessage = blocksProcedureCompletion(previous);
-      if (procedureCompletionMessage) {
-        setWorkOrderActionWarning(activeWorkOrderId, procedureCompletionMessage);
-        submitButton.disabled = false;
-        submitButton.textContent = "Save Quick Update";
-        if (errorTarget) errorTarget.textContent = procedureCompletionMessage;
-        return;
-      }
-      applySafetyCheckPayload(payload, safetyChecked);
-      if (requiresSafetyDeviceCheck(payload) && !payload.safety_devices_checked) {
-        submitButton.disabled = false;
-        submitButton.textContent = "Save Quick Update";
-        if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to equipment.";
-        return;
-      }
-      payload.completed_at = new Date().toISOString();
-    }
-    if (payload.status !== "completed") {
-      payload.completed_at = null;
-      applySafetyCheckPayload(payload, false);
-    } else if (previous?.status === "completed") {
-      applySafetyCheckPayload(payload, payload.safety_check_required && (safetyChecked || hasCompletedSafetyDeviceCheck(previous)));
-    }
-
-    const { error } = await withOperationTimeout(
-      updateWorkOrderSafely(payload, activeWorkOrderId),
-      "Quick update save timed out. Check your connection and try again.",
-      20000
-    );
-    if (error) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Quick Update";
-      if (errorTarget) errorTarget.textContent = `Could not save update: ${friendlyWorkOrderSaveError(error)}`;
-      return;
-    }
-
-    const warnings = [];
-    if (payload.asset_id && form.get("machine_down") === "on") {
-      const assetError = await updateAssetStatus(payload.asset_id, "offline");
-      if (assetError) {
-        warnings.push(`equipment status did not update: ${assetError.message}`);
-      } else {
-        await recordWorkOrderEvent(activeWorkOrderId, "asset_status_updated", "Equipment marked down/offline.");
-      }
-    }
-
-    const logError = await withOperationTimeout(
-      recordWorkOrderEvent(activeWorkOrderId, "quick_update", describeWorkOrderChanges(previous, Object.fromEntries(form.entries()))),
-      "Activity log timed out.",
-      8000
-    ).catch((error) => error);
-    if (newAssetName) {
-      await withOperationTimeout(
-        recordWorkOrderEvent(activeWorkOrderId, "equipment_created", `Equipment created from work order: ${newAssetName}.`),
-        "Activity log timed out.",
-        8000
-      ).catch(() => null);
-    }
-    if (logError) warnings.push(`history did not update: ${logError.message}`);
-    setWorkOrderActionWarning("", "");
-    showNotice(warnings.length ? `Quick update saved with warning: ${warnings[0]}` : "Quick update saved.", warnings.length ? "warning" : "success");
-    await render();
-  } catch (error) {
-    console.error("Quick update save failed", error);
-    submitButton.disabled = false;
-    submitButton.textContent = "Save Quick Update";
-    if (errorTarget) errorTarget.textContent = `Could not save update: ${error.message || error}`;
   }
 }
 
