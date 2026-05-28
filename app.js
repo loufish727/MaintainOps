@@ -53,6 +53,7 @@ const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
 const { createMessageWorkflow } = window.MaintainOpsMessageWorkflow;
 const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMaintenanceWorkflow;
 const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
+const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3141,6 +3142,30 @@ const {
   render: () => render(),
   renderWorkspace,
 });
+const {
+  bindTeamWorkflowEvents,
+  cancelTeamInvite,
+} = createTeamWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  isMissingColumnError,
+  isColumnSchemaError,
+  alertUser: (message) => alert(message),
+  getSession: () => session,
+  getActiveCompanyId: () => activeCompanyId,
+  getProfilesByUserId: () => profilesByUserId,
+  getTeamInvitesReady: () => teamInvitesReady,
+  setTeamInvitesReady: (value) => { teamInvitesReady = value; },
+  setPendingCancelInviteId: (value) => { pendingCancelInviteId = value; },
+  setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
+  loadMembers,
+  loadTeamInvites,
+  showNotice,
+  render: () => render(),
+  renderWorkspace,
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -3714,12 +3739,7 @@ function bindWorkspaceEvents() {
     field.addEventListener("change", saveStepResult);
   });
 
-  const memberForm = document.querySelector("#add-member-form");
-  if (memberForm) memberForm.addEventListener("submit", addCompanyMember);
-
-  document.querySelectorAll("[data-member-role]").forEach((form) => {
-    form.addEventListener("submit", updateCompanyMemberRole);
-  });
+  bindTeamWorkflowEvents();
 
   bindWorkspaceTeamWorkViewEvents({
     state: {
@@ -3735,12 +3755,6 @@ function bindWorkspaceEvents() {
     resetWorkOrderPage,
   });
 
-
-  const profileForm = document.querySelector("#profile-form");
-  if (profileForm) profileForm.addEventListener("submit", updateMyProfile);
-
-  const inviteForm = document.querySelector("#team-invite-form");
-  if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
 
   bindWorkspaceTeamInviteCancelEvents({
     state: {
@@ -4075,203 +4089,6 @@ async function createQuickFixAsset(name, status = "running") {
     return withSetupError(response, equipmentSchemaMessage(response.error).replace("saving", "adding"));
   }
   return response;
-}
-
-async function addCompanyMember(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const form = new FormData(formElement);
-  const submitButton = formElement.querySelector("button[type='submit']");
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Adding...";
-  }
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.from("company_members").insert({
-        company_id: activeCompanyId,
-        user_id: form.get("user_id"),
-        role: form.get("role"),
-      }),
-      "Team member save timed out."
-    );
-    if (error) throw error;
-    await render();
-  } catch (error) {
-    alert(error.message || error);
-  } finally {
-    if (submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Add Member";
-    }
-  }
-}
-
-async function updateCompanyMemberRole(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const form = new FormData(formElement);
-  const submitButton = formElement.querySelector("button[type='submit']");
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.rpc("update_company_member_role", {
-        target_company_id: activeCompanyId,
-        target_user_id: formElement.dataset.memberRole,
-        new_role: form.get("role"),
-      }),
-      "Role save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      throw new Error(error.message.includes("update_company_member_role")
-        ? "Run supabase/step-next-team-roles.sql before editing roles."
-        : error.message);
-    }
-
-    await loadMembers();
-    showNotice("Role saved.");
-    render();
-  } catch (error) {
-    showNotice(`Could not save role: ${error.message || error}`, "warning");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Role";
-    }
-  }
-}
-
-async function updateMyProfile(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#profile-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  const fullName = String(form.get("full_name") || "").trim();
-  const mobileTechField = formElement.querySelector('input[name="mobile_tech"]');
-  const mobileTech = mobileTechField ? mobileTechField.checked : Boolean(profilesByUserId[session.user.id]?.mobile_tech);
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient
-        .from("profiles")
-        .upsert({
-          company_id: activeCompanyId,
-          user_id: session.user.id,
-          full_name: fullName,
-          mobile_tech: mobileTech,
-        }, { onConflict: "company_id,user_id" }),
-      "Profile save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      if (isMissingColumnError(error, "mobile_tech")) {
-        throw new Error("Run supabase/step-next-mobile-tech-setting.sql before saving Mobile tech settings.");
-      }
-      throw error;
-    }
-
-    showNotice("Profile saved.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not save profile.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Save Profile";
-    }
-  }
-}
-
-// TRACEABILITY: Invite default location is onboarding state; acceptance must preserve the intended starting location.
-async function createTeamInvite(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#team-invite-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const form = new FormData(formElement);
-  if (errorElement) errorElement.textContent = "";
-  if (!teamInvitesReady) {
-    if (errorElement) errorElement.textContent = "Run supabase/step-next-invite-default-location.sql before inviting by email.";
-    return;
-  }
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Inviting...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.rpc("create_company_invite", {
-        target_company_id: activeCompanyId,
-        invite_email: String(form.get("email") || "").trim(),
-        invite_role: form.get("role"),
-        invite_default_location_id: form.get("default_location_id") || null,
-      }),
-      "Invite save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      if (error.message.includes("create_company_invite") || isColumnSchemaError(error, ["company_invites"])) {
-        teamInvitesReady = false;
-        throw new Error("Run supabase/step-next-invite-default-location.sql before inviting by email.");
-      }
-      throw error;
-    }
-
-    showNotice("Invite created.");
-    teamInviteCancelError = "";
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not create invite.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Create Invite";
-    }
-  }
-}
-
-async function cancelTeamInvite(inviteId) {
-  if (!inviteId || !activeCompanyId) return;
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.rpc("cancel_company_invite", {
-        target_company_id: activeCompanyId,
-        target_invite_id: inviteId,
-      }),
-      "Invite cancel timed out. Check your connection and try again.",
-      15000
-    );
-    if (error) {
-      if (error.message.includes("cancel_company_invite")) {
-        throw new Error("Run supabase/step-next-cancel-team-invites.sql before canceling invites.");
-      }
-      throw error;
-    }
-    pendingCancelInviteId = null;
-    teamInviteCancelError = "";
-    showNotice("Invite canceled.");
-    await loadTeamInvites();
-    renderWorkspace();
-  } catch (error) {
-    pendingCancelInviteId = null;
-    teamInviteCancelError = error.message || "Could not cancel invite.";
-    renderWorkspace();
-  }
 }
 
 async function updateCompanySettings(event) {
