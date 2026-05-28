@@ -67,6 +67,8 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Security verification commands now cover static SQL/RPC checks, anonymous table-access denial, invalid public request token behavior, and a tested cross-company read probe for selected high-value tables.
 - Technician manager/admin mutation probes now verify that technician credentials are rejected by role-management, invite, company-logo, and public-request-link admin RPCs.
 - Public request photo attach probing found a live RPC hardening gap; `supabase/step-next-public-request-photo-attach-hardening.sql` was applied and the random/mismatched request attach probes now pass.
+- Storage MIME hardening was applied to `work-order-photos` and `part-documents`; media storage workflow smoke and public/storage boundary probes passed afterward.
+- Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
 - `app.js` is currently about 4,796 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.

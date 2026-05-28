@@ -56,6 +56,22 @@ Additional live probe expansion:
 - forbidden-company storage upload to `company-logos`: PASS; rejected.
 - anonymous upload to a random `maintenance-request-photos` request path: PASS; rejected.
 - anonymous storage list probes returned no objects for private buckets.
+- storage MIME hardening: PASS; `work-order-photos` and `part-documents` now enforce bucket-level MIME allowlists and size limits.
+- public request rate limit: PASS; live throttle probe allowed 10 rapid disposable public requests and rejected the next 2 with `Too many requests. Please wait a minute and try again.`
+- public request rate-limit cleanup: PASS; all disposable throttle-probe requests were deleted after verification.
+
+## Public Request Rate Limit Hardening
+
+The public request intake RPC was hardened on 2026-05-28 through `supabase/step-next-public-request-rate-limit.sql`.
+
+The change adds a private `private.public_request_rate_limits` table with RLS enabled and direct `anon`/`authenticated` access revoked. `submit_public_location_request` now limits each active public request link to 10 submissions per minute while preserving the existing token-scoped public request creation behavior.
+
+Post-fix probe result:
+
+- valid public request link submit: PASS; one disposable request was created through the live anonymous RPC.
+- cleanup after valid submit: PASS; disposable request was deleted by the authenticated QA/admin probe.
+- rapid public request throttle: PASS; 10 disposable submissions were accepted and the next 2 were rejected.
+- cleanup after throttle probe: PASS; disposable throttle requests were deleted.
 
 ## Public Request Photo Attach Hardening
 

@@ -74,6 +74,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-public-request-link-admin-controls.sql`
 - `step-next-public-request-links.sql`
 - `step-next-public-request-photo-attach-hardening.sql`
+- `step-next-public-request-rate-limit.sql`
 - `step-next-qa-rls-location-fixture.sql`
 - `step-next-record-work-order-part-usage.sql`
 - `step-next-rls-bulletproof-hardening.sql`
@@ -82,6 +83,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-safety-checks.sql`
 - `step-next-security-hardening.sql`
 - `step-next-storage-cleanup.sql`
+- `step-next-storage-mime-hardening.sql`
 - `step-next-team-invites.sql`
 - `step-next-team-members.sql`
 - `step-next-team-roles.sql`
@@ -117,6 +119,14 @@ Run `supabase/step-next-maintenance-request-photos.sql` before testing QR or int
 Public request photo attach hardening:
 
 Run `supabase/step-next-public-request-photo-attach-hardening.sql` after `step-next-maintenance-request-photos.sql`. It hardens `attach_maintenance_request_photo` so random request ids, mismatched storage paths, expired/non-public requests, and no-op updates are rejected.
+
+Storage MIME hardening:
+
+Run `supabase/step-next-storage-mime-hardening.sql` after the storage buckets exist. It enforces bucket-level MIME allowlists and file-size limits for `work-order-photos` and `part-documents`.
+
+Public request rate limiting:
+
+Run `supabase/step-next-public-request-rate-limit.sql` after public request links exist. It creates `private.public_request_rate_limits` with RLS enabled and direct client access revoked, then updates `submit_public_location_request` to limit each public request link to 10 submissions per minute.
 
 ## QA Location Cleanup
 

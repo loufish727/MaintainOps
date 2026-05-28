@@ -10,6 +10,11 @@ create table if not exists private.public_request_rate_limits (
   primary key (public_request_link_id, window_start)
 );
 
+alter table private.public_request_rate_limits enable row level security;
+
+revoke all on table private.public_request_rate_limits from anon;
+revoke all on table private.public_request_rate_limits from authenticated;
+
 create or replace function public.submit_public_location_request(
   request_token text,
   request_title text,
