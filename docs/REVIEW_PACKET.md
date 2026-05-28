@@ -39,7 +39,7 @@ Areas still maturing:
 - Extracted modules: `src/`.
 - SQL source: `supabase/`.
 
-Current architecture is transitional: the app is functional and actively being decomposed, but `app.js` still owns substantial startup, rendering, state, and workflow authority.
+Current architecture is transitional but more intentional than earlier versions: `app.js` remains the app shell, bootstrapper, render router, and dependency wiring layer, while workflow, render, service, utility, and event modules continue moving into `src/`. The remaining `app.js` authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`.
 
 ## Security Posture
 
