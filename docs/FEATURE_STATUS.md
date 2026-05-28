@@ -70,7 +70,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Storage MIME hardening was applied to `work-order-photos` and `part-documents`; media storage workflow smoke and public/storage boundary probes passed afterward.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 4,796 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 4,450 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
 - Backup/restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.
