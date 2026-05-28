@@ -64,6 +64,7 @@ const { createRequestLifecycleWorkflow } = window.MaintainOpsRequestLifecycleWor
 const { createWorkOrderCreationWorkflow } = window.MaintainOpsWorkOrderCreationWorkflow;
 const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailEditWorkflow;
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
+const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -4156,76 +4157,6 @@ async function deletePart(id) {
   }
 }
 
-async function uploadPartDocument(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const partId = formElement.dataset.partDocument;
-  const errorElement = document.querySelector(`[data-part-document-error="${partId}"]`);
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const file = new FormData(formElement).get("document");
-
-  if (errorElement) errorElement.textContent = "";
-  if (!partDocumentsReady) {
-    if (errorElement) errorElement.textContent = "Run supabase/step-next-part-documents.sql before attaching files.";
-    return;
-  }
-  if (!file || !file.name) {
-    if (errorElement) errorElement.textContent = "Choose a receipt, invoice, photo, or PDF first.";
-    return;
-  }
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Attaching...";
-  }
-
-  const fileName = safeFileName(file.name || "part-file");
-  const path = `${activeCompanyId}/${partId}/${crypto.randomUUID()}-${fileName}`;
-  try {
-    const upload = await withOperationTimeout(
-      supabaseClient.storage.from("part-documents").upload(path, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      }),
-      "Part file upload timed out. Check your connection and try again.",
-      25000
-    );
-
-    if (upload.error) throw upload.error;
-
-    const { error } = await withOperationTimeout(
-      supabaseClient.from("part_documents").insert({
-        company_id: activeCompanyId,
-        part_id: partId,
-        uploaded_by: session.user.id,
-        storage_path: path,
-        file_name: fileName,
-        content_type: file.type || null,
-      }),
-      "Part file record save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      await removeUploadedObject("part-documents", path);
-      if (isColumnSchemaError(error, ["part_documents"])) partDocumentsReady = false;
-      throw new Error(partDocumentsReady
-        ? error.message
-        : "Run supabase/step-next-part-documents.sql before attaching files.");
-    }
-
-    showNotice("Part file attached.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not attach file.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Attach File";
-    }
-  }
-}
-
 async function createFollowUpWorkOrder(sourceId) {
   const source = workOrders.find((item) => item.id === sourceId);
   if (!source) return;
@@ -4276,6 +4207,36 @@ async function createFollowUpWorkOrder(sourceId) {
     showNotice(`Could not create follow-up work: ${error.message || error}`, "warning");
   }
 }
+
+const {
+  addPhotoToMaintenanceRequest,
+  addPhotoToWorkOrder,
+  optimizePhoto,
+  removeUploadedObject,
+  uploadPartDocument,
+  uploadPhoto,
+} = createMediaStorageWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  cryptoRef: crypto,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  getActiveCompanyId: () => activeCompanyId,
+  getActiveWorkOrderId: () => activeWorkOrderId,
+  getSession: () => session,
+  safeFileName,
+  fileBaseName,
+  isColumnSchemaError,
+  ensureProfileForActiveCompany,
+  getAppError: () => appError,
+  recordWorkOrderEvent,
+  getPartDocumentsReady: () => partDocumentsReady,
+  setPartDocumentsReady: (value) => { partDocumentsReady = value; },
+  setPhotosReady: (value) => { photosReady = value; },
+  setRequestPhotosReady: (value) => { requestPhotosReady = value; },
+  showNotice,
+  render,
+});
 
 const {
   addPartUsageToWorkOrder,
@@ -4708,178 +4669,6 @@ async function addCommentToWorkOrder(workOrderId, body) {
     error = retry.error;
   }
   return error || null;
-}
-
-async function uploadPhoto(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const errorTarget = document.querySelector("#photo-error");
-  if (errorTarget) errorTarget.textContent = "";
-  const file = new FormData(formElement).get("photo");
-  if (!file || !file.name) {
-    if (errorTarget) errorTarget.textContent = "Choose a photo first.";
-    return;
-  }
-
-  submitButton.disabled = true;
-  submitButton.textContent = "Uploading...";
-  try {
-    const hasProfile = await ensureProfileForActiveCompany();
-    if (!hasProfile) throw new Error(appError);
-
-    const error = await addPhotoToWorkOrder(activeWorkOrderId, file);
-    if (error) throw error;
-    await withOperationTimeout(
-      recordWorkOrderEvent(activeWorkOrderId, "photo_uploaded", `Photo uploaded: ${file.name}.`),
-      "Activity log timed out.",
-      8000
-    ).catch(() => null);
-    showNotice("Photo uploaded.");
-    await render();
-  } catch (error) {
-    if (errorTarget) errorTarget.textContent = `Could not upload photo: ${error.message || error}`;
-    else alert(error.message || error);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Upload Photo";
-  }
-}
-
-async function removeUploadedObject(bucket, path) {
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.storage.from(bucket).remove([path]),
-      "Uploaded file cleanup timed out.",
-      10000
-    );
-    if (error) console.warn(`Could not remove uploaded ${bucket} object`, error);
-  } catch (error) {
-    console.warn(`Could not remove uploaded ${bucket} object`, error);
-  }
-}
-
-async function addPhotoToWorkOrder(workOrderId, file) {
-  const hasProfile = await ensureProfileForActiveCompany();
-  if (!hasProfile) return new Error(appError);
-
-  const optimized = await optimizePhoto(file);
-  const path = `${activeCompanyId}/${workOrderId}/${crypto.randomUUID()}-${optimized.fileName}`;
-  const upload = await withOperationTimeout(
-    supabaseClient.storage.from("work-order-photos").upload(path, optimized.blob, {
-      contentType: optimized.contentType,
-      upsert: false,
-    }),
-    "Photo upload timed out. Check your connection and try again.",
-    25000
-  );
-  if (upload.error) return upload.error;
-
-  const photoRecord = {
-    company_id: activeCompanyId,
-    work_order_id: workOrderId,
-    uploaded_by: session.user.id,
-    storage_path: path,
-    file_name: optimized.fileName,
-    content_type: optimized.contentType,
-    file_size_bytes: optimized.blob.size || null,
-    original_file_name: safeFileName(file.name || "photo"),
-    original_size_bytes: file.size || null,
-  };
-
-  let { error } = await withOperationTimeout(
-    supabaseClient.from("work_order_photos").insert(photoRecord),
-    "Photo record save timed out. Check your connection and try again.",
-    15000
-  );
-  if (error && isColumnSchemaError(error, ["file_size_bytes", "original_file_name", "original_size_bytes"])) {
-    delete photoRecord.file_size_bytes;
-    delete photoRecord.original_file_name;
-    delete photoRecord.original_size_bytes;
-    const retry = await withOperationTimeout(
-      supabaseClient.from("work_order_photos").insert(photoRecord),
-      "Photo record retry timed out. Check your connection and try again.",
-      15000
-    );
-    error = retry.error;
-  }
-  if (error) await removeUploadedObject("work-order-photos", path);
-  return error || null;
-}
-
-async function addPhotoToMaintenanceRequest(requestId, file) {
-  if (!requestId) return new Error("Request was not saved before photo upload.");
-
-  const optimized = await optimizePhoto(file);
-  const path = `${requestId}/${crypto.randomUUID()}-${optimized.fileName}`;
-  const upload = await withOperationTimeout(
-    supabaseClient.storage.from("maintenance-request-photos").upload(path, optimized.blob, {
-      contentType: optimized.contentType,
-      upsert: false,
-    }),
-    "Request photo upload timed out. Check your connection and try again.",
-    25000
-  );
-  if (upload.error) return upload.error;
-
-  const { error } = await withOperationTimeout(
-    supabaseClient.rpc("attach_maintenance_request_photo", {
-      target_request_id: requestId,
-      p_photo_storage_path: path,
-      p_photo_file_name: optimized.fileName,
-      p_photo_content_type: optimized.contentType,
-      p_photo_file_size_bytes: optimized.blob.size || null,
-      p_photo_original_file_name: safeFileName(file.name || "photo"),
-      p_photo_original_size_bytes: file.size || null,
-    }),
-    "Request photo record save timed out. Check your connection and try again.",
-    15000
-  );
-  if (error) {
-    await removeUploadedObject("maintenance-request-photos", path);
-  }
-  return error || null;
-}
-
-async function optimizePhoto(file) {
-  const imageTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (!imageTypes.includes(file.type)) {
-    return {
-      blob: file,
-      fileName: safeFileName(file.name || "photo"),
-      contentType: file.type || "application/octet-stream",
-    };
-  }
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const maxDimension = 2400;
-    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d", { alpha: false });
-    context.drawImage(bitmap, 0, 0, width, height);
-    if (bitmap.close) bitmap.close();
-
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
-    if (!blob) throw new Error("Browser could not optimize this image.");
-
-    return {
-      blob,
-      fileName: `${fileBaseName(file.name || "photo")}.jpg`,
-      contentType: "image/jpeg",
-    };
-  } catch (error) {
-    console.warn("Photo optimization failed; uploading original.", error);
-    return {
-      blob: file,
-      fileName: safeFileName(file.name || "photo"),
-      contentType: file.type || "application/octet-stream",
-    };
-  }
 }
 
 async function optimizeLogo(file) {
