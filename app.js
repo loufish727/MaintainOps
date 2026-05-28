@@ -63,6 +63,7 @@ const { createAssetWorkflow } = window.MaintainOpsAssetWorkflow;
 const { createRequestLifecycleWorkflow } = window.MaintainOpsRequestLifecycleWorkflow;
 const { createWorkOrderCreationWorkflow } = window.MaintainOpsWorkOrderCreationWorkflow;
 const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailEditWorkflow;
+const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -4225,55 +4226,6 @@ async function uploadPartDocument(event) {
   }
 }
 
-async function recordPartUsed(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#parts-used-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Recording...";
-  }
-
-  try {
-    const form = new FormData(formElement);
-    const partId = form.get("part_id");
-    const quantity = Number(form.get("quantity_used")) || 1;
-    const part = parts.find((item) => item.id === partId);
-    if (!activeWorkOrderId) throw new Error("Open a work order before recording parts.");
-    if (!part) throw new Error("Choose a part first.");
-
-    const usageError = await addPartUsageToWorkOrder(activeWorkOrderId, part, quantity);
-    if (usageError) throw usageError;
-
-    showNotice("Part recorded on work order.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not record part used.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Record Part Used";
-    }
-  }
-}
-async function addPartUsageToWorkOrder(workOrderId, part, quantity) {
-  if (!part) return new Error("Choose a part first.");
-
-  const { error } = await withOperationTimeout(
-    supabaseClient.rpc("record_work_order_part_usage", {
-      p_company_id: activeCompanyId,
-      p_work_order_id: workOrderId,
-      p_part_id: part.id,
-      p_quantity: quantity,
-    }),
-    "Part usage save timed out."
-  );
-  if (error) return error;
-  return null;
-}
-
 async function createFollowUpWorkOrder(sourceId) {
   const source = workOrders.find((item) => item.id === sourceId);
   if (!source) return;
@@ -4324,6 +4276,21 @@ async function createFollowUpWorkOrder(sourceId) {
     showNotice(`Could not create follow-up work: ${error.message || error}`, "warning");
   }
 }
+
+const {
+  addPartUsageToWorkOrder,
+  recordPartUsed,
+} = createPartUsageWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  getActiveCompanyId: () => activeCompanyId,
+  getActiveWorkOrderId: () => activeWorkOrderId,
+  getParts: () => parts,
+  showNotice,
+  render,
+});
 
 const { createQuickFix } = createQuickFixWorkflow({
   documentRef: document,
