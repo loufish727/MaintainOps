@@ -50,6 +50,42 @@ Live authenticated cross-company probe:
 - `maintenance_requests`: PASS; zero forbidden-company rows visible.
 - `public_request_links`: PASS; zero forbidden-company rows visible.
 
+Additional live probe expansion:
+
+- forbidden-company storage upload to `company-logos`: PASS; rejected.
+- anonymous upload to a random `maintenance-request-photos` request path: PASS; rejected.
+- anonymous storage list probes returned no objects for private buckets.
+
+## Current Hard Stop
+
+The public request photo attach probe found a live database gap on 2026-05-28:
+
+- `attach_maintenance_request_photo` returned success for a random request id.
+- `attach_maintenance_request_photo` returned success for a mismatched request/photo path.
+
+The repository now includes `supabase/step-next-public-request-photo-attach-hardening.sql`, which recreates the RPC with explicit request existence, path-match, public-request window, company membership, and no-op update checks.
+
+ACTION NEEDED:
+
+Run `supabase/step-next-public-request-photo-attach-hardening.sql` in the Supabase SQL editor, then rerun:
+
+```bash
+npm run test:security:boundary
+```
+
+The public request photo attach probes should pass after the live RPC is updated.
+
+## Technician Role Mutation Probe
+
+The boundary probe now includes technician manager/admin rejection checks for:
+
+- `update_company_member_role`
+- `create_company_invite`
+- `set_company_logo`
+- `ensure_location_request_link`
+
+These checks run only when `MAINTAINOPS_PROBE_EMAIL` and `MAINTAINOPS_PROBE_PASSWORD` belong to a technician account. The currently tested QA account was an admin, so these technician-specific rejection probes are instrumented but still need a technician test credential.
+
 ## What This Does And Does Not Prove
 
 These checks prove the current public Data API surface rejects anonymous table reads and that the tested authenticated user could not read rows for the tested forbidden company across the selected high-value tables.

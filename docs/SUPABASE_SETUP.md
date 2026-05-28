@@ -73,6 +73,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-procedures.sql`
 - `step-next-public-request-link-admin-controls.sql`
 - `step-next-public-request-links.sql`
+- `step-next-public-request-photo-attach-hardening.sql`
 - `step-next-qa-rls-location-fixture.sql`
 - `step-next-record-work-order-part-usage.sql`
 - `step-next-rls-bulletproof-hardening.sql`
@@ -112,6 +113,10 @@ notify pgrst, 'reload schema';
 Maintenance request photos:
 
 Run `supabase/step-next-maintenance-request-photos.sql` before testing QR or internal request photo uploads. It adds optional request photo metadata columns, creates the private `maintenance-request-photos` bucket, and installs the public QR upload policy plus the attach RPC.
+
+Public request photo attach hardening:
+
+Run `supabase/step-next-public-request-photo-attach-hardening.sql` after `step-next-maintenance-request-photos.sql`. It hardens `attach_maintenance_request_photo` so random request ids, mismatched storage paths, expired/non-public requests, and no-op updates are rejected.
 
 ## QA Location Cleanup
 
