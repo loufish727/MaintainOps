@@ -56,6 +56,7 @@ const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
 const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
 const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkflow;
 const { createAppIssueWorkflow } = window.MaintainOpsAppIssueWorkflow;
+const { createPublicRequestLinkWorkflow } = window.MaintainOpsPublicRequestLinkWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3215,6 +3216,24 @@ const {
   showNotice,
   renderWorkspace,
 });
+const {
+  createPublicRequestLink,
+  disablePublicRequestLink,
+  setPublicRequestLinkActive,
+  regeneratePublicRequestLink,
+} = createPublicRequestLinkWorkflow({
+  documentRef: document,
+  windowRef: window,
+  CSSRef: CSS,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  generatePublicRequestToken,
+  canAdministerPublicRequestLinks,
+  getActiveCompanyId: () => activeCompanyId,
+  setPublicRequestLinksReady: (value) => { publicRequestLinksReady = value; },
+  showNotice,
+  render: () => render(),
+});
 
 function renderPartDetail() {
   const part = parts.find((item) => item.id === activePartId);
@@ -4196,134 +4215,6 @@ async function uploadCompanyLogo(event) {
       submitButton.disabled = false;
       submitButton.textContent = "Upload Logo";
     }
-  }
-}
-
-async function createPublicRequestLink(locationId) {
-  const errorElement = document.querySelector("#public-request-link-error");
-  const button = document.querySelector(`[data-create-public-request-link="${CSS.escape(locationId)}"]`);
-  if (errorElement) errorElement.textContent = "";
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Creating...";
-  }
-
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.rpc("ensure_location_request_link", {
-        target_location_id: locationId,
-      }),
-      "QR link save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      publicRequestLinksReady = false;
-      throw new Error(error.message.includes("ensure_location_request_link")
-        ? "Run supabase/step-next-public-request-links.sql before creating QR request links."
-        : error.message);
-    }
-
-    showNotice("Location request QR link ready.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not create QR request link.";
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Create QR Link";
-    }
-  }
-}
-
-async function disablePublicRequestLink(linkId) {
-  if (!canAdministerPublicRequestLinks()) {
-    const errorElement = document.querySelector("#public-request-link-error");
-    if (errorElement) errorElement.textContent = "Only admins can disable posted QR request links.";
-    return;
-  }
-  const confirmed = window.confirm("Disable this public request QR link? Posted codes for this location will stop accepting requests until you reactivate it.");
-  if (!confirmed) return;
-  await setPublicRequestLinkActive(linkId, false);
-}
-
-async function setPublicRequestLinkActive(linkId, isActive) {
-  if (!canAdministerPublicRequestLinks()) {
-    const errorElement = document.querySelector("#public-request-link-error");
-    if (errorElement) errorElement.textContent = "Only admins can reactivate or disable posted QR request links.";
-    return;
-  }
-  await updatePublicRequestLink(
-    linkId,
-    { is_active: Boolean(isActive) },
-    isActive ? "Request link reactivated." : "Request link disabled.",
-  );
-}
-
-async function regeneratePublicRequestLink(linkId) {
-  if (!canAdministerPublicRequestLinks()) {
-    const errorElement = document.querySelector("#public-request-link-error");
-    if (errorElement) errorElement.textContent = "Only admins can replace posted QR request links.";
-    return;
-  }
-  const confirmed = window.confirm("Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
-  if (!confirmed) return;
-
-  await updatePublicRequestLink(
-    linkId,
-    {
-      token: generatePublicRequestToken(),
-      is_active: true,
-    },
-    "Request QR regenerated.",
-  );
-}
-
-async function updatePublicRequestLink(linkId, patch, successMessage) {
-  const errorElement = document.querySelector("#public-request-link-error");
-  if (errorElement) errorElement.textContent = "";
-
-  if (!canAdministerPublicRequestLinks()) {
-    if (errorElement) errorElement.textContent = "Only admins can replace, disable, or reactivate posted QR request links.";
-    return;
-  }
-
-  if (!linkId || !activeCompanyId) {
-    if (errorElement) errorElement.textContent = "Select a company before updating request links.";
-    return;
-  }
-
-  try {
-    const { data, error } = await withOperationTimeout(
-      supabaseClient
-        .from("public_request_links")
-        .update({
-          ...patch,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", linkId)
-        .eq("company_id", activeCompanyId)
-        .select("id"),
-      "Request link update timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      if (errorElement) errorElement.textContent = error.message;
-      return;
-    }
-
-    if (!data?.length) {
-      if (errorElement) {
-        errorElement.textContent = "Could not update the request link. Check that your company role is admin or manager.";
-      }
-      return;
-    }
-
-    showNotice(successMessage);
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not update the request link.";
   }
 }
 
