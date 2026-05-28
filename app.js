@@ -65,6 +65,7 @@ const { createWorkOrderCreationWorkflow } = window.MaintainOpsWorkOrderCreationW
 const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailEditWorkflow;
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
+const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -3971,77 +3972,6 @@ function bindWorkspaceEvents() {
   if (logoForm) logoForm.addEventListener("submit", uploadCompanyLogo);
 }
 
-async function uploadCompanyLogo(event) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const errorElement = document.querySelector("#company-logo-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const file = new FormData(formElement).get("logo");
-  if (errorElement) errorElement.textContent = "";
-  if (!file || !file.name) {
-    if (errorElement) errorElement.textContent = "Choose a logo image first.";
-    return;
-  }
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Uploading...";
-  }
-
-  try {
-    const optimized = await optimizeLogo(file);
-    const path = `${activeCompanyId}/logo-${crypto.randomUUID()}-${optimized.fileName}`;
-    const upload = await withOperationTimeout(
-      supabaseClient.storage.from("company-logos").upload(path, optimized.blob, {
-        contentType: optimized.contentType,
-        upsert: false,
-      }),
-      "Company logo upload timed out. Check your connection and try again.",
-      25000
-    );
-
-    if (upload.error) {
-      throw new Error(upload.error.message.includes("Bucket not found")
-        ? "Run supabase/step-next-company-logo.sql before uploading a logo."
-        : upload.error.message);
-    }
-
-    const { error } = await withOperationTimeout(
-      supabaseClient.rpc("set_company_logo", {
-        target_company_id: activeCompanyId,
-        new_logo_path: path,
-      }),
-      "Company logo record save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      await removeUploadedObject("company-logos", path);
-      throw new Error(isColumnSchemaError(error, ["logo_path"])
-        ? "Run supabase/step-next-company-logo.sql before saving a company logo."
-        : error.message.includes("set_company_logo")
-        ? "Run supabase/step-next-company-logo.sql, then try uploading the logo again."
-        : error.message);
-    }
-
-    const activeCompany = companies.find((company) => company.id === activeCompanyId);
-    if (activeCompany) {
-      activeCompany.logo_path = path;
-      activeCompany.logoUrl = URL.createObjectURL(optimized.blob);
-    }
-
-    showNotice("Company logo uploaded.");
-    await render();
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not upload logo.";
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Upload Logo";
-    }
-  }
-}
-
 function requestDeletePart(id) {
   if (!canDeleteParts()) {
     alert("Only company admins and managers can delete parts.");
@@ -4234,6 +4164,24 @@ const {
   setPartDocumentsReady: (value) => { partDocumentsReady = value; },
   setPhotosReady: (value) => { photosReady = value; },
   setRequestPhotosReady: (value) => { requestPhotosReady = value; },
+  showNotice,
+  render,
+});
+
+const { uploadCompanyLogo } = createCompanyLogoWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  cryptoRef: crypto,
+  URLRef: URL,
+  consoleRef: console,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  removeUploadedObject,
+  getActiveCompanyId: () => activeCompanyId,
+  getCompanies: () => companies,
+  safeFileName,
+  fileBaseName,
+  isColumnSchemaError,
   showNotice,
   render,
 });
@@ -4669,48 +4617,6 @@ async function addCommentToWorkOrder(workOrderId, body) {
     error = retry.error;
   }
   return error || null;
-}
-
-async function optimizeLogo(file) {
-  const imageTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (!imageTypes.includes(file.type)) {
-    return {
-      blob: file,
-      fileName: safeFileName(file.name || "logo"),
-      contentType: file.type || "application/octet-stream",
-    };
-  }
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const maxDimension = 1200;
-    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d", { alpha: true });
-    context.clearRect(0, 0, width, height);
-    context.drawImage(bitmap, 0, 0, width, height);
-    if (bitmap.close) bitmap.close();
-
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!blob) throw new Error("Browser could not optimize this logo.");
-
-    return {
-      blob,
-      fileName: `${fileBaseName(file.name || "logo")}.png`,
-      contentType: "image/png",
-    };
-  } catch (error) {
-    console.warn("Logo optimization failed; uploading original.", error);
-    return {
-      blob: file,
-      fileName: safeFileName(file.name || "logo"),
-      contentType: file.type || "application/octet-stream",
-    };
-  }
 }
 
 function activeCompanyRole() {
