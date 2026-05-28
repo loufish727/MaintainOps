@@ -33,6 +33,7 @@ For a concise external review, start with:
 - [docs/APP_JS_AUTHORITY_MAP.md](docs/APP_JS_AUTHORITY_MAP.md)
 - [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
 - [docs/SECURITY_VERIFICATION.md](docs/SECURITY_VERIFICATION.md)
+- [docs/BACKUP_RESTORE_VALIDATION.md](docs/BACKUP_RESTORE_VALIDATION.md)
 - [docs/ENGINEERING_PROCESS.md](docs/ENGINEERING_PROCESS.md)
 - [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 

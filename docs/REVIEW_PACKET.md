@@ -26,6 +26,7 @@ Areas still maturing:
 - `app.js` remains the main orchestration file.
 - Automated integration/end-to-end coverage is still limited.
 - Backup, restore, support, and incident procedures need final production rollout polish.
+- Backup/restore validation is currently blocked by the Free-plan Supabase project and missing local restore tooling; see `docs/BACKUP_RESTORE_VALIDATION.md`.
 - Public request intake needs final production copy, routing, and support hardening.
 - The current hosted app contains QA and pilot-style data.
 
@@ -70,6 +71,7 @@ Useful entry points:
 - `package.json` scripts
 - `docs/APP_JS_AUTHORITY_MAP.md`
 - `docs/SECURITY_VERIFICATION.md`
+- `docs/BACKUP_RESTORE_VALIDATION.md`
 
 This is not yet a full automated test suite. A broader integration/e2e suite remains a recommended next maturity step.
 
