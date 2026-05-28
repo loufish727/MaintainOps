@@ -30,6 +30,7 @@ For a concise external review, start with:
 - [docs/REVIEW_PACKET.md](docs/REVIEW_PACKET.md)
 - [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/APP_JS_AUTHORITY_MAP.md](docs/APP_JS_AUTHORITY_MAP.md)
 - [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
 - [docs/ENGINEERING_PROCESS.md](docs/ENGINEERING_PROCESS.md)
 - [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)

@@ -1,5 +1,7 @@
 # Step 4: Assets And Locations
 
+Historical planning note: this file records an early asset/location slice. Current equipment, location, and workspace behavior is tracked in `FEATURE_STATUS.md` and `PROJECT_OVERVIEW.md`.
+
 ## Goal
 
 Make assets operational records instead of static reference cards. A manager should be able to open an asset, understand where it lives, see its maintenance history, and change its current condition.

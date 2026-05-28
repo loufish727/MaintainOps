@@ -1,5 +1,7 @@
 # Step 1: Product Foundation
 
+Historical planning note: this file records the early product foundation. Current app state is tracked in `PROJECT_OVERVIEW.md`, `FEATURE_STATUS.md`, `ARCHITECTURE.md`, and `APP_JS_AUTHORITY_MAP.md`.
+
 ## Working Product Name
 
 MaintainOps

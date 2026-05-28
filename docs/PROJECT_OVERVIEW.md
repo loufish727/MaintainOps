@@ -33,6 +33,8 @@ Remove all references to MaintenanceX or Maintenance X. The app must remain orig
 - Supabase config example: `supabase-config.example.js`
 - Local Supabase config: `supabase-config.js`
 
+The intended remaining role of `app.js` is tracked in `APP_JS_AUTHORITY_MAP.md`.
+
 ## Current Local Testing
 
 Use a cache-bust query when testing after changes:

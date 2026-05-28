@@ -1,5 +1,7 @@
 # Step 3: Work Orders MVP
 
+Historical planning note: this file records an early MVP slice. Current work-order behavior is tracked in `FEATURE_STATUS.md` and current architecture is tracked in `ARCHITECTURE.md`.
+
 ## Goal
 
 Make work orders the operational center of the prototype. A manager or technician should be able to triage, update, document, and complete a job from the work order detail panel.

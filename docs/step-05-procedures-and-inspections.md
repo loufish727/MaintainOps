@@ -1,5 +1,7 @@
 # Step 5: Procedures And Inspections
 
+Historical planning note: this file records an early procedures/inspection slice. Current procedure and checklist behavior is tracked in `FEATURE_STATUS.md` and `ARCHITECTURE.md`.
+
 ## Goal
 
 Turn procedures into structured inspection templates instead of simple checklist text.

@@ -9,38 +9,11 @@
 5. Put your Supabase project URL and publishable anon key in `supabase-config.js`.
 6. Open `index.html`.
 
-## Current SQL Step Order
+## Current SQL Setup Direction
 
-Run these after `supabase/schema.sql` when creating or refreshing a Supabase project:
+Run `supabase/schema.sql` first when creating or refreshing a Supabase project, then apply the current `supabase/step-next-*.sql` files that are not already represented in the schema. The canonical current file list and setup cautions live in `docs/SUPABASE_SETUP.md`.
 
-1. `supabase/step-next-team-members.sql`
-2. `supabase/step-next-work-order-assignment.sql`
-3. `supabase/step-next-work-order-type.sql`
-4. `supabase/step-next-preventive-schedules.sql`
-5. `supabase/step-next-work-order-completion.sql`
-6. `supabase/step-next-parts-inventory.sql`
-7. `supabase/step-next-work-order-events.sql`
-8. `supabase/step-next-company-settings.sql`
-9. `supabase/step-next-procedures.sql`
-10. `supabase/step-next-maintenance-requests.sql`
-11. `supabase/step-next-part-costs.sql`
-12. `supabase/step-next-work-order-outcomes.sql`
-13. `supabase/step-next-safety-checks.sql`
-14. `supabase/step-next-photo-metadata.sql`
-15. `supabase/step-next-part-documents.sql`
-16. `supabase/step-next-part-suppliers.sql`
-17. `supabase/step-next-locations.sql`
-18. `supabase/step-next-location-integrity.sql`
-19. `supabase/step-next-storage-cleanup.sql`
-20. `supabase/step-next-team-invites.sql`
-21. `supabase/step-next-team-roles.sql`
-22. `supabase/step-next-admin-delete-work-orders.sql`
-23. `supabase/step-next-message-center.sql`
-24. `supabase/step-next-message-work-order-links.sql`
-25. `supabase/step-next-company-logo.sql`
-26. `supabase/step-next-safety-check-completion-only.sql`
-27. `supabase/step-next-security-hardening.sql`
-28. `supabase/step-next-public-request-links.sql`
+Some SQL files are audit or live-maintenance scripts, not baseline migrations. Do not run files named `audit-*` or `step-live-*` as part of a fresh baseline setup unless you are intentionally performing that specific audit or live data repair.
 
 ## Implemented
 
@@ -55,7 +28,7 @@ Run these after `supabase/schema.sql` when creating or refreshing a Supabase pro
 - Asset list display with open work counts.
 - Uploaded photo records displayed on the work order detail with private signed links.
 - Private Supabase Storage bucket for work order photos.
-- Locations, procedures, preventive schedules, maintenance requests, public request QR links, parts inventory, part documents, team invites, role management, message threads, company logos, work order history, and safety completion checks.
+- Locations, procedures, preventive schedules, maintenance requests, public request QR links, request photos, parts inventory, part documents, team invites, role management, message threads, company logos, work order history, safety completion checks, delete guardrails, explicit Data API grants, and role-assignment guardrails.
 
 ## Tables
 
@@ -82,6 +55,8 @@ Run these after `supabase/schema.sql` when creating or refreshing a Supabase pro
 - `message_thread_members`
 - `messages`
 - `message_reads`
+
+Additional feature tables and columns are introduced through the current `step-next-*.sql` files listed in `SUPABASE_SETUP.md`.
 
 ## Security Shape
 

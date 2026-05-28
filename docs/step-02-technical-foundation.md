@@ -1,12 +1,14 @@
 # Step 2: Technical Foundation
 
+Historical planning note: this file records the early dependency-free prototype direction. MaintainOps is now a Supabase-backed static browser app with extracted modules under `src/`; current architecture is tracked in `ARCHITECTURE.md` and `APP_JS_AUTHORITY_MAP.md`.
+
 ## Decision
 
 Start with a dependency-free browser prototype using plain HTML, CSS, and JavaScript.
 
 This is intentionally lightweight. The goal is to validate the core CMMS product shape before committing to a larger stack, auth system, database schema, or deployment path.
 
-## Current Prototype
+## Original Prototype Snapshot
 
 - `index.html`: app shell, navigation, dialog, and detail panel.
 - `styles.css`: responsive operational UI styling.

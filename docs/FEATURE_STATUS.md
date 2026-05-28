@@ -64,9 +64,10 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
-- Quick Fix submit workflow was extracted behind explicit dependency injection.
+- Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
+- `app.js` is currently about 4,796 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
-- Backup/restore/incident response, public request intake hardening, and public exposure review were identified as pilot-readiness workstreams.
+- Backup/restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.
 - Work-card warning badges made darker.
 - Work-card badge row changed to prevent desktop clipping.

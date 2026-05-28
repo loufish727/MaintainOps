@@ -68,6 +68,7 @@ Useful entry points:
 - `tests/smoke/`
 - `.github/workflows/resource-load-smoke.yml`
 - `package.json` scripts
+- `docs/APP_JS_AUTHORITY_MAP.md`
 
 This is not yet a full automated test suite. A broader integration/e2e suite remains a recommended next maturity step.
 

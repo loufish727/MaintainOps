@@ -1,5 +1,7 @@
 # 10-Step Build Process
 
+This is the original product build roadmap. It is kept for context and sequencing history; current app state is tracked in `PROJECT_OVERVIEW.md`, `FEATURE_STATUS.md`, `ARCHITECTURE.md`, and `APP_JS_AUTHORITY_MAP.md`.
+
 ## 1. Product Foundation
 
 Define the target users, core workflows, MVP scope, data model, and first release boundaries. Build an original maintenance operations app with its own language, information architecture, and visual design.
