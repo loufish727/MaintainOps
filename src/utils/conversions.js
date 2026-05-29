@@ -155,6 +155,49 @@
     { inch: "1-3/8", inchDiameter: "1.375", metric: "M36", metricDiameter: "36.0", threads: "1-3/8-12 UNF" },
     { inch: "1-1/2", inchDiameter: "1.500", metric: "M39", metricDiameter: "39.0", threads: "1-1/2-6 UNC" },
     { inch: "1-1/2", inchDiameter: "1.500", metric: "M39", metricDiameter: "39.0", threads: "1-1/2-12 UNF" },
+    { inch: "1-1/16", inchDiameter: "1.0625", metric: "M27", metricDiameter: "27.0", threads: "1-1/16-12 UN" },
+    { inch: "1-1/8", inchDiameter: "1.125", metric: "M30", metricDiameter: "30.0", threads: "1-1/8-18 UNEF" },
+    { inch: "1-3/16", inchDiameter: "1.1875", metric: "M30", metricDiameter: "30.0", threads: "1-3/16-12 UN" },
+    { inch: "1-1/4", inchDiameter: "1.250", metric: "M33", metricDiameter: "33.0", threads: "1-1/4-18 UNEF" },
+    { inch: "1-5/16", inchDiameter: "1.3125", metric: "M33", metricDiameter: "33.0", threads: "1-5/16-12 UN" },
+    { inch: "1-7/16", inchDiameter: "1.4375", metric: "M36", metricDiameter: "36.0", threads: "1-7/16-12 UN" },
+    { inch: "1-9/16", inchDiameter: "1.5625", metric: "M39 / M40", metricDiameter: "39.0 / 40.0", threads: "1-9/16-12 UN" },
+    { inch: "1-5/8", inchDiameter: "1.625", metric: "M42", metricDiameter: "42.0", threads: "1-5/8-5.5 UNC" },
+    { inch: "1-5/8", inchDiameter: "1.625", metric: "M42", metricDiameter: "42.0", threads: "1-5/8-12 UNF" },
+    { inch: "1-5/8", inchDiameter: "1.625", metric: "M42", metricDiameter: "42.0", threads: "1-5/8-18 UNEF" },
+    { inch: "1-11/16", inchDiameter: "1.6875", metric: "M42", metricDiameter: "42.0", threads: "1-11/16-12 UN" },
+    { inch: "1-3/4", inchDiameter: "1.750", metric: "M45", metricDiameter: "45.0", threads: "1-3/4-5 UNC" },
+    { inch: "1-3/4", inchDiameter: "1.750", metric: "M45", metricDiameter: "45.0", threads: "1-3/4-12 UNF" },
+    { inch: "1-3/4", inchDiameter: "1.750", metric: "M45", metricDiameter: "45.0", threads: "1-3/4-18 UNEF" },
+    { inch: "1-13/16", inchDiameter: "1.8125", metric: "M45 / M48", metricDiameter: "45.0 / 48.0", threads: "1-13/16-12 UN" },
+    { inch: "1-7/8", inchDiameter: "1.875", metric: "M48", metricDiameter: "48.0", threads: "1-7/8-4.5 UNC" },
+    { inch: "1-7/8", inchDiameter: "1.875", metric: "M48", metricDiameter: "48.0", threads: "1-7/8-12 UNF" },
+    { inch: "1-7/8", inchDiameter: "1.875", metric: "M48", metricDiameter: "48.0", threads: "1-7/8-18 UNEF" },
+    { inch: "1-15/16", inchDiameter: "1.9375", metric: "M48", metricDiameter: "48.0", threads: "1-15/16-12 UN" },
+    { inch: "2", inchDiameter: "2.000", metric: "M52", metricDiameter: "52.0", threads: "2-4.5 UNC" },
+    { inch: "2", inchDiameter: "2.000", metric: "M52", metricDiameter: "52.0", threads: "2-12 UNF" },
+    { inch: "2", inchDiameter: "2.000", metric: "M52", metricDiameter: "52.0", threads: "2-18 UNEF" },
+    { inch: "2-1/8", inchDiameter: "2.125", metric: "M54", metricDiameter: "54.0", threads: "2-1/8-12 UN" },
+    { inch: "2-1/4", inchDiameter: "2.250", metric: "M56 / M60", metricDiameter: "56.0 / 60.0", threads: "2-1/4-4.5 UNC" },
+    { inch: "2-1/4", inchDiameter: "2.250", metric: "M56 / M60", metricDiameter: "56.0 / 60.0", threads: "2-1/4-8 UNF" },
+    { inch: "2-1/4", inchDiameter: "2.250", metric: "M56 / M60", metricDiameter: "56.0 / 60.0", threads: "2-1/4-12 UNEF" },
+    { inch: "2-3/8", inchDiameter: "2.375", metric: "M60", metricDiameter: "60.0", threads: "2-3/8-12 UN" },
+    { inch: "2-1/2", inchDiameter: "2.500", metric: "M64", metricDiameter: "64.0", threads: "2-1/2-4 UNC" },
+    { inch: "2-1/2", inchDiameter: "2.500", metric: "M64", metricDiameter: "64.0", threads: "2-1/2-8 UNF" },
+    { inch: "2-1/2", inchDiameter: "2.500", metric: "M64", metricDiameter: "64.0", threads: "2-1/2-12 UNEF" },
+    { inch: "2-5/8", inchDiameter: "2.625", metric: "M68", metricDiameter: "68.0", threads: "2-5/8-12 UN" },
+    { inch: "2-3/4", inchDiameter: "2.750", metric: "M70", metricDiameter: "70.0", threads: "2-3/4-4 UNC" },
+    { inch: "2-3/4", inchDiameter: "2.750", metric: "M70", metricDiameter: "70.0", threads: "2-3/4-8 UNF" },
+    { inch: "2-3/4", inchDiameter: "2.750", metric: "M70", metricDiameter: "70.0", threads: "2-3/4-12 UNEF" },
+    { inch: "3", inchDiameter: "3.000", metric: "M76", metricDiameter: "76.0", threads: "3-4 UNC" },
+    { inch: "3", inchDiameter: "3.000", metric: "M76", metricDiameter: "76.0", threads: "3-8 UNF" },
+    { inch: "3", inchDiameter: "3.000", metric: "M76", metricDiameter: "76.0", threads: "3-12 UNEF" },
+    { inch: "3-1/4", inchDiameter: "3.250", metric: "M80 / M85", metricDiameter: "80.0 / 85.0", threads: "3-1/4-4 UNC" },
+    { inch: "3-1/4", inchDiameter: "3.250", metric: "M80 / M85", metricDiameter: "80.0 / 85.0", threads: "3-1/4-8 UNF" },
+    { inch: "3-1/2", inchDiameter: "3.500", metric: "M90", metricDiameter: "90.0", threads: "3-1/2-4 UNC" },
+    { inch: "3-1/2", inchDiameter: "3.500", metric: "M90", metricDiameter: "90.0", threads: "3-1/2-8 UNF" },
+    { inch: "3-3/4", inchDiameter: "3.750", metric: "M95", metricDiameter: "95.0", threads: "3-3/4-4 UNC" },
+    { inch: "3-3/4", inchDiameter: "3.750", metric: "M95", metricDiameter: "95.0", threads: "3-3/4-8 UNF" },
   ];
 
   const BOLT_GAUGE_SIZES = BOLT_REFERENCE.reduce((sizes, row) => {
@@ -167,6 +210,11 @@
     });
     return sizes;
   }, []);
+
+  BOLT_REFERENCE.sort((left, right) => (
+    Number(left.inchDiameter) - Number(right.inchDiameter) ||
+    left.threads.localeCompare(right.threads, undefined, { numeric: true })
+  ));
 
   const WRENCH_REFERENCE = [
     { thread: "#6", threadDiameterIn: "0.138", wrenchIn: "1/4", wrenchMm: "6.4", note: "small machine screw hex" },

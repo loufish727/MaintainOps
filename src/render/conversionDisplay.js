@@ -78,20 +78,20 @@
                 <thead>
                   <tr>
                     <th>Inch size</th>
-                    <th>Major dia. in</th>
-                    <th>Nearest metric</th>
-                    <th>Metric dia. mm</th>
                     <th>Common inch thread</th>
+                    <th class="bolt-reference-detail">Major dia. in</th>
+                    <th class="bolt-reference-detail">Nearest metric</th>
+                    <th class="bolt-reference-detail">Metric dia. mm</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${boltReference.map((row) => `
-                    <tr data-bolt-size-row="${escapeHtml(row.inch)}">
-                      <td>${escapeHtml(row.inch)}</td>
-                      <td>${escapeHtml(row.inchDiameter)}</td>
-                      <td>${escapeHtml(row.metric)}</td>
-                      <td>${escapeHtml(row.metricDiameter)}</td>
-                      <td>${escapeHtml(row.threads)}</td>
+                    <tr class="bolt-reference-row" data-bolt-size-row="${escapeHtml(row.inch)}">
+                      <td class="bolt-reference-primary">${escapeHtml(row.inch)}</td>
+                      <td class="bolt-reference-primary">${escapeHtml(row.threads)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.inchDiameter)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.metric)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.metricDiameter)}</td>
                     </tr>
                   `).join("")}
                 </tbody>

@@ -4460,7 +4460,7 @@ textarea {
 
 .bolt-reference-table {
   width: 100%;
-  min-width: 840px;
+  min-width: 520px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -4482,6 +4482,20 @@ textarea {
   text-transform: uppercase;
 }
 
+.bolt-reference-table th.bolt-reference-detail,
+.bolt-reference-table td.bolt-reference-detail {
+  display: none;
+}
+
+.bolt-reference-table:has(.bolt-reference-active) th.bolt-reference-detail,
+.bolt-reference-table tr.bolt-reference-active td.bolt-reference-detail {
+  display: table-cell;
+}
+
+.bolt-reference-table td.bolt-reference-primary {
+  font-weight: 680;
+}
+
 .bolt-reference-table tr:last-child td {
   border-bottom: 0;
 }
@@ -4490,6 +4504,8 @@ textarea {
   background: color-mix(in srgb, var(--blue) 17%, var(--surface));
   color: var(--ink);
   font-weight: 760;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .bolt-reference-table tr.bolt-reference-active td:first-child {
