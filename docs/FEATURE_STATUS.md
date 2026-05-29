@@ -42,7 +42,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Location-scoped search.
 - Work order cards show due date and created date at a glance.
 - Mobile shell and desktop layout.
-- Shop reference chart cards in the Conversions tab with desktop table layout, mobile stacked-row layout, 12-per-page pagination, and browser-local favorites.
+- Shop reference chart cards in the Conversions tab with desktop table layout, mobile stacked-row layout, 12-per-page pagination, browser-local favorites, and search across chart names, common IDs, sizes, row values, and notes.
 
 ## Stable Enough For QA
 
@@ -68,6 +68,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes. The sizing circle is green, the calibration bar is red, and calibration can be locked per device.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.
 - Shop reference chart cards were adjusted to follow the app's card pattern: collapsed headline cards, one expanded chart at a time, full-width desktop detail layout, mobile stacked label/value rows so table content does not clip on phones, stronger favorite styling, and favorites that persist in browser `localStorage`.
+- Shop reference charts were expanded from 17 to 37 total cards with 20 common part-ID/reference additions including sensors, VFD faults, fuse classes, contactors/overloads, motor nameplates, pneumatic/hydraulic IDs, couplings, rollers, photoeyes, proximity sensors, thermocouples, hose clamps, threadlocker, bearing suffixes, belt codes, and chain sprocket IDs. A search bar now filters relevant cards without connecting to inventory or Supabase.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
 - Security verification commands now cover static SQL/RPC checks, anonymous table-access denial, invalid public request token behavior, and a tested cross-company read probe for selected high-value tables.

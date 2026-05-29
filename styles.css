@@ -4661,6 +4661,36 @@ textarea {
   padding: 14px;
 }
 
+.shop-reference-search {
+  display: grid;
+  gap: 6px;
+}
+
+.shop-reference-search span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.shop-reference-search input {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
+  border-radius: 8px;
+  background: var(--control-bg);
+  color: var(--ink);
+  padding: 10px 12px;
+}
+
+.shop-reference-empty {
+  border: 1px dashed color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 8px;
+  color: var(--muted);
+  margin: 0;
+  padding: 14px;
+  text-align: center;
+}
+
 .shop-reference-panel {
   border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
   border-radius: 8px;

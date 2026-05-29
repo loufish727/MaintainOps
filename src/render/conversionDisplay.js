@@ -472,6 +472,306 @@
           ["TT-30", "125V 30A", "RV 30A travel trailer", "not 240V"],
         ],
       },
+      {
+        title: "Common Sensor ID Reference",
+        note: "Reference only. Confirm wiring diagram, voltage, output type, sensing range, and connector pinout.",
+        columns: ["ID / marking", "Type", "Common use note", "Watch point"],
+        rows: [
+          ["M12 prox", "inductive sensor", "metal detection on guards/stops", "PNP/NPN"],
+          ["M18 prox", "inductive sensor", "larger target sensing", "range"],
+          ["M30 prox", "inductive sensor", "longer-range metal targets", "mounting"],
+          ["PZ / PE", "photoeye", "box/product detection", "beam alignment"],
+          ["Retroreflective", "photoeye", "reflector target sensing", "reflector condition"],
+          ["Diffuse", "photoeye", "short-range product sensing", "surface color"],
+          ["Fork sensor", "photoeye", "label/web edge detection", "slot width"],
+          ["Reed switch", "magnetic cylinder sensor", "air cylinder position", "magnet piston"],
+        ],
+      },
+      {
+        title: "Fuse Class Reference",
+        note: "Match fuse class, voltage, interrupt rating, time-delay behavior, and equipment listing.",
+        columns: ["Class", "Typical marking", "Common use note", "Watch point"],
+        rows: [
+          ["Class CC", "CCMR / LP-CC", "control transformers / small motors", "holder type"],
+          ["Class J", "JTD / LPJ", "industrial feeders", "short-circuit rating"],
+          ["Class RK5", "FRN-R / FRS-R", "general motor circuits", "current limiting"],
+          ["Class RK1", "LPN-RK / LPS-RK", "higher protection feeders", "cost"],
+          ["Class T", "JLLN / JLLS", "compact high-current service", "very fast"],
+          ["Midget", "MDA / MDL", "control panels", "not class CC"],
+          ["Glass AGC", "AGC / 3AG", "small electronics", "voltage rating"],
+          ["Semiconductor", "A70QS / FWP", "drives and SCRs", "application specific"],
+        ],
+      },
+      {
+        title: "Contactor / Overload Reference",
+        note: "Confirm coil voltage, horsepower rating, auxiliary contacts, overload class, and reset mode.",
+        columns: ["Marking", "Part type", "Common use note", "Watch point"],
+        rows: [
+          ["A1 / A2", "coil terminals", "contactor coil wiring", "coil voltage"],
+          ["L1 L2 L3", "line side", "incoming power", "disconnect first"],
+          ["T1 T2 T3", "load side", "motor leads", "phase order"],
+          ["13 / 14", "NO aux", "seal-in / status contact", "contact state"],
+          ["21 / 22", "NC aux", "interlock contact", "contact state"],
+          ["Class 10", "overload trip", "standard motor protection", "motor duty"],
+          ["Class 20", "overload trip", "heavier starting loads", "start time"],
+          ["FLA dial", "overload setting", "motor nameplate amps", "service factor"],
+        ],
+      },
+      {
+        title: "Motor Nameplate Reference",
+        note: "Use motor nameplate and OEM requirements for replacement. Do not size by horsepower alone.",
+        columns: ["Field", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["HP / kW", "output power", "replacement sizing", "service factor"],
+          ["FLA", "full-load amps", "overload setting", "voltage-specific"],
+          ["RPM", "rated speed", "pulley/fan/pump speed", "pole count"],
+          ["Frame", "mounting/shaft size", "mechanical fit", "C-face/base"],
+          ["SF", "service factor", "overload margin", "continuous load"],
+          ["Ins class", "winding insulation", "temperature rating", "environment"],
+          ["Enclosure", "TEFC/ODP/etc.", "washdown/dust exposure", "cooling"],
+          ["Duty", "continuous/intermittent", "cycle rating", "heat"],
+        ],
+      },
+      {
+        title: "VFD Fault Quick Reference",
+        note: "VFD faults are drive-specific. Check the manual before parameter changes or repeated resets.",
+        columns: ["Fault", "Likely area", "Common use note", "Watch point"],
+        rows: [
+          ["OC / overcurrent", "load or wiring", "jam, short, accel too fast", "motor leads"],
+          ["OV / overvoltage", "regen or line", "decel too fast", "braking resistor"],
+          ["UV / undervoltage", "supply", "line dip or phase loss", "incoming power"],
+          ["OH / overheat", "cooling", "dirty fan/heatsink", "ambient temp"],
+          ["GF / ground fault", "motor/cable", "insulation breakdown", "megger policy"],
+          ["OL / overload", "motor/load", "high current over time", "mechanical load"],
+          ["PHL / phase loss", "input/output", "missing phase", "fuses/contactors"],
+          ["COM fault", "network/control", "PLC or keypad comms", "cable/settings"],
+        ],
+      },
+      {
+        title: "Pneumatic Fitting ID Reference",
+        note: "Confirm tube OD, thread type, seal style, pressure rating, and fluid compatibility.",
+        columns: ["ID", "Type", "Common use note", "Watch point"],
+        rows: [
+          ["1/4 push", "push-to-connect", "common air tubing", "tube cut"],
+          ["3/8 push", "push-to-connect", "larger air drops", "OD sizing"],
+          ["1/2 push", "push-to-connect", "main machine air", "flow"],
+          ["1/8 NPT", "pipe thread", "small valves/fittings", "sealant"],
+          ["1/4 NPT", "pipe thread", "common air fittings", "thread damage"],
+          ["M5", "metric thread", "small pneumatic ports", "pitch"],
+          ["G1/8", "BSPP", "import valve ports", "bonded seal"],
+          ["Bulkhead", "panel fitting", "through-panel tubing", "nut clearance"],
+        ],
+      },
+      {
+        title: "Air Cylinder ID Reference",
+        note: "Confirm bore, stroke, mounting, rod thread, cushions, magnet piston, and seal kit.",
+        columns: ["Marking", "Means", "Common use note", "Watch point"],
+        rows: [
+          ["Bore", "piston diameter", "force estimate", "pressure"],
+          ["Stroke", "travel length", "motion distance", "end clearance"],
+          ["Rod dia.", "rod size", "thread/clevis fit", "buckling"],
+          ["NFPA", "tie-rod style", "standard industrial cylinder", "mounting"],
+          ["Compact", "short body", "tight machine spaces", "side load"],
+          ["Magnet", "sensor-ready piston", "reed/prox switches", "sensor type"],
+          ["Cushion", "end damping", "high-speed motion", "adjustment"],
+          ["Seal kit", "repair kit", "leaking cylinder repair", "series match"],
+        ],
+      },
+      {
+        title: "Solenoid Valve ID Reference",
+        note: "Confirm voltage, valve function, port size, manual override, flow, and pressure range.",
+        columns: ["Marking", "Function", "Common use note", "Watch point"],
+        rows: [
+          ["2/2", "2-way valve", "on/off air or fluid", "normally open/closed"],
+          ["3/2", "3-way valve", "single-acting cylinder", "exhaust port"],
+          ["5/2", "5-way valve", "double-acting cylinder", "single/double solenoid"],
+          ["5/3", "center position", "hold/vent/pressure center", "machine behavior"],
+          ["12VDC", "coil voltage", "mobile equipment", "polarity"],
+          ["24VDC", "coil voltage", "PLC machines", "flyback"],
+          ["120VAC", "coil voltage", "older controls", "coil heat"],
+          ["DIN plug", "connector style", "field-replaceable coil", "gasket"],
+        ],
+      },
+      {
+        title: "Hydraulic Cylinder Seal ID Reference",
+        note: "Seal selection depends on bore, rod, groove, pressure, fluid, temperature, and surface finish.",
+        columns: ["Seal", "Location", "Common use note", "Watch point"],
+        rows: [
+          ["Rod seal", "gland", "keeps oil in cylinder", "lip direction"],
+          ["Wiper", "rod exterior", "keeps dirt out", "rod damage"],
+          ["Piston seal", "piston OD", "separates pressure sides", "energizer"],
+          ["Wear ring", "rod/piston guide", "prevents metal contact", "gap"],
+          ["Buffer seal", "behind rod seal", "shock pressure protection", "orientation"],
+          ["O-ring", "static seal", "gland/port sealing", "durometer"],
+          ["Backup ring", "anti-extrusion", "high-pressure O-rings", "side placement"],
+          ["U-cup", "dynamic seal", "rod or piston sealing", "open side to pressure"],
+        ],
+      },
+      {
+        title: "Gear Reducer ID Reference",
+        note: "Confirm ratio, shaft orientation, service factor, mounting, lubricant, and backstop requirements.",
+        columns: ["Marking", "Means", "Common use note", "Watch point"],
+        rows: [
+          ["Ratio 10:1", "speed reduction", "output is input/10", "torque increase"],
+          ["HP rating", "power rating", "motor match", "service factor"],
+          ["SF", "service factor", "load severity allowance", "shock load"],
+          ["C-face", "motor mount", "direct motor mounting", "frame size"],
+          ["Hollow bore", "shaft mount", "conveyor reducers", "bushing size"],
+          ["Right angle", "worm/bevel", "space-saving drive", "efficiency"],
+          ["Backstop", "one-way clutch", "incline conveyors", "rotation"],
+          ["ISO VG", "oil viscosity", "lube selection", "temperature"],
+        ],
+      },
+      {
+        title: "Coupling Insert Reference",
+        note: "Confirm coupling series, shaft size, torque rating, speed, alignment, and chemical exposure.",
+        columns: ["ID", "Style", "Common use note", "Watch point"],
+        rows: [
+          ["L-075 spider", "jaw coupling", "small pumps", "durometer"],
+          ["L-095 spider", "jaw coupling", "small motors", "series"],
+          ["L-100 spider", "jaw coupling", "common pump drive", "wear dust"],
+          ["L-110 spider", "jaw coupling", "larger pump drive", "hub size"],
+          ["L-150 spider", "jaw coupling", "heavier drive", "torque"],
+          ["HRC insert", "jaw coupling", "metric/Euro drives", "series"],
+          ["Grid coupling", "steel grid", "shock load drives", "lubrication"],
+          ["Sure-Flex sleeve", "elastomer sleeve", "pump/fan drives", "flange size"],
+        ],
+      },
+      {
+        title: "Conveyor Roller ID Reference",
+        note: "Confirm roller diameter, between-frame length, axle style, bearing type, and load rating.",
+        columns: ["ID", "Feature", "Common use note", "Watch point"],
+        rows: [
+          ["1.9 roller", "1.9 in OD", "common gravity conveyor", "BF length"],
+          ["2.5 roller", "2.5 in OD", "heavier conveyor", "load"],
+          ["7/16 hex axle", "hex spring axle", "common conveyor roller", "frame slot"],
+          ["11/16 hex axle", "heavy hex axle", "heavier roller", "frame slot"],
+          ["Spring loaded", "axle style", "easy roller removal", "spring length"],
+          ["Grooved roller", "O-belt groove", "line-shaft conveyor", "groove position"],
+          ["Tapered roller", "curve conveyor", "carton curves", "orientation"],
+          ["Poly sleeve", "roller cover", "quiet/grip surface", "wear"],
+        ],
+      },
+      {
+        title: "Photoeye Setup Reference",
+        note: "Confirm sensor mode, target, environment, wiring, response time, and teach procedure.",
+        columns: ["Mode", "Best for", "Common use note", "Watch point"],
+        rows: [
+          ["Through-beam", "long range", "reliable detection", "two devices"],
+          ["Retroreflective", "medium range", "carton/object detection", "reflector"],
+          ["Polarized retro", "shiny targets", "rejects mirror reflections", "alignment"],
+          ["Diffuse", "short range", "no reflector needed", "target color"],
+          ["Background suppression", "fixed distance", "ignores background", "teach distance"],
+          ["Clear object", "bottles/film", "transparent targets", "sensitivity"],
+          ["Fiber optic", "tight spaces", "small target detection", "fiber damage"],
+          ["Laser", "small spot", "precise edge detection", "eye safety"],
+        ],
+      },
+      {
+        title: "Proximity Sensor Reference",
+        note: "Confirm sensing material, shielded/unshielded body, output type, voltage, and connector.",
+        columns: ["Type", "Detects", "Common use note", "Watch point"],
+        rows: [
+          ["Inductive", "metal", "shaft/guard/stop sensing", "range by metal"],
+          ["Capacitive", "many materials", "level/product detection", "false trips"],
+          ["Magnetic reed", "magnet", "cylinder position", "magnet required"],
+          ["Hall effect", "magnetic field", "speed/position sensing", "polarity"],
+          ["Shielded", "flush mount", "metal bracket mounting", "shorter range"],
+          ["Unshielded", "non-flush", "longer range", "clearance needed"],
+          ["PNP", "sourcing output", "common modern PLC input", "input card"],
+          ["NPN", "sinking output", "some older/import machines", "input card"],
+        ],
+      },
+      {
+        title: "Thermocouple / RTD Reference",
+        note: "Confirm sensor type, temperature range, wiring, extension wire, and controller input setting.",
+        columns: ["ID", "Type", "Common use note", "Watch point"],
+        rows: [
+          ["Type J", "thermocouple", "older equipment / moderate heat", "iron wire"],
+          ["Type K", "thermocouple", "general high-temp use", "polarity"],
+          ["Type T", "thermocouple", "low-temp/wet environments", "range"],
+          ["Type E", "thermocouple", "higher output signal", "controller setting"],
+          ["PT100", "RTD", "accurate process temp", "2/3/4 wire"],
+          ["PT1000", "RTD", "longer lead applications", "controller setting"],
+          ["Mini plug", "TC connector", "bench/test leads", "alloy match"],
+          ["Ungrounded", "probe style", "noise isolation", "slower response"],
+        ],
+      },
+      {
+        title: "Hose Clamp Reference",
+        note: "Confirm clamp style, diameter range, material, pressure, vibration, and hose construction.",
+        columns: ["Style", "Best for", "Common use note", "Watch point"],
+        rows: [
+          ["Worm gear", "general hose", "water/air light duty", "strip risk"],
+          ["T-bolt", "high clamp load", "charge air / heavy hose", "torque"],
+          ["Spring clamp", "thermal cycling", "coolant hoses", "reuse condition"],
+          ["Ear clamp", "permanent crimp", "small hoses", "single use"],
+          ["Constant torque", "temperature swings", "silicone/coolant hose", "size range"],
+          ["Band clamp", "exhaust/duct", "large diameter joints", "seal type"],
+          ["Cushion clamp", "line support", "hydraulic/air line routing", "rubber condition"],
+          ["Double wire", "spiral hose", "dust collection hose", "wire fit"],
+        ],
+      },
+      {
+        title: "Threadlocker / Retaining Compound Reference",
+        note: "Confirm manufacturer, strength, temperature, gap, material, and whether future disassembly is required.",
+        columns: ["Color / ID", "Strength", "Common use note", "Watch point"],
+        rows: [
+          ["Purple 222", "low", "small screws / adjustment screws", "small fasteners"],
+          ["Blue 242/243", "medium", "general bolts that need service", "oil tolerance"],
+          ["Red 271", "high", "permanent studs/bolts", "heat to remove"],
+          ["Green 290", "wicking", "assembled fasteners", "cleanliness"],
+          ["Green 609", "retaining", "bearings/bushings", "slip fit"],
+          ["Green 620", "high-temp retaining", "sleeves/gears", "gap"],
+          ["Primer", "activator", "stainless/inactive metals", "cure speed"],
+          ["Anti-seize", "not threadlocker", "hot/corrosive fasteners", "torque changes"],
+        ],
+      },
+      {
+        title: "Bearing Suffix ID Reference",
+        note: "Match the full bearing code. Suffixes vary by manufacturer and change fit, clearance, seals, and shields.",
+        columns: ["Suffix", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["2RS / 2RSH", "two rubber seals", "dusty/wet bearing locations", "friction"],
+          ["ZZ / 2Z", "two metal shields", "motors/light contamination", "not sealed"],
+          ["C3", "extra clearance", "motors/hot running fits", "noise if misused"],
+          ["C4", "more clearance", "high-temp/special fits", "spec required"],
+          ["NR", "snap ring groove", "located bearing", "ring included"],
+          ["M", "machined cage", "higher duty bearings", "manufacturer meaning"],
+          ["TN / TV", "polyamide cage", "common modern bearings", "temperature"],
+          ["Explorer", "SKF series", "premium bearing line", "brand-specific"],
+        ],
+      },
+      {
+        title: "Belt Code ID Reference",
+        note: "Confirm belt profile, effective length, top width, cogged/notched style, and manufacturer code.",
+        columns: ["Code", "Means", "Common use note", "Watch point"],
+        rows: [
+          ["A40", "A section length", "classic V-belt", "inside/effective length"],
+          ["4L400", "light-duty belt", "fractional HP belt", "not same as A40"],
+          ["AX40", "cogged A belt", "small pulley drives", "profile"],
+          ["B56", "B section length", "common industrial V-belt", "length basis"],
+          ["5L560", "light-duty B-ish", "fractional HP replacement", "duty"],
+          ["BX56", "cogged B belt", "pump/fan drives", "profile"],
+          ["5VX800", "narrow cogged belt", "high-power compact drive", "pulley profile"],
+          ["J-section", "poly-V", "multi-rib compact belt", "rib count"],
+        ],
+      },
+      {
+        title: "Chain Sprocket ID Reference",
+        note: "Confirm chain size, tooth count, bore, keyway, hub style, and wear before replacing sprockets.",
+        columns: ["ID", "Means", "Common use note", "Watch point"],
+        rows: [
+          ["40B12", "#40 chain 12T", "small conveyor sprocket", "bore"],
+          ["40B24", "#40 chain 24T", "speed reduction", "pitch"],
+          ["50B15", "#50 chain 15T", "medium drive", "tooth wear"],
+          ["60B18", "#60 chain 18T", "heavier drive", "hub clearance"],
+          ["80B12", "#80 chain 12T", "heavy slow drive", "wrap"],
+          ["Type A", "plate sprocket", "no hub", "mounting"],
+          ["Type B", "one-side hub", "common keyed sprocket", "set screws"],
+          ["QD bushing", "taper bushing", "serviceable shaft fit", "bushing series"],
+        ],
+      },
     ];
 
     function renderConversionCard(group) {
@@ -499,8 +799,14 @@
     }
 
     function renderReferenceTable(section) {
+      const searchableText = [
+        section.title,
+        section.note,
+        ...section.columns,
+        ...section.rows.flat(),
+      ].join(" ");
       return `
-        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-title="${escapeHtml(section.title)}">
+        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
           <summary class="bolt-reference-summary">
             <div class="shop-reference-card-main">
               <div class="chip-row">
@@ -539,16 +845,21 @@
       return `
         <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
           <div class="shop-reference-heading">
-            <div>
-              <h3>Shop Reference Charts</h3>
-              <p>Common field references, sorted alphabetically. Favorites stay first.</p>
+          <div>
+            <h3>Shop Reference Charts</h3>
+              <p>Common field references, sorted alphabetically. Search filters chart names, IDs, sizes, and notes.</p>
             </div>
             <span>${shopReferenceSections.length} charts / 12 per page</span>
           </div>
           <div class="shop-reference-pages">
+            <label class="shop-reference-search">
+              <span>Search references</span>
+              <input data-shop-reference-search-input type="search" inputmode="search" autocomplete="off" placeholder="Try 6205, NPT, M12, 5VX800, photoeye...">
+            </label>
             <div class="shop-reference-card-grid" data-shop-reference-grid>
               ${sortedSections.map(renderReferenceTable).join("")}
             </div>
+            <p class="shop-reference-empty" data-shop-reference-empty hidden>No matching reference cards.</p>
             ${shopReferenceSections.length > pageSize ? `
               <div class="pagination-bar shop-reference-pagination">
                 <button class="secondary-button page-action-button" data-shop-reference-page="prev" type="button" disabled>Previous</button>
