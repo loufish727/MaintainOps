@@ -43,6 +43,8 @@ const html = helpers.renderConversionsPanel();
 assert.match(html, /data-conversion-group="length"/);
 assert.match(html, /data-conversion-group="area"/);
 assert.match(html, /<summary class="conversion-card-heading">/);
+assert.match(html, /<span class="conversion-card-icon" aria-hidden="true">L<\/span>/);
+assert.match(html, /<span class="conversion-card-icon" aria-hidden="true">T<\/span>/);
 assert.match(html, /Bolt Size Reference/);
 assert.match(html, /data-bolt-gauge/);
 assert.match(html, /bolt-gauge-card/);

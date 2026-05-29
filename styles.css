@@ -4048,8 +4048,12 @@ textarea {
 
 .conversion-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--blue) 12%, var(--line));
+  border-radius: 8px;
+  background: #fff;
 }
 
 .conversion-reference {
@@ -4062,29 +4066,74 @@ textarea {
 }
 
 .conversion-card {
+  --conversion-accent: var(--blue);
+  --conversion-accent-dark: var(--blue);
   display: grid;
   min-height: 0;
-  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--conversion-accent) 36%, var(--line));
   border-radius: 8px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 72%),
-    var(--surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--conversion-accent) 14%, transparent), transparent 62%),
+    #fff;
+  box-shadow:
+    inset 4px 0 0 var(--conversion-accent),
+    0 1px 4px rgba(15, 23, 42, 0.08);
   padding: 0;
 }
 
+.conversion-card[data-conversion-group="length"] {
+  --conversion-accent: #1d8f68;
+  --conversion-accent-dark: #0f6f50;
+}
+
+.conversion-card[data-conversion-group="area"] {
+  --conversion-accent: #c26a1b;
+  --conversion-accent-dark: #934a0d;
+}
+
+.conversion-card[data-conversion-group="weight"] {
+  --conversion-accent: #7a5ccf;
+  --conversion-accent-dark: #5940a8;
+}
+
+.conversion-card[data-conversion-group="temperature"] {
+  --conversion-accent: #c83f4f;
+  --conversion-accent-dark: #9f2634;
+}
+
+.conversion-card[data-conversion-group="volume"] {
+  --conversion-accent: #1976b8;
+  --conversion-accent-dark: #0e5b91;
+}
+
+.conversion-card[data-conversion-group="pressure"] {
+  --conversion-accent: #5b7f1b;
+  --conversion-accent-dark: #3f5e0e;
+}
+
+.conversion-card[data-conversion-group="torque"] {
+  --conversion-accent: #9a5a15;
+  --conversion-accent-dark: #713d08;
+}
+
 .conversion-card[open] {
+  border-color: var(--conversion-accent);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 9%, transparent), transparent 62%),
-    var(--surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--conversion-accent) 18%, transparent), transparent 64%),
+    #fff;
+  box-shadow:
+    inset 4px 0 0 var(--conversion-accent),
+    0 0 0 3px color-mix(in srgb, var(--conversion-accent) 18%, transparent),
+    0 2px 8px rgba(15, 23, 42, 0.12);
 }
 
 .conversion-card-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  min-height: 44px;
-  padding: 9px 12px;
+  min-height: 58px;
+  padding: 12px;
   cursor: pointer;
   list-style: none;
 }
@@ -4095,32 +4144,48 @@ textarea {
 
 .conversion-card-heading h3 {
   margin: 0;
+  color: #172033;
+  font-size: 0.98rem;
+  line-height: 1.15;
 }
 
-.conversion-card-heading span {
+.conversion-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--conversion-accent);
+  color: #fff;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.conversion-card-heading > span:not(.conversion-card-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 62px;
+  min-width: 58px;
   min-height: 26px;
-  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--conversion-accent) 34%, var(--line));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--blue) 9%, var(--control-bg));
-  color: var(--blue);
+  background: color-mix(in srgb, var(--conversion-accent) 10%, #fff);
+  color: var(--conversion-accent-dark);
   padding: 3px 8px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 760;
 }
 
-.conversion-card[open] .conversion-card-heading span {
-  background: var(--blue);
+.conversion-card[open] .conversion-card-heading > span:not(.conversion-card-icon) {
+  background: var(--conversion-accent);
+  border-color: var(--conversion-accent);
   color: #fff;
 }
 
 .conversion-card-body {
   display: grid;
   gap: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--blue) 18%, var(--line));
+  border-top: 1px solid color-mix(in srgb, var(--conversion-accent) 24%, var(--line));
   padding: 12px;
 }
 
@@ -4172,9 +4237,9 @@ textarea {
   display: flex;
   align-items: center;
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--conversion-accent) 34%, var(--line));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--blue) 8%, var(--surface-2));
+  background: color-mix(in srgb, var(--conversion-accent) 9%, #fff);
   color: var(--ink);
   padding: 9px 10px;
   font-weight: 720;

@@ -782,6 +782,7 @@
       return `
         <details class="conversion-card" data-conversion-card data-conversion-group="${escapeHtml(group.id)}">
           <summary class="conversion-card-heading">
+            <span class="conversion-card-icon" aria-hidden="true">${escapeHtml(group.label.slice(0, 1))}</span>
             <h3>${escapeHtml(group.label)}</h3>
             <span>Open</span>
           </summary>
