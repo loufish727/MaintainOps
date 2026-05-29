@@ -148,6 +148,13 @@
     { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-12 UNF" },
     { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-20 UNEF" },
     { inch: "1-1/8", inchDiameter: "1.125", metric: "M30", metricDiameter: "30.0", threads: "1-1/8-7 UNC" },
+    { inch: "1-1/8", inchDiameter: "1.125", metric: "M30", metricDiameter: "30.0", threads: "1-1/8-12 UNF" },
+    { inch: "1-1/4", inchDiameter: "1.250", metric: "M33", metricDiameter: "33.0", threads: "1-1/4-7 UNC" },
+    { inch: "1-1/4", inchDiameter: "1.250", metric: "M33", metricDiameter: "33.0", threads: "1-1/4-12 UNF" },
+    { inch: "1-3/8", inchDiameter: "1.375", metric: "M36", metricDiameter: "36.0", threads: "1-3/8-6 UNC" },
+    { inch: "1-3/8", inchDiameter: "1.375", metric: "M36", metricDiameter: "36.0", threads: "1-3/8-12 UNF" },
+    { inch: "1-1/2", inchDiameter: "1.500", metric: "M39", metricDiameter: "39.0", threads: "1-1/2-6 UNC" },
+    { inch: "1-1/2", inchDiameter: "1.500", metric: "M39", metricDiameter: "39.0", threads: "1-1/2-12 UNF" },
   ];
 
   const BOLT_GAUGE_SIZES = BOLT_REFERENCE.reduce((sizes, row) => {
@@ -160,6 +167,26 @@
     });
     return sizes;
   }, []);
+
+  const WRENCH_REFERENCE = [
+    { thread: "#6", threadDiameterIn: "0.138", wrenchIn: "1/4", wrenchMm: "6.4", note: "small machine screw hex" },
+    { thread: "#8", threadDiameterIn: "0.164", wrenchIn: "1/4", wrenchMm: "6.4", note: "small machine screw hex" },
+    { thread: "#10", threadDiameterIn: "0.190", wrenchIn: "5/16", wrenchMm: "7.9", note: "common hex head" },
+    { thread: "1/4", threadDiameterIn: "0.250", wrenchIn: "7/16", wrenchMm: "11.1", note: "common hex bolt/nut" },
+    { thread: "5/16", threadDiameterIn: "0.3125", wrenchIn: "1/2", wrenchMm: "12.7", note: "common hex bolt/nut" },
+    { thread: "3/8", threadDiameterIn: "0.375", wrenchIn: "9/16", wrenchMm: "14.3", note: "common hex bolt/nut" },
+    { thread: "7/16", threadDiameterIn: "0.4375", wrenchIn: "5/8", wrenchMm: "15.9", note: "common hex bolt/nut" },
+    { thread: "1/2", threadDiameterIn: "0.500", wrenchIn: "3/4", wrenchMm: "19.1", note: "common hex bolt/nut" },
+    { thread: "9/16", threadDiameterIn: "0.5625", wrenchIn: "13/16", wrenchMm: "20.6", note: "common hex bolt/nut" },
+    { thread: "5/8", threadDiameterIn: "0.625", wrenchIn: "15/16", wrenchMm: "23.8", note: "common hex bolt/nut" },
+    { thread: "3/4", threadDiameterIn: "0.750", wrenchIn: "1-1/8", wrenchMm: "28.6", note: "common hex bolt/nut" },
+    { thread: "7/8", threadDiameterIn: "0.875", wrenchIn: "1-5/16", wrenchMm: "33.3", note: "common hex bolt/nut" },
+    { thread: "1", threadDiameterIn: "1.000", wrenchIn: "1-1/2", wrenchMm: "38.1", note: "common hex bolt/nut" },
+    { thread: "1-1/8", threadDiameterIn: "1.125", wrenchIn: "1-11/16", wrenchMm: "42.9", note: "common hex bolt/nut" },
+    { thread: "1-1/4", threadDiameterIn: "1.250", wrenchIn: "1-7/8", wrenchMm: "47.6", note: "common hex bolt/nut" },
+    { thread: "1-3/8", threadDiameterIn: "1.375", wrenchIn: "2-1/16", wrenchMm: "52.4", note: "common hex bolt/nut" },
+    { thread: "1-1/2", threadDiameterIn: "1.500", wrenchIn: "2-1/4", wrenchMm: "57.2", note: "common hex bolt/nut" },
+  ];
 
   function groupById(groupId) {
     return UNIT_GROUPS.find((group) => group.id === groupId) || null;
@@ -206,19 +233,51 @@
     }, null);
   }
 
-  function boltGaugeReading(diameterPx, pixelsPerInch) {
+  function wrenchSizeInches(value) {
+    const match = String(value).match(/^(\d+)(?:-(\d+)\/(\d+)|\/(\d+))?$/);
+    if (!match) return Number(value) || 0;
+    const whole = Number(match[1]) || 0;
+    if (match[2] && match[3]) return whole + (Number(match[2]) / Number(match[3]));
+    if (match[4]) return whole / Number(match[4]);
+    return whole;
+  }
+
+  function nearestWrenchSize(diameterIn) {
+    const value = Number(diameterIn);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return WRENCH_REFERENCE.reduce((closest, size) => {
+      const wrenchIn = wrenchSizeInches(size.wrenchIn);
+      const delta = Math.abs(wrenchIn - value);
+      return !closest || delta < closest.delta ? { ...size, wrenchDiameterIn: wrenchIn, delta } : closest;
+    }, null);
+  }
+
+  function boltGaugeReading(diameterPx, pixelsPerInch, mode = "thread") {
     const px = Number(diameterPx);
     const ppi = Number(pixelsPerInch);
     if (!Number.isFinite(px) || !Number.isFinite(ppi) || px <= 0 || ppi <= 0) return null;
     const diameterIn = px / ppi;
     const diameterMm = diameterIn * 25.4;
+    if (mode === "wrench") {
+      const closestWrench = nearestWrenchSize(diameterIn);
+      return {
+        diameterIn,
+        diameterMm,
+        mode,
+        closest: closestWrench,
+        text: closestWrench
+          ? `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm across flats - closest ${closestWrench.wrenchIn} wrench for ${closestWrench.thread} thread`
+          : `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm across flats`,
+      };
+    }
     const closest = nearestBoltSize(diameterIn);
     return {
       diameterIn,
       diameterMm,
+      mode: "thread",
       closest,
       text: closest
-        ? `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm - closest ${closest.label}`
+        ? `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm thread diameter - closest ${closest.label}`
         : `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm`,
     };
   }
@@ -233,6 +292,8 @@
       const calibration = gauge.querySelector("[data-bolt-gauge-calibration]");
       const calibrationLine = gauge.querySelector("[data-bolt-gauge-calibration-line]");
       const output = gauge.querySelector("[data-bolt-gauge-output]");
+      const help = gauge.querySelector("[data-bolt-gauge-help]");
+      const modeInputs = Array.from(gauge.querySelectorAll("[data-bolt-gauge-mode]"));
       const storedCalibration = Number(storage?.getItem("maintainops.boltGaugePixelsPerInch"));
       if (calibration && Number.isFinite(storedCalibration) && storedCalibration > 0) {
         calibration.value = String(storedCalibration);
@@ -240,22 +301,32 @@
       const update = () => {
         const diameterPx = Number(diameter?.value || 0);
         const pixelsPerInch = Number(calibration?.value || 96);
+        const mode = modeInputs.find((input) => input.checked)?.value || "thread";
         if (circle) {
           circle.style.width = `${diameterPx}px`;
           circle.style.height = `${diameterPx}px`;
         }
         if (calibrationLine) calibrationLine.style.width = `${pixelsPerInch}px`;
-        const reading = boltGaugeReading(diameterPx, pixelsPerInch);
+        const reading = boltGaugeReading(diameterPx, pixelsPerInch, mode);
         if (output) output.textContent = reading ? reading.text : "Calibrate the gauge";
-        const activeInch = reading?.closest?.inch || "";
+        if (help) {
+          help.textContent = mode === "wrench"
+            ? "Fit the circle across the bolt head or nut flats to estimate wrench size."
+            : "Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.";
+        }
+        const activeInch = mode === "thread" ? (reading?.closest?.inch || "") : "";
+        const activeWrenchThread = mode === "wrench" ? (reading?.closest?.thread || "") : "";
         doc.querySelectorAll("[data-bolt-size-row]").forEach((row) => {
           row.classList.toggle("bolt-reference-active", Boolean(activeInch && row.dataset.boltSizeRow === activeInch));
+        });
+        doc.querySelectorAll("[data-wrench-size-row]").forEach((row) => {
+          row.classList.toggle("bolt-reference-active", Boolean(activeWrenchThread && row.dataset.wrenchSizeRow === activeWrenchThread));
         });
         if (storage && Number.isFinite(pixelsPerInch) && pixelsPerInch > 0) {
           storage.setItem("maintainops.boltGaugePixelsPerInch", String(pixelsPerInch));
         }
       };
-      [diameter, calibration].filter(Boolean).forEach((element) => {
+      [diameter, calibration, ...modeInputs].filter(Boolean).forEach((element) => {
         element.addEventListener("input", update);
         element.addEventListener("change", update);
       });
@@ -298,7 +369,9 @@
     UNIT_GROUPS,
     BOLT_REFERENCE,
     BOLT_GAUGE_SIZES,
+    WRENCH_REFERENCE,
     nearestBoltSize,
+    nearestWrenchSize,
     boltGaugeReading,
     convertValue,
     formatConvertedValue,
@@ -312,7 +385,9 @@
       UNIT_GROUPS,
       BOLT_REFERENCE,
       BOLT_GAUGE_SIZES,
+      WRENCH_REFERENCE,
       nearestBoltSize,
+      nearestWrenchSize,
       boltGaugeReading,
       convertValue,
       formatConvertedValue,

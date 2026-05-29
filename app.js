@@ -43,6 +43,7 @@ const {
 const {
   UNIT_GROUPS,
   BOLT_REFERENCE,
+  WRENCH_REFERENCE,
   conversionResultText,
   bindConversionEvents,
 } = window.MaintainOpsConversions;
@@ -269,6 +270,7 @@ const { renderConversionsPanel } = createConversionDisplayHelpers({
   escapeHtml,
   conversionGroups: UNIT_GROUPS,
   boltReference: BOLT_REFERENCE,
+  wrenchReference: WRENCH_REFERENCE,
   conversionResultText,
 });
 const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;

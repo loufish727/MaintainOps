@@ -3,6 +3,7 @@
     escapeHtml,
     conversionGroups,
     boltReference,
+    wrenchReference,
     conversionResultText,
   }) {
     function optionHtml(group, selectedUnitId) {
@@ -48,14 +49,19 @@
               <h3>Bolt Gauge</h3>
               <span>screen fit estimate</span>
             </div>
+            <div class="bolt-gauge-mode" role="radiogroup" aria-label="Bolt gauge mode">
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread" checked>Thread / Nut ID</label>
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench">Head / Wrench</label>
+            </div>
+            <p class="muted bolt-gauge-help" data-bolt-gauge-help>Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.</p>
             <div class="bolt-gauge-layout">
               <div class="bolt-gauge-card" data-bolt-gauge-card aria-label="Bolt gauge sizing card">
                 <div class="bolt-gauge-circle" data-bolt-gauge-circle></div>
                 <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
               </div>
               <div class="bolt-gauge-controls">
-                <label>Circle diameter<input data-bolt-gauge-diameter type="range" min="18" max="240" step="1" value="96"></label>
-                <label>1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="180" step="1" value="96"></label>
+                <label>Circle diameter<input data-bolt-gauge-diameter type="range" min="18" max="320" step="1" value="96"></label>
+                <label>1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="220" step="1" value="96"></label>
                 <output class="bolt-gauge-output" data-bolt-gauge-output></output>
                 <p class="muted">Reference only. Verify thread pitch, grade, and final size with a physical gauge or calipers.</p>
               </div>
@@ -85,6 +91,36 @@
                       <td>${escapeHtml(row.metric)}</td>
                       <td>${escapeHtml(row.metricDiameter)}</td>
                       <td>${escapeHtml(row.threads)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </details>
+          <details class="bolt-reference-details">
+            <summary class="bolt-reference-summary">
+              <strong>Common Wrench / Head Size Reference</strong>
+              <span>${wrenchReference.length} rows</span>
+            </summary>
+            <div class="bolt-table-wrap" role="region" aria-label="Common wrench and head size reference table" tabindex="0">
+              <table class="bolt-reference-table wrench-reference-table">
+                <thead>
+                  <tr>
+                    <th>Thread size</th>
+                    <th>Thread dia. in</th>
+                    <th>Wrench size</th>
+                    <th>Wrench mm</th>
+                    <th>Use</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${wrenchReference.map((row) => `
+                    <tr data-wrench-size-row="${escapeHtml(row.thread)}">
+                      <td>${escapeHtml(row.thread)}</td>
+                      <td>${escapeHtml(row.threadDiameterIn)}</td>
+                      <td>${escapeHtml(row.wrenchIn)}</td>
+                      <td>${escapeHtml(row.wrenchMm)}</td>
+                      <td>${escapeHtml(row.note)}</td>
                     </tr>
                   `).join("")}
                 </tbody>
