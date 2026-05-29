@@ -1938,10 +1938,10 @@
               <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread" checked>Thread / Nut ID</label>
               <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench">Head / Wrench</label>
             </div>
-            <p class="bolt-gauge-screen-callout"><span aria-hidden="true">*</span>PLACE THE ACTUAL BOLT, NUT, OR WRENCH HEAD DIRECTLY ON THE WHITE SCREEN CARD BELOW.</p>
             <p class="muted bolt-gauge-help" data-bolt-gauge-help>Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.</p>
             <div class="bolt-gauge-layout">
               <div class="bolt-gauge-measurement-stack">
+                <p class="bolt-gauge-screen-callout"><span aria-hidden="true">*</span>PLACE THE ACTUAL BOLT, NUT, OR WRENCH HEAD DIRECTLY ON THE WHITE SCREEN CARD BELOW.</p>
                 <div class="bolt-gauge-card-readout">
                   <output class="bolt-gauge-output" data-bolt-gauge-output></output>
                 </div>

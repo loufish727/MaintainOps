@@ -4398,6 +4398,7 @@ textarea {
   border: 1px solid color-mix(in srgb, #f97316 52%, var(--line));
   border-left: 5px solid #f97316;
   border-radius: 8px;
+  box-sizing: border-box;
   background: #fff7ed;
   color: #9a3412;
   display: flex;
@@ -4407,6 +4408,7 @@ textarea {
   line-height: 1.35;
   margin: 0;
   padding: 9px 11px;
+  width: 100%;
 }
 
 .bolt-gauge-screen-callout span {
