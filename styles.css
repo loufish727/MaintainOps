@@ -4048,9 +4048,9 @@ textarea {
 
 .conversion-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
-  padding: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
   border: 1px solid color-mix(in srgb, var(--blue) 12%, var(--line));
   border-radius: 8px;
   background: #fff;
@@ -4117,6 +4117,7 @@ textarea {
 }
 
 .conversion-card[open] {
+  grid-column: 1 / -1;
   border-color: var(--conversion-accent);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--conversion-accent) 18%, transparent), transparent 64%),
@@ -4132,8 +4133,8 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  min-height: 58px;
-  padding: 12px;
+  min-height: 66px;
+  padding: 14px;
   cursor: pointer;
   list-style: none;
 }
@@ -4145,7 +4146,7 @@ textarea {
 .conversion-card-heading h3 {
   margin: 0;
   color: #172033;
-  font-size: 0.98rem;
+  font-size: 1.02rem;
   line-height: 1.15;
 }
 
@@ -4901,6 +4902,17 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .conversion-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .conversion-card-heading {
+    min-height: 58px;
+    padding: 12px;
+  }
+
   .conversion-controls {
     grid-template-columns: 1fr;
   }
@@ -4974,6 +4986,12 @@ textarea {
   .shop-reference-card[open] .shop-reference-table tr:last-child td,
   .shop-reference-card[open] .shop-reference-table td:last-child {
     border-bottom: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  .conversion-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
