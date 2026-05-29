@@ -1185,11 +1185,9 @@
     function renderShopReferences() {
       const pageSize = 12;
       const sortedSections = [...shopReferenceSections].sort((a, b) => a.title.localeCompare(b.title));
-      const categoryCounts = new Map(shopReferenceCategories.map((category) => [category.id, 0]));
-      shopReferenceSections.forEach((section) => {
-        const category = shopReferenceCategory(section);
-        categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
-      });
+      const categoryCount = (categoryId) => (
+        shopReferenceSections.filter((section) => shopReferenceCategory(section) === categoryId).length
+      );
       const totalPages = Math.max(1, Math.ceil(sortedSections.length / pageSize));
       return `
         <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
@@ -1206,7 +1204,7 @@
               <input data-shop-reference-search-input type="search" inputmode="search" autocomplete="off" placeholder="Try 6205, NPT, M12, 5VX800, photoeye...">
             </label>
             <div class="shop-reference-category-grid" data-shop-reference-category-grid>
-              ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCounts.get(category) || 0)).join("")}
+              ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCount(category.id))).join("")}
             </div>
             <button class="secondary-button shop-reference-back" data-shop-reference-back type="button" hidden>All categories</button>
             <div class="shop-reference-card-grid" data-shop-reference-grid hidden>
