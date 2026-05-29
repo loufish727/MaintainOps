@@ -4232,6 +4232,11 @@ textarea {
 .conversion-controls input,
 .conversion-controls select {
   width: 100%;
+  border-color: color-mix(in srgb, var(--conversion-accent-dark) 34%, #cbd5e1);
+  background: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.04);
+  color: #111827;
+  font-weight: 760;
 }
 
 .conversion-result {
