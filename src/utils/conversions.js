@@ -110,6 +110,19 @@
     { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-8 / 1-12" },
   ];
 
+  const BOLT_GAUGE_SIZES = [
+    { label: "#10 / M5", inch: "#10", metric: "M5", diameterIn: 0.190 },
+    { label: "1/4 / M6", inch: "1/4", metric: "M6", diameterIn: 0.250 },
+    { label: "5/16 / M8", inch: "5/16", metric: "M8", diameterIn: 0.3125 },
+    { label: "3/8 / M10", inch: "3/8", metric: "M10", diameterIn: 0.375 },
+    { label: "7/16 / M10-M12", inch: "7/16", metric: "M10 / M12", diameterIn: 0.4375 },
+    { label: "1/2 / M12", inch: "1/2", metric: "M12", diameterIn: 0.500 },
+    { label: "5/8 / M16", inch: "5/8", metric: "M16", diameterIn: 0.625 },
+    { label: "3/4 / M20", inch: "3/4", metric: "M20", diameterIn: 0.750 },
+    { label: "7/8 / M22", inch: "7/8", metric: "M22", diameterIn: 0.875 },
+    { label: "1 / M24", inch: "1", metric: "M24", diameterIn: 1.000 },
+  ];
+
   function groupById(groupId) {
     return UNIT_GROUPS.find((group) => group.id === groupId) || null;
   }
@@ -146,6 +159,69 @@
     return `${formatConvertedValue(value)} ${to.label}`;
   }
 
+  function nearestBoltSize(diameterIn) {
+    const value = Number(diameterIn);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return BOLT_GAUGE_SIZES.reduce((closest, size) => {
+      const delta = Math.abs(size.diameterIn - value);
+      return !closest || delta < closest.delta ? { ...size, delta } : closest;
+    }, null);
+  }
+
+  function boltGaugeReading(diameterPx, pixelsPerInch) {
+    const px = Number(diameterPx);
+    const ppi = Number(pixelsPerInch);
+    if (!Number.isFinite(px) || !Number.isFinite(ppi) || px <= 0 || ppi <= 0) return null;
+    const diameterIn = px / ppi;
+    const diameterMm = diameterIn * 25.4;
+    const closest = nearestBoltSize(diameterIn);
+    return {
+      diameterIn,
+      diameterMm,
+      closest,
+      text: closest
+        ? `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm - closest ${closest.label}`
+        : `${formatConvertedValue(diameterIn)} in / ${formatConvertedValue(diameterMm)} mm`,
+    };
+  }
+
+  function bindBoltGaugeEvents(options = {}) {
+    const doc = options.documentRef || document;
+    const storage = options.storage || (typeof window !== "undefined" ? window.localStorage : null);
+    doc.querySelectorAll("[data-bolt-gauge]").forEach((gauge) => {
+      const card = gauge.querySelector("[data-bolt-gauge-card]");
+      const circle = gauge.querySelector("[data-bolt-gauge-circle]");
+      const diameter = gauge.querySelector("[data-bolt-gauge-diameter]");
+      const calibration = gauge.querySelector("[data-bolt-gauge-calibration]");
+      const calibrationLine = gauge.querySelector("[data-bolt-gauge-calibration-line]");
+      const output = gauge.querySelector("[data-bolt-gauge-output]");
+      const storedCalibration = Number(storage?.getItem("maintainops.boltGaugePixelsPerInch"));
+      if (calibration && Number.isFinite(storedCalibration) && storedCalibration > 0) {
+        calibration.value = String(storedCalibration);
+      }
+      const update = () => {
+        const diameterPx = Number(diameter?.value || 0);
+        const pixelsPerInch = Number(calibration?.value || 96);
+        if (circle) {
+          circle.style.width = `${diameterPx}px`;
+          circle.style.height = `${diameterPx}px`;
+        }
+        if (calibrationLine) calibrationLine.style.width = `${pixelsPerInch}px`;
+        const reading = boltGaugeReading(diameterPx, pixelsPerInch);
+        if (output) output.textContent = reading ? reading.text : "Calibrate the gauge";
+        if (storage && Number.isFinite(pixelsPerInch) && pixelsPerInch > 0) {
+          storage.setItem("maintainops.boltGaugePixelsPerInch", String(pixelsPerInch));
+        }
+      };
+      [diameter, calibration].filter(Boolean).forEach((element) => {
+        element.addEventListener("input", update);
+        element.addEventListener("change", update);
+      });
+      if (card) card.addEventListener("click", () => diameter?.focus?.());
+      update();
+    });
+  }
+
   function bindConversionEvents(options = {}) {
     const doc = options.documentRef || document;
     doc.querySelectorAll("[data-conversion-card]").forEach((card) => {
@@ -173,25 +249,34 @@
       }
       update();
     });
+    bindBoltGaugeEvents(options);
   }
 
   window.MaintainOpsConversions = Object.freeze({
     UNIT_GROUPS,
     BOLT_REFERENCE,
+    BOLT_GAUGE_SIZES,
+    nearestBoltSize,
+    boltGaugeReading,
     convertValue,
     formatConvertedValue,
     conversionResultText,
     bindConversionEvents,
+    bindBoltGaugeEvents,
   });
 
   if (typeof module !== "undefined") {
     module.exports = {
       UNIT_GROUPS,
       BOLT_REFERENCE,
+      BOLT_GAUGE_SIZES,
+      nearestBoltSize,
+      boltGaugeReading,
       convertValue,
       formatConvertedValue,
       conversionResultText,
       bindConversionEvents,
+      bindBoltGaugeEvents,
     };
   }
 })();

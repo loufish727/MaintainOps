@@ -43,6 +43,24 @@
             <span>Closest common sizes only</span>
           </div>
           <p class="muted">Imperial and metric bolts are not interchangeable by diameter alone. Verify thread pitch, grade, length, and fit before replacing hardware.</p>
+          <div class="bolt-gauge" data-bolt-gauge>
+            <div class="settings-section-heading">
+              <h3>Bolt Gauge</h3>
+              <span>screen fit estimate</span>
+            </div>
+            <div class="bolt-gauge-layout">
+              <div class="bolt-gauge-card" data-bolt-gauge-card aria-label="Bolt gauge sizing card">
+                <div class="bolt-gauge-circle" data-bolt-gauge-circle></div>
+                <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
+              </div>
+              <div class="bolt-gauge-controls">
+                <label>Circle diameter<input data-bolt-gauge-diameter type="range" min="18" max="240" step="1" value="96"></label>
+                <label>1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="180" step="1" value="96"></label>
+                <output class="bolt-gauge-output" data-bolt-gauge-output></output>
+                <p class="muted">Reference only. Verify thread pitch, grade, and final size with a physical gauge or calipers.</p>
+              </div>
+            </div>
+          </div>
           <div class="bolt-table-wrap" role="region" aria-label="Bolt size reference table" tabindex="0">
             <table class="bolt-reference-table">
               <thead>

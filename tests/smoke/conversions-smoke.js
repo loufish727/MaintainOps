@@ -5,8 +5,10 @@ global.window = {};
 const {
   BOLT_REFERENCE,
   UNIT_GROUPS,
+  boltGaugeReading,
   bindConversionEvents,
   conversionResultText,
+  nearestBoltSize,
 } = require("../../src/utils/conversions.js");
 const { createConversionDisplayHelpers } = require("../../src/render/conversionDisplay.js");
 
@@ -15,6 +17,8 @@ assert.equal(conversionResultText("area", 100, "sqft", "sqm"), "9.2903 Square me
 assert.equal(conversionResultText("weight", 10, "lb", "kg"), "4.5359 Kilograms");
 assert.equal(conversionResultText("temperature", 212, "f", "c"), "100 Celsius");
 assert.equal(BOLT_REFERENCE.find((row) => row.inch === "1/4")?.metric, "M6");
+assert.equal(nearestBoltSize(0.251)?.inch, "1/4");
+assert.equal(boltGaugeReading(24, 96)?.closest?.inch, "1/4");
 
 const helpers = createConversionDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
@@ -28,6 +32,9 @@ assert.match(html, /data-conversion-group="length"/);
 assert.match(html, /data-conversion-group="area"/);
 assert.match(html, /<summary class="conversion-card-heading">/);
 assert.match(html, /Bolt Size Reference/);
+assert.match(html, /data-bolt-gauge/);
+assert.match(html, /bolt-gauge-card/);
+assert.match(html, /data-bolt-gauge-diameter/);
 assert.match(html, /bolt-reference-table/);
 assert.match(html, /not interchangeable by diameter alone/);
 

@@ -24,7 +24,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Parts inventory.
 - Parts usage on work orders.
 - Parts documents/receipts attachment.
-- Collapsible conversions reference tab for common shop measurements, square footage, and bolt-size lookup.
+- Collapsible conversions reference tab for common shop measurements, square footage, bolt-size lookup, and a screen-fit bolt gauge.
 - Equipment hierarchy.
 - Equipment deletion for manager/admin.
 - Preventive maintenance schedules.
@@ -64,7 +64,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
-- Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, and bolt-size reference helpers.
+- Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, bolt-size reference helpers, and a calibrated screen-fit bolt gauge.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.

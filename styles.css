@@ -4185,6 +4185,156 @@ textarea {
   gap: 10px;
 }
 
+.bolt-gauge {
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--blue) 6%, var(--surface-2));
+  padding: 12px;
+}
+
+.bolt-gauge-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(220px, 1fr);
+  gap: 14px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.bolt-gauge-card {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  min-height: 320px;
+  max-height: 320px;
+  border: 1px solid #d5dde4;
+  border-radius: 8px;
+  background:
+    linear-gradient(#eef3f7 1px, transparent 1px),
+    linear-gradient(90deg, #eef3f7 1px, transparent 1px),
+    #fff;
+  background-size: 20px 20px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 12px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.bolt-gauge-card::before,
+.bolt-gauge-card::after {
+  content: "";
+  position: absolute;
+  background: rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+}
+
+.bolt-gauge-card::before {
+  left: 50%;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+}
+
+.bolt-gauge-card::after {
+  top: 50%;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+}
+
+.bolt-gauge-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96px;
+  height: 96px;
+  border: 3px solid #1668e8;
+  border-radius: 999px;
+  background: rgba(22, 104, 232, 0.07);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.78), 0 0 0 999px rgba(255,255,255,0.06);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bolt-gauge-circle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #1668e8;
+  transform: translate(-50%, -50%);
+}
+
+.bolt-gauge-calibration-line {
+  position: absolute;
+  left: 18px;
+  bottom: 22px;
+  width: 96px;
+  border-top: 4px solid #111827;
+  z-index: 3;
+}
+
+.bolt-gauge-calibration-line::before,
+.bolt-gauge-calibration-line::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  width: 3px;
+  height: 16px;
+  background: #111827;
+}
+
+.bolt-gauge-calibration-line::before {
+  left: 0;
+}
+
+.bolt-gauge-calibration-line::after {
+  right: 0;
+}
+
+.bolt-gauge-calibration-line span {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  color: #111827;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.bolt-gauge-controls {
+  display: grid;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.bolt-gauge-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.bolt-gauge-output {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 9px 10px;
+  font-weight: 760;
+}
+
 .bolt-table-wrap {
   overflow-x: auto;
   border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
@@ -4223,6 +4373,10 @@ textarea {
 @media (max-width: 760px) {
   .conversion-controls {
     grid-template-columns: 1fr;
+  }
+
+  .bolt-gauge-layout {
+    grid-template-columns: 320px;
   }
 }
 
