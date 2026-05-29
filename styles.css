@@ -4203,6 +4203,12 @@ textarea {
   padding-bottom: 2px;
 }
 
+.bolt-gauge-measurement-stack {
+  display: grid;
+  gap: 8px;
+  width: 320px;
+}
+
 .bolt-gauge-card {
   position: relative;
   width: 320px;
@@ -4394,14 +4400,7 @@ textarea {
 }
 
 .bolt-gauge-card-readout {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  z-index: 4;
-  display: grid;
-  gap: 6px;
-  width: min(248px, calc(100% - 20px));
-  pointer-events: auto;
+  width: 320px;
 }
 
 .bolt-gauge-controls {
@@ -4475,10 +4474,15 @@ textarea {
 }
 
 .bolt-gauge-size-lock {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
   border-color: color-mix(in srgb, #128a46 32%, var(--line));
   background: rgba(255,255,255,0.94);
   color: #128a46;
   font-size: 0.74rem;
+  white-space: nowrap;
 }
 
 .bolt-gauge-size-lock input {
@@ -4499,11 +4503,10 @@ textarea {
 
 .bolt-gauge-card-readout .bolt-gauge-output {
   min-height: 38px;
-  background: rgba(255,255,255,0.94);
+  background: var(--surface);
   padding: 7px 9px;
   font-size: 0.78rem;
   line-height: 1.22;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
 }
 
 .bolt-reference-details {

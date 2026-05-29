@@ -551,13 +551,15 @@
             </div>
             <p class="muted bolt-gauge-help" data-bolt-gauge-help>Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.</p>
             <div class="bolt-gauge-layout">
-              <div class="bolt-gauge-card" data-bolt-gauge-card aria-label="Bolt gauge sizing card">
+              <div class="bolt-gauge-measurement-stack">
                 <div class="bolt-gauge-card-readout">
                   <output class="bolt-gauge-output" data-bolt-gauge-output></output>
-                  <label class="bolt-gauge-size-lock"><input data-bolt-gauge-size-lock type="checkbox">Lock size</label>
                 </div>
-                <div class="bolt-gauge-circle" data-bolt-gauge-circle></div>
-                <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
+                <div class="bolt-gauge-card" data-bolt-gauge-card aria-label="Bolt gauge sizing card">
+                  <label class="bolt-gauge-size-lock"><input data-bolt-gauge-size-lock type="checkbox">Lock size</label>
+                  <div class="bolt-gauge-circle" data-bolt-gauge-circle></div>
+                  <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
+                </div>
               </div>
               <div class="bolt-gauge-controls">
                 <label class="bolt-gauge-sizing-control">Sizing circle<input data-bolt-gauge-diameter type="range" min="18" max="280" step="1" value="96"></label>
