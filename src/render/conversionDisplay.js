@@ -1137,6 +1137,389 @@
           ["RTD transmitter", "4-20 mA temp", "long cable temperature", "scaling"],
         ],
       },
+      {
+        title: "Diesel SPN / FMI Diagnostic Reference",
+        note: "Fault IDs identify a circuit or condition, not the repair. Use the engine OEM diagnostic tree for final testing.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["SPN", "suspect parameter number", "identifies system or sensor", "OEM mapping"],
+          ["FMI", "failure mode identifier", "describes fault type", "same SPN can vary"],
+          ["OC", "occurrence count", "repeat history", "old vs active fault"],
+          ["Active", "currently detected", "live diagnostic fault", "conditions present"],
+          ["Inactive", "not currently detected", "stored fault history", "clear after repair"],
+          ["FMI 0", "data high", "sensor value above range", "compare live data"],
+          ["FMI 1", "data low", "sensor value below range", "compare live data"],
+          ["FMI 2", "erratic/intermittent", "signal plausibility", "wiggle/load test"],
+          ["FMI 3", "voltage high/short high", "open/short to power", "measure voltage"],
+          ["FMI 4", "voltage low/short low", "short to ground", "measure resistance"],
+          ["FMI 5", "current low/open", "open circuit or coil", "load test circuit"],
+          ["FMI 6", "current high/short", "shorted load", "isolate component"],
+        ],
+      },
+      {
+        title: "Diesel Aftertreatment ID Reference",
+        note: "Aftertreatment codes depend on engine, emissions level, sensor layout, and calibration.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["DOC", "diesel oxidation catalyst", "upstream exhaust treatment", "temperature sensors"],
+          ["DPF", "diesel particulate filter", "soot capture/regeneration", "restriction"],
+          ["SCR", "selective catalytic reduction", "NOx reduction with DEF", "NOx sensors"],
+          ["DEF", "diesel exhaust fluid", "SCR reagent", "quality/concentration"],
+          ["Regen", "filter cleaning cycle", "soot burn-off event", "inhibit conditions"],
+          ["Soot load", "DPF loading estimate", "regen decision", "sensor accuracy"],
+          ["Ash load", "non-burnable residue", "service interval factor", "cleaning history"],
+          ["NOx sensor", "emissions sensor", "SCR feedback", "upstream/downstream"],
+          ["DPF delta P", "filter pressure drop", "restriction estimate", "hose/sensor ports"],
+          ["DEF doser", "urea injector", "SCR dosing", "crystallization"],
+          ["DEF pump", "reagent pressure", "tank to doser supply", "freeze/thaw"],
+          ["Quality sensor", "DEF concentration", "fluid verification", "contamination"],
+        ],
+      },
+      {
+        title: "Diesel Fluid / Filter Reference",
+        note: "Match fluid and filter requirements to the engine or equipment OEM specification.",
+        columns: ["Item", "What it affects", "Common use note", "Watch point"],
+        rows: [
+          ["Engine oil", "lubrication/soot handling", "diesel crankcase", "OEM spec"],
+          ["Oil filter", "lube filtration", "scheduled service", "bypass rating"],
+          ["Primary fuel filter", "coarse fuel/water separation", "frame-mounted filter", "micron/water bowl"],
+          ["Secondary fuel filter", "fine fuel filtration", "engine-mounted filter", "micron rating"],
+          ["Coolant", "heat/corrosion protection", "cooling system", "chemistry match"],
+          ["Coolant filter", "additive/filter element", "some heavy engines", "SCA level"],
+          ["Air filter", "intake protection", "dusty equipment", "restriction gauge"],
+          ["Hydraulic oil", "machine fluid power", "mobile equipment", "viscosity/additives"],
+          ["DEF", "SCR reagent", "emissions system", "32.5% concentration"],
+          ["Fuel water separator", "water removal", "fuel system protection", "drain history"],
+        ],
+      },
+      {
+        title: "Heavy Equipment Battery / Charging Reference",
+        note: "Charging faults depend on battery state, cable voltage drop, alternator output, and controller inputs.",
+        columns: ["Check", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["12.6 V", "charged 12V battery rest", "single battery check", "surface charge"],
+          ["12.2 V", "partially charged", "slow crank complaint", "load test"],
+          ["24 V system", "two 12V batteries series", "heavy equipment/trucks", "balance"],
+          ["CCA", "cold cranking amps", "starting capacity", "temperature"],
+          ["Voltage drop", "cable/connection loss", "crank circuit", "under load"],
+          ["Alternator B+", "charge output", "charging system", "sense wire"],
+          ["Ground strap", "return path", "engine/frame grounds", "corrosion"],
+          ["Parasitic draw", "key-off current", "dead battery complaint", "sleep mode"],
+          ["Battery isolation", "multi-battery system", "aux/start battery split", "solenoid"],
+          ["CAN awake", "module not sleeping", "modern equipment", "network activity"],
+        ],
+      },
+      {
+        title: "CNC G-Code Quick Reference",
+        note: "G-code dialects vary by control. Confirm the active plane, units, offsets, and modal state before running.",
+        columns: ["Code", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["G00", "rapid positioning", "non-cutting move", "clearance"],
+          ["G01", "linear feed move", "straight cutting move", "feedrate"],
+          ["G02", "clockwise arc", "circular interpolation", "IJK/R mode"],
+          ["G03", "counterclockwise arc", "circular interpolation", "plane"],
+          ["G17", "XY plane", "mill default plane", "arc direction"],
+          ["G20", "inch units", "inch programs", "unit mismatch"],
+          ["G21", "metric units", "metric programs", "unit mismatch"],
+          ["G28", "machine zero return", "home return command", "intermediate point"],
+          ["G40", "cancel cutter comp", "end compensated path", "lead-out"],
+          ["G41/G42", "cutter comp left/right", "profile compensation", "tool diameter"],
+          ["G43", "tool length comp", "Z length offset active", "H offset"],
+          ["G54-G59", "work offsets", "fixture coordinate systems", "active offset"],
+          ["G80", "cancel canned cycle", "drill cycle cleanup", "modal cycle"],
+          ["G90/G91", "absolute/incremental", "positioning mode", "unexpected motion"],
+        ],
+      },
+      {
+        title: "CNC M-Code Quick Reference",
+        note: "M-codes are machine/control specific. Confirm the machine manual before relying on optional functions.",
+        columns: ["Code", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["M00", "program stop", "mandatory stop", "restart point"],
+          ["M01", "optional stop", "operator-controlled stop", "optional stop switch"],
+          ["M03", "spindle forward", "clockwise spindle", "speed command"],
+          ["M04", "spindle reverse", "counterclockwise spindle", "tool/process"],
+          ["M05", "spindle stop", "stop rotation", "coast time"],
+          ["M06", "tool change", "automatic/manual tool change", "tool number"],
+          ["M08", "coolant on", "flood coolant", "coolant type"],
+          ["M09", "coolant off", "stop coolant", "chip clearing"],
+          ["M19", "spindle orient", "tool change/probing", "orientation setting"],
+          ["M30", "program end/reset", "end of program", "rewind behavior"],
+          ["M97", "local subprogram", "repeat section in same file", "line number"],
+          ["M98", "subprogram call", "call external/internal sub", "P/L words"],
+          ["M99", "subprogram return", "loop/return command", "infinite loop"],
+          ["M88/M89", "through-spindle coolant on/off", "TSC machines", "pressure/tooling"],
+        ],
+      },
+      {
+        title: "Machining Insert ID Reference",
+        note: "Insert codes vary by standard and manufacturer. Match shape, clearance, tolerance, chipbreaker, and grade.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["CNMG", "80 deg diamond turning insert", "general turning", "holder hand"],
+          ["DNMG", "55 deg diamond insert", "profiling/finishing", "weaker point"],
+          ["TNMG", "triangle insert", "turning/facing", "edge count"],
+          ["WNMG", "trigon insert", "rough/medium turning", "holder style"],
+          ["CCMT", "positive diamond insert", "small boring/turning", "screw size"],
+          ["VBMT", "35 deg positive insert", "profiling", "point strength"],
+          ["APKT", "milling insert", "shoulder/face mills", "cutter series"],
+          ["R390", "milling insert family", "Sandvik-style shoulder milling", "grade/geometry"],
+          ["P grade", "steel machining", "ISO material group", "material match"],
+          ["M grade", "stainless machining", "ISO material group", "work hardening"],
+          ["K grade", "cast iron machining", "ISO material group", "abrasion"],
+          ["N grade", "non-ferrous machining", "aluminum/brass", "built-up edge"],
+        ],
+      },
+      {
+        title: "Machining Decimal Drill Reference",
+        note: "Decimal equivalents help identify drill sizes. Confirm required fit, clearance, and material before cutting.",
+        columns: ["Drill", "Decimal", "Metric near", "Common use note"],
+        rows: [
+          ["#60", "0.0400 in", "1.02 mm", "small holes"],
+          ["#50", "0.0700 in", "1.78 mm", "small screw drilling"],
+          ["#40", "0.0980 in", "2.49 mm", "pilot holes"],
+          ["#30", "0.1285 in", "3.26 mm", "small machine screws"],
+          ["#21", "0.1590 in", "4.04 mm", "#10-32 tap drill"],
+          ["#7", "0.2010 in", "5.11 mm", "1/4-20 tap drill"],
+          ["F", "0.2570 in", "6.53 mm", "5/16-18 tap drill"],
+          ["Q", "0.3320 in", "8.43 mm", "3/8-24 tap drill"],
+          ["U", "0.3680 in", "9.35 mm", "7/16-14 tap drill"],
+          ["27/64", "0.4219 in", "10.72 mm", "1/2-13 tap drill"],
+          ["1/2", "0.5000 in", "12.70 mm", "common clearance/pilot"],
+          ["5/8", "0.6250 in", "15.88 mm", "larger clearance/pilot"],
+        ],
+      },
+      {
+        title: "Surface Finish Reference",
+        note: "Surface finish requirements depend on process, material, sealing, bearing, and print callout.",
+        columns: ["Ra", "Process range", "Common use note", "Watch point"],
+        rows: [
+          ["250 µin", "rough machining", "non-critical surfaces", "tool marks"],
+          ["125 µin", "general machining", "typical milled/turned surface", "fit"],
+          ["63 µin", "fine machining", "bearing fits/light sealing", "tool condition"],
+          ["32 µin", "fine finish", "shaft/seal adjacent surfaces", "process control"],
+          ["16 µin", "grinding/honing", "sealing/bearing surfaces", "measurement"],
+          ["8 µin", "lapped/ground", "precision sealing", "cost"],
+          ["3.2 µm", "metric roughness", "rough/general finish", "unit conversion"],
+          ["1.6 µm", "metric roughness", "general machined finish", "unit conversion"],
+          ["0.8 µm", "metric roughness", "fine machined finish", "unit conversion"],
+          ["0.4 µm", "metric roughness", "ground/sealing finish", "unit conversion"],
+        ],
+      },
+      {
+        title: "GD&T Symbol Quick Reference",
+        note: "GD&T meaning depends on datum structure, feature control frame, tolerance zone, and drawing standard.",
+        columns: ["Symbol/name", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Flatness", "surface flat zone", "plate/machined faces", "no datum"],
+          ["Straightness", "line/axis control", "shafts/edges", "surface vs axis"],
+          ["Circularity", "roundness", "turned diameters", "cross-section"],
+          ["Cylindricity", "round + straight cylinder", "precision shafts/bores", "no datum"],
+          ["Profile", "surface/line profile", "complex contours", "datum setup"],
+          ["Perpendicularity", "90 deg orientation", "machined faces/holes", "datum"],
+          ["Parallelism", "parallel orientation", "slots/faces", "datum"],
+          ["Position", "true position", "hole patterns", "MMC/LMC modifier"],
+          ["Concentricity", "median point control", "legacy callouts", "hard to inspect"],
+          ["Runout", "rotation variation", "shafts/chucks", "datum axis"],
+          ["Total runout", "full surface rotation", "sealing/bearing surfaces", "full sweep"],
+          ["Datum", "reference feature", "inspection setup", "simulator"],
+        ],
+      },
+      {
+        title: "CNC Offset Reference",
+        note: "Offsets are control-specific and modal. Confirm active work offset and tool offset before cycle start.",
+        columns: ["Offset", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["G54", "work coordinate 1", "main vise/fixture", "active fixture"],
+          ["G55", "work coordinate 2", "second fixture", "program callout"],
+          ["H offset", "tool length", "Z compensation", "tool number match"],
+          ["D offset", "tool diameter/radius", "cutter comp", "wear vs geometry"],
+          ["Wear offset", "small correction", "size tuning", "sign direction"],
+          ["Geometry offset", "tool measured value", "setup data", "probe/manual entry"],
+          ["Tool table", "tool data register", "length/diameter storage", "active tool"],
+          ["Work probe", "sets fixture offset", "part setup", "probe calibration"],
+          ["Tool setter", "measures tool length", "tool setup", "setter location"],
+          ["G92", "coordinate shift", "legacy/program shift", "hidden modal state"],
+        ],
+      },
+      {
+        title: "Weld Symbol Quick Reference",
+        note: "Weld symbols depend on the drawing standard, arrow side, other side, tail notes, and dimensions.",
+        columns: ["Symbol/name", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Fillet", "triangular weld symbol", "corner/T/lap joints", "size/length"],
+          ["Square groove", "square butt joint", "thin plates", "root opening"],
+          ["V-groove", "beveled both sides", "butt weld prep", "included angle"],
+          ["Bevel groove", "one member beveled", "thicker plate", "arrow side"],
+          ["Plug/slot", "hole or slot weld", "lap joints", "pitch/count"],
+          ["Contour flush", "finish flush", "grind/machine finish", "finish symbol"],
+          ["All around", "circle at elbow", "weld all around joint", "joint continuity"],
+          ["Field weld", "flag symbol", "weld made in field", "location"],
+          ["Tail", "process/spec note", "WPS/process callout", "note text"],
+          ["Arrow side", "symbol below line", "near-side weld", "standard convention"],
+          ["Other side", "symbol above line", "far-side weld", "standard convention"],
+          ["Intermittent", "length-pitch callout", "stitch welds", "spacing"],
+        ],
+      },
+      {
+        title: "Stick Electrode Reference",
+        note: "Electrode choice depends on base metal, position, current type, joint, and procedure requirements.",
+        columns: ["Rod", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["E6010", "deep penetrating DC rod", "pipe/root/open root", "DC capability"],
+          ["E6011", "AC/DC deep penetration", "dirty/rusty repair", "arc force"],
+          ["E6013", "light penetration", "sheet/light fabrication", "slag inclusions"],
+          ["E7014", "iron powder fill", "flat/horizontal fillets", "position"],
+          ["E7018", "low hydrogen", "structural/general repair", "storage"],
+          ["E7024", "high deposition", "flat/horizontal heavy welds", "position"],
+          ["Ni-Cl", "nickel cast iron", "cast iron repair", "preheat/cooling"],
+          ["Hardfacing", "wear overlay", "bucket/blade wear areas", "base metal"],
+          ["3/32 in", "small diameter", "thin material/root", "amperage"],
+          ["1/8 in", "common diameter", "general fabrication", "joint thickness"],
+          ["5/32 in", "larger diameter", "heavy material", "machine output"],
+          ["DCEP", "reverse polarity", "many rods", "rod requirement"],
+        ],
+      },
+      {
+        title: "MIG Wire / Shielding Gas Reference",
+        note: "Match wire, gas, transfer mode, base metal, thickness, and machine output.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["ER70S-6", "mild steel solid wire", "general steel MIG", "gas required"],
+          [".023 in", "small wire", "thin sheet", "feed stability"],
+          [".030 in", "light/general wire", "auto/body/light fab", "material thickness"],
+          [".035 in", "common fab wire", "general fabrication", "machine range"],
+          [".045 in", "larger wire", "heavy fab", "output capacity"],
+          ["C25", "75/25 argon-CO2", "short-circuit steel", "gas mix"],
+          ["100% CO2", "active gas", "deeper penetration steel", "spatter"],
+          ["Tri-mix", "stainless gas", "stainless MIG", "wire/process"],
+          ["Flux-core gas shielded", "tubular wire", "structural/heavy fab", "polarity"],
+          ["Self-shielded FCAW", "no external gas", "outdoor field repair", "wire type"],
+        ],
+      },
+      {
+        title: "Plasma Cutting Reference",
+        note: "Cut quality depends on consumables, amperage, air/gas quality, torch height, speed, and material.",
+        columns: ["Item", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Nozzle", "orifice shapes arc", "cut quality/kerf", "wear"],
+          ["Electrode", "arc emitter", "consumable core", "pit depth"],
+          ["Shield", "protects nozzle", "drag/mechanized cutting", "correct style"],
+          ["Swirl ring", "gas flow control", "arc stability", "damage"],
+          ["Kerf", "cut width", "nesting/offset", "consumable/process"],
+          ["Pierce height", "start height", "hole starts", "blowback"],
+          ["Cut height", "running torch height", "edge quality", "arc voltage"],
+          ["Dross", "re-solidified metal", "speed/height clue", "top vs bottom"],
+          ["Air pressure", "gas supply", "portable plasma", "moisture"],
+          ["Amperage cartridge", "process-specific consumable", "material thickness"],
+        ],
+      },
+      {
+        title: "Fabrication Bend Reference",
+        note: "Bend results depend on material, grain, tooling, die opening, radius, and machine setup.",
+        columns: ["Term", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Inside radius", "bend inner radius", "formed part geometry", "tool radius"],
+          ["K-factor", "neutral axis factor", "flat pattern math", "material/process"],
+          ["Bend allowance", "arc length added", "flat pattern calculation", "units"],
+          ["Bend deduction", "length removed", "flange layout", "method"],
+          ["Setback", "mold line distance", "layout reference", "angle"],
+          ["Air bend", "three-point bend", "common press brake process", "springback"],
+          ["Bottoming", "punch bottoms material", "more repeatable angle", "tonnage"],
+          ["Coining", "high-tonnage forming", "tight angle control", "tool wear"],
+          ["Die opening", "V-die width", "radius/tonnage driver", "material thickness"],
+          ["Grain direction", "rolling direction", "crack control", "bend orientation"],
+        ],
+      },
+      {
+        title: "Structural Shape ID Reference",
+        note: "Shape designations vary by standard and supplier. Confirm dimensions, weight, grade, and mill cert.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["W8x18", "wide-flange beam", "structural beam", "weight/ft"],
+          ["C6x8.2", "channel", "frames/supports", "flange slope"],
+          ["L2x2x1/4", "angle", "brackets/frames", "leg thickness"],
+          ["HSS2x2x1/4", "square tube", "machine frames", "wall thickness"],
+          ["HSS3x2x1/4", "rect tube", "frames/guards", "orientation"],
+          ["Pipe 2 SCH40", "nominal pipe", "rails/utility", "actual OD"],
+          ["Flat bar", "rectangular bar", "tabs/brackets", "thickness"],
+          ["Round bar", "solid round", "pins/shafts", "diameter/material"],
+          ["Plate", "flat plate", "bases/gussets", "thickness/grade"],
+          ["Expanded metal", "slit/stretched sheet", "guards/walkways", "strand size"],
+        ],
+      },
+      {
+        title: "Industrial PLC Sourcing / Sinking Reference",
+        note: "Sourcing/sinking labels vary by manufacturer. PNP/NPN and the module wiring diagram are clearer.",
+        columns: ["ID", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["PNP sensor", "sources +V on output", "common 24VDC sensors", "input common"],
+          ["NPN sensor", "sinks to 0V on output", "some import/legacy systems", "pull-up/common"],
+          ["Sourcing output", "switches +V to load", "PLC output modules", "load common"],
+          ["Sinking output", "switches load to 0V", "PLC output modules", "load supply"],
+          ["Sinking input", "accepts sourcing device", "many AB input modules", "manual definition"],
+          ["Sourcing input", "accepts sinking device", "some module styles", "manual definition"],
+          ["2-wire sensor", "series load sensor", "prox/photoeye", "leakage current"],
+          ["3-wire sensor", "+V/0V/output", "standard sensors", "pinout"],
+          ["Brown", "+V sensor lead", "IEC sensor cable", "pinout"],
+          ["Blue", "0V sensor lead", "IEC sensor cable", "pinout"],
+          ["Black", "output lead", "IEC sensor cable", "PNP/NPN"],
+          ["White", "second output/teach", "4-wire sensors", "function"],
+        ],
+      },
+      {
+        title: "Control Panel Terminal Reference",
+        note: "Terminal markings depend on IEC/NEMA convention, manufacturer, and drawing standard.",
+        columns: ["Marking", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["A1/A2", "coil terminals", "relays/contactors", "coil voltage"],
+          ["13/14", "NO contact", "auxiliary contact", "state"],
+          ["21/22", "NC contact", "auxiliary contact", "state"],
+          ["95/96", "NC overload trip", "starter feedback", "device convention"],
+          ["97/98", "NO overload trip", "trip indication", "device convention"],
+          ["L1/L2/L3", "line terminals", "incoming power", "phase order"],
+          ["T1/T2/T3", "load terminals", "motor output", "overload location"],
+          ["X1/X2", "control transformer secondary", "24/120V control", "grounded side"],
+          ["PE", "protective earth", "ground terminal", "bonding"],
+          ["0V", "DC common", "24VDC control", "isolated supplies"],
+          ["24V", "DC supply positive", "controls/sensors", "current capacity"],
+          ["COM", "common terminal", "I/O or relay common", "voltage group"],
+        ],
+      },
+      {
+        title: "Control Transformer Reference",
+        note: "Transformer selection depends on primary voltage, secondary voltage, VA load, inrush, and protection.",
+        columns: ["Item", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Primary", "supply winding", "480/240/120V input", "tap selection"],
+          ["Secondary", "output winding", "24/120V controls", "grounding"],
+          ["VA", "power rating", "control circuit capacity", "inrush"],
+          ["Fuse primary", "line-side protection", "transformer protection", "voltage"],
+          ["Fuse secondary", "control circuit protection", "branch protection", "class/rating"],
+          ["Inrush", "startup current", "contactors/solenoids", "nuisance trip"],
+          ["X1 grounded", "grounded control side", "120V controls", "drawing convention"],
+          ["Class 2", "limited power", "24V control devices", "load limit"],
+          ["Multi-tap", "selectable primary", "480/240/208 input", "jumper/tap"],
+          ["VA sum", "load total", "coils/lights/devices", "simultaneous load"],
+        ],
+      },
+      {
+        title: "Drive / Motor Nameplate Match Reference",
+        note: "Drive setup should match the motor nameplate and application. Confirm against the drive manual.",
+        columns: ["Field", "Meaning", "Common use note", "Watch point"],
+        rows: [
+          ["Motor FLA", "full-load amps", "drive current limit", "voltage-specific"],
+          ["Base Hz", "rated frequency", "60/50Hz motors", "speed scaling"],
+          ["Base RPM", "rated speed", "slip/speed setup", "pole count"],
+          ["Motor volts", "rated voltage", "drive output setup", "lead wiring"],
+          ["HP/kW", "power rating", "sizing reference", "current matters more"],
+          ["Accel time", "speed ramp up", "conveyors/fans", "overcurrent"],
+          ["Decel time", "speed ramp down", "high inertia loads", "overvoltage"],
+          ["Brake resistor", "regen energy path", "fast decel", "ohms/watts"],
+          ["Carrier freq", "PWM frequency", "noise/heat tradeoff", "motor cable"],
+          ["Control source", "keypad/terminal/network", "start command", "unexpected source"],
+        ],
+      },
     ];
 
     function renderConversionCard(group) {
@@ -1167,6 +1550,9 @@
     const shopReferenceCategories = [
       { id: "fasteners", label: "Fasteners & Threads", description: "Threads, bolts, taps, torque, grades, threadlocker" },
       { id: "electrical", label: "Electrical & Controls", description: "Wire, plugs, fuses, sensors, panels, PLC I/O" },
+      { id: "diesel-mobile", label: "Diesel & Mobile", description: "SPN/FMI, aftertreatment, batteries, fluids, field service IDs" },
+      { id: "machining-cnc", label: "Machining & CNC", description: "G-code, M-code, inserts, GD&T, finishes, offsets" },
+      { id: "fabrication", label: "Fabrication & Welding", description: "Weld symbols, electrodes, MIG, plasma, bends, structural shapes" },
       { id: "motors", label: "Motors & Drives", description: "Motors, VFDs, reducers, belts, couplings" },
       { id: "fluid-power", label: "Fluid Power", description: "Hydraulic hose, leaks, seals, cylinders, fittings" },
       { id: "pneumatics", label: "Pneumatics", description: "Air fittings, cylinders, valves, tubing" },
@@ -1179,8 +1565,11 @@
     function shopReferenceCategory(section) {
       const title = section.title.toLowerCase();
       if (/thread|tap|fastener|torque|threadlocker/.test(title)) return "fasteners";
-      if (/wire|electrical|plug|sensor|fuse|contactor|vfd|thermocouple|rtd|plc|relay|conduit|nema enclosure/.test(title)) return "electrical";
-      if (/motor|belt code|belt section|gear reducer|coupling/.test(title)) return "motors";
+      if (/diesel|aftertreatment|battery \/ charging|heavy equipment/.test(title)) return "diesel-mobile";
+      if (/cnc|g-code|m-code|machining|insert|decimal drill|surface finish|gd&t|offset/.test(title)) return "machining-cnc";
+      if (/weld|stick electrode|mig|plasma|fabrication|structural shape/.test(title)) return "fabrication";
+      if (/wire|electrical|plug|sensor|fuse|contactor|thermocouple|rtd|plc|relay|conduit|nema enclosure|control panel|control transformer/.test(title)) return "electrical";
+      if (/motor|vfd|drive \/ motor|belt code|belt section|gear reducer|coupling/.test(title)) return "motors";
       if (/hydraulic|shaft seal|o-ring material|pump seal/.test(title)) return "fluid-power";
       if (/pneumatic|air cylinder|solenoid/.test(title)) return "pneumatics";
       if (/bearing|roller chain|chain|sprocket|belt failure|conveyor roller/.test(title)) return "bearings-belts-chain";
@@ -1226,6 +1615,25 @@
       if (/wire color/.test(title)) return "trace drawing + meter";
       if (/sensor|photoeye|proximity/.test(title)) return "check label, LED, wiring";
       if (/plc i\/o/.test(title)) return "match card type + wiring";
+      if (/diesel spn|fmi/.test(title)) return "read code + OEM tree";
+      if (/aftertreatment/.test(title)) return "compare live data + sensor";
+      if (/diesel fluid|filter/.test(title)) return "match OEM spec/part number";
+      if (/battery \/ charging|heavy equipment/.test(title)) return "load test + voltage drop";
+      if (/g-code|m-code/.test(title)) return "dry run + active modal check";
+      if (/insert id/.test(title)) return "match insert code + holder";
+      if (/decimal drill/.test(title)) return "measure drill + print callout";
+      if (/surface finish/.test(title)) return "measure Ra/profile callout";
+      if (/gd&t/.test(title)) return "read feature control frame";
+      if (/cnc offset/.test(title)) return "check active offset screen";
+      if (/weld symbol/.test(title)) return "read drawing symbol/tail";
+      if (/stick electrode|mig wire|shielding gas/.test(title)) return "match WPS/settings chart";
+      if (/plasma cutting/.test(title)) return "match consumables + cut chart";
+      if (/fabrication bend/.test(title)) return "check flat pattern/tooling";
+      if (/structural shape/.test(title)) return "measure shape + grade";
+      if (/sourcing \/ sinking|industrial plc/.test(title)) return "check module diagram";
+      if (/control panel terminal/.test(title)) return "trace drawing + terminal mark";
+      if (/control transformer/.test(title)) return "sum VA + tap label";
+      if (/drive \/ motor nameplate/.test(title)) return "match drive params to nameplate";
       if (/relay|contactor|overload/.test(title)) return "read terminal marks + coil";
       if (/motor nameplate/.test(title)) return "read nameplate fields";
       if (/nema motor frame/.test(title)) return "measure shaft + frame";
