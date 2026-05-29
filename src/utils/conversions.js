@@ -491,6 +491,87 @@
     });
   }
 
+  function bindShopReferenceEvents(options = {}) {
+    const doc = options.documentRef || document;
+    const storage = options.storage || (typeof window !== "undefined" ? window.localStorage : null);
+    const favoriteKey = "maintainops.shopReferenceFavorites";
+
+    doc.querySelectorAll("[data-shop-reference-panel]").forEach((panel) => {
+      const grids = Array.from(panel.querySelectorAll("[data-shop-reference-grid]"));
+      const cards = Array.from(panel.querySelectorAll("[data-shop-reference-card]"));
+      if (!grids.length || !cards.length) return;
+
+      const pageSize = 12;
+      const readFavorites = () => {
+        try {
+          const parsed = JSON.parse(storage?.getItem(favoriteKey) || "[]");
+          return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+        } catch (error) {
+          return [];
+        }
+      };
+      const writeFavorites = (favorites) => {
+        try {
+          storage?.setItem(favoriteKey, JSON.stringify(favorites));
+        } catch (error) {}
+      };
+      const normalizedTitle = (card) => card.dataset.shopReferenceTitle || "";
+      const favoriteButton = (card) => card.querySelector("[data-shop-reference-favorite]");
+      const applyFavoriteState = (favorites) => {
+        const favoriteSet = new Set(favorites);
+        cards.forEach((card) => {
+          const active = favoriteSet.has(normalizedTitle(card));
+          card.classList.toggle("shop-reference-favorited", active);
+          const button = favoriteButton(card);
+          if (button) {
+            button.setAttribute("aria-pressed", String(active));
+            button.textContent = active ? "★" : "☆";
+            button.title = active ? "Remove favorite" : "Favorite chart";
+          }
+        });
+      };
+      const orderedCards = (favorites) => {
+        const favoriteSet = new Set(favorites);
+        const byTitle = new Map(cards.map((card) => [normalizedTitle(card), card]));
+        const favoriteCards = favorites.map((title) => byTitle.get(title)).filter(Boolean);
+        const rest = cards
+          .filter((card) => !favoriteSet.has(normalizedTitle(card)))
+          .sort((a, b) => normalizedTitle(a).localeCompare(normalizedTitle(b)));
+        return [...favoriteCards, ...rest];
+      };
+      const renderOrder = () => {
+        const favorites = readFavorites();
+        applyFavoriteState(favorites);
+        const ordered = orderedCards(favorites);
+        grids.forEach((grid) => { grid.textContent = ""; });
+        ordered.forEach((card, index) => {
+          const grid = grids[Math.floor(index / pageSize)] || grids[grids.length - 1];
+          grid.appendChild(card);
+        });
+        grids.forEach((grid) => {
+          const count = grid.querySelectorAll("[data-shop-reference-card]").length;
+          const label = grid.closest(".shop-reference-page")?.querySelector("[data-shop-reference-page-count]");
+          if (label) label.textContent = `${count} ${count === 1 ? "chart" : "charts"}`;
+        });
+      };
+
+      cards.forEach((card) => {
+        const button = favoriteButton(card);
+        if (!button) return;
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const title = normalizedTitle(card);
+          const favorites = readFavorites().filter((favorite) => favorite !== title);
+          if (button.getAttribute("aria-pressed") !== "true") favorites.push(title);
+          writeFavorites(favorites);
+          renderOrder();
+        });
+      });
+      renderOrder();
+    });
+  }
+
   function bindConversionEvents(options = {}) {
     const doc = options.documentRef || document;
     doc.querySelectorAll("[data-conversion-card]").forEach((card) => {
@@ -519,6 +600,7 @@
       update();
     });
     bindBoltGaugeEvents(options);
+    bindShopReferenceEvents(options);
   }
 
   window.MaintainOpsConversions = Object.freeze({
@@ -534,6 +616,7 @@
     conversionResultText,
     bindConversionEvents,
     bindBoltGaugeEvents,
+    bindShopReferenceEvents,
   });
 
   if (typeof module !== "undefined") {
@@ -550,6 +633,7 @@
       conversionResultText,
       bindConversionEvents,
       bindBoltGaugeEvents,
+      bindShopReferenceEvents,
     };
   }
 })();

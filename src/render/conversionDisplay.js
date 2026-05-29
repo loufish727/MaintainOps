@@ -500,9 +500,10 @@
 
     function renderReferenceTable(section) {
       return `
-        <details class="bolt-reference-details shop-reference-details shop-reference-card">
+        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-title="${escapeHtml(section.title)}">
           <summary class="bolt-reference-summary">
             <strong>${escapeHtml(section.title)}</strong>
+            <button class="shop-reference-favorite" data-shop-reference-favorite type="button" aria-label="Favorite ${escapeHtml(section.title)}" title="Favorite chart" aria-pressed="false">☆</button>
             <span>${section.rows.length} rows</span>
           </summary>
           <div class="bolt-table-wrap" role="region" aria-label="${escapeHtml(section.title)} table" tabindex="0">
@@ -530,26 +531,28 @@
         pages.push(sortedSections.slice(index, index + pageSize));
       }
       return `
-        <div class="shop-reference-heading">
-          <div>
-            <h3>Shop Reference Charts</h3>
-            <p>Common field references, sorted alphabetically.</p>
+        <section class="shop-reference-panel" data-shop-reference-panel>
+          <div class="shop-reference-heading">
+            <div>
+              <h3>Shop Reference Charts</h3>
+              <p>Common field references, sorted alphabetically. Favorites stay first.</p>
+            </div>
+            <span>${shopReferenceSections.length} charts / 12 per page</span>
           </div>
-          <span>${shopReferenceSections.length} charts / 12 per page</span>
-        </div>
-        <div class="shop-reference-pages">
-          ${pages.map((page, pageIndex) => `
-            <section class="shop-reference-page" aria-label="Shop reference page ${pageIndex + 1} of ${pages.length}">
-              <div class="shop-reference-page-label">
-                <strong>Page ${pageIndex + 1} of ${pages.length}</strong>
-                <span>${page.length} charts</span>
-              </div>
-              <div class="shop-reference-card-grid">
-                ${page.map(renderReferenceTable).join("")}
-              </div>
-            </section>
-          `).join("")}
-        </div>
+          <div class="shop-reference-pages">
+            ${pages.map((page, pageIndex) => `
+              <section class="shop-reference-page" aria-label="Shop reference page ${pageIndex + 1} of ${pages.length}">
+                <div class="shop-reference-page-label">
+                  <strong>Page ${pageIndex + 1} of ${pages.length}</strong>
+                  <span data-shop-reference-page-count>${page.length} charts</span>
+                </div>
+                <div class="shop-reference-card-grid" data-shop-reference-grid>
+                  ${page.map(renderReferenceTable).join("")}
+                </div>
+              </section>
+            `).join("")}
+          </div>
+        </section>
       `;
     }
 

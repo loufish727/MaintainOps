@@ -9,6 +9,7 @@ const {
   boltGaugeReading,
   bindBoltGaugeEvents,
   bindConversionEvents,
+  bindShopReferenceEvents,
   conversionResultText,
   nearestBoltSize,
   nearestWrenchSize,
@@ -85,9 +86,12 @@ assert.match(html, /Shaft Seal Reference/);
 assert.match(html, /NEMA Motor Frame Reference/);
 assert.match(html, /Electrical Plug \/ Receptacle Reference/);
 assert.match(html, /17 charts \/ 12 per page/);
-assert.match(html, /Common field references, sorted alphabetically/);
+assert.match(html, /Common field references, sorted alphabetically\. Favorites stay first\./);
 assert.match(html, /Page 1 of 2/);
 assert.match(html, /Page 2 of 2/);
+assert.match(html, /data-shop-reference-panel/);
+assert.match(html, /data-shop-reference-card/);
+assert.match(html, /data-shop-reference-favorite/);
 assert.match(html, /shop-reference-card-grid/);
 assert.ok(html.indexOf("Bearing Quick Reference") < html.indexOf("Belt Section Reference"));
 assert.ok(html.indexOf("Belt Section Reference") < html.indexOf("Drill / Tap Quick Reference"));
@@ -291,5 +295,71 @@ gaugePoints.value = "8";
 gaugePoints.listeners.change();
 assert.match(gaugeHelp.textContent, /8-point head mode/);
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "8");
+
+const favoriteStorage = {
+  values: {},
+  getItem(key) { return this.values[key] || null; },
+  setItem(key, value) { this.values[key] = value; },
+};
+const favoriteGridOne = {
+  children: [],
+  set textContent(value) { if (value === "") this.children = []; },
+  get textContent() { return ""; },
+  appendChild(card) { this.children.push(card); },
+  querySelectorAll(selector) { return selector === "[data-shop-reference-card]" ? this.children : []; },
+  closest() { return { querySelector() { return { textContent: "" }; } }; },
+};
+const favoriteGridTwo = {
+  children: [],
+  set textContent(value) { if (value === "") this.children = []; },
+  get textContent() { return ""; },
+  appendChild(card) { this.children.push(card); },
+  querySelectorAll(selector) { return selector === "[data-shop-reference-card]" ? this.children : []; },
+  closest() { return { querySelector() { return { textContent: "" }; } }; },
+};
+function createFavoriteButton() {
+  return {
+    textContent: "",
+    title: "",
+    attributes: {},
+    listeners: {},
+    setAttribute(name, value) { this.attributes[name] = value; },
+    getAttribute(name) { return this.attributes[name]; },
+    addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  };
+}
+function createReferenceCard(title) {
+  const button = createFavoriteButton();
+  return {
+    dataset: { shopReferenceTitle: title },
+    classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+    querySelector(selector) { return selector === "[data-shop-reference-favorite]" ? button : null; },
+    button,
+  };
+}
+const alphaCard = createReferenceCard("Alpha Reference");
+const betaCard = createReferenceCard("Beta Reference");
+const shopPanel = {
+  querySelectorAll(selector) {
+    if (selector === "[data-shop-reference-grid]") return [favoriteGridOne, favoriteGridTwo];
+    if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
+    return [];
+  },
+};
+const shopDocument = {
+  querySelectorAll(selector) {
+    return selector === "[data-shop-reference-panel]" ? [shopPanel] : [];
+  },
+};
+bindShopReferenceEvents({ documentRef: shopDocument, storage: favoriteStorage });
+assert.equal(favoriteGridOne.children[0], alphaCard);
+assert.equal(favoriteGridOne.children[1], betaCard);
+assert.equal(alphaCard.button.textContent, "☆");
+
+betaCard.button.listeners.click({ preventDefault() {}, stopPropagation() {} });
+assert.equal(JSON.parse(favoriteStorage.values["maintainops.shopReferenceFavorites"])[0], "Beta Reference");
+assert.equal(favoriteGridOne.children[0], betaCard);
+assert.equal(betaCard.button.textContent, "★");
+assert.equal(betaCard.classList.values["shop-reference-favorited"], true);
 
 console.log("conversions smoke passed");

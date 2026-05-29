@@ -4617,12 +4617,10 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
-  border-radius: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 20%, var(--line));
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--blue) 14%, transparent), transparent 58%),
     var(--surface-2);
-  margin-top: 18px;
   padding: 14px;
 }
 
@@ -4657,7 +4655,15 @@ textarea {
 .shop-reference-pages {
   display: grid;
   gap: 14px;
-  margin-top: 12px;
+  padding: 14px;
+}
+
+.shop-reference-panel {
+  border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  margin-top: 18px;
+  overflow: hidden;
 }
 
 .shop-reference-page {
@@ -4686,13 +4692,61 @@ textarea {
 .shop-reference-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .shop-reference-card {
+  border-left: 4px solid var(--blue);
   margin: 0;
   min-width: 0;
+  background: var(--surface);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.shop-reference-card:hover,
+.shop-reference-card[open] {
+  border-color: color-mix(in srgb, var(--blue) 50%, var(--line));
+  border-left-color: var(--blue);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+.shop-reference-card.shop-reference-favorited {
+  border-left-color: #d89b00;
+}
+
+.shop-reference-card .bolt-reference-summary {
+  min-height: 58px;
+  align-items: start;
+}
+
+.shop-reference-card .bolt-reference-summary strong {
+  align-self: center;
+  font-size: 0.92rem;
+}
+
+.shop-reference-favorite {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, #d89b00 36%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, #d89b00 8%, var(--surface));
+  color: #a66f00;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shop-reference-card[open] .shop-reference-favorite,
+.shop-reference-card.shop-reference-favorited .shop-reference-favorite {
+  display: inline-flex;
+}
+
+.shop-reference-favorite[aria-pressed="true"] {
+  background: color-mix(in srgb, #d89b00 18%, var(--surface));
 }
 
 .shop-reference-table {
