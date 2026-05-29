@@ -42,6 +42,8 @@ Areas still maturing:
 
 Current architecture is transitional but more intentional than earlier versions: `app.js` remains the app shell, bootstrapper, render router, and dependency wiring layer, while workflow, render, service, utility, and event modules continue moving into `src/`. The remaining `app.js` authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`.
 
+Recent UI trace: the Conversions tab now includes expanded shop reference charts and a screen-fit bolt gauge. Shop reference cards were corrected for desktop and mobile behavior: collapsed cards stay compact, opened desktop cards span the grid, opened mobile charts use stacked label/value rows instead of clipped wide tables, and favorite charts are visually prominent. Favorites are intentionally browser-local via `localStorage` at this stage.
+
 ## Security Posture
 
 The app is designed around database-enforced tenant isolation:

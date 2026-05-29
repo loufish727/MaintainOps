@@ -56,6 +56,8 @@ The live app is hosted at:
 - Work order gauges are clickable filters.
 - Completed work is not shown by default; it is accessed through filters/gauges and paged results.
 - Parts are compact tiles that open into detail cards.
+- Conversion shop reference charts use collapsed card headlines, paged chart cards, and mobile stacked label/value rows for wide reference data.
+- Shop reference favorites are currently browser-local preferences stored in `localStorage`, not account-synced profile settings.
 - Warning states should be visually strong. `Critical` and `Overdue` badges should be obvious.
 
 ## Current QA Data

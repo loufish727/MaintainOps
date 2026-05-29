@@ -11,5 +11,6 @@ Publicly visible process principles:
 - Prefer incremental modularization over broad rewrites.
 - Preserve production behavior while reducing `app.js` authority over time.
 - Document public-facing maturity honestly.
+- Leave a brief trace for meaningful UI/workflow changes: what changed, why, what was verified, and any intentional limitation.
 
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.
