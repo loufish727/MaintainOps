@@ -522,7 +522,7 @@
               </thead>
               <tbody>
                 ${section.rows.map((row) => `
-                  <tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>
+                  <tr>${row.map((cell, index) => `<td data-label="${escapeHtml(section.columns[index] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
                 `).join("")}
               </tbody>
             </table>

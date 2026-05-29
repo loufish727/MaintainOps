@@ -93,6 +93,8 @@ assert.match(html, /data-shop-reference-page="next"/);
 assert.match(html, /data-shop-reference-panel/);
 assert.match(html, /data-shop-reference-card/);
 assert.match(html, /data-shop-reference-favorite/);
+assert.match(html, /<td data-label="AWG">/);
+assert.match(html, /<td data-label="Common use note">/);
 assert.match(html, /shop-reference-card-grid/);
 assert.ok(html.indexOf("Bearing Quick Reference") < html.indexOf("Belt Section Reference"));
 assert.ok(html.indexOf("Belt Section Reference") < html.indexOf("Drill / Tap Quick Reference"));

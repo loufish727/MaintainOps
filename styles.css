@@ -4556,6 +4556,9 @@ textarea {
 .bolt-table-wrap {
   overflow-x: auto;
   background: var(--surface);
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
 }
 
 .bolt-reference-table {
@@ -4814,6 +4817,55 @@ textarea {
 
   .shop-reference-card .bolt-reference-summary {
     min-height: 0;
+  }
+
+  .shop-reference-card[open] .bolt-table-wrap {
+    overflow-x: visible;
+  }
+
+  .shop-reference-card[open] .shop-reference-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .shop-reference-card[open] .shop-reference-table thead {
+    display: none;
+  }
+
+  .shop-reference-card[open] .shop-reference-table tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  .shop-reference-card[open] .shop-reference-table tr {
+    display: grid;
+    border: 1px solid color-mix(in srgb, var(--blue) 14%, var(--line));
+    border-radius: 8px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .shop-reference-card[open] .shop-reference-table td {
+    display: grid;
+    grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    border-bottom: 1px solid var(--line);
+    padding: 8px 10px;
+  }
+
+  .shop-reference-card[open] .shop-reference-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 760;
+    text-transform: uppercase;
+  }
+
+  .shop-reference-card[open] .shop-reference-table tr:last-child td,
+  .shop-reference-card[open] .shop-reference-table td:last-child {
+    border-bottom: 0;
   }
 }
 
