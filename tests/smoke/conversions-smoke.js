@@ -56,7 +56,8 @@ assert.match(html, /Head \/ Wrench/);
 assert.match(html, /data-bolt-gauge-points/);
 assert.match(html, /6 point hex/);
 assert.match(html, /4 point square/);
-assert.match(html, /12 point/);
+assert.match(html, /8 point square/);
+assert.match(html, /12 point socket/);
 assert.match(html, /Common Wrench \/ Head Size Reference/);
 assert.match(html, /data-wrench-size-row="1\/2"/);
 assert.match(html, /data-wrench-size-row="4"/);
@@ -266,5 +267,10 @@ gaugePoints.value = "4";
 gaugePoints.listeners.change();
 assert.match(gaugeHelp.textContent, /4-point head mode/);
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "4");
+
+gaugePoints.value = "8";
+gaugePoints.listeners.change();
+assert.match(gaugeHelp.textContent, /8-point head mode/);
+assert.equal(gaugeDataset.boltGaugePointsCurrent, "8");
 
 console.log("conversions smoke passed");
