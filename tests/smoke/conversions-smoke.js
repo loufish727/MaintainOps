@@ -82,6 +82,13 @@ assert.match(html, /RV TT-30/);
 assert.match(html, /50 A RV 14-50/);
 assert.match(html, /light indoor extension cord/);
 assert.match(html, /heavy outdoor cord/);
+assert.match(html, /electrical boxes and covers/);
+assert.match(html, /plant air branches/);
+assert.match(html, /shop fans and light conveyors/);
+assert.match(html, /common pump and conveyor bearing/);
+assert.match(html, /common conveyor and sprocket drive/);
+assert.match(html, /general motor and conveyor bearings/);
+assert.match(html, /structural brackets \/ bases/);
 assert.match(html, /double-pitch conveyor/);
 
 function createField(value) {
