@@ -104,6 +104,7 @@ const gaugeDiameter = createField("24");
 const gaugeCalibration = createField("96");
 const threadMode = { value: "thread", checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const wrenchMode = { value: "wrench", checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const calibrationLock = { checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const gaugeOutput = { textContent: "" };
 const gaugeHelp = { textContent: "" };
 const highlightedRows = {};
@@ -132,6 +133,7 @@ const gaugeLookup = {
   "[data-bolt-gauge-calibration-line]": { style: {} },
   "[data-bolt-gauge-output]": gaugeOutput,
   "[data-bolt-gauge-help]": gaugeHelp,
+  "[data-bolt-gauge-lock]": calibrationLock,
 };
 const gaugeElement = {
   querySelector(selector) {
@@ -156,6 +158,8 @@ const storage = {
 };
 bindBoltGaugeEvents({ documentRef: gaugeDocument, storage });
 assert.match(gaugeOutput.textContent, /closest 1\/4 \/ M6/);
+assert.equal(gaugeCalibration.disabled, true);
+assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "true");
 assert.equal(highlightedRows["1/4"], true);
 assert.equal(highlightedRows["#10"], false);
 assert.match(gaugeHelp.textContent, /bolt shaft/);
@@ -174,5 +178,10 @@ assert.match(gaugeOutput.textContent, /closest 3\/4 wrench for 1\/2 thread/);
 assert.equal(highlightedWrenchRows["1/2"], true);
 assert.equal(highlightedRows["1"], false);
 assert.match(gaugeHelp.textContent, /bolt head/);
+
+calibrationLock.checked = false;
+calibrationLock.listeners.change();
+assert.equal(gaugeCalibration.disabled, false);
+assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "false");
 
 console.log("conversions smoke passed");

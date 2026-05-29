@@ -64,7 +64,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
-- Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes.
+- Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes. The sizing circle is green, the calibration bar is red, and calibration can be locked per device.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.

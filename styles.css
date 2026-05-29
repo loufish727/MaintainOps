@@ -4196,21 +4196,21 @@ textarea {
 
 .bolt-gauge-layout {
   display: grid;
-  grid-template-columns: 360px minmax(220px, 1fr);
+  grid-template-columns: 320px minmax(220px, 1fr);
   gap: 14px;
   align-items: start;
-  overflow-x: auto;
+  overflow-x: hidden;
   padding-bottom: 2px;
 }
 
 .bolt-gauge-card {
   position: relative;
-  width: 360px;
-  height: 360px;
-  min-width: 360px;
-  max-width: 360px;
-  min-height: 360px;
-  max-height: 360px;
+  width: 320px;
+  height: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  min-height: 320px;
+  max-height: 320px;
   border: 1px solid #d5dde4;
   border-radius: 8px;
   background:
@@ -4286,9 +4286,9 @@ textarea {
   top: 50%;
   width: 96px;
   height: 96px;
-  border: 3px solid #1668e8;
+  border: 3px solid #128a46;
   border-radius: 999px;
-  background: rgba(22, 104, 232, 0.07);
+  background: rgba(18, 138, 70, 0.08);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.78), 0 0 0 999px rgba(255,255,255,0.06);
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -4303,7 +4303,7 @@ textarea {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #1668e8;
+  background: #128a46;
   transform: translate(-50%, -50%);
 }
 
@@ -4312,7 +4312,7 @@ textarea {
   left: 18px;
   bottom: 22px;
   width: 96px;
-  border-top: 4px solid #111827;
+  border-top: 4px solid #c51f32;
   z-index: 3;
 }
 
@@ -4323,7 +4323,7 @@ textarea {
   top: -10px;
   width: 3px;
   height: 16px;
-  background: #111827;
+  background: #c51f32;
 }
 
 .bolt-gauge-calibration-line::before {
@@ -4338,7 +4338,7 @@ textarea {
   position: absolute;
   left: 50%;
   top: -24px;
-  color: #111827;
+  color: #c51f32;
   font-size: 0.72rem;
   font-weight: 800;
   transform: translateX(-50%);
@@ -4357,6 +4357,28 @@ textarea {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 650;
+}
+
+.bolt-gauge-controls input[type="range"]:disabled {
+  opacity: 0.52;
+}
+
+.bolt-gauge-lock {
+  display: inline-flex !important;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, #c51f32 30%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, #c51f32 8%, var(--surface));
+  color: var(--ink);
+  padding: 5px 10px;
+}
+
+.bolt-gauge-lock input {
+  accent-color: #c51f32;
 }
 
 .bolt-gauge-output {
@@ -4464,7 +4486,8 @@ textarea {
   }
 
   .bolt-gauge-layout {
-    grid-template-columns: 360px;
+    grid-template-columns: 320px;
+    overflow-x: auto;
   }
 
   .bolt-gauge-mode {

@@ -60,8 +60,9 @@
                 <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
               </div>
               <div class="bolt-gauge-controls">
-                <label>Circle diameter<input data-bolt-gauge-diameter type="range" min="18" max="320" step="1" value="96"></label>
-                <label>1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="220" step="1" value="96"></label>
+                <label>Sizing circle<input data-bolt-gauge-diameter type="range" min="18" max="280" step="1" value="96"></label>
+                <label>1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="200" step="1" value="96"></label>
+                <label class="bolt-gauge-lock"><input data-bolt-gauge-lock type="checkbox" checked>Lock 1 in calibration</label>
                 <output class="bolt-gauge-output" data-bolt-gauge-output></output>
                 <p class="muted">Reference only. Verify thread pitch, grade, and final size with a physical gauge or calipers.</p>
               </div>
