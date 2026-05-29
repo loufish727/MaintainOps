@@ -98,30 +98,68 @@
   ];
 
   const BOLT_REFERENCE = [
-    { inch: "#10", inchDiameter: "0.190", metric: "M5", metricDiameter: "5.0", threads: "10-24 / 10-32" },
-    { inch: "1/4", inchDiameter: "0.250", metric: "M6", metricDiameter: "6.0", threads: "1/4-20 / 1/4-28" },
-    { inch: "5/16", inchDiameter: "0.3125", metric: "M8", metricDiameter: "8.0", threads: "5/16-18 / 5/16-24" },
-    { inch: "3/8", inchDiameter: "0.375", metric: "M10", metricDiameter: "10.0", threads: "3/8-16 / 3/8-24" },
-    { inch: "7/16", inchDiameter: "0.4375", metric: "M10 / M12", metricDiameter: "10.0 / 12.0", threads: "7/16-14 / 7/16-20" },
-    { inch: "1/2", inchDiameter: "0.500", metric: "M12", metricDiameter: "12.0", threads: "1/2-13 / 1/2-20" },
-    { inch: "5/8", inchDiameter: "0.625", metric: "M16", metricDiameter: "16.0", threads: "5/8-11 / 5/8-18" },
-    { inch: "3/4", inchDiameter: "0.750", metric: "M20", metricDiameter: "20.0", threads: "3/4-10 / 3/4-16" },
-    { inch: "7/8", inchDiameter: "0.875", metric: "M22", metricDiameter: "22.0", threads: "7/8-9 / 7/8-14" },
-    { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-8 / 1-12" },
+    { inch: "#0", inchDiameter: "0.060", metric: "M1.6", metricDiameter: "1.6", threads: "0-80 UNF" },
+    { inch: "#1", inchDiameter: "0.073", metric: "M2", metricDiameter: "2.0", threads: "1-64 UNC" },
+    { inch: "#1", inchDiameter: "0.073", metric: "M2", metricDiameter: "2.0", threads: "1-72 UNF" },
+    { inch: "#2", inchDiameter: "0.086", metric: "M2.2", metricDiameter: "2.2", threads: "2-56 UNC" },
+    { inch: "#2", inchDiameter: "0.086", metric: "M2.2", metricDiameter: "2.2", threads: "2-64 UNF" },
+    { inch: "#3", inchDiameter: "0.099", metric: "M2.5", metricDiameter: "2.5", threads: "3-48 UNC" },
+    { inch: "#3", inchDiameter: "0.099", metric: "M2.5", metricDiameter: "2.5", threads: "3-56 UNF" },
+    { inch: "#4", inchDiameter: "0.112", metric: "M3", metricDiameter: "3.0", threads: "4-40 UNC" },
+    { inch: "#4", inchDiameter: "0.112", metric: "M3", metricDiameter: "3.0", threads: "4-48 UNF" },
+    { inch: "#5", inchDiameter: "0.125", metric: "M3", metricDiameter: "3.0", threads: "5-40 UNC" },
+    { inch: "#5", inchDiameter: "0.125", metric: "M3", metricDiameter: "3.0", threads: "5-44 UNF" },
+    { inch: "#6", inchDiameter: "0.138", metric: "M3.5", metricDiameter: "3.5", threads: "6-32 UNC" },
+    { inch: "#6", inchDiameter: "0.138", metric: "M3.5", metricDiameter: "3.5", threads: "6-40 UNF" },
+    { inch: "#8", inchDiameter: "0.164", metric: "M4", metricDiameter: "4.0", threads: "8-32 UNC" },
+    { inch: "#8", inchDiameter: "0.164", metric: "M4", metricDiameter: "4.0", threads: "8-36 UNF" },
+    { inch: "#10", inchDiameter: "0.190", metric: "M5", metricDiameter: "5.0", threads: "10-24 UNC" },
+    { inch: "#10", inchDiameter: "0.190", metric: "M5", metricDiameter: "5.0", threads: "10-32 UNF" },
+    { inch: "#12", inchDiameter: "0.216", metric: "M5.5", metricDiameter: "5.5", threads: "12-24 UNC" },
+    { inch: "#12", inchDiameter: "0.216", metric: "M5.5", metricDiameter: "5.5", threads: "12-28 UNF" },
+    { inch: "1/4", inchDiameter: "0.250", metric: "M6", metricDiameter: "6.0", threads: "1/4-20 UNC" },
+    { inch: "1/4", inchDiameter: "0.250", metric: "M6", metricDiameter: "6.0", threads: "1/4-28 UNF" },
+    { inch: "1/4", inchDiameter: "0.250", metric: "M6", metricDiameter: "6.0", threads: "1/4-32 UNEF" },
+    { inch: "5/16", inchDiameter: "0.3125", metric: "M8", metricDiameter: "8.0", threads: "5/16-18 UNC" },
+    { inch: "5/16", inchDiameter: "0.3125", metric: "M8", metricDiameter: "8.0", threads: "5/16-24 UNF" },
+    { inch: "5/16", inchDiameter: "0.3125", metric: "M8", metricDiameter: "8.0", threads: "5/16-32 UNEF" },
+    { inch: "3/8", inchDiameter: "0.375", metric: "M10", metricDiameter: "10.0", threads: "3/8-16 UNC" },
+    { inch: "3/8", inchDiameter: "0.375", metric: "M10", metricDiameter: "10.0", threads: "3/8-24 UNF" },
+    { inch: "3/8", inchDiameter: "0.375", metric: "M10", metricDiameter: "10.0", threads: "3/8-32 UNEF" },
+    { inch: "7/16", inchDiameter: "0.4375", metric: "M10 / M12", metricDiameter: "10.0 / 12.0", threads: "7/16-14 UNC" },
+    { inch: "7/16", inchDiameter: "0.4375", metric: "M10 / M12", metricDiameter: "10.0 / 12.0", threads: "7/16-20 UNF" },
+    { inch: "7/16", inchDiameter: "0.4375", metric: "M10 / M12", metricDiameter: "10.0 / 12.0", threads: "7/16-28 UNEF" },
+    { inch: "1/2", inchDiameter: "0.500", metric: "M12", metricDiameter: "12.0", threads: "1/2-13 UNC" },
+    { inch: "1/2", inchDiameter: "0.500", metric: "M12", metricDiameter: "12.0", threads: "1/2-20 UNF" },
+    { inch: "1/2", inchDiameter: "0.500", metric: "M12", metricDiameter: "12.0", threads: "1/2-28 UNEF" },
+    { inch: "9/16", inchDiameter: "0.5625", metric: "M14", metricDiameter: "14.0", threads: "9/16-12 UNC" },
+    { inch: "9/16", inchDiameter: "0.5625", metric: "M14", metricDiameter: "14.0", threads: "9/16-18 UNF" },
+    { inch: "9/16", inchDiameter: "0.5625", metric: "M14", metricDiameter: "14.0", threads: "9/16-24 UNEF" },
+    { inch: "5/8", inchDiameter: "0.625", metric: "M16", metricDiameter: "16.0", threads: "5/8-11 UNC" },
+    { inch: "5/8", inchDiameter: "0.625", metric: "M16", metricDiameter: "16.0", threads: "5/8-18 UNF" },
+    { inch: "5/8", inchDiameter: "0.625", metric: "M16", metricDiameter: "16.0", threads: "5/8-24 UNEF" },
+    { inch: "3/4", inchDiameter: "0.750", metric: "M20", metricDiameter: "20.0", threads: "3/4-10 UNC" },
+    { inch: "3/4", inchDiameter: "0.750", metric: "M20", metricDiameter: "20.0", threads: "3/4-16 UNF" },
+    { inch: "3/4", inchDiameter: "0.750", metric: "M20", metricDiameter: "20.0", threads: "3/4-20 UNEF" },
+    { inch: "7/8", inchDiameter: "0.875", metric: "M22", metricDiameter: "22.0", threads: "7/8-9 UNC" },
+    { inch: "7/8", inchDiameter: "0.875", metric: "M22", metricDiameter: "22.0", threads: "7/8-14 UNF" },
+    { inch: "7/8", inchDiameter: "0.875", metric: "M22", metricDiameter: "22.0", threads: "7/8-20 UNEF" },
+    { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-8 UNC" },
+    { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-12 UNF" },
+    { inch: "1", inchDiameter: "1.000", metric: "M24", metricDiameter: "24.0", threads: "1-20 UNEF" },
+    { inch: "1-1/8", inchDiameter: "1.125", metric: "M30", metricDiameter: "30.0", threads: "1-1/8-7 UNC" },
   ];
 
-  const BOLT_GAUGE_SIZES = [
-    { label: "#10 / M5", inch: "#10", metric: "M5", diameterIn: 0.190 },
-    { label: "1/4 / M6", inch: "1/4", metric: "M6", diameterIn: 0.250 },
-    { label: "5/16 / M8", inch: "5/16", metric: "M8", diameterIn: 0.3125 },
-    { label: "3/8 / M10", inch: "3/8", metric: "M10", diameterIn: 0.375 },
-    { label: "7/16 / M10-M12", inch: "7/16", metric: "M10 / M12", diameterIn: 0.4375 },
-    { label: "1/2 / M12", inch: "1/2", metric: "M12", diameterIn: 0.500 },
-    { label: "5/8 / M16", inch: "5/8", metric: "M16", diameterIn: 0.625 },
-    { label: "3/4 / M20", inch: "3/4", metric: "M20", diameterIn: 0.750 },
-    { label: "7/8 / M22", inch: "7/8", metric: "M22", diameterIn: 0.875 },
-    { label: "1 / M24", inch: "1", metric: "M24", diameterIn: 1.000 },
-  ];
+  const BOLT_GAUGE_SIZES = BOLT_REFERENCE.reduce((sizes, row) => {
+    if (sizes.some((size) => size.inch === row.inch)) return sizes;
+    sizes.push({
+      label: `${row.inch} / ${row.metric}`,
+      inch: row.inch,
+      metric: row.metric,
+      diameterIn: Number(row.inchDiameter),
+    });
+    return sizes;
+  }, []);
 
   function groupById(groupId) {
     return UNIT_GROUPS.find((group) => group.id === groupId) || null;
@@ -209,6 +247,10 @@
         if (calibrationLine) calibrationLine.style.width = `${pixelsPerInch}px`;
         const reading = boltGaugeReading(diameterPx, pixelsPerInch);
         if (output) output.textContent = reading ? reading.text : "Calibrate the gauge";
+        const activeInch = reading?.closest?.inch || "";
+        doc.querySelectorAll("[data-bolt-size-row]").forEach((row) => {
+          row.classList.toggle("bolt-reference-active", Boolean(activeInch && row.dataset.boltSizeRow === activeInch));
+        });
         if (storage && Number.isFinite(pixelsPerInch) && pixelsPerInch > 0) {
           storage.setItem("maintainops.boltGaugePixelsPerInch", String(pixelsPerInch));
         }

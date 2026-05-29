@@ -4335,16 +4335,58 @@ textarea {
   font-weight: 760;
 }
 
-.bolt-table-wrap {
-  overflow-x: auto;
+.bolt-reference-details {
   border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--line));
   border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.bolt-reference-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.bolt-reference-summary::-webkit-details-marker {
+  display: none;
+}
+
+.bolt-reference-summary strong {
+  font-weight: 760;
+}
+
+.bolt-reference-summary span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 9%, var(--control-bg));
+  color: var(--blue);
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.bolt-reference-details[open] .bolt-reference-summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 18%, var(--line));
+}
+
+.bolt-table-wrap {
+  overflow-x: auto;
   background: var(--surface);
 }
 
 .bolt-reference-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 840px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -4368,6 +4410,16 @@ textarea {
 
 .bolt-reference-table tr:last-child td {
   border-bottom: 0;
+}
+
+.bolt-reference-table tr.bolt-reference-active td {
+  background: color-mix(in srgb, var(--blue) 17%, var(--surface));
+  color: var(--ink);
+  font-weight: 760;
+}
+
+.bolt-reference-table tr.bolt-reference-active td:first-child {
+  box-shadow: inset 4px 0 0 var(--blue);
 }
 
 @media (max-width: 760px) {

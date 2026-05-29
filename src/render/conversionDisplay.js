@@ -61,30 +61,36 @@
               </div>
             </div>
           </div>
-          <div class="bolt-table-wrap" role="region" aria-label="Bolt size reference table" tabindex="0">
-            <table class="bolt-reference-table">
-              <thead>
-                <tr>
-                  <th>Inch size</th>
-                  <th>Major dia. in</th>
-                  <th>Nearest metric</th>
-                  <th>Metric dia. mm</th>
-                  <th>Common inch threads</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${boltReference.map((row) => `
+          <details class="bolt-reference-details">
+            <summary class="bolt-reference-summary">
+              <strong>Common Inch Thread Reference</strong>
+              <span>${boltReference.length} rows</span>
+            </summary>
+            <div class="bolt-table-wrap" role="region" aria-label="Common inch thread reference table" tabindex="0">
+              <table class="bolt-reference-table">
+                <thead>
                   <tr>
-                    <td>${escapeHtml(row.inch)}</td>
-                    <td>${escapeHtml(row.inchDiameter)}</td>
-                    <td>${escapeHtml(row.metric)}</td>
-                    <td>${escapeHtml(row.metricDiameter)}</td>
-                    <td>${escapeHtml(row.threads)}</td>
+                    <th>Inch size</th>
+                    <th>Major dia. in</th>
+                    <th>Nearest metric</th>
+                    <th>Metric dia. mm</th>
+                    <th>Common inch thread</th>
                   </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  ${boltReference.map((row) => `
+                    <tr data-bolt-size-row="${escapeHtml(row.inch)}">
+                      <td>${escapeHtml(row.inch)}</td>
+                      <td>${escapeHtml(row.inchDiameter)}</td>
+                      <td>${escapeHtml(row.metric)}</td>
+                      <td>${escapeHtml(row.metricDiameter)}</td>
+                      <td>${escapeHtml(row.threads)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </details>
         </section>
       `;
     }
