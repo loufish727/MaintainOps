@@ -20,12 +20,13 @@ assert.equal(conversionResultText("area", 100, "sqft", "sqm"), "9.2903 Square me
 assert.equal(conversionResultText("weight", 10, "lb", "kg"), "4.5359 Kilograms");
 assert.equal(conversionResultText("temperature", 212, "f", "c"), "100 Celsius");
 assert.equal(BOLT_REFERENCE.length, 100);
-assert.equal(WRENCH_REFERENCE.length, 17);
+assert.equal(WRENCH_REFERENCE.length, 100);
 assert.equal(BOLT_REFERENCE.find((row) => row.inch === "1/4")?.metric, "M6");
 assert.equal(nearestBoltSize(0.251)?.inch, "1/4");
 assert.equal(nearestBoltSize(1.49)?.inch, "1-1/2");
 assert.equal(nearestBoltSize(3.6)?.inch, "3-1/2");
 assert.equal(nearestWrenchSize(0.749)?.thread, "1/2");
+assert.equal(nearestWrenchSize(6)?.thread, "4");
 assert.equal(boltGaugeReading(24, 96)?.closest?.inch, "1/4");
 assert.equal(boltGaugeReading(72, 96, "wrench")?.closest?.thread, "1/2");
 
@@ -54,6 +55,7 @@ assert.match(html, /Thread \/ Nut ID/);
 assert.match(html, /Head \/ Wrench/);
 assert.match(html, /Common Wrench \/ Head Size Reference/);
 assert.match(html, /data-wrench-size-row="1\/2"/);
+assert.match(html, /data-wrench-size-row="4"/);
 assert.match(html, /bolt-reference-table/);
 assert.match(html, /not interchangeable by diameter alone/);
 

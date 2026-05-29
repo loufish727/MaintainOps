@@ -108,20 +108,20 @@
                 <thead>
                   <tr>
                     <th>Thread size</th>
-                    <th>Thread dia. in</th>
                     <th>Wrench size</th>
-                    <th>Wrench mm</th>
-                    <th>Use</th>
+                    <th class="bolt-reference-detail">Thread dia. in</th>
+                    <th class="bolt-reference-detail">Wrench mm</th>
+                    <th class="bolt-reference-detail">Use</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${wrenchReference.map((row) => `
-                    <tr data-wrench-size-row="${escapeHtml(row.thread)}">
-                      <td>${escapeHtml(row.thread)}</td>
-                      <td>${escapeHtml(row.threadDiameterIn)}</td>
-                      <td>${escapeHtml(row.wrenchIn)}</td>
-                      <td>${escapeHtml(row.wrenchMm)}</td>
-                      <td>${escapeHtml(row.note)}</td>
+                    <tr class="bolt-reference-row" data-wrench-size-row="${escapeHtml(row.thread)}">
+                      <td class="bolt-reference-primary">${escapeHtml(row.thread)}</td>
+                      <td class="bolt-reference-primary">${escapeHtml(row.wrenchIn)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.threadDiameterIn)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.wrenchMm)}</td>
+                      <td class="bolt-reference-detail">${escapeHtml(row.note)}</td>
                     </tr>
                   `).join("")}
                 </tbody>
