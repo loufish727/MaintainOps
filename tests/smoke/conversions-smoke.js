@@ -125,6 +125,11 @@ assert.match(html, /Industrial PLC Sourcing \/ Sinking Reference/);
 assert.match(html, /Control Transformer Reference/);
 assert.match(html, /75 charts \/ 12 per page/);
 assert.match(html, /data-shop-reference-category-grid/);
+assert.match(html, /shop-reference-top-strip/);
+assert.match(html, /data-shop-reference-top="Drill \/ Tap Quick Reference"/);
+assert.match(html, /data-shop-reference-top="Wire Gauge Reference"/);
+assert.match(html, /data-shop-reference-top="CNC G-Code Quick Reference"/);
+assert.match(html, /data-shop-reference-category=""/);
 assert.match(html, /data-shop-reference-category="fasteners"/);
 assert.match(html, /data-shop-reference-category="diesel-mobile"/);
 assert.match(html, /data-shop-reference-category="machining-cnc"/);
@@ -186,9 +191,9 @@ assert.match(html, /AWS symbol\/procedure standards, WPS, filler manufacturer da
 assert.match(html, /NEC\/NFPA 70, NEMA\/IEC standards, device datasheets/);
 assert.match(html, /same code on another control, wrong active work offset, hidden modal state/);
 assert.match(html, /shop-reference-card-grid/);
-assert.ok(html.indexOf("Bearing Quick Reference") < html.indexOf("Belt Section Reference"));
-assert.ok(html.indexOf("Belt Section Reference") < html.indexOf("Drill / Tap Quick Reference"));
-assert.ok(html.indexOf("Torque Reference") < html.indexOf("Wire Gauge Reference"));
+assert.ok(html.indexOf('data-shop-reference-title="Bearing Quick Reference"') < html.indexOf('data-shop-reference-title="Belt Section Reference"'));
+assert.ok(html.indexOf('data-shop-reference-title="Belt Section Reference"') < html.indexOf('data-shop-reference-title="Drill / Tap Quick Reference"'));
+assert.ok(html.indexOf('data-shop-reference-title="Torque Reference"') < html.indexOf('data-shop-reference-title="Wire Gauge Reference"'));
 assert.match(html, /Drill \/ Tap Quick Reference[\s\S]*20 rows/);
 assert.match(html, /Wire Gauge Reference[\s\S]*20 rows/);
 assert.match(html, /Pipe \/ Tubing Reference[\s\S]*20 rows/);
@@ -448,6 +453,7 @@ const betaCard = createReferenceCard("Beta Reference");
 const pageStatus = { textContent: "" };
 const searchInput = { value: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const emptyState = { hidden: true };
+const topButton = { dataset: { shopReferenceTop: "Alpha" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const categoryGrid = {
   hidden: false,
   listeners: {},
@@ -479,6 +485,7 @@ const nextButton = { disabled: false, dataset: { shopReferencePage: "next" }, li
 const shopPanel = {
   dataset: { shopReferencePageSize: "12" },
   querySelectorAll(selector) {
+    if (selector === "[data-shop-reference-top]") return [topButton];
     if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
     if (selector === "[data-shop-reference-page]") return [prevButton, nextButton];
     if (selector === "[data-shop-reference-category]") return [electricalCategory, bearingCategory];
@@ -545,6 +552,12 @@ searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"bearing\" - Page 1 of 1");
+topButton.listeners.click();
+assert.equal(searchInput.value, "Alpha");
+assert.equal(favoriteGridOne.children.length, 1);
+assert.equal(favoriteGridOne.children[0], alphaCard);
+assert.equal(activeCategoryLabel.textContent, "Search results for \"Alpha\"");
+assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"Alpha\" - Page 1 of 1");
 searchInput.value = "no-hit";
 searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 0);

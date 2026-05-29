@@ -650,6 +650,17 @@
         if (searchQuery) focusResults();
       });
 
+      panel.querySelectorAll("[data-shop-reference-top]").forEach((button) => {
+        button.addEventListener?.("click", () => {
+          searchQuery = button.dataset.shopReferenceTop || "";
+          activeCategory = "";
+          if (searchInput) searchInput.value = searchQuery;
+          currentPage = 1;
+          renderOrder({ closeOpen: true });
+          focusResults();
+        });
+      });
+
       categoryGrid?.addEventListener?.("click", (event) => {
         const card = event.target?.closest?.("[data-shop-reference-category]");
         if (!card || !categoryGrid.contains?.(card)) return;

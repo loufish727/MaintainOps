@@ -4806,24 +4806,60 @@ textarea {
   padding: 10px 12px;
 }
 
+.shop-reference-top-strip {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.shop-reference-top-strip > span {
+  color: var(--muted);
+  flex: 0 0 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.shop-reference-top-button {
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+  color: color-mix(in srgb, var(--blue) 82%, var(--ink));
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.1;
+  min-height: 30px;
+  padding: 6px 10px;
+}
+
+.shop-reference-top-button:hover,
+.shop-reference-top-button:focus-visible {
+  border-color: color-mix(in srgb, var(--blue) 52%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 14%, transparent);
+  outline: none;
+}
+
 .shop-reference-category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 8px;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
 .shop-reference-category-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 10px;
   align-items: center;
-  border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 34%, var(--line));
-  border-left: 4px solid var(--rel-parts-ink);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--rel-parts-ink) 6%, var(--surface));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+  border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 24%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rel-parts-ink) 5%, var(--surface));
   color: var(--ink);
-  padding: 10px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 7px;
+  min-height: 32px;
+  padding: 5px 9px 5px 11px;
   text-align: left;
 }
 
@@ -4831,35 +4867,25 @@ textarea {
 .shop-reference-category-card:focus-visible,
 .shop-reference-category-card.shop-reference-category-active {
   border-color: color-mix(in srgb, var(--rel-parts-ink) 58%, var(--line));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.45),
-    0 0 0 3px color-mix(in srgb, var(--rel-parts-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--rel-parts-ink) 10%, var(--surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rel-parts-ink) 14%, transparent);
   outline: none;
 }
 
 .shop-reference-category-card span {
-  font-size: 0.94rem;
-  font-weight: 840;
-  line-height: 1.15;
-}
-
-.shop-reference-category-card small {
-  color: color-mix(in srgb, var(--muted) 78%, var(--ink));
-  font-size: 0.76rem;
-  line-height: 1.35;
-  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.1;
 }
 
 .shop-reference-category-card strong {
-  align-self: center;
-  justify-self: end;
   border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 34%, transparent);
   border-radius: 999px;
   background: var(--rel-parts-bg);
   color: var(--rel-parts-ink);
-  padding: 4px 9px;
-  font-size: 0.76rem;
-  font-weight: 620;
+  padding: 3px 7px;
+  font-size: 0.68rem;
+  font-weight: 570;
 }
 
 .shop-reference-back {
@@ -4931,8 +4957,8 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   gap: 10px;
-  min-height: 144px;
-  padding: 14px;
+  min-height: 82px;
+  padding: 11px 12px;
 }
 
 .shop-reference-card[open] .bolt-reference-summary {
@@ -4946,7 +4972,7 @@ textarea {
 .shop-reference-card-main {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -4964,6 +4990,10 @@ textarea {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.shop-reference-card:not([open]) .shop-reference-card-main small {
+  display: none;
 }
 
 .shop-reference-card-actions {

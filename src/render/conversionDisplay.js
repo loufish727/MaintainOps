@@ -1581,9 +1581,8 @@
 
     function renderCategoryCard(category, count) {
       return `
-        <button class="shop-reference-category-card" data-shop-reference-category="${escapeHtml(category.id)}" type="button">
+        <button class="shop-reference-category-card" data-shop-reference-category="${escapeHtml(category.id)}" type="button" title="${escapeHtml(category.description)}">
           <span>${escapeHtml(category.label)}</span>
-          <small>${escapeHtml(category.description)}</small>
           <strong>${count} charts</strong>
         </button>
       `;
@@ -1866,6 +1865,14 @@
       const categoryCount = (categoryId) => (
         shopReferenceSections.filter((section) => shopReferenceCategory(section) === categoryId).length
       );
+      const topReferenceTitles = [
+        "Drill / Tap Quick Reference",
+        "Wire Gauge Reference",
+        "Bearing Quick Reference",
+        "CNC G-Code Quick Reference",
+        "Diesel SPN / FMI Diagnostic Reference",
+        "Weld Symbol Quick Reference",
+      ];
       const totalPages = Math.max(1, Math.ceil(sortedSections.length / pageSize));
       return `
         <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
@@ -1881,7 +1888,17 @@
               <span>Search references</span>
               <input data-shop-reference-search-input type="search" inputmode="search" autocomplete="off" placeholder="Try 6205, NPT, M12, 5VX800, photoeye...">
             </label>
+            <div class="shop-reference-top-strip" aria-label="Top shop references">
+              <span>Top references</span>
+              ${topReferenceTitles.map((title) => `
+                <button class="shop-reference-top-button" data-shop-reference-top="${escapeHtml(title)}" type="button">${escapeHtml(title.replace(" Reference", ""))}</button>
+              `).join("")}
+            </div>
             <div class="shop-reference-category-grid" data-shop-reference-category-grid>
+              <button class="shop-reference-category-card" data-shop-reference-category="" type="button" title="Show every reference">
+                <span>All</span>
+                <strong>${shopReferenceSections.length} charts</strong>
+              </button>
               ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCount(category.id))).join("")}
             </div>
             <div class="active-team-filter shop-reference-active-filter" data-shop-reference-active-category hidden>
