@@ -13,4 +13,12 @@ Publicly visible process principles:
 - Document public-facing maturity honestly.
 - Leave a brief trace for meaningful UI/workflow changes: what changed, why, what was verified, and any intentional limitation.
 
+CSS and UI changes also need a small visual safety check:
+
+- Preserve readable contrast for all changed text, values, controls, and state labels.
+- Check default, open/active, selected, disabled, warning, error, and empty states when touched.
+- Verify both desktop and mobile layouts for changed cards, tables, panels, and forms.
+- Treat hidden content, accidental overflow, clipped values, or unreadable result fields as a failed smoke.
+- Prefer a targeted browser or computed-style check when a change depends on color, layout, or responsive behavior.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.
