@@ -1164,14 +1164,14 @@
               <span data-shop-reference-active-category-label></span>
               <button class="text-button" data-shop-reference-back type="button">All categories</button>
             </div>
-            <div class="shop-reference-card-grid" data-shop-reference-grid hidden>
+            <div class="shop-reference-card-grid" data-shop-reference-grid>
               ${sortedSections.map(renderReferenceTable).join("")}
             </div>
             <p class="shop-reference-empty" data-shop-reference-empty hidden>No matching reference cards.</p>
             ${shopReferenceSections.length > pageSize ? `
               <div class="pagination-bar shop-reference-pagination">
                 <button class="secondary-button page-action-button" data-shop-reference-page="prev" type="button" disabled>Previous</button>
-                <span data-shop-reference-page-status>Showing ${shopReferenceCategories.length} categories</span>
+                <span data-shop-reference-page-status>Showing 1-${Math.min(pageSize, sortedSections.length)} of ${sortedSections.length} - Page 1 of ${totalPages}</span>
                 <button class="secondary-button page-action-button" data-shop-reference-page="next" type="button">Next</button>
               </div>
             ` : ""}

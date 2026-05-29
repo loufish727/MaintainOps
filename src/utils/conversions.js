@@ -588,14 +588,14 @@
         if (options.closeOpen) closeCards();
         const favorites = readFavorites();
         applyFavoriteState(favorites);
-        const showCategories = !searchQuery && !activeCategory;
-        if (categoryGrid) categoryGrid.hidden = !showCategories;
-        if (grid) grid.hidden = showCategories;
+        const hasFilter = Boolean(searchQuery || activeCategory);
+        if (categoryGrid) categoryGrid.hidden = false;
+        if (grid) grid.hidden = false;
         if (backButton) {
           backButton.textContent = "All categories";
         }
         if (activeCategoryBanner) {
-          activeCategoryBanner.hidden = showCategories;
+          activeCategoryBanner.hidden = !hasFilter;
         }
         if (activeCategoryLabelElement) {
           if (searchQuery) {
@@ -611,30 +611,26 @@
           card.classList.toggle("shop-reference-category-active", active);
           card.setAttribute?.("aria-pressed", String(active));
         });
-        const ordered = showCategories ? [] : orderedCards(favorites).filter((card) => matchesSearch(card) && matchesCategory(card));
+        const ordered = orderedCards(favorites).filter((card) => matchesSearch(card) && matchesCategory(card));
         const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
         currentPage = Math.min(Math.max(1, currentPage), totalPages);
         const startIndex = (currentPage - 1) * pageSize;
         const pageCards = ordered.slice(startIndex, startIndex + pageSize);
         grid.textContent = "";
         pageCards.forEach((card) => grid.appendChild(card));
-        if (emptyState) emptyState.hidden = showCategories || ordered.length > 0;
+        if (emptyState) emptyState.hidden = ordered.length > 0;
         const status = pageStatus();
         if (status) {
-          if (showCategories) {
-            status.textContent = `Showing ${categoryCards.length} categories`;
-          } else {
-            const firstShown = ordered.length ? startIndex + 1 : 0;
-            const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
-            const searchSuffix = searchQuery ? ` for "${searchQuery}"` : "";
-            const categorySuffix = activeCategory && !searchQuery ? ` in ${activeCategoryLabel()}` : "";
-            status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${categorySuffix}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
-          }
+          const firstShown = ordered.length ? startIndex + 1 : 0;
+          const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
+          const searchSuffix = searchQuery ? ` for "${searchQuery}"` : "";
+          const categorySuffix = activeCategory && !searchQuery ? ` in ${activeCategoryLabel()}` : "";
+          status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${categorySuffix}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
         }
         const prev = pageButton("prev");
         const next = pageButton("next");
-        if (prev) prev.disabled = showCategories || currentPage <= 1;
-        if (next) next.disabled = showCategories || currentPage >= totalPages;
+        if (prev) prev.disabled = currentPage <= 1;
+        if (next) next.disabled = currentPage >= totalPages;
         try {
           storage?.setItem(pageKey, String(currentPage));
         } catch (error) {}
