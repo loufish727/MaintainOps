@@ -168,6 +168,17 @@ assert.match(html, /<td data-label="Verify by">dry run \+ active modal check<\/t
 assert.match(html, /<td data-label="Verify by">match insert code \+ holder<\/td>/);
 assert.match(html, /<td data-label="Verify by">read drawing symbol\/tail<\/td>/);
 assert.match(html, /<td data-label="Verify by">check module diagram<\/td>/);
+assert.match(html, /shop-reference-detail-panel/);
+assert.match(html, /Related chart/);
+assert.match(html, /Alternate names/);
+assert.match(html, /Close-but-wrong matches/);
+assert.match(html, /Source family/);
+assert.match(html, /Examples/);
+assert.match(html, /SAE J1939, engine OEM service data, equipment service manuals/);
+assert.match(html, /CNC control manual, machine builder documentation, setup sheet/);
+assert.match(html, /AWS symbol\/procedure standards, WPS, filler manufacturer data/);
+assert.match(html, /NEC\/NFPA 70, NEMA\/IEC standards, device datasheets/);
+assert.match(html, /same code on another control, wrong active work offset, hidden modal state/);
 assert.match(html, /shop-reference-card-grid/);
 assert.ok(html.indexOf("Bearing Quick Reference") < html.indexOf("Belt Section Reference"));
 assert.ok(html.indexOf("Belt Section Reference") < html.indexOf("Drill / Tap Quick Reference"));

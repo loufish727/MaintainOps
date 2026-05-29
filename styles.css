@@ -5020,6 +5020,39 @@ textarea {
   margin-right: 4px;
 }
 
+.shop-reference-detail-panel {
+  border-top: 1px solid color-mix(in srgb, var(--blue) 12%, var(--line));
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 10px 12px 12px;
+}
+
+.shop-reference-detail-item {
+  background: color-mix(in srgb, var(--panel) 78%, white);
+  border: 1px solid color-mix(in srgb, var(--line) 76%, var(--blue));
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.shop-reference-detail-item span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shop-reference-detail-item strong {
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 740;
+  line-height: 1.35;
+}
+
 @media (max-width: 760px) {
   .conversion-grid {
     grid-template-columns: 1fr;
@@ -5060,6 +5093,10 @@ textarea {
 
   .shop-reference-card[open] .bolt-table-wrap {
     overflow-x: visible;
+  }
+
+  .shop-reference-detail-panel {
+    grid-template-columns: 1fr;
   }
 
   .shop-reference-card[open] .shop-reference-table {

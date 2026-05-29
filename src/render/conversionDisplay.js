@@ -1660,15 +1660,117 @@
       return "verify marking + measurement";
     }
 
+    function detailTextFromRules(section, rules, fallback) {
+      const title = section.title.toLowerCase();
+      const match = rules.find((rule) => rule.pattern.test(title));
+      return match ? match.text : fallback;
+    }
+
+    function referenceSourceFamily(section, category) {
+      return detailTextFromRules(section, [
+        { pattern: /diesel|aftertreatment|battery|heavy equipment/, text: "SAE J1939, engine OEM service data, equipment service manuals" },
+        { pattern: /g-code|m-code|cnc|offset/, text: "CNC control manual, machine builder documentation, setup sheet" },
+        { pattern: /insert|drill|surface finish/, text: "ISO machining standards, tooling catalog, print requirement" },
+        { pattern: /gd&t/, text: "ASME Y14.5 / ISO GPS drawing standard family" },
+        { pattern: /weld|electrode|mig/, text: "AWS symbol/procedure standards, WPS, filler manufacturer data" },
+        { pattern: /plasma/, text: "plasma system cut chart, consumable chart, machine manual" },
+        { pattern: /bend|structural shape/, text: "fabrication handbook, material standard, shop drawing" },
+        { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor|thermocouple|rtd/, text: "NEC/NFPA 70, NEMA/IEC standards, device datasheets" },
+        { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "NEMA/IEC motor data, drive manual, OEM mechanical catalog" },
+        { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "SAE/ISO fluid power standards, hose/fitting/seal catalog" },
+        { pattern: /pneumatic|air cylinder|solenoid/, text: "ISO pneumatic standards, valve/cylinder manufacturer data" },
+        { pattern: /bearing|belt|chain|sprocket|roller/, text: "ABMA/ISO bearing data, belt/chain manufacturer catalog" },
+        { pattern: /thread|tap|fastener|torque|threadlocker|wrench|socket/, text: "ASME/ISO fastener standards, OEM torque data, product datasheet" },
+        { pattern: /sheet metal|oil|grease|failure|compressor|pump/, text: "ASTM/SAE material data, OEM manual, maintenance history" },
+      ], `${category.replaceAll("-", " ")} reference family, OEM manual, and measured part marking`);
+    }
+
+    function referenceAlternateNames(section, category) {
+      return detailTextFromRules(section, [
+        { pattern: /spn|fmi/, text: "fault code, J1939 code, DTC, diagnostic code" },
+        { pattern: /aftertreatment/, text: "emissions system, DPF/SCR system, exhaust treatment" },
+        { pattern: /g-code/, text: "preparatory code, motion code, modal G code" },
+        { pattern: /m-code/, text: "miscellaneous code, machine function code" },
+        { pattern: /insert/, text: "carbide insert, turning insert, indexable insert" },
+        { pattern: /gd&t/, text: "feature control frame, geometric tolerance, datum callout" },
+        { pattern: /weld symbol/, text: "AWS symbol, drawing weld callout, welding notation" },
+        { pattern: /stick electrode/, text: "SMAW rod, arc rod, welding electrode" },
+        { pattern: /mig/, text: "GMAW wire, solid wire, shielding gas setup" },
+        { pattern: /plasma/, text: "air plasma, cut chart, consumables chart" },
+        { pattern: /sourcing|sinking/, text: "PNP/NPN wiring, input common, output polarity" },
+        { pattern: /terminal/, text: "terminal strip, wire marker, panel terminal" },
+        { pattern: /transformer/, text: "control power transformer, CPT, VA transformer" },
+        { pattern: /wire gauge/, text: "AWG, conductor size, cable size" },
+        { pattern: /plug|receptacle/, text: "NEMA plug, twist-lock, cord cap" },
+        { pattern: /fuse/, text: "fuse class, current-limiting fuse, branch fuse" },
+        { pattern: /bearing/, text: "bearing number, bearing code, bearing ID" },
+        { pattern: /belt/, text: "V-belt, belt section, belt code" },
+        { pattern: /chain/, text: "roller chain, chain pitch, sprocket chain" },
+        { pattern: /hydraulic hose/, text: "hose dash size, hose ID, hydraulic line" },
+        { pattern: /fitting|thread/, text: "adapter, thread form, sealing face" },
+        { pattern: /o-ring/, text: "seal ring, elastomer seal, dash size" },
+        { pattern: /shaft seal/, text: "oil seal, lip seal, rotary seal" },
+        { pattern: /torque/, text: "tightening spec, bolt torque, clamp load reference" },
+      ], `${category.replaceAll("-", " ")} chart, shop reference, field ID aid`);
+    }
+
+    function referenceWrongMatches(section, category) {
+      return detailTextFromRules(section, [
+        { pattern: /spn|fmi/, text: "same SPN with different FMI, inactive history, manufacturer-specific code text" },
+        { pattern: /aftertreatment/, text: "NOx sensor vs DEF dosing fault, soot load vs ash load, regen inhibit vs failed regen" },
+        { pattern: /g-code|m-code|cnc|offset/, text: "same code on another control, wrong active work offset, hidden modal state" },
+        { pattern: /insert/, text: "same shape with wrong thickness, radius, chipbreaker, grade, or holder hand" },
+        { pattern: /drill/, text: "near decimal size, clearance drill vs tap drill, letter/number mix-up" },
+        { pattern: /surface finish/, text: "Ra vs RMS, microinch vs micrometer, process guess without measurement" },
+        { pattern: /gd&t/, text: "profile vs position, circularity vs cylindricity, datum omitted" },
+        { pattern: /weld|electrode|mig|plasma/, text: "similar filler with wrong position/current/gas, cut chart for different consumables" },
+        { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor/, text: "same voltage with wrong current, AC/DC mix-up, source/sink reversed" },
+        { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "same HP with wrong frame, wrong base speed, wrong shaft or service factor" },
+        { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "close OD with wrong thread, wrong sealing face, wrong pressure or material" },
+        { pattern: /pneumatic|air cylinder|solenoid/, text: "same port with wrong valve function, wrong coil voltage, wrong tube OD" },
+        { pattern: /bearing|belt|chain|sprocket|roller/, text: "same bore with wrong width/seal, same belt length with wrong section, chain pitch mismatch" },
+        { pattern: /thread|tap|fastener|torque|threadlocker|wrench|socket/, text: "metric vs inch near match, coarse vs fine pitch, wrench fit confused with thread size" },
+      ], "visually similar part, near-size match, or correct family with the wrong rating");
+    }
+
+    function referenceExamples(section) {
+      return section.rows
+        .slice(0, 4)
+        .map((row) => row[0])
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    function relatedReferenceTitles(section, category) {
+      return shopReferenceSections
+        .filter((candidate) => candidate !== section && shopReferenceCategory(candidate) === category)
+        .map((candidate) => candidate.title)
+        .sort((a, b) => a.localeCompare(b))
+        .slice(0, 3)
+        .join(", ");
+    }
+
+    function referenceDetailItems(section, category) {
+      return [
+        ["Related chart", relatedReferenceTitles(section, category) || "Use category search for nearby shop references"],
+        ["Alternate names", referenceAlternateNames(section, category)],
+        ["Close-but-wrong matches", referenceWrongMatches(section, category)],
+        ["Source family", referenceSourceFamily(section, category)],
+        ["Examples", referenceExamples(section) || "See table rows"],
+      ];
+    }
+
     function renderReferenceTable(section) {
       const category = shopReferenceCategory(section);
       const columns = [...section.columns, "Verify by"];
       const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
+      const detailItems = referenceDetailItems(section, category);
       const searchableText = [
         section.title,
         category,
         section.note,
         ...columns,
+        ...detailItems.flat(),
         ...rows.flat(),
       ].join(" ");
       return `
@@ -1700,6 +1802,14 @@
             </table>
           </div>
           <p class="shop-reference-note"><span aria-hidden="true">*</span>${escapeHtml(section.note)}</p>
+          <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} reference context">
+            ${detailItems.map(([label, value]) => `
+              <div class="shop-reference-detail-item">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(value)}</strong>
+              </div>
+            `).join("")}
+          </div>
         </details>
       `;
     }
