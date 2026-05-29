@@ -77,7 +77,11 @@ assert.match(html, /Roller Chain Reference[\s\S]*20 rows/);
 assert.match(html, /Oil \/ Grease Reference[\s\S]*20 rows/);
 assert.match(html, /Torque Reference[\s\S]*20 rows/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
-assert.match(html, /15 A branch typical/);
+assert.match(html, /15 A branch \/ medium outdoor cord/);
+assert.match(html, /RV TT-30/);
+assert.match(html, /50 A RV 14-50/);
+assert.match(html, /light indoor extension cord/);
+assert.match(html, /heavy outdoor cord/);
 assert.match(html, /double-pitch conveyor/);
 
 function createField(value) {
