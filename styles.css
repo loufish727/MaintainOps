@@ -5037,12 +5037,12 @@ textarea {
 
 .shop-reference-line-detail summary {
   align-items: center;
-  color: var(--blue);
+  color: color-mix(in srgb, var(--blue) 76%, var(--ink));
   cursor: pointer;
   display: flex;
   gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 820;
+  font-size: 0.76rem;
+  font-weight: 680;
   justify-content: flex-start;
   min-height: 34px;
   padding: 8px 10px 8px 14px;
@@ -5063,9 +5063,9 @@ textarea {
 
 .shop-reference-detail-panel {
   display: grid;
-  gap: 8px;
+  gap: 9px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  padding: 10px;
+  padding: 11px;
 }
 
 .shop-reference-detail-item {
@@ -5073,24 +5073,24 @@ textarea {
   border: 1px solid color-mix(in srgb, var(--line) 76%, var(--blue));
   border-radius: 8px;
   display: grid;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
-  padding: 8px;
+  padding: 9px;
 }
 
 .shop-reference-detail-item span {
   color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 0.66rem;
+  font-weight: 660;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .shop-reference-detail-item strong {
-  color: var(--ink);
-  font-size: 0.78rem;
-  font-weight: 740;
-  line-height: 1.35;
+  color: color-mix(in srgb, var(--ink) 84%, var(--muted));
+  font-size: 0.76rem;
+  font-weight: 560;
+  line-height: 1.45;
 }
 
 @media (max-width: 760px) {
