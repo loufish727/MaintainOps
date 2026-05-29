@@ -4286,9 +4286,9 @@ textarea {
   top: 50%;
   width: 96px;
   height: 96px;
-  border: 3px solid #128a46;
+  border: 3px solid #111827;
   border-radius: 999px;
-  background: rgba(18, 138, 70, 0.08);
+  background: rgba(17, 24, 39, 0.04);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.78), 0 0 0 999px rgba(255,255,255,0.06);
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -4303,7 +4303,7 @@ textarea {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #128a46;
+  background: #111827;
   transform: translate(-50%, -50%);
 }
 
@@ -4357,6 +4357,22 @@ textarea {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 650;
+}
+
+.bolt-gauge-sizing-control {
+  color: #128a46 !important;
+}
+
+.bolt-gauge-sizing-control input {
+  accent-color: #128a46;
+}
+
+.bolt-gauge-calibration-control {
+  color: #c51f32 !important;
+}
+
+.bolt-gauge-calibration-control input {
+  accent-color: #c51f32;
 }
 
 .bolt-gauge-controls input[type="range"]:disabled {
