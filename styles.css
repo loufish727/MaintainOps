@@ -4064,9 +4064,8 @@ textarea {
 
 .conversion-card {
   display: grid;
-  grid-template-rows: auto 1fr auto;
   gap: 12px;
-  min-height: 210px;
+  min-height: 0;
 }
 
 .conversion-card-heading {
@@ -4074,10 +4073,44 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversion-card-heading::-webkit-details-marker {
+  display: none;
 }
 
 .conversion-card-heading h3 {
   margin: 0;
+}
+
+.conversion-card-heading span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 9%, var(--control-bg));
+  color: var(--blue);
+  padding: 4px 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.conversion-card[open] .conversion-card-heading span {
+  background: var(--blue);
+  color: #fff;
+}
+
+.conversion-card-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.conversion-card-body .icon-action-button {
+  justify-self: end;
 }
 
 .icon-action-button {

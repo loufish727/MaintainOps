@@ -16,6 +16,20 @@
       ],
     },
     {
+      id: "area",
+      label: "Area",
+      defaultValue: "100",
+      defaultFrom: "sqft",
+      defaultTo: "sqm",
+      units: [
+        { id: "sqin", label: "Square inches", toBase: 0.00064516 },
+        { id: "sqft", label: "Square feet", toBase: 0.09290304 },
+        { id: "sqyd", label: "Square yards", toBase: 0.83612736 },
+        { id: "sqcm", label: "Square centimeters", toBase: 0.0001 },
+        { id: "sqm", label: "Square meters", toBase: 1 },
+      ],
+    },
+    {
       id: "weight",
       label: "Weight",
       defaultValue: "10",

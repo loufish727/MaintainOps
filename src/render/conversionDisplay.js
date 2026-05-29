@@ -17,18 +17,21 @@
       const value = group.defaultValue || "1";
       const initialResult = conversionResultText(group.id, value, from, to);
       return `
-        <article class="conversion-card" data-conversion-card data-conversion-group="${escapeHtml(group.id)}">
-          <div class="conversion-card-heading">
+        <details class="conversion-card" data-conversion-card data-conversion-group="${escapeHtml(group.id)}">
+          <summary class="conversion-card-heading">
             <h3>${escapeHtml(group.label)}</h3>
+            <span>Open</span>
+          </summary>
+          <div class="conversion-card-body">
             <button class="icon-action-button" data-conversion-swap type="button" title="Swap units" aria-label="Swap ${escapeHtml(group.label)} units">&#8644;</button>
+            <div class="conversion-controls">
+              <label>Value<input data-conversion-input type="number" inputmode="decimal" step="any" value="${escapeHtml(value)}"></label>
+              <label>From<select data-conversion-from>${optionHtml(group, from)}</select></label>
+              <label>To<select data-conversion-to>${optionHtml(group, to)}</select></label>
+            </div>
+            <output class="conversion-result" data-conversion-output>${escapeHtml(initialResult)}</output>
           </div>
-          <div class="conversion-controls">
-            <label>Value<input data-conversion-input type="number" inputmode="decimal" step="any" value="${escapeHtml(value)}"></label>
-            <label>From<select data-conversion-from>${optionHtml(group, from)}</select></label>
-            <label>To<select data-conversion-to>${optionHtml(group, to)}</select></label>
-          </div>
-          <output class="conversion-result" data-conversion-output>${escapeHtml(initialResult)}</output>
-        </article>
+        </details>
       `;
     }
 
