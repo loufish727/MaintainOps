@@ -500,7 +500,7 @@
 
     function renderReferenceTable(section) {
       return `
-        <details class="bolt-reference-details shop-reference-details">
+        <details class="bolt-reference-details shop-reference-details shop-reference-card">
           <summary class="bolt-reference-summary">
             <strong>${escapeHtml(section.title)}</strong>
             <span>${section.rows.length} rows</span>
@@ -523,12 +523,33 @@
     }
 
     function renderShopReferences() {
+      const pageSize = 12;
+      const sortedSections = [...shopReferenceSections].sort((a, b) => a.title.localeCompare(b.title));
+      const pages = [];
+      for (let index = 0; index < sortedSections.length; index += pageSize) {
+        pages.push(sortedSections.slice(index, index + pageSize));
+      }
       return `
-        <div class="settings-section-heading">
-          <h3>Shop Reference Charts</h3>
-          <span>${shopReferenceSections.length} collapsed charts</span>
+        <div class="shop-reference-heading">
+          <div>
+            <h3>Shop Reference Charts</h3>
+            <p>Common field references, sorted alphabetically.</p>
+          </div>
+          <span>${shopReferenceSections.length} charts / 12 per page</span>
         </div>
-        ${shopReferenceSections.map(renderReferenceTable).join("")}
+        <div class="shop-reference-pages">
+          ${pages.map((page, pageIndex) => `
+            <section class="shop-reference-page" aria-label="Shop reference page ${pageIndex + 1} of ${pages.length}">
+              <div class="shop-reference-page-label">
+                <strong>Page ${pageIndex + 1} of ${pages.length}</strong>
+                <span>${page.length} charts</span>
+              </div>
+              <div class="shop-reference-card-grid">
+                ${page.map(renderReferenceTable).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
       `;
     }
 
