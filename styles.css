@@ -5020,12 +5020,37 @@ textarea {
   margin-right: 4px;
 }
 
+.shop-reference-row-detail td {
+  background: color-mix(in srgb, var(--panel) 70%, white);
+  border-top: 0;
+  padding: 0;
+}
+
+.shop-reference-line-detail {
+  margin: 0;
+}
+
+.shop-reference-line-detail summary {
+  align-items: center;
+  color: var(--blue);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 820;
+  justify-content: flex-start;
+  min-height: 34px;
+  padding: 8px 10px;
+}
+
+.shop-reference-line-detail[open] summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+}
+
 .shop-reference-detail-panel {
-  border-top: 1px solid color-mix(in srgb, var(--blue) 12%, var(--line));
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  padding: 10px 12px 12px;
+  padding: 10px;
 }
 
 .shop-reference-detail-item {

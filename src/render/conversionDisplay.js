@@ -1760,17 +1760,70 @@
       ];
     }
 
+    function rowDetailLabel(row) {
+      return row[0] || "This row";
+    }
+
+    function rowAlternateNames(section, row, category) {
+      const label = rowDetailLabel(row);
+      const context = row.slice(1, 3).filter(Boolean).join(", ");
+      return `${label}${context ? `, ${context}` : ""}, ${referenceAlternateNames(section, category)}`;
+    }
+
+    function rowWrongMatches(section, row, category) {
+      const label = rowDetailLabel(row);
+      return `${label}: ${referenceWrongMatches(section, category)}`;
+    }
+
+    function rowExample(row) {
+      return row.filter(Boolean).join(" / ");
+    }
+
+    function rowDetailItems(section, row, category) {
+      return [
+        ["Related chart", relatedReferenceTitles(section, category) || "Use category search for nearby shop references"],
+        ["Alternate names", rowAlternateNames(section, row, category)],
+        ["Close-but-wrong matches", rowWrongMatches(section, row, category)],
+        ["Source family", referenceSourceFamily(section, category)],
+        ["Example", rowExample(row)],
+      ];
+    }
+
+    function renderRowDetail(section, row, category, columns) {
+      const label = rowDetailLabel(row);
+      const details = rowDetailItems(section, row, category);
+      return `
+        <tr class="shop-reference-row-detail">
+          <td colspan="${columns.length}">
+            <details class="shop-reference-line-detail">
+              <summary>Details for ${escapeHtml(label)}</summary>
+              <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} ${escapeHtml(label)} reference context">
+                ${details.map(([detailLabel, value]) => `
+                  <div class="shop-reference-detail-item">
+                    <span>${escapeHtml(detailLabel)}</span>
+                    <strong>${escapeHtml(value)}</strong>
+                  </div>
+                `).join("")}
+              </div>
+            </details>
+          </td>
+        </tr>
+      `;
+    }
+
     function renderReferenceTable(section) {
       const category = shopReferenceCategory(section);
       const columns = [...section.columns, "Verify by"];
       const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
       const detailItems = referenceDetailItems(section, category);
+      const rowDetails = section.rows.map((row) => rowDetailItems(section, row, category));
       const searchableText = [
         section.title,
         category,
         section.note,
         ...columns,
         ...detailItems.flat(),
+        ...rowDetails.flat(2),
         ...rows.flat(),
       ].join(" ");
       return `
@@ -1795,21 +1848,14 @@
                 <tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
               </thead>
               <tbody>
-                ${rows.map((row) => `
-                  <tr>${row.map((cell, index) => `<td data-label="${escapeHtml(columns[index] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                ${rows.map((row, index) => `
+                  <tr class="shop-reference-data-row">${row.map((cell, cellIndex) => `<td data-label="${escapeHtml(columns[cellIndex] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                  ${renderRowDetail(section, section.rows[index], category, columns)}
                 `).join("")}
               </tbody>
             </table>
           </div>
           <p class="shop-reference-note"><span aria-hidden="true">*</span>${escapeHtml(section.note)}</p>
-          <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} reference context">
-            ${detailItems.map(([label, value]) => `
-              <div class="shop-reference-detail-item">
-                <span>${escapeHtml(label)}</span>
-                <strong>${escapeHtml(value)}</strong>
-              </div>
-            `).join("")}
-          </div>
         </details>
       `;
     }
