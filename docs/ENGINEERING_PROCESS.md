@@ -16,9 +16,10 @@ Publicly visible process principles:
 CSS and UI changes also need a small visual safety check:
 
 - Preserve readable contrast for all changed text, values, controls, and state labels.
+- Preserve the active theme surface system; do not spread hardcoded light or dark backgrounds across a page unless the component is intentionally isolated.
 - Check default, open/active, selected, disabled, warning, error, and empty states when touched.
 - Verify both desktop and mobile layouts for changed cards, tables, panels, and forms.
-- Treat hidden content, accidental overflow, clipped values, or unreadable result fields as a failed smoke.
+- Treat hidden content, accidental overflow, clipped values, unreadable result fields, or theme-breaking background drift as a failed smoke.
 - Prefer a targeted browser or computed-style check when a change depends on color, layout, or responsive behavior.
 
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.

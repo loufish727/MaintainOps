@@ -4051,20 +4051,20 @@ textarea {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   padding: 14px;
-  border: 2px solid color-mix(in srgb, var(--blue) 38%, #cbd5e1);
+  border: 2px solid color-mix(in srgb, var(--blue) 38%, var(--line));
   border-radius: 8px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--blue) 8%, #f8fafc), #ffffff 42%),
-    #ffffff;
+    linear-gradient(180deg, color-mix(in srgb, var(--blue) 8%, transparent), transparent 42%),
+    var(--surface);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
 }
 
 .conversion-reference {
-  border: 2px solid color-mix(in srgb, var(--blue) 36%, #cbd5e1);
+  border: 2px solid color-mix(in srgb, var(--blue) 36%, var(--line));
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, #f8fafc), #ffffff 58%),
-    #ffffff;
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 58%),
+    var(--surface);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
   padding: 16px;
 }
@@ -4075,25 +4075,25 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--blue) 34%, #cbd5e1);
+  border: 1px solid color-mix(in srgb, var(--blue) 34%, var(--line));
   border-left: 5px solid var(--blue);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 13%, #ffffff), #ffffff 68%),
-    #ffffff;
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 13%, transparent), transparent 68%),
+    var(--surface-2);
   padding: 12px 14px;
 }
 
 .conversion-board-heading h3 {
   margin: 0;
-  color: #172033;
+  color: var(--ink);
   font-size: 1.02rem;
   font-weight: 840;
 }
 
 .conversion-board-heading p {
   margin: 3px 0 0;
-  color: #52616a;
+  color: var(--muted);
   font-size: 0.82rem;
   font-weight: 620;
 }
@@ -4103,10 +4103,10 @@ textarea {
   align-items: center;
   justify-content: center;
   min-height: 30px;
-  border: 1px solid color-mix(in srgb, var(--blue) 36%, #cbd5e1);
+  border: 1px solid color-mix(in srgb, var(--blue) 36%, var(--line));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--blue) 10%, #ffffff);
-  color: #164f87;
+  background: color-mix(in srgb, var(--blue) 10%, var(--control-bg));
+  color: var(--blue);
   padding: 4px 10px;
   font-size: 0.78rem;
   font-weight: 820;
@@ -4313,12 +4313,12 @@ textarea {
 .bolt-gauge {
   display: grid;
   gap: 10px;
-  border: 2px solid color-mix(in srgb, var(--blue) 32%, #cbd5e1);
+  border: 2px solid color-mix(in srgb, var(--blue) 32%, var(--line));
   border-left: 5px solid var(--blue);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 9%, #f8fafc), #ffffff 64%),
-    #ffffff;
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 9%, transparent), transparent 64%),
+    var(--surface-2);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
   padding: 12px;
 }
@@ -4639,10 +4639,10 @@ textarea {
 }
 
 .bolt-reference-details {
-  border: 2px solid color-mix(in srgb, var(--blue) 30%, #cbd5e1);
-  border-left: 5px solid color-mix(in srgb, var(--blue) 82%, #164f87);
+  border: 2px solid color-mix(in srgb, var(--blue) 30%, var(--line));
+  border-left: 5px solid var(--blue);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
   overflow: hidden;
 }
@@ -4654,8 +4654,8 @@ textarea {
   gap: 10px;
   min-height: 46px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, #ffffff), #ffffff 68%),
-    #ffffff;
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 68%),
+    var(--surface-2);
   padding: 10px 12px;
   cursor: pointer;
   list-style: none;
@@ -4689,7 +4689,7 @@ textarea {
 
 .bolt-table-wrap {
   overflow-x: auto;
-  background: #ffffff;
+  background: var(--surface);
   max-width: 100%;
   min-width: 0;
   width: 100%;
@@ -4826,9 +4826,9 @@ textarea {
 }
 
 .shop-reference-panel {
-  border: 2px solid color-mix(in srgb, var(--blue) 36%, #cbd5e1);
+  border: 2px solid color-mix(in srgb, var(--blue) 36%, var(--line));
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--surface);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
   margin-top: 18px;
   overflow: hidden;
