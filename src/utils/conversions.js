@@ -508,7 +508,7 @@
       const pageSize = Math.max(1, Number(panel.dataset.shopReferencePageSize) || 12);
       const searchInput = panel.querySelector("[data-shop-reference-search-input]");
       const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
-      const categoryCards = Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
+      const categoryCards = () => Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
       const backButton = panel.querySelector("[data-shop-reference-back]");
       const activeCategoryBanner = panel.querySelector("[data-shop-reference-active-category]");
       const activeCategoryLabelElement = panel.querySelector("[data-shop-reference-active-category-label]");
@@ -572,7 +572,7 @@
         !activeCategory || searchQuery || card.dataset.shopReferenceCategory === activeCategory
       );
       const activeCategoryLabel = () => (
-        categoryCards.find((card) => card.dataset.shopReferenceCategory === activeCategory)?.querySelector?.("span")?.textContent?.trim() || activeCategory
+        categoryCards().find((card) => card.dataset.shopReferenceCategory === activeCategory)?.querySelector?.("span")?.textContent?.trim() || activeCategory
       );
       const pageStatus = () => panel.querySelector("[data-shop-reference-page-status]");
       const pageButton = (direction) => panel.querySelector(`[data-shop-reference-page="${direction}"]`);
@@ -606,7 +606,7 @@
             activeCategoryLabelElement.textContent = "";
           }
         }
-        categoryCards.forEach((card) => {
+        categoryCards().forEach((card) => {
           const active = card.dataset.shopReferenceCategory === activeCategory && !searchQuery;
           card.classList.toggle("shop-reference-category-active", active);
           card.setAttribute?.("aria-pressed", String(active));
@@ -650,8 +650,19 @@
         if (searchQuery) focusResults();
       });
 
-      categoryCards.forEach((card) => {
-        card.addEventListener?.("click", () => {
+      categoryGrid?.addEventListener?.("click", (event) => {
+        const card = event.target?.closest?.("[data-shop-reference-category]");
+        if (!card || !categoryGrid.contains?.(card)) return;
+        activeCategory = card.dataset.shopReferenceCategory || "";
+        currentPage = 1;
+        renderOrder({ closeOpen: true });
+        focusResults();
+      });
+
+      categoryCards().forEach((card) => {
+        card.addEventListener?.("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault?.();
           activeCategory = card.dataset.shopReferenceCategory || "";
           currentPage = 1;
           renderOrder({ closeOpen: true });

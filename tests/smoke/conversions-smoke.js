@@ -389,6 +389,9 @@ const searchInput = { value: "", listeners: {}, addEventListener(eventName, hand
 const emptyState = { hidden: true };
 const categoryGrid = {
   hidden: false,
+  listeners: {},
+  addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  contains(card) { return card === electricalCategory || card === bearingCategory; },
   querySelectorAll(selector) {
     return selector === "[data-shop-reference-category]" ? [electricalCategory, bearingCategory] : [];
   },
@@ -399,6 +402,7 @@ function createCategoryCard(id, label) {
     listeners: {},
     attributes: {},
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+    closest(selector) { return selector === "[data-shop-reference-category]" ? this : null; },
     querySelector(selector) { return selector === "span" ? { textContent: label } : null; },
     setAttribute(name, value) { this.attributes[name] = value; },
     addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
@@ -447,7 +451,7 @@ assert.equal(activeCategoryBanner.hidden, true);
 assert.equal(prevButton.disabled, true);
 assert.equal(nextButton.disabled, true);
 
-electricalCategory.listeners.click();
+categoryGrid.listeners.click({ target: electricalCategory });
 assert.equal(categoryGrid.hidden, false);
 assert.equal(favoriteGridOne.hidden, false);
 assert.equal(activeCategoryBanner.hidden, false);

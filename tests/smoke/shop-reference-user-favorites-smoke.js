@@ -69,12 +69,16 @@ const categoryCard = {
   listeners: {},
   attributes: {},
   classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+  closest(selector) { return selector === "[data-shop-reference-category]" ? this : null; },
   querySelector(selector) { return selector === "span" ? { textContent: "Electrical & Controls" } : null; },
   setAttribute(name, value) { this.attributes[name] = value; },
   addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
 };
 const categoryGrid = {
   hidden: false,
+  listeners: {},
+  addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  contains(card) { return card === categoryCard; },
   querySelectorAll(selector) {
     return selector === "[data-shop-reference-category]" ? [categoryCard] : [];
   },
@@ -115,7 +119,7 @@ bindShopReferenceEvents({
 });
 
 await new Promise((resolve) => setTimeout(resolve, 0));
-categoryCard.listeners.click();
+categoryGrid.listeners.click({ target: categoryCard });
 assert.equal(grid.children[0], beta);
 assert.equal(beta.button.getAttribute("aria-pressed"), "true");
 assert.equal(activeCategoryLabel.textContent, "Category: Electrical & Controls");
