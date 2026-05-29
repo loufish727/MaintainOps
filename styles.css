@@ -4286,7 +4286,7 @@ textarea {
   top: 50%;
   width: 96px;
   height: 96px;
-  border: 3px solid #111827;
+  border: 1.5px solid #111827;
   border-radius: 999px;
   background: rgba(17, 24, 39, 0.04);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.78), 0 0 0 999px rgba(255,255,255,0.06);
@@ -4305,7 +4305,7 @@ textarea {
 .bolt-gauge[data-bolt-gauge-mode-current="wrench"] .bolt-gauge-circle::before {
   content: "";
   position: absolute;
-  inset: 2px;
+  inset: 1.5px;
   background: rgba(255,255,255,0.92);
   z-index: 1;
 }
@@ -4393,6 +4393,17 @@ textarea {
   white-space: nowrap;
 }
 
+.bolt-gauge-card-readout {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 4;
+  display: grid;
+  gap: 6px;
+  width: min(248px, calc(100% - 20px));
+  pointer-events: auto;
+}
+
 .bolt-gauge-controls {
   display: grid;
   gap: 10px;
@@ -4444,7 +4455,8 @@ textarea {
   opacity: 0.52;
 }
 
-.bolt-gauge-lock {
+.bolt-gauge-lock,
+.bolt-gauge-size-lock {
   display: inline-flex !important;
   grid-template-columns: none;
   align-items: center;
@@ -4462,6 +4474,17 @@ textarea {
   accent-color: #c51f32;
 }
 
+.bolt-gauge-size-lock {
+  border-color: color-mix(in srgb, #128a46 32%, var(--line));
+  background: rgba(255,255,255,0.94);
+  color: #128a46;
+  font-size: 0.74rem;
+}
+
+.bolt-gauge-size-lock input {
+  accent-color: #128a46;
+}
+
 .bolt-gauge-output {
   display: flex;
   align-items: center;
@@ -4472,6 +4495,15 @@ textarea {
   color: var(--ink);
   padding: 9px 10px;
   font-weight: 760;
+}
+
+.bolt-gauge-card-readout .bolt-gauge-output {
+  min-height: 38px;
+  background: rgba(255,255,255,0.94);
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  line-height: 1.22;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
 }
 
 .bolt-reference-details {

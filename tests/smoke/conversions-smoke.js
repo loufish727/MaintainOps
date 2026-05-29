@@ -45,7 +45,10 @@ assert.match(html, /<summary class="conversion-card-heading">/);
 assert.match(html, /Bolt Size Reference/);
 assert.match(html, /data-bolt-gauge/);
 assert.match(html, /bolt-gauge-card/);
+assert.match(html, /bolt-gauge-card-readout/);
 assert.match(html, /data-bolt-gauge-diameter/);
+assert.match(html, /data-bolt-gauge-size-lock/);
+assert.match(html, /Lock size/);
 assert.match(html, /Common Inch Thread Reference/);
 assert.match(html, /100 rows/);
 assert.match(html, /data-bolt-size-row="1\/4"/);
@@ -175,6 +178,7 @@ const gaugeCalibration = createField("96");
 const threadMode = { value: "thread", checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const wrenchMode = { value: "wrench", checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const calibrationLock = { checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const sizeLock = { checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const gaugePoints = createField("6");
 const gaugeOutput = { textContent: "" };
 const gaugeHelp = { textContent: "" };
@@ -207,6 +211,7 @@ const gaugeLookup = {
   "[data-bolt-gauge-help]": gaugeHelp,
   "[data-bolt-gauge-points]": gaugePoints,
   "[data-bolt-gauge-lock]": calibrationLock,
+  "[data-bolt-gauge-size-lock]": sizeLock,
 };
 const gaugeElement = {
   dataset: gaugeDataset,
@@ -234,7 +239,9 @@ bindBoltGaugeEvents({ documentRef: gaugeDocument, storage });
 assert.match(gaugeOutput.textContent, /closest 1\/4 \/ M6/);
 assert.equal(gaugeDataset.boltGaugeModeCurrent, "thread");
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "6");
+assert.equal(gaugeDataset.boltGaugeSizeLocked, "false");
 assert.equal(gaugeCalibration.disabled, true);
+assert.equal(gaugeDiameter.disabled, false);
 assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "true");
 assert.equal(highlightedRows["1/4"], true);
 assert.equal(highlightedRows["#10"], false);
@@ -262,6 +269,11 @@ calibrationLock.checked = false;
 calibrationLock.listeners.change();
 assert.equal(gaugeCalibration.disabled, false);
 assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "false");
+
+sizeLock.checked = true;
+sizeLock.listeners.change();
+assert.equal(gaugeDiameter.disabled, true);
+assert.equal(gaugeDataset.boltGaugeSizeLocked, "true");
 
 gaugePoints.value = "4";
 gaugePoints.listeners.change();

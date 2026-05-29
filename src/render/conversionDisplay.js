@@ -552,6 +552,10 @@
             <p class="muted bolt-gauge-help" data-bolt-gauge-help>Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.</p>
             <div class="bolt-gauge-layout">
               <div class="bolt-gauge-card" data-bolt-gauge-card aria-label="Bolt gauge sizing card">
+                <div class="bolt-gauge-card-readout">
+                  <output class="bolt-gauge-output" data-bolt-gauge-output></output>
+                  <label class="bolt-gauge-size-lock"><input data-bolt-gauge-size-lock type="checkbox">Lock size</label>
+                </div>
                 <div class="bolt-gauge-circle" data-bolt-gauge-circle></div>
                 <div class="bolt-gauge-calibration-line" data-bolt-gauge-calibration-line><span>1 in</span></div>
               </div>
@@ -560,7 +564,6 @@
                 <label class="bolt-gauge-points-control">Head points<select data-bolt-gauge-points><option value="6" selected>6 point hex</option><option value="4">4 point square</option><option value="8">8 point square</option><option value="12">12 point socket</option></select></label>
                 <label class="bolt-gauge-calibration-control">1 in calibration<input data-bolt-gauge-calibration type="range" min="48" max="200" step="1" value="96"></label>
                 <label class="bolt-gauge-lock"><input data-bolt-gauge-lock type="checkbox" checked>Lock 1 in calibration</label>
-                <output class="bolt-gauge-output" data-bolt-gauge-output></output>
                 <p class="muted">Reference only. Verify thread pitch, grade, and final size with a physical gauge or calipers.</p>
               </div>
             </div>

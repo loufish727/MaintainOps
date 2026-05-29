@@ -433,6 +433,7 @@
       const modeInputs = Array.from(gauge.querySelectorAll("[data-bolt-gauge-mode]"));
       const points = gauge.querySelector("[data-bolt-gauge-points]");
       const lock = gauge.querySelector("[data-bolt-gauge-lock]");
+      const sizeLock = gauge.querySelector("[data-bolt-gauge-size-lock]");
       const storedCalibration = Number(storage?.getItem("maintainops.boltGaugePixelsPerInch"));
       const storedLock = storage?.getItem("maintainops.boltGaugeCalibrationLocked");
       if (calibration && Number.isFinite(storedCalibration) && storedCalibration > 0) {
@@ -445,9 +446,12 @@
         const mode = modeInputs.find((input) => input.checked)?.value || "thread";
         const headPoints = points?.value || "6";
         const locked = !lock || lock.checked;
+        const sizeLocked = Boolean(sizeLock?.checked);
         gauge.dataset.boltGaugeModeCurrent = mode;
         gauge.dataset.boltGaugePointsCurrent = headPoints;
+        gauge.dataset.boltGaugeSizeLocked = String(sizeLocked);
         if (calibration) calibration.disabled = locked;
+        if (diameter) diameter.disabled = sizeLocked;
         if (circle) {
           circle.style.width = `${diameterPx}px`;
           circle.style.height = `${diameterPx}px`;
@@ -473,11 +477,16 @@
         }
         if (storage && lock) storage.setItem("maintainops.boltGaugeCalibrationLocked", String(locked));
       };
-      [diameter, calibration, points, lock, ...modeInputs].filter(Boolean).forEach((element) => {
+      [diameter, calibration, points, lock, sizeLock, ...modeInputs].filter(Boolean).forEach((element) => {
         element.addEventListener("input", update);
         element.addEventListener("change", update);
       });
-      if (card) card.addEventListener("click", () => diameter?.focus?.());
+      if (card) {
+        card.addEventListener("click", (event) => {
+          if (event.target?.closest?.(".bolt-gauge-card-readout")) return;
+          diameter?.focus?.();
+        });
+      }
       update();
     });
   }
