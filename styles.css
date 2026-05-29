@@ -4736,7 +4736,7 @@ textarea {
 }
 
 .shop-reference-favorite {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
@@ -4749,11 +4749,6 @@ textarea {
   font-size: 1rem;
   font-weight: 900;
   line-height: 1;
-}
-
-.shop-reference-card[open] .shop-reference-favorite,
-.shop-reference-card.shop-reference-favorited .shop-reference-favorite {
-  display: inline-flex;
 }
 
 .shop-reference-favorite[aria-pressed="true"] {
