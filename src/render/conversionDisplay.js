@@ -1200,14 +1200,68 @@
       `;
     }
 
+    function verifyByForReference(section, row) {
+      const title = section.title.toLowerCase();
+      const rowText = row.join(" ").toLowerCase();
+      if (/bearing suffix/.test(title)) return "read full bearing code";
+      if (/bearing quick/.test(title)) return "measure bore + full code";
+      if (/bearing symptom/.test(title)) return "inspect race/lube pattern";
+      if (/belt code|belt section/.test(title)) return "read belt code + measure width";
+      if (/belt failure/.test(title)) return "inspect pulley + tension";
+      if (/chain sprocket/.test(title)) return "count teeth + confirm chain";
+      if (/roller chain/.test(title)) return "measure pitch + roller width";
+      if (/chain \/ sprocket wear/.test(title)) return "check pitch stretch + teeth";
+      if (/drill \/ tap/.test(title)) return "gauge thread + test fit";
+      if (/metric thread|npt pipe thread/.test(title)) return "check pitch/thread gauge";
+      if (/fastener grade/.test(title)) return "read head marking";
+      if (/torque/.test(title)) return "confirm OEM torque spec";
+      if (/socket \/ wrench/.test(title)) return "test correct wrench fit";
+      if (/threadlocker/.test(title)) return "match product datasheet";
+      if (/wire gauge/.test(title)) return "measure AWG + insulation rating";
+      if (/extension cord/.test(title)) return "read cord jacket marking";
+      if (/plug|receptacle/.test(title)) return "match NEMA face + rating";
+      if (/fuse/.test(title)) return "match class, volts, amps";
+      if (/conduit/.test(title)) return "calculate fill with actual OD";
+      if (/enclosure/.test(title)) return "read enclosure rating label";
+      if (/wire color/.test(title)) return "trace drawing + meter";
+      if (/sensor|photoeye|proximity/.test(title)) return "check label, LED, wiring";
+      if (/plc i\/o/.test(title)) return "match card type + wiring";
+      if (/relay|contactor|overload/.test(title)) return "read terminal marks + coil";
+      if (/motor nameplate/.test(title)) return "read nameplate fields";
+      if (/nema motor frame/.test(title)) return "measure shaft + frame";
+      if (/vfd fault/.test(title)) return "read drive fault history";
+      if (/pipe \/ tubing/.test(title)) return "measure OD + wall/nominal";
+      if (/fitting \/ thread/.test(title)) return "check thread + sealing face";
+      if (/hydraulic hose/.test(title)) return "read hose layline";
+      if (/hose clamp/.test(title)) return "measure hose OD range";
+      if (/pneumatic fitting/.test(title)) return "measure tube OD + thread";
+      if (/air cylinder|pneumatic cylinder/.test(title)) return "measure bore/stroke";
+      if (/solenoid valve/.test(title)) return "read valve function + coil";
+      if (/hydraulic cylinder seal|o-ring|shaft seal/.test(title)) return "measure groove + material";
+      if (/hydraulic leak/.test(title)) return "inspect leak point + pressure";
+      if (/pump seal/.test(title)) return "inspect seal face + flush";
+      if (/gear reducer/.test(title)) return "read tag ratio + shaft";
+      if (/coupling/.test(title)) return "measure hub/insert series";
+      if (/conveyor roller/.test(title)) return "measure BF + axle";
+      if (/thermocouple|rtd/.test(title)) return "match sensor type + wiring";
+      if (/oil \/ grease/.test(title)) return "match OEM lube spec";
+      if (/sheet metal/.test(title)) return "measure thickness";
+      if (/compressor/.test(title)) return "check hours + OEM manual";
+      if (/common failure/.test(title)) return "confirm symptom under load";
+      if (/class l|class j|class cc/.test(rowText)) return "match holder rejection";
+      return "verify marking + measurement";
+    }
+
     function renderReferenceTable(section) {
       const category = shopReferenceCategory(section);
+      const columns = [...section.columns, "Verify by"];
+      const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
       const searchableText = [
         section.title,
         category,
         section.note,
-        ...section.columns,
-        ...section.rows.flat(),
+        ...columns,
+        ...rows.flat(),
       ].join(" ");
       return `
         <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-category="${escapeHtml(category)}" data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
@@ -1218,7 +1272,7 @@
                 <span class="chip">${section.rows.length} rows</span>
               </div>
               <strong>${escapeHtml(section.title)}</strong>
-              <small>${escapeHtml(section.columns.join(" / "))}</small>
+              <small>${escapeHtml(columns.join(" / "))}</small>
             </div>
             <div class="shop-reference-card-actions">
               <button class="shop-reference-favorite" data-shop-reference-favorite type="button" aria-label="Favorite ${escapeHtml(section.title)}" title="Favorite chart" aria-pressed="false">&#9734;</button>
@@ -1228,11 +1282,11 @@
           <div class="bolt-table-wrap" role="region" aria-label="${escapeHtml(section.title)} table" tabindex="0">
             <table class="bolt-reference-table shop-reference-table">
               <thead>
-                <tr>${section.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
+                <tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
               </thead>
               <tbody>
-                ${section.rows.map((row) => `
-                  <tr>${row.map((cell, index) => `<td data-label="${escapeHtml(section.columns[index] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                ${rows.map((row) => `
+                  <tr>${row.map((cell, index) => `<td data-label="${escapeHtml(columns[index] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
                 `).join("")}
               </tbody>
             </table>
