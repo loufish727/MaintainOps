@@ -431,6 +431,7 @@
       const output = gauge.querySelector("[data-bolt-gauge-output]");
       const help = gauge.querySelector("[data-bolt-gauge-help]");
       const modeInputs = Array.from(gauge.querySelectorAll("[data-bolt-gauge-mode]"));
+      const points = gauge.querySelector("[data-bolt-gauge-points]");
       const lock = gauge.querySelector("[data-bolt-gauge-lock]");
       const storedCalibration = Number(storage?.getItem("maintainops.boltGaugePixelsPerInch"));
       const storedLock = storage?.getItem("maintainops.boltGaugeCalibrationLocked");
@@ -442,7 +443,10 @@
         const diameterPx = Number(diameter?.value || 0);
         const pixelsPerInch = Number(calibration?.value || 96);
         const mode = modeInputs.find((input) => input.checked)?.value || "thread";
+        const headPoints = points?.value || "6";
         const locked = !lock || lock.checked;
+        gauge.dataset.boltGaugeModeCurrent = mode;
+        gauge.dataset.boltGaugePointsCurrent = headPoints;
         if (calibration) calibration.disabled = locked;
         if (circle) {
           circle.style.width = `${diameterPx}px`;
@@ -453,7 +457,7 @@
         if (output) output.textContent = reading ? reading.text : "Calibrate the gauge";
         if (help) {
           help.textContent = mode === "wrench"
-            ? "Fit the circle across the bolt head or nut flats to estimate wrench size."
+            ? `${headPoints}-point head mode: size the outline across opposite flats to estimate wrench or socket size.`
             : "Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.";
         }
         const activeInch = mode === "thread" ? (reading?.closest?.inch || "") : "";
@@ -469,7 +473,7 @@
         }
         if (storage && lock) storage.setItem("maintainops.boltGaugeCalibrationLocked", String(locked));
       };
-      [diameter, calibration, lock, ...modeInputs].filter(Boolean).forEach((element) => {
+      [diameter, calibration, points, lock, ...modeInputs].filter(Boolean).forEach((element) => {
         element.addEventListener("input", update);
         element.addEventListener("change", update);
       });

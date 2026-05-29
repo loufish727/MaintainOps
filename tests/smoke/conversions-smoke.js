@@ -53,6 +53,10 @@ assert.match(html, /data-bolt-size-row="3-1\/2"/);
 assert.match(html, /bolt-reference-detail/);
 assert.match(html, /Thread \/ Nut ID/);
 assert.match(html, /Head \/ Wrench/);
+assert.match(html, /data-bolt-gauge-points/);
+assert.match(html, /6 point hex/);
+assert.match(html, /4 point square/);
+assert.match(html, /12 point/);
 assert.match(html, /Common Wrench \/ Head Size Reference/);
 assert.match(html, /data-wrench-size-row="1\/2"/);
 assert.match(html, /data-wrench-size-row="4"/);
@@ -170,8 +174,10 @@ const gaugeCalibration = createField("96");
 const threadMode = { value: "thread", checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const wrenchMode = { value: "wrench", checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const calibrationLock = { checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const gaugePoints = createField("6");
 const gaugeOutput = { textContent: "" };
 const gaugeHelp = { textContent: "" };
+const gaugeDataset = {};
 const highlightedRows = {};
 const highlightedWrenchRows = {};
 const boltRows = ["#10", "1/4", "1"].map((size) => ({
@@ -198,9 +204,11 @@ const gaugeLookup = {
   "[data-bolt-gauge-calibration-line]": { style: {} },
   "[data-bolt-gauge-output]": gaugeOutput,
   "[data-bolt-gauge-help]": gaugeHelp,
+  "[data-bolt-gauge-points]": gaugePoints,
   "[data-bolt-gauge-lock]": calibrationLock,
 };
 const gaugeElement = {
+  dataset: gaugeDataset,
   querySelector(selector) {
     return gaugeLookup[selector] || null;
   },
@@ -223,6 +231,8 @@ const storage = {
 };
 bindBoltGaugeEvents({ documentRef: gaugeDocument, storage });
 assert.match(gaugeOutput.textContent, /closest 1\/4 \/ M6/);
+assert.equal(gaugeDataset.boltGaugeModeCurrent, "thread");
+assert.equal(gaugeDataset.boltGaugePointsCurrent, "6");
 assert.equal(gaugeCalibration.disabled, true);
 assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "true");
 assert.equal(highlightedRows["1/4"], true);
@@ -240,13 +250,21 @@ threadMode.checked = false;
 gaugeDiameter.value = "72";
 wrenchMode.listeners.change();
 assert.match(gaugeOutput.textContent, /closest 3\/4 wrench for 1\/2 thread/);
+assert.match(gaugeHelp.textContent, /6-point head mode/);
+assert.equal(gaugeDataset.boltGaugeModeCurrent, "wrench");
+assert.equal(gaugeDataset.boltGaugePointsCurrent, "6");
 assert.equal(highlightedWrenchRows["1/2"], true);
 assert.equal(highlightedRows["1"], false);
-assert.match(gaugeHelp.textContent, /bolt head/);
+assert.match(gaugeHelp.textContent, /across opposite flats/);
 
 calibrationLock.checked = false;
 calibrationLock.listeners.change();
 assert.equal(gaugeCalibration.disabled, false);
 assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "false");
+
+gaugePoints.value = "4";
+gaugePoints.listeners.change();
+assert.match(gaugeHelp.textContent, /4-point head mode/);
+assert.equal(gaugeDataset.boltGaugePointsCurrent, "4");
 
 console.log("conversions smoke passed");
