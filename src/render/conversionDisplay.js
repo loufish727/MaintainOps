@@ -980,6 +980,13 @@
       return `
         <div class="conversion-screen">
           <div class="conversion-grid">
+            <div class="conversion-board-heading">
+              <div>
+                <h3>Unit Converters</h3>
+                <p>Common shop and maintenance measurements</p>
+              </div>
+              <span>${conversionGroups.length} tools</span>
+            </div>
             ${conversionGroups.map(renderConversionCard).join("")}
           </div>
           ${renderBoltReference()}
