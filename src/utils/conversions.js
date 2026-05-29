@@ -545,7 +545,13 @@
       };
       const pageStatus = () => panel.querySelector("[data-shop-reference-page-status]");
       const pageButton = (direction) => panel.querySelector(`[data-shop-reference-page="${direction}"]`);
-      const renderOrder = () => {
+      const closeCards = (except = null) => {
+        cards.forEach((card) => {
+          if (card !== except) card.removeAttribute?.("open");
+        });
+      };
+      const renderOrder = (options = {}) => {
+        if (options.closeOpen) closeCards();
         const favorites = readFavorites();
         applyFavoriteState(favorites);
         const ordered = orderedCards(favorites);
@@ -573,11 +579,14 @@
       panel.querySelectorAll("[data-shop-reference-page]").forEach((button) => {
         button.addEventListener("click", () => {
           currentPage += button.dataset.shopReferencePage === "next" ? 1 : -1;
-          renderOrder();
+          renderOrder({ closeOpen: true });
         });
       });
 
       cards.forEach((card) => {
+        card.addEventListener?.("toggle", () => {
+          if (card.open) closeCards(card);
+        });
         const button = favoriteButton(card);
         if (!button) return;
         button.addEventListener("click", (event) => {
@@ -588,7 +597,7 @@
           if (button.getAttribute("aria-pressed") !== "true") favorites.push(title);
           writeFavorites(favorites);
           currentPage = 1;
-          renderOrder();
+          renderOrder({ closeOpen: true });
         });
       });
       renderOrder();

@@ -4697,6 +4697,10 @@ textarea {
   border-left-color: #d89b00;
 }
 
+.shop-reference-card[open] {
+  grid-column: 1 / -1;
+}
+
 .shop-reference-card .bolt-reference-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -4704,6 +4708,14 @@ textarea {
   gap: 10px;
   min-height: 144px;
   padding: 14px;
+}
+
+.shop-reference-card[open] .bolt-reference-summary {
+  min-height: 0;
+}
+
+.shop-reference-card[open] .part-tile-open {
+  display: none;
 }
 
 .shop-reference-card-main {

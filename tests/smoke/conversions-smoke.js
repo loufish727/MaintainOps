@@ -324,8 +324,12 @@ function createReferenceCard(title) {
   const button = createFavoriteButton();
   return {
     dataset: { shopReferenceTitle: title },
+    listeners: {},
+    open: false,
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
     querySelector(selector) { return selector === "[data-shop-reference-favorite]" ? button : null; },
+    addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+    removeAttribute(name) { if (name === "open") this.open = false; },
     button,
   };
 }
@@ -368,4 +372,10 @@ assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(betaCard.button.innerHTML, "&#9733;");
 assert.equal(betaCard.classList.values["shop-reference-favorited"], true);
 assert.equal(favoriteStorage.values["maintainops.shopReferencePage"], "1");
+
+alphaCard.open = true;
+betaCard.open = true;
+betaCard.listeners.toggle();
+assert.equal(alphaCard.open, false);
+assert.equal(betaCard.open, true);
 console.log("conversions smoke passed");
