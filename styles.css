@@ -4719,16 +4719,6 @@ textarea {
   text-transform: uppercase;
 }
 
-.bolt-reference-table th.bolt-reference-detail,
-.bolt-reference-table td.bolt-reference-detail {
-  display: none;
-}
-
-.bolt-reference-table:has(.bolt-reference-active) th.bolt-reference-detail,
-.bolt-reference-table tr.bolt-reference-active td.bolt-reference-detail {
-  display: table-cell;
-}
-
 .bolt-reference-table td.bolt-reference-primary {
   font-weight: 680;
 }
