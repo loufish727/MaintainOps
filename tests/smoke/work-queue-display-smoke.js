@@ -46,6 +46,7 @@ const workOrder = {
   asset_id: "asset-1",
   assets: { name: "Pump A" },
   assigned_to: "user-2",
+  created_at: "2026-05-01T12:00:00Z",
   due_at: "2026-06-01",
   procedure_template_id: "proc-1",
 };
@@ -55,6 +56,7 @@ assert.match(card, /work-card status-card status-open selected/);
 assert.match(card, /Pump &lt;jam&gt;/);
 assert.match(card, /Seal leak/);
 assert.match(card, /Daily Check/);
+assert.match(card, /Created/);
 assert.match(card, /data-id="wo-1"/);
 assert.match(card, /data-assign-me="wo-1"/);
 assert.match(card, /data-card-assign="wo-1"/);

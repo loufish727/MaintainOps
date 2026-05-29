@@ -41,6 +41,12 @@ const {
   csvCell,
 } = window.MaintainOpsFormatting;
 const {
+  UNIT_GROUPS,
+  BOLT_REFERENCE,
+  conversionResultText,
+  bindConversionEvents,
+} = window.MaintainOpsConversions;
+const {
   isColumnSchemaError,
   isMissingColumnError,
   isProfileMissingError,
@@ -214,6 +220,7 @@ const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay
 const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
 const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const { createQuickFixDisplayHelpers } = window.MaintainOpsQuickFixDisplay;
+const { createConversionDisplayHelpers } = window.MaintainOpsConversionDisplay;
 const {
   workspaceLoading,
   workspaceLoadError,
@@ -258,6 +265,12 @@ const {
   formatMessageDay,
   initials,
 } = window.MaintainOpsMessageFormatting;
+const { renderConversionsPanel } = createConversionDisplayHelpers({
+  escapeHtml,
+  conversionGroups: UNIT_GROUPS,
+  boltReference: BOLT_REFERENCE,
+  conversionResultText,
+});
 const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 let supabaseClient;
 let session;
@@ -2762,6 +2775,14 @@ function renderWorkspace() {
             `}
           </section>
 
+          <section class="panel full-width ${activeSection === "conversions" ? "" : "hidden-section"}">
+            <div class="panel-header">
+              <h2>Conversions</h2>
+              <span>shop reference</span>
+            </div>
+            ${renderConversionsPanel()}
+          </section>
+
           <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Company Settings</h2>
@@ -3555,6 +3576,7 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
     visibleNavItems,
   });
+  bindConversionEvents();
   bindWorkspaceQuickFixCommandEvents({
     state: {
       setActiveAssetId: setActiveAssetIdState,
@@ -4692,6 +4714,7 @@ function visibleNavItems() {
     ["pm", "PM"],
     ["procedures", "Procedures"],
     ["parts", "Parts"],
+    ["conversions", "Conversions"],
     ["messages", "Messages"],
     ["team", "Team"],
   ];

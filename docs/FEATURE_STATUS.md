@@ -24,6 +24,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Parts inventory.
 - Parts usage on work orders.
 - Parts documents/receipts attachment.
+- Conversions reference tab for common shop measurements and bolt-size lookup.
 - Equipment hierarchy.
 - Equipment deletion for manager/admin.
 - Preventive maintenance schedules.
@@ -39,6 +40,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Company logo upload.
 - Public request QR/link intake per location.
 - Location-scoped search.
+- Work order cards show due date and created date at a glance.
 - Mobile shell and desktop layout.
 
 ## Stable Enough For QA
@@ -62,6 +64,8 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
+- Conversions tab added with length, weight, temperature, volume, pressure, torque, and bolt-size reference helpers.
+- Work order cards now include a created-date stamp alongside existing due-date/context metadata.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
 - Security verification commands now cover static SQL/RPC checks, anonymous table-access denial, invalid public request token behavior, and a tested cross-company read probe for selected high-value tables.
@@ -70,7 +74,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Storage MIME hardening was applied to `work-order-photos` and `part-documents`; media storage workflow smoke and public/storage boundary probes passed afterward.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 4,450 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 4,819 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
 - Backup/restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.

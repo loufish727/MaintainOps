@@ -10,7 +10,7 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It is intenti
 
 - `app.js`
   - Owns the current app shell authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, module wiring, dependency injection, and event-module composition.
-  - Current line count is about 4,450 after ongoing modularization work.
+  - Current line count is about 4,819 after ongoing modularization work.
   - Remaining authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`; additional extraction should be based on ownership clarity and operational risk reduction, not line count alone.
 
 - `src/`

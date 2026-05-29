@@ -63,6 +63,8 @@
     function renderWorkOrderCard(workOrder) {
       const dueState = getDueState(workOrder);
       const procedure = getProcedureTemplates().find((template) => template.id === workOrder.procedure_template_id);
+      const createdDate = workOrder.created_at ? new Date(workOrder.created_at) : null;
+      const createdLabel = createdDate && !Number.isNaN(createdDate.getTime()) ? createdDate.toLocaleDateString() : "";
       return `
         <article class="work-card status-card status-${workOrder.status} ${workOrder.id === getActiveWorkOrderId() ? "selected" : ""}" data-id="${workOrder.id}" tabindex="0">
           <div class="work-card-header">
@@ -82,6 +84,7 @@
             <span>${segmentIcon(isVendorAssigned(workOrder) ? "vendor" : "mine")}${escapeHtml(assignmentLabel(workOrder))}</span>
             ${procedure ? `<span>${relationshipIcon("procedure")}${escapeHtml(procedure.name)}</span>` : ""}
             <span>${segmentIcon("due")}Due ${workOrder.due_at || "unset"}</span>
+            ${createdLabel ? `<span>${segmentIcon("created")}Created ${escapeHtml(createdLabel)}</span>` : ""}
             ${workOrder.completed_at ? `<span>${segmentIcon("completed")}Completed ${new Date(workOrder.completed_at).toLocaleDateString()}</span>` : ""}
           </div>
           ${renderRelationshipChips(workOrder)}

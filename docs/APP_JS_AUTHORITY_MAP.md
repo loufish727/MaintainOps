@@ -4,7 +4,7 @@ This document defines the intended role of `app.js` after the modularization pas
 
 ## Current Position
 
-`app.js` is currently about 4,450 lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
+`app.js` is currently about 4,819 lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
 
 At this stage, additional movement should be based on ownership clarity and operational risk reduction, not line count alone.
 

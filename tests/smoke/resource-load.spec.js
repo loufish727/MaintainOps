@@ -8,6 +8,7 @@ const requiredResources = [
   "src/utils/constants.js",
   "src/utils/dom.js",
   "src/utils/formatting.js",
+  "src/utils/conversions.js",
   "src/utils/schemaErrors.js",
   "src/utils/operationResults.js",
   "src/utils/operationTimeout.js",
@@ -136,6 +137,7 @@ const requiredResources = [
   "src/render/quickFixDisplay.js",
   "src/render/authDisplay.js",
   "src/render/publicRequestDisplay.js",
+  "src/render/conversionDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",
 ];
