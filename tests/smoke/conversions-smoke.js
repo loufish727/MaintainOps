@@ -87,8 +87,9 @@ assert.match(html, /NEMA Motor Frame Reference/);
 assert.match(html, /Electrical Plug \/ Receptacle Reference/);
 assert.match(html, /17 charts \/ 12 per page/);
 assert.match(html, /Common field references, sorted alphabetically\. Favorites stay first\./);
-assert.match(html, /Page 1 of 2/);
-assert.match(html, /Page 2 of 2/);
+assert.match(html, /Showing 1-12 of 17 - Page 1 of 2/);
+assert.match(html, /data-shop-reference-page="prev"/);
+assert.match(html, /data-shop-reference-page="next"/);
 assert.match(html, /data-shop-reference-panel/);
 assert.match(html, /data-shop-reference-card/);
 assert.match(html, /data-shop-reference-favorite/);
@@ -297,7 +298,7 @@ assert.match(gaugeHelp.textContent, /8-point head mode/);
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "8");
 
 const favoriteStorage = {
-  values: {},
+  values: { "maintainops.shopReferencePage": "2" },
   getItem(key) { return this.values[key] || null; },
   setItem(key, value) { this.values[key] = value; },
 };
@@ -307,19 +308,10 @@ const favoriteGridOne = {
   get textContent() { return ""; },
   appendChild(card) { this.children.push(card); },
   querySelectorAll(selector) { return selector === "[data-shop-reference-card]" ? this.children : []; },
-  closest() { return { querySelector() { return { textContent: "" }; } }; },
-};
-const favoriteGridTwo = {
-  children: [],
-  set textContent(value) { if (value === "") this.children = []; },
-  get textContent() { return ""; },
-  appendChild(card) { this.children.push(card); },
-  querySelectorAll(selector) { return selector === "[data-shop-reference-card]" ? this.children : []; },
-  closest() { return { querySelector() { return { textContent: "" }; } }; },
 };
 function createFavoriteButton() {
   return {
-    textContent: "",
+    innerHTML: "",
     title: "",
     attributes: {},
     listeners: {},
@@ -339,11 +331,22 @@ function createReferenceCard(title) {
 }
 const alphaCard = createReferenceCard("Alpha Reference");
 const betaCard = createReferenceCard("Beta Reference");
+const pageStatus = { textContent: "" };
+const prevButton = { disabled: false, dataset: { shopReferencePage: "prev" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const nextButton = { disabled: false, dataset: { shopReferencePage: "next" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const shopPanel = {
+  dataset: { shopReferencePageSize: "12" },
   querySelectorAll(selector) {
-    if (selector === "[data-shop-reference-grid]") return [favoriteGridOne, favoriteGridTwo];
     if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
+    if (selector === "[data-shop-reference-page]") return [prevButton, nextButton];
     return [];
+  },
+  querySelector(selector) {
+    if (selector === "[data-shop-reference-grid]") return favoriteGridOne;
+    if (selector === "[data-shop-reference-page-status]") return pageStatus;
+    if (selector === "[data-shop-reference-page=\"prev\"]") return prevButton;
+    if (selector === "[data-shop-reference-page=\"next\"]") return nextButton;
+    return null;
   },
 };
 const shopDocument = {
@@ -354,12 +357,15 @@ const shopDocument = {
 bindShopReferenceEvents({ documentRef: shopDocument, storage: favoriteStorage });
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(favoriteGridOne.children[1], betaCard);
-assert.equal(alphaCard.button.textContent, "☆");
+assert.equal(alphaCard.button.innerHTML, "&#9734;");
+assert.equal(pageStatus.textContent, "Showing 1-2 of 2 - Page 1 of 1");
+assert.equal(prevButton.disabled, true);
+assert.equal(nextButton.disabled, true);
 
 betaCard.button.listeners.click({ preventDefault() {}, stopPropagation() {} });
 assert.equal(JSON.parse(favoriteStorage.values["maintainops.shopReferenceFavorites"])[0], "Beta Reference");
 assert.equal(favoriteGridOne.children[0], betaCard);
-assert.equal(betaCard.button.textContent, "★");
+assert.equal(betaCard.button.innerHTML, "&#9733;");
 assert.equal(betaCard.classList.values["shop-reference-favorited"], true);
-
+assert.equal(favoriteStorage.values["maintainops.shopReferencePage"], "1");
 console.log("conversions smoke passed");

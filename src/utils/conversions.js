@@ -495,13 +495,17 @@
     const doc = options.documentRef || document;
     const storage = options.storage || (typeof window !== "undefined" ? window.localStorage : null);
     const favoriteKey = "maintainops.shopReferenceFavorites";
+    const pageKey = "maintainops.shopReferencePage";
 
     doc.querySelectorAll("[data-shop-reference-panel]").forEach((panel) => {
-      const grids = Array.from(panel.querySelectorAll("[data-shop-reference-grid]"));
+      if (panel.dataset.shopReferenceBound === "true") return;
+      panel.dataset.shopReferenceBound = "true";
+      const grid = panel.querySelector("[data-shop-reference-grid]");
       const cards = Array.from(panel.querySelectorAll("[data-shop-reference-card]"));
-      if (!grids.length || !cards.length) return;
+      if (!grid || !cards.length) return;
 
-      const pageSize = 12;
+      const pageSize = Math.max(1, Number(panel.dataset.shopReferencePageSize) || 12);
+      let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);
       const readFavorites = () => {
         try {
           const parsed = JSON.parse(storage?.getItem(favoriteKey) || "[]");
@@ -525,7 +529,7 @@
           const button = favoriteButton(card);
           if (button) {
             button.setAttribute("aria-pressed", String(active));
-            button.textContent = active ? "★" : "☆";
+            button.innerHTML = active ? "&#9733;" : "&#9734;";
             button.title = active ? "Remove favorite" : "Favorite chart";
           }
         });
@@ -539,21 +543,39 @@
           .sort((a, b) => normalizedTitle(a).localeCompare(normalizedTitle(b)));
         return [...favoriteCards, ...rest];
       };
+      const pageStatus = () => panel.querySelector("[data-shop-reference-page-status]");
+      const pageButton = (direction) => panel.querySelector(`[data-shop-reference-page="${direction}"]`);
       const renderOrder = () => {
         const favorites = readFavorites();
         applyFavoriteState(favorites);
         const ordered = orderedCards(favorites);
-        grids.forEach((grid) => { grid.textContent = ""; });
-        ordered.forEach((card, index) => {
-          const grid = grids[Math.floor(index / pageSize)] || grids[grids.length - 1];
-          grid.appendChild(card);
-        });
-        grids.forEach((grid) => {
-          const count = grid.querySelectorAll("[data-shop-reference-card]").length;
-          const label = grid.closest(".shop-reference-page")?.querySelector("[data-shop-reference-page-count]");
-          if (label) label.textContent = `${count} ${count === 1 ? "chart" : "charts"}`;
-        });
+        const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
+        currentPage = Math.min(Math.max(1, currentPage), totalPages);
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageCards = ordered.slice(startIndex, startIndex + pageSize);
+        grid.textContent = "";
+        pageCards.forEach((card) => grid.appendChild(card));
+        const status = pageStatus();
+        if (status) {
+          const firstShown = startIndex + 1;
+          const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
+          status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length} - Page ${currentPage} of ${totalPages}`;
+        }
+        const prev = pageButton("prev");
+        const next = pageButton("next");
+        if (prev) prev.disabled = currentPage <= 1;
+        if (next) next.disabled = currentPage >= totalPages;
+        try {
+          storage?.setItem(pageKey, String(currentPage));
+        } catch (error) {}
       };
+
+      panel.querySelectorAll("[data-shop-reference-page]").forEach((button) => {
+        button.addEventListener("click", () => {
+          currentPage += button.dataset.shopReferencePage === "next" ? 1 : -1;
+          renderOrder();
+        });
+      });
 
       cards.forEach((card) => {
         const button = favoriteButton(card);
@@ -565,6 +587,7 @@
           const favorites = readFavorites().filter((favorite) => favorite !== title);
           if (button.getAttribute("aria-pressed") !== "true") favorites.push(title);
           writeFavorites(favorites);
+          currentPage = 1;
           renderOrder();
         });
       });

@@ -502,9 +502,18 @@
       return `
         <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-title="${escapeHtml(section.title)}">
           <summary class="bolt-reference-summary">
-            <strong>${escapeHtml(section.title)}</strong>
-            <button class="shop-reference-favorite" data-shop-reference-favorite type="button" aria-label="Favorite ${escapeHtml(section.title)}" title="Favorite chart" aria-pressed="false">☆</button>
-            <span>${section.rows.length} rows</span>
+            <div class="shop-reference-card-main">
+              <div class="chip-row">
+                <span class="chip">reference</span>
+                <span class="chip">${section.rows.length} rows</span>
+              </div>
+              <strong>${escapeHtml(section.title)}</strong>
+              <small>${escapeHtml(section.columns.join(" / "))}</small>
+            </div>
+            <div class="shop-reference-card-actions">
+              <button class="shop-reference-favorite" data-shop-reference-favorite type="button" aria-label="Favorite ${escapeHtml(section.title)}" title="Favorite chart" aria-pressed="false">&#9734;</button>
+              <span class="part-tile-open">Open</span>
+            </div>
           </summary>
           <div class="bolt-table-wrap" role="region" aria-label="${escapeHtml(section.title)} table" tabindex="0">
             <table class="bolt-reference-table shop-reference-table">
@@ -526,12 +535,9 @@
     function renderShopReferences() {
       const pageSize = 12;
       const sortedSections = [...shopReferenceSections].sort((a, b) => a.title.localeCompare(b.title));
-      const pages = [];
-      for (let index = 0; index < sortedSections.length; index += pageSize) {
-        pages.push(sortedSections.slice(index, index + pageSize));
-      }
+      const totalPages = Math.max(1, Math.ceil(sortedSections.length / pageSize));
       return `
-        <section class="shop-reference-panel" data-shop-reference-panel>
+        <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
           <div class="shop-reference-heading">
             <div>
               <h3>Shop Reference Charts</h3>
@@ -540,17 +546,16 @@
             <span>${shopReferenceSections.length} charts / 12 per page</span>
           </div>
           <div class="shop-reference-pages">
-            ${pages.map((page, pageIndex) => `
-              <section class="shop-reference-page" aria-label="Shop reference page ${pageIndex + 1} of ${pages.length}">
-                <div class="shop-reference-page-label">
-                  <strong>Page ${pageIndex + 1} of ${pages.length}</strong>
-                  <span data-shop-reference-page-count>${page.length} charts</span>
-                </div>
-                <div class="shop-reference-card-grid" data-shop-reference-grid>
-                  ${page.map(renderReferenceTable).join("")}
-                </div>
-              </section>
-            `).join("")}
+            <div class="shop-reference-card-grid" data-shop-reference-grid>
+              ${sortedSections.map(renderReferenceTable).join("")}
+            </div>
+            ${shopReferenceSections.length > pageSize ? `
+              <div class="pagination-bar shop-reference-pagination">
+                <button class="secondary-button page-action-button" data-shop-reference-page="prev" type="button" disabled>Previous</button>
+                <span data-shop-reference-page-status>Showing 1-${Math.min(pageSize, sortedSections.length)} of ${sortedSections.length} - Page 1 of ${totalPages}</span>
+                <button class="secondary-button page-action-button" data-shop-reference-page="next" type="button">Next</button>
+              </div>
+            ` : ""}
           </div>
         </section>
       `;
