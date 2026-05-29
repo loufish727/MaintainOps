@@ -58,6 +58,16 @@ assert.match(html, /data-wrench-size-row="1\/2"/);
 assert.match(html, /data-wrench-size-row="4"/);
 assert.match(html, /bolt-reference-table/);
 assert.match(html, /not interchangeable by diameter alone/);
+assert.match(html, /Shop Reference Charts/);
+assert.match(html, /Drill \/ Tap Quick Reference/);
+assert.match(html, /Wire Gauge Reference/);
+assert.match(html, /Pipe \/ Tubing Reference/);
+assert.match(html, /Belt Section Reference/);
+assert.match(html, /Bearing Quick Reference/);
+assert.match(html, /Roller Chain Reference/);
+assert.match(html, /Oil \/ Grease Reference/);
+assert.match(html, /Torque Reference/);
+assert.match(html, /8 collapsed charts/);
 
 function createField(value) {
   return {

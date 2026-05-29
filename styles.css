@@ -4512,6 +4512,16 @@ textarea {
   box-shadow: inset 4px 0 0 var(--blue);
 }
 
+.shop-reference-table {
+  min-width: 640px;
+}
+
+.shop-reference-note {
+  border-top: 1px solid color-mix(in srgb, var(--blue) 14%, var(--line));
+  margin: 0;
+  padding: 9px 12px 11px;
+}
+
 @media (max-width: 760px) {
   .conversion-controls {
     grid-template-columns: 1fr;
