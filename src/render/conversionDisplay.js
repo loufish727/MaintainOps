@@ -204,7 +204,7 @@
       },
       {
         title: "Torque Reference",
-        note: "Reference only. Always follow OEM torque, bolt grade, lubrication, thread engagement, and safety-critical requirements.",
+        note: "Reference only. Always follow OEM torque, bolt grade, lubrication, thread engagement, and application requirements.",
         columns: ["Bolt", "Grade 5 dry", "Grade 8 dry", "Note"],
         rows: [
           ["#10-24", "3 ft-lb", "4 ft-lb", "small covers and brackets"],
@@ -822,23 +822,8 @@
         ],
       },
       {
-        title: "PM Interval Starter Reference",
-        note: "Use this only as a starting point. OEM manual, duty cycle, environment, and failure history should override generic intervals.",
-        columns: ["Asset type", "Starter interval", "Common task", "Watch point"],
-        rows: [
-          ["Air compressor", "weekly/monthly", "drain, filter, leaks", "oil and heat"],
-          ["Conveyor", "weekly/monthly", "belt/chain tracking", "guarding"],
-          ["Pump", "monthly/quarterly", "leaks, vibration, coupler", "seal condition"],
-          ["Gear reducer", "monthly/quarterly", "oil level, leaks, noise", "breather"],
-          ["Dust collector", "weekly/monthly", "filters, differential pressure", "fire risk"],
-          ["Hydraulic power unit", "weekly/monthly", "fluid, leaks, heat", "contamination"],
-          ["Panel/controls", "quarterly", "fans, filters, loose wires", "LOTO"],
-          ["Forklift/vehicle", "daily/weekly", "tires, leaks, battery", "operator checks"],
-        ],
-      },
-      {
         title: "Common Failure Symptom Reference",
-        note: "Symptoms point to likely areas, not final diagnosis. Lock out equipment and verify before adjustment.",
+        note: "Symptoms point to likely areas, not final diagnosis. Confirm operating conditions before adjustment.",
         columns: ["Asset", "Symptom", "Likely area", "First check"],
         rows: [
           ["Motor", "runs hot", "overload or cooling", "current and fan"],
@@ -898,7 +883,7 @@
       },
       {
         title: "Pneumatic Cylinder Troubleshooting Reference",
-        note: "Depressurize and lock out before service. Confirm pressure, flow controls, valve function, and mechanical binding.",
+        note: "Confirm pressure, flow controls, valve function, and mechanical binding before replacing components.",
         columns: ["Symptom", "Likely area", "Common use note", "First check"],
         rows: [
           ["Slow extend", "flow/pressure", "air cylinders", "regulator"],
@@ -913,11 +898,11 @@
       },
       {
         title: "Hydraulic Leak / Failure Reference",
-        note: "Hydraulic leaks can inject fluid under skin. Depressurize and use proper PPE before inspection.",
+        note: "Hydraulic leak checks depend on pressure, fluid, fittings, and equipment design. Depressurize before inspection.",
         columns: ["Symptom", "Likely area", "Common use note", "Watch point"],
         rows: [
           ["External hose leak", "hose/fitting", "wet hose or fitting", "pressure rating"],
-          ["Cylinder drift", "piston seal/valve", "load slowly moves", "load safety"],
+          ["Cylinder drift", "piston seal/valve", "load slowly moves", "holding circuit"],
           ["Weak force", "low pressure/bypass", "presses/lifts", "relief setting"],
           ["Foamy oil", "air ingress", "pump noise", "suction leak"],
           ["Hot oil", "restriction/bypass", "slow systems", "cooler/filter"],
@@ -957,38 +942,8 @@
         ],
       },
       {
-        title: "Lockout / Tagout Checklist Reference",
-        note: "Use company LOTO procedure and authorized training. This chart is a reminder, not a substitute for procedure.",
-        columns: ["Step", "Action", "Common use note", "Watch point"],
-        rows: [
-          ["1", "notify affected people", "before shutdown", "scope"],
-          ["2", "identify energy sources", "electric/air/hydraulic/gravity", "stored energy"],
-          ["3", "shut down normally", "operator controls", "sequence"],
-          ["4", "isolate energy", "disconnects/valves/blocks", "all sources"],
-          ["5", "apply lock/tag", "authorized person", "one lock per person"],
-          ["6", "release stored energy", "bleed/block/discharge", "gravity"],
-          ["7", "verify zero energy", "try/start/test", "meter/proof"],
-          ["8", "restore safely", "remove tools/people clear", "controlled restart"],
-        ],
-      },
-      {
-        title: "PPE Task Matrix Reference",
-        note: "Follow site hazard assessment and SDS. PPE does not replace guarding, lockout, or safe work controls.",
-        columns: ["Task", "Likely PPE", "Common use note", "Watch point"],
-        rows: [
-          ["Grinding", "safety glasses + face shield", "sparks/debris", "glove snag"],
-          ["Welding", "hood, gloves, FR", "hot work", "fume control"],
-          ["Chemical handling", "goggles/gloves/apron", "cleaners/oils", "SDS"],
-          ["Electrical panel", "arc-rated PPE", "qualified work", "arc flash label"],
-          ["Compressed air", "eye protection", "blowoff/nozzles", "pressure limit"],
-          ["Overhead work", "hard hat/eye protection", "lifts/ladders", "drop zone"],
-          ["Cutting metal", "eye/hand/hearing", "saws/shears", "guarding"],
-          ["Hydraulics", "eye/hand protection", "leak checks", "injection hazard"],
-        ],
-      },
-      {
         title: "Extension Cord Load Reference",
-        note: "Use listed cords, inspect damage, and follow site electrical rules. Long runs need larger wire.",
+        note: "Cord ratings depend on conductor size, length, insulation, connectors, and listed use. Long runs need larger wire.",
         columns: ["Cord", "Length", "Typical load", "Watch point"],
         rows: [
           ["16 AWG", "25 ft", "light tools", "voltage drop"],
@@ -1068,7 +1023,7 @@
         rows: [
           ["24 VDC input", "sensors/buttons", "modern machines", "PNP/NPN"],
           ["24 VDC output", "solenoids/relays", "PLC outputs", "current limit"],
-          ["120 VAC input", "older controls", "field switches", "shock hazard"],
+          ["120 VAC input", "older controls", "field switches", "voltage exposure"],
           ["120 VAC output", "relays/lamps", "legacy panels", "load rating"],
           ["Analog 4-20 mA", "process signal", "pressure/level/temp", "loop power"],
           ["Analog 0-10 V", "speed/reference", "VFD commands", "noise"],
@@ -1110,7 +1065,6 @@
       { id: "fluid-power", label: "Fluid Power", description: "Hydraulic hose, leaks, seals, cylinders, fittings" },
       { id: "pneumatics", label: "Pneumatics", description: "Air fittings, cylinders, valves, tubing" },
       { id: "bearings-belts-chain", label: "Bearings, Belts & Chain", description: "Bearings, belts, chains, sprockets, wear patterns" },
-      { id: "safety", label: "Safety & LOTO", description: "LOTO, PPE, extension cords, enclosure reminders" },
       { id: "pm-troubleshooting", label: "PM & Troubleshooting", description: "Intervals, symptoms, compressors, pumps" },
       { id: "pipe-hose-fittings", label: "Pipe, Hose & Fittings", description: "Pipe, tubing, NPT, hose clamps, fittings" },
       { id: "materials-shop", label: "Materials & Shop Math", description: "Gauge, grease, close-fit, temperature and shop IDs" },
@@ -1124,7 +1078,7 @@
       if (/hydraulic|shaft seal|o-ring material|pump seal/.test(title)) return "fluid-power";
       if (/pneumatic|air cylinder|solenoid/.test(title)) return "pneumatics";
       if (/bearing|roller chain|chain|sprocket|belt failure|conveyor roller/.test(title)) return "bearings-belts-chain";
-      if (/lockout|tagout|ppe|extension cord|ip \//.test(title)) return "safety";
+      if (/extension cord|industrial wire|conduit|ip \/|nema enclosure|electrical/.test(title)) return "electrical";
       if (/pm interval|failure symptom|compressor|pump seal/.test(title)) return "pm-troubleshooting";
       if (/pipe|tubing|npt|fitting|hose clamp|hydraulic hose/.test(title)) return "pipe-hose-fittings";
       return "materials-shop";
@@ -1206,7 +1160,10 @@
             <div class="shop-reference-category-grid" data-shop-reference-category-grid>
               ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCount(category.id))).join("")}
             </div>
-            <button class="secondary-button shop-reference-back" data-shop-reference-back type="button" hidden>All categories</button>
+            <div class="active-team-filter shop-reference-active-filter" data-shop-reference-active-category hidden>
+              <span data-shop-reference-active-category-label></span>
+              <button class="text-button" data-shop-reference-back type="button">All categories</button>
+            </div>
             <div class="shop-reference-card-grid" data-shop-reference-grid hidden>
               ${sortedSections.map(renderReferenceTable).join("")}
             </div>

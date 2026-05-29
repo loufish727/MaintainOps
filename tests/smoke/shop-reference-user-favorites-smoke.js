@@ -42,7 +42,7 @@ function createButton() {
 function createCard(title) {
   const button = createButton();
   return {
-    dataset: { shopReferenceTitle: title, shopReferenceSearch: title.toLowerCase() },
+    dataset: { shopReferenceTitle: title, shopReferenceSearch: title.toLowerCase(), shopReferenceCategory: "electrical" },
     listeners: {},
     open: false,
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
@@ -57,11 +57,30 @@ const alpha = createCard("Alpha Reference");
 const beta = createCard("Beta Reference");
 const grid = {
   children: [],
+  hidden: false,
+  scrollIntoView() {},
   set textContent(value) { if (value === "") this.children = []; },
   get textContent() { return ""; },
   appendChild(card) { this.children.push(card); },
 };
 const status = { textContent: "" };
+const categoryCard = {
+  dataset: { shopReferenceCategory: "electrical" },
+  listeners: {},
+  attributes: {},
+  classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+  querySelector(selector) { return selector === "span" ? { textContent: "Electrical & Controls" } : null; },
+  setAttribute(name, value) { this.attributes[name] = value; },
+  addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+};
+const categoryGrid = {
+  hidden: false,
+  querySelectorAll(selector) {
+    return selector === "[data-shop-reference-category]" ? [categoryCard] : [];
+  },
+};
+const activeCategoryBanner = { hidden: true };
+const activeCategoryLabel = { textContent: "" };
 const storage = {
   values: {},
   getItem(key) { return this.values[key] || null; },
@@ -73,10 +92,14 @@ const panel = {
   querySelectorAll(selector) {
     if (selector === "[data-shop-reference-card]") return [alpha, beta];
     if (selector === "[data-shop-reference-page]") return [];
+    if (selector === "[data-shop-reference-category]") return [categoryCard];
     return [];
   },
   querySelector(selector) {
     if (selector === "[data-shop-reference-grid]") return grid;
+    if (selector === "[data-shop-reference-category-grid]") return categoryGrid;
+    if (selector === "[data-shop-reference-active-category]") return activeCategoryBanner;
+    if (selector === "[data-shop-reference-active-category-label]") return activeCategoryLabel;
     if (selector === "[data-shop-reference-page-status]") return status;
     return null;
   },
@@ -92,8 +115,10 @@ bindShopReferenceEvents({
 });
 
 await new Promise((resolve) => setTimeout(resolve, 0));
+categoryCard.listeners.click();
 assert.equal(grid.children[0], beta);
 assert.equal(beta.button.getAttribute("aria-pressed"), "true");
+assert.equal(activeCategoryLabel.textContent, "Category: Electrical & Controls");
 assert.equal(storage.values["maintainops.shopReferenceFavorites"], JSON.stringify(["Beta Reference"]));
 
 alpha.button.listeners.click({ preventDefault() {}, stopPropagation() {} });

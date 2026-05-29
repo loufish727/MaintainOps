@@ -510,6 +510,8 @@
       const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
       const categoryCards = Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
       const backButton = panel.querySelector("[data-shop-reference-back]");
+      const activeCategoryBanner = panel.querySelector("[data-shop-reference-active-category]");
+      const activeCategoryLabelElement = panel.querySelector("[data-shop-reference-active-category-label]");
       const emptyState = panel.querySelector("[data-shop-reference-empty]");
       let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);
       let searchQuery = "";
@@ -579,6 +581,9 @@
           if (card !== except) card.removeAttribute?.("open");
         });
       };
+      const focusResults = () => {
+        grid?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+      };
       const renderOrder = (options = {}) => {
         if (options.closeOpen) closeCards();
         const favorites = readFavorites();
@@ -587,8 +592,19 @@
         if (categoryGrid) categoryGrid.hidden = !showCategories;
         if (grid) grid.hidden = showCategories;
         if (backButton) {
-          backButton.hidden = showCategories;
-          backButton.textContent = activeCategory && !searchQuery ? "All categories" : "All categories";
+          backButton.textContent = "All categories";
+        }
+        if (activeCategoryBanner) {
+          activeCategoryBanner.hidden = showCategories;
+        }
+        if (activeCategoryLabelElement) {
+          if (searchQuery) {
+            activeCategoryLabelElement.textContent = `Search results for "${searchQuery}"`;
+          } else if (activeCategory) {
+            activeCategoryLabelElement.textContent = `Category: ${activeCategoryLabel()}`;
+          } else {
+            activeCategoryLabelElement.textContent = "";
+          }
         }
         categoryCards.forEach((card) => {
           const active = card.dataset.shopReferenceCategory === activeCategory && !searchQuery;
@@ -635,6 +651,7 @@
         searchQuery = searchInput.value.trim();
         currentPage = 1;
         renderOrder({ closeOpen: true });
+        if (searchQuery) focusResults();
       });
 
       categoryCards.forEach((card) => {
@@ -642,6 +659,7 @@
           activeCategory = card.dataset.shopReferenceCategory || "";
           currentPage = 1;
           renderOrder({ closeOpen: true });
+          focusResults();
         });
       });
 

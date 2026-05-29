@@ -95,7 +95,7 @@ assert.match(html, /Chain Sprocket ID Reference/);
 assert.match(html, /Metric Thread Pitch Reference/);
 assert.match(html, /NPT Pipe Thread Reference/);
 assert.match(html, /O-Ring Material Reference/);
-assert.match(html, /PM Interval Starter Reference/);
+assert.doesNotMatch(html, /PM Interval Starter Reference/);
 assert.match(html, /Common Failure Symptom Reference/);
 assert.match(html, /Bearing Symptom Reference/);
 assert.match(html, /Belt Failure Pattern Reference/);
@@ -104,27 +104,30 @@ assert.match(html, /Pneumatic Cylinder Troubleshooting Reference/);
 assert.match(html, /Hydraulic Leak \/ Failure Reference/);
 assert.match(html, /Compressor Maintenance Reference/);
 assert.match(html, /Pump Seal Failure Reference/);
-assert.match(html, /Lockout \/ Tagout Checklist Reference/);
-assert.match(html, /PPE Task Matrix Reference/);
+assert.doesNotMatch(html, /Lockout \/ Tagout Checklist Reference/);
+assert.doesNotMatch(html, /PPE Task Matrix Reference/);
+assert.doesNotMatch(html, /Safety & LOTO/);
 assert.match(html, /Extension Cord Load Reference/);
 assert.match(html, /Industrial Wire Color Reference/);
 assert.match(html, /Conduit Fill Quick Reference/);
 assert.match(html, /IP \/ NEMA Enclosure Reference/);
 assert.match(html, /Relay \/ Contactor Symbol Reference/);
 assert.match(html, /PLC I\/O Voltage Reference/);
-assert.match(html, /57 charts \/ 12 per page/);
+assert.match(html, /54 charts \/ 12 per page/);
 assert.match(html, /data-shop-reference-category-grid/);
 assert.match(html, /data-shop-reference-category="fasteners"/);
+assert.match(html, /data-shop-reference-active-category/);
+assert.match(html, /data-shop-reference-active-category-label/);
 assert.match(html, /Fasteners & Threads/);
 assert.match(html, /Electrical & Controls/);
 assert.match(html, /PM & Troubleshooting/);
 assert.match(html, /data-shop-reference-back/);
 assert.doesNotMatch(html, /<strong>0 charts<\/strong>/);
 assert.match(html, /Fasteners & Threads[\s\S]*7 charts/);
-assert.match(html, /Electrical & Controls[\s\S]*13 charts/);
+assert.match(html, /Electrical & Controls[\s\S]*14 charts/);
 assert.match(html, /Search filters chart names, IDs, sizes, and notes\./);
 assert.match(html, /Try 6205, NPT, M12, 5VX800, photoeye/);
-assert.match(html, /Showing 10 categories/);
+assert.match(html, /Showing 9 categories/);
 assert.match(html, /data-shop-reference-page="prev"/);
 assert.match(html, /data-shop-reference-page="next"/);
 assert.match(html, /data-shop-reference-panel/);
@@ -347,9 +350,12 @@ const favoriteStorage = {
 };
 const favoriteGridOne = {
   children: [],
+  hidden: false,
+  scrollCalls: [],
   set textContent(value) { if (value === "") this.children = []; },
   get textContent() { return ""; },
   appendChild(card) { this.children.push(card); },
+  scrollIntoView(options) { this.scrollCalls.push(options); },
   querySelectorAll(selector) { return selector === "[data-shop-reference-card]" ? this.children : []; },
 };
 function createFavoriteButton() {
@@ -401,6 +407,8 @@ function createCategoryCard(id, label) {
 const electricalCategory = createCategoryCard("electrical", "Electrical & Controls");
 const bearingCategory = createCategoryCard("bearings-belts-chain", "Bearings, Belts & Chain");
 const backButton = { hidden: true, textContent: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const activeCategoryBanner = { hidden: true };
+const activeCategoryLabel = { textContent: "" };
 const prevButton = { disabled: false, dataset: { shopReferencePage: "prev" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const nextButton = { disabled: false, dataset: { shopReferencePage: "next" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const shopPanel = {
@@ -415,6 +423,8 @@ const shopPanel = {
     if (selector === "[data-shop-reference-grid]") return favoriteGridOne;
     if (selector === "[data-shop-reference-category-grid]") return categoryGrid;
     if (selector === "[data-shop-reference-back]") return backButton;
+    if (selector === "[data-shop-reference-active-category]") return activeCategoryBanner;
+    if (selector === "[data-shop-reference-active-category-label]") return activeCategoryLabel;
     if (selector === "[data-shop-reference-page-status]") return pageStatus;
     if (selector === "[data-shop-reference-search-input]") return searchInput;
     if (selector === "[data-shop-reference-empty]") return emptyState;
@@ -432,12 +442,16 @@ bindShopReferenceEvents({ documentRef: shopDocument, storage: favoriteStorage })
 assert.equal(categoryGrid.hidden, false);
 assert.equal(favoriteGridOne.hidden, true);
 assert.equal(pageStatus.textContent, "Showing 2 categories");
+assert.equal(activeCategoryBanner.hidden, true);
 assert.equal(prevButton.disabled, true);
 assert.equal(nextButton.disabled, true);
 
 electricalCategory.listeners.click();
 assert.equal(categoryGrid.hidden, true);
 assert.equal(favoriteGridOne.hidden, false);
+assert.equal(activeCategoryBanner.hidden, false);
+assert.equal(activeCategoryLabel.textContent, "Category: Electrical & Controls");
+assert.equal(favoriteGridOne.scrollCalls.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(alphaCard.button.innerHTML, "&#9734;");
@@ -456,6 +470,8 @@ searchInput.value = "photoeye";
 searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
+assert.equal(activeCategoryLabel.textContent, "Search results for \"photoeye\"");
+assert.equal(favoriteGridOne.scrollCalls.length, 2);
 assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"photoeye\" - Page 1 of 1");
 assert.equal(emptyState.hidden, true);
 searchInput.value = "bearing";
