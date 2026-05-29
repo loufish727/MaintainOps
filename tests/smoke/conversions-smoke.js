@@ -53,7 +53,7 @@ assert.match(html, /data-bolt-gauge-diameter/);
 assert.match(html, /data-bolt-gauge-size-lock/);
 assert.match(html, /Lock size/);
 assert.match(html, /bolt-gauge-screen-callout/);
-assert.match(html, /Place the actual bolt, nut, or wrench head directly on the white screen card below\./);
+assert.match(html, /<p class="bolt-gauge-screen-callout"><span aria-hidden="true">\*<\/span>PLACE THE ACTUAL BOLT, NUT, OR WRENCH HEAD DIRECTLY ON THE WHITE SCREEN CARD BELOW\.<\/p>/);
 assert.match(html, /Common Inch Thread Reference/);
 assert.match(html, /100 rows/);
 assert.match(html, /data-bolt-size-row="1\/4"/);

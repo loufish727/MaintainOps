@@ -4394,16 +4394,28 @@ textarea {
 }
 
 .bolt-gauge-screen-callout {
+  align-items: flex-start;
   border: 1px solid color-mix(in srgb, #f97316 52%, var(--line));
   border-left: 5px solid #f97316;
   border-radius: 8px;
   background: #fff7ed;
   color: #9a3412;
+  display: flex;
+  gap: 6px;
   font-size: 0.88rem;
   font-weight: 820;
   line-height: 1.35;
   margin: 0;
   padding: 9px 11px;
+}
+
+.bolt-gauge-screen-callout span {
+  color: #dc2626;
+  flex: 0 0 auto;
+  font-size: 1rem;
+  font-weight: 950;
+  line-height: 1;
+  margin-top: 1px;
 }
 
 .bolt-gauge-card::before,
