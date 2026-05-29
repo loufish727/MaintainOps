@@ -155,6 +155,10 @@ const {
   updateAppIssueReportStatusRecord,
 } = window.MaintainOpsAppIssueReportsService;
 const {
+  getUserPreferences,
+  saveShopReferenceFavorites,
+} = window.MaintainOpsUserPreferencesService;
+const {
   renderMetric,
   renderInsight,
   renderRoleGuide,
@@ -1309,6 +1313,23 @@ function renderWorkspaceLoadError(message) {
   app.innerHTML = workspaceLoadError(message);
   document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
+}
+
+function createShopReferenceFavoriteStore() {
+  return {
+    async load() {
+      if (!supabaseClient || !session?.user?.id) return null;
+      const { data, error } = await getUserPreferences(supabaseClient, session.user.id);
+      if (error) throw error;
+      return Array.isArray(data?.shop_reference_favorites) ? data.shop_reference_favorites : [];
+    },
+    async save(favorites) {
+      if (!supabaseClient || !session?.user?.id) return null;
+      const { error } = await saveShopReferenceFavorites(supabaseClient, session.user.id, favorites);
+      if (error) throw error;
+      return true;
+    },
+  };
 }
 
 function renderAuth(mode, initialError = "") {
@@ -3578,7 +3599,7 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
     visibleNavItems,
   });
-  bindConversionEvents();
+  bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
   bindWorkspaceQuickFixCommandEvents({
     state: {
       setActiveAssetId: setActiveAssetIdState,

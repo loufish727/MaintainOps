@@ -112,6 +112,10 @@ add column if not exists mobile_tech boolean not null default false;
 notify pgrst, 'reload schema';
 ```
 
+User preference sync:
+
+Run `supabase/step-next-user-preferences.sql` before expecting shop reference favorites to follow a user across browsers/devices. The app keeps a browser `localStorage` fallback/cache if the table is not available.
+
 Maintenance request photos:
 
 Run `supabase/step-next-maintenance-request-photos.sql` before testing QR or internal request photo uploads. It adds optional request photo metadata columns, creates the private `maintenance-request-photos` bucket, and installs the public QR upload policy plus the attach RPC.

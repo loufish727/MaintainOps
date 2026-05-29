@@ -494,6 +494,7 @@
   function bindShopReferenceEvents(options = {}) {
     const doc = options.documentRef || document;
     const storage = options.storage || (typeof window !== "undefined" ? window.localStorage : null);
+    const favoriteStore = options.favoriteStore || null;
     const favoriteKey = "maintainops.shopReferenceFavorites";
     const pageKey = "maintainops.shopReferencePage";
 
@@ -509,18 +510,27 @@
       const emptyState = panel.querySelector("[data-shop-reference-empty]");
       let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);
       let searchQuery = "";
+      let cachedFavorites = null;
       const readFavorites = () => {
+        if (cachedFavorites) return cachedFavorites;
         try {
           const parsed = JSON.parse(storage?.getItem(favoriteKey) || "[]");
-          return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+          cachedFavorites = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
         } catch (error) {
-          return [];
+          cachedFavorites = [];
         }
+        return cachedFavorites;
       };
       const writeFavorites = (favorites) => {
+        cachedFavorites = Array.isArray(favorites) ? favorites.filter(Boolean) : [];
         try {
-          storage?.setItem(favoriteKey, JSON.stringify(favorites));
+          storage?.setItem(favoriteKey, JSON.stringify(cachedFavorites));
         } catch (error) {}
+        if (favoriteStore?.save) {
+          Promise.resolve(favoriteStore.save(cachedFavorites)).catch((error) => {
+            console.warn?.("Could not sync shop reference favorites.", error);
+          });
+        }
       };
       const normalizedTitle = (card) => card.dataset.shopReferenceTitle || "";
       const favoriteButton = (card) => card.querySelector("[data-shop-reference-favorite]");
@@ -618,6 +628,19 @@
         });
       });
       renderOrder();
+      if (favoriteStore?.load) {
+        Promise.resolve(favoriteStore.load()).then((favorites) => {
+          if (!Array.isArray(favorites)) return;
+          cachedFavorites = favorites.filter(Boolean);
+          try {
+            storage?.setItem(favoriteKey, JSON.stringify(cachedFavorites));
+          } catch (error) {}
+          currentPage = 1;
+          renderOrder({ closeOpen: true });
+        }).catch((error) => {
+          console.warn?.("Could not load shop reference favorites.", error);
+        });
+      }
     });
   }
 
