@@ -113,9 +113,15 @@ assert.match(html, /IP \/ NEMA Enclosure Reference/);
 assert.match(html, /Relay \/ Contactor Symbol Reference/);
 assert.match(html, /PLC I\/O Voltage Reference/);
 assert.match(html, /57 charts \/ 12 per page/);
+assert.match(html, /data-shop-reference-category-grid/);
+assert.match(html, /data-shop-reference-category="fasteners"/);
+assert.match(html, /Fasteners & Threads/);
+assert.match(html, /Electrical & Controls/);
+assert.match(html, /PM & Troubleshooting/);
+assert.match(html, /data-shop-reference-back/);
 assert.match(html, /Search filters chart names, IDs, sizes, and notes\./);
 assert.match(html, /Try 6205, NPT, M12, 5VX800, photoeye/);
-assert.match(html, /Showing 1-12 of 57 - Page 1 of 5/);
+assert.match(html, /Showing 10 categories/);
 assert.match(html, /data-shop-reference-page="prev"/);
 assert.match(html, /data-shop-reference-page="next"/);
 assert.match(html, /data-shop-reference-panel/);
@@ -357,7 +363,7 @@ function createFavoriteButton() {
 function createReferenceCard(title) {
   const button = createFavoriteButton();
   return {
-    dataset: { shopReferenceTitle: title },
+    dataset: { shopReferenceTitle: title, shopReferenceCategory: title.includes("Beta") ? "bearings-belts-chain" : "electrical" },
     listeners: {},
     open: false,
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
@@ -372,6 +378,21 @@ const betaCard = createReferenceCard("Beta Reference");
 const pageStatus = { textContent: "" };
 const searchInput = { value: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const emptyState = { hidden: true };
+const categoryGrid = { hidden: false };
+function createCategoryCard(id, label) {
+  return {
+    dataset: { shopReferenceCategory: id },
+    listeners: {},
+    attributes: {},
+    classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+    querySelector(selector) { return selector === "span" ? { textContent: label } : null; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  };
+}
+const electricalCategory = createCategoryCard("electrical", "Electrical & Controls");
+const bearingCategory = createCategoryCard("bearings-belts-chain", "Bearings, Belts & Chain");
+const backButton = { hidden: true, textContent: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const prevButton = { disabled: false, dataset: { shopReferencePage: "prev" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const nextButton = { disabled: false, dataset: { shopReferencePage: "next" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const shopPanel = {
@@ -379,10 +400,13 @@ const shopPanel = {
   querySelectorAll(selector) {
     if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
     if (selector === "[data-shop-reference-page]") return [prevButton, nextButton];
+    if (selector === "[data-shop-reference-category]") return [electricalCategory, bearingCategory];
     return [];
   },
   querySelector(selector) {
     if (selector === "[data-shop-reference-grid]") return favoriteGridOne;
+    if (selector === "[data-shop-reference-category-grid]") return categoryGrid;
+    if (selector === "[data-shop-reference-back]") return backButton;
     if (selector === "[data-shop-reference-page-status]") return pageStatus;
     if (selector === "[data-shop-reference-search-input]") return searchInput;
     if (selector === "[data-shop-reference-empty]") return emptyState;
@@ -397,16 +421,24 @@ const shopDocument = {
   },
 };
 bindShopReferenceEvents({ documentRef: shopDocument, storage: favoriteStorage });
+assert.equal(categoryGrid.hidden, false);
+assert.equal(favoriteGridOne.hidden, true);
+assert.equal(pageStatus.textContent, "Showing 2 categories");
+assert.equal(prevButton.disabled, true);
+assert.equal(nextButton.disabled, true);
+
+electricalCategory.listeners.click();
+assert.equal(categoryGrid.hidden, true);
+assert.equal(favoriteGridOne.hidden, false);
 assert.equal(favoriteGridOne.children[0], alphaCard);
-assert.equal(favoriteGridOne.children[1], betaCard);
+assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(alphaCard.button.innerHTML, "&#9734;");
-assert.equal(pageStatus.textContent, "Showing 1-2 of 2 - Page 1 of 1");
+assert.equal(pageStatus.textContent, "Showing 1-1 of 1 in Electrical & Controls - Page 1 of 1");
 assert.equal(prevButton.disabled, true);
 assert.equal(nextButton.disabled, true);
 
 betaCard.button.listeners.click({ preventDefault() {}, stopPropagation() {} });
 assert.equal(JSON.parse(favoriteStorage.values["maintainops.shopReferenceFavorites"])[0], "Beta Reference");
-assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(betaCard.button.innerHTML, "&#9733;");
 assert.equal(betaCard.classList.values["shop-reference-favorited"], true);
 assert.equal(favoriteStorage.values["maintainops.shopReferencePage"], "1");
@@ -418,11 +450,21 @@ assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"photoeye\" - Page 1 of 1");
 assert.equal(emptyState.hidden, true);
+searchInput.value = "bearing";
+searchInput.listeners.input();
+assert.equal(favoriteGridOne.children.length, 1);
+assert.equal(favoriteGridOne.children[0], betaCard);
+assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"bearing\" - Page 1 of 1");
 searchInput.value = "no-hit";
 searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 0);
 assert.equal(pageStatus.textContent, "Showing 0-0 of 0 for \"no-hit\" - Page 1 of 1");
 assert.equal(emptyState.hidden, false);
+backButton.listeners.click();
+assert.equal(searchInput.value, "");
+assert.equal(categoryGrid.hidden, false);
+assert.equal(favoriteGridOne.hidden, true);
+assert.equal(pageStatus.textContent, "Showing 2 categories");
 
 alphaCard.open = true;
 betaCard.open = true;

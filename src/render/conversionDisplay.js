@@ -1103,15 +1103,54 @@
       `;
     }
 
+    const shopReferenceCategories = [
+      { id: "fasteners", label: "Fasteners & Threads", description: "Threads, bolts, taps, torque, grades, threadlocker" },
+      { id: "electrical", label: "Electrical & Controls", description: "Wire, plugs, fuses, sensors, panels, PLC I/O" },
+      { id: "motors", label: "Motors & Drives", description: "Motors, VFDs, reducers, belts, couplings" },
+      { id: "fluid-power", label: "Fluid Power", description: "Hydraulic hose, leaks, seals, cylinders, fittings" },
+      { id: "pneumatics", label: "Pneumatics", description: "Air fittings, cylinders, valves, tubing" },
+      { id: "bearings-belts-chain", label: "Bearings, Belts & Chain", description: "Bearings, belts, chains, sprockets, wear patterns" },
+      { id: "safety", label: "Safety & LOTO", description: "LOTO, PPE, extension cords, enclosure reminders" },
+      { id: "pm-troubleshooting", label: "PM & Troubleshooting", description: "Intervals, symptoms, compressors, pumps" },
+      { id: "pipe-hose-fittings", label: "Pipe, Hose & Fittings", description: "Pipe, tubing, NPT, hose clamps, fittings" },
+      { id: "materials-shop", label: "Materials & Shop Math", description: "Gauge, grease, close-fit, temperature and shop IDs" },
+    ];
+
+    function shopReferenceCategory(section) {
+      const title = section.title.toLowerCase();
+      if (/thread|tap|fastener|torque|threadlocker/.test(title)) return "fasteners";
+      if (/wire|electrical|plug|sensor|fuse|contactor|vfd|thermocouple|rtd|plc|relay|conduit|nema enclosure/.test(title)) return "electrical";
+      if (/motor|belt code|belt section|gear reducer|coupling/.test(title)) return "motors";
+      if (/hydraulic|shaft seal|o-ring material|pump seal/.test(title)) return "fluid-power";
+      if (/pneumatic|air cylinder|solenoid/.test(title)) return "pneumatics";
+      if (/bearing|roller chain|chain|sprocket|belt failure|conveyor roller/.test(title)) return "bearings-belts-chain";
+      if (/lockout|tagout|ppe|extension cord|ip \//.test(title)) return "safety";
+      if (/pm interval|failure symptom|compressor|pump seal/.test(title)) return "pm-troubleshooting";
+      if (/pipe|tubing|npt|fitting|hose clamp|hydraulic hose/.test(title)) return "pipe-hose-fittings";
+      return "materials-shop";
+    }
+
+    function renderCategoryCard(category, count) {
+      return `
+        <button class="shop-reference-category-card" data-shop-reference-category="${escapeHtml(category.id)}" type="button">
+          <span>${escapeHtml(category.label)}</span>
+          <small>${escapeHtml(category.description)}</small>
+          <strong>${count} charts</strong>
+        </button>
+      `;
+    }
+
     function renderReferenceTable(section) {
+      const category = shopReferenceCategory(section);
       const searchableText = [
         section.title,
+        category,
         section.note,
         ...section.columns,
         ...section.rows.flat(),
       ].join(" ");
       return `
-        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
+        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-category="${escapeHtml(category)}" data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
           <summary class="bolt-reference-summary">
             <div class="shop-reference-card-main">
               <div class="chip-row">
@@ -1146,6 +1185,11 @@
     function renderShopReferences() {
       const pageSize = 12;
       const sortedSections = [...shopReferenceSections].sort((a, b) => a.title.localeCompare(b.title));
+      const categoryCounts = new Map(shopReferenceCategories.map((category) => [category.id, 0]));
+      shopReferenceSections.forEach((section) => {
+        const category = shopReferenceCategory(section);
+        categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+      });
       const totalPages = Math.max(1, Math.ceil(sortedSections.length / pageSize));
       return `
         <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
@@ -1161,14 +1205,18 @@
               <span>Search references</span>
               <input data-shop-reference-search-input type="search" inputmode="search" autocomplete="off" placeholder="Try 6205, NPT, M12, 5VX800, photoeye...">
             </label>
-            <div class="shop-reference-card-grid" data-shop-reference-grid>
+            <div class="shop-reference-category-grid" data-shop-reference-category-grid>
+              ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCounts.get(category) || 0)).join("")}
+            </div>
+            <button class="secondary-button shop-reference-back" data-shop-reference-back type="button" hidden>All categories</button>
+            <div class="shop-reference-card-grid" data-shop-reference-grid hidden>
               ${sortedSections.map(renderReferenceTable).join("")}
             </div>
             <p class="shop-reference-empty" data-shop-reference-empty hidden>No matching reference cards.</p>
             ${shopReferenceSections.length > pageSize ? `
               <div class="pagination-bar shop-reference-pagination">
                 <button class="secondary-button page-action-button" data-shop-reference-page="prev" type="button" disabled>Previous</button>
-                <span data-shop-reference-page-status>Showing 1-${Math.min(pageSize, sortedSections.length)} of ${sortedSections.length} - Page 1 of ${totalPages}</span>
+                <span data-shop-reference-page-status>Showing ${shopReferenceCategories.length} categories</span>
                 <button class="secondary-button page-action-button" data-shop-reference-page="next" type="button">Next</button>
               </div>
             ` : ""}

@@ -4806,6 +4806,56 @@ textarea {
   padding: 10px 12px;
 }
 
+.shop-reference-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.shop-reference-category-card {
+  display: grid;
+  gap: 7px;
+  min-height: 118px;
+  border: 2px solid color-mix(in srgb, var(--blue) 24%, var(--line));
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 66%),
+    var(--surface);
+  color: var(--ink);
+  padding: 13px;
+  text-align: left;
+}
+
+.shop-reference-category-card:hover,
+.shop-reference-category-card:focus-visible,
+.shop-reference-category-card.shop-reference-category-active {
+  border-color: color-mix(in srgb, var(--blue) 52%, var(--line));
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+.shop-reference-category-card span {
+  font-size: 1rem;
+  font-weight: 840;
+}
+
+.shop-reference-category-card small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.shop-reference-category-card strong {
+  align-self: end;
+  color: var(--blue);
+  font-size: 0.82rem;
+  font-weight: 820;
+}
+
+.shop-reference-back {
+  justify-self: start;
+}
+
 .shop-reference-empty {
   border: 1px dashed color-mix(in srgb, var(--blue) 28%, var(--line));
   border-radius: 8px;

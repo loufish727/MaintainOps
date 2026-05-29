@@ -507,9 +507,13 @@
 
       const pageSize = Math.max(1, Number(panel.dataset.shopReferencePageSize) || 12);
       const searchInput = panel.querySelector("[data-shop-reference-search-input]");
+      const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
+      const categoryCards = Array.from(panel.querySelectorAll("[data-shop-reference-category]"));
+      const backButton = panel.querySelector("[data-shop-reference-back]");
       const emptyState = panel.querySelector("[data-shop-reference-empty]");
       let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);
       let searchQuery = "";
+      let activeCategory = "";
       let cachedFavorites = null;
       const readFavorites = () => {
         if (cachedFavorites) return cachedFavorites;
@@ -562,6 +566,12 @@
         const haystack = `${normalizedTitle(card)} ${card.dataset.shopReferenceSearch || ""}`.toLowerCase();
         return tokens.every((token) => haystack.includes(token));
       };
+      const matchesCategory = (card) => (
+        !activeCategory || searchQuery || card.dataset.shopReferenceCategory === activeCategory
+      );
+      const activeCategoryLabel = () => (
+        categoryCards.find((card) => card.dataset.shopReferenceCategory === activeCategory)?.querySelector?.("span")?.textContent?.trim() || activeCategory
+      );
       const pageStatus = () => panel.querySelector("[data-shop-reference-page-status]");
       const pageButton = (direction) => panel.querySelector(`[data-shop-reference-page="${direction}"]`);
       const closeCards = (except = null) => {
@@ -573,25 +583,42 @@
         if (options.closeOpen) closeCards();
         const favorites = readFavorites();
         applyFavoriteState(favorites);
-        const ordered = orderedCards(favorites).filter(matchesSearch);
+        const showCategories = !searchQuery && !activeCategory;
+        if (categoryGrid) categoryGrid.hidden = !showCategories;
+        if (grid) grid.hidden = showCategories;
+        if (backButton) {
+          backButton.hidden = showCategories;
+          backButton.textContent = activeCategory && !searchQuery ? "All categories" : "All categories";
+        }
+        categoryCards.forEach((card) => {
+          const active = card.dataset.shopReferenceCategory === activeCategory && !searchQuery;
+          card.classList.toggle("shop-reference-category-active", active);
+          card.setAttribute?.("aria-pressed", String(active));
+        });
+        const ordered = showCategories ? [] : orderedCards(favorites).filter((card) => matchesSearch(card) && matchesCategory(card));
         const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
         currentPage = Math.min(Math.max(1, currentPage), totalPages);
         const startIndex = (currentPage - 1) * pageSize;
         const pageCards = ordered.slice(startIndex, startIndex + pageSize);
         grid.textContent = "";
         pageCards.forEach((card) => grid.appendChild(card));
-        if (emptyState) emptyState.hidden = ordered.length > 0;
+        if (emptyState) emptyState.hidden = showCategories || ordered.length > 0;
         const status = pageStatus();
         if (status) {
-          const firstShown = ordered.length ? startIndex + 1 : 0;
-          const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
-          const searchSuffix = searchQuery ? ` for "${searchQuery}"` : "";
-          status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
+          if (showCategories) {
+            status.textContent = `Showing ${categoryCards.length} categories`;
+          } else {
+            const firstShown = ordered.length ? startIndex + 1 : 0;
+            const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
+            const searchSuffix = searchQuery ? ` for "${searchQuery}"` : "";
+            const categorySuffix = activeCategory && !searchQuery ? ` in ${activeCategoryLabel()}` : "";
+            status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${categorySuffix}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
+          }
         }
         const prev = pageButton("prev");
         const next = pageButton("next");
-        if (prev) prev.disabled = currentPage <= 1;
-        if (next) next.disabled = currentPage >= totalPages;
+        if (prev) prev.disabled = showCategories || currentPage <= 1;
+        if (next) next.disabled = showCategories || currentPage >= totalPages;
         try {
           storage?.setItem(pageKey, String(currentPage));
         } catch (error) {}
@@ -606,6 +633,22 @@
 
       searchInput?.addEventListener("input", () => {
         searchQuery = searchInput.value.trim();
+        currentPage = 1;
+        renderOrder({ closeOpen: true });
+      });
+
+      categoryCards.forEach((card) => {
+        card.addEventListener?.("click", () => {
+          activeCategory = card.dataset.shopReferenceCategory || "";
+          currentPage = 1;
+          renderOrder({ closeOpen: true });
+        });
+      });
+
+      backButton?.addEventListener?.("click", () => {
+        activeCategory = "";
+        searchQuery = "";
+        if (searchInput) searchInput.value = "";
         currentPage = 1;
         renderOrder({ closeOpen: true });
       });
