@@ -4518,8 +4518,16 @@ textarea {
 
 .shop-reference-note {
   border-top: 1px solid color-mix(in srgb, var(--blue) 14%, var(--line));
+  color: #c51f32;
+  font-size: 0.82rem;
+  font-weight: 740;
   margin: 0;
   padding: 9px 12px 11px;
+}
+
+.shop-reference-note span {
+  display: inline-block;
+  margin-right: 4px;
 }
 
 @media (max-width: 760px) {
