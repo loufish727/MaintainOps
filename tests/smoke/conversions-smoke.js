@@ -171,7 +171,7 @@ assert.match(html, /<td data-label="Verify by">check module diagram<\/td>/);
 assert.match(html, /shop-reference-row-detail/);
 assert.match(html, /shop-reference-line-detail/);
 assert.match(html, /shop-reference-detail-panel/);
-assert.match(html, /Details for SPN/);
+assert.match(html, /Details for row above: SPN/);
 assert.match(html, /Related chart/);
 assert.match(html, /Alternate names/);
 assert.match(html, /Close-but-wrong matches/);

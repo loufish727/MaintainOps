@@ -1796,7 +1796,7 @@
         <tr class="shop-reference-row-detail">
           <td colspan="${columns.length}">
             <details class="shop-reference-line-detail">
-              <summary>Details for ${escapeHtml(label)}</summary>
+              <summary><span aria-hidden="true"></span>Details for row above: ${escapeHtml(label)}</summary>
               <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} ${escapeHtml(label)} reference context">
                 ${details.map(([detailLabel, value]) => `
                   <div class="shop-reference-detail-item">

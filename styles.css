@@ -5021,9 +5021,14 @@ textarea {
 }
 
 .shop-reference-row-detail td {
-  background: color-mix(in srgb, var(--panel) 70%, white);
+  background: color-mix(in srgb, var(--blue) 4%, var(--panel));
   border-top: 0;
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--blue) 58%, var(--line));
   padding: 0;
+}
+
+.shop-reference-data-row + .shop-reference-row-detail td {
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 16%, var(--line));
 }
 
 .shop-reference-line-detail {
@@ -5035,11 +5040,21 @@ textarea {
   color: var(--blue);
   cursor: pointer;
   display: flex;
+  gap: 7px;
   font-size: 0.78rem;
   font-weight: 820;
   justify-content: flex-start;
   min-height: 34px;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 14px;
+}
+
+.shop-reference-line-detail summary > span {
+  border-bottom: 2px solid color-mix(in srgb, var(--blue) 68%, var(--line));
+  border-left: 2px solid color-mix(in srgb, var(--blue) 68%, var(--line));
+  border-radius: 0 0 0 4px;
+  flex: 0 0 18px;
+  height: 11px;
+  margin-top: -5px;
 }
 
 .shop-reference-line-detail[open] summary {
