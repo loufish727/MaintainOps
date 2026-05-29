@@ -4697,7 +4697,14 @@ textarea {
 }
 
 .shop-reference-card.shop-reference-favorited {
+  border-color: color-mix(in srgb, #d89b00 62%, var(--line));
   border-left-color: #d89b00;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #d89b00 18%, transparent), transparent 58%),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    0 0 0 3px color-mix(in srgb, #d89b00 18%, transparent);
 }
 
 .shop-reference-card[open] {
@@ -4767,7 +4774,13 @@ textarea {
 }
 
 .shop-reference-favorite[aria-pressed="true"] {
-  background: color-mix(in srgb, #d89b00 18%, var(--surface));
+  border-color: #d89b00;
+  background: #d89b00;
+  color: #1f1600;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.42),
+    0 0 0 3px color-mix(in srgb, #d89b00 24%, transparent);
+  transform: scale(1.08);
 }
 
 .shop-reference-pagination {
