@@ -508,7 +508,7 @@
       const pageSize = Math.max(1, Number(panel.dataset.shopReferencePageSize) || 12);
       const searchInput = panel.querySelector("[data-shop-reference-search-input]");
       const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
-      const categoryCards = Array.from(panel.querySelectorAll("[data-shop-reference-category]"));
+      const categoryCards = Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
       const backButton = panel.querySelector("[data-shop-reference-back]");
       const emptyState = panel.querySelector("[data-shop-reference-empty]");
       let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);

@@ -378,7 +378,12 @@ const betaCard = createReferenceCard("Beta Reference");
 const pageStatus = { textContent: "" };
 const searchInput = { value: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const emptyState = { hidden: true };
-const categoryGrid = { hidden: false };
+const categoryGrid = {
+  hidden: false,
+  querySelectorAll(selector) {
+    return selector === "[data-shop-reference-category]" ? [electricalCategory, bearingCategory] : [];
+  },
+};
 function createCategoryCard(id, label) {
   return {
     dataset: { shopReferenceCategory: id },
