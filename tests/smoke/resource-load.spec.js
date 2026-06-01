@@ -138,6 +138,7 @@ const requiredResources = [
   "src/render/quickFixDisplay.js",
   "src/render/authDisplay.js",
   "src/render/publicRequestDisplay.js",
+  "src/data/shopReferenceCharts.js",
   "src/render/conversionDisplay.js",
   "src/render/messageFormatting.js",
   "src/render/messageDisplay.js",

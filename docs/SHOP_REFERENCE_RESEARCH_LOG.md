@@ -319,3 +319,18 @@ Reason: Diesel/mobile references can influence diagnostic direction, parts repla
 ### Standard Feedback
 
 The diesel/mobile batch benefits from the senior-tech standard because many rows are not part numbers; they are diagnostic direction clues. The chart should make the first verification step obvious without pretending to replace OEM service information.
+
+## Shop Reference Data Boundary - Implemented
+
+Reason: The shop reference library is expected to keep growing, so chart data should not live inside the conversion renderer or app coordinator.
+
+Decision:
+
+- Moved shop reference chart definitions to `src/data/shopReferenceCharts.js`.
+- Kept rendering behavior in `src/render/conversionDisplay.js`.
+- Loaded the data module before the renderer in `index.html`.
+- Added the data module to the resource-load smoke list.
+
+Standard:
+
+New chart rows, signal badges, and row teaching should be added to `src/data/shopReferenceCharts.js`. Renderer changes should stay in `src/render/conversionDisplay.js` only when layout or behavior changes.
