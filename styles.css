@@ -5189,7 +5189,7 @@ textarea {
 .shop-reference-detail-panel {
   display: grid;
   gap: 9px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   padding: 11px;
 }
 

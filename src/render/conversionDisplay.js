@@ -1764,25 +1764,6 @@
         .join(", ");
     }
 
-    function relatedReferenceTitles(section, category) {
-      return shopReferenceSections
-        .filter((candidate) => candidate !== section && shopReferenceCategory(candidate) === category)
-        .map((candidate) => candidate.title)
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, 3)
-        .join(", ");
-    }
-
-    function referenceDetailItems(section, category) {
-      return [
-        ["Related chart", relatedReferenceTitles(section, category) || "Use category search for nearby shop references"],
-        ["Alternate names", referenceAlternateNames(section, category)],
-        ["Close-but-wrong matches", referenceWrongMatches(section, category)],
-        ["Source family", referenceSourceFamily(section, category)],
-        ["Examples", referenceExamples(section) || "See table rows"],
-      ];
-    }
-
     function rowDetailLabel(row) {
       return row[0] || "This row";
     }
@@ -1802,11 +1783,57 @@
       return row.filter(Boolean).join(" / ");
     }
 
+    function mechanic101ForReference(section) {
+      return detailTextFromRules(section, [
+        { pattern: /wire gauge/, text: "wire size, fuse size, insulation rating, and run length all matter" },
+        { pattern: /socket \/ wrench/, text: "wrench size is fastener head size, not bolt thread size" },
+        { pattern: /bearing quick/, text: "bearing bore, OD, width, suffix, seal style, and clearance all matter" },
+        { pattern: /bearing/, text: "match the complete bearing code, not just the bore" },
+        { pattern: /thread|tap|fastener/, text: "diameter, pitch, grade, and thread family must all match" },
+        { pattern: /torque/, text: "torque depends on grade, lubrication, thread condition, and OEM spec" },
+        { pattern: /hydraulic|hose|fitting|seal/, text: "pressure, material, sealing face, and contamination drive the right choice" },
+        { pattern: /sensor|plc|relay|contactor|wire|plug|fuse|transformer/, text: "voltage, current, AC/DC type, and wiring method must match the device" },
+        { pattern: /motor|vfd|drive/, text: "nameplate data and application load decide the correct setup" },
+        { pattern: /cnc|g-code|m-code|insert/, text: "active setup, control model, tooling, and offsets change what the code means" },
+        { pattern: /weld|electrode|mig|plasma/, text: "material, process, position, filler, and machine settings must agree" },
+      ], "identify the part family, then verify the exact marking, size, and application");
+    }
+
+    function seniorTechNoteForReference(section, row, category) {
+      const label = rowDetailLabel(row);
+      const rowText = row.join(" ").toLowerCase();
+      if (/wire gauge/i.test(section.title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
+        return `${label} AWG is common enough to recognize quickly, but fuse size, run length, and insulation rating still decide the final answer`;
+      }
+      if (/socket \/ wrench/i.test(section.title) && /10 mm/.test(rowText)) {
+        return "10mm is a high-frequency mechanic size because it appears constantly on metric hardware; keep extras, but do not treat a loose SAE fit as correct";
+      }
+      if (/socket \/ wrench/i.test(section.title) && /(13 mm|14 mm|19 mm)/.test(rowText)) {
+        return `${row[1]} is common in metric work; use close-fit notes for identification, then seat the correct socket before applying load`;
+      }
+      if (/bearing quick/i.test(section.title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
+        return `${label} is common in rotating equipment, but suffix, clearance, seal/shield style, and fit are where replacements go wrong`;
+      }
+      return `${label}: ${referenceWrongMatches(section, category)}. Verify before replacing, tightening, wiring, or ordering.`;
+    }
+
+    function riskSignalForReference(section, row) {
+      const title = section.title.toLowerCase();
+      const rowText = row.join(" ").toLowerCase();
+      const relevance = rowRelevance(section, row);
+      if (/torque|wire|fuse|hydraulic|pressure|lifting|structural|electrical/.test(title)) return "Spec required";
+      if (/wrong|not npt|not sealed|overheat|leak|fault|failure|symptom/.test(rowText)) return "High consequence";
+      if (relevance) return relevance;
+      return "Verify first";
+    }
+
     function rowDetailItems(section, row, category) {
       return [
-        ["Related chart", relatedReferenceTitles(section, category) || "Use category search for nearby shop references"],
-        ["Alternate names", rowAlternateNames(section, row, category)],
-        ["Close-but-wrong matches", rowWrongMatches(section, row, category)],
+        ["Mechanic 101", mechanic101ForReference(section)],
+        ["Common confusion", rowWrongMatches(section, row, category)],
+        ["Senior tech note", seniorTechNoteForReference(section, row, category)],
+        ["Verify by", verifyByForReference(section, row)],
+        ["Risk / signal", riskSignalForReference(section, row)],
         ["Source family", referenceSourceFamily(section, category)],
         ["Example", rowExample(row)],
       ];
@@ -1855,14 +1882,12 @@
       const kind = shopReferenceKind(section);
       const columns = [...section.columns, "Verify by"];
       const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
-      const detailItems = referenceDetailItems(section, category);
       const rowDetails = section.rows.map((row) => rowDetailItems(section, row, category));
       const searchableText = [
         section.title,
         category,
         section.note,
         ...columns,
-        ...detailItems.flat(),
         ...rowDetails.flat(2),
         ...rows.flat(),
       ].join(" ");

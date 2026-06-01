@@ -24,11 +24,12 @@ Three chart families were used to establish the relevance pattern:
 
 ## Minimum Chart Quality
 
+Expanded row detail should avoid loop-around navigation noise. Do not add a generic "related chart" box unless it names a direct next lookup that changes the decision.
+
 Each chart should include:
 
 - A practical row label.
 - A sizing or identity value.
-- A common use note.
+- A field note that explains why mechanics care.
 - A watch point or verify-by path.
-- Detail rows that include alternate names, close-but-wrong matches, source family, and example context.
-
+- Detail rows that include Mechanic 101, common confusion, senior tech note, verify-by, risk/signal, source family, and example context.
