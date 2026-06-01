@@ -130,21 +130,22 @@ assert.match(html, /Industrial PLC Sourcing \/ Sinking Reference/);
 assert.match(html, /Control Transformer Reference/);
 assert.match(html, /77 charts \/ 12 per page/);
 assert.match(html, /data-shop-reference-category-grid/);
-assert.match(html, /shop-reference-top-strip/);
-assert.match(html, /data-shop-reference-top="Drill \/ Tap Quick Reference"/);
-assert.match(html, /data-shop-reference-top="Wire Gauge Reference"/);
-assert.match(html, /data-shop-reference-top="CNC G-Code Quick Reference"/);
+assert.doesNotMatch(html, /shop-reference-top-strip/);
+assert.doesNotMatch(html, /data-shop-reference-top=/);
 assert.match(html, /data-shop-reference-kind-grid/);
 assert.match(html, /data-shop-reference-kind="sizing-id"/);
 assert.match(html, /data-shop-reference-kind="troubleshooting"/);
 assert.match(html, /data-shop-reference-kind="codes-symbols"/);
 assert.match(html, /data-shop-reference-kind="common-specs"/);
-assert.match(html, /Reference type/);
+assert.match(html, /1\. Choose reference type/);
+assert.match(html, /2\. Narrow by trade area/);
 assert.match(html, /Sizing \/ ID/);
 assert.match(html, /Troubleshooting/);
 assert.match(html, /Codes \/ symbols/);
 assert.match(html, /Common specs/);
+assert.match(html, /data-shop-reference-category-group hidden/);
 assert.match(html, /data-shop-reference-category=""/);
+assert.match(html, /All trade areas/);
 assert.match(html, /data-shop-reference-category="fasteners"/);
 assert.match(html, /data-shop-reference-category="diesel-mobile"/);
 assert.match(html, /data-shop-reference-category="machining-cnc"/);
@@ -543,7 +544,6 @@ const betaCard = createReferenceCard("Beta Reference");
 const pageStatus = { textContent: "" };
 const searchInput = { value: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const emptyState = { hidden: true };
-const topButton = { dataset: { shopReferenceTop: "Alpha" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const kindGrid = {
   hidden: false,
   listeners: {},
@@ -553,6 +553,7 @@ const kindGrid = {
     return selector === "[data-shop-reference-kind]" ? [sizingKind, codesKind] : [];
   },
 };
+const categoryGroup = { hidden: false };
 const categoryGrid = {
   hidden: false,
   listeners: {},
@@ -563,15 +564,22 @@ const categoryGrid = {
   },
 };
 function createCategoryCard(id, label) {
+  const countElement = { textContent: "" };
   return {
     dataset: { shopReferenceCategory: id },
+    hidden: false,
     listeners: {},
     attributes: {},
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
     closest(selector) { return selector === "[data-shop-reference-category]" ? this : null; },
-    querySelector(selector) { return selector === "span" ? { textContent: label } : null; },
+    querySelector(selector) {
+      if (selector === "span") return { textContent: label };
+      if (selector === "strong") return countElement;
+      return null;
+    },
     setAttribute(name, value) { this.attributes[name] = value; },
     addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+    countElement,
   };
 }
 function createKindCard(id, label) {
@@ -598,7 +606,6 @@ const nextButton = { disabled: false, dataset: { shopReferencePage: "next" }, li
 const shopPanel = {
   dataset: { shopReferencePageSize: "12" },
   querySelectorAll(selector) {
-    if (selector === "[data-shop-reference-top]") return [topButton];
     if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
     if (selector === "[data-shop-reference-page]") return [prevButton, nextButton];
     if (selector === "[data-shop-reference-kind]") return [sizingKind, codesKind];
@@ -608,6 +615,7 @@ const shopPanel = {
   querySelector(selector) {
     if (selector === "[data-shop-reference-grid]") return favoriteGridOne;
     if (selector === "[data-shop-reference-kind-grid]") return kindGrid;
+    if (selector === "[data-shop-reference-category-group]") return categoryGroup;
     if (selector === "[data-shop-reference-category-grid]") return categoryGrid;
     if (selector === "[data-shop-reference-back]") return backButton;
     if (selector === "[data-shop-reference-active-category]") return activeCategoryBanner;
@@ -626,7 +634,8 @@ const shopDocument = {
   },
 };
 bindShopReferenceEvents({ documentRef: shopDocument, storage: favoriteStorage });
-assert.equal(categoryGrid.hidden, false);
+assert.equal(categoryGroup.hidden, true);
+assert.equal(categoryGrid.hidden, true);
 assert.equal(favoriteGridOne.hidden, false);
 assert.equal(favoriteGridOne.children.length, 2);
 assert.equal(pageStatus.textContent, "Showing 1-2 of 2 - Page 1 of 1");
@@ -637,6 +646,11 @@ assert.equal(nextButton.disabled, true);
 kindGrid.listeners.click({ target: sizingKind });
 assert.equal(activeCategoryBanner.hidden, false);
 assert.equal(activeCategoryLabel.textContent, "Type: Sizing / ID");
+assert.equal(categoryGroup.hidden, false);
+assert.equal(categoryGrid.hidden, false);
+assert.equal(electricalCategory.hidden, true);
+assert.equal(bearingCategory.hidden, false);
+assert.equal(bearingCategory.countElement.textContent, "1 charts");
 assert.equal(sizingKind.classList.values["shop-reference-kind-active"], true);
 assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(favoriteGridOne.children.length, 1);
@@ -644,16 +658,21 @@ assert.equal(pageStatus.textContent, "Showing 1-1 of 1 in Sizing / ID - Page 1 o
 backButton.listeners.click();
 favoriteGridOne.scrollCalls = [];
 
+kindGrid.listeners.click({ target: codesKind });
+assert.equal(categoryGroup.hidden, false);
+assert.equal(electricalCategory.hidden, false);
+assert.equal(bearingCategory.hidden, true);
+favoriteGridOne.scrollCalls = [];
 categoryGrid.listeners.click({ target: electricalCategory });
 assert.equal(categoryGrid.hidden, false);
 assert.equal(favoriteGridOne.hidden, false);
 assert.equal(activeCategoryBanner.hidden, false);
-assert.equal(activeCategoryLabel.textContent, "Trade: Electrical & Controls");
+assert.equal(activeCategoryLabel.textContent, "Codes / symbols / Electrical & Controls");
 assert.equal(favoriteGridOne.scrollCalls.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(alphaCard.button.innerHTML, "&#9734;");
-assert.equal(pageStatus.textContent, "Showing 1-1 of 1 in Electrical & Controls - Page 1 of 1");
+assert.equal(pageStatus.textContent, "Showing 1-1 of 1 in Codes / symbols in Electrical & Controls - Page 1 of 1");
 assert.equal(prevButton.disabled, true);
 assert.equal(nextButton.disabled, true);
 
@@ -669,6 +688,7 @@ searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(activeCategoryLabel.textContent, "Search results for \"photoeye\"");
+assert.equal(categoryGroup.hidden, true);
 assert.equal(favoriteGridOne.scrollCalls.length, 2);
 assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"photoeye\" - Page 1 of 1");
 assert.equal(emptyState.hidden, true);
@@ -677,12 +697,6 @@ searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 1);
 assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"bearing\" - Page 1 of 1");
-topButton.listeners.click();
-assert.equal(searchInput.value, "Alpha");
-assert.equal(favoriteGridOne.children.length, 1);
-assert.equal(favoriteGridOne.children[0], alphaCard);
-assert.equal(activeCategoryLabel.textContent, "Search results for \"Alpha\"");
-assert.equal(pageStatus.textContent, "Showing 1-1 of 1 for \"Alpha\" - Page 1 of 1");
 searchInput.value = "no-hit";
 searchInput.listeners.input();
 assert.equal(favoriteGridOne.children.length, 0);
@@ -690,7 +704,8 @@ assert.equal(pageStatus.textContent, "Showing 0-0 of 0 for \"no-hit\" - Page 1 o
 assert.equal(emptyState.hidden, false);
 backButton.listeners.click();
 assert.equal(searchInput.value, "");
-assert.equal(categoryGrid.hidden, false);
+assert.equal(categoryGroup.hidden, true);
+assert.equal(categoryGrid.hidden, true);
 assert.equal(favoriteGridOne.hidden, false);
 assert.equal(favoriteGridOne.children[0], betaCard);
 assert.equal(favoriteGridOne.children[1], alphaCard);

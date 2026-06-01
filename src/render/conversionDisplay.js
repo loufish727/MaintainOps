@@ -2222,14 +2222,6 @@
       const kindCount = (kindId) => (
         shopReferenceSections.filter((section) => shopReferenceKind(section) === kindId).length
       );
-      const topReferenceTitles = [
-        "Drill / Tap Quick Reference",
-        "Wire Gauge Reference",
-        "Bearing Quick Reference",
-        "CNC G-Code Quick Reference",
-        "Diesel SPN / FMI Diagnostic Reference",
-        "Weld Symbol Quick Reference",
-      ];
       const totalPages = Math.max(1, Math.ceil(sortedSections.length / pageSize));
       return `
         <section class="shop-reference-panel" data-shop-reference-panel data-shop-reference-page-size="${pageSize}">
@@ -2245,14 +2237,8 @@
               <span>Search references</span>
               <input data-shop-reference-search-input type="search" inputmode="search" autocomplete="off" placeholder="Try 6205, NPT, M12, 5VX800, photoeye...">
             </label>
-            <div class="shop-reference-top-strip" aria-label="Top shop references">
-              <span>Top references</span>
-              ${topReferenceTitles.map((title) => `
-                <button class="shop-reference-top-button" data-shop-reference-top="${escapeHtml(title)}" type="button">${escapeHtml(title.replace(" Reference", ""))}</button>
-              `).join("")}
-            </div>
             <div class="shop-reference-filter-group">
-              <span>Reference type</span>
+              <span>1. Choose reference type</span>
               <div class="shop-reference-kind-grid" data-shop-reference-kind-grid>
                 <button class="shop-reference-kind-card" data-shop-reference-kind="" type="button">
                   <span>All types</span>
@@ -2261,11 +2247,11 @@
                 ${shopReferenceKinds.map((kind) => renderKindCard(kind, kindCount(kind.id))).join("")}
               </div>
             </div>
-            <div class="shop-reference-filter-group">
-              <span>Trade area</span>
+            <div class="shop-reference-filter-group" data-shop-reference-category-group hidden>
+              <span>2. Narrow by trade area</span>
             <div class="shop-reference-category-grid" data-shop-reference-category-grid>
-              <button class="shop-reference-category-card" data-shop-reference-category="" type="button" title="Show every reference">
-                <span>All</span>
+              <button class="shop-reference-category-card" data-shop-reference-category="" type="button" title="Show every trade area for the selected reference type">
+                <span>All trade areas</span>
                 <strong>${shopReferenceSections.length} charts</strong>
               </button>
               ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCount(category.id))).join("")}

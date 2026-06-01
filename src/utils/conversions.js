@@ -504,6 +504,7 @@
       const kindGrid = panel.querySelector("[data-shop-reference-kind-grid]");
       const kindCards = () => Array.from(kindGrid?.querySelectorAll?.("[data-shop-reference-kind]") || []);
       const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
+      const categoryGroup = panel.querySelector("[data-shop-reference-category-group]");
       const categoryCards = () => Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
       const backButton = panel.querySelector("[data-shop-reference-back]");
       const activeCategoryBanner = panel.querySelector("[data-shop-reference-active-category]");
@@ -571,6 +572,10 @@
       const matchesKind = (card) => (
         !activeKind || searchQuery || card.dataset.shopReferenceKind === activeKind
       );
+      const categoryCountForKind = (categoryId) => cards.filter((card) => (
+        (!activeKind || card.dataset.shopReferenceKind === activeKind)
+        && (!categoryId || card.dataset.shopReferenceCategory === categoryId)
+      )).length;
       const activeKindLabel = () => (
         kindCards().find((card) => card.dataset.shopReferenceKind === activeKind)?.querySelector?.("span")?.textContent?.trim() || activeKind
       );
@@ -593,10 +598,11 @@
         applyFavoriteState(favorites);
         const hasFilter = Boolean(searchQuery || activeKind || activeCategory);
         if (kindGrid) kindGrid.hidden = false;
-        if (categoryGrid) categoryGrid.hidden = false;
+        if (categoryGroup) categoryGroup.hidden = Boolean(searchQuery || !activeKind);
+        if (categoryGrid) categoryGrid.hidden = Boolean(searchQuery || !activeKind);
         if (grid) grid.hidden = false;
         if (backButton) {
-          backButton.textContent = "All filters";
+          backButton.textContent = "Reset filters";
         }
         if (activeCategoryBanner) {
           activeCategoryBanner.hidden = !hasFilter;
@@ -620,6 +626,13 @@
           card.setAttribute?.("aria-pressed", String(active));
         });
         categoryCards().forEach((card) => {
+          const categoryId = card.dataset.shopReferenceCategory || "";
+          const relevantCount = categoryCountForKind(categoryId);
+          const countElement = card.querySelector?.("strong");
+          if (countElement && activeKind && !searchQuery) {
+            countElement.textContent = `${relevantCount} charts`;
+          }
+          card.hidden = Boolean(activeKind && !searchQuery && categoryId && relevantCount === 0);
           const active = card.dataset.shopReferenceCategory === activeCategory && !searchQuery;
           card.classList.toggle("shop-reference-category-active", active);
           card.setAttribute?.("aria-pressed", String(active));
@@ -680,6 +693,7 @@
         const card = event.target?.closest?.("[data-shop-reference-kind]");
         if (!card || !kindGrid.contains?.(card)) return;
         activeKind = card.dataset.shopReferenceKind || "";
+        activeCategory = "";
         currentPage = 1;
         renderOrder({ closeOpen: true });
         focusResults();
@@ -690,6 +704,7 @@
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault?.();
           activeKind = card.dataset.shopReferenceKind || "";
+          activeCategory = "";
           currentPage = 1;
           renderOrder({ closeOpen: true });
           focusResults();
