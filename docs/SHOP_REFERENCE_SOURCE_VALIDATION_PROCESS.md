@@ -95,6 +95,20 @@ Highlighted rows need row-level support:
 - `Spec required`: source family must be clear, and the row must direct the user to the final authority.
 - `Common failure`: at least one troubleshooting/failure source and one field-use source.
 
+## Signal Detail Gate
+
+If a row is important enough to receive a signal badge, it is not allowed to rely on generic expanded teaching text.
+
+Every badged row must have row-specific:
+
+- Common confusion.
+- Senior tech note.
+- Verification path.
+- Risk/signal label.
+- Example context tied to that exact row.
+
+Generic fallback text can still support unbadged rows or search metadata, but it should not appear in the rendered expanded detail for `Very common`, `Easy mix-up`, `High consequence`, `Spec required`, `Common failure`, `Stock item`, or `Field shortcut` rows.
+
 ## Badge Rules
 
 Use badges sparingly. A badge is a teaching signal, not decoration.
@@ -129,4 +143,3 @@ For each chart:
 - Forum and technician sources identify common confusion, field language, time sinks, and failure patterns.
 - Beginner/101 sources help phrase explanations clearly.
 - Forums must not be used as final authority for code, torque, pressure, electrical limits, or safety-critical values.
-

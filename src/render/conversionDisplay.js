@@ -938,6 +938,36 @@
           "Carbon tracking": "Easy mix-up",
           "Worn electrode": "Very common",
         },
+        rowTeaching: {
+          "Dry carbon fouling": {
+            commonConfusion: "Dry carbon is often blamed on the plug alone, but the soot usually points back to rich mixture, weak ignition, too much idle/cold running, or the wrong heat range.",
+            seniorTechNote: "Dry carbon fouling points toward rich running, weak ignition, cold operation, or the wrong heat range; replace the plug only after checking why it fouled.",
+          },
+          "Fuel wet fouling": {
+            commonConfusion: "Fuel-wet and oil-wet plugs can both look wet at a glance. Smell, texture, cylinder data, and compression separate the cause.",
+            seniorTechNote: "A fuel-wet plug is usually telling you the cylinder did not light off; check spark, injector behavior, and compression before blaming the plug.",
+          },
+          "Oil fouling": {
+            commonConfusion: "Oil fouling can be mistaken for a bad plug. The plug may be the symptom, while rings, guides, PCV, or cylinder wear are the cause.",
+            seniorTechNote: "Oil fouling is a root-cause clue. The new plug may foul again if oil control, PCV, guides, rings, or cylinder wear are ignored.",
+          },
+          "Ash deposits": {
+            commonConfusion: "Ash deposits are dry crusty residue, not the same thing as a wet oil-fouled plug. Additives, oil consumption, or fuel/oil contamination can leave light-colored buildup.",
+            seniorTechNote: "Ash deposits are a residue clue. Check oil use, additives, fuel quality, and whether the same crust appears across cylinders before replacing plugs and calling it fixed.",
+          },
+          "Overheated / blistered": {
+            commonConfusion: "Overheated plug signs can be confused with normal light coloring. Blistering, eroded electrodes, timing, lean mix, cooling, and heat range matter.",
+            seniorTechNote: "Overheated plug damage is a stop-and-check signal because lean operation, timing, cooling, or wrong heat range can hurt the engine.",
+          },
+          "Carbon tracking": {
+            commonConfusion: "Carbon tracking can be missed because the plug tip may not look terrible. The spark may be leaking down the insulator or boot path.",
+            seniorTechNote: "Carbon tracking often follows the boot path, so a new plug alone may not fix the misfire if the boot, coil, or wire leaks spark.",
+          },
+          "Worn electrode": {
+            commonConfusion: "A worn electrode can look like an ordinary old plug until the gap is measured. Mileage, gap growth, and even wear across cylinders separate normal wear from a deeper issue.",
+            seniorTechNote: "A worn electrode is common maintenance evidence; check gap, mileage, and whether the wear is even across cylinders.",
+          },
+        },
         rows: [
           ["Normal", "light tan/gray, slight wear", "baseline after real running", "compare cylinders"],
           ["Dry carbon fouling", "dry black soot", "rich mixture, weak spark, cold running", "air/fuel/ignition"],
@@ -1026,6 +1056,63 @@
           ["Pump whine", "cavitation", "low inlet flow", "suction strainer"],
           ["Jerky motion", "air/contamination", "cylinders", "bleed/filter"],
           ["Black oil", "heat/contamination", "old fluid", "sample oil"],
+        ],
+      },
+      {
+        title: "Hydraulic Fluid Condition Reference",
+        note: "Fluid appearance is a field clue, not a lab result. Compare a clean sample, check filters and reservoir conditions, and use oil analysis when the finding affects operation.",
+        columns: ["Condition", "Look", "Likely clue", "First check"],
+        signalDetailsOnly: true,
+        rowSignals: {
+          "Milky / cloudy oil": "High consequence",
+          "Foam on surface": "Common failure",
+          "Air bubbles suspended": "Easy mix-up",
+          "Dark / burnt smell": "High consequence",
+          "Metallic sparkle": "High consequence",
+          "Sludge / varnish": "Common failure",
+          "Water at reservoir drain": "Common failure",
+        },
+        rowTeaching: {
+          "Milky / cloudy oil": {
+            commonConfusion: "Milky oil is often treated like normal color change, but a cloudy emulsion points toward water mixed into the oil and can mean rust, cavitation, sludge, and poor lubricity.",
+            seniorTechNote: "Milky oil is a stop-and-sample clue. Check for free water, bad breathers, washdown entry, cooler leaks, and whether the machine has been agitating water into the reservoir.",
+          },
+          "Foam on surface": {
+            commonConfusion: "Surface foam and suspended air are related but not identical. Foam is visible on top; entrained air can hide below the surface and still cause noise, heat, and sluggish response.",
+            seniorTechNote: "Foam usually means air management trouble. Check oil level, return flow, anti-foam condition, suction leaks, and whether the reservoir is being churned or overfilled.",
+          },
+          "Air bubbles suspended": {
+            commonConfusion: "Suspended bubbles can be mistaken for water haze. Let the sample sit and compare: air clears differently, while water emulsion often stays cloudy or separates slowly.",
+            seniorTechNote: "Entrained air is a pump and valve warning. Look for suction leaks, low oil level, return-line aeration, cylinder cycling effects, and cavitation noise before changing parts.",
+          },
+          "Dark / burnt smell": {
+            commonConfusion: "Dark oil is not automatically failed oil, but burnt odor plus darkening points toward heat, oxidation, overextended service, or the wrong operating condition.",
+            seniorTechNote: "Burnt-smelling oil is a heat-history clue. Check temperature, cooler flow, relief bypass, filter restriction, viscosity, and whether the oil analysis shows oxidation or additive depletion.",
+          },
+          "Metallic sparkle": {
+            commonConfusion: "Shiny particles are not the same as ordinary dirt. Metal in the sample points toward active wear, repair debris, cavitation damage, or a component breaking down.",
+            seniorTechNote: "Metal sparkle should trigger filter inspection and oil analysis. Cut the filter if practical, check recent repairs, and watch pumps, motors, cylinders, and valves for generated wear.",
+          },
+          "Sludge / varnish": {
+            commonConfusion: "Sticky varnish is easy to confuse with dirt, but it often comes from oxidation, heat, air, water, or degraded oil chemistry and can stick valves even when bulk oil tests look normal.",
+            seniorTechNote: "Varnish is a reliability clue, not just dirty oil. Check temperature control, oil age, valve sticking complaints, filter loading, and whether varnish-specific testing or cleanup is needed.",
+          },
+          "Water at reservoir drain": {
+            commonConfusion: "Free water at the drain can be missed if only the top of the reservoir is checked. Oil floats above water, so the bottom drain tells a different story than the sight glass.",
+            seniorTechNote: "Free water means find the entry path. Check breathers, washdown, storage/top-off handling, coolers, condensation cycles, and whether dehydration or fluid change is required.",
+          },
+        },
+        rows: [
+          ["Clear / normal color", "clear amber to darker normal", "baseline depends on oil age/type", "compare clean sample"],
+          ["Milky / cloudy oil", "hazy, cloudy, mayonnaise-like", "water contamination/emulsion", "bottom drain + sample"],
+          ["Foam on surface", "bubbles sitting on top", "air contamination or churn", "oil level/suction leaks"],
+          ["Air bubbles suspended", "tiny bubbles in oil body", "entrained air/aeration", "let sample settle"],
+          ["Dark / burnt smell", "dark oil, hot odor", "oxidation/overheat", "temperature + oil sample"],
+          ["Metallic sparkle", "shiny flakes or glitter", "wear debris/repair debris", "filter + oil analysis"],
+          ["Sludge / varnish", "sticky brown film/deposits", "oxidation/deposit formation", "valves/filter/temperature"],
+          ["Water at reservoir drain", "free water or emulsion first", "water settled at bottom", "drain test + source"],
+          ["Dirty / gritty oil", "visible dirt or grit", "particulate ingress", "filter/breather/service practice"],
+          ["Wrong or mixed fluid", "odd color or separation", "cross-contamination/additive clash", "fluid ID + service history"],
         ],
       },
       {
@@ -1618,7 +1705,7 @@
 
     function shopReferenceKind(section) {
       const title = section.title.toLowerCase();
-      if (/failure|symptom|troubleshooting|fault|leak|spark plug|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
+      if (/failure|symptom|troubleshooting|fault|leak|fluid condition|spark plug|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
       if (/g-code|m-code|gd&t|weld symbol|relay \/ contactor symbol|plc|wire color|sourcing \/ sinking|control panel terminal/.test(title)) return "codes-symbols";
       if (/load|fluid|filter|oil|grease|threadlocker|battery|charging|extension cord|transformer|drive \/ motor|plasma|mig wire|stick electrode/.test(title)) return "common-specs";
       return "sizing-id";
@@ -1695,6 +1782,7 @@
       if (/pipe \/ tubing/.test(title)) return "measure OD + wall/nominal";
       if (/fitting \/ thread/.test(title)) return "check thread + sealing face";
       if (/hydraulic hose/.test(title)) return "read hose layline";
+      if (/hydraulic fluid condition/.test(title)) return "sample oil + system clues";
       if (/hose clamp/.test(title)) return "measure hose OD range";
       if (/pneumatic fitting/.test(title)) return "measure tube OD + thread";
       if (/air cylinder|pneumatic cylinder/.test(title)) return "measure bore/stroke";
@@ -1732,6 +1820,7 @@
         { pattern: /spark plug/, text: "spark plug manufacturer diagnosis guides, OEM service data, cylinder comparison, scan data" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor|thermocouple|rtd/, text: "NEC/NFPA 70, NEMA/IEC standards, device datasheets" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "NEMA/IEC motor data, drive manual, OEM mechanical catalog" },
+        { pattern: /hydraulic fluid condition/, text: "hydraulic fluid OEM manuals, filtration guidance, lubricant manufacturer data, oil analysis references" },
         { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "SAE/ISO fluid power standards, hose/fitting/seal catalog" },
         { pattern: /pneumatic|air cylinder|solenoid/, text: "ISO pneumatic standards, valve/cylinder manufacturer data" },
         { pattern: /bearing|belt|chain|sprocket|roller/, text: "ABMA/ISO bearing data, belt/chain manufacturer catalog" },
@@ -1762,6 +1851,7 @@
         { pattern: /bearing/, text: "bearing number, bearing code, bearing ID" },
         { pattern: /belt/, text: "V-belt, belt section, belt code" },
         { pattern: /chain/, text: "roller chain, chain pitch, sprocket chain" },
+        { pattern: /hydraulic fluid condition/, text: "oil condition, fluid contamination, hydraulic oil sample, reservoir check" },
         { pattern: /hydraulic hose/, text: "hose dash size, hose ID, hydraulic line" },
         { pattern: /fitting|thread/, text: "adapter, thread form, sealing face" },
         { pattern: /o-ring/, text: "seal ring, elastomer seal, dash size" },
@@ -1783,6 +1873,7 @@
         { pattern: /spark plug/, text: "plug appearance mistaken for final diagnosis, fuel wet vs oil wet, heat range issue vs engine problem" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor/, text: "same voltage with wrong current, AC/DC mix-up, source/sink reversed" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "same HP with wrong frame, wrong base speed, wrong shaft or service factor" },
+        { pattern: /hydraulic fluid condition/, text: "normal darkening vs failed oil, water haze vs air bubbles, dirt vs wear metal, visual clue vs oil analysis result" },
         { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "close OD with wrong thread, wrong sealing face, wrong pressure or material" },
         { pattern: /pneumatic|air cylinder|solenoid/, text: "same port with wrong valve function, wrong coil voltage, wrong tube OD" },
         { pattern: /bearing|belt|chain|sprocket|roller/, text: "same bore with wrong width/seal, same belt length with wrong section, chain pitch mismatch" },
@@ -1811,6 +1902,11 @@
       return row.filter(Boolean).join(" / ");
     }
 
+    function rowTeachingValue(section, row, field) {
+      const teaching = section.rowTeaching && section.rowTeaching[row[0]];
+      return teaching && teaching[field] ? teaching[field] : "";
+    }
+
     function rowMechanic101(section, row) {
       const title = section.title.toLowerCase();
       const label = rowDetailLabel(row);
@@ -1826,6 +1922,9 @@
       }
       if (/spark plug/.test(title)) {
         return "spark plug condition is a clue; compare all cylinders and confirm ignition, fuel, compression, heat range, and OEM plug spec";
+      }
+      if (/hydraulic fluid condition/.test(title)) {
+        return "hydraulic fluid appearance is a clue; confirm with oil sample, filter condition, reservoir checks, temperature, noise, and OEM fluid spec";
       }
       return detailTextFromRules(section, [
         { pattern: /wire gauge/, text: "wire size, fuse size, insulation rating, and run length all matter" },
@@ -1846,6 +1945,8 @@
       const title = section.title.toLowerCase();
       const label = rowDetailLabel(row);
       const rowText = row.join(" ").toLowerCase();
+      const teaching = rowTeachingValue(section, row, "commonConfusion");
+      if (teaching) return teaching;
       if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
         return `${label} AWG can be confused with nearby gauge sizes by sight. Do not size wire from voltage alone; current, protection, material, and run length change the answer.`;
       }
@@ -1871,6 +1972,8 @@
     function seniorTechNoteForReference(section, row, category) {
       const label = rowDetailLabel(row);
       const rowText = row.join(" ").toLowerCase();
+      const teaching = rowTeachingValue(section, row, "seniorTechNote");
+      if (teaching) return teaching;
       if (/wire gauge/i.test(section.title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
         return `${label} AWG is common enough to recognize quickly, but fuse size, run length, and insulation rating still decide the final answer`;
       }
@@ -1899,6 +2002,7 @@
       const title = section.title.toLowerCase();
       const rowText = row.join(" ").toLowerCase();
       const relevance = rowRelevance(section, row);
+      if (section.signalDetailsOnly && relevance) return relevance;
       if (/torque|wire|fuse|hydraulic|pressure|lifting|structural|electrical/.test(title)) return "Spec required";
       if (/wrong|not npt|not sealed|overheat|leak|fault|failure|symptom/.test(rowText)) return "High consequence";
       if (relevance) return relevance;
@@ -1920,6 +2024,9 @@
       }
       if (/spark plug/.test(title)) {
         return `${label}: ${row[1]}. Field clue: ${row[2]}. First check: ${row[3]}.`;
+      }
+      if (/hydraulic fluid condition/.test(title)) {
+        return `${label}: ${row[1]}. Likely clue: ${row[2]}. First check: ${row[3]}.`;
       }
       return rowExample(row);
     }

@@ -35,4 +35,4 @@ Each chart should include:
 - A field note that explains why mechanics care.
 - A watch point or verify-by path.
 - Detail rows that include Mechanic 101, common confusion, senior tech note, verify-by, risk/signal, source family, and example context.
-- Highlighted rows should get row-specific teaching text. Generic category fallback is acceptable for obscure rows, but "Very common" rows should explain the actual size/code/part, the nearby mistake, and the field reason it matters.
+- Highlighted rows must get row-specific teaching text. Generic category fallback is acceptable for unbadged obscure rows, but no badged row should expand into boilerplate.

@@ -17,6 +17,7 @@ This log tracks source validation before chart content changes. It is intentiona
 | Socket / Wrench Close-Fit Reference | Identification | 4 | Queued | Useful mechanic field lookup with common close-fit mistakes. |
 | Bearing Quick Reference | Identification with consequence rows | 4 chart / row-specific highlights | Queued | Common part ID chart; suffix, clearance, seal, and fit mistakes can cause repeat failure. |
 | Spark Plug Condition Reference | Identification/troubleshooting | 4 | Implemented trial | Mechanic-facing visual diagnosis chart used to test signal-only detail expansion and row-specific teaching text. |
+| Hydraulic Fluid Condition Reference | Identification/troubleshooting | 4 | Implemented trial | Mechanic-facing fluid condition chart used to test the no-generic-detail rule for all signal rows. |
 
 ## Wire Gauge Reference - Started
 
@@ -111,4 +112,40 @@ Reason: Spark plug condition reading is mechanic-facing and visual. It is useful
 
 ### Standard Feedback
 
-This trial supports the direction that normal rows should stay clean and only signal rows should get teaching detail.
+This trial supports the direction that normal rows should stay clean and only signal rows should get teaching detail. After review, Ash deposits exposed the next standard rule: a badged row cannot use generic fallback detail. Spark Plug signal rows now use row-specific common-confusion and senior-tech detail.
+
+## Hydraulic Fluid Condition Reference - Implemented Trial
+
+Classification: 4-source identification/troubleshooting chart.
+
+Reason: Hydraulic fluid appearance is a mechanic-facing clue, but visual inspection is not oil analysis. This made it a good second trial for the updated signal-detail gate: every badged row must carry row-specific teaching.
+
+### Reviewed Sources
+
+1. Donaldson, 6 Types of Hydraulic Fluid Contamination and How to Prevent Them
+   URL: https://www.donaldson.com/en-us/engine/filters/technical-articles/six-types-hydraulic-fluid-contamination/
+   Use: contamination families, water haze/milky fluid, air/foam, chemical degradation, particles, and damage risk.
+
+2. Shell, Hydraulic oil air contamination white paper
+   URL: https://www.shell.com/business-customers/lubricants-for-business/products/shell-tellus-hydraulic-fluids/shell-tellus-s4-ve/
+   Use: distinction between surface foam and entrained air, air effects on wear, noise, cavitation, and response.
+
+3. Mobil, Equipment Maintenance Used Oil Analysis / hydraulic oils machine shop
+   URL: https://www.mobil.com/en/lubricants/for-businesses/industrial/lubricant-expertise/resources/hydraulic-oils-machine-shop
+   Use: water contamination, varnish formation, oxidation, anti-foam context, and oil analysis framing.
+
+4. Machinery Lubrication, How to Identify and Proactively Prevent Lubrication Contamination
+   URL: https://www.machinerylubrication.com/Read/32876/how-to-identify-prevent-lubrication-contamination
+   Use: field-identification limits, cloudy oil after cooling, surface foam vs entrained air, heat, sludge, and varnish.
+
+### Trial Decisions
+
+- Added one new chart: Hydraulic Fluid Condition Reference.
+- Treated it as an identification/troubleshooting chart, not a lab-result or OEM-fluid-selection chart.
+- Added `signalDetailsOnly` so only signal rows get expanded detail.
+- Added row-specific teaching for every signal row before rendering.
+- Normal rows remain clean table rows without expanded detail.
+
+### Standard Feedback
+
+This trial validates the updated rule: signal badges require authored row-specific teaching. Generic fallback detail is now treated as a smoke-test failure for signal-only trial charts.
