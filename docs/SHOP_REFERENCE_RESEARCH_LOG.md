@@ -446,3 +446,38 @@ Reason: Bearings, chain, sprockets, and belt codes are common shop-floor replace
 ### Standard Feedback
 
 Power transmission ID cards are highest value when they teach that a same-looking part is not automatically the same replacement. The chart should call out bore, width, pitch, tooth count, belt section, suffix, bushing type, and manufacturer code before a tech treats a replacement as equivalent.
+
+## Foundational Shop Reference Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent shop reference charts.
+
+Reason: Drill/tap, wire gauge, pipe/tubing, torque, and fastener-grade references are familiar enough to invite memory-based shortcuts. This batch adds row teaching where common numbers can still be wrong because of pitch, material, code, schedule, grade, lubrication, or joint requirements.
+
+### Reviewed / Opened Sources
+
+1. Tap drill and clearance-hole source family
+   Use: UNC, UNF, and metric tap drill relationships, clearance-hole checks, thread pitch differences, and thread-class context.
+
+2. NEC / conductor ampacity source family
+   Use: AWG recognition, insulation temperature, conductor material, terminal temperature, ambient correction, conductor count, and voltage-drop caution.
+
+3. ASME pipe / nominal pipe size source family
+   Use: NPS vs actual OD, schedule wall thickness, tubing actual-OD language, material and pressure-class checks.
+
+4. SAE / fastener torque source family
+   Use: Grade 5/Grade 8 dry torque, lubricated vs dry difference, reused hardware caution, joint condition, and OEM torque authority.
+
+5. SAE / ISO / ASTM fastener marking source family
+   Use: radial head markings, metric property classes, stainless A2/A4 classes, structural bolt markings, and unknown-fastener replacement caution.
+
+### Trial Decisions
+
+- Updated five existing charts: Drill / Tap Quick Reference, Wire Gauge Reference, Pipe / Tubing Reference, Torque Reference, and Fastener Grade Marking Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows remain compact.
+- Added row-specific `rowSignals` and `rowTeaching` for common, easy-mix-up, spec-required, and high-consequence rows.
+- Kept authority pointed to thread gauges, calipers, drawings, OEM specs, code tables, structural specs, and known fastener markings.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Foundational shop charts should not pretend memory is enough. The useful pattern is: recognize the common number, name the hidden dependency, then tell the tech what proves the answer before they drill, wire, pipe, torque, or substitute hardware.
