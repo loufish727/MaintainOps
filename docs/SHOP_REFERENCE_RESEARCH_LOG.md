@@ -411,3 +411,38 @@ Reason: Fabrication and welding references can influence weld placement, rod/wir
 ### Standard Feedback
 
 Fabrication charts need to be practical without sounding like jobsite policy. The useful standard is: identify what the row means, name the common wrong assumption, and tell the tech what physical label, print note, chart, setup data, or measurement proves it.
+
+## Power Transmission ID Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent mechanical ID charts.
+
+Reason: Bearings, chain, sprockets, and belt codes are common shop-floor replacement references where same-bore, same-pitch, or same-looking substitutions can still be wrong.
+
+### Reviewed / Opened Sources
+
+1. SKF / bearing manufacturer designation source family
+   Use: bearing suffixes, seals, shields, clearance, cages, tapered bore, snap-ring/groove language, and lubrication-groove context.
+
+2. Bearing damage and application source family
+   Use: fit, repeat failure, heat, load, lubrication context, and why same-size substitution may not solve the root problem.
+
+3. Gates / belt manufacturer source family
+   Use: V-belt sections, fractional HP vs industrial belt families, cogged belts, narrow wedge belts, synchronous timing belt profile, and effective-length language.
+
+4. ANSI roller chain / chain manufacturer source family
+   Use: chain pitch, roller width, heavy series, double-pitch conveyor chain, strand count, and replacement measurement.
+
+5. Martin / sprocket and bushing manufacturer source family
+   Use: sprocket ID, tooth count, hub style, QD/taper bushings, bore, keyway, and bushing interchange caution.
+
+### Trial Decisions
+
+- Updated five existing charts: Bearing Quick Reference, Roller Chain Reference, Bearing Suffix ID Reference, Belt Code ID Reference, and Chain Sprocket ID Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for high-value mechanical ID rows.
+- Kept final authority language pointed toward markings, full part codes, measurements, catalogs, manufacturer specs, and OEM requirements.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Power transmission ID cards are highest value when they teach that a same-looking part is not automatically the same replacement. The chart should call out bore, width, pitch, tooth count, belt section, suffix, bushing type, and manufacturer code before a tech treats a replacement as equivalent.

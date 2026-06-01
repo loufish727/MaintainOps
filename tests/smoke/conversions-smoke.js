@@ -220,7 +220,7 @@ assert.match(html, /same code on another control, wrong active work offset, hidd
 assert.match(html, /wire size, fuse size, insulation rating, and run length all matter/);
 assert.match(html, /wrench size is fastener head size, not bolt thread size/);
 assert.match(html, /10mm is a high-frequency mechanic size/);
-assert.match(html, /bearing bore, OD, width, suffix, seal style, and clearance all matter/);
+assert.match(html, /6205 is a very common 25 mm bore bearing used around conveyors, pumps, and motors/);
 assert.match(html, /14 AWG is only one sizing clue; fuse\/breaker size, copper vs aluminum, insulation rating, temperature, bundling, and run length all matter/);
 assert.match(html, /14 AWG can be confused with nearby gauge sizes by sight/);
 assert.match(html, /14 AWG is commonly associated with very common 15 A branch and medium cord size/);
@@ -345,6 +345,11 @@ assert.match(html, /MIG Wire \/ Shielding Gas Reference[\s\S]*If the weld change
 assert.match(html, /Plasma Cutting Reference[\s\S]*Piercing too low can destroy consumables/);
 assert.match(html, /Fabrication Bend Reference[\s\S]*Changing V-die width can change the formed part/);
 assert.match(html, /Structural Shape ID Reference[\s\S]*pipe size is nominal and schedule controls wall thickness/);
+assert.match(html, /Bearing Quick Reference[\s\S]*6205 can match by bore while still being wrong by width/);
+assert.match(html, /Roller Chain Reference[\s\S]*#40 and #41 share 1\/2 inch pitch language/);
+assert.match(html, /Bearing Suffix ID Reference[\s\S]*C3 is not a quality grade/);
+assert.match(html, /Belt Code ID Reference[\s\S]*A40 and 4L400 look related/);
+assert.match(html, /Chain Sprocket ID Reference[\s\S]*Changing tooth count changes speed ratio/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
