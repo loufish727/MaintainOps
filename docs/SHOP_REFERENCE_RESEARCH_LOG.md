@@ -481,3 +481,38 @@ Reason: Drill/tap, wire gauge, pipe/tubing, torque, and fastener-grade reference
 ### Standard Feedback
 
 Foundational shop charts should not pretend memory is enough. The useful pattern is: recognize the common number, name the hidden dependency, then tell the tech what proves the answer before they drill, wire, pipe, torque, or substitute hardware.
+
+## Fluid Power and Sealing Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent fluid-power and sealing charts.
+
+Reason: Lubricant, fitting, hose, O-ring, and shaft-seal replacements are common maintenance tasks where a part can appear close enough but fail because the material, pressure, fluid, sealing face, construction, or installation condition is wrong.
+
+### Reviewed / Opened Sources
+
+1. NLGI / lubricant viscosity source family
+   Use: NLGI consistency, ISO VG viscosity, grease thickener compatibility, food-grade H1 framing, and OEM lubricant authority.
+
+2. Hydraulic fitting and thread identification source family
+   Use: NPT/NPTF, BSPP/BSPT, JIC 37, SAE 45, ORB, ORFS, DIN light/heavy, sealing-face identification, and thread-gauge practice.
+
+3. SAE hydraulic hose and dash-size source family
+   Use: dash size as nominal hose ID, hose construction, pressure rating, fitting/crimp compatibility, suction hose distinction, and bend-radius/routing concerns.
+
+4. AS568 O-ring source family
+   Use: dash size, ID/cross-section matching, NBR/FKM/EPDM material differences, durometer, groove fit, pressure, and fluid compatibility.
+
+5. Rotary shaft seal source family
+   Use: ID/OD/width identification, lip direction, shaft finish, bore condition, seal material, wear sleeves, pressure/venting, and installation damage.
+
+### Trial Decisions
+
+- Updated five existing charts: Oil / Grease Reference, Fitting / Thread Reference, Hydraulic Hose Dash Reference, O-Ring Size Reference, and Shaft Seal Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for common, easy-mix-up, high-consequence, and spec-required rows.
+- Kept authority pointed to OEM specs, labels, laylines, thread gauges, sealing faces, crimp charts, groove measurements, material bags, and shaft/bore inspection.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Fluid-power and sealing charts should teach that dimensional match is only the first gate. The useful chart answer is: identify the size family, then verify fluid, pressure, material, sealing surface, construction, and installation condition before replacement.

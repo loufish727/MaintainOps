@@ -355,6 +355,11 @@ assert.match(html, /Wire Gauge Reference[\s\S]*For 30 amp and above, stop using 
 assert.match(html, /Pipe \/ Tubing Reference[\s\S]*1\/2 inch pipe is nominal/);
 assert.match(html, /Torque Reference[\s\S]*Do not use one memory number for every 1\/2 inch bolt/);
 assert.match(html, /Fastener Grade Marking Reference[\s\S]*Do not upgrade fastener grade casually/);
+assert.match(html, /Oil \/ Grease Reference[\s\S]*NLGI grade is consistency, not chemistry/);
+assert.match(html, /Fitting \/ Thread Reference[\s\S]*JIC fittings seal on a 37 degree metal flare/);
+assert.match(html, /Hydraulic Hose Dash Reference[\s\S]*Dash size describes hose ID family/);
+assert.match(html, /O-Ring Size Reference[\s\S]*O-ring dash size proves dimensions only/);
+assert.match(html, /Shaft Seal Reference[\s\S]*Seal size does not prove lip material/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
