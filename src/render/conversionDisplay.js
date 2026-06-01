@@ -1683,6 +1683,92 @@
           ["Control source", "keypad/terminal/network", "start command", "unexpected source"],
         ],
       },
+      {
+        title: "CIDAN / Forstner Cut-To-Length Line Flow",
+        note: "Use as a flow map for coil-to-blank troubleshooting. Confirm actual machine model, controller, coil spec, knife setup, and OEM manual before adjustment.",
+        columns: ["Station", "Job in flow", "Common use note", "Watch point"],
+        rows: [
+          ["Decoiler", "holds and pays out coil", "starts the line without sheet handling", "drag, brake, coil set"],
+          ["Coil guide / infeed", "keeps strip square", "first tracking reference", "side pressure"],
+          ["Straightener", "removes coil memory", "flattens before slit/cut", "pause marks"],
+          ["Measuring wheel / encoder", "tracks feed length", "length accuracy signal", "slip or dirt"],
+          ["Slitting knives", "set finished width", "strip blanks from coil", "clearance and burr"],
+          ["Guillotine shear", "cuts programmed length", "final blank length", "blade gap/hold-down"],
+          ["Stacker / outfeed", "supports finished sheets", "prevents dents and handling damage", "alignment"],
+          ["Zero cut / trim cut", "resets true leading edge", "needed after coil or knife changes", "waste vs accuracy"],
+          ["Control recipe", "stores length/width/job", "repeat setup on common blanks", "wrong saved job"],
+          ["Finished blank check", "validates output", "first-piece inspection", "measure before production"],
+        ],
+        rowSignals: {
+          "Straightener": "Common failure",
+          "Measuring wheel / encoder": "Very common",
+          "Slitting knives": "High consequence",
+          "Zero cut / trim cut": "Common failure",
+          "Finished blank check": "Spec required",
+        },
+        rowTeaching: {
+          "Decoiler": {
+            mechanic101: "decoiling is not just storage; brake drag, coil weight, and coil set affect how the strip enters the line",
+            commonConfusion: "Decoiler drag can look like a straightener or tracking problem because the sheet is already fighting the line before it reaches the rollers.",
+            seniorTechNote: "If the strip pulls unevenly before the straightener, fix coil payoff and infeed behavior before adjusting downstream stations.",
+            verifyBy: "watch coil payoff under feed",
+          },
+          "Coil guide / infeed": {
+            mechanic101: "the infeed squares the strip before any precision work happens; small side pressure errors can carry through the whole line",
+            commonConfusion: "Operators often chase slitter or shear issues when the strip was biased at the entry guide.",
+            seniorTechNote: "Guide the coil; do not pinch it. Too much side pressure can create tracking, edge damage, or twist.",
+            verifyBy: "check strip square at entry",
+          },
+          "Straightener": {
+            mechanic101: "straightener rollers remove coil memory by bending the strip back toward flat before slitting and shearing",
+            commonConfusion: "More roller pressure is not always better; over-adjustment can mark, bow, or stress the sheet.",
+            seniorTechNote: "If blanks have pause marks or shape changes at starts/stops, inspect straightener pressure and feed behavior before blaming the shear.",
+            verifyBy: "inspect flatness + pause marks",
+          },
+          "Measuring wheel / encoder": {
+            mechanic101: "the measuring wheel or encoder tells the control how far material actually moved; dirty or slipping contact becomes length error",
+            commonConfusion: "A consistent short/long blank can be calibration, but random length drift often points to slip, dirt, material movement, or feed pressure.",
+            seniorTechNote: "When length is wrong, compare commanded length, displayed feed, wheel condition, and first-piece measurement before changing recipes.",
+            verifyBy: "compare command to cut length",
+          },
+          "Slitting knives": {
+            mechanic101: "slitter knives create finished width, so clearance, overlap, sharpness, and setup order decide burr and strip quality",
+            commonConfusion: "A width issue may be a knife setup issue, but burr direction and edge quality can also reveal dull knives or wrong clearance.",
+            seniorTechNote: "Treat knife changes like tooling setup: lock the spec, verify width, check burr, and document the setting before production.",
+            verifyBy: "measure width + burr side",
+          },
+          "Guillotine shear": {
+            mechanic101: "the shear finishes the blank length after feed measurement; hold-down and blade condition affect squareness and edge quality",
+            commonConfusion: "A crooked or burred cut can look like bad material when blade gap, hold-down, or sheet support is the real cause.",
+            seniorTechNote: "If the first blank measures right but the cut edge is poor, separate length control from shear condition.",
+            verifyBy: "measure cut length + squareness",
+          },
+          "Stacker / outfeed": {
+            mechanic101: "outfeed support protects finished blanks after the precision work is done",
+            commonConfusion: "Scratches and dents found at inspection may be outfeed handling damage, not forming or coil damage.",
+            seniorTechNote: "Look at where the mark starts; downstream scratches often repeat by stacker contact point or sheet slide path.",
+            verifyBy: "trace mark direction/location",
+          },
+          "Zero cut / trim cut": {
+            mechanic101: "a zero or trim cut creates a known leading edge after a coil load, knife change, or interrupted setup",
+            commonConfusion: "Skipping the trim cut can make the first blank wrong even when the recipe and measuring system are correct.",
+            seniorTechNote: "If only the first sheet is off after setup, verify the trim-cut habit before recalibrating the line.",
+            verifyBy: "confirm first-edge reset",
+          },
+          "Control recipe": {
+            mechanic101: "the recipe ties length, width, quantity, and line options together; the machine follows the active job, not the operator's memory",
+            commonConfusion: "A correct-looking screen can still run the wrong saved job, wrong width, or old quantity if the active recipe was not checked.",
+            seniorTechNote: "Before production, read back the active recipe against the order: material, width, length, quantity, and slitter state.",
+            verifyBy: "read active recipe aloud",
+          },
+          "Finished blank check": {
+            mechanic101: "first-piece inspection proves the coil, guide, straightener, slitter, shear, and recipe are working together",
+            commonConfusion: "Do not accept a good length alone; width, squareness, flatness, edge quality, and surface marks all matter.",
+            seniorTechNote: "Measure the first blank like it is a machine-health report. One part can tell you which station to inspect next.",
+            verifyBy: "measure first blank fully",
+          },
+        },
+      },
     ];
 
     function renderConversionCard(group) {
@@ -1738,7 +1824,7 @@
       if (/diesel|aftertreatment|battery \/ charging|heavy equipment/.test(title)) return "diesel-mobile";
       if (/spark plug/.test(title)) return "pm-troubleshooting";
       if (/cnc|g-code|m-code|machining|insert|decimal drill|surface finish|gd&t|offset/.test(title)) return "machining-cnc";
-      if (/weld|stick electrode|mig|plasma|fabrication|structural shape/.test(title)) return "fabrication";
+      if (/weld|stick electrode|mig|plasma|fabrication|structural shape|cut-to-length|slitting|straightener/.test(title)) return "fabrication";
       if (/wire|electrical|plug|sensor|fuse|contactor|thermocouple|rtd|plc|relay|conduit|nema enclosure|control panel|control transformer/.test(title)) return "electrical";
       if (/motor|vfd|drive \/ motor|belt code|belt section|gear reducer|coupling/.test(title)) return "motors";
       if (/hydraulic|shaft seal|o-ring material|pump seal/.test(title)) return "fluid-power";
@@ -1754,7 +1840,7 @@
       const title = section.title.toLowerCase();
       if (/failure|symptom|troubleshooting|fault|leak|fluid condition|spark plug|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
       if (/g-code|m-code|gd&t|weld symbol|relay \/ contactor symbol|plc|wire color|sourcing \/ sinking|control panel terminal/.test(title)) return "codes-symbols";
-      if (/load|fluid|filter|oil|grease|threadlocker|battery|charging|extension cord|transformer|drive \/ motor|plasma|mig wire|stick electrode/.test(title)) return "common-specs";
+      if (/load|fluid|filter|oil|grease|threadlocker|battery|charging|extension cord|transformer|drive \/ motor|plasma|mig wire|stick electrode|cut-to-length/.test(title)) return "common-specs";
       return "sizing-id";
     }
 
@@ -1865,6 +1951,7 @@
         { pattern: /gd&t/, text: "ASME Y14.5 / ISO GPS drawing standard family" },
         { pattern: /weld|electrode|mig/, text: "AWS symbol/procedure standards, WPS, filler manufacturer data" },
         { pattern: /plasma/, text: "plasma system cut chart, consumable chart, machine manual" },
+        { pattern: /cut-to-length|slitting|straightener/, text: "CIDAN/Forstner machine manuals, coil processing setup notes, material spec, first-piece inspection records" },
         { pattern: /bend|structural shape/, text: "fabrication handbook, material standard, shop drawing" },
         { pattern: /extension cord/, text: "UL flexible cord/listing guidance, OSHA flexible-cord rules, tool OEM cord tables, cord jacket markings" },
         { pattern: /spark plug/, text: "spark plug manufacturer diagnosis guides, OEM service data, cylinder comparison, scan data" },
@@ -1891,6 +1978,7 @@
         { pattern: /stick electrode/, text: "SMAW rod, arc rod, welding electrode" },
         { pattern: /mig/, text: "GMAW wire, solid wire, shielding gas setup" },
         { pattern: /plasma/, text: "air plasma, cut chart, consumables chart" },
+        { pattern: /cut-to-length/, text: "CTL line, coil line, slit-and-cut line, Forstner line, blanking line" },
         { pattern: /sourcing|sinking/, text: "PNP/NPN wiring, input common, output polarity" },
         { pattern: /terminal/, text: "terminal strip, wire marker, panel terminal" },
         { pattern: /transformer/, text: "control power transformer, CPT, VA transformer" },
@@ -1921,6 +2009,7 @@
         { pattern: /surface finish/, text: "Ra vs RMS, microinch vs micrometer, process guess without measurement" },
         { pattern: /gd&t/, text: "profile vs position, circularity vs cylindricity, datum omitted" },
         { pattern: /weld|electrode|mig|plasma/, text: "similar filler with wrong position/current/gas, cut chart for different consumables" },
+        { pattern: /cut-to-length|slitting|straightener/, text: "same symptom from a different station, wrong active recipe, material coil issue mistaken for machine setup" },
         { pattern: /extension cord/, text: "cord length ignored, jacket marking misread, indoor cord used outdoors, plug rating confused with wire size" },
         { pattern: /spark plug/, text: "plug appearance mistaken for final diagnosis, fuel wet vs oil wet, heat range issue vs engine problem" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor/, text: "same voltage with wrong current, AC/DC mix-up, source/sink reversed" },
@@ -1992,6 +2081,7 @@
         { pattern: /motor|vfd|drive/, text: "nameplate data and application load decide the correct setup" },
         { pattern: /cnc|g-code|m-code|insert/, text: "active setup, control model, tooling, and offsets change what the code means" },
         { pattern: /weld|electrode|mig|plasma/, text: "material, process, position, filler, and machine settings must agree" },
+        { pattern: /cut-to-length|slitting|straightener/, text: "the stations work as a chain: coil payoff, guide, straightening, measuring, slitting, shearing, and outfeed each leave different clues" },
       ], "identify the part family, then verify the exact marking, size, and application");
     }
 
