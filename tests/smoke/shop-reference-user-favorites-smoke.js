@@ -122,7 +122,7 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 categoryGrid.listeners.click({ target: categoryCard });
 assert.equal(grid.children[0], beta);
 assert.equal(beta.button.getAttribute("aria-pressed"), "true");
-assert.equal(activeCategoryLabel.textContent, "Category: Electrical & Controls");
+assert.equal(activeCategoryLabel.textContent, "Trade: Electrical & Controls");
 assert.equal(storage.values["maintainops.shopReferenceFavorites"], JSON.stringify(["Beta Reference"]));
 
 alpha.button.listeners.click({ preventDefault() {}, stopPropagation() {} });

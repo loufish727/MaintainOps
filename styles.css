@@ -4389,10 +4389,6 @@ textarea {
   accent-color: var(--blue);
 }
 
-.bolt-gauge-help {
-  margin: 0;
-}
-
 .bolt-gauge-screen-callout {
   align-items: flex-start;
   border: 1px solid color-mix(in srgb, #f97316 52%, var(--line));
@@ -4869,6 +4865,20 @@ textarea {
   outline: none;
 }
 
+.shop-reference-filter-group {
+  display: grid;
+  gap: 7px;
+}
+
+.shop-reference-filter-group > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.shop-reference-kind-grid,
 .shop-reference-category-grid {
   align-items: center;
   display: flex;
@@ -4876,6 +4886,7 @@ textarea {
   gap: 7px;
 }
 
+.shop-reference-kind-card,
 .shop-reference-category-card {
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 24%, var(--line));
@@ -4890,6 +4901,14 @@ textarea {
   text-align: left;
 }
 
+.shop-reference-kind-card {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--line));
+  background: color-mix(in srgb, var(--blue) 6%, var(--surface));
+}
+
+.shop-reference-kind-card:hover,
+.shop-reference-kind-card:focus-visible,
+.shop-reference-kind-card.shop-reference-kind-active,
 .shop-reference-category-card:hover,
 .shop-reference-category-card:focus-visible,
 .shop-reference-category-card.shop-reference-category-active {
@@ -4899,12 +4918,22 @@ textarea {
   outline: none;
 }
 
+.shop-reference-kind-card:hover,
+.shop-reference-kind-card:focus-visible,
+.shop-reference-kind-card.shop-reference-kind-active {
+  border-color: color-mix(in srgb, var(--blue) 52%, var(--line));
+  background: color-mix(in srgb, var(--blue) 12%, var(--surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 14%, transparent);
+}
+
+.shop-reference-kind-card span,
 .shop-reference-category-card span {
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1.1;
 }
 
+.shop-reference-kind-card strong,
 .shop-reference-category-card strong {
   border: 1px solid color-mix(in srgb, var(--rel-parts-ink) 34%, transparent);
   border-radius: 999px;
@@ -4913,6 +4942,12 @@ textarea {
   padding: 3px 7px;
   font-size: 0.68rem;
   font-weight: 570;
+}
+
+.shop-reference-kind-card strong {
+  border-color: color-mix(in srgb, var(--blue) 30%, transparent);
+  background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+  color: var(--blue);
 }
 
 .shop-reference-back {

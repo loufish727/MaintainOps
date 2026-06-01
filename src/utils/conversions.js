@@ -429,7 +429,6 @@
       const calibration = gauge.querySelector("[data-bolt-gauge-calibration]");
       const calibrationLine = gauge.querySelector("[data-bolt-gauge-calibration-line]");
       const output = gauge.querySelector("[data-bolt-gauge-output]");
-      const help = gauge.querySelector("[data-bolt-gauge-help]");
       const modeInputs = Array.from(gauge.querySelectorAll("[data-bolt-gauge-mode]"));
       const points = gauge.querySelector("[data-bolt-gauge-points]");
       const lock = gauge.querySelector("[data-bolt-gauge-lock]");
@@ -443,7 +442,7 @@
       const update = () => {
         const diameterPx = Number(diameter?.value || 0);
         const pixelsPerInch = Number(calibration?.value || 96);
-        const mode = modeInputs.find((input) => input.checked)?.value || "thread";
+        const mode = modeInputs.find((input) => input.checked)?.value || "wrench";
         const headPoints = points?.value || "6";
         const locked = !lock || lock.checked;
         const sizeLocked = Boolean(sizeLock?.checked);
@@ -459,11 +458,6 @@
         if (calibrationLine) calibrationLine.style.width = `${pixelsPerInch}px`;
         const reading = boltGaugeReading(diameterPx, pixelsPerInch, mode);
         if (output) output.textContent = reading ? reading.text : "Calibrate the gauge";
-        if (help) {
-          help.textContent = mode === "wrench"
-            ? `${headPoints}-point head mode: size the outline across opposite flats to estimate wrench or socket size.`
-            : "Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.";
-        }
         const activeInch = mode === "thread" ? (reading?.closest?.inch || "") : "";
         const activeWrenchThread = mode === "wrench" ? (reading?.closest?.thread || "") : "";
         doc.querySelectorAll("[data-bolt-size-row]").forEach((row) => {
@@ -507,6 +501,8 @@
 
       const pageSize = Math.max(1, Number(panel.dataset.shopReferencePageSize) || 12);
       const searchInput = panel.querySelector("[data-shop-reference-search-input]");
+      const kindGrid = panel.querySelector("[data-shop-reference-kind-grid]");
+      const kindCards = () => Array.from(kindGrid?.querySelectorAll?.("[data-shop-reference-kind]") || []);
       const categoryGrid = panel.querySelector("[data-shop-reference-category-grid]");
       const categoryCards = () => Array.from(categoryGrid?.querySelectorAll?.("[data-shop-reference-category]") || []);
       const backButton = panel.querySelector("[data-shop-reference-back]");
@@ -515,6 +511,7 @@
       const emptyState = panel.querySelector("[data-shop-reference-empty]");
       let currentPage = Math.max(1, Number(storage?.getItem(pageKey)) || 1);
       let searchQuery = "";
+      let activeKind = "";
       let activeCategory = "";
       let cachedFavorites = null;
       const readFavorites = () => {
@@ -571,6 +568,12 @@
       const matchesCategory = (card) => (
         !activeCategory || searchQuery || card.dataset.shopReferenceCategory === activeCategory
       );
+      const matchesKind = (card) => (
+        !activeKind || searchQuery || card.dataset.shopReferenceKind === activeKind
+      );
+      const activeKindLabel = () => (
+        kindCards().find((card) => card.dataset.shopReferenceKind === activeKind)?.querySelector?.("span")?.textContent?.trim() || activeKind
+      );
       const activeCategoryLabel = () => (
         categoryCards().find((card) => card.dataset.shopReferenceCategory === activeCategory)?.querySelector?.("span")?.textContent?.trim() || activeCategory
       );
@@ -588,11 +591,12 @@
         if (options.closeOpen) closeCards();
         const favorites = readFavorites();
         applyFavoriteState(favorites);
-        const hasFilter = Boolean(searchQuery || activeCategory);
+        const hasFilter = Boolean(searchQuery || activeKind || activeCategory);
+        if (kindGrid) kindGrid.hidden = false;
         if (categoryGrid) categoryGrid.hidden = false;
         if (grid) grid.hidden = false;
         if (backButton) {
-          backButton.textContent = "All categories";
+          backButton.textContent = "All filters";
         }
         if (activeCategoryBanner) {
           activeCategoryBanner.hidden = !hasFilter;
@@ -600,18 +604,27 @@
         if (activeCategoryLabelElement) {
           if (searchQuery) {
             activeCategoryLabelElement.textContent = `Search results for "${searchQuery}"`;
+          } else if (activeKind && activeCategory) {
+            activeCategoryLabelElement.textContent = `${activeKindLabel()} / ${activeCategoryLabel()}`;
+          } else if (activeKind) {
+            activeCategoryLabelElement.textContent = `Type: ${activeKindLabel()}`;
           } else if (activeCategory) {
-            activeCategoryLabelElement.textContent = `Category: ${activeCategoryLabel()}`;
+            activeCategoryLabelElement.textContent = `Trade: ${activeCategoryLabel()}`;
           } else {
             activeCategoryLabelElement.textContent = "";
           }
         }
+        kindCards().forEach((card) => {
+          const active = card.dataset.shopReferenceKind === activeKind && !searchQuery;
+          card.classList.toggle("shop-reference-kind-active", active);
+          card.setAttribute?.("aria-pressed", String(active));
+        });
         categoryCards().forEach((card) => {
           const active = card.dataset.shopReferenceCategory === activeCategory && !searchQuery;
           card.classList.toggle("shop-reference-category-active", active);
           card.setAttribute?.("aria-pressed", String(active));
         });
-        const ordered = orderedCards(favorites).filter((card) => matchesSearch(card) && matchesCategory(card));
+        const ordered = orderedCards(favorites).filter((card) => matchesSearch(card) && matchesKind(card) && matchesCategory(card));
         const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
         currentPage = Math.min(Math.max(1, currentPage), totalPages);
         const startIndex = (currentPage - 1) * pageSize;
@@ -624,8 +637,9 @@
           const firstShown = ordered.length ? startIndex + 1 : 0;
           const lastShown = Math.min(ordered.length, startIndex + pageCards.length);
           const searchSuffix = searchQuery ? ` for "${searchQuery}"` : "";
+          const kindSuffix = activeKind && !searchQuery ? ` in ${activeKindLabel()}` : "";
           const categorySuffix = activeCategory && !searchQuery ? ` in ${activeCategoryLabel()}` : "";
-          status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${categorySuffix}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
+          status.textContent = `Showing ${firstShown}-${lastShown} of ${ordered.length}${kindSuffix}${categorySuffix}${searchSuffix} - Page ${currentPage} of ${totalPages}`;
         }
         const prev = pageButton("prev");
         const next = pageButton("next");
@@ -653,8 +667,29 @@
       panel.querySelectorAll("[data-shop-reference-top]").forEach((button) => {
         button.addEventListener?.("click", () => {
           searchQuery = button.dataset.shopReferenceTop || "";
+          activeKind = "";
           activeCategory = "";
           if (searchInput) searchInput.value = searchQuery;
+          currentPage = 1;
+          renderOrder({ closeOpen: true });
+          focusResults();
+        });
+      });
+
+      kindGrid?.addEventListener?.("click", (event) => {
+        const card = event.target?.closest?.("[data-shop-reference-kind]");
+        if (!card || !kindGrid.contains?.(card)) return;
+        activeKind = card.dataset.shopReferenceKind || "";
+        currentPage = 1;
+        renderOrder({ closeOpen: true });
+        focusResults();
+      });
+
+      kindCards().forEach((card) => {
+        card.addEventListener?.("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault?.();
+          activeKind = card.dataset.shopReferenceKind || "";
           currentPage = 1;
           renderOrder({ closeOpen: true });
           focusResults();
@@ -682,6 +717,7 @@
       });
 
       backButton?.addEventListener?.("click", () => {
+        activeKind = "";
         activeCategory = "";
         searchQuery = "";
         if (searchInput) searchInput.value = "";

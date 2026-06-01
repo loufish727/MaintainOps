@@ -62,6 +62,10 @@ assert.match(html, /bolt-reference-detail/);
 assert.match(html, /Thread \/ Nut ID/);
 assert.match(html, /Head \/ Wrench/);
 assert.match(html, /data-bolt-gauge-points/);
+assert.match(html, /Select Head \/ Wrench/);
+assert.match(html, /Select Thread \/ Nut ID/);
+assert.ok(html.indexOf("Select Head / Wrench") < html.indexOf("Select Thread / Nut ID"));
+assert.match(html, /value="wrench" checked/);
 assert.match(html, /6 point hex/);
 assert.match(html, /4 point square/);
 assert.match(html, /8 point square/);
@@ -131,6 +135,16 @@ assert.match(html, /shop-reference-top-strip/);
 assert.match(html, /data-shop-reference-top="Drill \/ Tap Quick Reference"/);
 assert.match(html, /data-shop-reference-top="Wire Gauge Reference"/);
 assert.match(html, /data-shop-reference-top="CNC G-Code Quick Reference"/);
+assert.match(html, /data-shop-reference-kind-grid/);
+assert.match(html, /data-shop-reference-kind="sizing-id"/);
+assert.match(html, /data-shop-reference-kind="troubleshooting"/);
+assert.match(html, /data-shop-reference-kind="codes-symbols"/);
+assert.match(html, /data-shop-reference-kind="common-specs"/);
+assert.match(html, /Reference type/);
+assert.match(html, /Sizing \/ ID/);
+assert.match(html, /Troubleshooting/);
+assert.match(html, /Codes \/ symbols/);
+assert.match(html, /Common specs/);
 assert.match(html, /data-shop-reference-category=""/);
 assert.match(html, /data-shop-reference-category="fasteners"/);
 assert.match(html, /data-shop-reference-category="diesel-mobile"/);
@@ -158,6 +172,7 @@ assert.match(html, /data-shop-reference-page="prev"/);
 assert.match(html, /data-shop-reference-page="next"/);
 assert.match(html, /data-shop-reference-panel/);
 assert.match(html, /data-shop-reference-card/);
+assert.match(html, /data-shop-reference-kind="sizing-id"/);
 assert.match(html, /data-shop-reference-favorite/);
 assert.match(html, /data-shop-reference-search-input/);
 assert.match(html, /data-shop-reference-empty/);
@@ -301,13 +316,12 @@ assert.equal(output.textContent, "9.4488 Inches");
 
 const gaugeDiameter = createField("24");
 const gaugeCalibration = createField("96");
-const threadMode = { value: "thread", checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
-const wrenchMode = { value: "wrench", checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const threadMode = { value: "thread", checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const wrenchMode = { value: "wrench", checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const calibrationLock = { checked: true, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const sizeLock = { checked: false, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const gaugePoints = createField("6");
 const gaugeOutput = { textContent: "" };
-const gaugeHelp = { textContent: "" };
 const gaugeDataset = {};
 const highlightedRows = {};
 const highlightedWrenchRows = {};
@@ -334,7 +348,6 @@ const gaugeLookup = {
   "[data-bolt-gauge-calibration]": gaugeCalibration,
   "[data-bolt-gauge-calibration-line]": { style: {} },
   "[data-bolt-gauge-output]": gaugeOutput,
-  "[data-bolt-gauge-help]": gaugeHelp,
   "[data-bolt-gauge-points]": gaugePoints,
   "[data-bolt-gauge-lock]": calibrationLock,
   "[data-bolt-gauge-size-lock]": sizeLock,
@@ -362,20 +375,22 @@ const storage = {
   setItem(key, value) { this.values[key] = value; },
 };
 bindBoltGaugeEvents({ documentRef: gaugeDocument, storage });
-assert.match(gaugeOutput.textContent, /closest 1\/4 \/ M6/);
-assert.equal(gaugeDataset.boltGaugeModeCurrent, "thread");
+assert.match(gaugeOutput.textContent, /wrench/);
+assert.equal(gaugeDataset.boltGaugeModeCurrent, "wrench");
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "6");
 assert.equal(gaugeDataset.boltGaugeSizeLocked, "false");
 assert.equal(gaugeCalibration.disabled, true);
 assert.equal(gaugeDiameter.disabled, false);
 assert.equal(storage.values["maintainops.boltGaugeCalibrationLocked"], "true");
-assert.equal(highlightedRows["1/4"], true);
-assert.equal(highlightedRows["#10"], false);
-assert.match(gaugeHelp.textContent, /bolt shaft/);
+assert.equal(Object.values(highlightedWrenchRows).some(Boolean), false);
+assert.equal(highlightedRows["1/4"], false);
 
+threadMode.checked = true;
+wrenchMode.checked = false;
 gaugeDiameter.value = "96";
-gaugeDiameter.listeners.input();
+threadMode.listeners.change();
 assert.match(gaugeOutput.textContent, /closest 1 \/ M24/);
+assert.equal(gaugeDataset.boltGaugeModeCurrent, "thread");
 assert.equal(highlightedRows["1"], true);
 assert.equal(highlightedRows["1/4"], false);
 
@@ -384,12 +399,10 @@ threadMode.checked = false;
 gaugeDiameter.value = "72";
 wrenchMode.listeners.change();
 assert.match(gaugeOutput.textContent, /closest 3\/4 wrench for 1\/2 thread/);
-assert.match(gaugeHelp.textContent, /6-point head mode/);
 assert.equal(gaugeDataset.boltGaugeModeCurrent, "wrench");
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "6");
 assert.equal(highlightedWrenchRows["1/2"], true);
 assert.equal(highlightedRows["1"], false);
-assert.match(gaugeHelp.textContent, /across opposite flats/);
 
 calibrationLock.checked = false;
 calibrationLock.listeners.change();
@@ -403,12 +416,10 @@ assert.equal(gaugeDataset.boltGaugeSizeLocked, "true");
 
 gaugePoints.value = "4";
 gaugePoints.listeners.change();
-assert.match(gaugeHelp.textContent, /4-point head mode/);
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "4");
 
 gaugePoints.value = "8";
 gaugePoints.listeners.change();
-assert.match(gaugeHelp.textContent, /8-point head mode/);
 assert.equal(gaugeDataset.boltGaugePointsCurrent, "8");
 
 const favoriteStorage = {
@@ -439,8 +450,9 @@ function createFavoriteButton() {
 }
 function createReferenceCard(title) {
   const button = createFavoriteButton();
+  const isBeta = title.includes("Beta");
   return {
-    dataset: { shopReferenceTitle: title, shopReferenceCategory: title.includes("Beta") ? "bearings-belts-chain" : "electrical" },
+    dataset: { shopReferenceTitle: title, shopReferenceCategory: isBeta ? "bearings-belts-chain" : "electrical", shopReferenceKind: isBeta ? "sizing-id" : "codes-symbols" },
     listeners: {},
     open: false,
     classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
@@ -456,6 +468,15 @@ const pageStatus = { textContent: "" };
 const searchInput = { value: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
 const emptyState = { hidden: true };
 const topButton = { dataset: { shopReferenceTop: "Alpha" }, listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
+const kindGrid = {
+  hidden: false,
+  listeners: {},
+  addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  contains(card) { return card === sizingKind || card === codesKind; },
+  querySelectorAll(selector) {
+    return selector === "[data-shop-reference-kind]" ? [sizingKind, codesKind] : [];
+  },
+};
 const categoryGrid = {
   hidden: false,
   listeners: {},
@@ -477,6 +498,20 @@ function createCategoryCard(id, label) {
     addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
   };
 }
+function createKindCard(id, label) {
+  return {
+    dataset: { shopReferenceKind: id },
+    listeners: {},
+    attributes: {},
+    classList: { values: {}, toggle(name, active) { this.values[name] = active; } },
+    closest(selector) { return selector === "[data-shop-reference-kind]" ? this : null; },
+    querySelector(selector) { return selector === "span" ? { textContent: label } : null; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    addEventListener(eventName, handler) { this.listeners[eventName] = handler; },
+  };
+}
+const sizingKind = createKindCard("sizing-id", "Sizing / ID");
+const codesKind = createKindCard("codes-symbols", "Codes / symbols");
 const electricalCategory = createCategoryCard("electrical", "Electrical & Controls");
 const bearingCategory = createCategoryCard("bearings-belts-chain", "Bearings, Belts & Chain");
 const backButton = { hidden: true, textContent: "", listeners: {}, addEventListener(eventName, handler) { this.listeners[eventName] = handler; } };
@@ -490,11 +525,13 @@ const shopPanel = {
     if (selector === "[data-shop-reference-top]") return [topButton];
     if (selector === "[data-shop-reference-card]") return [betaCard, alphaCard];
     if (selector === "[data-shop-reference-page]") return [prevButton, nextButton];
+    if (selector === "[data-shop-reference-kind]") return [sizingKind, codesKind];
     if (selector === "[data-shop-reference-category]") return [electricalCategory, bearingCategory];
     return [];
   },
   querySelector(selector) {
     if (selector === "[data-shop-reference-grid]") return favoriteGridOne;
+    if (selector === "[data-shop-reference-kind-grid]") return kindGrid;
     if (selector === "[data-shop-reference-category-grid]") return categoryGrid;
     if (selector === "[data-shop-reference-back]") return backButton;
     if (selector === "[data-shop-reference-active-category]") return activeCategoryBanner;
@@ -521,11 +558,21 @@ assert.equal(activeCategoryBanner.hidden, true);
 assert.equal(prevButton.disabled, true);
 assert.equal(nextButton.disabled, true);
 
+kindGrid.listeners.click({ target: sizingKind });
+assert.equal(activeCategoryBanner.hidden, false);
+assert.equal(activeCategoryLabel.textContent, "Type: Sizing / ID");
+assert.equal(sizingKind.classList.values["shop-reference-kind-active"], true);
+assert.equal(favoriteGridOne.children[0], betaCard);
+assert.equal(favoriteGridOne.children.length, 1);
+assert.equal(pageStatus.textContent, "Showing 1-1 of 1 in Sizing / ID - Page 1 of 1");
+backButton.listeners.click();
+favoriteGridOne.scrollCalls = [];
+
 categoryGrid.listeners.click({ target: electricalCategory });
 assert.equal(categoryGrid.hidden, false);
 assert.equal(favoriteGridOne.hidden, false);
 assert.equal(activeCategoryBanner.hidden, false);
-assert.equal(activeCategoryLabel.textContent, "Category: Electrical & Controls");
+assert.equal(activeCategoryLabel.textContent, "Trade: Electrical & Controls");
 assert.equal(favoriteGridOne.scrollCalls.length, 1);
 assert.equal(favoriteGridOne.children[0], alphaCard);
 assert.equal(favoriteGridOne.children.length, 1);

@@ -1562,6 +1562,13 @@
       { id: "materials-shop", label: "Materials & Shop Math", description: "Gauge, grease, close-fit, temperature and shop IDs" },
     ];
 
+    const shopReferenceKinds = [
+      { id: "sizing-id", label: "Sizing / ID" },
+      { id: "troubleshooting", label: "Troubleshooting" },
+      { id: "codes-symbols", label: "Codes / symbols" },
+      { id: "common-specs", label: "Common specs" },
+    ];
+
     function shopReferenceCategory(section) {
       const title = section.title.toLowerCase();
       if (/thread|tap|fastener|torque|threadlocker/.test(title)) return "fasteners";
@@ -1579,10 +1586,27 @@
       return "materials-shop";
     }
 
+    function shopReferenceKind(section) {
+      const title = section.title.toLowerCase();
+      if (/failure|symptom|troubleshooting|fault|leak|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
+      if (/g-code|m-code|gd&t|weld symbol|relay \/ contactor symbol|plc|wire color|sourcing \/ sinking|control panel terminal/.test(title)) return "codes-symbols";
+      if (/load|fluid|filter|oil|grease|threadlocker|battery|charging|extension cord|transformer|drive \/ motor|plasma|mig wire|stick electrode/.test(title)) return "common-specs";
+      return "sizing-id";
+    }
+
     function renderCategoryCard(category, count) {
       return `
         <button class="shop-reference-category-card" data-shop-reference-category="${escapeHtml(category.id)}" type="button" title="${escapeHtml(category.description)}">
           <span>${escapeHtml(category.label)}</span>
+          <strong>${count} charts</strong>
+        </button>
+      `;
+    }
+
+    function renderKindCard(kind, count) {
+      return `
+        <button class="shop-reference-kind-card" data-shop-reference-kind="${escapeHtml(kind.id)}" type="button">
+          <span>${escapeHtml(kind.label)}</span>
           <strong>${count} charts</strong>
         </button>
       `;
@@ -1812,6 +1836,7 @@
 
     function renderReferenceTable(section) {
       const category = shopReferenceCategory(section);
+      const kind = shopReferenceKind(section);
       const columns = [...section.columns, "Verify by"];
       const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
       const detailItems = referenceDetailItems(section, category);
@@ -1826,7 +1851,7 @@
         ...rows.flat(),
       ].join(" ");
       return `
-        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-category="${escapeHtml(category)}" data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
+        <details class="bolt-reference-details shop-reference-details shop-reference-card" data-shop-reference-card data-shop-reference-category="${escapeHtml(category)}" data-shop-reference-kind="${escapeHtml(kind)}" data-shop-reference-title="${escapeHtml(section.title)}" data-shop-reference-search="${escapeHtml(searchableText.toLowerCase())}">
           <summary class="bolt-reference-summary">
             <div class="shop-reference-card-main">
               <div class="chip-row">
@@ -1865,6 +1890,9 @@
       const categoryCount = (categoryId) => (
         shopReferenceSections.filter((section) => shopReferenceCategory(section) === categoryId).length
       );
+      const kindCount = (kindId) => (
+        shopReferenceSections.filter((section) => shopReferenceKind(section) === kindId).length
+      );
       const topReferenceTitles = [
         "Drill / Tap Quick Reference",
         "Wire Gauge Reference",
@@ -1894,6 +1922,18 @@
                 <button class="shop-reference-top-button" data-shop-reference-top="${escapeHtml(title)}" type="button">${escapeHtml(title.replace(" Reference", ""))}</button>
               `).join("")}
             </div>
+            <div class="shop-reference-filter-group">
+              <span>Reference type</span>
+              <div class="shop-reference-kind-grid" data-shop-reference-kind-grid>
+                <button class="shop-reference-kind-card" data-shop-reference-kind="" type="button">
+                  <span>All types</span>
+                  <strong>${shopReferenceSections.length} charts</strong>
+                </button>
+                ${shopReferenceKinds.map((kind) => renderKindCard(kind, kindCount(kind.id))).join("")}
+              </div>
+            </div>
+            <div class="shop-reference-filter-group">
+              <span>Trade area</span>
             <div class="shop-reference-category-grid" data-shop-reference-category-grid>
               <button class="shop-reference-category-card" data-shop-reference-category="" type="button" title="Show every reference">
                 <span>All</span>
@@ -1901,9 +1941,10 @@
               </button>
               ${shopReferenceCategories.map((category) => renderCategoryCard(category, categoryCount(category.id))).join("")}
             </div>
+            </div>
             <div class="active-team-filter shop-reference-active-filter" data-shop-reference-active-category hidden>
               <span data-shop-reference-active-category-label></span>
-              <button class="text-button" data-shop-reference-back type="button">All categories</button>
+              <button class="text-button" data-shop-reference-back type="button">All filters</button>
             </div>
             <div class="shop-reference-card-grid" data-shop-reference-grid>
               ${sortedSections.map(renderReferenceTable).join("")}
@@ -1935,10 +1976,9 @@
               <span>screen fit estimate</span>
             </div>
             <div class="bolt-gauge-mode" role="radiogroup" aria-label="Bolt gauge mode">
-              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread" checked>Thread / Nut ID</label>
-              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench">Head / Wrench</label>
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench" checked>Select Head / Wrench</label>
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread">Select Thread / Nut ID</label>
             </div>
-            <p class="muted bolt-gauge-help" data-bolt-gauge-help>Fit the circle around the bolt shaft or inside the nut opening to estimate thread size.</p>
             <div class="bolt-gauge-layout">
               <div class="bolt-gauge-measurement-stack">
                 <p class="bolt-gauge-screen-callout"><span aria-hidden="true">*</span>PLACE THE ACTUAL BOLT, NUT, OR WRENCH HEAD DIRECTLY ON THE WHITE SCREEN CARD BELOW.</p>
