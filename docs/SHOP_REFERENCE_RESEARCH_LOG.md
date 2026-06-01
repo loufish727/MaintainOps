@@ -246,3 +246,41 @@ Reason: Electrical/control reference cards are high-use in maintenance, but seve
 ### Standard Feedback
 
 The signal-only model scales better than giving every row generic expanded details. It keeps the cards readable, makes search richer, and forces authored details only where a row has enough field value to deserve a badge.
+
+## Motors & Drives Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent common-spec charts.
+
+Reason: Motors, drives, belts, reducers, and couplings are common mechanic-maintenance references, but several rows can change fit, replacement, setup, or safety outcomes. This batch keeps the signal-detail standard conservative: only common, confusing, high-consequence, or spec-required rows get expanded teaching.
+
+### Reviewed / Source Families
+
+1. NEMA / motor frame and nameplate references
+   Use: frame geometry, shaft height, mounting language, nameplate field interpretation, and replacement-fit caution.
+
+2. Motor manufacturer nameplate guides and replacement guidance
+   Use: FLA, voltage, RPM, frame, enclosure, service factor, frequency, and start-code decision context.
+
+3. VFD manufacturer fault and troubleshooting manuals
+   Use: overcurrent, overvoltage, undervoltage, ground fault, overload, phase loss, STO, encoder feedback, and first-check language.
+
+4. Gear reducer catalogs and service manuals
+   Use: ratio, service factor, C-face mounting, hollow bore, backstop, worm/helical differences, and lubricant/spec matching.
+
+5. Coupling manufacturer catalogs and maintenance references
+   Use: jaw spider series, grid/sleeve/disc/beam coupling differences, insert-family matching, alignment, lube, and torque-rating cautions.
+
+6. Industrial belt manufacturer catalogs and field guides
+   Use: conventional V-belt, fractional horsepower belt, narrow wedge belt, cogged belt, metric wedge belt, and poly-V identification.
+
+### Trial Decisions
+
+- Updated six existing charts: Belt Section Reference, NEMA Motor Frame Reference, Motor Nameplate Reference, VFD Fault Quick Reference, Gear Reducer ID Reference, and Coupling Insert Reference.
+- Added `signalDetailsOnly` to keep non-signal rows clean.
+- Added row-specific `rowSignals` and `rowTeaching` for high-value rows only.
+- Kept final authority language pointed toward labels, nameplates, drive manuals, reducer tags, coupling catalogs, belt markings, and OEM documentation.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+The signal-only standard still fits this domain. Motors and drives can become over-explained quickly, so the card should teach the rows that change field decisions while leaving basic lookup rows compact.

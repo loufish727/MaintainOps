@@ -324,6 +324,12 @@ assert.match(html, /Photoeye Setup Reference[\s\S]*Transparent film or bottles c
 assert.match(html, /Proximity Sensor Reference[\s\S]*An NPN sensor installed where a PNP input is expected/);
 assert.match(html, /PLC I\/O Voltage Reference[\s\S]*A live 4 mA signal is not zero current/);
 assert.match(html, /Industrial PLC Sourcing \/ Sinking Reference[\s\S]*PNP\/sourcing sensor into sinking input/);
+assert.match(html, /Belt Section Reference[\s\S]*A 4L belt can be used where an A belt appears to fit/);
+assert.match(html, /NEMA Motor Frame Reference[\s\S]*A 56-frame motor may physically fit while voltage/);
+assert.match(html, /Motor Nameplate Reference[\s\S]*A dual-voltage motor can be wired wrong/);
+assert.match(html, /VFD Fault Quick Reference[\s\S]*Overcurrent is often reset repeatedly/);
+assert.match(html, /Gear Reducer ID Reference[\s\S]*A reducer with the same physical size but different ratio/);
+assert.match(html, /Coupling Insert Reference[\s\S]*Nearby jaw coupling series can look similar/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
