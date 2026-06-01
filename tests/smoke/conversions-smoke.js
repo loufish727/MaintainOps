@@ -334,6 +334,11 @@ assert.match(html, /Diesel SPN \/ FMI Diagnostic Reference[\s\S]*Read SPN and FM
 assert.match(html, /Diesel Aftertreatment ID Reference[\s\S]*ash load as a service-life and cleaning-history question/);
 assert.match(html, /Diesel Fluid \/ Filter Reference[\s\S]*Water in fuel may show up as intermittent no-start/);
 assert.match(html, /Heavy Equipment Battery \/ Charging Reference[\s\S]*Ohm checks can pass with no load/);
+assert.match(html, /CNC G-Code Quick Reference[\s\S]*Running an inch program as metric/);
+assert.match(html, /CNC M-Code Quick Reference[\s\S]*An M99 in the wrong place can make a program repeat unexpectedly/);
+assert.match(html, /Machining Insert ID Reference[\s\S]*CNMG shape alone is not enough/);
+assert.match(html, /GD&T Symbol Quick Reference/);
+assert.match(html, /most gd&t mistakes start with the wrong datum setup/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);

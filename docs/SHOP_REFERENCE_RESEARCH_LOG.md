@@ -334,3 +334,41 @@ Decision:
 Standard:
 
 New chart rows, signal badges, and row teaching should be added to `src/data/shopReferenceCharts.js`. Renderer changes should stay in `src/render/conversionDisplay.js` only when layout or behavior changes.
+
+## Machining & CNC Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent machining setup charts.
+
+Reason: CNC and machining references can influence machine motion, offsets, tooling, insert selection, and drawing inspection. This batch applies authored detail only to rows where a wrong assumption can create a crash, scrap part, wrong tool order, or inspection mistake.
+
+### Reviewed / Opened Sources
+
+1. Haas Automation G-code reference
+   URL: https://www.haascnc.com/service/service-content/guide-procedures/mill---g-codes.html
+   Use: common mill G-code meaning including rapid, feed, plane, units, offsets, canned-cycle cancellation, and absolute/incremental behavior.
+
+2. Haas mill programming workbook
+   URL: https://www.haascnc.com/content/dam/haascnc/en/service/reference/programming-workbooks/mill---programming-workbook.pdf
+   Use: control-specific programming context, setup/prove-out language, and modal G-code framing.
+
+3. CIMCO Fanuc/Siemens G and M code training references
+   URL: https://www.cimco.com/documentation/online/cimco_edit/v8/en/ExercisesMillingFanucGMCodes.html
+   Use: cross-control examples for G43, G54, G80, G90, M03, and program-structure awareness.
+
+4. Sandvik / ISO insert designation source family
+   Use: insert shape families, ISO material groups, chipbreaker/grade context, and full-code matching.
+
+5. ASME Y14.5 / GD&T source family
+   Use: feature control frame, datum setup, profile, position, runout, total runout, and legacy concentricity inspection caution.
+
+### Trial Decisions
+
+- Updated four existing charts: CNC G-Code Quick Reference, CNC M-Code Quick Reference, Machining Insert ID Reference, and GD&T Symbol Quick Reference.
+- Added `signalDetailsOnly` so basic lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for high-value setup, tooling, and inspection rows.
+- Kept final authority language pointed toward the active control manual, setup sheet, tool table, insert box/catalog, drawing standard, and inspection setup.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+The machining batch reinforces that not every code row deserves a lecture. The strongest chart value is warning where a familiar code or symbol has a hidden setup dependency: active unit mode, active offset, modal state, full insert code, or datum structure.
