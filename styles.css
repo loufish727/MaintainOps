@@ -5106,6 +5106,31 @@ textarea {
   min-width: 640px;
 }
 
+.shop-reference-data-row.shop-reference-row-high-signal td {
+  background: color-mix(in srgb, #ffd84d 18%, var(--surface));
+}
+
+.shop-reference-data-row.shop-reference-row-high-signal td:first-child {
+  box-shadow: inset 4px 0 0 #d89b00;
+}
+
+.shop-reference-row-signal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, #d89b00 60%, var(--line));
+  border-radius: 999px;
+  background: #ffd84d;
+  color: #3c2a00;
+  font-size: 0.64rem;
+  font-weight: 850;
+  line-height: 1;
+  margin: 0 6px 4px 0;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
 .shop-reference-note {
   border-top: 1px solid color-mix(in srgb, var(--blue) 14%, var(--line));
   color: #c51f32;

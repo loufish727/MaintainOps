@@ -49,12 +49,12 @@
           ["22", "0.0253", "0.64", "PLC sensors / low-current controls"],
           ["20", "0.0320", "0.81", "thermostat, alarm, or panel signal"],
           ["18", "0.0403", "1.02", "24V controls / fixture leads"],
-          ["16", "0.0508", "1.29", "light indoor extension cord"],
-          ["14", "0.0641", "1.63", "15 A branch / medium outdoor cord"],
-          ["12", "0.0808", "2.05", "20 A branch / heavy outdoor cord"],
-          ["10", "0.1019", "2.59", "30 A dryer, water heater, RV TT-30"],
-          ["8", "0.1285", "3.26", "40 A range or large AC; 50 A only when install allows"],
-          ["6", "0.1620", "4.11", "50 A RV 14-50, welder, range, EV circuit"],
+          ["16", "0.0508", "1.29", "extension cords / light machine leads; check cord rating"],
+          ["14", "0.0641", "1.63", "very common 15 A branch and medium cord size"],
+          ["12", "0.0808", "2.05", "very common 20 A branch and heavy cord size"],
+          ["10", "0.1019", "2.59", "very common 30 A dryer, water heater, RV TT-30"],
+          ["8", "0.1285", "3.26", "common 40 A range/AC feeder; 50 A only when install allows"],
+          ["6", "0.1620", "4.11", "common 50 A RV 14-50, welder, range, EV circuit"],
           ["4", "0.2043", "5.19", "60-70 A feeder / large equipment"],
           ["3", "0.2294", "5.83", "100 A feeder in some copper installs"],
           ["2", "0.2576", "6.54", "100 A subpanel / equipment feeder"],
@@ -135,10 +135,10 @@
           ["6005", "25 mm", "47 x 12 mm", "light-duty shaft support"],
           ["6201", "12 mm", "32 x 10 mm", "motor ends / small pulleys"],
           ["6202", "15 mm", "35 x 11 mm", "small motors and rollers"],
-          ["6203", "17 mm", "40 x 12 mm", "common motor bearing"],
-          ["6204", "20 mm", "47 x 14 mm", "pumps / motor shafts"],
-          ["6205", "25 mm", "52 x 15 mm", "common pump and conveyor bearing"],
-          ["6206", "30 mm", "62 x 16 mm", "larger motor / gearbox support"],
+          ["6203", "17 mm", "40 x 12 mm", "very common small motor/fan bearing"],
+          ["6204", "20 mm", "47 x 14 mm", "very common pump and motor-shaft bearing"],
+          ["6205", "25 mm", "52 x 15 mm", "very common pump, conveyor, and motor bearing"],
+          ["6206", "30 mm", "62 x 16 mm", "common larger motor / gearbox support bearing"],
           ["6207", "35 mm", "72 x 17 mm", "heavier rotating shafts"],
           ["6208", "40 mm", "80 x 18 mm", "larger industrial shafts"],
           ["6301", "12 mm", "37 x 12 mm", "heavier small shaft"],
@@ -294,13 +294,13 @@
           ["1/4", "6 mm", "loose", "small hex heads"],
           ["5/16", "8 mm", "close", "#10 hex / small bolts"],
           ["11/32", "9 mm", "loose", "small clamp hardware"],
-          ["3/8", "10 mm", "loose", "small metric/SAE mix"],
+          ["3/8", "10 mm", "loose", "very common 10mm socket; frequent-loss size, not a torque substitute"],
           ["7/16", "11 mm", "close", "1/4 bolt heads"],
-          ["1/2", "13 mm", "loose", "5/16 bolt heads"],
-          ["9/16", "14 mm", "close", "3/8 bolt heads"],
+          ["1/2", "13 mm", "loose", "common 13mm metric socket; loose SAE substitute"],
+          ["9/16", "14 mm", "close", "common 14mm metric socket; check fit before load"],
           ["5/8", "16 mm", "loose", "7/16 bolt heads"],
           ["11/16", "17 mm", "close", "metric frame hardware"],
-          ["3/4", "19 mm", "close", "1/2 bolt heads"],
+          ["3/4", "19 mm", "close", "common 19mm metric socket / 1/2 bolt heads; verify full seat"],
           ["13/16", "21 mm", "loose", "lug/nut checks"],
           ["7/8", "22 mm", "close", "larger fasteners"],
           ["15/16", "24 mm", "close", "5/8 bolt heads"],
@@ -1812,6 +1812,22 @@
       ];
     }
 
+    function rowRelevance(section, row) {
+      const title = section.title.toLowerCase();
+      const label = String(row[0] || "").toLowerCase();
+      const rowText = row.join(" ").toLowerCase();
+      if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(label)) {
+        return "Very common";
+      }
+      if (/socket \/ wrench/.test(title) && /(10 mm|13 mm|14 mm|19 mm)/.test(rowText)) {
+        return "Very common";
+      }
+      if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(label)) {
+        return "Very common";
+      }
+      return "";
+    }
+
     function renderRowDetail(section, row, category, columns) {
       const label = rowDetailLabel(row);
       const details = rowDetailItems(section, row, category);
@@ -1872,10 +1888,13 @@
                 <tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
               </thead>
               <tbody>
-                ${rows.map((row, index) => `
-                  <tr class="shop-reference-data-row">${row.map((cell, cellIndex) => `<td data-label="${escapeHtml(columns[cellIndex] || "")}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                ${rows.map((row, index) => {
+                  const relevance = rowRelevance(section, section.rows[index]);
+                  return `
+                  <tr class="shop-reference-data-row${relevance ? " shop-reference-row-high-signal" : ""}">${row.map((cell, cellIndex) => `<td data-label="${escapeHtml(columns[cellIndex] || "")}">${cellIndex === 0 && relevance ? `<span class="shop-reference-row-signal">${escapeHtml(relevance)}</span>` : ""}${escapeHtml(cell)}</td>`).join("")}</tr>
                   ${renderRowDetail(section, section.rows[index], category, columns)}
-                `).join("")}
+                `;
+                }).join("")}
               </tbody>
             </table>
           </div>
