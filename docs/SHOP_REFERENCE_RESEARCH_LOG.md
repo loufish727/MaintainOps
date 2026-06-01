@@ -583,3 +583,41 @@ Reason: Panel and instrumentation references are most useful when they help iden
 ### Standard Feedback
 
 Control-panel references should help a tech read what is in front of them without encouraging panel work by memory. The best row detail names the symbol or parameter, explains the common wrong assumption, and points to the exact proof: drawing, meter, input setup, nameplate, or manual.
+
+## All Remaining Card Signal Batch - Implemented
+
+Classification: mixed 4-source field identification, sizing, troubleshooting, and setup reference charts.
+
+Reason: The remaining charts were useful as lookup tables, but they did not yet carry the senior-tech detail layer. This batch brings every shop-reference chart onto the same row-detail standard: identify the common/high-risk row, name the likely wrong assumption, and point to a practical verification step.
+
+### Reviewed / Source Families
+
+1. Hand-tool, fastener, and sheet-metal sizing source family
+   Use: socket/wrench close-fit caution, metric/inch mix-ups, gauge thickness direction, material-family differences, and plate-vs-gauge language.
+
+2. Pneumatic and hydraulic component source family
+   Use: tube OD vs pipe size, NPT/BSPP distinction, valve function symbols, cylinder bore/stroke/rod/magnet checks, seal orientation, backup rings, and leak/failure isolation.
+
+3. Conveyor, clamp, and chemical-retention source family
+   Use: roller OD/BF/axle identification, groove/sprocket matching, clamp style by service condition, threadlocker vs retaining compound, and anti-seize torque caution.
+
+4. Thread, pipe, O-ring, and material compatibility source family
+   Use: metric pitch verification, NPT nominal/tapered thread behavior, O-ring material compatibility, elastomer limits, and gland/fit requirements.
+
+5. Troubleshooting and maintenance source family
+   Use: motor/pump/conveyor/hydraulic/sensor first checks, bearing/belt/chain failure patterns, pneumatic cylinder checks, compressor maintenance, and pump seal root-cause framing.
+
+6. Machining and CNC source family
+   Use: decimal drill identification, tap-drill mix-ups, surface finish unit confusion, work coordinate offsets, H/D offsets, wear offsets, and hidden modal-state risks.
+
+### Trial Decisions
+
+- Updated 23 remaining charts that still lacked `rowTeaching`.
+- Added `signalDetailsOnly` and row-specific `rowSignals` so lookup rows stay compact until a user opens the question-mark detail.
+- Added detail rows to common, easy-mix-up, high-consequence, spec-required, and common-failure items rather than trying to explain every low-value row.
+- Added a smoke assertion that every shop-reference chart has `rowTeaching`, plus representative rendered assertions for the newly updated charts.
+- Kept all changes in the data module; the renderer and app coordinator were not changed.
+
+### Standard Feedback
+
+The all-card standard is now consistent: every chart should behave like a senior tech standing beside the table. It should not replace OEM manuals, drawings, code, or qualified procedure. It should make the first field decision better by saying what the row means, what people commonly confuse, and what to verify before acting.

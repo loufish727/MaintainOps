@@ -15,6 +15,7 @@ const {
   nearestWrenchSize,
 } = require("../../src/utils/conversions.js");
 const { createConversionDisplayHelpers } = require("../../src/render/conversionDisplay.js");
+const { SHOP_REFERENCE_SECTIONS } = require("../../src/data/shopReferenceCharts.js");
 
 assert.equal(conversionResultText("length", 12, "in", "cm"), "30.48 Centimeters");
 assert.equal(conversionResultText("area", 100, "sqft", "sqm"), "9.2903 Square meters");
@@ -30,6 +31,8 @@ assert.equal(nearestWrenchSize(0.749)?.thread, "1/2");
 assert.equal(nearestWrenchSize(6)?.thread, "4");
 assert.equal(boltGaugeReading(24, 96)?.closest?.inch, "1/4");
 assert.equal(boltGaugeReading(72, 96, "wrench")?.closest?.thread, "1/2");
+assert.equal(SHOP_REFERENCE_SECTIONS.length, 77);
+assert.deepEqual(SHOP_REFERENCE_SECTIONS.filter((chart) => !chart.rowTeaching).map((chart) => chart.title), []);
 
 const helpers = createConversionDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
@@ -207,24 +210,23 @@ assert.match(html, /Senior tech note/);
 assert.match(html, /Risk \/ signal/);
 assert.match(html, /Source family/);
 assert.match(html, /Example/);
-assert.match(html, /identify the part family, then verify the exact marking, size, and application/);
+assert.match(html, /A 3\/8 inch wrench is often near a 10 mm fastener/);
 assert.match(html, /SPN points to the suspect parameter or circuit family/);
 assert.match(html, /The same SPN can lead to different tests depending on FMI/);
-assert.match(html, /<strong>Verify first<\/strong>/);
 assert.match(html, /SPN \/ suspect parameter number \/ identifies system or sensor \/ OEM mapping/);
 assert.match(html, /SAE J1939, engine OEM service data, equipment service manuals/);
 assert.match(html, /CNC control manual, machine builder documentation, setup sheet/);
 assert.match(html, /AWS symbol\/procedure standards, WPS, filler manufacturer data/);
 assert.match(html, /NEC\/NFPA 70, NEMA\/IEC standards, device datasheets/);
-assert.match(html, /same code on another control, wrong active work offset, hidden modal state/);
+assert.match(html, /A leftover shift can make every correct-looking offset cut in the wrong place/);
 assert.match(html, /22 AWG is common in low-current controls, sensors, and signal wiring/);
-assert.match(html, /wrench size is fastener head size, not bolt thread size/);
-assert.match(html, /10mm is a high-frequency mechanic size/);
+assert.match(html, /Fitting hex size is not the same thing as thread size or hose size/);
+assert.match(html, /For common 10 mm hardware, use the actual 10 mm tool/);
 assert.match(html, /6205 is a very common 25 mm bore bearing used around conveyors, pumps, and motors/);
 assert.match(html, /14 AWG is commonly associated with 15 amp branch circuits and medium cord sizes/);
 assert.match(html, /breaker size, copper vs aluminum, insulation rating, temperature, bundling, and run length all matter/);
 assert.match(html, /Treat 14 AWG as a common recognition point/);
-assert.match(html, /10mm is close enough to some inch sizes to tempt a shortcut/);
+assert.match(html, /Close fit does not mean correct fit/);
 assert.match(html, /10 mm is commonly reached for very common 10mm socket; frequent-loss size/);
 assert.match(html, /6205 can match by bore while still being wrong by width, seal\/shield suffix, clearance, cage, or fit/);
 assert.match(html, /6205 \(25 mm bore, 52 x 15 mm\) is commonly seen on very common pump, conveyor, and motor bearing/);
@@ -370,6 +372,29 @@ assert.match(html, /Relay \/ Contactor Symbol Reference[\s\S]*NO\/NC describes t
 assert.match(html, /Control Panel Terminal Reference[\s\S]*PE, DC common, neutral, and shield drains serve different purposes/);
 assert.match(html, /Control Transformer Reference[\s\S]*Adding up steady loads only can miss contactor\/solenoid inrush/);
 assert.match(html, /Drive \/ Motor Nameplate Match Reference[\s\S]*Wrong base frequency can change speed scaling/);
+assert.match(html, /Socket \/ Wrench Close-Fit Reference[\s\S]*For common 10 mm hardware, use the actual 10 mm tool/);
+assert.match(html, /Sheet Metal Gauge Reference[\s\S]*Gauge number runs backward/);
+assert.match(html, /Pneumatic Fitting ID Reference[\s\S]*1\/4 push-to-connect fittings use tube outside diameter/);
+assert.match(html, /Air Cylinder ID Reference[\s\S]*Cylinder bore is piston diameter/);
+assert.match(html, /Solenoid Valve ID Reference[\s\S]*center condition changes machine behavior/);
+assert.match(html, /Hydraulic Cylinder Seal ID Reference[\s\S]*The rod seal keeps pressurized oil/);
+assert.match(html, /Conveyor Roller ID Reference[\s\S]*Measure between-frame length from the conveyor frame/);
+assert.match(html, /Hose Clamp Reference[\s\S]*Spring clamps maintain tension as hose expands/);
+assert.match(html, /Threadlocker \/ Retaining Compound Reference[\s\S]*Green products can be wicking or retaining compounds/);
+assert.match(html, /Metric Thread Pitch Reference[\s\S]*M10 can be mistaken for 3\/8 inch hardware/);
+assert.match(html, /NPT Pipe Thread Reference[\s\S]*NPT, BSPT, and BSPP fittings may look close/);
+assert.match(html, /O-Ring Material Reference[\s\S]*EPDM is common for water, steam, coolant/);
+assert.match(html, /Common Failure Symptom Reference[\s\S]*Compare current to nameplate FLA/);
+assert.match(html, /Bearing Symptom Reference[\s\S]*Overgreasing can cause heat/);
+assert.match(html, /Belt Failure Pattern Reference[\s\S]*Belt dressing may quiet the symptom/);
+assert.match(html, /Chain \/ Sprocket Wear Reference[\s\S]*Chain stretch is usually pin and bushing wear/);
+assert.match(html, /Pneumatic Cylinder Troubleshooting Reference[\s\S]*Follow the energy path/);
+assert.match(html, /Hydraulic Leak \/ Failure Reference[\s\S]*never check with hands/);
+assert.match(html, /Compressor Maintenance Reference[\s\S]*Air leaks waste compressor capacity/);
+assert.match(html, /Pump Seal Failure Reference[\s\S]*Cavitation noise suggests vapor bubbles/);
+assert.match(html, /Machining Decimal Drill Reference[\s\S]*#10-24 and #10-32 require different tap drills/);
+assert.match(html, /Surface Finish Reference[\s\S]*Metric and microinch finish units are easy to mix up/);
+assert.match(html, /CNC Offset Reference[\s\S]*Wrong H offset can move Z/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
