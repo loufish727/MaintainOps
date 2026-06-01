@@ -925,6 +925,35 @@
         ],
       },
       {
+        title: "Spark Plug Condition Reference",
+        note: "Plug appearance is a clue, not a standalone diagnosis. Compare all cylinders and verify plug type, gap, heat range, ignition, fueling, oil control, and OEM service data.",
+        columns: ["Condition", "Look", "Field note", "First check"],
+        signalDetailsOnly: true,
+        rowSignals: {
+          "Dry carbon fouling": "Common failure",
+          "Fuel wet fouling": "Common failure",
+          "Oil fouling": "Common failure",
+          "Ash deposits": "Common failure",
+          "Overheated / blistered": "High consequence",
+          "Carbon tracking": "Easy mix-up",
+          "Worn electrode": "Very common",
+        },
+        rows: [
+          ["Normal", "light tan/gray, slight wear", "baseline after real running", "compare cylinders"],
+          ["Dry carbon fouling", "dry black soot", "rich mixture, weak spark, cold running", "air/fuel/ignition"],
+          ["Fuel wet fouling", "wet fuel smell", "no-start, misfire, flooding", "spark/injector/compression"],
+          ["Oil fouling", "wet oily deposits", "oil control, rings, guides, PCV", "compression/leakdown"],
+          ["Ash deposits", "tan/white crust", "oil/fuel additives or oil burning", "oil use/additives"],
+          ["Overheated / blistered", "white blistering, eroded electrode", "lean, timing, cooling, wrong heat range", "timing/fuel/cooling"],
+          ["Worn electrode", "rounded center/ground electrode", "normal service wear, larger gap", "gap and mileage"],
+          ["Gap bridged", "debris between electrodes", "misfire from deposits/debris", "inspect chamber/deposits"],
+          ["Cracked insulator", "broken ceramic", "handling, detonation, installation damage", "replace and inspect cause"],
+          ["Carbon tracking", "black line down insulator", "spark leak from boot/terminal", "boot/coil/wire"],
+          ["Glazed deposits", "shiny yellow/brown coating", "additives/heat can cause misfire", "fuel/oil additives"],
+          ["Incorrect gap", "gap too wide/narrow", "hard start, misfire, coil stress", "gap to OEM spec"],
+        ],
+      },
+      {
         title: "Bearing Symptom Reference",
         note: "Bearing diagnosis should include load, lubrication, alignment, fit, temperature, and contamination review.",
         columns: ["Symptom", "Likely area", "Common use note", "Watch point"],
@@ -1573,6 +1602,7 @@
       const title = section.title.toLowerCase();
       if (/thread|tap|fastener|torque|threadlocker/.test(title)) return "fasteners";
       if (/diesel|aftertreatment|battery \/ charging|heavy equipment/.test(title)) return "diesel-mobile";
+      if (/spark plug/.test(title)) return "pm-troubleshooting";
       if (/cnc|g-code|m-code|machining|insert|decimal drill|surface finish|gd&t|offset/.test(title)) return "machining-cnc";
       if (/weld|stick electrode|mig|plasma|fabrication|structural shape/.test(title)) return "fabrication";
       if (/wire|electrical|plug|sensor|fuse|contactor|thermocouple|rtd|plc|relay|conduit|nema enclosure|control panel|control transformer/.test(title)) return "electrical";
@@ -1581,14 +1611,14 @@
       if (/pneumatic|air cylinder|solenoid/.test(title)) return "pneumatics";
       if (/bearing|roller chain|chain|sprocket|belt failure|conveyor roller/.test(title)) return "bearings-belts-chain";
       if (/extension cord|industrial wire|conduit|ip \/|nema enclosure|electrical/.test(title)) return "electrical";
-      if (/pm interval|failure symptom|compressor|pump seal/.test(title)) return "pm-troubleshooting";
+      if (/pm interval|failure symptom|spark plug|compressor|pump seal/.test(title)) return "pm-troubleshooting";
       if (/pipe|tubing|npt|fitting|hose clamp|hydraulic hose/.test(title)) return "pipe-hose-fittings";
       return "materials-shop";
     }
 
     function shopReferenceKind(section) {
       const title = section.title.toLowerCase();
-      if (/failure|symptom|troubleshooting|fault|leak|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
+      if (/failure|symptom|troubleshooting|fault|leak|spark plug|compressor|pump seal|aftertreatment|spn|fmi/.test(title)) return "troubleshooting";
       if (/g-code|m-code|gd&t|weld symbol|relay \/ contactor symbol|plc|wire color|sourcing \/ sinking|control panel terminal/.test(title)) return "codes-symbols";
       if (/load|fluid|filter|oil|grease|threadlocker|battery|charging|extension cord|transformer|drive \/ motor|plasma|mig wire|stick electrode/.test(title)) return "common-specs";
       return "sizing-id";
@@ -1631,6 +1661,7 @@
       if (/threadlocker/.test(title)) return "match product datasheet";
       if (/wire gauge/.test(title)) return "measure AWG + insulation rating";
       if (/extension cord/.test(title)) return "read cord jacket marking";
+      if (/spark plug/.test(title)) return "compare plug + cylinder data";
       if (/plug|receptacle/.test(title)) return "match NEMA face + rating";
       if (/fuse/.test(title)) return "match class, volts, amps";
       if (/conduit/.test(title)) return "calculate fill with actual OD";
@@ -1698,6 +1729,7 @@
         { pattern: /weld|electrode|mig/, text: "AWS symbol/procedure standards, WPS, filler manufacturer data" },
         { pattern: /plasma/, text: "plasma system cut chart, consumable chart, machine manual" },
         { pattern: /bend|structural shape/, text: "fabrication handbook, material standard, shop drawing" },
+        { pattern: /spark plug/, text: "spark plug manufacturer diagnosis guides, OEM service data, cylinder comparison, scan data" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor|thermocouple|rtd/, text: "NEC/NFPA 70, NEMA/IEC standards, device datasheets" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "NEMA/IEC motor data, drive manual, OEM mechanical catalog" },
         { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "SAE/ISO fluid power standards, hose/fitting/seal catalog" },
@@ -1724,6 +1756,7 @@
         { pattern: /terminal/, text: "terminal strip, wire marker, panel terminal" },
         { pattern: /transformer/, text: "control power transformer, CPT, VA transformer" },
         { pattern: /wire gauge/, text: "AWG, conductor size, cable size" },
+        { pattern: /spark plug/, text: "plug reading, plug condition, ignition/fueling clue, misfire clue" },
         { pattern: /plug|receptacle/, text: "NEMA plug, twist-lock, cord cap" },
         { pattern: /fuse/, text: "fuse class, current-limiting fuse, branch fuse" },
         { pattern: /bearing/, text: "bearing number, bearing code, bearing ID" },
@@ -1747,6 +1780,7 @@
         { pattern: /surface finish/, text: "Ra vs RMS, microinch vs micrometer, process guess without measurement" },
         { pattern: /gd&t/, text: "profile vs position, circularity vs cylindricity, datum omitted" },
         { pattern: /weld|electrode|mig|plasma/, text: "similar filler with wrong position/current/gas, cut chart for different consumables" },
+        { pattern: /spark plug/, text: "plug appearance mistaken for final diagnosis, fuel wet vs oil wet, heat range issue vs engine problem" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor/, text: "same voltage with wrong current, AC/DC mix-up, source/sink reversed" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "same HP with wrong frame, wrong base speed, wrong shaft or service factor" },
         { pattern: /hydraulic|hose|o-ring|shaft seal|fitting|pipe|tubing/, text: "close OD with wrong thread, wrong sealing face, wrong pressure or material" },
@@ -1790,6 +1824,9 @@
       if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
         return `${label} identifies the bearing size family, but suffix, seal/shield style, clearance, and fit still decide the replacement`;
       }
+      if (/spark plug/.test(title)) {
+        return "spark plug condition is a clue; compare all cylinders and confirm ignition, fuel, compression, heat range, and OEM plug spec";
+      }
       return detailTextFromRules(section, [
         { pattern: /wire gauge/, text: "wire size, fuse size, insulation rating, and run length all matter" },
         { pattern: /socket \/ wrench/, text: "wrench size is fastener head size, not bolt thread size" },
@@ -1821,6 +1858,13 @@
       if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
         return `${label} can match by bore while still being wrong by width, seal/shield suffix, clearance, cage, or fit.`;
       }
+      if (/spark plug/.test(title)) {
+        if (/fuel wet/i.test(label)) return "fuel-wet and oil-wet plugs can both look wet at a glance. Smell, texture, cylinder data, and compression separate the cause.";
+        if (/oil fouling/i.test(label)) return "oil fouling can be mistaken for a bad plug. The plug may be the symptom, while rings, guides, PCV, or cylinder wear are the cause.";
+        if (/overheated/i.test(label)) return "overheated plug signs can be confused with normal light coloring. Blistering, eroded electrodes, timing, lean mix, cooling, and heat range matter.";
+        if (/carbon tracking/i.test(label)) return "carbon tracking can be missed because the plug tip may not look terrible. The spark may be leaking down the insulator or boot path.";
+        return `${label}: plug appearance can be mistaken for final diagnosis. Compare cylinders and verify the running condition.`;
+      }
       return rowWrongMatches(section, row, category);
     }
 
@@ -1838,6 +1882,15 @@
       }
       if (/bearing quick/i.test(section.title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
         return `${label} is common in rotating equipment, but suffix, clearance, seal/shield style, and fit are where replacements go wrong`;
+      }
+      if (/spark plug/i.test(section.title)) {
+        if (/dry carbon/i.test(label)) return "Dry carbon fouling points toward rich running, weak ignition, cold operation, or the wrong heat range; replace the plug only after checking why it fouled.";
+        if (/fuel wet/i.test(label)) return "A fuel-wet plug is usually telling you the cylinder did not light off; check spark, injector behavior, and compression before blaming the plug.";
+        if (/oil fouling/i.test(label)) return "Oil fouling is a root-cause clue. The new plug may foul again if oil control, PCV, guides, rings, or cylinder wear are ignored.";
+        if (/overheated/i.test(label)) return "Overheated plug damage is a stop-and-check signal because lean operation, timing, cooling, or wrong heat range can hurt the engine.";
+        if (/carbon tracking/i.test(label)) return "Carbon tracking often follows the boot path, so a new plug alone may not fix the misfire if the boot, coil, or wire leaks spark.";
+        if (/worn electrode/i.test(label)) return "A worn electrode is common maintenance evidence; check gap, mileage, and whether the wear is even across cylinders.";
+        return `${label}: use the plug as a clue, then confirm with live data, cylinder comparison, and OEM service information.`;
       }
       return `${label}: ${referenceWrongMatches(section, category)}. Verify before replacing, tightening, wiring, or ordering.`;
     }
@@ -1864,6 +1917,9 @@
       }
       if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
         return `${label} (${row[1]} bore, ${row[2]}) is commonly seen on ${row[3]}; match the full bearing code before ordering.`;
+      }
+      if (/spark plug/.test(title)) {
+        return `${label}: ${row[1]}. Field clue: ${row[2]}. First check: ${row[3]}.`;
       }
       return rowExample(row);
     }
@@ -1893,7 +1949,17 @@
       if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(label)) {
         return "Very common";
       }
+      if (section.rowSignals && Object.prototype.hasOwnProperty.call(section.rowSignals, row[0])) {
+        return section.rowSignals[row[0]];
+      }
       return "";
+    }
+
+    function shouldRenderRowDetail(section, row) {
+      if (section.signalDetailsOnly) {
+        return Boolean(rowRelevance(section, row));
+      }
+      return true;
     }
 
     function renderRowDetail(section, row, category, columns) {
@@ -1923,7 +1989,9 @@
       const kind = shopReferenceKind(section);
       const columns = [...section.columns, "Verify by"];
       const rows = section.rows.map((row) => [...row, verifyByForReference(section, row)]);
-      const rowDetails = section.rows.map((row) => rowDetailItems(section, row, category));
+      const rowDetails = section.rows
+        .filter((row) => shouldRenderRowDetail(section, row))
+        .map((row) => rowDetailItems(section, row, category));
       const searchableText = [
         section.title,
         category,
@@ -1958,7 +2026,7 @@
                   const relevance = rowRelevance(section, section.rows[index]);
                   return `
                   <tr class="shop-reference-data-row${relevance ? " shop-reference-row-high-signal" : ""}">${row.map((cell, cellIndex) => `<td data-label="${escapeHtml(columns[cellIndex] || "")}">${cellIndex === 0 && relevance ? `<span class="shop-reference-row-signal">${escapeHtml(relevance)}</span>` : ""}${escapeHtml(cell)}</td>`).join("")}</tr>
-                  ${renderRowDetail(section, section.rows[index], category, columns)}
+                  ${shouldRenderRowDetail(section, section.rows[index]) ? renderRowDetail(section, section.rows[index], category, columns) : ""}
                 `;
                 }).join("")}
               </tbody>

@@ -16,6 +16,7 @@ This log tracks source validation before chart content changes. It is intentiona
 | Wire Gauge Reference | Decision | 10 | Started | Electrical sizing/protection can affect overheating, nuisance trips, voltage drop, and code/OEM fit. |
 | Socket / Wrench Close-Fit Reference | Identification | 4 | Queued | Useful mechanic field lookup with common close-fit mistakes. |
 | Bearing Quick Reference | Identification with consequence rows | 4 chart / row-specific highlights | Queued | Common part ID chart; suffix, clearance, seal, and fit mistakes can cause repeat failure. |
+| Spark Plug Condition Reference | Identification/troubleshooting | 4 | Implemented trial | Mechanic-facing visual diagnosis chart used to test signal-only detail expansion and row-specific teaching text. |
 
 ## Wire Gauge Reference - Started
 
@@ -76,3 +77,38 @@ Reason: This chart can influence wire, fuse/breaker, cord, and current-carrying 
 
 Do not edit the rendered Wire Gauge chart again until the 10-source pack is complete or a smaller reviewed row-specific patch is explicitly scoped.
 
+## Spark Plug Condition Reference - Implemented Trial
+
+Classification: 4-source identification/troubleshooting chart.
+
+Reason: Spark plug condition reading is mechanic-facing and visual. It is useful for orientation, but plug appearance is a clue rather than a final diagnosis. This made it a good trial for the source process without using a 10-source decision chart.
+
+### Reviewed Sources
+
+1. DENSO, Spark Plug Basic Knowledge - Troubleshooting
+   URL: https://www.denso.com/global/en/products-and-services/automotive-service-parts-and-accessories/plug/basic/diagnosis/
+   Use: manufacturer diagnosis language for oil fouling, overheating, deposits, and misfire conditions.
+
+2. Champion, Spark Plug Trouble Tracer Chart
+   URL: https://www.championautoparts.com/content/dam/marketing/emea/champion/pdf/CHAMPION-Spark-Plug-Trouble-Tracer-pdf.pdf
+   Use: manufacturer condition list and common causes for oil fouling, carbon fouling, flashover/carbon tracking, ash deposits, and worn plugs.
+
+3. NGK, Plug Fouling technical sheet
+   URL: https://www.ngkpartfinder.co.uk/assets/Uploads/PlugFouling-ver2.pdf
+   Use: manufacturer fouling explanation, wet/dry deposit distinction, low-speed/stop-start operation, and heat-range context.
+
+4. Mechanic/field discussion sample: AskMechanics and MechanicAdvice spark plug reading threads
+   Example URL: https://www.reddit.com/r/AskMechanics/comments/106lz6v/
+   Use: field confusion evidence. Common pattern: people ask plug appearance to diagnose engine health, while experienced replies caution that modern plug reading is limited and should be paired with cylinder comparison, symptoms, scan/live data, and service context.
+
+### Trial Decisions
+
+- Added one new chart: Spark Plug Condition Reference.
+- Treated it as an identification/troubleshooting chart, not a final diagnosis chart.
+- Added `signalDetailsOnly` so only signal rows get expanded senior-tech detail.
+- Signal rows include common failure/high-consequence/easy-mix-up/very-common examples.
+- Normal lookup rows remain clean table rows without expanded detail.
+
+### Standard Feedback
+
+This trial supports the direction that normal rows should stay clean and only signal rows should get teaching detail.
