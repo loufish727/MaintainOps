@@ -198,3 +198,51 @@ Reason: Extension cords look simple, but the chart can influence load, length, v
 ### Open Work
 
 Complete the remaining 3 sources before treating the whole chart as fully reviewed under the 10-source decision threshold. Until then, this is a conservative signal-detail trial, not a full extension-cord authority.
+
+## Electrical & Controls Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent common-spec charts.
+
+Reason: Electrical/control reference cards are high-use in maintenance, but several rows can influence wiring, fuse replacement, PLC I/O selection, or sensor replacement. This batch applies the signal-detail standard conservatively: only high-frequency, high-confusion, high-consequence, or spec-required rows get expanded teaching.
+
+### Reviewed / Opened Sources
+
+1. Banner Engineering, Photoelectric Sensors overview
+   URL: https://www.bannerengineering.eu/us/en/products/sensors/photoelectric-sensors.html
+   Use: photoelectric sensing families including opposed/through-beam, retroreflective, diffuse, background suppression, clear object, and alignment/range context.
+
+2. Banner Engineering, photoelectric sensor literature / troubleshooting reference
+   URL: https://info.bannerengineering.com/cs/groups/public/documents/literature/03190.pdf
+   Use: field troubleshooting orientation for opposed and retroreflective alignment, load operation checks, and reflector-related diagnosis.
+
+3. AutomationDirect, Inductive Proximity Sensors
+   URL: https://www.automationdirect.com/proximity
+   Use: proximity sensor families, PNP/NPN output availability, AC/DC output models, sensor purpose, and PLC/relay connection context.
+
+4. AutomationDirect, Proximity Sensor Terminology / catalog references
+   URL: https://support.automationdirect.com/docs/an-sen-009.pdf
+   Use: proximity terminology, output type, voltage drop, wiring-programmable output context, and field-device language.
+
+5. Eaton, Fuses Made Simple
+   URL: https://www.eaton.com/us/en-us/products/electrical-circuit-protection/fuses/fuses-made-simple0.html
+   Use: fuse class family names, time-delay/current-limiting framing, Class CC/J/R/L context, and replacement-class caution.
+
+6. Eaton, Fuseology / overcurrent protection fundamentals
+   URL: https://www.eaton.com/content/dam/eaton/markets/machinebuilding/protect-personnel-assets-and-machine-reliability/documents/documents-english-language/bus-ele-br-10757-fuseology.pdf
+   Use: current-limiting fuse families, rejection-holder context, Class R/RK family differences, and supplemental/branch-protection separation.
+
+7. Rockwell/Allen-Bradley style field documentation sample and PLC field discussions
+   URL: https://www.manualsdir.com/manuals/576828/rockwell-automation-45mla-controller-installation-instructions.html?page=3
+   Use: sourcing/sinking input language and the repeated field confusion around PNP/NPN sensor terminology vs module input terminology.
+
+### Trial Decisions
+
+- Updated six existing charts: Common Sensor ID Reference, Fuse Class Reference, Photoeye Setup Reference, Proximity Sensor Reference, PLC I/O Voltage Reference, and Industrial PLC Sourcing / Sinking Reference.
+- Added `signalDetailsOnly` to keep unbadged rows clean.
+- Added row-specific `rowSignals` and `rowTeaching` for high-value rows only.
+- Kept final authority language pointed toward labels, wiring diagrams, datasheets, holders, input cards, and OEM/device manuals.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+The signal-only model scales better than giving every row generic expanded details. It keeps the cards readable, makes search richer, and forces authored details only where a row has enough field value to deserve a badge.
