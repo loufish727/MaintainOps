@@ -650,3 +650,30 @@ Reason: Common Inch Thread Reference and Common Wrench / Head Size Reference are
 ### Standard Feedback
 
 Bolt and wrench references should make the first field identification faster without implying substitution authority. A good row detail explains the measurement being shown, names the common wrong assumption, and points the user to a physical proof: thread gauge, calipers, head mark, wrench fit, torque spec, drawing, or OEM procedure.
+
+## Reference Data Split - Implemented
+
+Classification: low-risk mechanical data organization.
+
+Reason: The shop-reference dataset had grown to 77 charts, 1,004 rows, and 541 senior-tech detail rows. It was still safe as static frontend data, but `src/data/shopReferenceCharts.js` had become a maintenance risk as one large file.
+
+### Implementation
+
+- Split chart data into category files under `src/data/reference/`.
+- Kept `src/data/shopReferenceCharts.js` as the compatibility assembler/export used by the existing renderer and tests.
+- Preserved browser global loading through `window.MaintainOpsReferenceData`.
+- Preserved CommonJS test loading through category-file `module.exports`.
+- Updated `index.html` load order so category data loads before the assembler.
+- Updated resource-load smoke coverage so each split category file must be referenced and hosted.
+
+### Verification Standard
+
+- Syntax check every split data file.
+- Confirm assembled chart data is byte-for-byte equivalent to the previous committed export.
+- Confirm chart count, row count, teaching-row count, and first/last chart order.
+- Run conversion and shop-reference favorites smokes.
+- Run local and hosted resource smokes before calling the split complete.
+
+### Standard Feedback
+
+Reference data can keep growing, but new chart additions should now land in the relevant category file instead of rebuilding a single data monolith. `shopReferenceCharts.js` should stay an assembler unless the exported contract itself changes.
