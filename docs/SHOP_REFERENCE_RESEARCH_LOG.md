@@ -516,3 +516,38 @@ Reason: Lubricant, fitting, hose, O-ring, and shaft-seal replacements are common
 ### Standard Feedback
 
 Fluid-power and sealing charts should teach that dimensional match is only the first gate. The useful chart answer is: identify the size family, then verify fluid, pressure, material, sealing surface, construction, and installation condition before replacement.
+
+## Electrical Identification Signal Batch - Implemented
+
+Classification: mixed 4-source identification and spec-adjacent electrical reference charts.
+
+Reason: Electrical reference cards are useful only when they help a technician identify what they are looking at without replacing drawings, code, meter checks, or qualified electrical procedure. This batch focuses on connector identity, terminal markings, wire-color caution, raceway fill reminders, and enclosure-rating interpretation.
+
+### Reviewed / Opened Sources
+
+1. NEMA plug and receptacle source family
+   Use: 5/6/10/14 locking and non-locking configurations, voltage/amperage families, neutral vs no-neutral distinction, TT-30 RV confusion, and unsafe interchange prevention.
+
+2. Contactor and overload terminal-marking source family
+   Use: A1/A2 coil terminals, L/T line-load markings, auxiliary NO/NC numbering, overload 95/96 and 97/98 contacts, FLA dial, and reset-mode checks.
+
+3. NFPA 79 / industrial control panel wiring source family
+   Use: wire color as a convention, not proof; AC/DC control wiring distinctions, external-source color caution, wire numbering, and schematic authority.
+
+4. NEC conduit-fill source family
+   Use: 53 percent / 31 percent / 40 percent fill reminders, Chapter 9 table framing, box-fill distinction, pull length, bend count, and VFD cable manufacturer requirements.
+
+5. NEMA enclosure / IP rating source family
+   Use: NEMA 1, 3R, 4, 4X, 12, 6 and IP54/IP65/IP67 distinctions, environment suitability, connector/entry ratings, corrosion, dust, washdown, and temporary immersion limits.
+
+### Trial Decisions
+
+- Updated five existing charts: Electrical Plug / Receptacle Reference, Contactor / Overload Reference, Industrial Wire Color Reference, Conduit Fill Quick Reference, and IP / NEMA Enclosure Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for common, easy-mix-up, high-consequence, and spec-required rows.
+- Kept authority pointed to equipment manuals, labels, schematic/wire numbers, meter checks, code tables, listings, enclosure labels, and environment checks.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Electrical shop references should never read like permission to wire by memory. The useful pattern is: identify the item, name the common wrong assumption, then force verification through the drawing, meter, listing, code table, or equipment manual.

@@ -360,6 +360,11 @@ assert.match(html, /Fitting \/ Thread Reference[\s\S]*JIC fittings seal on a 37 
 assert.match(html, /Hydraulic Hose Dash Reference[\s\S]*Dash size describes hose ID family/);
 assert.match(html, /O-Ring Size Reference[\s\S]*O-ring dash size proves dimensions only/);
 assert.match(html, /Shaft Seal Reference[\s\S]*Seal size does not prove lip material/);
+assert.match(html, /Electrical Plug \/ Receptacle Reference[\s\S]*TT-30 is a 125V 30A travel-trailer\/RV configuration/);
+assert.match(html, /Contactor \/ Overload Reference[\s\S]*A contactor can have the right amp or horsepower rating and still have the wrong coil voltage/);
+assert.match(html, /Industrial Wire Color Reference[\s\S]*Never use color alone to prove a conductor is safe/);
+assert.match(html, /Conduit Fill Quick Reference[\s\S]*40 percent fill does not replace derating/);
+assert.match(html, /IP \/ NEMA Enclosure Reference[\s\S]*NEMA 4 does not automatically mean corrosion resistance/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
