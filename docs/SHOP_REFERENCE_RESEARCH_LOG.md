@@ -372,3 +372,42 @@ Reason: CNC and machining references can influence machine motion, offsets, tool
 ### Standard Feedback
 
 The machining batch reinforces that not every code row deserves a lecture. The strongest chart value is warning where a familiar code or symbol has a hidden setup dependency: active unit mode, active offset, modal state, full insert code, or datum structure.
+
+## Fabrication & Welding Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent fabrication charts.
+
+Reason: Fabrication and welding references can influence weld placement, rod/wire selection, plasma cut quality, brake setup, and material substitution. This batch avoids company-policy/safety-process content and focuses on practical identification and verification cues.
+
+### Reviewed / Opened Sources
+
+1. AWS A2.4 weld symbol source family
+   Use: arrow-side / other-side convention, reference line, tail, fillet/groove symbols, intermittent weld language, and all-around symbol caution.
+
+2. Lincoln Electric / Miller stick electrode and welding setup source family
+   Use: E6010, E6011, E6013, E7018, E7024, polarity, low-hydrogen handling, and rod-position context.
+
+3. Miller MIG wire and shielding gas references
+   URL: https://www.millerwelds.com/resources/article-library/understanding-the-basics-of-mig-welding-for-mild-steel
+   Use: ER70S-6, C25 gas, wire diameter, shielding-gas behavior, and mild-steel MIG setup language.
+
+4. Hypertherm plasma cut chart source family
+   Use: consumable stack, amperage, pierce height, cut height, kerf, dross, air quality, and chart-based setup.
+
+5. Sheet-metal bend / press-brake setup source family
+   Use: inside radius, K-factor, bend allowance/deduction, air bending, die opening, springback, and grain-direction caution.
+
+6. AISC / structural shape source family
+   Use: W-shape/channel/angle/HSS/pipe designation, nominal vs actual dimensions, weight per foot, wall thickness, grade, and material certification context.
+
+### Trial Decisions
+
+- Updated six existing charts: Weld Symbol Quick Reference, Stick Electrode Reference, MIG Wire / Shielding Gas Reference, Plasma Cutting Reference, Fabrication Bend Reference, and Structural Shape ID Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for high-value fabrication, welding, cutting, forming, and material-ID rows.
+- Kept final authority language pointed toward drawings, WPS/procedure, rod/wire labels, machine cut charts, brake setup data, shape tables, and material certs.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Fabrication charts need to be practical without sounding like jobsite policy. The useful standard is: identify what the row means, name the common wrong assumption, and tell the tech what physical label, print note, chart, setup data, or measurement proves it.

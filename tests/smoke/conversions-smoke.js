@@ -339,6 +339,12 @@ assert.match(html, /CNC M-Code Quick Reference[\s\S]*An M99 in the wrong place c
 assert.match(html, /Machining Insert ID Reference[\s\S]*CNMG shape alone is not enough/);
 assert.match(html, /GD&T Symbol Quick Reference/);
 assert.match(html, /most gd&t mistakes start with the wrong datum setup/);
+assert.match(html, /Weld Symbol Quick Reference[\s\S]*Arrow side and other side are one of the easiest ways/);
+assert.match(html, /Stick Electrode Reference[\s\S]*storage and handling are part of the weld/);
+assert.match(html, /MIG Wire \/ Shielding Gas Reference[\s\S]*If the weld changed after a cylinder swap/);
+assert.match(html, /Plasma Cutting Reference[\s\S]*Piercing too low can destroy consumables/);
+assert.match(html, /Fabrication Bend Reference[\s\S]*Changing V-die width can change the formed part/);
+assert.match(html, /Structural Shape ID Reference[\s\S]*pipe size is nominal and schedule controls wall thickness/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);
