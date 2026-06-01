@@ -1149,6 +1149,53 @@
         title: "Extension Cord Load Reference",
         note: "Cord ratings depend on conductor size, length, insulation, connectors, and listed use. Long runs need larger wire.",
         columns: ["Cord", "Length", "Typical load", "Watch point"],
+        signalDetailsOnly: true,
+        rowSignals: {
+          "16 AWG": "Easy mix-up",
+          "12 AWG": "Very common",
+          "10 AWG": "High consequence",
+          "Outdoor cord": "Spec required",
+          "SJTW": "Very common",
+          "SOOW": "Stock item",
+        },
+        rowTeaching: {
+          "16 AWG": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "16 AWG cords look useful because they are common and light, but longer runs and motor loads can create voltage drop, heat, and weak tool performance.",
+            seniorTechNote: "Use 16 AWG for light loads only after checking the cord label and tool amps. Do not let a long skinny cord become the hidden cause of nuisance trips or hot plugs.",
+            verifyBy: "read jacket + tool amps",
+          },
+          "12 AWG": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "12 AWG is common for heavier shop cords, but it is still not a universal permission slip; connector rating, cord length, duty, and environment still matter.",
+            seniorTechNote: "12 AWG is the everyday heavy-cord size worth recognizing. It buys margin for longer runs and higher draw, but the nameplate load and cord marking still decide.",
+            verifyBy: "read jacket + load nameplate",
+          },
+          "10 AWG": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "10 AWG at 100 ft may look like overkill until a large temporary load or motor start pulls voltage down; the wrong connector or circuit rating can still make it wrong.",
+            seniorTechNote: "A 10 AWG cord is a high-load clue. Check the full path: breaker, receptacle, plug, connector rating, cord length, duty cycle, and whether temporary power is appropriate.",
+            verifyBy: "match load + connector rating",
+          },
+          "Outdoor cord": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "Outdoor use is not just color or thickness. Look for the actual jacket marking and wet/location suitability instead of assuming a rugged-looking cord is outdoor rated.",
+            seniorTechNote: "Outdoor or jobsite use is a marking-and-protection check. Confirm jacket type, grounded conductors where required, GFCI protection, condition, and connector fit before use.",
+            verifyBy: "check W marking + GFCI",
+          },
+          "SJTW": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "SJTW is a jacket/service designation, not an amp rating by itself. You still need the AWG, length, plug rating, and load amps.",
+            seniorTechNote: "SJTW is common outdoor general-duty cord language. It helps identify weather-rated junior hard service cord, but it does not replace reading the full cord label.",
+            verifyBy: "read full cord legend",
+          },
+          "SOOW": {
+            mechanic101: "extension cord choice depends on AWG, length, load amps, jacket marking, plug rating, and where the cord is used",
+            commonConfusion: "SOOW usually signals heavier flexible service cord, but the letters do not tell you the exact amp limit without AWG, conductor count, plug, and equipment rating.",
+            seniorTechNote: "SOOW is worth recognizing for portable equipment and tougher shop cords. Treat it as a stock clue, then verify conductor size and end fittings before trusting it.",
+            verifyBy: "read jacket + end fittings",
+          },
+        },
         rows: [
           ["16 AWG", "25 ft", "light tools", "voltage drop"],
           ["16 AWG", "50 ft", "low/medium load", "not heaters"],
@@ -1732,6 +1779,8 @@
     function verifyByForReference(section, row) {
       const title = section.title.toLowerCase();
       const rowText = row.join(" ").toLowerCase();
+      const teachingVerifyBy = rowTeachingValue(section, row, "verifyBy");
+      if (teachingVerifyBy) return teachingVerifyBy;
       if (/bearing suffix/.test(title)) return "read full bearing code";
       if (/bearing quick/.test(title)) return "measure bore + full code";
       if (/bearing symptom/.test(title)) return "inspect race/lube pattern";
@@ -1817,6 +1866,7 @@
         { pattern: /weld|electrode|mig/, text: "AWS symbol/procedure standards, WPS, filler manufacturer data" },
         { pattern: /plasma/, text: "plasma system cut chart, consumable chart, machine manual" },
         { pattern: /bend|structural shape/, text: "fabrication handbook, material standard, shop drawing" },
+        { pattern: /extension cord/, text: "UL flexible cord/listing guidance, OSHA flexible-cord rules, tool OEM cord tables, cord jacket markings" },
         { pattern: /spark plug/, text: "spark plug manufacturer diagnosis guides, OEM service data, cylinder comparison, scan data" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor|thermocouple|rtd/, text: "NEC/NFPA 70, NEMA/IEC standards, device datasheets" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "NEMA/IEC motor data, drive manual, OEM mechanical catalog" },
@@ -1845,6 +1895,7 @@
         { pattern: /terminal/, text: "terminal strip, wire marker, panel terminal" },
         { pattern: /transformer/, text: "control power transformer, CPT, VA transformer" },
         { pattern: /wire gauge/, text: "AWG, conductor size, cable size" },
+        { pattern: /extension cord/, text: "drop cord, cord set, flexible cord, portable cord, SJTW/SOOW cord" },
         { pattern: /spark plug/, text: "plug reading, plug condition, ignition/fueling clue, misfire clue" },
         { pattern: /plug|receptacle/, text: "NEMA plug, twist-lock, cord cap" },
         { pattern: /fuse/, text: "fuse class, current-limiting fuse, branch fuse" },
@@ -1870,6 +1921,7 @@
         { pattern: /surface finish/, text: "Ra vs RMS, microinch vs micrometer, process guess without measurement" },
         { pattern: /gd&t/, text: "profile vs position, circularity vs cylindricity, datum omitted" },
         { pattern: /weld|electrode|mig|plasma/, text: "similar filler with wrong position/current/gas, cut chart for different consumables" },
+        { pattern: /extension cord/, text: "cord length ignored, jacket marking misread, indoor cord used outdoors, plug rating confused with wire size" },
         { pattern: /spark plug/, text: "plug appearance mistaken for final diagnosis, fuel wet vs oil wet, heat range issue vs engine problem" },
         { pattern: /wire|plug|fuse|conduit|panel|transformer|plc|relay|sensor/, text: "same voltage with wrong current, AC/DC mix-up, source/sink reversed" },
         { pattern: /motor|vfd|drive|gear reducer|coupling/, text: "same HP with wrong frame, wrong base speed, wrong shaft or service factor" },
@@ -1911,6 +1963,8 @@
       const title = section.title.toLowerCase();
       const label = rowDetailLabel(row);
       const rowText = row.join(" ").toLowerCase();
+      const teaching = rowTeachingValue(section, row, "mechanic101");
+      if (teaching) return teaching;
       if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
         return `${label} AWG is only one sizing clue; fuse/breaker size, copper vs aluminum, insulation rating, temperature, bundling, and run length all matter`;
       }

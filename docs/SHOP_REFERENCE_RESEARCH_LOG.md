@@ -18,6 +18,7 @@ This log tracks source validation before chart content changes. It is intentiona
 | Bearing Quick Reference | Identification with consequence rows | 4 chart / row-specific highlights | Queued | Common part ID chart; suffix, clearance, seal, and fit mistakes can cause repeat failure. |
 | Spark Plug Condition Reference | Identification/troubleshooting | 4 | Implemented trial | Mechanic-facing visual diagnosis chart used to test signal-only detail expansion and row-specific teaching text. |
 | Hydraulic Fluid Condition Reference | Identification/troubleshooting | 4 | Implemented trial | Mechanic-facing fluid condition chart used to test the no-generic-detail rule for all signal rows. |
+| Extension Cord Load Reference | Decision/common-spec | 10 | Started / limited signal trial | Simple-looking chart that can affect load, heat, voltage drop, outdoor use, and jobsite protection decisions. |
 
 ## Wire Gauge Reference - Started
 
@@ -149,3 +150,51 @@ Reason: Hydraulic fluid appearance is a mechanic-facing clue, but visual inspect
 ### Standard Feedback
 
 This trial validates the updated rule: signal badges require authored row-specific teaching. Generic fallback detail is now treated as a smoke-test failure for signal-only trial charts.
+
+## Extension Cord Load Reference - Limited Signal Trial
+
+Classification: 10-source decision/common-spec chart.
+
+Reason: Extension cords look simple, but the chart can influence load, length, voltage-drop, outdoor/wet-location, jobsite, jacket-rating, and connector decisions. It should stay conservative and label-driven until the full 10-source decision pack is complete.
+
+### Reviewed / Opened Sources
+
+1. UL Solutions, Wire and Cable Application Guide
+   URL: https://www.ul.com/thecodeauthority/knowledge/wire-cable-guide
+   Use: flexible cord and cable markings, intended-use language, SJTW outdoor/weather-resistant marking context.
+
+2. OSHA, Electrical - Flexible Cords
+   URL: https://www.osha.gov/electrical/hazards/flexible-cords
+   Use: flexible-cord service marking, hard/extra-hard usage framing, jobsite inspection and grounded-cord context.
+
+3. CPSC, Extension Cords FAQ
+   URL: https://www.cpsc.gov/FAQ/Extension-Cords
+   Use: consumer-facing extension cord definition and observable safety/listing characteristics.
+
+4. DeWalt, Minimum Gauge for Cord Sets table
+   URL: https://support.dewalt.com/hc/es/article_attachments/115004370914
+   Use: tool-OEM framing that undersized cords cause voltage drop, power loss, and overheating; cord length/load/AWG relationship.
+
+5. OSHA, Extension Cords publication
+   URL: https://www.osha.gov/sites/default/files/publications/OSHA4495.pdf
+   Use: field/jobsite inspection, GFCI, and flexible-cord usage reminders.
+
+6. Electrical101, Extension Cord Info
+   URL: https://www.electrical101.com/extension-cords.html
+   Use: beginner/101 explanation for gauge, length, amp ratings, voltage drop, indoor/outdoor distinctions.
+
+7. Allstar Electrical, Extension Cord Size Guide
+   URL: https://www.allstarelectrical.com/resource-articles/post/extension-cord-sizing-guide
+   Use: current field-use summary for AWG, load, length, jacket/environment, and GFCI decision language.
+
+### Trial Decisions
+
+- Kept the visible chart at 10 rows.
+- Added signal details only for rows that teach common mistakes or common field IDs.
+- Left unbadged rows clean, including 14 AWG rows, because the current goal is not to make every cord size a lecture.
+- Added row-specific teaching for 16 AWG, 12 AWG, 10 AWG, Outdoor cord, SJTW, and SOOW.
+- Added smoke coverage so generic fallback cannot silently replace these signal details.
+
+### Open Work
+
+Complete the remaining 3 sources before treating the whole chart as fully reviewed under the 10-source decision threshold. Until then, this is a conservative signal-detail trial, not a full extension-cord authority.
