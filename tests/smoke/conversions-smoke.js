@@ -365,6 +365,11 @@ assert.match(html, /Contactor \/ Overload Reference[\s\S]*A contactor can have t
 assert.match(html, /Industrial Wire Color Reference[\s\S]*Never use color alone to prove a conductor is safe/);
 assert.match(html, /Conduit Fill Quick Reference[\s\S]*40 percent fill does not replace derating/);
 assert.match(html, /IP \/ NEMA Enclosure Reference[\s\S]*NEMA 4 does not automatically mean corrosion resistance/);
+assert.match(html, /Thermocouple \/ RTD Reference[\s\S]*PT100 is an RTD that measures about 100 ohms at 0 C/);
+assert.match(html, /Relay \/ Contactor Symbol Reference[\s\S]*NO\/NC describes the normal state/);
+assert.match(html, /Control Panel Terminal Reference[\s\S]*PE, DC common, neutral, and shield drains serve different purposes/);
+assert.match(html, /Control Transformer Reference[\s\S]*Adding up steady loads only can miss contactor\/solenoid inrush/);
+assert.match(html, /Drive \/ Motor Nameplate Match Reference[\s\S]*Wrong base frequency can change speed scaling/);
 assert.match(html, /<p class="shop-reference-note"><span aria-hidden="true">\*<\/span>/);
 assert.match(html, /very common 15 A branch and medium cord size/);
 assert.match(html, /very common 20 A branch and heavy cord size/);

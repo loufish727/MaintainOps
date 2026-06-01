@@ -551,3 +551,35 @@ Reason: Electrical reference cards are useful only when they help a technician i
 ### Standard Feedback
 
 Electrical shop references should never read like permission to wire by memory. The useful pattern is: identify the item, name the common wrong assumption, then force verification through the drawing, meter, listing, code table, or equipment manual.
+
+## Control Panel and Instrumentation Signal Batch - Implemented
+
+Classification: mixed 4-source identification and setup-adjacent control-panel charts.
+
+Reason: Panel and instrumentation references are most useful when they help identify the symbol, terminal, sensor, transformer, or drive parameter while still forcing verification through the drawing, meter, nameplate, input setting, or drive manual.
+
+### Reviewed / Opened Sources
+
+1. Thermocouple / RTD source family
+   Use: Type J/K/T/E/N distinctions, thermocouple alloy and extension-wire requirements, PT100/PT1000 RTD behavior, 2/3/4-wire RTD wiring, grounded vs ungrounded junction behavior, and controller-input matching.
+
+2. IEC/NEMA relay and contactor terminal-marking source family
+   Use: A1/A2 coil terminals, NO/NC state language, 13/14 and 21/22 auxiliary contacts, L/T line/load markings, overload trip contact behavior, and device-tag cross-reference practice.
+
+3. Control transformer source family
+   Use: primary/secondary winding checks, VA load, coil/solenoid inrush, primary/secondary protection, grounded secondary conventions, multi-tap wiring, and load-sag troubleshooting.
+
+4. VFD / motor nameplate parameter source family
+   Use: motor FLA, voltage, base frequency, base RPM, accel/decel behavior, brake resistor selection, command source, and drive-manual authority.
+
+### Trial Decisions
+
+- Updated five existing charts: Thermocouple / RTD Reference, Relay / Contactor Symbol Reference, Control Panel Terminal Reference, Control Transformer Reference, and Drive / Motor Nameplate Match Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for common, easy-mix-up, high-consequence, and spec-required rows.
+- Kept authority pointed to drawings, device diagrams, meter checks, input settings, transformer diagrams, load/inrush checks, motor nameplates, and drive manuals.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+Control-panel references should help a tech read what is in front of them without encouraging panel work by memory. The best row detail names the symbol or parameter, explains the common wrong assumption, and points to the exact proof: drawing, meter, input setup, nameplate, or manual.
