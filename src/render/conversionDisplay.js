@@ -1976,8 +1976,8 @@
               <span>screen fit estimate</span>
             </div>
             <div class="bolt-gauge-mode" role="radiogroup" aria-label="Bolt gauge mode">
-              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench" checked>Select Head / Wrench</label>
-              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread">Select Thread / Nut ID</label>
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="wrench" checked>SELECT HEAD / WRENCH</label>
+              <label><input data-bolt-gauge-mode type="radio" name="bolt-gauge-mode" value="thread">SELECT THREAD / NUT ID</label>
             </div>
             <div class="bolt-gauge-layout">
               <div class="bolt-gauge-measurement-stack">

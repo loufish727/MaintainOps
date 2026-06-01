@@ -4368,18 +4368,23 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  min-height: 40px;
+  min-height: 48px;
   border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
-  padding: 8px 10px;
-  font-size: 0.86rem;
-  font-weight: 720;
+  padding: 10px 12px;
+  position: relative;
+  text-align: center;
+  font-size: 0.98rem;
+  font-weight: 850;
+  letter-spacing: 0.025em;
+  line-height: 1.18;
+  text-transform: uppercase;
 }
 
-.bolt-gauge-mode label:has(input:checked) {
+.bolt-gauge-mode label:has(input:checked),
+.bolt-gauge-mode label:has(input:focus-visible) {
   border-color: var(--blue);
   background: color-mix(in srgb, var(--blue) 15%, var(--surface));
   color: var(--blue);
@@ -4387,6 +4392,9 @@ textarea {
 
 .bolt-gauge-mode input {
   accent-color: var(--blue);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 .bolt-gauge-screen-callout {
