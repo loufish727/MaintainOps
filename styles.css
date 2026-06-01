@@ -5105,30 +5105,76 @@ textarea {
 .shop-reference-table {
   min-width: 640px;
   border-collapse: separate;
-  border-spacing: 0 6px;
+  border-spacing: 0 8px;
 }
 
-.shop-reference-data-row.shop-reference-row-high-signal td {
+.shop-reference-row-card-cell {
+  border: 0;
+  padding: 0;
+}
+
+.shop-reference-row-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--blue) 12%, var(--line));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.shop-reference-row-fields {
+  display: grid;
+  grid-template-columns: repeat(var(--shop-reference-columns), minmax(0, 1fr));
+}
+
+.shop-reference-row-field {
+  border-right: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.shop-reference-row-field:last-child {
+  border-right: 0;
+}
+
+.shop-reference-row-field > span {
+  color: var(--muted);
+  display: none;
+  font-size: 0.68rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.shop-reference-row-field > strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 620;
+  overflow-wrap: anywhere;
+}
+
+.shop-reference-data-row.shop-reference-row-high-signal .shop-reference-row-card {
   background: color-mix(in srgb, #ffd84d 18%, var(--surface));
+  border-color: color-mix(in srgb, #d89b00 45%, var(--line));
+  box-shadow: inset 4px 0 0 #d89b00;
 }
 
 .shop-reference-data-row td {
-  border-bottom: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
-  border-top: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  border-bottom: 0;
+  border-top: 0;
 }
 
 .shop-reference-data-row td:first-child {
-  border-left: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
-  border-radius: 8px 0 0 8px;
+  border-left: 0;
+  border-radius: 0;
 }
 
 .shop-reference-data-row td:last-child {
-  border-right: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
-  border-radius: 0 8px 8px 0;
+  border-right: 0;
+  border-radius: 0;
 }
 
 .shop-reference-data-row.shop-reference-row-high-signal td:first-child {
-  box-shadow: inset 4px 0 0 #d89b00;
+  box-shadow: none;
 }
 
 .shop-reference-row-signal {
@@ -5175,10 +5221,8 @@ textarea {
 }
 
 .shop-reference-line-detail {
-  border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
-  border-radius: 8px;
   background: color-mix(in srgb, var(--blue) 5%, var(--panel));
-  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--blue) 58%, var(--line));
+  border-top: 1px solid color-mix(in srgb, var(--blue) 18%, var(--line));
   margin: 0;
   overflow: hidden;
 }
@@ -5325,14 +5369,14 @@ textarea {
 
   .shop-reference-card[open] .shop-reference-table tr {
     display: grid;
-    border: 1px solid color-mix(in srgb, var(--blue) 14%, var(--line));
-    border-radius: 8px;
-    background: var(--surface);
-    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
   }
 
   .shop-reference-card[open] .shop-reference-table .shop-reference-data-row {
-    border-radius: 8px 8px 0 0;
+    border-radius: 0;
   }
 
   .shop-reference-card[open] .shop-reference-table .shop-reference-row-detail {
@@ -5344,16 +5388,13 @@ textarea {
   }
 
   .shop-reference-card[open] .shop-reference-table td {
-    display: grid;
-    grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-    border-bottom: 1px solid var(--line);
+    display: block;
+    border-bottom: 0;
     border-left: 0;
     border-radius: 0;
     border-right: 0;
     border-top: 0;
-    padding: 8px 10px;
+    padding: 0;
   }
 
   .shop-reference-card[open] .shop-reference-row-detail td {
@@ -5365,9 +5406,25 @@ textarea {
     display: none;
   }
 
+  .shop-reference-card[open] .shop-reference-row-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-reference-card[open] .shop-reference-row-field {
+    border-bottom: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+    border-right: 0;
+    display: grid;
+    grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .shop-reference-card[open] .shop-reference-row-field > span {
+    display: block;
+  }
+
   .shop-reference-card[open] .shop-reference-line-detail {
-    border: 0;
-    border-radius: 0;
+    border-top: 1px solid color-mix(in srgb, var(--blue) 18%, var(--line));
   }
 
   .shop-reference-card[open] .shop-reference-help-copy {

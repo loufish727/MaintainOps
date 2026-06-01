@@ -2123,26 +2123,44 @@
       return true;
     }
 
-    function renderRowDetail(section, row, category, columns) {
+    function renderRowDetail(section, row, category) {
       const label = rowDetailLabel(row);
       const details = rowDetailItems(section, row, category);
       return `
-        <tr class="shop-reference-row-detail">
-          <td colspan="${columns.length}">
-            <details class="shop-reference-line-detail">
-              <summary title="Explain ${escapeHtml(label)}">
-                <span class="shop-reference-help-mark" aria-hidden="true">?</span>
-                <span class="shop-reference-help-copy">Explain ${escapeHtml(label)}</span>
-              </summary>
-              <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} ${escapeHtml(label)} reference context">
-                ${details.map(([detailLabel, value]) => `
-                  <div class="shop-reference-detail-item">
-                    <span>${escapeHtml(detailLabel)}</span>
-                    <strong>${escapeHtml(value)}</strong>
+        <details class="shop-reference-line-detail">
+          <summary title="Explain ${escapeHtml(label)}">
+            <span class="shop-reference-help-mark" aria-hidden="true">?</span>
+            <span class="shop-reference-help-copy">Explain ${escapeHtml(label)}</span>
+          </summary>
+          <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} ${escapeHtml(label)} reference context">
+            ${details.map(([detailLabel, value]) => `
+              <div class="shop-reference-detail-item">
+                <span>${escapeHtml(detailLabel)}</span>
+                <strong>${escapeHtml(value)}</strong>
+              </div>
+            `).join("")}
+          </div>
+        </details>
+      `;
+    }
+
+    function renderReferenceRow(section, row, sourceRow, category, columns) {
+      const relevance = rowRelevance(section, sourceRow);
+      const hasDetail = shouldRenderRowDetail(section, sourceRow);
+      return `
+        <tr class="shop-reference-data-row${relevance ? " shop-reference-row-high-signal" : ""}${hasDetail ? " shop-reference-row-has-detail" : ""}">
+          <td class="shop-reference-row-card-cell" colspan="${columns.length}">
+            <div class="shop-reference-row-card">
+              <div class="shop-reference-row-fields" style="--shop-reference-columns: ${columns.length};">
+                ${row.map((cell, cellIndex) => `
+                  <div class="shop-reference-row-field" data-label="${escapeHtml(columns[cellIndex] || "")}">
+                    <span>${escapeHtml(columns[cellIndex] || "")}</span>
+                    <strong>${cellIndex === 0 && relevance ? `<span class="shop-reference-row-signal">${escapeHtml(relevance)}</span>` : ""}${escapeHtml(cell)}</strong>
                   </div>
                 `).join("")}
               </div>
-            </details>
+              ${hasDetail ? renderRowDetail(section, sourceRow, category) : ""}
+            </div>
           </td>
         </tr>
       `;
@@ -2186,13 +2204,7 @@
                 <tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr>
               </thead>
               <tbody>
-                ${rows.map((row, index) => {
-                  const relevance = rowRelevance(section, section.rows[index]);
-                  return `
-                  <tr class="shop-reference-data-row${relevance ? " shop-reference-row-high-signal" : ""}">${row.map((cell, cellIndex) => `<td data-label="${escapeHtml(columns[cellIndex] || "")}">${cellIndex === 0 && relevance ? `<span class="shop-reference-row-signal">${escapeHtml(relevance)}</span>` : ""}${escapeHtml(cell)}</td>`).join("")}</tr>
-                  ${shouldRenderRowDetail(section, section.rows[index]) ? renderRowDetail(section, section.rows[index], category, columns) : ""}
-                `;
-                }).join("")}
+                ${rows.map((row, index) => renderReferenceRow(section, row, section.rows[index], category, columns)).join("")}
               </tbody>
             </table>
           </div>
