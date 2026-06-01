@@ -621,3 +621,32 @@ Reason: The remaining charts were useful as lookup tables, but they did not yet 
 ### Standard Feedback
 
 The all-card standard is now consistent: every chart should behave like a senior tech standing beside the table. It should not replace OEM manuals, drawings, code, or qualified procedure. It should make the first field decision better by saying what the row means, what people commonly confuse, and what to verify before acting.
+
+## Bolt / Wrench Reference Signal Batch - Implemented
+
+Classification: bounded conversion-screen table detail update.
+
+Reason: Common Inch Thread Reference and Common Wrench / Head Size Reference are 100-row conversion reference tables, not part of the 77 shop-reference card dataset. They still needed the same senior-tech signal layer on the rows where a mechanic is most likely to make a bad assumption.
+
+### Reviewed / Source Families
+
+1. Inch thread and machine-screw source family
+   Use: screw-number versus diameter, UNC/UNF/UNEF pitch differences, inch-versus-metric near matches, and common small-hardware field mistakes.
+
+2. Hex-head and across-flats source family
+   Use: wrench size as tool fit, not thread proof; standard hex versus heavy hex versus square head; common tool-grab shortcuts; and high-consequence large fastener handling.
+
+3. Fastener grade / torque / OEM procedure source family
+   Use: head-mark checks, material and grade requirements, lubrication/torque sensitivity, engineered heavy hardware, and drawing/OEM authority for large fasteners.
+
+### Trial Decisions
+
+- Kept both 100-row tables intact for fast scanning.
+- Added row-level teaching only to common, commonly confused, high-consequence, and spec-only rows.
+- Reused the same question-mark detail affordance from shop-reference cards so the UI language stays consistent.
+- Kept the key warning explicit: thread size, wrench size, nearest metric size, and replacement approval are different decisions.
+- Added smoke coverage proving both tables still contain 100 rows and now render senior-tech details.
+
+### Standard Feedback
+
+Bolt and wrench references should make the first field identification faster without implying substitution authority. A good row detail explains the measurement being shown, names the common wrong assumption, and points the user to a physical proof: thread gauge, calipers, head mark, wrench fit, torque spec, drawing, or OEM procedure.

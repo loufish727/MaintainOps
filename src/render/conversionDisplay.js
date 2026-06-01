@@ -609,6 +609,39 @@
       `;
     }
 
+    function renderReferenceTeaching(row, label, columns) {
+      if (!row.teaching) return "";
+      const items = [
+        ["Mechanic 101", row.teaching.mechanic101],
+        ["Common confusion", row.teaching.commonConfusion],
+        ["Senior tech note", row.teaching.seniorTechNote],
+        ["Verify by", row.teaching.verifyBy],
+        ["Risk / signal", row.teaching.riskSignal],
+        ["Source family", row.teaching.sourceFamily],
+        ["Example", row.teaching.example],
+      ].filter(([, value]) => value);
+      return `
+        <tr class="bolt-reference-row-detail">
+          <td colspan="${columns}">
+            <details class="shop-reference-line-detail bolt-reference-line-detail">
+              <summary title="Explain ${escapeHtml(label)}">
+                <span class="shop-reference-help-mark" aria-hidden="true">?</span>
+                <span class="shop-reference-help-copy">Explain ${escapeHtml(label)}</span>
+              </summary>
+              <div class="shop-reference-detail-panel" aria-label="${escapeHtml(label)} reference context">
+                ${items.map(([detailLabel, value]) => `
+                  <div class="shop-reference-detail-item">
+                    <span>${escapeHtml(detailLabel)}</span>
+                    <strong>${escapeHtml(value)}</strong>
+                  </div>
+                `).join("")}
+              </div>
+            </details>
+          </td>
+        </tr>
+      `;
+    }
+
     function renderBoltReference() {
       return `
         <section class="conversion-reference">
@@ -665,13 +698,14 @@
                 </thead>
                 <tbody>
                   ${boltReference.map((row) => `
-                    <tr class="bolt-reference-row" data-bolt-size-row="${escapeHtml(row.inch)}">
-                      <td class="bolt-reference-primary">${escapeHtml(row.inch)}</td>
+                    <tr class="bolt-reference-row${row.signal ? " shop-reference-row-high-signal" : ""}${row.teaching ? " shop-reference-row-has-detail" : ""}" data-bolt-size-row="${escapeHtml(row.inch)}">
+                      <td class="bolt-reference-primary">${row.signal ? `<span class="shop-reference-row-signal">${escapeHtml(row.signal)}</span>` : ""}${escapeHtml(row.inch)}</td>
                       <td class="bolt-reference-primary">${escapeHtml(row.threads)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.inchDiameter)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.metric)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.metricDiameter)}</td>
                     </tr>
+                    ${renderReferenceTeaching(row, row.threads || row.inch, 5)}
                   `).join("")}
                 </tbody>
               </table>
@@ -695,13 +729,14 @@
                 </thead>
                 <tbody>
                   ${wrenchReference.map((row) => `
-                    <tr class="bolt-reference-row" data-wrench-size-row="${escapeHtml(row.thread)}">
-                      <td class="bolt-reference-primary">${escapeHtml(row.thread)}</td>
+                    <tr class="bolt-reference-row${row.signal ? " shop-reference-row-high-signal" : ""}${row.teaching ? " shop-reference-row-has-detail" : ""}" data-wrench-size-row="${escapeHtml(row.thread)}">
+                      <td class="bolt-reference-primary">${row.signal ? `<span class="shop-reference-row-signal">${escapeHtml(row.signal)}</span>` : ""}${escapeHtml(row.thread)}</td>
                       <td class="bolt-reference-primary">${escapeHtml(row.wrenchIn)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.threadDiameterIn)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.wrenchMm)}</td>
                       <td class="bolt-reference-detail">${escapeHtml(row.note)}</td>
                     </tr>
+                    ${renderReferenceTeaching(row, `${row.thread} / ${row.wrenchIn}`, 5)}
                   `).join("")}
                 </tbody>
               </table>

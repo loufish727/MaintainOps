@@ -4770,6 +4770,21 @@ textarea {
   box-shadow: inset 4px 0 0 var(--blue);
 }
 
+.bolt-reference-table tr.shop-reference-row-has-detail td {
+  border-bottom: 0;
+}
+
+.bolt-reference-row-detail td {
+  background: color-mix(in srgb, var(--blue) 4%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 16%, var(--line));
+  padding: 0 10px 10px;
+}
+
+.bolt-reference-line-detail {
+  border-color: color-mix(in srgb, var(--blue) 20%, var(--line));
+  border-radius: 0 0 8px 8px;
+}
+
 .shop-reference-heading {
   display: flex;
   align-items: center;

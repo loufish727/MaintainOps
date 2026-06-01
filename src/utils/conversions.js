@@ -200,6 +200,123 @@
     { inch: "3-3/4", inchDiameter: "3.750", metric: "M95", metricDiameter: "95.0", threads: "3-3/4-8 UNF" },
   ];
 
+  function referenceTeaching(mechanic101, commonConfusion, seniorTechNote, verifyBy, riskSignal, sourceFamily, example) {
+    return {
+      mechanic101,
+      commonConfusion,
+      seniorTechNote,
+      verifyBy,
+      riskSignal,
+      sourceFamily,
+      example,
+    };
+  }
+
+  function addBoltTeaching(thread, signal, teaching) {
+    const row = BOLT_REFERENCE.find((reference) => reference.threads === thread);
+    if (row) Object.assign(row, { signal, teaching });
+  }
+
+  addBoltTeaching("6-32 UNC", "Very common", referenceTeaching(
+    "Small machine screws are identified by screw number and pitch, not by wrench size.",
+    "#6, #8, and M3.5/M4 hardware can look close when dirty or plated.",
+    "6-32 is common around covers, light brackets, panels, and electrical-style hardware. Start by checking pitch before forcing a nut.",
+    "measure OD + thread pitch",
+    "Common mix-up",
+    "ASME inch screw threads, machinery handbooks, fastener catalogs",
+    "6-32 UNC / #6 major diameter / coarse small screw thread"
+  ));
+  addBoltTeaching("10-24 UNC", "Very common", referenceTeaching(
+    "A #10 screw has the same major diameter across 10-24 and 10-32, but the pitch changes.",
+    "10-24 and 10-32 are easy to cross-thread because the diameter looks identical.",
+    "If a #10 fastener starts but tightens wrong after a turn or two, stop and verify pitch before damaging the threaded hole.",
+    "thread gauge + test nut",
+    "Common failure",
+    "ASME inch screw threads, fastener catalogs, equipment manuals",
+    "10-24 UNC / coarse #10 / common covers, brackets, and light machine hardware"
+  ));
+  addBoltTeaching("10-32 UNF", "Very common", referenceTeaching(
+    "Fine threads hold the same outside diameter with more threads per inch.",
+    "10-32 can be mistaken for 10-24 when only the screw diameter is checked.",
+    "Use 10-32 where the machine or tapped part calls for it; do not substitute 10-24 just because the screw number matches.",
+    "thread gauge + tapped-hole feel",
+    "Common mix-up",
+    "ASME inch screw threads, fastener catalogs, OEM service data",
+    "10-32 UNF / fine #10 / common in instruments, panels, and machine assemblies"
+  ));
+  addBoltTeaching("1/4-20 UNC", "Very common", referenceTeaching(
+    "1/4-20 is one of the most common inch coarse threads in general shop work.",
+    "1/4-20, 1/4-28, and M6 are close enough to invite wrong-bin mistakes.",
+    "Treat 1/4 inch diameter as only the first clue. Pitch, length, grade, and head style still decide the correct replacement.",
+    "measure OD + pitch + grade mark",
+    "Very common",
+    "ASME inch screw threads, SAE fastener practice, fastener catalogs",
+    "1/4-20 UNC / common coarse shop bolt / near M6 by diameter"
+  ));
+  addBoltTeaching("1/4-28 UNF", "Common mix-up", referenceTeaching(
+    "1/4-28 is the fine-thread partner to 1/4-20.",
+    "A 1/4-20 nut may start on a 1/4-28 bolt poorly enough to fool a rushed repair.",
+    "Fine thread is often intentional for adjustment, vibration, or clamping detail. Match pitch instead of guessing from diameter.",
+    "thread gauge + correct nut",
+    "Spec required",
+    "ASME inch screw threads, OEM service data, fastener catalogs",
+    "1/4-28 UNF / fine 1/4 inch / same OD as 1/4-20"
+  ));
+  addBoltTeaching("3/8-16 UNC", "Very common", referenceTeaching(
+    "3/8-16 is a common coarse inch bolt used around brackets, guards, mounts, and general equipment.",
+    "3/8 inch and M10 are close enough that the wrong family can appear to fit at first.",
+    "If the thread feels gritty or binds early, check inch versus metric before chasing the hole or forcing the fastener.",
+    "calipers + pitch gauge",
+    "Common mix-up",
+    "ASME inch screw threads, ISO metric thread references, equipment manuals",
+    "3/8-16 UNC / common coarse bolt / often confused with M10"
+  ));
+  addBoltTeaching("1/2-13 UNC", "Very common", referenceTeaching(
+    "1/2-13 is a common structural and equipment fastener size, but torque and grade matter more as size increases.",
+    "A 1/2 inch bolt can be misidentified by wrench size or swapped without matching grade.",
+    "On load-bearing equipment, never treat size alone as approval. Verify grade, engagement, washers, and the torque spec.",
+    "read head mark + torque spec",
+    "High consequence",
+    "SAE J429, ASME inch screw threads, OEM torque charts",
+    "1/2-13 UNC / common coarse equipment fastener / grade and torque required"
+  ));
+  addBoltTeaching("3/4-10 UNC", "High consequence", referenceTeaching(
+    "Large coarse threads are usually carrying real clamp load or alignment responsibility.",
+    "Diameter-only replacement can miss grade, thread class, lubrication, or torque requirements.",
+    "At 3/4 inch and above, use the chart for identification only. Final selection comes from the assembly spec.",
+    "verify spec + grade + torque",
+    "Spec required",
+    "ASME inch screw threads, SAE fastener practice, OEM service data",
+    "3/4-10 UNC / large coarse fastener / torque procedure matters"
+  ));
+  addBoltTeaching("1-8 UNC", "High consequence", referenceTeaching(
+    "One-inch fasteners usually belong to heavy equipment, fixturing, anchors, or structural connections.",
+    "Nearest metric comparisons are only visual clues; they are not substitutions.",
+    "Use the reference to identify the family, then confirm material, grade, thread class, lubrication, and torque sequence.",
+    "spec sheet + physical gauge",
+    "Spec required",
+    "ASME inch screw threads, ASTM/SAE fastener standards, OEM service data",
+    "1-8 UNC / large coarse inch thread / do not substitute by nearest metric"
+  ));
+  addBoltTeaching("2-4.5 UNC", "Spec only", referenceTeaching(
+    "Very large fasteners are normally engineered connection points, not general-bin replacement parts.",
+    "Pitch and diameter may be readable, but strength, coating, and installation method carry the real risk.",
+    "Use this row to identify what you are looking at, then go to the drawing, OEM manual, or vendor spec before removal or replacement.",
+    "drawing + gauge + torque plan",
+    "High consequence",
+    "ASME inch screw threads, ASTM heavy fastener standards, OEM drawings",
+    "2-4.5 UNC / heavy coarse thread / engineered connection"
+  ));
+  addBoltTeaching("3-1/2-4 UNC", "Spec only", referenceTeaching(
+    "Oversized fasteners are usually part of specialized machinery, tooling, anchors, or heavy structures.",
+    "A field chart cannot confirm material, stretch, coating, or reuse limits.",
+    "Do not make a replacement decision from diameter alone. Confirm the component drawing and manufacturer procedure.",
+    "drawing + OEM procedure",
+    "High consequence",
+    "ASME inch screw threads, OEM drawings, heavy equipment service data",
+    "3-1/2-4 UNC / oversized coarse thread / documentation required"
+  ));
+
   const BOLT_GAUGE_SIZES = BOLT_REFERENCE.reduce((sizes, row) => {
     if (sizes.some((size) => size.inch === row.inch)) return sizes;
     sizes.push({
@@ -318,6 +435,97 @@
     { thread: "4", threadDiameterIn: "4.000", wrenchIn: "6-1/8", wrenchMm: "155.6", note: "heavy hex or square head" },
     { thread: "4", threadDiameterIn: "4.000", wrenchIn: "5-15/16", wrenchMm: "150.8", note: "jam nut or low-profile hex" },
   ];
+
+  function addWrenchTeaching(thread, wrenchIn, note, signal, teaching) {
+    const row = WRENCH_REFERENCE.find((reference) => (
+      reference.thread === thread &&
+      reference.wrenchIn === wrenchIn &&
+      reference.note === note
+    ));
+    if (row) Object.assign(row, { signal, teaching });
+  }
+
+  addWrenchTeaching("#10", "5/16", "common hex head", "Very common", referenceTeaching(
+    "Wrench size measures across the head flats; it does not prove thread pitch.",
+    "Small hex heads can be confused with nearby metric or driver-style hardware.",
+    "Use the wrench fit to choose the tool, then confirm the screw size from the thread if replacement matters.",
+    "fit tool + check thread",
+    "Common mix-up",
+    "ASME hex dimensions, fastener catalogs, machinery handbooks",
+    "#10 screw / 5/16 wrench / common small hex head"
+  ));
+  addWrenchTeaching("1/4", "7/16", "common hex bolt/nut", "Very common", referenceTeaching(
+    "A common 1/4 inch hex bolt or nut often takes a 7/16 inch wrench.",
+    "Thread diameter and wrench size are different measurements; 1/4 inch hardware does not take a 1/4 inch wrench.",
+    "When teaching apprentices, this is the row that proves across-flats size and thread size are separate ideas.",
+    "measure thread + fit wrench",
+    "Very common",
+    "ASME hex bolt dimensions, fastener catalogs, shop practice",
+    "1/4 thread / 7/16 wrench / common general shop hardware"
+  ));
+  addWrenchTeaching("5/16", "1/2", "common hex bolt/nut", "Very common", referenceTeaching(
+    "5/16 inch thread commonly pairs with a 1/2 inch wrench on standard hex hardware.",
+    "Heavy hex, square head, and specialty hardware may use a different across-flats size.",
+    "Use this as a tool grab shortcut, not as final proof of the fastener thread.",
+    "fit wrench + verify thread",
+    "Very common",
+    "ASME hex bolt dimensions, fastener catalogs, machinery handbooks",
+    "5/16 thread / 1/2 wrench / common equipment hardware"
+  ));
+  addWrenchTeaching("3/8", "9/16", "common hex bolt/nut", "Very common", referenceTeaching(
+    "3/8 inch standard hex hardware commonly takes a 9/16 inch wrench.",
+    "3/8 inch thread, 9/16 inch wrench, and 10 mm metric hardware are often mixed up in conversation.",
+    "If the tool fits but the replacement bolt looks wrong, stop and identify thread family before installing it.",
+    "fit wrench + pitch gauge",
+    "Common mix-up",
+    "ASME hex bolt dimensions, ISO metric hex references, equipment manuals",
+    "3/8 thread / 9/16 wrench / common guard and bracket hardware"
+  ));
+  addWrenchTeaching("1/2", "3/4", "common hex bolt/nut", "Very common", referenceTeaching(
+    "1/2 inch standard hex hardware commonly takes a 3/4 inch wrench.",
+    "A wrench fit can hide grade, pitch, length, or heavy-hex differences.",
+    "This is a common equipment size. For structural or moving equipment, verify grade and torque before calling it done.",
+    "head mark + wrench fit + torque spec",
+    "High consequence",
+    "ASME hex bolt dimensions, SAE J429, OEM torque charts",
+    "1/2 thread / 3/4 wrench / common equipment fastener"
+  ));
+  addWrenchTeaching("3/4", "1-1/8", "common hex bolt/nut", "High consequence", referenceTeaching(
+    "Large wrench sizes usually mean higher clamp load and more installation risk.",
+    "Standard hex, heavy hex, and square head can all point to different wrench sizes for the same thread.",
+    "Use the wrench reference to choose tooling, then confirm the fastener spec and torque procedure.",
+    "spec + wrench fit + torque method",
+    "Spec required",
+    "ASME hex dimensions, SAE/ASTM fastener standards, OEM service data",
+    "3/4 thread / 1-1/8 wrench / large equipment hardware"
+  ));
+  addWrenchTeaching("1", "1-1/2", "common hex bolt/nut", "High consequence", referenceTeaching(
+    "One-inch hex hardware is usually beyond casual replacement territory.",
+    "Across-flats size helps identify the tool, but not reuse rules, grade, lubrication, or torque.",
+    "Plan the job before breaking it loose: correct wrench, backup wrench, torque value, and fastener replacement rule.",
+    "job plan + OEM spec",
+    "High consequence",
+    "ASME hex dimensions, ASTM/SAE fastener standards, OEM service data",
+    "1 inch thread / 1-1/2 wrench / heavy equipment fastener"
+  ));
+  addWrenchTeaching("2", "3", "common hex bolt/nut", "Spec only", referenceTeaching(
+    "Very large wrench flats identify a heavy connection, not a generic replacement part.",
+    "Jam nuts, heavy hex, and standard hex can sit close together in size charts.",
+    "Treat this as tool identification only. The drawing or manufacturer procedure owns the final answer.",
+    "drawing + wrench fit",
+    "Spec required",
+    "ASME hex dimensions, ASTM heavy hex standards, OEM drawings",
+    "2 inch thread / 3 inch wrench / engineered heavy hardware"
+  ));
+  addWrenchTeaching("4", "6", "common hex bolt/nut", "Spec only", referenceTeaching(
+    "Four-inch thread hardware is specialized industrial hardware.",
+    "A chart cannot confirm custom flats, hydraulic tensioning, torque multiplier setup, or reuse limits.",
+    "Use the row to identify scale and tooling family, then stop for the assembly procedure.",
+    "OEM procedure + tooling plan",
+    "High consequence",
+    "ASME hex dimensions, OEM drawings, heavy equipment service data",
+    "4 inch thread / 6 inch wrench / special procedure expected"
+  ));
 
   WRENCH_REFERENCE.sort((left, right) => (
     wrenchSizeInches(left.wrenchIn) - wrenchSizeInches(right.wrenchIn) ||
