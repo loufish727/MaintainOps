@@ -26,6 +26,8 @@ Three chart families were used to establish the relevance pattern:
 
 Expanded row detail should avoid loop-around navigation noise. Do not add a generic "related chart" box unless it names a direct next lookup that changes the decision.
 
+Source validation is tracked in [SHOP_REFERENCE_SOURCE_VALIDATION_PROCESS.md](SHOP_REFERENCE_SOURCE_VALIDATION_PROCESS.md). Identification charts need 4-source validation. Decision charts need 10-source validation. Highlighted rows need row-specific support before they are treated as reviewed teaching content.
+
 Each chart should include:
 
 - A practical row label.
