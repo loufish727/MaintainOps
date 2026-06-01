@@ -72,6 +72,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Main conversion cards were restyled as color-coded white tool tiles so length, area, weight, temperature, volume, pressure, and torque read as distinct quick tools instead of a plain list.
 - Shop reference charts now have a documented relevance standard and first-pass "Very common" row highlighting for researched wire gauge, socket/wrench, and bearing rows so high-frequency field references stand out without turning the charts into policy or opinion content.
 - Shop reference expanded row details now emphasize Mechanic 101, common confusion, senior tech notes, verify-by guidance, risk/signal, source family, and examples. The generic related-chart box was removed because it added navigation noise without improving field judgment.
+- Highlighted "Very common" reference rows now use row-specific teaching text instead of only generic category fallback, so examples like 14 AWG, 10mm, and 6205 explain the actual nearby mistake and field reason they matter.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
 - RLS and public-schema grant hardening were reviewed against the current app-used Supabase surface.
 - Security verification commands now cover static SQL/RPC checks, anonymous table-access denial, invalid public request token behavior, and a tested cross-company read probe for selected high-value tables.

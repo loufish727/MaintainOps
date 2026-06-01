@@ -1768,12 +1768,6 @@
       return row[0] || "This row";
     }
 
-    function rowAlternateNames(section, row, category) {
-      const label = rowDetailLabel(row);
-      const context = row.slice(1, 3).filter(Boolean).join(", ");
-      return `${label}${context ? `, ${context}` : ""}, ${referenceAlternateNames(section, category)}`;
-    }
-
     function rowWrongMatches(section, row, category) {
       const label = rowDetailLabel(row);
       return `${label}: ${referenceWrongMatches(section, category)}`;
@@ -1783,7 +1777,19 @@
       return row.filter(Boolean).join(" / ");
     }
 
-    function mechanic101ForReference(section) {
+    function rowMechanic101(section, row) {
+      const title = section.title.toLowerCase();
+      const label = rowDetailLabel(row);
+      const rowText = row.join(" ").toLowerCase();
+      if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
+        return `${label} AWG is only one sizing clue; fuse/breaker size, copper vs aluminum, insulation rating, temperature, bundling, and run length all matter`;
+      }
+      if (/socket \/ wrench/.test(title) && /(10 mm|13 mm|14 mm|19 mm)/.test(rowText)) {
+        return `${row[1]} is a wrench/socket size for the fastener head, not the bolt thread size`;
+      }
+      if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
+        return `${label} identifies the bearing size family, but suffix, seal/shield style, clearance, and fit still decide the replacement`;
+      }
       return detailTextFromRules(section, [
         { pattern: /wire gauge/, text: "wire size, fuse size, insulation rating, and run length all matter" },
         { pattern: /socket \/ wrench/, text: "wrench size is fastener head size, not bolt thread size" },
@@ -1797,6 +1803,25 @@
         { pattern: /cnc|g-code|m-code|insert/, text: "active setup, control model, tooling, and offsets change what the code means" },
         { pattern: /weld|electrode|mig|plasma/, text: "material, process, position, filler, and machine settings must agree" },
       ], "identify the part family, then verify the exact marking, size, and application");
+    }
+
+    function rowCommonConfusion(section, row, category) {
+      const title = section.title.toLowerCase();
+      const label = rowDetailLabel(row);
+      const rowText = row.join(" ").toLowerCase();
+      if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
+        return `${label} AWG can be confused with nearby gauge sizes by sight. Do not size wire from voltage alone; current, protection, material, and run length change the answer.`;
+      }
+      if (/socket \/ wrench/.test(title) && /10 mm/.test(rowText)) {
+        return "10mm is close enough to some inch sizes to tempt a shortcut, but loose fit rounds hardware under load.";
+      }
+      if (/socket \/ wrench/.test(title) && /(13 mm|14 mm|19 mm)/.test(rowText)) {
+        return `${row[1]} may feel close to an SAE size during identification. Confirm full seating before torque or removal force.`;
+      }
+      if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
+        return `${label} can match by bore while still being wrong by width, seal/shield suffix, clearance, cage, or fit.`;
+      }
+      return rowWrongMatches(section, row, category);
     }
 
     function seniorTechNoteForReference(section, row, category) {
@@ -1827,15 +1852,31 @@
       return "Verify first";
     }
 
+    function rowExampleForReference(section, row) {
+      const title = section.title.toLowerCase();
+      const label = rowDetailLabel(row);
+      const rowText = row.join(" ").toLowerCase();
+      if (/wire gauge/.test(title) && /^(14|12|10|8|6)$/.test(String(row[0] || ""))) {
+        return `${label} AWG is commonly associated with ${row[3]}, but only when the installation conditions allow it.`;
+      }
+      if (/socket \/ wrench/.test(title) && /(10 mm|13 mm|14 mm|19 mm)/.test(rowText)) {
+        return `${row[1]} is commonly reached for ${row[3]}; use the close-fit value for identification, not as a substitute spec.`;
+      }
+      if (/bearing quick/.test(title) && /^(6203|6204|6205|6206)$/.test(String(row[0] || ""))) {
+        return `${label} (${row[1]} bore, ${row[2]}) is commonly seen on ${row[3]}; match the full bearing code before ordering.`;
+      }
+      return rowExample(row);
+    }
+
     function rowDetailItems(section, row, category) {
       return [
-        ["Mechanic 101", mechanic101ForReference(section)],
-        ["Common confusion", rowWrongMatches(section, row, category)],
+        ["Mechanic 101", rowMechanic101(section, row)],
+        ["Common confusion", rowCommonConfusion(section, row, category)],
         ["Senior tech note", seniorTechNoteForReference(section, row, category)],
         ["Verify by", verifyByForReference(section, row)],
         ["Risk / signal", riskSignalForReference(section, row)],
         ["Source family", referenceSourceFamily(section, category)],
-        ["Example", rowExample(row)],
+        ["Example", rowExampleForReference(section, row)],
       ];
     }
 

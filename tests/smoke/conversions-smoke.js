@@ -216,6 +216,13 @@ assert.match(html, /wire size, fuse size, insulation rating, and run length all 
 assert.match(html, /wrench size is fastener head size, not bolt thread size/);
 assert.match(html, /10mm is a high-frequency mechanic size/);
 assert.match(html, /bearing bore, OD, width, suffix, seal style, and clearance all matter/);
+assert.match(html, /14 AWG is only one sizing clue; fuse\/breaker size, copper vs aluminum, insulation rating, temperature, bundling, and run length all matter/);
+assert.match(html, /14 AWG can be confused with nearby gauge sizes by sight/);
+assert.match(html, /14 AWG is commonly associated with very common 15 A branch and medium cord size/);
+assert.match(html, /10mm is close enough to some inch sizes to tempt a shortcut/);
+assert.match(html, /10 mm is commonly reached for very common 10mm socket; frequent-loss size/);
+assert.match(html, /6205 can match by bore while still being wrong by width, seal\/shield suffix, clearance, cage, or fit/);
+assert.match(html, /6205 \(25 mm bore, 52 x 15 mm\) is commonly seen on very common pump, conveyor, and motor bearing/);
 assert.match(html, /shop-reference-card-grid/);
 assert.ok(html.indexOf('data-shop-reference-title="Bearing Quick Reference"') < html.indexOf('data-shop-reference-title="Belt Section Reference"'));
 assert.ok(html.indexOf('data-shop-reference-title="Belt Section Reference"') < html.indexOf('data-shop-reference-title="Drill / Tap Quick Reference"'));
