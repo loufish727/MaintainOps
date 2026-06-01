@@ -5104,10 +5104,27 @@ textarea {
 
 .shop-reference-table {
   min-width: 640px;
+  border-collapse: separate;
+  border-spacing: 0 6px;
 }
 
 .shop-reference-data-row.shop-reference-row-high-signal td {
   background: color-mix(in srgb, #ffd84d 18%, var(--surface));
+}
+
+.shop-reference-data-row td {
+  border-bottom: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  border-top: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+}
+
+.shop-reference-data-row td:first-child {
+  border-left: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  border-radius: 8px 0 0 8px;
+}
+
+.shop-reference-data-row td:last-child {
+  border-right: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  border-radius: 0 8px 8px 0;
 }
 
 .shop-reference-data-row.shop-reference-row-high-signal td:first-child {
@@ -5146,51 +5163,78 @@ textarea {
 }
 
 .shop-reference-row-detail td {
-  background: color-mix(in srgb, var(--blue) 4%, var(--panel));
+  background: transparent;
+  border: 0;
   border-top: 0;
-  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--blue) 58%, var(--line));
+  box-shadow: none;
   padding: 0;
 }
 
 .shop-reference-data-row + .shop-reference-row-detail td {
-  border-bottom: 1px solid color-mix(in srgb, var(--blue) 16%, var(--line));
+  border-bottom: 0;
 }
 
 .shop-reference-line-detail {
+  border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--blue) 5%, var(--panel));
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--blue) 58%, var(--line));
   margin: 0;
+  overflow: hidden;
 }
 
 .shop-reference-line-detail summary {
   align-items: center;
-  color: color-mix(in srgb, var(--blue) 76%, var(--ink));
+  color: var(--ink);
   cursor: pointer;
   display: flex;
-  gap: 7px;
-  font-size: 0.76rem;
-  font-weight: 680;
+  gap: 9px;
+  font-size: 0.78rem;
+  font-weight: 740;
   justify-content: flex-start;
-  min-height: 34px;
-  padding: 8px 10px 8px 14px;
+  min-height: 40px;
+  padding: 7px 10px 7px 12px;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
-.shop-reference-line-detail summary > span {
-  border-bottom: 2px solid color-mix(in srgb, var(--blue) 68%, var(--line));
-  border-left: 2px solid color-mix(in srgb, var(--blue) 68%, var(--line));
-  border-radius: 0 0 0 4px;
-  flex: 0 0 18px;
-  height: 11px;
-  margin-top: -5px;
+.shop-reference-line-detail summary:hover {
+  background: color-mix(in srgb, var(--blue) 10%, var(--surface));
 }
 
 .shop-reference-line-detail[open] summary {
   border-bottom: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line));
+  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+}
+
+.shop-reference-help-mark {
+  align-items: center;
+  background: color-mix(in srgb, var(--blue) 86%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--blue) 75%, var(--line));
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 24px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  height: 24px;
+  justify-content: center;
+  line-height: 1;
+  width: 24px;
+}
+
+.shop-reference-help-copy {
+  color: color-mix(in srgb, var(--ink) 82%, var(--muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shop-reference-detail-panel {
   display: grid;
-  gap: 9px;
+  gap: 10px;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  padding: 11px;
+  padding: 10px;
 }
 
 .shop-reference-detail-item {
@@ -5276,7 +5320,7 @@ textarea {
 
   .shop-reference-card[open] .shop-reference-table tbody {
     display: grid;
-    gap: 8px;
+    gap: 0;
   }
 
   .shop-reference-card[open] .shop-reference-table tr {
@@ -5287,13 +5331,47 @@ textarea {
     overflow: hidden;
   }
 
+  .shop-reference-card[open] .shop-reference-table .shop-reference-data-row {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .shop-reference-card[open] .shop-reference-table .shop-reference-row-detail {
+    border-color: color-mix(in srgb, var(--blue) 24%, var(--line));
+    border-radius: 0 0 8px 8px;
+    border-top: 0;
+    display: block;
+    margin-bottom: 8px;
+  }
+
   .shop-reference-card[open] .shop-reference-table td {
     display: grid;
     grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
     gap: 10px;
     align-items: start;
     border-bottom: 1px solid var(--line);
+    border-left: 0;
+    border-radius: 0;
+    border-right: 0;
+    border-top: 0;
     padding: 8px 10px;
+  }
+
+  .shop-reference-card[open] .shop-reference-row-detail td {
+    display: block;
+    padding: 0;
+  }
+
+  .shop-reference-card[open] .shop-reference-row-detail td::before {
+    display: none;
+  }
+
+  .shop-reference-card[open] .shop-reference-line-detail {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .shop-reference-card[open] .shop-reference-help-copy {
+    white-space: normal;
   }
 
   .shop-reference-card[open] .shop-reference-table td::before {

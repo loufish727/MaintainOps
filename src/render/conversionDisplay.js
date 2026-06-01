@@ -2130,7 +2130,10 @@
         <tr class="shop-reference-row-detail">
           <td colspan="${columns.length}">
             <details class="shop-reference-line-detail">
-              <summary><span aria-hidden="true"></span>Details for row above: ${escapeHtml(label)}</summary>
+              <summary title="Explain ${escapeHtml(label)}">
+                <span class="shop-reference-help-mark" aria-hidden="true">?</span>
+                <span class="shop-reference-help-copy">Explain ${escapeHtml(label)}</span>
+              </summary>
               <div class="shop-reference-detail-panel" aria-label="${escapeHtml(section.title)} ${escapeHtml(label)} reference context">
                 ${details.map(([detailLabel, value]) => `
                   <div class="shop-reference-detail-item">
