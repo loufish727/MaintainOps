@@ -284,3 +284,38 @@ Reason: Motors, drives, belts, reducers, and couplings are common mechanic-maint
 ### Standard Feedback
 
 The signal-only standard still fits this domain. Motors and drives can become over-explained quickly, so the card should teach the rows that change field decisions while leaving basic lookup rows compact.
+
+## Diesel & Mobile Signal Batch - Implemented
+
+Classification: mixed 4-source identification and 10-source decision-adjacent troubleshooting charts.
+
+Reason: Diesel/mobile references can influence diagnostic direction, parts replacement, emissions troubleshooting, filter service, and battery/charging decisions. This batch uses the signal-detail standard only where a row represents a common field mistake, high-consequence decision, or spec-required check.
+
+### Reviewed / Opened Sources
+
+1. SAE J1939 / SPN-FMI diagnostic source family
+   Use: SPN/FMI relationship, failure mode direction, active/inactive distinction, and OEM diagnostic-tree framing.
+
+2. Cummins / PACCAR aftertreatment operator and aftertreatment-system references
+   Use: DOC, DPF, SCR, DEF, regeneration, soot/ash language, warning/inhibit context, and aftertreatment-system service framing.
+
+3. Donaldson diesel fuel and engine filtration references
+   Use: fuel-water separation, filter service context, water contamination, filter plugging, and diesel fuel quality language.
+
+4. Caterpillar battery testing and charging references
+   Use: open-circuit voltage, load testing, battery condition, equipment-specific replacement, and charging-system decision context.
+
+5. Field diagnostic practice source family
+   Use: voltage-drop testing, ground-path checks, parasitic draw sleep timing, CAN-awake troubleshooting, and diesel fault-code verification patterns.
+
+### Trial Decisions
+
+- Updated four existing charts: Diesel SPN / FMI Diagnostic Reference, Diesel Aftertreatment ID Reference, Diesel Fluid / Filter Reference, and Heavy Equipment Battery / Charging Reference.
+- Added `signalDetailsOnly` so ordinary lookup rows stay compact.
+- Added row-specific `rowSignals` and `rowTeaching` for common diagnostic and service-decision rows.
+- Kept final authority language pointed toward OEM diagnostic trees, live data, fluid tests, filter markings, service history, and voltage/load tests.
+- Added smoke coverage for at least one authored signal detail from each updated chart.
+
+### Standard Feedback
+
+The diesel/mobile batch benefits from the senior-tech standard because many rows are not part numbers; they are diagnostic direction clues. The chart should make the first verification step obvious without pretending to replace OEM service information.
