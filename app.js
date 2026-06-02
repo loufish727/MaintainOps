@@ -41,13 +41,6 @@ const {
   csvCell,
 } = window.MaintainOpsFormatting;
 const {
-  UNIT_GROUPS,
-  BOLT_REFERENCE,
-  WRENCH_REFERENCE,
-  conversionResultText,
-  bindConversionEvents,
-} = window.MaintainOpsConversions;
-const {
   isColumnSchemaError,
   isMissingColumnError,
   isProfileMissingError,
@@ -227,7 +220,6 @@ const { createEquipmentStructureGuideDisplayHelpers } = window.MaintainOpsEquipm
 const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
 const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const { createQuickFixDisplayHelpers } = window.MaintainOpsQuickFixDisplay;
-const { createConversionDisplayHelpers } = window.MaintainOpsConversionDisplay;
 const {
   workspaceLoading,
   workspaceLoadError,
@@ -272,17 +264,30 @@ const {
   formatMessageDay,
   initials,
 } = window.MaintainOpsMessageFormatting;
-const { renderConversionsPanel } = createConversionDisplayHelpers({
-  escapeHtml,
-  conversionGroups: UNIT_GROUPS,
-  boltReference: BOLT_REFERENCE,
-  wrenchReference: WRENCH_REFERENCE,
-  conversionResultText,
-});
 const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 let supabaseClient;
 let session;
+const CONVERSION_RESOURCE_PATHS = [
+  "src/utils/conversions.js?v=conversion-lazy-load-1",
+  "src/data/reference/fasteners.js?v=conversion-lazy-load-1",
+  "src/data/reference/electricalControls.js?v=conversion-lazy-load-1",
+  "src/data/reference/dieselMobile.js?v=conversion-lazy-load-1",
+  "src/data/reference/machiningCnc.js?v=conversion-lazy-load-1",
+  "src/data/reference/fabrication.js?v=conversion-lazy-load-1",
+  "src/data/reference/motorsDrives.js?v=conversion-lazy-load-1",
+  "src/data/reference/fluidPower.js?v=conversion-lazy-load-1",
+  "src/data/reference/pneumatics.js?v=conversion-lazy-load-1",
+  "src/data/reference/bearingsBeltsChain.js?v=conversion-lazy-load-1",
+  "src/data/reference/pmTroubleshooting.js?v=conversion-lazy-load-1",
+  "src/data/reference/pipeHoseFittings.js?v=conversion-lazy-load-1",
+  "src/data/reference/materialsShop.js?v=conversion-lazy-load-1",
+  "src/data/shopReferenceCharts.js?v=conversion-lazy-load-1",
+  "src/render/conversionDisplay.js?v=conversion-lazy-load-1",
+];
+let conversionResourcesPromise = null;
+let conversionResourcesError = "";
+let conversionDisplayHelpers = null;
 const {
   authCallbackRedirectUrl,
   passwordResetRedirectUrl,
@@ -1324,6 +1329,83 @@ function renderWorkspaceLoadError(message) {
   app.innerHTML = workspaceLoadError(message);
   document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
+}
+
+function loadScriptResource(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-lazy-src="${src}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`Could not load ${src}`)), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.dataset.lazySrc = src;
+    script.async = false;
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Could not load ${src}`));
+    document.body.appendChild(script);
+  });
+}
+
+async function ensureConversionResourcesLoaded() {
+  if (conversionDisplayHelpers) return conversionDisplayHelpers;
+  if (!conversionResourcesPromise) {
+    conversionResourcesError = "";
+    conversionResourcesPromise = (async () => {
+      for (const src of CONVERSION_RESOURCE_PATHS) {
+        await loadScriptResource(src);
+      }
+      const conversions = window.MaintainOpsConversions;
+      const display = window.MaintainOpsConversionDisplay;
+      if (!conversions || !display) throw new Error("Conversion tools did not initialize.");
+      conversionDisplayHelpers = display.createConversionDisplayHelpers({
+        escapeHtml,
+        conversionGroups: conversions.UNIT_GROUPS,
+        boltReference: conversions.BOLT_REFERENCE,
+        wrenchReference: conversions.WRENCH_REFERENCE,
+        conversionResultText: conversions.conversionResultText,
+      });
+      return conversionDisplayHelpers;
+    })().catch((error) => {
+      conversionResourcesError = error.message || "Could not load conversion tools.";
+      conversionResourcesPromise = null;
+      throw error;
+    });
+  }
+  return conversionResourcesPromise;
+}
+
+function renderConversionsLazyPanel() {
+  if (conversionDisplayHelpers) return conversionDisplayHelpers.renderConversionsPanel();
+  const status = conversionResourcesError || "Loading shop converters and reference charts...";
+  const toneClass = conversionResourcesError ? "status-blocked" : "status-in_progress";
+  return `
+    <section class="setup-card conversion-loading-card ${toneClass}">
+      <h3>Conversions</h3>
+      <p>${escapeHtml(status)}</p>
+      ${conversionResourcesError ? `<button class="secondary-button" data-retry-conversions type="button">Retry</button>` : ""}
+    </section>
+  `;
+}
+
+function scheduleConversionResourceLoad() {
+  if (activeSection !== "conversions" || conversionDisplayHelpers || conversionResourcesPromise) return;
+  ensureConversionResourcesLoaded()
+    .then(() => {
+      if (activeSection === "conversions") renderWorkspace();
+    })
+    .catch(() => {
+      if (activeSection === "conversions") renderWorkspace();
+    });
 }
 
 function createShopReferenceFavoriteStore() {
@@ -2881,7 +2963,7 @@ function renderWorkspace() {
               <h2>Conversions</h2>
               <span>shop reference</span>
             </div>
-            ${activeSection === "conversions" ? renderConversionsPanel() : ""}
+            ${activeSection === "conversions" ? renderConversionsLazyPanel() : ""}
           </section>
 
           <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
@@ -3713,7 +3795,16 @@ function bindWorkspaceEvents() {
     visibleNavItems,
   });
   if (activeSection === "conversions") {
-    bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
+    if (conversionDisplayHelpers) {
+      window.MaintainOpsConversions.bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
+    } else {
+      document.querySelector("[data-retry-conversions]")?.addEventListener("click", () => {
+        conversionResourcesError = "";
+        scheduleConversionResourceLoad();
+        renderWorkspace();
+      });
+      scheduleConversionResourceLoad();
+    }
   }
   bindWorkspaceQuickFixCommandEvents({
     state: {

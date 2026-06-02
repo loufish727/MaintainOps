@@ -8,7 +8,6 @@ const requiredResources = [
   "src/utils/constants.js",
   "src/utils/dom.js",
   "src/utils/formatting.js",
-  "src/utils/conversions.js",
   "src/utils/schemaErrors.js",
   "src/utils/operationResults.js",
   "src/utils/operationTimeout.js",
@@ -140,6 +139,12 @@ const requiredResources = [
   "src/render/quickFixDisplay.js",
   "src/render/authDisplay.js",
   "src/render/publicRequestDisplay.js",
+  "src/render/messageFormatting.js",
+  "src/render/messageDisplay.js",
+];
+
+const lazyResources = [
+  "src/utils/conversions.js",
   "src/data/reference/fasteners.js",
   "src/data/reference/electricalControls.js",
   "src/data/reference/dieselMobile.js",
@@ -154,8 +159,6 @@ const requiredResources = [
   "src/data/reference/materialsShop.js",
   "src/data/shopReferenceCharts.js",
   "src/render/conversionDisplay.js",
-  "src/render/messageFormatting.js",
-  "src/render/messageDisplay.js",
 ];
 
 const additionalResources = [
@@ -186,6 +189,13 @@ test.describe("MaintainOps hosted resource smoke", () => {
         for (const resource of additionalResources) {
           const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke-${attempt}`);
           expect(response.status(), `${resource} should load`).toBe(200);
+        }
+
+        for (const resource of lazyResources) {
+          expect(indexHtml, `index.html should not eagerly load lazy resource ${resource}`).not.toContain(resource);
+
+          const response = await request.get(`${baseURL}${resource}?qa_bust=resource-smoke-${attempt}`);
+          expect(response.status(), `${resource} should load when requested`).toBe(200);
         }
 
         return;
