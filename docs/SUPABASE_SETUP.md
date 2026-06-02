@@ -48,6 +48,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-asset-hierarchy.sql`
 - `step-next-asset-type-secondary-machine.sql`
 - `step-next-asset-type-shop-item.sql`
+- `step-next-asset-type-tooling.sql`
 - `step-next-cancel-team-invites.sql`
 - `step-next-cleanup-delete-paths.sql`
 - `step-next-company-logo.sql`
@@ -125,6 +126,10 @@ Run `supabase/step-next-invite-role-preservation.sql` if an existing teammate ac
 Equipment part links:
 
 Run `supabase/step-next-asset-parts.sql` before linking parts directly to equipment. This creates the `asset_parts` join table so equipment can list recommended/common parts without recording work-order usage or changing inventory quantity.
+
+Equipment tooling type:
+
+Run `supabase/step-next-asset-type-tooling.sql` before selecting `Tooling / Setup` as an equipment type. It updates the `assets.asset_type` constraint so roll tooling sets, die sets, profile setups, and station tooling can be tracked separately from machines, sub-assemblies, components, and shop items.
 
 Maintenance request photos:
 

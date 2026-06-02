@@ -9,6 +9,7 @@
     "test:smoke:github-actions": "node scripts/verify-github-actions-run.js"
   },
   "devDependencies": {
-    "@playwright/test": "1.60.0"
+    "@playwright/test": "1.60.0",
+    "supabase": "^2.104.0"
   }
 }

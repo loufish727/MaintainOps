@@ -149,12 +149,12 @@ function createWorkflow(options = {}) {
       asset_code: "P-1",
       location: "Line 1",
       parent_asset_id: "",
-      asset_type: "pump",
+      asset_type: "tooling",
       safety_devices_required: "on",
     },
   });
   await create.workflow.createAsset({ preventDefault() {}, currentTarget: createForm });
-  assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].name === "Pump 1"), true);
+  assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].name === "Pump 1" && call[2].asset_type === "tooling"), true);
   assert.equal(create.calls.some((call) => call[0] === "notice" && call[1] === "Equipment added."), true);
   assert.equal(createForm.button.disabled, false);
   assert.equal(createForm.button.textContent, "Add Equipment");

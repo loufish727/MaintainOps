@@ -26,6 +26,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Parts documents/receipts attachment.
 - Collapsible conversions reference tab for common shop measurements, square footage, expanded common inch thread lookup, wrench/head-size lookup, and a screen-fit bolt gauge.
 - Equipment hierarchy.
+- Equipment can classify tooling/setup records separately from machines, sub-assemblies, components, and shop items.
 - Equipment deletion for manager/admin.
 - Preventive maintenance schedules.
 - PM-generated work orders.
@@ -68,6 +69,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes. The sizing circle is green, the calibration bar is red, and calibration can be locked per device.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.
 - Follow-up work creation now uses a days-based due-date target from Planning instead of creating follow-up work with no due date. `actual_minutes` remains labor/completion duration data for analytics and exports.
+- Equipment detail includes a visible structure guide explaining machine/line, sub-assembly, tooling/setup, and component/part logic for complex lines like progressive roll formers and ASC lines.
 - Shop reference chart cards were adjusted to follow the app's card pattern: collapsed headline cards, one expanded chart at a time, full-width desktop detail layout, mobile stacked label/value rows so table content does not clip on phones, stronger favorite styling, and favorites that persist to the signed-in user's `user_preferences` row when available, with browser `localStorage` retained as a fallback/cache.
 - Shop reference charts were expanded from 17 to 37 total cards with 20 common part-ID/reference additions including sensors, VFD faults, fuse classes, contactors/overloads, motor nameplates, pneumatic/hydraulic IDs, couplings, rollers, photoeyes, proximity sensors, thermocouples, hose clamps, threadlocker, bearing suffixes, belt codes, and chain sprocket IDs. A search bar now filters relevant cards without connecting to inventory or Supabase.
 - Main conversion cards were restyled as color-coded white tool tiles so length, area, weight, temperature, volume, pressure, and torque read as distinct quick tools instead of a plain list.
