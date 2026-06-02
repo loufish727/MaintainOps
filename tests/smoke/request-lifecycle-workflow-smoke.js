@@ -172,6 +172,8 @@ function createWorkflow(options = {}) {
     buttonText: "Submit Request",
     formValues: {
       title: "Request title",
+      requester_name: "Lee Requester",
+      equipment_note: "Thalmann line",
       description: "Request description",
       asset_id: "asset-1",
       priority: "medium",
@@ -180,6 +182,8 @@ function createWorkflow(options = {}) {
   });
   await created.workflow.createRequest({ preventDefault() {}, target: requestForm });
   assert.equal(created.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests"), true);
+  assert.equal(created.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests" && call[2].requested_by_name === "Lee Requester"), true);
+  assert.equal(created.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests" && /Machine \/ area: Thalmann line/.test(call[2].description)), true);
   assert.equal(created.calls.some((call) => call[0] === "photo" && call[1] === "request-new"), true);
   assert.equal(created.calls.some((call) => call[0] === "activeSection" && call[1] === "requests"), true);
   assert.equal(requestForm.button.disabled, false);

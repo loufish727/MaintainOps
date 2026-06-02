@@ -78,11 +78,13 @@
       return `
         <form class="form-grid" id="request-form">
           <label>Request title<input name="title" required placeholder="Cold room door not sealing"></label>
-          <label>What is happening?<textarea name="description" rows="4" required></textarea></label>
+          <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
+          <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+          <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
           <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
-          <label>Machine / equipment
+          <label>Link to saved equipment
             <select name="asset_id" data-location-sensitive-asset>
-              <option value="">Unknown or general location</option>
+              <option value="">No saved equipment link</option>
               ${renderAssetOptions()}
             </select>
           </label>

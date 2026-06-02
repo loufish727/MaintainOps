@@ -1588,9 +1588,9 @@ async function submitPublicRequest(event, token, intake) {
       supabaseClient.rpc("submit_public_location_request", {
         request_token: token,
         request_title: requiredText(form.get("title"), "Request title"),
-        equipment_note: String(form.get("equipment_note") || "").trim() || null,
-        request_description: String(form.get("description") || "").trim() || null,
-        requester_name: String(form.get("requester_name") || "").trim() || null,
+        equipment_note: requiredText(form.get("equipment_note"), "Machine / area"),
+        request_description: requiredText(form.get("description"), "Request details"),
+        requester_name: requiredText(form.get("requester_name"), "Your name"),
         requester_contact: String(form.get("requester_contact") || "").trim() || null,
         request_priority: form.get("priority") || "medium",
       }),
