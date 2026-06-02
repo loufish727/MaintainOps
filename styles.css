@@ -10,6 +10,12 @@
   --sidebar-text: #f8fbf8;
   --sidebar-muted: #aebcb7;
   --control-bg: #ffffff;
+  --field-bg: #edf2ee;
+  --field-bg-strong: #e4ebe6;
+  --field-ink: #101614;
+  --field-muted: #4d5b55;
+  --field-line: #9dafaa;
+  --field-focus: #176f5b;
   --chip-text: #33403c;
   --on-light-highlight: #101614;
   --sticky-fade: rgba(255,255,255,0);
@@ -54,6 +60,12 @@
   --sidebar-text: #f4faf7;
   --sidebar-muted: #91a49c;
   --control-bg: #121a17;
+  --field-bg: #0f1714;
+  --field-bg-strong: #14201c;
+  --field-ink: #f5fbf8;
+  --field-muted: #c7d4ce;
+  --field-line: #5d746d;
+  --field-focus: #77d7ff;
   --chip-text: #d8e5df;
   --on-light-highlight: #101614;
   --sticky-fade: rgba(24,33,31,0);
@@ -1734,11 +1746,25 @@ label, .company-switcher {
 
 input, select, textarea {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: 8px;
-  background: var(--control-bg);
-  color: var(--ink);
+  background: var(--field-bg);
+  color: var(--field-ink);
   padding: 8px 10px;
+  font-weight: 620;
+}
+
+select {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+option {
+  background: var(--field-bg-strong);
+  color: var(--field-ink);
 }
 
 .form-grid label:not(.check-row),
@@ -4280,10 +4306,11 @@ textarea {
 .conversion-controls input,
 .conversion-controls select {
   width: 100%;
-  border-color: color-mix(in srgb, var(--conversion-accent-dark) 34%, #cbd5e1);
-  background: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.04);
-  color: #111827;
+  border-color: color-mix(in srgb, var(--conversion-accent-dark) 52%, var(--field-line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--conversion-accent) 8%, transparent), transparent),
+    var(--field-bg);
+  color: var(--field-ink);
   font-weight: 760;
 }
 
@@ -6527,16 +6554,17 @@ body {
 input,
 select,
 textarea {
-  border-color: rgba(119, 215, 255, 0.24);
-  background: rgba(0,0,0,0.28);
+  border-color: var(--field-line);
+  background: var(--field-bg);
+  color: var(--field-ink);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 1px solid rgba(119, 215, 255, 0.58);
-  border-color: rgba(119, 215, 255, 0.58);
+  outline: 2px solid color-mix(in srgb, var(--field-focus) 42%, transparent);
+  border-color: var(--field-focus);
 }
 
 .primary-button {
@@ -7861,12 +7889,13 @@ select,
 textarea {
   min-height: var(--control-height);
   border-radius: var(--radius-sm);
-  border-color: rgba(119, 215, 255, 0.20);
+  border-color: var(--field-line);
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.012)),
-    rgba(0, 0, 0, 0.24);
-  color: var(--ink);
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+    var(--field-bg);
+  color: var(--field-ink);
   line-height: 1.35;
+  font-weight: 650;
 }
 
 textarea {
@@ -7876,7 +7905,7 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--muted) 74%, transparent);
+  color: color-mix(in srgb, var(--field-muted) 82%, transparent);
   opacity: 1;
 }
 
@@ -7885,10 +7914,10 @@ select:focus,
 textarea:focus {
   outline: 2px solid rgba(119, 215, 255, 0.20);
   outline-offset: 1px;
-  border-color: rgba(119, 215, 255, 0.70);
+  border-color: var(--field-focus);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.07),
-    0 0 0 3px rgba(119, 215, 255, 0.10);
+    0 0 0 3px color-mix(in srgb, var(--field-focus) 18%, transparent);
 }
 
 .form-grid,
