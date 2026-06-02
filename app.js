@@ -3515,6 +3515,7 @@ const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
   locationIdForAsset,
   workOrderDateValue,
   assignedUserFromForm,
+  procedureColumn,
   applySafetyRequirementPayload,
   blocksProcedureCompletion,
   setWorkOrderActionWarning,
