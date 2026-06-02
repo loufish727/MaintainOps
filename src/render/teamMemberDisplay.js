@@ -19,6 +19,7 @@
     COMPANY_ROLES,
     renderLocationOptions,
     inviteDefaultLocationLabel,
+    teamInviteSignupUrl,
   }) {
     function teamMemberName(userId) {
       const profile = getProfilesByUserId()[userId];
@@ -94,7 +95,7 @@
         <form class="team-invite-form relationship-detail comment" id="team-invite-form">
           <div>
             <h3>Invite Teammate</h3>
-            <p class="muted">They sign up with this email, then the app adds them to this company automatically.</p>
+            <p class="muted">Invites are saved here. Copy the invite message and send it to them; when they sign up with the same email, the app adds them to this company automatically.</p>
           </div>
           <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required pattern="[^@\\s]+@[^@\\s]+\\.[^@\\s]+" placeholder="tech@company.com" ${teamInvitesReady ? "" : "disabled"}></label>
           <label>Role
@@ -118,6 +119,7 @@
 
     function renderTeamInvites() {
       const pending = getTeamInvites().filter((invite) => !invite.accepted_at);
+      const signupUrl = teamInviteSignupUrl();
       return `
         <section class="team-invites">
           <div class="panel-header compact">
@@ -127,14 +129,19 @@
           <p class="error-text" id="team-invite-cancel-error">${escapeHtml(getTeamInviteCancelError())}</p>
           <div class="member-list">
             ${pending.map((invite) => `
+              ${(() => {
+                const inviteMessage = `You have a MaintainOps invite for this company. Sign up or sign in with ${invite.email} here: ${signupUrl}`;
+                return `
               <article class="member-card invite-card">
                 <div>
                   <strong>${escapeHtml(invite.email)}</strong>
                   <p>Sent ${new Date(invite.created_at).toLocaleString()}</p>
                   <p>${escapeHtml(inviteDefaultLocationLabel(invite))}</p>
+                  <p class="muted">Email is not sent automatically. Send this person the signup link.</p>
                 </div>
                 <div class="button-row">
                   <span class="chip">${escapeHtml(invite.role)}</span>
+                  <button class="secondary-button" data-copy-team-invite="${escapeHtml(inviteMessage)}" type="button">Copy Invite</button>
                   ${getPendingCancelInviteId() === invite.id ? `
                     <button class="secondary-button" data-cancel-invite-cancel type="button">Keep</button>
                     <button class="danger-action-button confirm-delete-button" data-confirm-cancel-invite="${escapeHtml(invite.id)}" type="button">Cancel Invite</button>
@@ -143,6 +150,8 @@
                   `}
                 </div>
               </article>
+                `;
+              })()}
             `).join("") || `<p class="muted">No pending invites.</p>`}
           </div>
         </section>

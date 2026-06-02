@@ -27,6 +27,7 @@ const helpers = createTeamMemberDisplayHelpers({
   COMPANY_ROLES: ["technician", "manager", "admin"],
   renderLocationOptions: () => '<option value="loc-1">QA Facility</option>',
   inviteDefaultLocationLabel: () => "Default location: QA Facility",
+  teamInviteSignupUrl: () => "https://example.test/MaintainOps/",
 });
 
 assert.equal(helpers.teamMemberName("user-1"), "Louie");
@@ -51,6 +52,9 @@ assert.match(inviteForm, /QA Facility/);
 
 const invites = helpers.renderTeamInvites();
 assert.match(invites, /tech@example\.test/);
+assert.match(invites, /Email is not sent automatically/);
+assert.match(invites, /data-copy-team-invite/);
+assert.match(invites, /https:\/\/example\.test\/MaintainOps\//);
 assert.match(invites, /Cancel &lt;failed&gt;/);
 assert.match(invites, /data-cancel-invite-cancel/);
 assert.match(invites, /data-confirm-cancel-invite="invite-1"/);

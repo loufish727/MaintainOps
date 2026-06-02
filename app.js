@@ -107,6 +107,7 @@ const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceS
 const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
 const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
 const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
+const { bindWorkspaceTeamInviteCopyEvents } = window.MaintainOpsWorkspaceTeamInviteCopyEvents;
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
 const { bindWorkspaceAssetQuickFixEvents } = window.MaintainOpsWorkspaceAssetQuickFixEvents;
 const { bindWorkspacePublicRequestLinkCopyEvents } = window.MaintainOpsWorkspacePublicRequestLinkCopyEvents;
@@ -521,6 +522,7 @@ const {
   COMPANY_ROLES,
   renderLocationOptions: (...args) => renderLocationOptions(...args),
   inviteDefaultLocationLabel: (...args) => inviteDefaultLocationLabel(...args),
+  teamInviteSignupUrl,
 });
 const {
   teamMemberWorkload,
@@ -3114,6 +3116,13 @@ function isMissingTableError(error, tableName) {
   return error?.code === "PGRST205" || (message.includes(tableName.toLowerCase()) && message.includes("schema cache"));
 }
 
+function teamInviteSignupUrl() {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
 const WORK_ORDER_SCHEMA_FIELDS = [
   "location_id",
   "assigned_to",
@@ -4040,6 +4049,10 @@ function bindWorkspaceEvents() {
     },
     renderWorkspace,
     cancelTeamInvite,
+  });
+
+  bindWorkspaceTeamInviteCopyEvents({
+    copyTextToClipboard,
   });
 
   bindPartInventoryWorkflowEvents();
