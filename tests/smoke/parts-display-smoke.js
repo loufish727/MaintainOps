@@ -19,7 +19,10 @@ const helpers = createPartsDisplayHelpers({
     { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 },
   ],
   getPartDocumentsByPartId: () => ({
-    "part-1": [{ file_name: "receipt.pdf", created_at: "2026-05-27T12:00:00Z", signedUrl: "https://example.test/receipt.pdf" }],
+    "part-1": [
+      { file_name: "receipt.pdf", document_type: "receipt", content_type: "application/pdf", created_at: "2026-05-27T12:00:00Z", signedUrl: "https://example.test/receipt.pdf" },
+      { file_name: "label.jpg", document_type: "part_photo", content_type: "image/jpeg", file_size_bytes: 12345, original_file_name: "raw label.png", created_at: "2026-05-27T12:10:00Z", signedUrl: "https://example.test/label.jpg" },
+    ],
   }),
   getPartDocumentsReady: () => state.partDocumentsReady,
   getPendingDeletePartId: () => state.pendingDeletePartId,
@@ -55,6 +58,11 @@ assert.match(detail, /data-edit-part="part-1"/);
 assert.match(detail, /data-toggle-part-sources/);
 assert.match(detail, /part-source-manager/);
 assert.match(detail, /data-part-document="part-1"/);
+assert.match(detail, /name="document_type"/);
+assert.match(detail, /Part photos/);
+assert.match(detail, /Receipts/);
+assert.match(detail, /part-document-thumb/);
+assert.match(detail, /raw label\.png/);
 assert.match(detail, /receipt\.pdf/);
 assert.match(detail, /data-cancel-delete-part/);
 assert.match(detail, /permanent-delete-button/);

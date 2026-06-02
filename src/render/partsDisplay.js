@@ -17,6 +17,93 @@
     renderPartSourceOptions,
     renderPartSourceManager,
   }) {
+    const PART_DOCUMENT_TYPES = [
+      ["part_photo", "Part photos"],
+      ["receipt", "Receipts"],
+      ["invoice", "Invoices"],
+      ["part_print", "Part prints"],
+      ["schematic", "Schematics"],
+      ["manual", "Manuals"],
+      ["spec_sheet", "Spec sheets"],
+      ["warranty", "Warranty"],
+      ["other", "Other files"],
+    ];
+
+    const PART_DOCUMENT_TYPE_LABELS = PART_DOCUMENT_TYPES.reduce((labels, [value, label]) => {
+      labels[value] = label.replace(/s$/, "");
+      return labels;
+    }, {});
+
+    function partDocumentType(document) {
+      if (document.document_type) return document.document_type;
+      if (String(document.content_type || "").startsWith("image/")) return "part_photo";
+      if (/invoice/i.test(document.file_name || "")) return "invoice";
+      if (/receipt/i.test(document.file_name || "")) return "receipt";
+      if (/schematic|diagram/i.test(document.file_name || "")) return "schematic";
+      if (/print|drawing/i.test(document.file_name || "")) return "part_print";
+      if (/manual/i.test(document.file_name || "")) return "manual";
+      if (/spec|cut.?sheet|datasheet/i.test(document.file_name || "")) return "spec_sheet";
+      return "other";
+    }
+
+    function renderDocumentTypeOptions() {
+      return PART_DOCUMENT_TYPES.map(([value, label]) => `
+        <option value="${value}">${escapeHtml(PART_DOCUMENT_TYPE_LABELS[value] || label)}</option>
+      `).join("");
+    }
+
+    function renderPartDocumentCard(document) {
+      const type = partDocumentType(document);
+      const isImage = String(document.content_type || "").startsWith("image/");
+      const typeLabel = PART_DOCUMENT_TYPE_LABELS[type] || "File";
+      const uploaded = document.created_at ? new Date(document.created_at).toLocaleString() : "Uploaded";
+      const sizeText = document.file_size_bytes ? `${Math.round(Number(document.file_size_bytes) / 1024)} KB` : "";
+      return `
+        <article class="part-document-card ${isImage ? "image-file" : ""}">
+          ${isImage && document.signedUrl ? `<a class="part-document-thumb" href="${escapeHtml(document.signedUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(document.signedUrl)}" alt="${escapeHtml(document.file_name)}"></a>` : ""}
+          <div>
+            <div class="chip-row">
+              <span class="chip">${escapeHtml(typeLabel)}</span>
+              ${sizeText ? `<span class="chip">${escapeHtml(sizeText)}</span>` : ""}
+            </div>
+            <strong>${escapeHtml(document.file_name)}</strong>
+            <span>${escapeHtml(uploaded)}</span>
+            ${document.original_file_name && document.original_file_name !== document.file_name ? `<small>Original: ${escapeHtml(document.original_file_name)}</small>` : ""}
+            ${document.signedUrl ? `<a href="${escapeHtml(document.signedUrl)}" target="_blank" rel="noreferrer">Open file</a>` : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderPartDocumentSection([type, label], documents) {
+      const grouped = documents.filter((document) => partDocumentType(document) === type);
+      if (!grouped.length) return "";
+      return `
+        <section class="part-document-group">
+          <div class="part-document-group-heading">
+            <h4>${escapeHtml(label)}</h4>
+            <span>${grouped.length}</span>
+          </div>
+          <div class="part-document-grid">
+            ${grouped.map(renderPartDocumentCard).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderPartDocumentSummary(documents) {
+      const counts = documents.reduce((summary, document) => {
+        const type = partDocumentType(document);
+        summary[type] = (summary[type] || 0) + 1;
+        return summary;
+      }, {});
+      const summaryTypes = ["part_photo", "receipt", "invoice", "part_print", "schematic", "manual", "spec_sheet"];
+      return summaryTypes
+        .filter((type) => counts[type])
+        .map((type) => `<span class="chip">${counts[type]} ${escapeHtml(PART_DOCUMENT_TYPE_LABELS[type] || "file")}${counts[type] === 1 ? "" : "s"}</span>`)
+        .join("");
+    }
+
     function renderPart(part) {
       const quantity = Number(part.quantity_on_hand) || 0;
       const reorderPoint = Number(part.reorder_point) || 0;
@@ -76,6 +163,7 @@
       const reorderPoint = Number(part.reorder_point) || 0;
       const unitCost = Number(part.unit_cost) || 0;
       const documents = getPartDocumentsByPartId()[part.id] || [];
+      const documentSummary = renderPartDocumentSummary(documents);
       return `
         <section class="part-detail-shell">
           ${renderPartSourceOptions()}
@@ -89,6 +177,7 @@
               </div>
               <h3>${escapeHtml(part.name)}</h3>
               <p>${quantity} on hand - reorder at ${reorderPoint}</p>
+              ${documentSummary ? `<div class="chip-row part-file-summary">${documentSummary}</div>` : ""}
             </div>
           </div>
 
@@ -127,22 +216,19 @@
 
           <section class="part-detail-files relationship-detail parts">
             <div class="panel-header compact">
-              <h3>Filed Receipts / Invoices</h3>
+              <h3>Part Files</h3>
               <span>${documents.length} file${documents.length === 1 ? "" : "s"}</span>
             </div>
             <form class="part-document-form" data-part-document="${part.id}">
-              <label>Attach file<input name="document" type="file" accept="image/*,.pdf"></label>
+              <label>File type<select name="document_type">${renderDocumentTypeOptions()}</select></label>
+              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"></label>
               <p class="error-text" data-part-document-error="${part.id}">${getPartDocumentsReady() ? "" : "Run supabase/step-next-part-documents.sql before attaching files."}</p>
               <button class="secondary-button" type="submit" ${getPartDocumentsReady() ? "" : "disabled"}>Attach File</button>
             </form>
-            <div class="mini-list part-document-list">
-              ${documents.map((document) => `
-                <article>
-                  <strong>${escapeHtml(document.file_name)}</strong>
-                  <span>${new Date(document.created_at).toLocaleString()}</span>
-                  ${document.signedUrl ? `<a href="${escapeHtml(document.signedUrl)}" target="_blank" rel="noreferrer">Open file</a>` : ""}
-                </article>
-              `).join("") || `<p class="muted">No receipts or invoices filed with this part.</p>`}
+            <div class="part-document-list">
+              ${documents.length
+                ? PART_DOCUMENT_TYPES.map((type) => renderPartDocumentSection(type, documents)).join("")
+                : `<p class="muted">No photos, receipts, invoices, prints, schematics, or manuals filed with this part.</p>`}
             </div>
           </section>
 

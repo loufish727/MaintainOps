@@ -80,11 +80,17 @@ function createWorkflow(options = {}) {
     setRequestPhotosReady: (value) => calls.push(["requestPhotosReady", value]),
     showNotice: (message, tone) => calls.push(["notice", message, tone || "success"]),
     render: async () => calls.push(["render"]),
-    optimizePhotoOverride: async (file) => ({
-      blob: { name: "optimized", size: 123 },
-      fileName: "optimized.jpg",
-      contentType: "image/jpeg",
-    }),
+    optimizePhotoOverride: async (file) => String(file.type || "").startsWith("image/")
+      ? ({
+        blob: { name: "optimized", size: 123 },
+        fileName: "optimized.jpg",
+        contentType: "image/jpeg",
+      })
+      : ({
+        blob: file,
+        fileName: String(file.name || "file").replace(/\s+/g, "-"),
+        contentType: file.type || "application/octet-stream",
+      }),
   });
   return { workflow, calls, errors };
 }
@@ -108,15 +114,29 @@ function createWorkflow(options = {}) {
     preventDefault() {},
     currentTarget: {
       dataset: { partDocument: "part-1" },
-      formValues: { document: { name: "receipt.pdf", type: "application/pdf" } },
+      formValues: { document: { name: "receipt.pdf", type: "application/pdf", size: 456 }, document_type: "receipt" },
       querySelector(selector) {
         return selector === "button[type='submit']" ? button : null;
       },
     },
   });
   assert.equal(partDoc.calls.some((call) => call[0] === "upload" && call[1] === "part-documents"), true);
-  assert.equal(partDoc.calls.some((call) => call[0] === "insert" && call[1] === "part_documents"), true);
+  assert.equal(partDoc.calls.some((call) => call[0] === "insert" && call[1] === "part_documents" && call[2].document_type === "receipt" && call[2].original_file_name === "receipt.pdf"), true);
   assert.equal(button.disabled, false);
+
+  const partPhoto = createWorkflow();
+  await partPhoto.workflow.uploadPartDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { partDocument: "part-1" },
+      formValues: { document: { name: "Part label.png", type: "image/png", size: 999 }, document_type: "part_photo" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(partPhoto.calls.some((call) => call[0] === "upload" && call[1] === "part-documents" && call[2] === "company-1/part-1/uuid-1-optimized.jpg"), true);
+  assert.equal(partPhoto.calls.some((call) => call[0] === "insert" && call[1] === "part_documents" && call[2].document_type === "part_photo" && call[2].file_size_bytes === 123), true);
 
   const upload = createWorkflow();
   const uploadButton = { disabled: false, textContent: "Upload Photo" };

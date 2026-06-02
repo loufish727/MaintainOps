@@ -12,7 +12,9 @@
       const partId = formElement.dataset.partDocument;
       const errorElement = documentRef.querySelector(`[data-part-document-error="${partId}"]`);
       const submitButton = formElement.querySelector("button[type='submit']");
-      const file = new FormDataCtor(formElement).get("document");
+      const formData = new FormDataCtor(formElement);
+      const file = formData.get("document");
+      const documentType = normalizePartDocumentType(formData.get("document_type"));
 
       if (errorElement) errorElement.textContent = "";
       if (!deps.getPartDocumentsReady()) {
@@ -29,12 +31,13 @@
         submitButton.textContent = "Attaching...";
       }
 
-      const fileName = deps.safeFileName(file.name || "part-file");
+      const optimized = await optimizePhoto(file);
+      const fileName = optimized.fileName || deps.safeFileName(file.name || "part-file");
       const path = `${deps.getActiveCompanyId()}/${partId}/${cryptoRef.randomUUID()}-${fileName}`;
       try {
         const upload = await deps.withOperationTimeout(
-          deps.supabaseClient().storage.from("part-documents").upload(path, file, {
-            contentType: file.type || "application/octet-stream",
+          deps.supabaseClient().storage.from("part-documents").upload(path, optimized.blob, {
+            contentType: optimized.contentType,
             upsert: false,
           }),
           "Part file upload timed out. Check your connection and try again.",
@@ -43,18 +46,37 @@
 
         if (upload.error) throw upload.error;
 
-        const { error } = await deps.withOperationTimeout(
-          deps.supabaseClient().from("part_documents").insert({
-            company_id: deps.getActiveCompanyId(),
-            part_id: partId,
-            uploaded_by: deps.getSession().user.id,
-            storage_path: path,
-            file_name: fileName,
-            content_type: file.type || null,
-          }),
+        const documentRecord = {
+          company_id: deps.getActiveCompanyId(),
+          part_id: partId,
+          uploaded_by: deps.getSession().user.id,
+          storage_path: path,
+          file_name: fileName,
+          content_type: optimized.contentType,
+          document_type: documentType,
+          file_size_bytes: optimized.blob.size || null,
+          original_file_name: deps.safeFileName(file.name || "part-file"),
+          original_size_bytes: file.size || null,
+        };
+
+        let { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().from("part_documents").insert(documentRecord),
           "Part file record save timed out. Check your connection and try again.",
           15000
         );
+
+        if (error && deps.isColumnSchemaError(error, ["document_type", "file_size_bytes", "original_file_name", "original_size_bytes"])) {
+          delete documentRecord.document_type;
+          delete documentRecord.file_size_bytes;
+          delete documentRecord.original_file_name;
+          delete documentRecord.original_size_bytes;
+          const retry = await deps.withOperationTimeout(
+            deps.supabaseClient().from("part_documents").insert(documentRecord),
+            "Part file record retry timed out. Check your connection and try again.",
+            15000
+          );
+          error = retry.error;
+        }
 
         if (error) {
           await removeUploadedObject("part-documents", path);
@@ -74,6 +96,11 @@
           submitButton.textContent = "Attach File";
         }
       }
+    }
+
+    function normalizePartDocumentType(value) {
+      const allowed = new Set(["part_photo", "receipt", "invoice", "part_print", "schematic", "manual", "spec_sheet", "warranty", "other"]);
+      return allowed.has(value) ? value : "other";
     }
 
     async function uploadPhoto(event) {
