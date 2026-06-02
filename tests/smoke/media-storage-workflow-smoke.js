@@ -50,6 +50,7 @@ function createWorkflow(options = {}) {
   const errors = {
     "#photo-error": { textContent: "" },
     '[data-part-document-error="part-1"]': { textContent: "" },
+    '[data-asset-document-error="asset-1"]': { textContent: "" },
   };
   const workflow = createMediaStorageWorkflow({
     documentRef: {
@@ -74,6 +75,8 @@ function createWorkflow(options = {}) {
     ensureProfileForActiveCompany: async () => options.hasProfile !== false,
     getAppError: () => "Profile unavailable",
     recordWorkOrderEvent: async (id, type, summary) => calls.push(["event", id, type, summary]),
+    getAssetDocumentsReady: () => options.assetDocumentsReady !== false,
+    setAssetDocumentsReady: (value) => calls.push(["assetDocumentsReady", value]),
     getPartDocumentsReady: () => options.partDocumentsReady !== false,
     setPartDocumentsReady: (value) => calls.push(["partDocumentsReady", value]),
     setPhotosReady: (value) => calls.push(["photosReady", value]),
@@ -137,6 +140,34 @@ function createWorkflow(options = {}) {
   });
   assert.equal(partPhoto.calls.some((call) => call[0] === "upload" && call[1] === "part-documents" && call[2] === "company-1/part-1/uuid-1-optimized.jpg"), true);
   assert.equal(partPhoto.calls.some((call) => call[0] === "insert" && call[1] === "part_documents" && call[2].document_type === "part_photo" && call[2].file_size_bytes === 123), true);
+
+  const assetDocument = createWorkflow();
+  await assetDocument.workflow.uploadAssetDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { assetDocument: "asset-1" },
+      formValues: { document: { name: "Controller settings.pdf", type: "application/pdf", size: 789 }, document_type: "settings" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(assetDocument.calls.some((call) => call[0] === "upload" && call[1] === "asset-documents"), true);
+  assert.equal(assetDocument.calls.some((call) => call[0] === "insert" && call[1] === "asset_documents" && call[2].document_type === "settings" && call[2].original_file_name === "Controller-settings.pdf"), true);
+
+  const assetImageDocument = createWorkflow();
+  await assetImageDocument.workflow.uploadAssetDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { assetDocument: "asset-1" },
+      formValues: { document: { name: "Name plate.png", type: "image/png", size: 999 }, document_type: "nameplate" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(assetImageDocument.calls.some((call) => call[0] === "upload" && call[1] === "asset-documents" && call[2] === "company-1/asset-1/uuid-1-optimized.jpg"), true);
+  assert.equal(assetImageDocument.calls.some((call) => call[0] === "insert" && call[1] === "asset_documents" && call[2].document_type === "nameplate" && call[2].file_size_bytes === 123), true);
 
   const upload = createWorkflow();
   const uploadButton = { disabled: false, textContent: "Upload Photo" };

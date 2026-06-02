@@ -98,6 +98,86 @@
       }
     }
 
+    async function uploadAssetDocument(event) {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const assetId = formElement.dataset.assetDocument;
+      const errorElement = documentRef.querySelector(`[data-asset-document-error="${assetId}"]`);
+      const submitButton = formElement.querySelector("button[type='submit']");
+      const formData = new FormDataCtor(formElement);
+      const file = formData.get("document");
+      const documentType = normalizeAssetDocumentType(formData.get("document_type"));
+
+      if (errorElement) errorElement.textContent = "";
+      if (!deps.getAssetDocumentsReady?.()) {
+        if (errorElement) errorElement.textContent = "Run supabase/step-next-asset-documents.sql before uploading equipment files.";
+        return;
+      }
+      if (!file || !file.name) {
+        if (errorElement) errorElement.textContent = "Choose a machine file first.";
+        return;
+      }
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Uploading...";
+      }
+
+      const optimized = await optimizePhoto(file);
+      const path = `${deps.getActiveCompanyId()}/${assetId}/${cryptoRef.randomUUID()}-${optimized.fileName}`;
+      try {
+        const upload = await deps.withOperationTimeout(
+          deps.supabaseClient().storage.from("asset-documents").upload(path, optimized.blob, {
+            contentType: optimized.contentType,
+            upsert: false,
+          }),
+          "Equipment file upload timed out. Check your connection and try again.",
+          25000
+        );
+        if (upload.error) throw upload.error;
+
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().from("asset_documents").insert({
+            company_id: deps.getActiveCompanyId(),
+            asset_id: assetId,
+            uploaded_by: deps.getSession().user.id,
+            storage_path: path,
+            file_name: optimized.fileName,
+            content_type: optimized.contentType,
+            document_type: documentType,
+            file_size_bytes: optimized.blob.size || null,
+            original_file_name: deps.safeFileName(file.name || "machine-photo"),
+            original_size_bytes: file.size || null,
+          }),
+          "Equipment file record save timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) {
+          await removeUploadedObject("asset-documents", path);
+          if (deps.isColumnSchemaError(error, ["asset_documents"])) deps.setAssetDocumentsReady?.(false);
+          throw new Error(deps.getAssetDocumentsReady?.()
+            ? error.message
+            : "Run supabase/step-next-asset-documents.sql before uploading equipment files.");
+        }
+
+        deps.showNotice("Machine file attached.");
+        await deps.render();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not upload machine file.";
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Attach Machine File";
+        }
+      }
+    }
+
+    function normalizeAssetDocumentType(value) {
+      const allowed = new Set(["machine_photo", "schematic", "settings", "manual", "nameplate", "inspection", "receipt", "other"]);
+      return allowed.has(value) ? value : "other";
+    }
+
     function normalizePartDocumentType(value) {
       const allowed = new Set(["part_photo", "receipt", "invoice", "part_print", "schematic", "manual", "spec_sheet", "warranty", "other"]);
       return allowed.has(value) ? value : "other";
@@ -281,6 +361,7 @@
       addPhotoToWorkOrder,
       optimizePhoto,
       removeUploadedObject,
+      uploadAssetDocument,
       uploadPartDocument,
       uploadPhoto,
     };

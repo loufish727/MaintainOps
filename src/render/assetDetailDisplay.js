@@ -30,6 +30,8 @@
       const parts = deps.getParts();
       const assetParts = deps.getAssetParts();
       const assetPartsReady = deps.getAssetPartsReady();
+      const assetDocuments = (deps.getAssetDocumentsByAssetId?.()[asset.id] || []);
+      const assetDocumentsReady = deps.getAssetDocumentsReady?.() !== false;
       const partsUsedByWorkOrder = deps.getPartsUsedByWorkOrder();
       const locations = deps.getLocations();
       const activeLocationId = deps.getActiveLocationId();
@@ -101,11 +103,48 @@
               <strong>${openWork.length}</strong>
               <small>${openWork.length ? "Active work tied to this equipment" : "No open work"}</small>
             </button>
+            <button class="command-card command-photo ${assetDocuments.length ? "" : "empty"}" data-jump-work-section="asset-documents-target" type="button">
+              <span>Files</span>
+              <strong>${assetDocuments.length}</strong>
+              <small>${assetDocuments.length ? "Machine files on record" : "No machine files yet"}</small>
+            </button>
           </section>
 
           <div class="quick-actions detail-quick-actions">
             <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
           </div>
+
+          <section class="relationship-detail photo asset-photo-panel" id="asset-documents-target">
+            <div class="panel-header compact">
+              <h3>Machine Files</h3>
+              <span>${assetDocuments.length} file${assetDocuments.length === 1 ? "" : "s"}</span>
+            </div>
+            <form class="form-grid asset-photo-form relationship-detail photo" data-asset-document="${escapeHtml(asset.id)}">
+              <label>File type
+                <select name="document_type">
+                  <option value="machine_photo">Machine photo</option>
+                  <option value="schematic">Schematic / print</option>
+                  <option value="settings">Settings / parameters</option>
+                  <option value="manual">Manual / cut sheet</option>
+                  <option value="nameplate">Nameplate photo</option>
+                  <option value="inspection">Inspection reference</option>
+                  <option value="receipt">Receipt / invoice</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx" capture="environment"></label>
+              <p class="error-text" data-asset-document-error="${escapeHtml(asset.id)}">${assetDocumentsReady ? "" : "Run supabase/step-next-asset-documents.sql before uploading equipment files."}</p>
+              <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Attach Machine File</button>
+            </form>
+            <div class="asset-photo-grid">
+              ${assetDocuments.map((document) => `
+                <a class="asset-photo-card ${String(document.content_type || "").startsWith("image/") ? "" : "document-file"}" href="${escapeHtml(document.signedUrl || "#")}" target="_blank" rel="noreferrer">
+                  ${String(document.content_type || "").startsWith("image/") && document.signedUrl ? `<img src="${escapeHtml(document.signedUrl)}" alt="${escapeHtml(document.file_name || asset.name)}">` : `<strong>${escapeHtml(assetDocumentTypeLabel(document.document_type))}</strong>`}
+                  <span>${escapeHtml(document.original_file_name || document.file_name || "Machine file")}</span>
+                </a>
+              `).join("") || `<p class="muted">No photos, schematics, settings, manuals, nameplates, or receipts uploaded yet.</p>`}
+            </div>
+          </section>
 
           <form class="form-grid" id="edit-asset-form">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
@@ -252,6 +291,19 @@
           `}
         </section>
       `;
+    }
+
+    function assetDocumentTypeLabel(type) {
+      return {
+        machine_photo: "Photo",
+        schematic: "Schematic",
+        settings: "Settings",
+        manual: "Manual",
+        nameplate: "Nameplate",
+        inspection: "Inspection",
+        receipt: "Receipt",
+        other: "File",
+      }[type] || "File";
     }
 
 

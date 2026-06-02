@@ -38,6 +38,13 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ],
   getAssetParts: () => [{ id: "asset-part-1", asset_id: "asset-1", part_id: "part-1", quantity_recommended: 4, note: "guard hardware", parts: { name: "Guard Bolt", sku: "GB-1" } }],
   getAssetPartsReady: () => true,
+  getAssetDocumentsByAssetId: () => ({
+    "asset-1": [
+      { file_name: "press.jpg", document_type: "machine_photo", content_type: "image/jpeg", original_file_name: "raw press.png", signedUrl: "https://example.test/press.jpg" },
+      { file_name: "settings.pdf", document_type: "settings", content_type: "application/pdf", original_file_name: "controller settings.pdf", signedUrl: "https://example.test/settings.pdf" },
+    ],
+  }),
+  getAssetDocumentsReady: () => true,
   getPartsUsedByWorkOrder: () => ({ "wo-1": [{ work_order_id: "wo-1", quantity_used: 2, parts: { name: "Guard Bolt" } }] }),
   getMaintenanceRequests: () => [],
   getPendingDeleteAssetId: () => "asset-1",
@@ -67,10 +74,18 @@ assert.match(html, /<span>Primary<\/span>/);
 assert.match(html, /<span>Sub Equipment<\/span>/);
 assert.match(html, /<span>Parts<\/span>/);
 assert.match(html, /<span>Open Work<\/span>/);
+assert.match(html, /<span>Files<\/span>/);
 assert.match(html, /data-jump-work-section="edit-asset-status-field"/);
 assert.match(html, /data-jump-work-section="asset-linked-parts-target"/);
+assert.match(html, /data-jump-work-section="asset-documents-target"/);
 assert.doesNotMatch(html, /Email Helper/);
 assert.match(html, /data-quick-fix-asset="asset-1"/);
+assert.match(html, /Machine Files/);
+assert.match(html, /data-asset-document="asset-1"/);
+assert.match(html, /Attach Machine File/);
+assert.match(html, /raw press\.png/);
+assert.match(html, /controller settings\.pdf/);
+assert.match(html, /Settings/);
 assert.match(html, /data-open-asset="parent-1"/);
 assert.match(html, /data-open-asset="child-1"/);
 assert.match(html, /Open Work/);

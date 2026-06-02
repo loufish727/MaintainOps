@@ -107,6 +107,11 @@ function createWorkflow(options = {}) {
     getWorkOrders: () => [{ id: "wo-1", asset_id: "asset-2" }],
     getPreventiveSchedules: () => [],
     getMaintenanceRequests: () => [],
+    getAssetDocumentStoragePaths: () => options.assetDocumentPaths || [],
+    removeAssetDocumentStorage: async (paths) => {
+      calls.push(["storageRemove", "asset-documents", paths]);
+      return { error: null };
+    },
     activeLocationDatabaseId: () => "location-1",
     childAssetsFor: (id) => (id === "parent-1" ? [{ id: "child-1" }] : []),
     requiredText: (value, label) => {
@@ -201,8 +206,9 @@ function createWorkflow(options = {}) {
   assert.deepEqual(requested.calls.filter((call) => call[0] === "pendingDeleteAssetId"), [["pendingDeleteAssetId", "asset-1"]]);
   assert.equal(requested.calls.some((call) => call[0] === "renderWorkspace"), true);
 
-  const deleted = createWorkflow();
+  const deleted = createWorkflow({ assetDocumentPaths: ["company-1/asset-1/photo.jpg", "company-1/asset-1/settings.pdf"] });
   await deleted.workflow.deleteAsset("asset-1");
+  assert.equal(deleted.calls.some((call) => call[0] === "storageRemove" && call[1] === "asset-documents" && call[2].length === 2), true);
   assert.equal(deleted.calls.some((call) => call[0] === "delete" && call[1] === "assets"), true);
   assert.equal(deleted.calls.some((call) => call[0] === "activeAssetId" && call[1] === null), true);
   assert.equal(deleted.calls.some((call) => call[0] === "activeSection" && call[1] === "assets"), true);

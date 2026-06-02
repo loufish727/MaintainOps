@@ -282,6 +282,18 @@
         const blockerMessage = deps.assetDeleteBlockerMessage(blockers);
         if (blockerMessage) throw new Error(blockerMessage);
 
+        const documentPaths = deps.getAssetDocumentStoragePaths?.(id) || [];
+        if (documentPaths.length) {
+          const storageDelete = await deps.withOperationTimeout(
+            deps.removeAssetDocumentStorage(documentPaths),
+            "Equipment file cleanup timed out.",
+            15000
+          );
+          if (storageDelete.error) {
+            throw new Error(`Could not remove equipment files: ${storageDelete.error.message}`);
+          }
+        }
+
         const { error } = await deps.withOperationTimeout(
           deps.supabaseClient()
             .from("assets")

@@ -5779,6 +5779,64 @@ textarea {
   object-fit: cover;
 }
 
+.asset-photo-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.asset-photo-form {
+  margin: 0;
+}
+
+.asset-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.asset-photo-card {
+  display: grid;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--rel-photo-ink) 24%, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px;
+  text-decoration: none;
+}
+
+.asset-photo-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  object-fit: cover;
+}
+
+.asset-photo-card.document-file {
+  align-content: start;
+  min-height: 118px;
+}
+
+.asset-photo-card.document-file strong {
+  display: grid;
+  min-height: 76px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--rel-photo-ink) 28%, var(--line));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--rel-photo-bg) 74%, var(--surface));
+  color: var(--rel-photo-ink);
+  font-size: 0.82rem;
+}
+
+.asset-photo-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
 .parts-used-list {
   display: grid;
   gap: 8px;

@@ -371,6 +371,8 @@ let partDocumentsReady = true;
 let partDocumentsByPartId = {};
 let assetParts = [];
 let assetPartsReady = true;
+let assetDocumentsReady = true;
+let assetDocumentsByAssetId = {};
 let procedureTemplates = [];
 let proceduresReady = false;
 let schedulesReady = false;
@@ -2010,7 +2012,7 @@ async function loadCompanyData() {
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
   proceduresReady = !procedureResponse.error;
-  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function reloadWorkOrderQueue() {
@@ -2020,7 +2022,7 @@ async function reloadWorkOrderQueue() {
       showNotice(`Could not load work orders: ${response.error.message}`, "warning");
       return;
     }
-    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadStepResults(), loadWorkOrderEvents()]);
+    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
     renderWorkspace();
   } catch (error) {
     showNotice(`Could not load work orders: ${error.message || error}`, "warning");
@@ -2277,6 +2279,37 @@ async function loadAssetParts() {
   assetPartsReady = true;
 }
 
+async function loadAssetDocuments() {
+  if (!activeCompanyId || !assets.length) {
+    assetDocumentsByAssetId = {};
+    assetDocumentsReady = true;
+    return;
+  }
+
+  const ids = assets.map((asset) => asset.id);
+  const { data, error } = await supabaseClient
+    .from("asset_documents")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("asset_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    assetDocumentsReady = false;
+    assetDocumentsByAssetId = {};
+    return;
+  }
+
+  assetDocumentsReady = true;
+  assetDocumentsByAssetId = (data || []).reduce((groups, document) => {
+    groups[document.asset_id] ||= [];
+    groups[document.asset_id].push(document);
+    return groups;
+  }, {});
+
+  await addSignedAssetDocumentUrls();
+}
+
 async function loadPartDocuments() {
   if (!parts.length) {
     partDocumentsByPartId = {};
@@ -2379,6 +2412,16 @@ async function addSignedRequestPhotoUrls() {
       return;
     }
     request.photoSignedUrl = data?.signedUrl || "";
+  }));
+}
+
+async function addSignedAssetDocumentUrls() {
+  const documents = Object.values(assetDocumentsByAssetId).flat();
+  await Promise.all(documents.map(async (document) => {
+    const { data } = await supabaseClient.storage
+      .from("asset-documents")
+      .createSignedUrl(document.storage_path, 60 * 10);
+    document.signedUrl = data?.signedUrl || "";
   }));
 }
 
@@ -3018,6 +3061,8 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getParts: () => parts,
   getAssetParts: () => assetParts,
   getAssetPartsReady: () => assetPartsReady,
+  getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
+  getAssetDocumentsReady: () => assetDocumentsReady,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getMaintenanceRequests: () => maintenanceRequests,
   getPendingDeleteAssetId: () => pendingDeleteAssetId,
@@ -3058,6 +3103,10 @@ const {
   getWorkOrders: () => workOrders,
   getPreventiveSchedules: () => preventiveSchedules,
   getMaintenanceRequests: () => maintenanceRequests,
+  getAssetDocumentStoragePaths: (assetId) => (assetDocumentsByAssetId[assetId] || [])
+    .map((document) => document.storage_path)
+    .filter(Boolean),
+  removeAssetDocumentStorage: (documentPaths) => supabaseClient.storage.from("asset-documents").remove(documentPaths),
   activeLocationDatabaseId,
   childAssetsFor,
   requiredText,
@@ -4095,6 +4144,10 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", uploadPartDocument);
   });
 
+  document.querySelectorAll("[data-asset-document]").forEach((form) => {
+    form.addEventListener("submit", uploadAssetDocument);
+  });
+
   const partsUsedForm = document.querySelector("#parts-used-form");
   if (partsUsedForm) partsUsedForm.addEventListener("submit", recordPartUsed);
 
@@ -4283,6 +4336,7 @@ const {
   addPhotoToWorkOrder,
   optimizePhoto,
   removeUploadedObject,
+  uploadAssetDocument,
   uploadPartDocument,
   uploadPhoto,
 } = createMediaStorageWorkflow({
@@ -4300,6 +4354,8 @@ const {
   ensureProfileForActiveCompany,
   getAppError: () => appError,
   recordWorkOrderEvent,
+  getAssetDocumentsReady: () => assetDocumentsReady,
+  setAssetDocumentsReady: (value) => { assetDocumentsReady = value; },
   getPartDocumentsReady: () => partDocumentsReady,
   setPartDocumentsReady: (value) => { partDocumentsReady = value; },
   setPhotosReady: (value) => { photosReady = value; },
