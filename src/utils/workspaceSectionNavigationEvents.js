@@ -4,7 +4,7 @@
    * Requires app.js-owned state setters, visible-nav guard, render callback, queue reloaders,
    * search-mode setter, page reset, storage, and document.
    * May switch active section, clear detail/form modes, reset work paging, persist the
-   * active section, render, and reload work/request queues.
+   * active section, render, and reload the queue owned by the entered section.
    * Must not mutate business records, submit forms, delete, upload, touch Supabase/RLS,
    * or own auth/company/location state.
    */
@@ -35,7 +35,7 @@
         options.resetWorkOrderPage();
         storage.setItem("maintainops.activeSection", nextSection);
         options.renderWorkspace();
-        await options.reloadWorkOrderQueue();
+        if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
         if (nextSection === "requests") await options.reloadRequestQueue();
       });
     });

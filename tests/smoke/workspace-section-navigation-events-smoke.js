@@ -30,7 +30,9 @@ require("../../src/utils/workspaceSectionNavigationEvents.js");
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 
 const workButton = createButton("work");
+const myWorkButton = createButton("mywork");
 const requestsButton = createButton("requests");
+const equipmentButton = createButton("equipment");
 const blockedButton = createButton("blocked");
 const storage = {
   values: {},
@@ -58,7 +60,7 @@ let requestReloadCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
-    documentRef: createDocument([workButton, requestsButton, blockedButton]),
+    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, blockedButton]),
     storage,
     state: {
       setActiveAssetId: (value) => { stateValues.activeAssetId = value; },
@@ -72,7 +74,7 @@ let requestReloadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["requests"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"]],
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
@@ -98,18 +100,36 @@ let requestReloadCount = 0;
   assert.equal(workReloadCount, 1);
   assert.equal(requestReloadCount, 0);
 
-  await requestsButton.dispatch("click");
-  assert.equal(stateValues.activeSection, "requests");
+  await myWorkButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "mywork");
   assert.deepEqual(workSearchModeCalls, [false]);
-  assert.equal(storage.values["maintainops.activeSection"], "requests");
+  assert.equal(storage.values["maintainops.activeSection"], "mywork");
   assert.equal(resetCount, 2);
   assert.equal(renderCount, 2);
+  assert.equal(workReloadCount, 2);
+  assert.equal(requestReloadCount, 0);
+
+  await requestsButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "requests");
+  assert.deepEqual(workSearchModeCalls, [false, false]);
+  assert.equal(storage.values["maintainops.activeSection"], "requests");
+  assert.equal(resetCount, 3);
+  assert.equal(renderCount, 3);
+  assert.equal(workReloadCount, 2);
+  assert.equal(requestReloadCount, 1);
+
+  await equipmentButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "equipment");
+  assert.deepEqual(workSearchModeCalls, [false, false, false]);
+  assert.equal(storage.values["maintainops.activeSection"], "equipment");
+  assert.equal(resetCount, 4);
+  assert.equal(renderCount, 4);
   assert.equal(workReloadCount, 2);
   assert.equal(requestReloadCount, 1);
 
   await blockedButton.dispatch("click");
-  assert.equal(stateValues.activeSection, "requests");
-  assert.equal(renderCount, 2);
+  assert.equal(stateValues.activeSection, "equipment");
+  assert.equal(renderCount, 4);
   assert.equal(workReloadCount, 2);
 
   bindWorkspaceSectionNavigationEvents({
