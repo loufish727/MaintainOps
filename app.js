@@ -2835,7 +2835,7 @@ function renderWorkspace() {
               <h2>Conversions</h2>
               <span>shop reference</span>
             </div>
-            ${renderConversionsPanel()}
+            ${activeSection === "conversions" ? renderConversionsPanel() : ""}
           </section>
 
           <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
@@ -3651,7 +3651,9 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
     visibleNavItems,
   });
-  bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
+  if (activeSection === "conversions") {
+    bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
+  }
   bindWorkspaceQuickFixCommandEvents({
     state: {
       setActiveAssetId: setActiveAssetIdState,
