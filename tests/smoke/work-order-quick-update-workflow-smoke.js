@@ -39,6 +39,7 @@ function createWorkflow(overrides = {}) {
     due_at: "",
     status: "in_progress",
     priority: "high",
+    procedure_template_id: "",
     resolution_summary: "Inspected",
     safety_devices_checked: "",
     machine_down: "",
@@ -72,10 +73,14 @@ function createWorkflow(overrides = {}) {
     locationIdForAsset: (assetId) => `location-${assetId || "none"}`,
     workOrderDateValue: () => null,
     assignedUserFromForm: () => "user-1",
+    procedureColumn: (value) => ({ procedure_template_id: value || null }),
     applySafetyRequirementPayload: (payload) => {
       payload.safety_check_required = overrides.safetyRequired || false;
     },
-    blocksProcedureCompletion: () => overrides.procedureBlockMessage || "",
+    blocksProcedureCompletion: (...args) => {
+      calls.push(["blocksProcedureCompletion", ...args]);
+      return overrides.procedureBlockMessage || "";
+    },
     setWorkOrderActionWarning: (...args) => calls.push(["warning", ...args]),
     applySafetyCheckPayload: (payload, checked) => {
       payload.safety_devices_checked = checked;
@@ -123,6 +128,7 @@ function createWorkflow(overrides = {}) {
   assert.equal(updateCall[1], "wo-1");
   assert.equal(updateCall[2].title, "Bearing noise");
   assert.equal(updateCall[2].completed_at, null);
+  assert.equal(updateCall[2].procedure_template_id, null);
   assert.equal(success.calls.some((call) => call[0] === "event" && call[2] === "quick_update"), true);
   assert.equal(success.calls.at(-1)[0], "render");
   assert.equal(successButton.disabled, true);
@@ -135,12 +141,20 @@ function createWorkflow(overrides = {}) {
   assert.equal(completed.calls.find((call) => call[0] === "update")[2].safety_devices_checked, true);
   assert.equal(typeof completed.calls.find((call) => call[0] === "update")[2].completed_at, "string");
 
+  const procedureConnected = createWorkflow({
+    values: { procedure_template_id: "proc-1" },
+  });
+  await procedureConnected.run();
+  assert.equal(procedureConnected.calls.find((call) => call[0] === "update")[2].procedure_template_id, "proc-1");
+
   const blocked = createWorkflow({
-    values: { status: "completed" },
+    values: { status: "completed", procedure_template_id: "proc-2" },
     procedureBlockMessage: "Complete checklist first.",
   });
   const blockedButton = await blocked.run();
   assert.equal(blocked.errorTarget.textContent, "Complete checklist first.");
+  assert.equal(blocked.calls.find((call) => call[0] === "blocksProcedureCompletion")[2], "proc-2");
+  assert.deepEqual(blocked.calls.find((call) => call[0] === "warning"), ["warning", "wo-1", "Complete checklist first."]);
   assert.equal(blocked.calls.some((call) => call[0] === "update"), false);
   assert.equal(blockedButton.disabled, false);
   assert.equal(blockedButton.textContent, "Save Quick Update");

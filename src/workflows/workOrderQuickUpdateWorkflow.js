@@ -38,12 +38,13 @@
           status: form.get("status"),
           priority: form.get("priority"),
           assigned_to: deps.assignedUserFromForm(form),
+          ...deps.procedureColumn(form.get("procedure_template_id")),
           resolution_summary: form.get("resolution_summary") || null,
         };
         deps.applySafetyRequirementPayload(payload);
         const safetyChecked = form.get("safety_devices_checked") === "on";
         if (payload.status === "completed" && previous?.status !== "completed") {
-          const procedureCompletionMessage = deps.blocksProcedureCompletion(previous);
+          const procedureCompletionMessage = deps.blocksProcedureCompletion(previous, payload.procedure_template_id || null);
           if (procedureCompletionMessage) {
             deps.setWorkOrderActionWarning(deps.getActiveWorkOrderId(), procedureCompletionMessage);
             submitButton.disabled = false;

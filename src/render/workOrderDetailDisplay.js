@@ -187,6 +187,11 @@
               </select>
             </label>
             ${renderWorkOrderAssignmentField(workOrder, "quick-update-owner-field")}
+            <label id="quick-update-procedure-field">Procedure
+              <select name="procedure_template_id">
+                ${renderProcedureOptions(workOrder.procedure_template_id || "")}
+              </select>
+            </label>
             <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
             ${requiresSafetyDeviceCheck(workOrder) ? (
               `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
