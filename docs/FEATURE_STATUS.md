@@ -126,6 +126,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Operational readiness.
   - Backup/restore validation is a known production-readiness item.
   - Current Supabase Free-plan project does not include scheduled backups or restore-to-new-project; see `BACKUP_RESTORE_VALIDATION.md`.
+  - Pilot hardening gates for support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `PILOT_HARDENING_PLAN.md`.
   - Public exposure review is ongoing as the app remains publicly hosted and publicly reviewable.
 
 ## UI Direction

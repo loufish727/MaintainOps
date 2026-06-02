@@ -27,6 +27,7 @@ Areas still maturing:
 - Automated integration/end-to-end coverage is still limited.
 - Backup, restore, support, and incident procedures need final production rollout polish.
 - Backup/restore validation is currently blocked by the Free-plan Supabase project and missing local restore tooling; see `docs/BACKUP_RESTORE_VALIDATION.md`.
+- Pilot hardening gates for backup/restore, support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `docs/PILOT_HARDENING_PLAN.md`.
 - Public request intake needs final production copy, routing, and support hardening.
 - The current hosted app contains QA and pilot-style data.
 
