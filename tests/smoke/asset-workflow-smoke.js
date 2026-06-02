@@ -4,9 +4,10 @@ global.window = {};
 
 const { createAssetWorkflow } = require("../../src/workflows/assetWorkflow.js");
 
-function createElement({ formValues = {}, buttonText = "Submit" } = {}) {
+function createElement({ formValues = {}, buttonText = "Submit", dataset = {} } = {}) {
   const button = { disabled: false, textContent: buttonText };
   return {
+    dataset,
     formValues,
     querySelector(selector) {
       return selector === "button[type='submit']" ? button : null;
@@ -90,6 +91,7 @@ function createWorkflow(options = {}) {
     "#asset-create-error": { textContent: "" },
     "#asset-edit-error": { textContent: "" },
     "#asset-delete-error": { textContent: "" },
+    '[data-asset-part-error="asset-1"]': { textContent: "" },
     '[data-confirm-delete-asset="asset-1"]': { disabled: false, textContent: "Permanently Delete" },
   };
   const workflow = createAssetWorkflow({
@@ -113,11 +115,13 @@ function createWorkflow(options = {}) {
       return text;
     },
     isMissingColumnError: () => false,
+    isMissingTableError: () => false,
     isAssetHierarchySchemaError: () => false,
     databaseSetupRequiredMessage: (label) => `setup ${label}`,
     equipmentSchemaMessage: () => "equipment schema missing",
     assetDeleteBlockerMessage: (blockers) => Object.values(blockers).some(Boolean) ? "Equipment has linked records." : "",
     canDeleteEquipment: () => options.canDeleteEquipment !== false,
+    setAssetPartsReady: (value) => calls.push(["assetPartsReady", value]),
     setLocationsReady: (value) => calls.push(["locationsReady", value]),
     setPendingDeleteAssetId: (value) => calls.push(["pendingDeleteAssetId", value]),
     setActiveAssetId: (value) => calls.push(["activeAssetId", value]),
@@ -167,6 +171,26 @@ function createWorkflow(options = {}) {
   const statusError = await status.workflow.updateAssetStatus("asset-1", "offline");
   assert.equal(statusError, null);
   assert.equal(status.calls.some((call) => call[0] === "update" && call[2].status === "offline"), true);
+
+  const attached = createWorkflow();
+  const attachForm = createElement({
+    buttonText: "Attach Part",
+    dataset: { attachAssetPart: "asset-1" },
+    formValues: {
+      part_id: "part-1",
+      quantity_recommended: "3",
+      note: "drive belt",
+    },
+  });
+  await attached.workflow.attachAssetPart({ preventDefault() {}, currentTarget: attachForm });
+  assert.equal(attached.calls.some((call) => call[0] === "insert" && call[1] === "asset_parts" && call[2].part_id === "part-1" && call[2].quantity_recommended === 3), true);
+  assert.equal(attached.calls.some((call) => call[0] === "notice" && call[1] === "Part linked to equipment."), true);
+
+  const removed = createWorkflow();
+  await removed.workflow.removeAssetPart("asset-part-1");
+  assert.equal(removed.calls.some((call) => call[0] === "delete" && call[1] === "asset_parts"), true);
+  assert.equal(removed.calls.some((call) => call[0] === "eq" && call[2] === "id" && call[3] === "asset-part-1"), true);
+  assert.equal(removed.calls.some((call) => call[0] === "notice" && call[1] === "Part link removed."), true);
 
   const blocked = createWorkflow();
   assert.equal(blocked.workflow.assetHasDeleteBlockers("asset-2"), true);

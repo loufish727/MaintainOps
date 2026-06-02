@@ -121,6 +121,85 @@
       return error || null;
     }
 
+    async function attachAssetPart(event) {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const assetId = formElement.dataset.attachAssetPart;
+      const errorElement = documentRef.querySelector(`[data-asset-part-error="${CSSRef.escape(assetId)}"]`);
+      if (errorElement) errorElement.textContent = "";
+      const submitButton = formElement.querySelector("button[type='submit']");
+      const originalButtonText = submitButton?.textContent || "Attach Part";
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Attaching...";
+      }
+
+      try {
+        const form = new FormDataCtor(formElement);
+        const partId = form.get("part_id");
+        if (!partId) throw new Error("Select a part to attach.");
+        const quantity = Math.max(1, Number(form.get("quantity_recommended")) || 1);
+        const note = String(form.get("note") || "").trim() || null;
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().from("asset_parts").insert({
+            company_id: deps.getActiveCompanyId(),
+            asset_id: assetId,
+            part_id: partId,
+            quantity_recommended: quantity,
+            note,
+          }),
+          "Equipment part link save timed out. Check your connection and try again.",
+          15000
+        );
+        if (error) {
+          if (deps.isMissingTableError?.(error, "asset_parts")) {
+            deps.setAssetPartsReady(false);
+            throw new Error("Run supabase/step-next-asset-parts.sql before linking parts to equipment.");
+          }
+          if (error.code === "23505") throw new Error("This part is already linked to this equipment.");
+          throw error;
+        }
+        deps.showNotice("Part linked to equipment.");
+        await deps.render();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not link part to equipment.";
+        else deps.showNotice(error.message || "Could not link part to equipment.", "warning");
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalButtonText;
+        }
+      }
+    }
+
+    async function removeAssetPart(id) {
+      const errorElement = documentRef.querySelector("[data-asset-part-error]");
+      if (errorElement) errorElement.textContent = "";
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("asset_parts")
+            .delete()
+            .eq("id", id)
+            .eq("company_id", deps.getActiveCompanyId()),
+          "Equipment part unlink timed out. Check your connection and try again.",
+          15000
+        );
+        if (error) {
+          if (deps.isMissingTableError?.(error, "asset_parts")) {
+            deps.setAssetPartsReady(false);
+            throw new Error("Run supabase/step-next-asset-parts.sql before linking parts to equipment.");
+          }
+          throw error;
+        }
+        deps.showNotice("Part link removed.");
+        await deps.render();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not remove linked part.";
+        else deps.showNotice(error.message || "Could not remove linked part.", "warning");
+      }
+    }
+
     function assetDeleteBlockers(assetId) {
       return {
         workOrders: deps.getWorkOrders().filter((workOrder) => workOrder.asset_id === assetId).length,
@@ -262,11 +341,13 @@
     return {
       assetDeleteBlockers,
       assetHasDeleteBlockers,
+      attachAssetPart,
       countAssetLinkedRows,
       createAsset,
       createQuickFixAsset,
       deleteAsset,
       loadAssetDeleteBlockers,
+      removeAssetPart,
       requestDeleteAsset,
       updateAsset,
       updateAssetStatus,

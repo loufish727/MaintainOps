@@ -63,6 +63,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-message-center.sql`
 - `step-next-message-work-order-links.sql`
 - `step-next-mobile-tech-setting.sql`
+- `step-next-asset-parts.sql`
 - `step-next-part-costs.sql`
 - `step-next-part-delete.sql`
 - `step-next-part-documents.sql`
@@ -115,6 +116,10 @@ notify pgrst, 'reload schema';
 User preference sync:
 
 Run `supabase/step-next-user-preferences.sql` before expecting shop reference favorites to follow a user across browsers/devices. The app keeps a browser `localStorage` fallback/cache if the table is not available.
+
+Equipment part links:
+
+Run `supabase/step-next-asset-parts.sql` before linking parts directly to equipment. This creates the `asset_parts` join table so equipment can list recommended/common parts without recording work-order usage or changing inventory quantity.
 
 Maintenance request photos:
 

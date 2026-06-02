@@ -27,6 +27,9 @@
       if (!asset) return renderCreateWorkOrder();
       const workOrders = deps.getWorkOrders();
       const preventiveSchedules = deps.getPreventiveSchedules();
+      const parts = deps.getParts();
+      const assetParts = deps.getAssetParts();
+      const assetPartsReady = deps.getAssetPartsReady();
       const partsUsedByWorkOrder = deps.getPartsUsedByWorkOrder();
       const locations = deps.getLocations();
       const activeLocationId = deps.getActiveLocationId();
@@ -40,7 +43,10 @@
       const usedParts = Object.values(partsUsedByWorkOrder)
         .flat()
         .filter((row) => assetWorkOrders.some((workOrder) => workOrder.id === row.work_order_id));
-    
+      const linkedParts = assetParts.filter((row) => row.asset_id === asset.id);
+      const linkedPartIds = new Set(linkedParts.map((row) => row.part_id));
+      const attachableParts = parts.filter((part) => !linkedPartIds.has(part.id));
+
       return `
         <div class="detail-stack">
           <div>
@@ -54,11 +60,11 @@
             <p>${escapeHtml(asset.location || "No location set")}</p>
             ${parent ? `<p>Part of <button class="text-button inline-link-button" data-open-asset="${escapeHtml(parent.id)}" type="button">${escapeHtml(parent.name)}</button></p>` : ""}
           </div>
-    
+
           <div class="quick-actions detail-quick-actions">
             <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
           </div>
-    
+
           <form class="form-grid" id="edit-asset-form">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
             <label>Equipment ID<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
@@ -88,7 +94,7 @@
             <p class="error-text" id="asset-edit-error"></p>
             <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
           </form>
-    
+
           <section>
             <h3>Linked Equipment</h3>
             <div class="mini-list asset-link-list">
@@ -100,35 +106,60 @@
               `).join("") || `<p class="muted">No equipment is linked under this item yet.</p>`}
             </div>
           </section>
-    
+
           <section>
             <h3>Open Work</h3>
             <div class="mini-list">
               ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`}
             </div>
           </section>
-    
+
           <section>
             <h3>Completed History</h3>
             <div class="mini-list">
               ${completedWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>`}
             </div>
           </section>
-    
+
           <section>
             <h3>PM Schedules</h3>
             <div class="mini-list">
               ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
             </div>
           </section>
-    
+
           <section>
-            <h3>Parts Used</h3>
+            <h3>Linked Parts</h3>
+            ${assetPartsReady ? `
+              <form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
+                <label>Part
+                  <select name="part_id" ${attachableParts.length ? "" : "disabled"}>
+                    <option value="">Select part</option>
+                    ${attachableParts.map((part) => `<option value="${escapeHtml(part.id)}">${escapeHtml(part.name)}${part.sku ? ` - ${escapeHtml(part.sku)}` : ""}</option>`).join("")}
+                  </select>
+                </label>
+                <label>Recommended qty<input name="quantity_recommended" type="number" min="1" step="1" value="1"></label>
+                <label>Note<input name="note" maxlength="180" placeholder="Filter, belt, seal, common spare..."></label>
+                <button class="secondary-button asset-action-button" type="submit" ${attachableParts.length ? "" : "disabled"}>Attach Part</button>
+              </form>
+              <p class="error-text" data-asset-part-error="${escapeHtml(asset.id)}"></p>
+              <div class="mini-list">
+                ${linkedParts.map((row) => `<article>
+                  <strong>${escapeHtml(row.parts?.name || "Part")}</strong>
+                  <span>${escapeHtml(row.parts?.sku || "No SKU")} - recommended qty ${escapeHtml(row.quantity_recommended || 1)}${row.note ? ` - ${escapeHtml(row.note)}` : ""}</span>
+                  <button class="text-button danger-link" data-remove-asset-part="${escapeHtml(row.id)}" type="button">Remove Link</button>
+                </article>`).join("") || `<p class="muted">No parts are linked to this equipment yet.</p>`}
+              </div>
+            ` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
+          </section>
+
+          <section>
+            <h3>Parts Used History</h3>
             <div class="mini-list">
               ${usedParts.map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`}
             </div>
           </section>
-    
+
           ${renderAssetDangerZone(asset)}
         </div>
       `;
@@ -180,7 +211,7 @@
         </section>
       `;
     }
-    
+
 
     return { renderAssetDetail };
   }

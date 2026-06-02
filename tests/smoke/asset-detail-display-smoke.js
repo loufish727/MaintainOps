@@ -32,6 +32,12 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getActiveAssetId: () => "asset-1",
   getWorkOrders: () => [workOrder, { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1" }],
   getPreventiveSchedules: () => [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }],
+  getParts: () => [
+    { id: "part-1", name: "Guard Bolt", sku: "GB-1" },
+    { id: "part-2", name: "Drive Belt", sku: "B-42" },
+  ],
+  getAssetParts: () => [{ id: "asset-part-1", asset_id: "asset-1", part_id: "part-1", quantity_recommended: 4, note: "guard hardware", parts: { name: "Guard Bolt", sku: "GB-1" } }],
+  getAssetPartsReady: () => true,
   getPartsUsedByWorkOrder: () => ({ "wo-1": [{ work_order_id: "wo-1", quantity_used: 2, parts: { name: "Guard Bolt" } }] }),
   getMaintenanceRequests: () => [],
   getPendingDeleteAssetId: () => "asset-1",
@@ -60,7 +66,12 @@ assert.match(html, /data-open-asset="child-1"/);
 assert.match(html, /Open Work/);
 assert.match(html, /Completed History/);
 assert.match(html, /PM Schedules/);
-assert.match(html, /Parts Used/);
+assert.match(html, /Linked Parts/);
+assert.match(html, /data-attach-asset-part="asset-1"/);
+assert.match(html, /data-remove-asset-part="asset-part-1"/);
+assert.match(html, /Drive Belt - B-42/);
+assert.match(html, /recommended qty 4/);
+assert.match(html, /Parts Used History/);
 assert.match(html, /data-cancel-delete-asset/);
 assert.match(html, /data-confirm-delete-asset="asset-1"/);
 

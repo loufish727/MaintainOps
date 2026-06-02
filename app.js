@@ -368,6 +368,8 @@ let partCostsReady = true;
 let partSuppliersReady = true;
 let partDocumentsReady = true;
 let partDocumentsByPartId = {};
+let assetParts = [];
+let assetPartsReady = true;
 let procedureTemplates = [];
 let proceduresReady = false;
 let schedulesReady = false;
@@ -642,6 +644,9 @@ const {
 } = createPartUsageDisplayHelpers({
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
 });
+function assetPartRows(partId) {
+  return assetParts.filter((row) => row.part_id === partId);
+}
 const {
   openMaintenanceRequests,
   requestMatchesBaseFilters,
@@ -2003,7 +2008,7 @@ async function loadCompanyData() {
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
   proceduresReady = !procedureResponse.error;
-  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
 }
 
 async function reloadWorkOrderQueue() {
@@ -2013,7 +2018,7 @@ async function reloadWorkOrderQueue() {
       showNotice(`Could not load work orders: ${response.error.message}`, "warning");
       return;
     }
-    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadStepResults(), loadWorkOrderEvents()]);
+    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadStepResults(), loadWorkOrderEvents()]);
     renderWorkspace();
   } catch (error) {
     showNotice(`Could not load work orders: ${error.message || error}`, "warning");
@@ -2243,6 +2248,31 @@ async function loadPartsUsed() {
     groups[row.work_order_id].push(row);
     return groups;
   }, {});
+}
+
+async function loadAssetParts() {
+  if (!activeCompanyId || !assets.length) {
+    assetParts = [];
+    assetPartsReady = true;
+    return;
+  }
+
+  const ids = assets.map((asset) => asset.id);
+  const { data, error } = await supabaseClient
+    .from("asset_parts")
+    .select("*, parts(*)")
+    .eq("company_id", activeCompanyId)
+    .in("asset_id", ids)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    assetParts = [];
+    assetPartsReady = false;
+    return;
+  }
+
+  assetParts = data || [];
+  assetPartsReady = true;
 }
 
 async function loadPartDocuments() {
@@ -2983,6 +3013,9 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getActiveAssetId: () => activeAssetId,
   getWorkOrders: () => workOrders,
   getPreventiveSchedules: () => preventiveSchedules,
+  getParts: () => parts,
+  getAssetParts: () => assetParts,
+  getAssetPartsReady: () => assetPartsReady,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getMaintenanceRequests: () => maintenanceRequests,
   getPendingDeleteAssetId: () => pendingDeleteAssetId,
@@ -3002,9 +3035,11 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
 });
 
 const {
+  attachAssetPart,
   createAsset,
   createQuickFixAsset,
   deleteAsset,
+  removeAssetPart,
   requestDeleteAsset,
   updateAsset,
   updateAssetStatus,
@@ -3025,11 +3060,13 @@ const {
   childAssetsFor,
   requiredText,
   isMissingColumnError,
+  isMissingTableError,
   isAssetHierarchySchemaError,
   databaseSetupRequiredMessage,
   equipmentSchemaMessage,
   assetDeleteBlockerMessage,
   canDeleteEquipment,
+  setAssetPartsReady: (value) => { assetPartsReady = value; },
   setLocationsReady: (value) => { locationsReady = value; },
   setPendingDeleteAssetId: (value) => { pendingDeleteAssetId = value; },
   setActiveAssetId: setActiveAssetIdState,
@@ -3070,6 +3107,11 @@ function requiredText(value, label) {
   const text = String(value || "").trim();
   if (!text) throw new Error(`${label} is required.`);
   return text;
+}
+
+function isMissingTableError(error, tableName) {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return error?.code === "PGRST205" || (message.includes(tableName.toLowerCase()) && message.includes("schema cache"));
 }
 
 const WORK_ORDER_SCHEMA_FIELDS = [
@@ -3932,6 +3974,14 @@ function bindWorkspaceEvents() {
   const editAssetForm = document.querySelector("#edit-asset-form");
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);
 
+  document.querySelectorAll("[data-attach-asset-part]").forEach((form) => {
+    form.addEventListener("submit", attachAssetPart);
+  });
+
+  document.querySelectorAll("[data-remove-asset-part]").forEach((button) => {
+    button.addEventListener("click", () => removeAssetPart(button.dataset.removeAssetPart));
+  });
+
   bindPreventiveMaintenanceWorkflowEvents();
 
   bindWorkspacePmGenerationEvents({
@@ -4051,6 +4101,10 @@ function requestDeletePart(id) {
     alert("This part has work order usage history and is kept for traceability.");
     return;
   }
+  if (assetPartRows(id).length) {
+    alert("This part is linked to equipment and is kept for traceability.");
+    return;
+  }
 
   const confirmButtonVisible = Boolean(document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`));
   if (pendingDeletePartId === id || confirmButtonVisible) {
@@ -4075,6 +4129,10 @@ async function deletePart(id) {
 
   if (partUsageRows(id).length) {
     if (errorElement) errorElement.textContent = "This part has work order usage history and is kept for traceability.";
+    return;
+  }
+  if (assetPartRows(id).length) {
+    if (errorElement) errorElement.textContent = "This part is linked to equipment and is kept for traceability.";
     return;
   }
   const confirmButton = document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`);
@@ -4111,7 +4169,7 @@ async function deletePart(id) {
 
     if (error) {
       throw new Error(error.message.includes("violates foreign key constraint")
-        ? "This part is used on a work order and cannot be deleted."
+        ? "This part is linked to work or equipment and cannot be deleted."
         : error.message);
     }
 
