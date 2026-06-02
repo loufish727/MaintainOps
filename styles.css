@@ -3184,20 +3184,20 @@ textarea {
 
 .asset-card-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
 }
 
 .asset-card-summary span {
   display: grid;
   gap: 3px;
-  min-height: 78px;
+  min-height: 58px;
   align-content: center;
   border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface-3) 84%, transparent);
-  padding: 8px;
-  text-align: left;
+  padding: 7px 5px;
+  text-align: center;
 }
 
 .asset-card-summary small {
@@ -3210,23 +3210,15 @@ textarea {
 
 .asset-card-summary strong {
   color: var(--ink);
-  font-size: 0.94rem;
+  font-size: 0.92rem;
   font-weight: 780;
   line-height: 1.1;
   overflow-wrap: anywhere;
 }
 
-.asset-card-summary em {
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-style: normal;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
 @media (max-width: 640px) {
   .asset-card-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
