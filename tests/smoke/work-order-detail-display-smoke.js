@@ -76,6 +76,7 @@ assert.match(html, /id="work-order-history-target"/);
 assert.match(html, /data-cancel-delete-work-order/);
 assert.match(html, /data-confirm-delete-work-order="wo-1"/);
 assert.match(html, /<details class="work-detail-section relationship-detail procedure" open>/);
+assert.match(html, /Procedure Checklist/);
 assert.match(html, /data-step-result="step-1"/);
 assert.match(html, /Finish checklist first\./);
 

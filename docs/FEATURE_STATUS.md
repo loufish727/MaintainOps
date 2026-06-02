@@ -29,7 +29,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Equipment deletion for manager/admin.
 - Preventive maintenance schedules.
 - PM-generated work orders.
-- Procedure templates and checklist steps.
+- Procedure checklist templates and checklist steps.
 - Procedure checklist result saving.
 - Safety-device completion check.
 - Work order history/events.
@@ -54,7 +54,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Create/update/delete work orders where permissions allow.
 - Comments and comment refresh.
 - Photo upload and metadata.
-- Procedure connection and checklist updates.
+- Procedure checklist connection and checklist updates.
 - PM to work order.
 - Parts use and restock.
 - Search by part name/number and related work orders.

@@ -32,14 +32,14 @@
         const { error } = await deps.withOperationTimeout(
           deps.supabaseClient().from("procedure_templates").insert({
             company_id: deps.getActiveCompanyId(),
-            name: deps.requiredText(form.get("name"), "Procedure name"),
+            name: deps.requiredText(form.get("name"), "Procedure checklist name"),
             description: String(form.get("description") || "").trim() || null,
             created_by: deps.getSession().user.id,
           }),
           "Procedure save timed out."
         );
         if (error) throw error;
-        deps.showNotice("Procedure added.");
+        deps.showNotice("Procedure checklist added.");
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = error.message || "Could not add procedure.";
@@ -47,7 +47,7 @@
       } finally {
         if (submitButton) {
           submitButton.disabled = false;
-          submitButton.textContent = "Add Procedure";
+          submitButton.textContent = "Add Checklist";
         }
       }
     }
@@ -97,14 +97,14 @@
           "Sample procedure steps save timed out."
         );
         if (stepsError) throw stepsError;
-        deps.showNotice("Sample procedure added.");
+        deps.showNotice("Sample procedure checklist added.");
         await deps.render();
       } catch (error) {
         deps.showNotice(`Could not add sample procedure: ${error.message || error}`, "warning");
       } finally {
         if (button) {
           button.disabled = false;
-          button.textContent = "Add sample inspection procedure";
+          button.textContent = "Add sample inspection checklist";
         }
       }
     }
@@ -129,14 +129,14 @@
             company_id: deps.getActiveCompanyId(),
             procedure_template_id: formElement.dataset.addStep,
             position: nextPosition,
-            prompt: deps.requiredText(form.get("prompt"), "Procedure step"),
+            prompt: deps.requiredText(form.get("prompt"), "Procedure checklist step"),
             response_type: form.get("response_type"),
             required: form.get("required") === "true",
           }),
           "Procedure step save timed out."
         );
         if (error) throw error;
-        deps.showNotice("Procedure step added.");
+        deps.showNotice("Procedure checklist step added.");
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = error.message || "Could not add procedure step.";
@@ -225,12 +225,12 @@
             .eq("id", id)
             .eq("company_id", deps.getActiveCompanyId())
             .select("id"),
-          "Procedure delete timed out. Check your connection and try again.",
+          "Procedure checklist delete timed out. Check your connection and try again.",
           15000
         );
         if (error) throw error;
         if (!data?.length) {
-          throw new Error("Procedure was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
+          throw new Error("Procedure checklist was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
         }
 
         const verification = await deps.withOperationTimeout(
@@ -240,14 +240,14 @@
             .eq("id", id)
             .eq("company_id", deps.getActiveCompanyId())
             .maybeSingle(),
-          "Procedure delete verification timed out. Refresh and check the procedure list.",
+          "Procedure checklist delete verification timed out. Refresh and check the checklist list.",
           15000
         );
-        if (verification.error) throw new Error(`Procedure delete verification failed: ${verification.error.message}`);
-        if (verification.data) throw new Error("Procedure delete did not persist in Supabase.");
+        if (verification.error) throw new Error(`Procedure checklist delete verification failed: ${verification.error.message}`);
+        if (verification.data) throw new Error("Procedure checklist delete did not persist in Supabase.");
 
         deps.setPendingDeleteProcedureId(null);
-        deps.showNotice("Procedure deleted.");
+        deps.showNotice("Procedure checklist deleted.");
         await deps.render();
       } catch (error) {
         const message = error.message || "Could not delete procedure.";

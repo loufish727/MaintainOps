@@ -82,7 +82,7 @@ Role behavior:
 
 - Admins have full company setup, team, settings, delete, and work access.
 - Managers can manage work, requests, team roles, company settings, parts/equipment deletes, and location switching. Managers cannot promote another user to admin.
-- Technicians use My Work, Work Orders, Quick Fix, Requests, Equipment, PM, Procedures, Parts, Messages, comments, photos, and Team profile settings. Technicians can turn requests into work orders, create work, and claim unassigned work for themselves. They cannot assign work to other users, assign outside vendors, clear assignments, or steal work already assigned to someone else. Technicians do not see Admin Setup/Settings and can switch locations only when Mobile tech is enabled.
+- Technicians use My Work, Work Orders, Quick Fix, Requests, Equipment, PM, Procedure Checklist, Parts, Messages, comments, photos, and Team profile settings. Technicians can turn requests into work orders, create work, and claim unassigned work for themselves. They cannot assign work to other users, assign outside vendors, clear assignments, or steal work already assigned to someone else. Technicians do not see Admin Setup/Settings and can switch locations only when Mobile tech is enabled.
 - Legacy `member` rows are treated as technicians and should be migrated to `technician` with `supabase/step-next-role-model-technician-manager-admin.sql`.
 
 ## Work Order Statuses

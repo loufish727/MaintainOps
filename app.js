@@ -2785,22 +2785,22 @@ function renderWorkspace() {
 
           <section class="panel full-width ${activeSection === "procedures" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>Procedures</h2>
+              <h2>Procedure Checklists</h2>
               <span>${visibleProcedures.length} shown</span>
             </div>
             ${proceduresReady ? `
             <form class="form-grid procedure-form relationship-detail procedure" id="create-procedure-form">
-              <label>Procedure name<input name="name" required placeholder="Monthly compressor inspection"></label>
+              <label>Procedure checklist name<input name="name" required placeholder="Monthly compressor inspection"></label>
               <label>Description<textarea name="description" rows="3" placeholder="Use this checklist when creating repeat work."></textarea></label>
               <p class="error-text" id="procedure-error"></p>
-              <button class="secondary-button" type="submit">Add Procedure</button>
+              <button class="secondary-button" type="submit">Add Checklist</button>
             </form>
-            <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection procedure</button>
+            <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection checklist</button>
             <div class="procedure-list">
-              ${pagedProcedures.map(renderProcedureTemplate).join("") || `<p class="muted">No procedures match this search.</p>`}
+              ${pagedProcedures.map(renderProcedureTemplate).join("") || `<p class="muted">No procedure checklists match this search.</p>`}
             </div>
             ${renderListPagination("procedures", visibleProcedures.length, proceduresPage, totalProcedurePages)}
-            ` : `<p class="muted">Run supabase/step-next-procedures.sql to turn on procedure templates.</p>`}
+            ` : `<p class="muted">Run supabase/step-next-procedures.sql to turn on procedure checklists.</p>`}
           </section>
 
           <section class="panel full-width ${activeSection === "messages" ? "" : "hidden-section"}">
@@ -4873,7 +4873,7 @@ function visibleNavItems() {
     ["requests", "Requests"],
     ["assets", "Equipment"],
     ["pm", "PM"],
-    ["procedures", "Procedures"],
+    ["procedures", "Procedure Checklist"],
     ["parts", "Parts"],
     ["conversions", "Conversions"],
     ["messages", "Messages"],

@@ -63,7 +63,7 @@
     }
 
     if (procedure && progress) {
-      chips.push(relationshipChip("procedure", "Procedure", `${progress.done}/${progress.total}`, deps));
+      chips.push(relationshipChip("procedure", "Procedure checklist", `${progress.done}/${progress.total}`, deps));
     }
 
     if (partsCount) {

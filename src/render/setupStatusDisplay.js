@@ -28,9 +28,9 @@
           detail: deps.getSchedulesReady() ? "PM schedules available" : "Run step-next-preventive-schedules.sql",
         },
         {
-          name: "Procedures",
+          name: "Procedure Checklists",
           ready: deps.getProceduresReady(),
-          detail: deps.getProceduresReady() ? "Procedure templates available" : "Run step-next-procedures.sql",
+          detail: deps.getProceduresReady() ? "Procedure checklists available" : "Run step-next-procedures.sql",
         },
         {
           name: "Part costs",

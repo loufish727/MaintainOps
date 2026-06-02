@@ -93,8 +93,8 @@
           ${canDeleteOperationalRecords() ? `
             <section class="delete-zone procedure-delete-zone">
               <div>
-                <h3>Delete Procedure</h3>
-                <p>${blockerMessage || "This removes the template and checklist steps."}</p>
+                <h3>Delete Procedure Checklist</h3>
+                <p>${blockerMessage || "This removes the checklist template and checklist steps."}</p>
               </div>
               <p class="error-text" data-procedure-delete-error="${escapeHtml(template.id)}"></p>
               ${blockerMessage ? `
@@ -109,7 +109,7 @@
                   </div>
                 </div>
               ` : `
-                <button class="danger-action-button" data-delete-procedure="${escapeHtml(template.id)}" type="button">Delete Procedure</button>
+                <button class="danger-action-button" data-delete-procedure="${escapeHtml(template.id)}" type="button">Delete Checklist</button>
               `}
             </section>
           ` : ""}

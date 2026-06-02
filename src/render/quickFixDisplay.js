@@ -65,7 +65,7 @@
                   ${renderAssignmentSelect(session.user.id, { selfLabel: "Assign to me" })}
                 </select>
               </label>
-              <label>Procedure
+              <label>Procedure checklist
                 <select name="procedure_template_id">
                   ${renderProcedureOptions()}
                 </select>

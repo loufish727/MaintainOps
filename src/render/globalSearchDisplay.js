@@ -20,7 +20,7 @@
             ${renderGlobalResultGroup("Parts", results.parts, renderGlobalPartResult, "parts")}
             ${renderGlobalResultGroup("Requests", results.requests, renderGlobalRequestResult, "comment")}
             ${renderGlobalResultGroup("PM", results.pm, renderGlobalPmResult, "procedure")}
-            ${renderGlobalResultGroup("Procedures", results.procedures, renderGlobalProcedureResult, "procedure")}
+            ${renderGlobalResultGroup("Procedure Checklists", results.procedures, renderGlobalProcedureResult, "procedure")}
           </div>
         </section>
       `;

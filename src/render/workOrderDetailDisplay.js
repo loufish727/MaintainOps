@@ -187,7 +187,7 @@
               </select>
             </label>
             ${renderWorkOrderAssignmentField(workOrder, "quick-update-owner-field")}
-            <label id="quick-update-procedure-field">Procedure
+            <label id="quick-update-procedure-field">Procedure checklist
               <select name="procedure_template_id">
                 ${renderProcedureOptions(workOrder.procedure_template_id || "")}
               </select>
@@ -231,7 +231,7 @@
             </select>
           </label>
           ${renderWorkOrderAssignmentField(workOrder)}
-          <label>Procedure
+          <label>Procedure checklist
             <select name="procedure_template_id">
               ${renderProcedureOptions(workOrder.procedure_template_id || "")}
             </select>

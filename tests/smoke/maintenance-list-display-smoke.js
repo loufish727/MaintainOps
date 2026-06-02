@@ -51,5 +51,6 @@ assert.match(procedure, /1 PM schedules/);
 assert.match(procedure, /data-add-step="procedure-1"/);
 assert.match(procedure, /1 work \/ 1 schedule blockers/);
 assert.match(procedure, /Kept For Traceability/);
+assert.match(procedure, /Delete Procedure Checklist/);
 
 console.log("maintenance list display smoke passed");

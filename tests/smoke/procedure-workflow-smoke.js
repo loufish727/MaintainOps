@@ -142,17 +142,17 @@ function createQuery(table, calls) {
 
   workflow.bindProcedureWorkflowEvents();
   await procedureForm.dispatch("submit");
-  assert.equal(state.notices.at(-1)[0], "Procedure added.");
+  assert.equal(state.notices.at(-1)[0], "Procedure checklist added.");
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "procedure_templates"));
 
   templates.length = 0;
   await sampleButton.dispatch("click");
-  assert.equal(state.notices.at(-1)[0], "Sample procedure added.");
+  assert.equal(state.notices.at(-1)[0], "Sample procedure checklist added.");
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "procedure_steps"));
 
   templates.push({ id: "template-1", name: "Inspection", procedure_steps: [{ id: "step-1" }] });
   await stepForm.dispatch("submit");
-  assert.equal(state.notices.at(-1)[0], "Procedure step added.");
+  assert.equal(state.notices.at(-1)[0], "Procedure checklist step added.");
 
   await workflow.requestDeleteProcedureTemplate("template-1");
   assert.equal(state.pendingDeleteProcedureId, "template-1");
@@ -160,7 +160,7 @@ function createQuery(table, calls) {
 
   await workflow.deleteProcedureTemplate("template-1");
   assert.equal(state.pendingDeleteProcedureId, null);
-  assert.equal(state.notices.at(-1)[0], "Procedure deleted.");
+  assert.equal(state.notices.at(-1)[0], "Procedure checklist deleted.");
 
   console.log("procedure workflow smoke passed");
 })();
