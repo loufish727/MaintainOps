@@ -166,12 +166,27 @@
               <p class="error-text" data-asset-document-error="${escapeHtml(asset.id)}">${assetDocumentsReady ? "" : "Run supabase/step-next-asset-documents.sql before uploading equipment files."}</p>
               <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Attach Machine File</button>
             </form>
-            <div class="asset-photo-grid">
+            <div class="asset-file-list">
               ${assetDocuments.map((document) => `
-                <a class="asset-photo-card ${String(document.content_type || "").startsWith("image/") ? "" : "document-file"}" href="${escapeHtml(document.signedUrl || "#")}" target="_blank" rel="noreferrer">
-                  ${String(document.content_type || "").startsWith("image/") && document.signedUrl ? `<img src="${escapeHtml(document.signedUrl)}" alt="${escapeHtml(document.file_name || asset.name)}">` : `<strong>${escapeHtml(assetDocumentTypeLabel(document.document_type))}</strong>`}
-                  <span>${escapeHtml(document.original_file_name || document.file_name || "Machine file")}</span>
-                </a>
+                <details class="asset-file-item">
+                  <summary>
+                    <span class="asset-file-thumb ${String(document.content_type || "").startsWith("image/") ? "" : "document-file"}">
+                      ${String(document.content_type || "").startsWith("image/") && document.signedUrl ? `<img src="${escapeHtml(document.signedUrl)}" alt="${escapeHtml(document.original_file_name || document.file_name || asset.name)}">` : `<strong>${escapeHtml(assetDocumentTypeLabel(document.document_type))}</strong>`}
+                    </span>
+                    <span class="asset-file-title">
+                      <strong>${escapeHtml(assetDocumentTypeLabel(document.document_type))}</strong>
+                      <span>${escapeHtml(document.original_file_name || document.file_name || "Machine file")}</span>
+                    </span>
+                    <span class="asset-file-action">Open</span>
+                  </summary>
+                  <div class="asset-file-preview">
+                    ${String(document.content_type || "").startsWith("image/") && document.signedUrl ? `<img src="${escapeHtml(document.signedUrl)}" alt="${escapeHtml(document.original_file_name || document.file_name || asset.name)}">` : `<div class="asset-file-document-preview">${escapeHtml(assetDocumentTypeLabel(document.document_type))}</div>`}
+                    <div class="asset-file-meta">
+                      <span>${escapeHtml(document.content_type || "file")}</span>
+                      <a class="secondary-button" href="${escapeHtml(document.signedUrl || "#")}" target="_blank" rel="noreferrer">Open File</a>
+                    </div>
+                  </div>
+                </details>
               `).join("") || `<p class="muted">No photos, schematics, settings, manuals, nameplates, or receipts uploaded yet.</p>`}
             </div>
           </section>
