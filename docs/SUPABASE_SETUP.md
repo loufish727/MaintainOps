@@ -55,6 +55,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-equipment-delete.sql`
 - `step-next-explicit-data-api-grants.sql`
 - `step-next-invite-default-location.sql`
+- `step-next-invite-role-preservation.sql`
 - `step-next-location-integrity.sql`
 - `step-next-locations.sql`
 - `step-next-login-memberships.sql`
@@ -116,6 +117,10 @@ notify pgrst, 'reload schema';
 User preference sync:
 
 Run `supabase/step-next-user-preferences.sql` before expecting shop reference favorites to follow a user across browsers/devices. The app keeps a browser `localStorage` fallback/cache if the table is not available.
+
+Invite role preservation:
+
+Run `supabase/step-next-invite-role-preservation.sql` if an existing teammate accepts a pending invite after their role has already been set. This prevents invite acceptance from downgrading an existing higher role such as admin or manager.
 
 Equipment part links:
 

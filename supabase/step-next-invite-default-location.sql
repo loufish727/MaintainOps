@@ -71,6 +71,21 @@ begin
 end;
 $$;
 
+create or replace function private.role_rank(role_name text)
+returns integer
+language sql
+immutable
+set search_path = public, private
+as $$
+  select case role_name
+    when 'admin' then 4
+    when 'manager' then 3
+    when 'technician' then 2
+    when 'member' then 1
+    else 0
+  end;
+$$;
+
 create or replace function public.accept_company_invites()
 returns integer
 language plpgsql
@@ -95,7 +110,11 @@ begin
   where lower(ci.email) = user_email
     and ci.accepted_at is null
   on conflict (company_id, user_id) do update
-  set role = excluded.role,
+  set role = case
+        when private.role_rank(public.company_members.role) >= private.role_rank(excluded.role)
+          then public.company_members.role
+        else excluded.role
+      end,
       default_location_id = coalesce(excluded.default_location_id, public.company_members.default_location_id);
 
   insert into public.profiles (company_id, user_id, full_name)
