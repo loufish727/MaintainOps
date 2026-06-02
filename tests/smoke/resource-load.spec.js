@@ -133,6 +133,7 @@ const requiredResources = [
   "src/render/messageCenterErrorDisplay.js",
   "src/render/appIssueErrorDisplay.js",
   "src/render/workOrderDetailDisplay.js",
+  "src/render/equipmentStructureGuideDisplay.js",
   "src/render/assetDetailDisplay.js",
   "src/render/messageCenterDisplay.js",
   "src/render/createWorkOrderDisplay.js",

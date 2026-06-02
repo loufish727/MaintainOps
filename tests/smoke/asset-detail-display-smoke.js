@@ -3,6 +3,9 @@ const assert = require("node:assert/strict");
 global.window = {};
 
 const { createAssetDetailDisplayHelpers } = require("../../src/render/assetDetailDisplay.js");
+const { createEquipmentStructureGuideDisplayHelpers } = require("../../src/render/equipmentStructureGuideDisplay.js");
+
+const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 
 const asset = {
   id: "asset-1",
@@ -61,6 +64,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   renderAssetMiniWorkOrder: (row) => `<article data-open-work-order="${row.id}">${row.title}</article>`,
   assetDeleteBlockerMessage: () => "",
   canDeleteEquipment: () => true,
+  renderEquipmentStructureGuide,
 });
 
 const html = renderAssetDetail();

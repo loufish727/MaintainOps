@@ -223,6 +223,7 @@ const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCent
 const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
 const { createWorkOrderDetailDisplayHelpers } = window.MaintainOpsWorkOrderDetailDisplay;
 const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay;
+const { createEquipmentStructureGuideDisplayHelpers } = window.MaintainOpsEquipmentStructureGuideDisplay;
 const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
 const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const { createQuickFixDisplayHelpers } = window.MaintainOpsQuickFixDisplay;
@@ -279,6 +280,7 @@ const { renderConversionsPanel } = createConversionDisplayHelpers({
   conversionResultText,
 });
 const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
+const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 let supabaseClient;
 let session;
 const {
@@ -2738,6 +2740,7 @@ function renderWorkspace() {
               <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
             </form>
             <p class="error-text" id="asset-create-error"></p>
+            ${renderEquipmentStructureGuide()}
             <div class="asset-health-grid">
               ${["running", "watch", "degraded", "offline"].map((status) => `
                 <button class="asset-health ${status} ${workspaceUiState.getAssetStatusFilter() === status ? "active" : ""}" data-asset-status-filter="${status}" type="button">
@@ -3079,6 +3082,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage,
   canDeleteEquipment,
+  renderEquipmentStructureGuide,
 });
 
 const {
