@@ -46,6 +46,15 @@
       const linkedParts = assetParts.filter((row) => row.asset_id === asset.id);
       const linkedPartIds = new Set(linkedParts.map((row) => row.part_id));
       const attachableParts = parts.filter((part) => !linkedPartIds.has(part.id));
+      const locationName = locations.find((location) => location.id === asset.location_id)?.name || asset.location || "No location set";
+      const primaryLabel = parent ? parent.name : "Top level equipment";
+      const statusTone = asset.status === "offline"
+        ? "status-blocked"
+        : asset.status === "degraded"
+          ? "status-open"
+          : asset.status === "watch"
+            ? "status-in_progress"
+            : "status-completed";
 
       return `
         <div class="detail-stack">
@@ -61,6 +70,39 @@
             ${parent ? `<p>Part of <button class="text-button inline-link-button" data-open-asset="${escapeHtml(parent.id)}" type="button">${escapeHtml(parent.name)}</button></p>` : ""}
           </div>
 
+          <section class="work-command-summary asset-command-summary" aria-label="Equipment summary">
+            <button class="command-card ${statusTone}" data-jump-work-section="edit-asset-status-field" type="button">
+              <span>Status</span>
+              <strong>${escapeHtml(assetStatusLabel(asset.status))}</strong>
+              <small>${asset.safety_devices_required === false ? "No safety completion gate" : "Safety check required before completing work"}</small>
+            </button>
+            <button class="command-card command-equipment" data-jump-work-section="edit-asset-location-field" type="button">
+              <span>Location</span>
+              <strong>${escapeHtml(locationName)}</strong>
+              <small>${asset.location ? escapeHtml(asset.location) : "Area / spot unset"}</small>
+            </button>
+            <button class="command-card command-owner" data-jump-work-section="edit-asset-parent-field" type="button">
+              <span>Primary</span>
+              <strong>${escapeHtml(primaryLabel)}</strong>
+              <small>${parent ? "Linked under parent equipment" : "Primary / standalone item"}</small>
+            </button>
+            <button class="command-card command-equipment ${children.length ? "" : "empty"}" data-jump-work-section="asset-linked-equipment-target" type="button">
+              <span>Sub Equipment</span>
+              <strong>${children.length}</strong>
+              <small>${children.length ? "Linked child items" : "No linked child equipment"}</small>
+            </button>
+            <button class="command-card command-parts ${linkedParts.length ? "" : "empty"}" data-jump-work-section="asset-linked-parts-target" type="button">
+              <span>Parts</span>
+              <strong>${linkedParts.length}</strong>
+              <small>${linkedParts.length ? "Recommended/common parts linked" : "No linked parts yet"}</small>
+            </button>
+            <button class="command-card status-open ${openWork.length ? "" : "empty"}" data-jump-work-section="asset-open-work-target" type="button">
+              <span>Open Work</span>
+              <strong>${openWork.length}</strong>
+              <small>${openWork.length ? "Active work tied to this equipment" : "No open work"}</small>
+            </button>
+          </section>
+
           <div class="quick-actions detail-quick-actions">
             <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
           </div>
@@ -73,19 +115,19 @@
                 ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (asset.asset_type || "machine") ? "selected" : ""}>${assetTypeLabel(type)}</option>`).join("")}
               </select>
             </label>
-            <label>Part of
+            <label id="edit-asset-parent-field">Part of
               <select name="parent_asset_id">
                 <option value="">Top level equipment</option>
                 ${renderParentAssetOptions(asset.parent_asset_id || "", asset.id)}
               </select>
             </label>
-            <label>Location
+            <label id="edit-asset-location-field">Location
               <select name="location_id" ${locations.length ? "" : "disabled"}>
                 ${renderLocationOptions(asset.location_id || activeLocationId)}
               </select>
             </label>
             <label>Area / spot<input name="location" value="${escapeHtml(asset.location || "")}"></label>
-            <label>Status
+            <label id="edit-asset-status-field">Status
               <select name="status">
                 ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${assetStatusLabel(status)}</option>`).join("")}
               </select>
@@ -95,7 +137,7 @@
             <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
           </form>
 
-          <section>
+          <section id="asset-linked-equipment-target">
             <h3>Linked Equipment</h3>
             <div class="mini-list asset-link-list">
               ${children.map((child) => `
@@ -107,7 +149,7 @@
             </div>
           </section>
 
-          <section>
+          <section id="asset-open-work-target">
             <h3>Open Work</h3>
             <div class="mini-list">
               ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`}
@@ -128,7 +170,7 @@
             </div>
           </section>
 
-          <section>
+          <section id="asset-linked-parts-target">
             <h3>Linked Parts</h3>
             ${assetPartsReady ? `
               <form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">

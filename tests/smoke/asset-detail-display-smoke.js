@@ -60,6 +60,16 @@ const html = renderAssetDetail();
 
 assert.match(html, /Press 1/);
 assert.match(html, /id="edit-asset-form"/);
+assert.match(html, /aria-label="Equipment summary"/);
+assert.match(html, /<span>Status<\/span>/);
+assert.match(html, /<span>Location<\/span>/);
+assert.match(html, /<span>Primary<\/span>/);
+assert.match(html, /<span>Sub Equipment<\/span>/);
+assert.match(html, /<span>Parts<\/span>/);
+assert.match(html, /<span>Open Work<\/span>/);
+assert.match(html, /data-jump-work-section="edit-asset-status-field"/);
+assert.match(html, /data-jump-work-section="asset-linked-parts-target"/);
+assert.doesNotMatch(html, /Email Helper/);
 assert.match(html, /data-quick-fix-asset="asset-1"/);
 assert.match(html, /data-open-asset="parent-1"/);
 assert.match(html, /data-open-asset="child-1"/);
