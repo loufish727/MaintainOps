@@ -253,7 +253,7 @@
         </details>
   
         ${procedure ? `
-          <details class="work-detail-section relationship-detail procedure">
+          <details class="work-detail-section relationship-detail procedure" open>
             <summary>Procedure Checklist</summary>
             <div class="panel-header compact-header">
               <h3>${escapeHtml(procedure.name)}</h3>
