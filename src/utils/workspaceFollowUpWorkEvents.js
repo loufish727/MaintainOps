@@ -12,7 +12,9 @@
 
     doc.querySelectorAll("[data-create-follow-up]").forEach((button) => {
       button.addEventListener("click", () => {
-        createFollowUpWorkOrder(button.dataset.createFollowUp);
+        const container = button.closest?.("[data-follow-up-create]");
+        const daysInput = container?.querySelector?.("[name='follow_up_days']");
+        createFollowUpWorkOrder(button.dataset.createFollowUp, daysInput?.value);
       });
     });
   }

@@ -67,6 +67,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 - Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes. The sizing circle is green, the calibration bar is red, and calibration can be locked per device.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.
+- Follow-up work creation now uses a days-based due-date target from Planning instead of creating follow-up work with no due date. `actual_minutes` remains labor/completion duration data for analytics and exports.
 - Shop reference chart cards were adjusted to follow the app's card pattern: collapsed headline cards, one expanded chart at a time, full-width desktop detail layout, mobile stacked label/value rows so table content does not clip on phones, stronger favorite styling, and favorites that persist to the signed-in user's `user_preferences` row when available, with browser `localStorage` retained as a fallback/cache.
 - Shop reference charts were expanded from 17 to 37 total cards with 20 common part-ID/reference additions including sensors, VFD faults, fuse classes, contactors/overloads, motor nameplates, pneumatic/hydraulic IDs, couplings, rollers, photoeyes, proximity sensors, thermocouples, hose clamps, threadlocker, bearing suffixes, belt codes, and chain sprocket IDs. A search bar now filters relevant cards without connecting to inventory or Supabase.
 - Main conversion cards were restyled as color-coded white tool tiles so length, area, weight, temperature, volume, pressure, and torque read as distinct quick tools instead of a plain list.
@@ -85,7 +86,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Storage MIME hardening was applied to `work-order-photos` and `part-documents`; media storage workflow smoke and public/storage boundary probes passed afterward.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 4,821 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 4,615 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
 - Backup/restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.

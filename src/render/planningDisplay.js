@@ -28,7 +28,10 @@
               <p>${escapeHtml(item.assetName)} - completed ${escapeHtml(item.completedAt)}</p>
               ${item.resolution ? `<p>${escapeHtml(item.resolution)}</p>` : ""}
             </div>
-            <button class="secondary-button" data-create-follow-up="${item.id}" type="button">Create Work</button>
+            <div class="follow-up-create" data-follow-up-create>
+              <label>Due in days<input name="follow_up_days" type="number" min="0" max="365" step="1" value="7"></label>
+              <button class="secondary-button" data-create-follow-up="${escapeHtml(item.id)}" type="button">Create Work</button>
+            </div>
           </article>
         `;
       }

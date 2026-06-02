@@ -36,7 +36,7 @@ Areas still maturing:
 - Hosting: GitHub Pages.
 - Backend: Supabase Auth, Postgres, RLS policies, RPCs, and private storage buckets.
 - Main app entry: `index.html`.
-- Main orchestration: `app.js` at roughly 4,821 lines.
+- Main orchestration: `app.js` at roughly 4,615 lines.
 - Extracted modules: `src/`.
 - SQL source: `supabase/`.
 

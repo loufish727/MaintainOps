@@ -3154,6 +3154,14 @@ function workOrderDateValue(value) {
   return parsed.toISOString().slice(0, 10);
 }
 
+function followUpDueDateFromDays(value) {
+  const parsed = Number.parseInt(String(value ?? "7"), 10);
+  const days = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 0), 365) : 7;
+  const due = startOfToday();
+  due.setDate(due.getDate() + days);
+  return isoDate(due);
+}
+
 function requiredText(value, label) {
   const text = String(value || "").trim();
   if (!text) throw new Error(`${label} is required.`);
@@ -4280,7 +4288,7 @@ async function deletePart(id) {
   }
 }
 
-async function createFollowUpWorkOrder(sourceId) {
+async function createFollowUpWorkOrder(sourceId, dueInDays) {
   const source = workOrders.find((item) => item.id === sourceId);
   if (!source) return;
 
@@ -4298,7 +4306,7 @@ async function createFollowUpWorkOrder(sourceId) {
     priority: source.priority || "medium",
     type: "corrective",
     status: "open",
-    due_at: null,
+    due_at: followUpDueDateFromDays(dueInDays),
     created_by: session.user.id,
   };
   applySafetyRequirementPayload(payload);
