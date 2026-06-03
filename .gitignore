@@ -6,5 +6,11 @@ test-results/
 playwright-report/
 MaintainOps-github-clean-*/
 MaintainOps-github-clean-*.zip
+*_PRIVATE_*
+*_INTERNAL_*
+*_HANDOFF_*.md
+*_HANDOFF_*.txt
+MAINTAINOPS_FULL_HANDOFF_*.txt
+supabase/.temp/
 .DS_Store
 Thumbs.db

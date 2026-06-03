@@ -25,7 +25,7 @@ Required before broader production dependence:
 - Verify sign-in or reinvite flow, company selection, workspace load, storage signed URLs, and representative work-order records.
 - Record restore duration, manual steps, missing objects, and any accepted limitations.
 
-Current status: ACTION NEEDED. See `docs/BACKUP_RESTORE_VALIDATION.md`.
+Current status: operator action required. See `docs/BACKUP_RESTORE_VALIDATION.md`.
 
 ### 2. Incident And Support Process
 
@@ -95,7 +95,7 @@ Use these labels when reporting hardening work:
 - PASS: verified with the named check.
 - FAIL: checked and did not meet expectation.
 - NOT VERIFIED: not checked, blocked, or not possible in the current environment.
-- ACTION NEEDED: requires user, Supabase dashboard, production account, device, or external state.
+- OPERATOR ACTION REQUIRED: requires user, Supabase dashboard, production account, device, or external state.
 
 ## Stop Rules
 

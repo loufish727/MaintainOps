@@ -128,7 +128,7 @@ Until restore validation is complete:
 
 ## Current Status
 
-ACTION NEEDED:
+OPERATOR ACTION REQUIRED:
 
 A true backup/restore validation requires either:
 

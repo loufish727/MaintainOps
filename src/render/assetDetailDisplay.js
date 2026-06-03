@@ -76,7 +76,7 @@
             ${parent ? `<p>Part of <button class="text-button inline-link-button" data-open-asset="${escapeHtml(parent.id)}" type="button">${escapeHtml(parent.name)}</button></p>` : ""}
           </div>
 
-          <section class="work-command-summary asset-command-summary" aria-label="Equipment summary">
+          <section class="work-command-summary asset-command-summary" id="equipment-action-cards" aria-label="Equipment summary">
             <button class="command-card ${statusTone}" data-jump-work-section="edit-asset-status-field" type="button">
               <span>Status</span>
               <strong>${escapeHtml(assetStatusLabel(asset.status))}</strong>

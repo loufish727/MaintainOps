@@ -4003,13 +4003,6 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
-    scrollToDetailTop: () => {
-      window.setTimeout(() => {
-        const target = document.querySelector(".asset-command-summary") || document.querySelector(".workspace");
-        if (target?.scrollIntoView) target.scrollIntoView({ behavior: "auto", block: "start" });
-        window.scrollTo({ top: 0, behavior: "auto" });
-      }, 0);
-    },
   });
 
   bindWorkspaceSubmitRequestCommandEvents({
@@ -4078,6 +4071,18 @@ function bindWorkspaceEvents() {
       setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
     },
     renderWorkspace,
+    scrollToDetailTop: () => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const target = document.querySelector("#equipment-action-cards") || document.querySelector(".asset-command-summary");
+          if (target?.scrollIntoView) {
+            target.scrollIntoView({ behavior: "auto", block: "start" });
+            return;
+          }
+          window.scrollTo({ top: 0, behavior: "auto" });
+        });
+      });
+    },
   });
 
   bindMessageWorkflowEvents();

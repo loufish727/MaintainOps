@@ -77,6 +77,7 @@ assert.match(html, /name="location_existing"/);
 assert.match(html, /<option value="Bay 1" selected>Bay 1<\/option>/);
 assert.match(html, /name="location_new"/);
 assert.match(html, /aria-label="Equipment summary"/);
+assert.match(html, /id="equipment-action-cards"/);
 assert.match(html, /<span>Status<\/span>/);
 assert.match(html, /<span>Location<\/span>/);
 assert.match(html, /<span>Primary<\/span>/);

@@ -5946,6 +5946,10 @@ textarea {
   gap: 12px;
 }
 
+#equipment-action-cards {
+  scroll-margin-top: 12px;
+}
+
 .equipment-structure-guide {
   border: 2px solid rgba(37, 99, 235, 0.34);
   border-radius: 8px;
