@@ -79,6 +79,8 @@ assert.match(html, /<span>Sub Equipment<\/span>/);
 assert.match(html, /<span>Parts<\/span>/);
 assert.match(html, /<span>Open Work<\/span>/);
 assert.match(html, /<span>Files<\/span>/);
+assert.match(html, /class="safety-check-note">safety check enabled<\/span>/);
+assert.doesNotMatch(html, /chip overdue">safety check required/);
 assert.match(html, /Equipment status guide/);
 assert.match(html, /Watch/);
 assert.match(html, /Monitor for a possible issue/);

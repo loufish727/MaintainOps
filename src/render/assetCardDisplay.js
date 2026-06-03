@@ -18,7 +18,7 @@
               <span class="chip asset-${asset.status}">${escapeHtml(asset.status)}</span>
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
               ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
-              ${asset.safety_devices_required === false ? `<span class="chip">no safety check</span>` : `<span class="chip overdue">safety check</span>`}
+              ${asset.safety_devices_required === false ? `<span class="safety-check-note disabled">safety check off</span>` : `<span class="safety-check-note">safety check enabled</span>`}
             </div>
             <h3>${escapeHtml(asset.name)}</h3>
             <p>${escapeHtml(asset.location || "No location set")}</p>
