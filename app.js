@@ -2916,6 +2916,11 @@ function renderWorkspace() {
             </form>
             <p class="error-text" id="asset-create-error"></p>
             ${renderEquipmentStructureGuide()}
+            <section class="equipment-status-guide" aria-label="Equipment status guide">
+              <div><strong>Watch</strong><span>Monitor for a possible issue.</span></div>
+              <div><strong>Degraded</strong><span>Known issue, still usable.</span></div>
+              <div><strong>Offline / Down</strong><span>Do not count on this equipment.</span></div>
+            </section>
             ${renderAssetMasterSummary()}
             <div class="asset-list">
               ${pagedAssets.map(renderAssetCard).join("") || `<p class="muted">${assetEmptyStateText()}</p>`}

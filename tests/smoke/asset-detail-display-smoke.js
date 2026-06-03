@@ -79,6 +79,13 @@ assert.match(html, /<span>Sub Equipment<\/span>/);
 assert.match(html, /<span>Parts<\/span>/);
 assert.match(html, /<span>Open Work<\/span>/);
 assert.match(html, /<span>Files<\/span>/);
+assert.match(html, /Equipment status guide/);
+assert.match(html, /Watch/);
+assert.match(html, /Monitor for a possible issue/);
+assert.match(html, /Degraded/);
+assert.match(html, /Known issue, still usable/);
+assert.match(html, /Offline \/ Down/);
+assert.match(html, /Do not count on this equipment/);
 assert.match(html, /Structure Guide/);
 assert.match(html, /Machine \/ Line/);
 assert.match(html, /Sub-assembly/);
@@ -114,6 +121,43 @@ assert.match(html, /recommended qty 4/);
 assert.match(html, /Parts Used History/);
 assert.match(html, /data-cancel-delete-asset/);
 assert.match(html, /data-confirm-delete-asset="asset-1"/);
+assert.doesNotMatch(html, /Degraded needs a reason/);
+
+const degradedRenderer = createAssetDetailDisplayHelpers({
+  ASSET_TYPE_OPTIONS: ["machine"],
+  getAssets: () => [{ ...asset, status: "degraded" }],
+  getActiveAssetId: () => "asset-1",
+  getWorkOrders: () => [],
+  getPreventiveSchedules: () => [],
+  getParts: () => [],
+  getAssetParts: () => [],
+  getAssetPartsReady: () => true,
+  getAssetDocumentsByAssetId: () => ({}),
+  getAssetDocumentsReady: () => true,
+  getPartsUsedByWorkOrder: () => ({}),
+  getMaintenanceRequests: () => [],
+  getPendingDeleteAssetId: () => "",
+  getLocations: () => [{ id: "loc-1", name: "Plant 1" }],
+  getActiveLocationId: () => "loc-1",
+  renderCreateWorkOrder: () => "<section>Create work order</section>",
+  parentAssetFor: () => null,
+  childAssetsFor: () => [],
+  escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
+  assetTypeLabel: (type) => type,
+  renderParentAssetOptions: () => "",
+  renderLocationOptions: () => '<option value="loc-1">Plant 1</option>',
+  assetStatusLabel: (status) => status === "degraded" ? "Degraded" : status,
+  renderAssetMiniWorkOrder: (row) => `<article>${row.title}</article>`,
+  assetDeleteBlockerMessage: () => "",
+  canDeleteEquipment: () => true,
+  renderEquipmentStructureGuide,
+}).renderAssetDetail;
+
+const degradedHtml = degradedRenderer();
+assert.match(degradedHtml, /Degraded needs a reason/);
+assert.match(degradedHtml, /no open work tied to it/);
+assert.match(degradedHtml, /Create Work for Degraded Condition/);
+assert.match(degradedHtml, /data-quick-fix-asset="asset-1"/);
 
 const missingRenderer = createAssetDetailDisplayHelpers({
   getAssets: () => [],

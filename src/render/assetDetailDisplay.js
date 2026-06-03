@@ -58,12 +58,13 @@
           : asset.status === "watch"
             ? "status-in_progress"
             : "status-completed";
+      const degradedWithoutOpenWork = asset.status === "degraded" && openWork.length === 0;
 
       return `
         <div class="detail-stack">
           <div>
             <div class="chip-row">
-              <span class="chip asset-${asset.status}">${escapeHtml(asset.status)}</span>
+              <span class="chip asset-${asset.status}">${escapeHtml(assetStatusLabel(asset.status))}</span>
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
               ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
               ${asset.safety_devices_required === false ? `<span class="chip">no safety check</span>` : `<span class="chip overdue">safety check required</span>`}
@@ -110,6 +111,20 @@
               <small>${assetDocuments.length ? "Machine files on record" : "No machine files yet"}</small>
             </button>
           </section>
+
+          <section class="equipment-status-guide" aria-label="Equipment status guide">
+            <div><strong>Watch</strong><span>Monitor for a possible issue.</span></div>
+            <div><strong>Degraded</strong><span>Known issue, still usable.</span></div>
+            <div><strong>Offline / Down</strong><span>Do not count on this equipment.</span></div>
+          </section>
+
+          ${degradedWithoutOpenWork ? `
+            <section class="equipment-status-nudge degraded" aria-label="Degraded equipment follow-up">
+              <strong>Degraded needs a reason</strong>
+              <p>This equipment is marked degraded but has no open work tied to it. Create or attach a work order so the condition is traceable.</p>
+              <button class="secondary-button" data-quick-fix-asset="${escapeHtml(asset.id)}" type="button">Create Work for Degraded Condition</button>
+            </section>
+          ` : ""}
 
           ${renderEquipmentStructureGuide ? renderEquipmentStructureGuide() : ""}
 
