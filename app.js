@@ -2561,6 +2561,9 @@ function renderWorkspace() {
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
   const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
+  if (activeSection === "assets" && workspaceUiState.getAssetStatusFilter() !== "all") {
+    workspaceUiState.setAssetStatusFilter("all");
+  }
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
@@ -2578,66 +2581,80 @@ function renderWorkspace() {
   const assetsPage = workspaceUiState.getAssetsPage();
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
   const locationAssets = assets.filter(matchesActiveLocation);
-  const locationAssetIds = new Set(locationAssets.map((asset) => asset.id));
-  const assetStatusCounts = ["running", "watch", "degraded", "offline"].reduce((counts, status) => {
-    counts[status] = locationAssets.filter((asset) => asset.status === status).length;
+  const assetTypeCounts = ASSET_TYPE_OPTIONS.reduce((counts, type) => {
+    counts[type] = locationAssets.filter((asset) => (asset.asset_type || "machine") === type).length;
     return counts;
   }, {});
-  const topLevelAssets = locationAssets.filter((asset) => !parentAssetFor(asset));
-  const subEquipmentCount = locationAssets.length - topLevelAssets.length;
-  const linkedAssetPartsCount = assetParts.filter((row) => locationAssetIds.has(row.asset_id)).length;
-  const assetOpenWorkCount = workOrders.filter((workOrder) => locationAssetIds.has(workOrder.asset_id) && workOrder.status !== "completed").length;
-  const assetFileCount = Object.entries(assetDocumentsByAssetId).reduce((count, [assetId, documents]) => {
-    return locationAssetIds.has(assetId) ? count + documents.length : count;
-  }, 0);
-  const assetAttentionCount = assetStatusCounts.watch + assetStatusCounts.degraded + assetStatusCounts.offline;
-  const assetStatusFilter = workspaceUiState.getAssetStatusFilter();
+  const runningAssetCount = locationAssets.filter((asset) => asset.status === "running").length;
+  const downAssetCount = locationAssets.filter((asset) => asset.status === "offline").length;
+  const assetTypeSummaryCards = [
+    {
+      label: "Running",
+      count: runningAssetCount,
+      tone: "status-completed",
+      detail: "Equipment currently marked running.",
+      empty: "No equipment marked running.",
+    },
+    {
+      label: "Down",
+      count: downAssetCount,
+      tone: "status-blocked",
+      detail: "Equipment currently marked offline.",
+      empty: "No equipment marked down.",
+    },
+    {
+      type: "machine",
+      label: "Primary",
+      count: assetTypeCounts.machine || 0,
+      tone: "command-owner",
+      detail: "Main machines, lines, and standalone equipment.",
+      empty: "No primary equipment yet.",
+    },
+    {
+      type: "secondary_machine",
+      label: "Sub Equipment",
+      count: assetTypeCounts.secondary_machine || 0,
+      tone: "command-equipment",
+      detail: "Major sections under a main machine or line.",
+      empty: "No sub equipment yet.",
+    },
+    {
+      type: "tooling",
+      label: "Tooling / Setup",
+      count: assetTypeCounts.tooling || 0,
+      tone: "command-equipment",
+      detail: "Roll tooling, die sets, profiles, and setup records.",
+      empty: "No tooling/setup records yet.",
+    },
+    {
+      type: "component",
+      label: "Components",
+      count: assetTypeCounts.component || 0,
+      tone: "command-equipment",
+      detail: "Tracked equipment components; inventory parts stay in detail.",
+      empty: "No component records yet.",
+    },
+    {
+      type: "shop_item",
+      label: "Shop Items",
+      count: assetTypeCounts.shop_item || 0,
+      tone: "command-equipment",
+      detail: "Support equipment or shop assets worth tracking.",
+      empty: "No shop item records yet.",
+    },
+  ];
   const renderAssetMasterSummary = () => `
     <section class="work-command-summary asset-command-summary asset-master-summary" aria-label="Equipment master summary">
-      <article class="command-card ${assetAttentionCount ? "status-open" : "status-completed"}">
-        <span>Status</span>
-        <strong>${assetStatusCounts.running} running</strong>
-        <small>${assetAttentionCount ? `${assetAttentionCount} need attention` : "No watch, degraded, or offline equipment"}</small>
-        <div class="asset-status-filter-row" aria-label="Filter equipment by status">
-          ${["running", "watch", "degraded", "offline"].map((status) => `
-            <button class="asset-status-mini ${status} ${assetStatusFilter === status ? "active" : ""}" data-asset-status-filter="${status}" type="button">
-              <span>${escapeHtml(assetStatusLabel(status))}</span>
-              <strong>${assetStatusCounts[status]}</strong>
-            </button>
-          `).join("")}
-        </div>
-        ${assetStatusFilter !== "all" ? `<button class="text-button asset-clear-status-filter" data-asset-status-filter="${escapeHtml(assetStatusFilter)}" type="button">Clear ${escapeHtml(assetStatusLabel(assetStatusFilter))} filter</button>` : ""}
-      </article>
-      <article class="command-card command-equipment">
-        <span>Location</span>
-        <strong>${escapeHtml(activeLocationName())}</strong>
-        <small>${locationAssets.length} equipment record${locationAssets.length === 1 ? "" : "s"} in this workspace</small>
-      </article>
-      <article class="command-card command-owner ${topLevelAssets.length ? "" : "empty"}">
-        <span>Primary</span>
-        <strong>${topLevelAssets.length}</strong>
-        <small>${topLevelAssets.length ? "Top-level machines, lines, and standalone items" : "No primary equipment yet"}</small>
-      </article>
-      <article class="command-card command-equipment ${subEquipmentCount ? "" : "empty"}">
-        <span>Sub Equipment</span>
-        <strong>${subEquipmentCount}</strong>
-        <small>${subEquipmentCount ? "Linked under parent equipment" : "No linked child equipment"}</small>
-      </article>
-      <article class="command-card command-parts ${linkedAssetPartsCount ? "" : "empty"}">
-        <span>Parts</span>
-        <strong>${linkedAssetPartsCount}</strong>
-        <small>${linkedAssetPartsCount ? "Recommended/common parts linked" : "No linked parts yet"}</small>
-      </article>
-      <article class="command-card status-open ${assetOpenWorkCount ? "" : "empty"}">
-        <span>Open Work</span>
-        <strong>${assetOpenWorkCount}</strong>
-        <small>${assetOpenWorkCount ? "Active work tied to equipment" : "No open equipment work"}</small>
-      </article>
-      <article class="command-card command-photo ${assetFileCount ? "" : "empty"}">
-        <span>Files</span>
-        <strong>${assetFileCount}</strong>
-        <small>${assetFileCount ? "Machine files on record" : "No machine files yet"}</small>
-      </article>
+      ${assetTypeSummaryCards.map((card) => {
+        const count = card.count || 0;
+        return `
+          <article class="command-card ${card.tone} ${count ? "" : "empty"}">
+            <span>${escapeHtml(card.label)}</span>
+            <strong>${count}</strong>
+            <small>${escapeHtml(count ? card.detail : card.empty)}</small>
+          </article>
+        `;
+      }).join("")}
     </section>
   `;
   const visibleMembers = filteredMembers();
