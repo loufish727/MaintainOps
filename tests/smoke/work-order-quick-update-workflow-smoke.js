@@ -162,6 +162,7 @@ function createWorkflow(overrides = {}) {
   const down = createWorkflow({ values: { machine_down: "on" } });
   await down.run();
   assert.equal(down.calls.some((call) => call[0] === "assetStatus" && call[2] === "offline"), true);
+  assert.equal(down.calls.some((call) => call[0] === "event" && call[3] === "Equipment marked offline/down."), true);
 
   console.log("work order quick update workflow smoke passed");
 })().catch((error) => {

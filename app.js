@@ -2599,12 +2599,12 @@ function renderWorkspace() {
       empty: "No equipment marked running.",
     },
     {
-      label: "Down",
+      label: "Offline / Down",
       count: downAssetCount,
       tone: "status-blocked",
       statusFilter: "offline",
-      detail: "Equipment currently marked offline.",
-      empty: "No equipment marked down.",
+      detail: "Equipment currently marked offline/down.",
+      empty: "No equipment marked offline/down.",
     },
     {
       type: "machine",

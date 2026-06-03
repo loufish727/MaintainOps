@@ -163,7 +163,7 @@
             warnings.push(`equipment status did not update: ${assetError.message}`);
           } else {
             await withOperationTimeout(
-              recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Equipment marked down/offline." : `Equipment status set to ${assetStatus}.`),
+              recordWorkOrderEvent(data.id, "asset_status_updated", machineDown ? "Equipment marked offline/down." : `Equipment status set to ${assetStatus}.`),
               "Activity log timed out.",
               8000
             ).catch((logError) => warnings.push(`history did not update: ${logError.message}`));
