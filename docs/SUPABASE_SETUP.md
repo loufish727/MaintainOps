@@ -123,6 +123,14 @@ npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay
 npx supabase secrets set RESEND_API_KEY="paste-provider-key" REQUEST_EMAIL_FROM="MaintainOps <requests@your-verified-domain.com>" REQUEST_EMAIL_APP_URL="https://loufish727.github.io/MaintainOps" --project-ref lbphkzznvvumemdkqoay
 ```
 
+For the Taylor beta no-new-paid-provider path, the same function can send through Google Apps Script instead:
+
+```powershell
+npx supabase secrets set GOOGLE_SCRIPT_WEBHOOK_URL="paste-google-script-web-app-url" GOOGLE_SCRIPT_WEBHOOK_SECRET="paste-shared-secret" REQUEST_EMAIL_APP_URL="https://loufish727.github.io/MaintainOps" --project-ref lbphkzznvvumemdkqoay
+```
+
+See `docs/GOOGLE_APPS_SCRIPT_REQUEST_EMAILER.md`.
+
 The frontend calls the Edge Function after a request is created, but request creation does not fail if the email sender is not configured. The function is deployed without JWT verification so anonymous public QR submissions can invoke it after the database creates the request. The function only processes existing queued request IDs and sends only to configured company recipients; it does not accept arbitrary recipient addresses from the browser.
 
 ## Recent Required SQL

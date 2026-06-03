@@ -86,6 +86,29 @@ async function sendEmail(apiKey: string, from: string, row: Record<string, unkno
   }
 }
 
+async function sendGoogleScriptEmail(webhookUrl: string, webhookSecret: string, row: Record<string, unknown>, appUrl: string) {
+  const { text, html } = emailBody(row, appUrl);
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      secret: webhookSecret,
+      to: cleanText(row.recipient_email),
+      subject: `MaintainOps request: ${cleanText(row.request_title, "New request")}`,
+      text,
+      html,
+      request_id: cleanText(row.request_id),
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Google Script sender rejected request (${response.status}): ${detail || response.statusText}`);
+  }
+}
+
 serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
@@ -106,13 +129,18 @@ serve(async (request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
   const fromEmail = Deno.env.get("REQUEST_EMAIL_FROM") || "";
+  const googleScriptWebhookUrl = Deno.env.get("GOOGLE_SCRIPT_WEBHOOK_URL") || "";
+  const googleScriptWebhookSecret = Deno.env.get("GOOGLE_SCRIPT_WEBHOOK_SECRET") || "";
   const appUrl = Deno.env.get("REQUEST_EMAIL_APP_URL") || "";
 
   if (!supabaseUrl || !serviceRoleKey) {
     return jsonResponse({ error: "Supabase service credentials are not configured" }, 500);
   }
 
-  if (!resendApiKey || !fromEmail) {
+  const hasResendSender = Boolean(resendApiKey && fromEmail);
+  const hasGoogleScriptSender = Boolean(googleScriptWebhookUrl && googleScriptWebhookSecret);
+
+  if (!hasResendSender && !hasGoogleScriptSender) {
     return jsonResponse({ sent: 0, skipped: true, reason: "email_sender_not_configured" });
   }
 
@@ -154,7 +182,11 @@ serve(async (request) => {
     }
 
     try {
-      await sendEmail(resendApiKey, fromEmail, row, appUrl);
+      if (hasResendSender) {
+        await sendEmail(resendApiKey, fromEmail, row, appUrl);
+      } else {
+        await sendGoogleScriptEmail(googleScriptWebhookUrl, googleScriptWebhookSecret, row, appUrl);
+      }
       sent += 1;
       await supabase
         .schema("private")
