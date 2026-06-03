@@ -2586,6 +2586,7 @@ function renderWorkspace() {
     return counts;
   }, {});
   const runningAssetCount = locationAssets.filter((asset) => asset.status === "running").length;
+  const degradedAssetCount = locationAssets.filter((asset) => asset.status === "degraded").length;
   const downAssetCount = locationAssets.filter((asset) => asset.status === "offline").length;
   const activeAssetStatusFilter = workspaceUiState.getAssetStatusFilter();
   const activeAssetTypeFilter = workspaceUiState.getAssetTypeFilter();
@@ -2597,6 +2598,14 @@ function renderWorkspace() {
       statusFilter: "running",
       detail: "Equipment currently marked running.",
       empty: "No equipment marked running.",
+    },
+    {
+      label: "Degraded",
+      count: degradedAssetCount,
+      tone: "status-open",
+      statusFilter: "degraded",
+      detail: "Known issue, still usable.",
+      empty: "No degraded equipment.",
     },
     {
       label: "Offline / Down",
