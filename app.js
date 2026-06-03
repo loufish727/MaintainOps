@@ -4026,6 +4026,7 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
+    scrollToQuickFixForm: scrollQuickFixFormIntoView,
     setWorkOrderSearchMode,
   });
 
@@ -4039,7 +4040,6 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
-    scrollToQuickFixForm: scrollQuickFixFormIntoView,
   });
 
   bindWorkspaceSubmitRequestCommandEvents({

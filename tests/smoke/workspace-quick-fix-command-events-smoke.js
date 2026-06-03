@@ -34,6 +34,7 @@ const changes = [];
 let searchMode = true;
 let storageWrite = null;
 let renderCount = 0;
+let scrollCount = 0;
 
 bindWorkspaceQuickFixCommandEvents({
   documentRef: createDocument([button]),
@@ -58,6 +59,9 @@ bindWorkspaceQuickFixCommandEvents({
   renderWorkspace: () => {
     renderCount += 1;
   },
+  scrollToQuickFixForm: () => {
+    scrollCount += 1;
+  },
 });
 
 button.dispatch("click");
@@ -74,6 +78,7 @@ assert.deepEqual(changes, [
 assert.equal(searchMode, false);
 assert.deepEqual(storageWrite, { key: "maintainops.activeSection", value: "mywork" });
 assert.equal(renderCount, 1);
+assert.equal(scrollCount, 1);
 
 bindWorkspaceQuickFixCommandEvents({
   documentRef: createDocument([button]),

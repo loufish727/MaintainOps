@@ -9,6 +9,7 @@
   function bindWorkspaceQuickFixCommandEvents(options = {}) {
     const doc = options.documentRef || document;
     const state = options.state;
+    const scrollToQuickFixForm = typeof options.scrollToQuickFixForm === "function" ? options.scrollToQuickFixForm : () => {};
 
     if (!state || typeof options.renderWorkspace !== "function") return;
 
@@ -27,6 +28,7 @@
         options.setWorkOrderSearchMode(false);
         storage.setItem("maintainops.activeSection", "mywork");
         options.renderWorkspace();
+        scrollToQuickFixForm();
       });
     });
   }
