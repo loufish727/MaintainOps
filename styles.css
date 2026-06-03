@@ -2816,7 +2816,8 @@ textarea {
 }
 
 .command-card:hover,
-.command-card:focus-visible {
+.command-card:focus-visible,
+.command-card.active {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
 }

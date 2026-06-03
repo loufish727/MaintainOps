@@ -2,8 +2,10 @@
   function createEmptyStateTextHelpers({
     getSearchQuery,
     getAssetStatusFilter,
+    getAssetTypeFilter,
     getPartSearchQuery,
     getPartInventoryFilter,
+    assetTypeLabel,
     assetStatusLabel,
   }) {
     function requestEmptyStateText(filter) {
@@ -15,8 +17,10 @@
 
     function assetEmptyStateText() {
       const assetStatusFilter = getAssetStatusFilter();
+      const assetTypeFilter = getAssetTypeFilter ? getAssetTypeFilter() : "all";
       if (getSearchQuery().trim()) return "No equipment matches this search.";
       if (assetStatusFilter !== "all") return `No ${assetStatusLabel(assetStatusFilter).toLowerCase()} equipment found.`;
+      if (assetTypeFilter !== "all") return `No ${assetTypeLabel(assetTypeFilter).toLowerCase()} equipment found.`;
       return "No equipment added yet.";
     }
 

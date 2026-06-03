@@ -8,6 +8,7 @@
   const STORAGE_KEYS = {
     activeSection: "maintainops.activeSection",
     assetStatusFilter: "maintainops.assetStatusFilter",
+    assetTypeFilter: "maintainops.assetTypeFilter",
     partInventoryFilter: "maintainops.partInventoryFilter",
     partSearchQuery: "maintainops.partSearchQuery",
     myWorkFilter: "maintainops.myWorkFilter",
@@ -80,6 +81,7 @@
       proceduresPage: readPage(storage, STORAGE_KEYS.proceduresPage),
       membersPage: readPage(storage, STORAGE_KEYS.membersPage),
       assetStatusFilter: readStorage(storage, STORAGE_KEYS.assetStatusFilter, "all"),
+      assetTypeFilter: readStorage(storage, STORAGE_KEYS.assetTypeFilter, "all"),
       partInventoryFilter: readStorage(storage, STORAGE_KEYS.partInventoryFilter, "all"),
       partSearchQuery: readStorage(storage, STORAGE_KEYS.partSearchQuery, ""),
     };
@@ -161,6 +163,8 @@
       resetMembersPage: () => resetPage("membersPage", STORAGE_KEYS.membersPage),
       getAssetStatusFilter: () => state.assetStatusFilter,
       setAssetStatusFilter: (value) => setValue("assetStatusFilter", value, STORAGE_KEYS.assetStatusFilter),
+      getAssetTypeFilter: () => state.assetTypeFilter,
+      setAssetTypeFilter: (value) => setValue("assetTypeFilter", value, STORAGE_KEYS.assetTypeFilter),
       getPartInventoryFilter: () => state.partInventoryFilter,
       setPartInventoryFilter: (value) => setValue("partInventoryFilter", value, STORAGE_KEYS.partInventoryFilter),
       getPartSearchQuery: () => state.partSearchQuery,

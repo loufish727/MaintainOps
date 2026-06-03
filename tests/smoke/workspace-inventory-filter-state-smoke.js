@@ -44,10 +44,12 @@ const storage = createStorage({
 const state = createWorkspaceUiState({ storage });
 const lowPartsButton = createButton({ partInventoryFilter: "low" });
 const runningAssetButton = createButton({ assetStatusFilter: "running" });
+const toolingAssetButton = createButton({ assetTypeFilter: "tooling" });
 const doc = {
   querySelectorAll(selector) {
     if (selector === "[data-part-inventory-filter]") return [lowPartsButton];
     if (selector === "[data-asset-status-filter]") return [runningAssetButton];
+    if (selector === "[data-asset-type-filter]") return [toolingAssetButton];
     return [];
   },
 };
@@ -74,12 +76,27 @@ assert.equal(renderCount, 1);
 
 runningAssetButton.dispatch("click");
 assert.equal(state.getAssetStatusFilter(), "running");
+assert.equal(state.getAssetTypeFilter(), "all");
 assert.equal(state.getAssetsPage(), 1);
 assert.equal(storage.values["maintainops.assetStatusFilter"], "running");
+assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
 assert.equal(storage.values["maintainops.assetsPage"], "1");
 assert.equal(renderCount, 2);
 
+toolingAssetButton.dispatch("click");
+assert.equal(state.getAssetStatusFilter(), "all");
+assert.equal(state.getAssetTypeFilter(), "tooling");
+assert.equal(storage.values["maintainops.assetStatusFilter"], "all");
+assert.equal(storage.values["maintainops.assetTypeFilter"], "tooling");
+assert.equal(renderCount, 3);
+
+toolingAssetButton.dispatch("click");
+assert.equal(state.getAssetTypeFilter(), "all");
+assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
+assert.equal(renderCount, 4);
+
+runningAssetButton.dispatch("click");
 runningAssetButton.dispatch("click");
 assert.equal(state.getAssetStatusFilter(), "all");
 assert.equal(storage.values["maintainops.assetStatusFilter"], "all");
-assert.equal(renderCount, 3);
+assert.equal(renderCount, 6);

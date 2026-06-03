@@ -26,6 +26,20 @@
           ? "all"
           : button.dataset.assetStatusFilter;
         state.setAssetStatusFilter(nextFilter);
+        if (state.setAssetTypeFilter) state.setAssetTypeFilter("all");
+        options.resetAssetsPage();
+        options.renderWorkspace();
+      });
+    });
+
+    doc.querySelectorAll("[data-asset-type-filter]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!state.getAssetTypeFilter || !state.setAssetTypeFilter) return;
+        const nextFilter = state.getAssetTypeFilter() === button.dataset.assetTypeFilter
+          ? "all"
+          : button.dataset.assetTypeFilter;
+        state.setAssetTypeFilter(nextFilter);
+        if (state.setAssetStatusFilter) state.setAssetStatusFilter("all");
         options.resetAssetsPage();
         options.renderWorkspace();
       });

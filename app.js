@@ -685,6 +685,7 @@ const {
 } = createAssetHierarchyDisplayHelpers({
   getAssets: () => assets,
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
+  getAssetTypeFilter: () => workspaceUiState.getAssetTypeFilter(),
   matchesActiveLocation,
   matchesSearch,
 });
@@ -751,8 +752,10 @@ const {
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
   getSearchQuery: () => workspaceUiState.getSearchQuery(),
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
+  getAssetTypeFilter: () => workspaceUiState.getAssetTypeFilter(),
   getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
+  assetTypeLabel,
   assetStatusLabel,
 });
 const {
@@ -2561,9 +2564,6 @@ function renderWorkspace() {
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
   const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
-  if (activeSection === "assets" && workspaceUiState.getAssetStatusFilter() !== "all") {
-    workspaceUiState.setAssetStatusFilter("all");
-  }
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
@@ -2587,11 +2587,14 @@ function renderWorkspace() {
   }, {});
   const runningAssetCount = locationAssets.filter((asset) => asset.status === "running").length;
   const downAssetCount = locationAssets.filter((asset) => asset.status === "offline").length;
+  const activeAssetStatusFilter = workspaceUiState.getAssetStatusFilter();
+  const activeAssetTypeFilter = workspaceUiState.getAssetTypeFilter();
   const assetTypeSummaryCards = [
     {
       label: "Running",
       count: runningAssetCount,
       tone: "status-completed",
+      statusFilter: "running",
       detail: "Equipment currently marked running.",
       empty: "No equipment marked running.",
     },
@@ -2599,6 +2602,7 @@ function renderWorkspace() {
       label: "Down",
       count: downAssetCount,
       tone: "status-blocked",
+      statusFilter: "offline",
       detail: "Equipment currently marked offline.",
       empty: "No equipment marked down.",
     },
@@ -2607,6 +2611,7 @@ function renderWorkspace() {
       label: "Primary",
       count: assetTypeCounts.machine || 0,
       tone: "command-owner",
+      typeFilter: "machine",
       detail: "Main machines, lines, and standalone equipment.",
       empty: "No primary equipment yet.",
     },
@@ -2615,6 +2620,7 @@ function renderWorkspace() {
       label: "Sub Equipment",
       count: assetTypeCounts.secondary_machine || 0,
       tone: "command-equipment",
+      typeFilter: "secondary_machine",
       detail: "Major sections under a main machine or line.",
       empty: "No sub equipment yet.",
     },
@@ -2623,6 +2629,7 @@ function renderWorkspace() {
       label: "Tooling / Setup",
       count: assetTypeCounts.tooling || 0,
       tone: "command-equipment",
+      typeFilter: "tooling",
       detail: "Roll tooling, die sets, profiles, and setup records.",
       empty: "No tooling/setup records yet.",
     },
@@ -2631,6 +2638,7 @@ function renderWorkspace() {
       label: "Components",
       count: assetTypeCounts.component || 0,
       tone: "command-equipment",
+      typeFilter: "component",
       detail: "Tracked equipment components; inventory parts stay in detail.",
       empty: "No component records yet.",
     },
@@ -2639,6 +2647,7 @@ function renderWorkspace() {
       label: "Shop Items",
       count: assetTypeCounts.shop_item || 0,
       tone: "command-equipment",
+      typeFilter: "shop_item",
       detail: "Support equipment or shop assets worth tracking.",
       empty: "No shop item records yet.",
     },
@@ -2647,12 +2656,16 @@ function renderWorkspace() {
     <section class="work-command-summary asset-command-summary asset-master-summary" aria-label="Equipment master summary">
       ${assetTypeSummaryCards.map((card) => {
         const count = card.count || 0;
+        const active = (card.statusFilter && activeAssetStatusFilter === card.statusFilter) || (card.typeFilter && activeAssetTypeFilter === card.typeFilter);
+        const filterAttribute = card.statusFilter
+          ? `data-asset-status-filter="${escapeHtml(card.statusFilter)}"`
+          : `data-asset-type-filter="${escapeHtml(card.typeFilter)}"`;
         return `
-          <article class="command-card ${card.tone} ${count ? "" : "empty"}">
+          <button class="command-card ${card.tone} ${count ? "" : "empty"} ${active ? "active" : ""}" ${filterAttribute} aria-pressed="${active}" type="button">
             <span>${escapeHtml(card.label)}</span>
             <strong>${count}</strong>
             <small>${escapeHtml(count ? card.detail : card.empty)}</small>
-          </article>
+          </button>
         `;
       }).join("")}
     </section>

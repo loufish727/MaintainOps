@@ -26,6 +26,7 @@
       return deps.getAssets().filter((asset) => {
         if (!deps.matchesActiveLocation(asset)) return false;
         if (deps.getAssetStatusFilter() !== "all" && asset.status !== deps.getAssetStatusFilter()) return false;
+        if (deps.getAssetTypeFilter && deps.getAssetTypeFilter() !== "all" && (asset.asset_type || "machine") !== deps.getAssetTypeFilter()) return false;
         return deps.matchesSearch([
           asset.name,
           asset.asset_code,
