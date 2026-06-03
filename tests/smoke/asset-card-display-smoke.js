@@ -23,7 +23,7 @@ const enabledHtml = renderAssetCard({
 });
 
 assert.match(enabledHtml, /class="chip asset-running">running<\/span>/);
-assert.match(enabledHtml, /class="safety-check-note">safety check enabled<\/span>/);
+assert.match(enabledHtml, /class="safety-check-note">safety devices identified<\/span>/);
 assert.doesNotMatch(enabledHtml, /chip overdue">safety check/);
 
 const disabledHtml = renderAssetCard({
@@ -35,6 +35,6 @@ const disabledHtml = renderAssetCard({
   safety_devices_required: false,
 });
 
-assert.match(disabledHtml, /class="safety-check-note disabled">safety check off<\/span>/);
+assert.match(disabledHtml, /class="safety-check-note disabled">no safety devices identified<\/span>/);
 
 console.log("asset card display smoke passed");
