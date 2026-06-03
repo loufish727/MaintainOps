@@ -243,7 +243,10 @@
           </section>
 
           <section id="asset-linked-parts-target">
-            <h3>Linked Parts</h3>
+            <div class="panel-header compact">
+              <h3>Linked Parts</h3>
+              <button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>
+            </div>
             ${assetPartsReady ? `
               <form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
                 <label>Part

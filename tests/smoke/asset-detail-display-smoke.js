@@ -116,6 +116,8 @@ assert.match(html, /Open Work/);
 assert.match(html, /Completed History/);
 assert.match(html, /PM Schedules/);
 assert.match(html, /Linked Parts/);
+assert.match(html, /data-section="parts"/);
+assert.match(html, /Go to Parts/);
 assert.match(html, /data-attach-asset-part="asset-1"/);
 assert.match(html, /data-remove-asset-part="asset-part-1"/);
 assert.match(html, /Drive Belt - B-42/);
