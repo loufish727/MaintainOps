@@ -114,7 +114,7 @@ Setup steps:
 3. Deploy the Edge Function:
 
 ```powershell
-npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay
+npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay --no-verify-jwt
 ```
 
 4. Set the email-provider secrets. The current function expects Resend:
@@ -123,7 +123,7 @@ npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay
 npx supabase secrets set RESEND_API_KEY="paste-provider-key" REQUEST_EMAIL_FROM="MaintainOps <requests@your-verified-domain.com>" REQUEST_EMAIL_APP_URL="https://loufish727.github.io/MaintainOps" --project-ref lbphkzznvvumemdkqoay
 ```
 
-The frontend calls the Edge Function after a request is created, but request creation does not fail if the email sender is not configured. This keeps the maintenance request durable even during email-provider outages.
+The frontend calls the Edge Function after a request is created, but request creation does not fail if the email sender is not configured. The function is deployed without JWT verification so anonymous public QR submissions can invoke it after the database creates the request. The function only processes existing queued request IDs and sends only to configured company recipients; it does not accept arbitrary recipient addresses from the browser.
 
 ## Recent Required SQL
 
