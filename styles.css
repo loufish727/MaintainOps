@@ -3176,34 +3176,10 @@ textarea {
 
 .asset-card .chip {
   min-height: 24px;
-  border-color: color-mix(in srgb, var(--line) 78%, var(--muted));
-  background: color-mix(in srgb, var(--surface-3) 86%, transparent);
-  color: var(--muted);
   padding: 4px 9px;
   font-size: 0.72rem;
   font-weight: 700;
-  box-shadow: none;
   text-transform: none;
-}
-
-.asset-card .chip.asset-running,
-.asset-card .chip.asset-watch,
-.asset-card .chip.asset-degraded,
-.asset-card .chip.asset-offline {
-  border-color: color-mix(in srgb, currentColor 32%, var(--line));
-  background: color-mix(in srgb, currentColor 11%, var(--surface-3));
-}
-
-.asset-card .chip.asset-running { color: var(--asset-running-ink); }
-.asset-card .chip.asset-watch { color: var(--asset-watch-ink); }
-.asset-card .chip.asset-degraded { color: var(--asset-degraded-ink); }
-.asset-card .chip.asset-offline { color: var(--asset-offline-ink); }
-
-.asset-card .chip.overdue {
-  border-color: color-mix(in srgb, var(--yellow) 42%, var(--line));
-  background: color-mix(in srgb, var(--yellow) 12%, var(--surface-3));
-  color: color-mix(in srgb, var(--yellow) 72%, var(--ink));
-  box-shadow: none;
 }
 
 .asset-card p {
