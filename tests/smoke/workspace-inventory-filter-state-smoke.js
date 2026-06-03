@@ -46,11 +46,14 @@ const lowPartsButton = createButton({ partInventoryFilter: "low" });
 const runningAssetButton = createButton({ assetStatusFilter: "running" });
 const degradedAssetButton = createButton({ assetStatusFilter: "degraded" });
 const toolingAssetButton = createButton({ assetTypeFilter: "tooling" });
+const areaSelect = createButton({ assetAreaFilter: "Bay 1" });
+areaSelect.value = "Bay 1";
 const doc = {
   querySelectorAll(selector) {
     if (selector === "[data-part-inventory-filter]") return [lowPartsButton];
     if (selector === "[data-asset-status-filter]") return [runningAssetButton, degradedAssetButton];
     if (selector === "[data-asset-type-filter]") return [toolingAssetButton];
+    if (selector === "[data-asset-area-filter]") return [areaSelect];
     return [];
   },
 };
@@ -111,3 +114,17 @@ assert.equal(storage.values["maintainops.assetStatusFilter"], "degraded");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
 assert.equal(storage.values["maintainops.assetsPage"], "1");
 assert.equal(renderCount, 7);
+
+state.setAssetsPage(5);
+areaSelect.dispatch("change");
+assert.equal(state.getAssetAreaFilter(), "Bay 1");
+assert.equal(state.getAssetsPage(), 1);
+assert.equal(storage.values["maintainops.assetAreaFilter"], "Bay 1");
+assert.equal(storage.values["maintainops.assetsPage"], "1");
+assert.equal(renderCount, 8);
+
+areaSelect.value = "";
+areaSelect.dispatch("change");
+assert.equal(state.getAssetAreaFilter(), "all");
+assert.equal(storage.values["maintainops.assetAreaFilter"], "all");
+assert.equal(renderCount, 9);

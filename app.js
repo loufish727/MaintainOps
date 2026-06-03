@@ -686,6 +686,7 @@ const {
   getAssets: () => assets,
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
   getAssetTypeFilter: () => workspaceUiState.getAssetTypeFilter(),
+  getAssetAreaFilter: () => workspaceUiState.getAssetAreaFilter(),
   matchesActiveLocation,
   matchesSearch,
 });
@@ -2564,6 +2565,13 @@ function renderWorkspace() {
   const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
   const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
   const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
+  const locationAssets = assets.filter(matchesActiveLocation);
+  const assetAreaOptions = [...new Set(locationAssets.map((asset) => String(asset.location || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+  if (workspaceUiState.getAssetAreaFilter() !== "all" && !assetAreaOptions.includes(workspaceUiState.getAssetAreaFilter())) {
+    workspaceUiState.setAssetAreaFilter("all");
+  }
+  const activeAssetAreaFilter = workspaceUiState.getAssetAreaFilter();
   const visibleAssets = filteredAssets();
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
@@ -2580,7 +2588,6 @@ function renderWorkspace() {
   if (workspaceUiState.getAssetsPage() < 1) workspaceUiState.setAssetsPage(1);
   const assetsPage = workspaceUiState.getAssetsPage();
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
-  const locationAssets = assets.filter(matchesActiveLocation);
   const assetTypeCounts = ASSET_TYPE_OPTIONS.reduce((counts, type) => {
     counts[type] = locationAssets.filter((asset) => (asset.asset_type || "machine") === type).length;
     return counts;
@@ -2590,6 +2597,17 @@ function renderWorkspace() {
   const downAssetCount = locationAssets.filter((asset) => asset.status === "offline").length;
   const activeAssetStatusFilter = workspaceUiState.getAssetStatusFilter();
   const activeAssetTypeFilter = workspaceUiState.getAssetTypeFilter();
+  const renderAssetAreaFilter = () => `
+    <div class="asset-area-filter relationship-detail asset" aria-label="Equipment area filter">
+      <label>Area / spot
+        <select data-asset-area-filter>
+          <option value="all" ${activeAssetAreaFilter === "all" ? "selected" : ""}>Display all areas</option>
+          ${assetAreaOptions.map((area) => `<option value="${escapeHtml(area)}" ${activeAssetAreaFilter === area ? "selected" : ""}>${escapeHtml(area)}</option>`).join("")}
+        </select>
+      </label>
+      <span>${activeAssetAreaFilter === "all" ? "Showing all equipment areas." : `Showing ${escapeHtml(activeAssetAreaFilter)}.`}</span>
+    </div>
+  `;
   const assetTypeSummaryCards = [
     {
       label: "Running",
@@ -2931,6 +2949,7 @@ function renderWorkspace() {
               <div><strong>Offline / Down</strong><span>Do not count on this equipment.</span></div>
             </section>
             ${renderAssetMasterSummary()}
+            ${renderAssetAreaFilter()}
             <div class="asset-list">
               ${pagedAssets.map(renderAssetCard).join("") || `<p class="muted">${assetEmptyStateText()}</p>`}
             </div>

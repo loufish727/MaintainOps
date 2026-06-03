@@ -44,6 +44,15 @@
         options.renderWorkspace();
       });
     });
+
+    doc.querySelectorAll("[data-asset-area-filter]").forEach((select) => {
+      select.addEventListener("change", () => {
+        if (!state.setAssetAreaFilter) return;
+        state.setAssetAreaFilter(select.value || "all");
+        options.resetAssetsPage();
+        options.renderWorkspace();
+      });
+    });
   }
 
   window.MaintainOpsWorkspaceInventoryFilterEvents = {

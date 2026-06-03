@@ -3183,6 +3183,30 @@ textarea {
   margin-top: 14px;
 }
 
+.asset-area-filter {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  align-items: end;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.asset-area-filter label {
+  margin: 0;
+}
+
+.asset-area-filter span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 700px) {
+  .asset-area-filter {
+    grid-template-columns: 1fr;
+  }
+}
+
 .equipment-status-guide {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
