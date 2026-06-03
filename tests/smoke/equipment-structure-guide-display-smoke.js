@@ -12,8 +12,14 @@ assert.match(html, /Structure Guide/);
 assert.match(html, /Machine \/ Line/);
 assert.match(html, /Sub-assembly/);
 assert.match(html, /Tooling \/ Setup/);
-assert.match(html, /Component \/ Part/);
+assert.match(html, /Component/);
+assert.match(html, /Machine sub-history/);
+assert.match(html, /Part/);
+assert.match(html, /Inventory item/);
+assert.match(html, /Shop Item/);
+assert.match(html, /Standalone support asset/);
+assert.match(html, /part = inventory/);
 assert.match(html, /Roll former rule/);
-assert.match(html, /station is usually a position/);
+assert.match(html, /station = position on the machine/);
 
 console.log("equipment structure guide display smoke passed");

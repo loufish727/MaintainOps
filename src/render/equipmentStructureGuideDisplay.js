@@ -24,12 +24,23 @@
               <p>Use for roll tooling sets, die sets, profile setups, or station tooling worth tracking separately.</p>
             </article>
             <article>
-              <span>Component / Part</span>
-              <strong>Replaceable item</strong>
-              <p>Use linked parts for bearings, sensors, VFDs, cylinders, valves, spacers, and common spares.</p>
+              <span>Component</span>
+              <strong>Machine sub-history</strong>
+              <p>Use when a piece of the machine needs its own repairs, PM, adjustments, serial, or recurring issue history.</p>
+            </article>
+            <article>
+              <span>Part</span>
+              <strong>Inventory item</strong>
+              <p>Use for stocked, purchased, or consumed items like bearings, belts, sensors, fuses, filters, bolts, seals, and common spares.</p>
+            </article>
+            <article>
+              <span>Shop Item</span>
+              <strong>Standalone support asset</strong>
+              <p>Use for tools or support equipment worth tracking, like welders, test meters, portable pumps, ladders, and tool carts.</p>
             </article>
           </div>
-          <p class="guide-note"><strong>Roll former rule:</strong> a station is usually a position. Track it as tooling/setup only when the roll set, adjustment, serial, PM, or recurring defect needs its own history.</p>
+          <p class="guide-note"><strong>Quick rule:</strong> part = inventory. Component = machine sub-history. Shop item = standalone support asset.</p>
+          <p class="guide-note"><strong>Roll former rule:</strong> station = position on the machine. Track it separately only if it needs its own maintenance history.</p>
         </section>
       `;
     }
