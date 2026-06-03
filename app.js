@@ -3303,6 +3303,19 @@ function bindAutoGrowTextareas() {
   bindWorkspaceTextareaAutoGrow();
 }
 
+function scrollEquipmentDetailToActions() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector("#equipment-action-cards") || document.querySelector(".asset-command-summary");
+      if (target?.scrollIntoView) {
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  });
+}
+
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
@@ -4071,18 +4084,6 @@ function bindWorkspaceEvents() {
       setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
     },
     renderWorkspace,
-    scrollToDetailTop: () => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          const target = document.querySelector("#equipment-action-cards") || document.querySelector(".asset-command-summary");
-          if (target?.scrollIntoView) {
-            target.scrollIntoView({ behavior: "auto", block: "start" });
-            return;
-          }
-          window.scrollTo({ top: 0, behavior: "auto" });
-        });
-      });
-    },
   });
 
   bindMessageWorkflowEvents();
@@ -4131,6 +4132,7 @@ function bindWorkspaceEvents() {
       },
     },
     renderWorkspace,
+    scrollToDetailTop: scrollEquipmentDetailToActions,
   });
 
   bindWorkspaceSearchEvents({
