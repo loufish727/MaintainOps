@@ -14,6 +14,11 @@
               <p>Use for the progressive roll former, ASC line, folder, press, or machine people open work against.</p>
             </article>
             <article>
+              <span>Forklift</span>
+              <strong>Mobile powered equipment</strong>
+              <p>Use for lift trucks that need repairs, inspections, battery/propane notes, attachments, PM, or recurring issue history.</p>
+            </article>
+            <article>
               <span>Sub-assembly</span>
               <strong>Major functional section</strong>
               <p>Use for uncoiler, forming section, shear, HPU, controls cabinet, conveyor, or safety circuit.</p>

@@ -26,7 +26,7 @@ const workOrder = {
 };
 
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
-  ASSET_TYPE_OPTIONS: ["machine", "secondary_machine", "tooling", "component"],
+  ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
   getAssets: () => [
     asset,
     { id: "parent-1", name: "Line 1", asset_type: "line", status: "running" },
@@ -98,6 +98,7 @@ assert.match(html, /Sub-assembly/);
 assert.match(html, /Tooling \/ Setup/);
 assert.match(html, /Roll former rule/);
 assert.match(html, /<option value="tooling"\s*>tooling<\/option>/);
+assert.match(html, /<option value="forklift"\s*>forklift<\/option>/);
 assert.match(html, /data-jump-work-section="edit-asset-status-field"/);
 assert.match(html, /data-jump-work-section="asset-linked-parts-target"/);
 assert.match(html, /data-jump-work-section="asset-documents-target"/);
