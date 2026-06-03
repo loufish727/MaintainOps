@@ -36,8 +36,8 @@
   --rel-comment-ink: #475a96;
   --rel-photo-bg: #f4eef7;
   --rel-photo-ink: #74518a;
-  --asset-running-bg: #e7f5eb;
-  --asset-running-ink: #2e7b4f;
+  --asset-running-bg: #dcf8e6;
+  --asset-running-ink: #187a3f;
   --asset-watch-bg: #fff0d9;
   --asset-watch-ink: #a06b19;
   --asset-degraded-bg: #fde9e9;
@@ -86,8 +86,8 @@
   --rel-comment-ink: #a8b8f0;
   --rel-photo-bg: #33263c;
   --rel-photo-ink: #d5a9ef;
-  --asset-running-bg: #1d3529;
-  --asset-running-ink: #76c892;
+  --asset-running-bg: #173f29;
+  --asset-running-ink: #8beaab;
   --asset-watch-bg: #362d1c;
   --asset-watch-ink: #e2aa4c;
   --asset-degraded-bg: #3a2222;
@@ -6567,8 +6567,8 @@ textarea {
   --rel-comment-ink: #9bb9ff;
   --rel-photo-bg: rgba(213, 169, 239, 0.12);
   --rel-photo-ink: #d5a9ef;
-  --asset-running-bg: rgba(114, 211, 155, 0.12);
-  --asset-running-ink: #72d39b;
+  --asset-running-bg: rgba(139, 234, 171, 0.15);
+  --asset-running-ink: #8beaab;
   --asset-watch-bg: rgba(240, 188, 99, 0.13);
   --asset-watch-ink: #f0bc63;
   --asset-degraded-bg: rgba(239, 118, 118, 0.13);
