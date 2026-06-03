@@ -990,10 +990,7 @@ const {
 } = createAssetCardDisplayHelpers({
   escapeHtml,
   assetTypeLabel,
-  assetStatusLabel,
   getWorkOrders: () => workOrders,
-  getAssetParts: () => assetParts,
-  getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getActiveAssetId: () => activeAssetId,
   parentAssetFor,
   childAssetsFor,
@@ -2602,12 +2599,12 @@ function renderWorkspace() {
       empty: "No equipment marked running.",
     },
     {
-      label: "Offline / Down",
+      label: "Down",
       count: downAssetCount,
       tone: "status-blocked",
       statusFilter: "offline",
-      detail: "Equipment currently marked offline/down.",
-      empty: "No equipment marked offline/down.",
+      detail: "Equipment currently marked offline.",
+      empty: "No equipment marked down.",
     },
     {
       type: "machine",

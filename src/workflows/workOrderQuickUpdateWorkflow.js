@@ -86,7 +86,7 @@
           if (assetError) {
             warnings.push(`equipment status did not update: ${assetError.message}`);
           } else {
-            await deps.recordWorkOrderEvent(deps.getActiveWorkOrderId(), "asset_status_updated", "Equipment marked offline/down.");
+            await deps.recordWorkOrderEvent(deps.getActiveWorkOrderId(), "asset_status_updated", "Equipment marked down/offline.");
           }
         }
 

@@ -14,7 +14,6 @@
   }
 
   function assetStatusLabel(status) {
-    if (status === "offline") return "Offline / Down";
     return String(status || "running")
       .replaceAll("_", " ")
       .replace(/\b\w/g, (letter) => letter.toUpperCase());

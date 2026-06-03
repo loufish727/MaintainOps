@@ -2477,11 +2477,7 @@ textarea {
   background: linear-gradient(180deg, #cb86ec, #603081);
   color: #17081f;
 }
-.chip.asset-running {
-  border-color: color-mix(in srgb, var(--asset-running-ink) 48%, var(--line));
-  background: var(--asset-running-bg);
-  color: var(--asset-running-ink);
-}
+.chip.asset-running { background: var(--asset-running-bg); color: var(--asset-running-ink); }
 .chip.asset-watch { background: var(--asset-watch-bg); color: var(--asset-watch-ink); }
 .chip.asset-degraded { background: var(--asset-degraded-bg); color: var(--asset-degraded-ink); }
 .chip.asset-offline { background: var(--asset-offline-bg); color: var(--asset-offline-ink); }
@@ -3161,7 +3157,8 @@ textarea {
 }
 
 .asset-card {
-  display: grid;
+  display: flex;
+  justify-content: space-between;
   gap: 12px;
   padding: 14px;
   cursor: pointer;
@@ -3188,59 +3185,6 @@ textarea {
 .asset-card p {
   margin-bottom: 0;
   color: var(--muted);
-}
-
-.asset-card-main {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.asset-card-context {
-  display: grid;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.asset-card-summary {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.asset-card-summary span {
-  display: grid;
-  gap: 3px;
-  min-height: 58px;
-  align-content: center;
-  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface-3) 84%, transparent);
-  padding: 7px 5px;
-  text-align: center;
-}
-
-.asset-card-summary small {
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 750;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.asset-card-summary strong {
-  color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 780;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 640px) {
-  .asset-card-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .pm-list {
