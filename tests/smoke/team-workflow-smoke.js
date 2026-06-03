@@ -60,6 +60,18 @@ function createQuery(table, calls) {
       calls.push(["upsert", table, payload, options]);
       return Promise.resolve({ error: null });
     },
+    delete() {
+      calls.push(["delete", table]);
+      return {
+        eq(column, value) {
+          calls.push(["eq", table, column, value]);
+          return this;
+        },
+        then(resolve) {
+          return Promise.resolve({ error: null }).then(resolve);
+        },
+      };
+    },
   };
 }
 
@@ -74,13 +86,22 @@ function createQuery(table, calls) {
   const inviteForm = createElement({
     formValues: { email: "new@example.com", role: "technician", default_location_id: "loc-1" },
   });
+  const requestNotificationForm = createElement({
+    formValues: { email: "notify@example.com", label: "Desk", location_id: "loc-1" },
+  });
+  const deleteRequestNotificationButton = createElement({
+    dataset: { deleteRequestNotificationRecipient: "recipient-1" },
+  });
   const documentRef = createDocument({
     "#add-member-form": memberForm,
     "[data-member-role]": [roleForm],
     "#profile-form": profileForm,
     "#team-invite-form": inviteForm,
+    "#request-notification-recipient-form": requestNotificationForm,
+    "[data-delete-request-notification-recipient]": [deleteRequestNotificationButton],
     "#profile-error": { textContent: "" },
     "#team-invite-error": { textContent: "" },
+    "#request-notification-recipient-error": { textContent: "" },
   });
   const calls = [];
   const state = {
@@ -90,8 +111,11 @@ function createQuery(table, calls) {
     loadMembersCount: 0,
     loadTeamInvitesCount: 0,
     teamInvitesReady: true,
+    requestNotificationRecipientsReady: true,
+    requestNotificationRecipientError: "",
     pendingCancelInviteId: "invite-1",
     teamInviteCancelError: "old",
+    loadRequestNotificationRecipientsCount: 0,
   };
 
   const workflow = createTeamWorkflow({
@@ -113,10 +137,14 @@ function createQuery(table, calls) {
     getProfilesByUserId: () => ({ "user-1": { mobile_tech: false } }),
     getTeamInvitesReady: () => state.teamInvitesReady,
     setTeamInvitesReady: (value) => { state.teamInvitesReady = value; },
+    getRequestNotificationRecipientsReady: () => state.requestNotificationRecipientsReady,
+    setRequestNotificationRecipientsReady: (value) => { state.requestNotificationRecipientsReady = value; },
+    setRequestNotificationRecipientError: (value) => { state.requestNotificationRecipientError = value; },
     setPendingCancelInviteId: (value) => { state.pendingCancelInviteId = value; },
     setTeamInviteCancelError: (value) => { state.teamInviteCancelError = value; },
     loadMembers: async () => { state.loadMembersCount += 1; },
     loadTeamInvites: async () => { state.loadTeamInvitesCount += 1; },
+    loadRequestNotificationRecipients: async () => { state.loadRequestNotificationRecipientsCount += 1; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
     render: async () => { state.renders += 1; },
     renderWorkspace: () => { state.renderWorkspaceCount += 1; },
@@ -141,10 +169,21 @@ function createQuery(table, calls) {
   assert.equal(state.teamInviteCancelError, "");
   assert.equal(state.notices.at(-1)[0], "Invite created.");
 
+  await requestNotificationForm.dispatch("submit");
+  assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "request_notification_recipients" && call[2].email === "notify@example.com"));
+  assert.equal(state.loadRequestNotificationRecipientsCount, 1);
+  assert.equal(state.notices.at(-1)[0], "Request email recipient saved.");
+
+  await deleteRequestNotificationButton.dispatch("click");
+  assert.ok(calls.some((call) => call[0] === "delete" && call[1] === "request_notification_recipients"));
+  assert.equal(state.loadRequestNotificationRecipientsCount, 2);
+  assert.equal(state.notices.at(-1)[0], "Request email recipient removed.");
+
+  const renderWorkspaceCountBeforeCancel = state.renderWorkspaceCount;
   await workflow.cancelTeamInvite("invite-1");
   assert.equal(state.pendingCancelInviteId, null);
   assert.equal(state.loadTeamInvitesCount, 1);
-  assert.equal(state.renderWorkspaceCount, 1);
+  assert.equal(state.renderWorkspaceCount, renderWorkspaceCountBeforeCancel + 1);
   assert.equal(state.notices.at(-1)[0], "Invite canceled.");
 
   console.log("team workflow smoke passed");

@@ -125,6 +125,7 @@ const {
   listCompanyMembers,
   listTeamInvites,
   listTeamInvitesLegacy,
+  listRequestNotificationRecipients,
 } = window.MaintainOpsProfilesService;
 const { listParts } = window.MaintainOpsPartsService;
 const { listAssets } = window.MaintainOpsAssetsService;
@@ -337,6 +338,9 @@ let companyMembers = [];
 let teamInvites = [];
 let teamInvitesReady = true;
 let teamInviteCancelError = "";
+let requestNotificationRecipients = [];
+let requestNotificationRecipientsReady = true;
+let requestNotificationRecipientError = "";
 let messageThreads = [];
 let messageThreadMembers = [];
 let messagesByThreadId = {};
@@ -509,6 +513,7 @@ const {
   filteredMembers,
   renderMember,
   renderMyProfileForm,
+  renderRequestNotificationRecipients,
   renderTeamInviteForm,
   renderTeamInvites,
 } = createTeamMemberDisplayHelpers({
@@ -519,6 +524,9 @@ const {
   getTeamInvitesReady: () => teamInvitesReady,
   getTeamInviteCancelError: () => teamInviteCancelError,
   getPendingCancelInviteId: () => pendingCancelInviteId,
+  getRequestNotificationRecipients: () => requestNotificationRecipients,
+  getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
+  getRequestNotificationRecipientError: () => requestNotificationRecipientError,
   getSession: () => session,
   getLocations: () => locations,
   matchesSearch,
@@ -2146,7 +2154,7 @@ async function loadMembers() {
   const { data } = await listCompanyMembers(supabaseClient, activeCompanyId);
 
   companyMembers = data || [];
-  await loadTeamInvites();
+  await Promise.all([loadTeamInvites(), loadRequestNotificationRecipients()]);
 }
 
 async function loadTeamInvites() {
@@ -2175,6 +2183,24 @@ async function loadTeamInvites() {
   }
 
   teamInvites = data || [];
+}
+
+async function loadRequestNotificationRecipients() {
+  if (!requestNotificationRecipientsReady) {
+    requestNotificationRecipients = [];
+    return;
+  }
+  const { data, error } = await listRequestNotificationRecipients(supabaseClient, activeCompanyId);
+
+  if (error) {
+    if (isColumnSchemaError(error, ["request_notification_recipients"]) || error.message.includes("request_notification_recipients")) {
+      requestNotificationRecipientsReady = false;
+    }
+    requestNotificationRecipients = [];
+    return;
+  }
+
+  requestNotificationRecipients = data || [];
 }
 
 async function loadMessageCenter() {
@@ -3023,6 +3049,7 @@ function renderWorkspace() {
             ${renderMyProfileForm()}
             ${renderRoleGuide()}
             ${canManageTeam() ? `
+              ${renderRequestNotificationRecipients(activeLocationId)}
               ${renderTeamInviteForm(activeLocationId)}
               ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
               <details class="developer-details">
@@ -3586,10 +3613,14 @@ const {
   getProfilesByUserId: () => profilesByUserId,
   getTeamInvitesReady: () => teamInvitesReady,
   setTeamInvitesReady: (value) => { teamInvitesReady = value; },
+  getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
+  setRequestNotificationRecipientsReady: (value) => { requestNotificationRecipientsReady = value; },
+  setRequestNotificationRecipientError: (value) => { requestNotificationRecipientError = value; },
   setPendingCancelInviteId: (value) => { pendingCancelInviteId = value; },
   setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
   loadMembers,
   loadTeamInvites,
+  loadRequestNotificationRecipients,
   showNotice,
   render: () => render(),
   renderWorkspace,

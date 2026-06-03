@@ -30,10 +30,19 @@
       .order("created_at", { ascending: false });
   }
 
+  function listRequestNotificationRecipients(supabaseClient, companyId) {
+    return supabaseClient
+      .from("request_notification_recipients")
+      .select("id, company_id, location_id, email, label, is_active, created_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+  }
+
   window.MaintainOpsProfilesService = {
     listProfiles,
     listCompanyMembers,
     listTeamInvites,
     listTeamInvitesLegacy,
+    listRequestNotificationRecipients,
   };
 })();

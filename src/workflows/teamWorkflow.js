@@ -16,6 +16,13 @@
 
       const inviteForm = documentRef.querySelector("#team-invite-form");
       if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
+
+      const requestNotificationForm = documentRef.querySelector("#request-notification-recipient-form");
+      if (requestNotificationForm) requestNotificationForm.addEventListener("submit", createRequestNotificationRecipient);
+
+      documentRef.querySelectorAll("[data-delete-request-notification-recipient]").forEach((button) => {
+        button.addEventListener("click", () => deleteRequestNotificationRecipient(button.dataset.deleteRequestNotificationRecipient));
+      });
     }
 
     async function addCompanyMember(event) {
@@ -214,6 +221,92 @@
       }
     }
 
+    async function createRequestNotificationRecipient(event) {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const errorElement = documentRef.querySelector("#request-notification-recipient-error");
+      const submitButton = formElement.querySelector("button[type='submit']");
+      const form = new FormDataCtor(formElement);
+      if (errorElement) errorElement.textContent = "";
+      if (!deps.getRequestNotificationRecipientsReady()) {
+        if (errorElement) errorElement.textContent = "Run supabase/step-next-request-notification-recipients.sql before routing request emails.";
+        return;
+      }
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Adding...";
+      }
+
+      try {
+        const email = String(form.get("email") || "").trim().toLowerCase();
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().from("request_notification_recipients").insert({
+            company_id: deps.getActiveCompanyId(),
+            location_id: form.get("location_id") || null,
+            email,
+            label: String(form.get("label") || "").trim() || null,
+            is_active: true,
+            created_by: deps.getSession().user.id,
+          }),
+          "Request email recipient save timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) {
+          if (deps.isColumnSchemaError(error, ["request_notification_recipients"]) || error.message.includes("request_notification_recipients")) {
+            deps.setRequestNotificationRecipientsReady(false);
+            throw new Error("Run supabase/step-next-request-notification-recipients.sql before routing request emails.");
+          }
+          throw error;
+        }
+
+        deps.setRequestNotificationRecipientError("");
+        deps.showNotice("Request email recipient saved.");
+        await deps.loadRequestNotificationRecipients();
+        deps.renderWorkspace();
+      } catch (error) {
+        const message = error.message || "Could not save request email recipient.";
+        deps.setRequestNotificationRecipientError(message);
+        if (errorElement) errorElement.textContent = message;
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Add Recipient";
+        }
+      }
+    }
+
+    async function deleteRequestNotificationRecipient(recipientId) {
+      if (!recipientId || !deps.getActiveCompanyId()) return;
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("request_notification_recipients")
+            .delete()
+            .eq("company_id", deps.getActiveCompanyId())
+            .eq("id", recipientId),
+          "Request email recipient remove timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) {
+          if (deps.isColumnSchemaError(error, ["request_notification_recipients"]) || error.message.includes("request_notification_recipients")) {
+            deps.setRequestNotificationRecipientsReady(false);
+            throw new Error("Run supabase/step-next-request-notification-recipients.sql before routing request emails.");
+          }
+          throw error;
+        }
+
+        deps.setRequestNotificationRecipientError("");
+        deps.showNotice("Request email recipient removed.");
+        await deps.loadRequestNotificationRecipients();
+        deps.renderWorkspace();
+      } catch (error) {
+        deps.setRequestNotificationRecipientError(error.message || "Could not remove request email recipient.");
+        deps.renderWorkspace();
+      }
+    }
+
     return {
       bindTeamWorkflowEvents,
       addCompanyMember,
@@ -221,6 +314,8 @@
       updateMyProfile,
       createTeamInvite,
       cancelTeamInvite,
+      createRequestNotificationRecipient,
+      deleteRequestNotificationRecipient,
     };
   }
 

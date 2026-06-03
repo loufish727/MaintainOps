@@ -80,6 +80,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-public-request-links.sql`
 - `step-next-public-request-photo-attach-hardening.sql`
 - `step-next-public-request-rate-limit.sql`
+- `step-next-request-notification-recipients.sql`
 - `step-next-qa-rls-location-fixture.sql`
 - `step-next-record-work-order-part-usage.sql`
 - `step-next-rls-bulletproof-hardening.sql`

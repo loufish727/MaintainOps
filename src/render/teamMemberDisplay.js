@@ -7,6 +7,9 @@
     getTeamInvitesReady,
     getTeamInviteCancelError,
     getPendingCancelInviteId,
+    getRequestNotificationRecipients,
+    getRequestNotificationRecipientsReady,
+    getRequestNotificationRecipientError,
     getSession,
     getLocations,
     matchesSearch,
@@ -88,6 +91,53 @@
       `;
     }
 
+    function requestNotificationLocationLabel(recipient) {
+      if (!recipient.location_id) return "All locations";
+      const location = getLocations().find((item) => item.id === recipient.location_id);
+      return location?.name || "Unknown location";
+    }
+
+    function renderRequestNotificationRecipients(activeLocationId) {
+      const ready = getRequestNotificationRecipientsReady();
+      const recipients = getRequestNotificationRecipients();
+      const locations = getLocations();
+      return `
+        <section class="team-notification-panel relationship-detail comment">
+          <div>
+            <h3>Request Email Recipients</h3>
+            <p class="muted">Choose who should receive new request emails when the backend email sender is enabled. Shared inboxes are allowed.</p>
+          </div>
+          <form class="inline-form team-form" id="request-notification-recipient-form">
+            <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required pattern="[^@\\s]+@[^@\\s]+\\.[^@\\s]+" placeholder="maintenance@company.com" ${ready ? "" : "disabled"}></label>
+            <label>Label<input name="label" maxlength="120" placeholder="Maintenance desk" ${ready ? "" : "disabled"}></label>
+            <label>Applies to
+              <select name="location_id" ${ready ? "" : "disabled"}>
+                <option value="">All locations</option>
+                ${locations.map((location) => `<option value="${escapeHtml(location.id)}" ${location.id === activeLocationId ? "selected" : ""}>${escapeHtml(location.name || "Location")}</option>`).join("")}
+              </select>
+            </label>
+            <button class="secondary-button" type="submit" ${ready ? "" : "disabled"}>Add Recipient</button>
+          </form>
+          <p class="error-text" id="request-notification-recipient-error">${escapeHtml(getRequestNotificationRecipientError() || (ready ? "" : "Run supabase/step-next-request-notification-recipients.sql before routing request emails."))}</p>
+          <div class="member-list compact-list">
+            ${recipients.map((recipient) => `
+              <article class="member-card invite-card">
+                <div>
+                  <strong>${escapeHtml(recipient.label || recipient.email)}</strong>
+                  <p>${escapeHtml(recipient.email)}</p>
+                  <p>${escapeHtml(requestNotificationLocationLabel(recipient))}</p>
+                </div>
+                <div class="button-row">
+                  <span class="chip">${recipient.is_active === false ? "Paused" : "Active"}</span>
+                  <button class="danger-action-button" data-delete-request-notification-recipient="${escapeHtml(recipient.id)}" type="button">Remove</button>
+                </div>
+              </article>
+            `).join("") || `<p class="muted">No request email recipients yet.</p>`}
+          </div>
+        </section>
+      `;
+    }
+
     function renderTeamInviteForm(activeLocationId) {
       const teamInvitesReady = getTeamInvitesReady();
       const locations = getLocations();
@@ -163,6 +213,7 @@
       filteredMembers,
       renderMember,
       renderMyProfileForm,
+      renderRequestNotificationRecipients,
       renderTeamInviteForm,
       renderTeamInvites,
     };

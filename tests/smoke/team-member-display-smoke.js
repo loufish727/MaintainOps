@@ -15,6 +15,9 @@ const helpers = createTeamMemberDisplayHelpers({
   getTeamInvitesReady: () => true,
   getTeamInviteCancelError: () => "Cancel <failed>",
   getPendingCancelInviteId: () => "invite-1",
+  getRequestNotificationRecipients: () => [{ id: "recipient-1", email: "maintenance@example.test", label: "Maintenance Desk", location_id: "loc-1", is_active: true }],
+  getRequestNotificationRecipientsReady: () => true,
+  getRequestNotificationRecipientError: () => "",
   getSession: () => ({ user: { id: "user-1", email: "louie@example.test" } }),
   getLocations: () => [{ id: "loc-1", name: "QA Facility" }],
   matchesSearch: () => true,
@@ -44,6 +47,13 @@ const profile = helpers.renderMyProfileForm();
 assert.match(profile, /id="profile-form"/);
 assert.match(profile, /louie@example\.test/);
 assert.match(profile, /name="mobile_tech" type="checkbox" checked/);
+
+const requestRecipients = helpers.renderRequestNotificationRecipients("loc-1");
+assert.match(requestRecipients, /Request Email Recipients/);
+assert.match(requestRecipients, /maintenance@example\.test/);
+assert.match(requestRecipients, /Maintenance Desk/);
+assert.match(requestRecipients, /QA Facility/);
+assert.match(requestRecipients, /data-delete-request-notification-recipient="recipient-1"/);
 
 const inviteForm = helpers.renderTeamInviteForm("loc-1");
 assert.match(inviteForm, /id="team-invite-form"/);
