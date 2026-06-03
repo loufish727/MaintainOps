@@ -61,7 +61,7 @@
                   ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
                 </select>
               </label>
-              <label>Expected back up / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD"></label>
+              <label>Expected back up / due date<input name="due_at" type="date"></label>
             </div>
           </details>
     
@@ -103,7 +103,7 @@
                 </select>
               </label>
               <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
-              <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized up to 2400px before upload.</small></label>
+              <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional. Choose a saved photo or take a new one. Photos are optimized up to 2400px before upload.</small></label>
               <label>First comment<textarea name="initial_comment" rows="2" placeholder="Add the first update or note for the record."></textarea></label>
             </div>
           </details>

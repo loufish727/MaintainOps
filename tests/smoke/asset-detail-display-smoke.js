@@ -60,6 +60,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   assetTypeLabel: (type) => type,
   renderParentAssetOptions: () => '<option value="parent-1">Line 1</option>',
   renderLocationOptions: () => '<option value="loc-1">Plant 1</option>',
+  renderAssetAreaOptions: (selected) => `<option value="Bay 1" ${selected === "Bay 1" ? "selected" : ""}>Bay 1</option>`,
   assetStatusLabel: (status) => status,
   renderAssetMiniWorkOrder: (row) => `<article data-open-work-order="${row.id}">${row.title}</article>`,
   assetDeleteBlockerMessage: () => "",
@@ -71,6 +72,9 @@ const html = renderAssetDetail();
 
 assert.match(html, /Press 1/);
 assert.match(html, /id="edit-asset-form"/);
+assert.match(html, /name="location_existing"/);
+assert.match(html, /<option value="Bay 1" selected>Bay 1<\/option>/);
+assert.match(html, /name="location_new"/);
 assert.match(html, /aria-label="Equipment summary"/);
 assert.match(html, /<span>Status<\/span>/);
 assert.match(html, /<span>Location<\/span>/);
@@ -152,6 +156,7 @@ const degradedRenderer = createAssetDetailDisplayHelpers({
   assetTypeLabel: (type) => type,
   renderParentAssetOptions: () => "",
   renderLocationOptions: () => '<option value="loc-1">Plant 1</option>',
+  renderAssetAreaOptions: () => "",
   assetStatusLabel: (status) => status === "degraded" ? "Degraded" : status,
   renderAssetMiniWorkOrder: (row) => `<article>${row.title}</article>`,
   assetDeleteBlockerMessage: () => "",

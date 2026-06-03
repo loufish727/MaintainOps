@@ -871,6 +871,7 @@ const {
   renderLocationOptions,
   renderAssetOptions,
   renderParentAssetOptions,
+  renderAssetAreaOptions,
   assetOptionLabel,
 } = createOptionDisplayHelpers({
   escapeHtml,
@@ -2953,7 +2954,11 @@ function renderWorkspace() {
             <form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
               <input name="asset_code" placeholder="Equipment ID">
-              <input name="location" placeholder="Area / line">
+              <select name="location_existing" aria-label="Area / spot">
+                <option value="">Area / spot unset</option>
+                ${renderAssetAreaOptions()}
+              </select>
+              <input name="location_new" placeholder="New area / spot">
               <select name="asset_type" aria-label="Equipment type">
                 ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}
               </select>
@@ -3306,6 +3311,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   assetTypeLabel,
   renderParentAssetOptions,
   renderLocationOptions,
+  renderAssetAreaOptions,
   assetStatusLabel,
   renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage,

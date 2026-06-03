@@ -14,6 +14,7 @@
       assetTypeLabel,
       renderParentAssetOptions,
       renderLocationOptions,
+      renderAssetAreaOptions,
       assetStatusLabel,
       renderAssetMiniWorkOrder,
       assetDeleteBlockerMessage,
@@ -150,7 +151,7 @@
                   <option value="other">Other</option>
                 </select>
               </label>
-              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx" capture="environment"></label>
+              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Choose a saved file or take a new photo.</small></label>
               <p class="error-text" data-asset-document-error="${escapeHtml(asset.id)}">${assetDocumentsReady ? "" : "Run supabase/step-next-asset-documents.sql before uploading equipment files."}</p>
               <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Attach Machine File</button>
             </form>
@@ -199,7 +200,13 @@
                 ${renderLocationOptions(asset.location_id || activeLocationId)}
               </select>
             </label>
-            <label>Area / spot<input name="location" value="${escapeHtml(asset.location || "")}"></label>
+            <label>Area / spot
+              <select name="location_existing">
+                <option value="">Area / spot unset</option>
+                ${renderAssetAreaOptions(asset.location || "")}
+              </select>
+            </label>
+            <label>New area / spot<input name="location_new" placeholder="Use only when this is a new area"></label>
             <label id="edit-asset-status-field">Status
               <select name="status">
                 ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${assetStatusLabel(status)}</option>`).join("")}

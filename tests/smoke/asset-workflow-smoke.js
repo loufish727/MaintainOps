@@ -147,7 +147,8 @@ function createWorkflow(options = {}) {
       name: "Pump 1",
       location_id: "",
       asset_code: "P-1",
-      location: "Line 1",
+      location_existing: "Line 1",
+      location_new: "",
       parent_asset_id: "",
       asset_type: "tooling",
       safety_devices_required: "on",
@@ -155,6 +156,7 @@ function createWorkflow(options = {}) {
   });
   await create.workflow.createAsset({ preventDefault() {}, currentTarget: createForm });
   assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].name === "Pump 1" && call[2].asset_type === "tooling"), true);
+  assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].location === "Line 1"), true);
   assert.equal(create.calls.some((call) => call[0] === "notice" && call[1] === "Equipment added."), true);
   assert.equal(createForm.button.disabled, false);
   assert.equal(createForm.button.textContent, "Add Equipment");
@@ -165,11 +167,14 @@ function createWorkflow(options = {}) {
     formValues: {
       name: "Pump 2",
       location_id: "location-2",
+      location_existing: "Line 1",
+      location_new: "Line 2",
       status: "watch",
     },
   });
   await update.workflow.updateAsset({ preventDefault() {}, currentTarget: editForm });
   assert.equal(update.calls.some((call) => call[0] === "update" && call[1] === "assets" && call[2].status === "watch"), true);
+  assert.equal(update.calls.some((call) => call[0] === "update" && call[1] === "assets" && call[2].location === "Line 2"), true);
   assert.equal(update.calls.some((call) => call[0] === "eq" && call[2] === "id" && call[3] === "asset-1"), true);
 
   const status = createWorkflow();

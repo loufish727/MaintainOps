@@ -5,6 +5,10 @@
     const alertRef = deps.alertRef || alert;
     const CSSRef = deps.CSSRef || CSS;
 
+    function areaSpotFromForm(form) {
+      return String(form.get("location_new") || form.get("location_existing") || form.get("location") || "").trim() || null;
+    }
+
     async function createAsset(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
@@ -23,7 +27,7 @@
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
-          location: String(form.get("location") || "").trim() || null,
+          location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
           asset_type: form.get("asset_type") || "machine",
           safety_devices_required: form.get("safety_devices_required") === "on",
@@ -72,7 +76,7 @@
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
-          location: String(form.get("location") || "").trim() || null,
+          location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
           asset_type: form.get("asset_type") || "machine",
           safety_devices_required: form.get("safety_devices_required") === "on",

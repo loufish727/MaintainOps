@@ -36,10 +36,27 @@
         .join("");
     }
 
+    function assetAreaOptions(selectedArea = "") {
+      const areas = [...new Set(getAssets()
+        .filter(matchesActiveLocation)
+        .map((asset) => String(asset.location || "").trim())
+        .filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+      const cleanSelected = String(selectedArea || "").trim();
+      return cleanSelected && !areas.includes(cleanSelected) ? [cleanSelected, ...areas] : areas;
+    }
+
+    function renderAssetAreaOptions(selectedArea = "") {
+      return assetAreaOptions(selectedArea)
+        .map((area) => `<option value="${escapeHtml(area)}" ${area === selectedArea ? "selected" : ""}>${escapeHtml(area)}</option>`)
+        .join("");
+    }
+
     return {
       renderLocationOptions,
       renderAssetOptions,
       renderParentAssetOptions,
+      renderAssetAreaOptions,
       assetOptionLabel,
     };
   }

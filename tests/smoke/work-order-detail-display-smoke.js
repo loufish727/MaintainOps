@@ -66,6 +66,7 @@ const html = renderWorkOrderDetail();
 assert.match(html, /Hydraulic Leak/);
 assert.match(html, /id="status-select"/);
 assert.match(html, /id="quick-update-work-order-form"/);
+assert.match(html, /name="due_at" type="date" value="2026-06-01"/);
 assert.match(html, /data-copy-downtime="subject"/);
 assert.match(html, /id="edit-work-order-form"/);
 assert.match(html, /id="complete-work-order-form"/);
