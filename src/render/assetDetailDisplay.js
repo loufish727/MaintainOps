@@ -218,7 +218,7 @@
             <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
           </form>
 
-          <section id="asset-linked-equipment-target">
+          <section class="asset-relationship-panel relationship-detail asset" id="asset-linked-equipment-target">
             <h3>Linked Equipment</h3>
             <div class="mini-list asset-link-list">
               ${children.map((child) => `
@@ -230,24 +230,27 @@
             </div>
           </section>
 
-          <section id="asset-open-work-target">
+          <section class="asset-relationship-panel relationship-detail comment" id="asset-open-work-target">
             <h3>Open Work</h3>
             <div class="mini-list">
               ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`}
             </div>
           </section>
 
-          <section>
+          <section class="asset-relationship-panel relationship-detail comment">
             <h3>Completed History</h3>
             <div class="mini-list">
               ${completedWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>`}
             </div>
           </section>
 
-          <section>
+          <section class="asset-relationship-panel relationship-detail procedure">
             <div class="panel-header compact">
               <h3>PM Schedules</h3>
-              <span>${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}</span>
+              <div class="panel-header-actions">
+                <span>${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}</span>
+                <button class="secondary-button asset-action-button" data-section="pm" type="button">Go to PM</button>
+              </div>
             </div>
             <form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
               <input name="title" required placeholder="PM for ${escapeHtml(asset.name)}">
@@ -269,7 +272,7 @@
             </div>
           </section>
 
-          <section id="asset-linked-parts-target">
+          <section class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target">
             <div class="panel-header compact">
               <h3>Linked Parts</h3>
               <button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>
@@ -297,7 +300,7 @@
             ` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
           </section>
 
-          <section>
+          <section class="asset-relationship-panel relationship-detail parts">
             <h3>Parts Used History</h3>
             <div class="mini-list">
               ${usedParts.map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`}
