@@ -3316,6 +3316,15 @@ function scrollEquipmentDetailToActions() {
   });
 }
 
+function scrollQuickFixFormIntoView() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector("#quick-fix-form");
+      if (target?.scrollIntoView) target.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+  });
+}
+
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
@@ -4016,6 +4025,7 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
+    scrollToQuickFixForm: scrollQuickFixFormIntoView,
   });
 
   bindWorkspaceSubmitRequestCommandEvents({

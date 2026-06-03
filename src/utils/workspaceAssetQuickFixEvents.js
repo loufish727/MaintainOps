@@ -9,6 +9,7 @@
   function bindWorkspaceAssetQuickFixEvents(options = {}) {
     const doc = options.documentRef || document;
     const state = options.state;
+    const scrollToQuickFixForm = typeof options.scrollToQuickFixForm === "function" ? options.scrollToQuickFixForm : () => {};
 
     if (!state || typeof options.renderWorkspace !== "function") return;
 
@@ -25,6 +26,7 @@
         state.setActiveSection("mywork");
         storage.setItem("maintainops.activeSection", "mywork");
         options.renderWorkspace();
+        scrollToQuickFixForm();
       });
     });
   }
