@@ -2477,13 +2477,24 @@ textarea {
   background: linear-gradient(180deg, #cb86ec, #603081);
   color: #17081f;
 }
-.chip.asset-running { background: var(--asset-running-bg); color: var(--asset-running-ink); }
+.chip.asset-running {
+  border-color: #20a75f;
+  background: linear-gradient(180deg, #55e491, #16834d);
+  color: #04140b;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #55e491 20%, transparent);
+}
 .chip.asset-watch { background: var(--asset-watch-bg); color: var(--asset-watch-ink); }
 .chip.asset-degraded { background: var(--asset-degraded-bg); color: var(--asset-degraded-ink); }
 .chip.asset-offline { background: var(--asset-offline-bg); color: var(--asset-offline-ink); }
 
 :root[data-theme="dark"] .chip.open { background: #fff0d9; color: var(--on-light-highlight); }
 :root[data-theme="dark"] .chip.completed { background: #1d3529; color: var(--green); }
+:root[data-theme="dark"] .chip.asset-running {
+  border-color: #57e08c;
+  background: linear-gradient(180deg, #70f0a0, #12824a);
+  color: #031208;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #70f0a0 24%, transparent);
+}
 
 .relationship-row {
   display: flex;
