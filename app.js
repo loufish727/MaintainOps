@@ -987,10 +987,7 @@ const {
 } = createAssetCardDisplayHelpers({
   escapeHtml,
   assetTypeLabel,
-  assetStatusLabel,
   getWorkOrders: () => workOrders,
-  getAssetParts: () => assetParts,
-  getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getActiveAssetId: () => activeAssetId,
   parentAssetFor,
   childAssetsFor,
