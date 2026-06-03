@@ -4370,6 +4370,10 @@ function bindWorkspaceEvents() {
     form.addEventListener("submit", uploadAssetDocument);
   });
 
+  document.querySelectorAll("[data-delete-asset-document]").forEach((button) => {
+    button.addEventListener("click", () => deleteAssetDocument(button.dataset.deleteAssetDocument, button.dataset.assetDocumentPath));
+  });
+
   const partsUsedForm = document.querySelector("#parts-used-form");
   if (partsUsedForm) partsUsedForm.addEventListener("submit", recordPartUsed);
 
@@ -4556,6 +4560,7 @@ async function createFollowUpWorkOrder(sourceId, dueInDays) {
 const {
   addPhotoToMaintenanceRequest,
   addPhotoToWorkOrder,
+  deleteAssetDocument,
   optimizePhoto,
   removeUploadedObject,
   uploadAssetDocument,

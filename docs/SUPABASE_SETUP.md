@@ -67,6 +67,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-mobile-tech-setting.sql`
 - `step-next-asset-parts.sql`
 - `step-next-equipment-document-delete-admins.sql`
+- `step-next-equipment-document-record-delete.sql`
 - `step-next-part-costs.sql`
 - `step-next-part-delete.sql`
 - `step-next-part-documents.sql`

@@ -36,6 +36,17 @@ function createSupabase(calls) {
           calls.push(["insert", table, payload]);
           return Promise.resolve({ error: null });
         },
+        delete() {
+          calls.push(["delete", table]);
+          return this;
+        },
+        eq(column, value) {
+          calls.push(["eq", table, column, value]);
+          return this;
+        },
+        then(resolve) {
+          resolve({ error: null });
+        },
       };
     },
     rpc(name, payload) {
@@ -168,6 +179,13 @@ function createWorkflow(options = {}) {
   });
   assert.equal(assetImageDocument.calls.some((call) => call[0] === "upload" && call[1] === "asset-documents" && call[2] === "company-1/asset-1/uuid-1-optimized.jpg"), true);
   assert.equal(assetImageDocument.calls.some((call) => call[0] === "insert" && call[1] === "asset_documents" && call[2].document_type === "nameplate" && call[2].file_size_bytes === 123), true);
+
+  const deletedAssetDocument = createWorkflow();
+  await deletedAssetDocument.workflow.deleteAssetDocument("asset-document-1", "company-1/asset-1/nameplate.jpg");
+  assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "remove" && call[1] === "asset-documents" && call[2][0] === "company-1/asset-1/nameplate.jpg"), true);
+  assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "delete" && call[1] === "asset_documents"), true);
+  assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "eq" && call[1] === "asset_documents" && call[2] === "id" && call[3] === "asset-document-1"), true);
+  assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "notice" && call[1] === "Machine file deleted."), true);
 
   const upload = createWorkflow();
   const uploadButton = { disabled: false, textContent: "Upload Photo" };

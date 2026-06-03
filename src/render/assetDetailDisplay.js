@@ -172,6 +172,7 @@
                     <div class="asset-file-meta">
                       <span>${escapeHtml(document.content_type || "file")}</span>
                       <a class="secondary-button" href="${escapeHtml(document.signedUrl || "#")}" target="_blank" rel="noreferrer">Open File</a>
+                      <button class="text-button danger-link" data-delete-asset-document="${escapeHtml(document.id)}" data-asset-document-path="${escapeHtml(document.storage_path || "")}" type="button">Delete File</button>
                     </div>
                   </div>
                 </details>

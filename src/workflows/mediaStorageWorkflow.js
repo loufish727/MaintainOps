@@ -173,6 +173,43 @@
       }
     }
 
+    async function deleteAssetDocument(documentId, storagePath) {
+      const errorElement = documentRef.querySelector("[data-asset-document-error]");
+      if (errorElement) errorElement.textContent = "";
+      if (!documentId || !storagePath) {
+        const message = "Missing machine file record. Refresh and try again.";
+        if (errorElement) errorElement.textContent = message;
+        else deps.showNotice(message, "warning");
+        return;
+      }
+
+      try {
+        const storageDelete = await deps.withOperationTimeout(
+          deps.supabaseClient().storage.from("asset-documents").remove([storagePath]),
+          "Equipment file delete timed out. Check your connection and try again.",
+          15000
+        );
+        if (storageDelete.error) throw storageDelete.error;
+
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("asset_documents")
+            .delete()
+            .eq("id", documentId)
+            .eq("company_id", deps.getActiveCompanyId()),
+          "Equipment file record delete timed out. Check your connection and try again.",
+          15000
+        );
+        if (error) throw error;
+
+        deps.showNotice("Machine file deleted.");
+        await deps.render();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not delete machine file.";
+        else deps.showNotice(error.message || "Could not delete machine file.", "warning");
+      }
+    }
+
     function normalizeAssetDocumentType(value) {
       const allowed = new Set(["machine_photo", "schematic", "settings", "manual", "nameplate", "inspection", "receipt", "other"]);
       return allowed.has(value) ? value : "other";
@@ -361,6 +398,7 @@
       addPhotoToWorkOrder,
       optimizePhoto,
       removeUploadedObject,
+      deleteAssetDocument,
       uploadAssetDocument,
       uploadPartDocument,
       uploadPhoto,

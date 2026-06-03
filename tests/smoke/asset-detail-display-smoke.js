@@ -109,6 +109,8 @@ assert.match(html, /class="asset-file-preview"/);
 assert.match(html, /raw press\.png/);
 assert.match(html, /controller settings\.pdf/);
 assert.match(html, /Settings/);
+assert.match(html, /data-delete-asset-document/);
+assert.match(html, /Delete File/);
 assert.doesNotMatch(html, /asset-photo-card/);
 assert.match(html, /data-open-asset="parent-1"/);
 assert.match(html, /data-open-asset="child-1"/);
