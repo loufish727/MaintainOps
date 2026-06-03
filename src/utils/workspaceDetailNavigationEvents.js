@@ -10,6 +10,7 @@
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;
     const state = options.state;
+    const scrollToDetailTop = typeof options.scrollToDetailTop === "function" ? options.scrollToDetailTop : () => {};
 
     if (!state) return;
 
@@ -56,6 +57,7 @@
         state.setActiveSection("assets");
         storage.setItem("maintainops.activeSection", state.getActiveSection());
         options.renderWorkspace();
+        scrollToDetailTop();
       });
     });
 
@@ -68,6 +70,7 @@
         if (state.getActiveSection() !== "assets") state.setActiveSection("work");
         storage.setItem("maintainops.activeSection", state.getActiveSection());
         options.renderWorkspace();
+        scrollToDetailTop();
       });
     });
 
@@ -81,6 +84,7 @@
         state.setActiveSection("assets");
         storage.setItem("maintainops.activeSection", state.getActiveSection());
         options.renderWorkspace();
+        scrollToDetailTop();
       };
 
       card.addEventListener("click", openAsset);

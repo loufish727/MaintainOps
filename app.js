@@ -4003,6 +4003,7 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
+    scrollToDetailTop: () => window.scrollTo({ top: 0, behavior: "auto" }),
   });
 
   bindWorkspaceSubmitRequestCommandEvents({
