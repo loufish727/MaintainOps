@@ -33,6 +33,12 @@ function createDocument(selectors) {
       if (!elements.has(selector)) elements.set(selector, { textContent: "" });
       return elements.get(selector);
     },
+    querySelectorAll(selector) {
+      if (selector === "[data-create-pm-form]") {
+        return Array.from(elements.values()).filter((element) => element.dataset?.createPmForm === "true");
+      }
+      return [];
+    },
   };
 }
 
@@ -88,6 +94,7 @@ function createQuery(table, calls) {
 
 (async () => {
   const pmForm = createElement({
+    dataset: { createPmForm: "true" },
     formValues: {
       asset_id: "asset-1",
       title: "Monthly PM",
@@ -96,10 +103,21 @@ function createQuery(table, calls) {
       procedure_template_id: "procedure-1",
     },
   });
+  const equipmentPmForm = createElement({
+    dataset: { createPmForm: "true" },
+    formValues: {
+      asset_id: "asset-2",
+      title: "Equipment PM",
+      frequency: "weekly",
+      next_due_at: "2026-06-08",
+      procedure_template_id: "",
+    },
+  });
   const deleteButton = createElement();
   const generateButton = createElement();
   const documentRef = createDocument({
     "#create-pm-form": pmForm,
+    "#equipment-pm-form": equipmentPmForm,
     "#pm-error": { textContent: "" },
     '[data-confirm-delete-schedule="schedule-1"]': deleteButton,
     '[data-generate-pm="schedule-1"]': generateButton,
@@ -154,9 +172,11 @@ function createQuery(table, calls) {
 
   workflow.bindPreventiveMaintenanceWorkflowEvents();
   await pmForm.dispatch("submit");
+  await equipmentPmForm.dispatch("submit");
   assert.equal(state.notices.at(-1)[0], "PM schedule added.");
-  assert.equal(state.renders, 1);
+  assert.equal(state.renders, 2);
   assert.ok(calls.some((call) => call[0] === "insertWithOptionalProcedure" && call[1] === "preventive_schedules"));
+  assert.ok(calls.some((call) => call[0] === "insertWithOptionalProcedure" && call[2].asset_id === "asset-2"));
 
   workflow.requestDeletePreventiveSchedule("schedule-1");
   assert.equal(state.pendingDeleteScheduleId, "schedule-1");

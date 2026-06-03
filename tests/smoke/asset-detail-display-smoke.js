@@ -66,6 +66,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   assetDeleteBlockerMessage: () => "",
   canDeleteEquipment: () => true,
   renderEquipmentStructureGuide,
+  renderProcedureOptions: () => '<option value="">No procedure checklist</option><option value="procedure-1">Press checklist</option>',
 });
 
 const html = renderAssetDetail();
@@ -122,6 +123,11 @@ assert.match(html, /data-open-asset="child-1"/);
 assert.match(html, /Open Work/);
 assert.match(html, /Completed History/);
 assert.match(html, /PM Schedules/);
+assert.match(html, /data-create-pm-form/);
+assert.match(html, /data-equipment-pm-form="asset-1"/);
+assert.match(html, /name="asset_id" type="hidden" value="asset-1"/);
+assert.match(html, /PM for Press 1/);
+assert.match(html, /Press checklist/);
 assert.match(html, /Linked Parts/);
 assert.match(html, /data-section="parts"/);
 assert.match(html, /Go to Parts/);

@@ -20,6 +20,7 @@
       assetDeleteBlockerMessage,
       canDeleteEquipment,
       renderEquipmentStructureGuide,
+      renderProcedureOptions,
     } = deps;
 
     function renderAssetDetail() {
@@ -244,7 +245,25 @@
           </section>
 
           <section>
-            <h3>PM Schedules</h3>
+            <div class="panel-header compact">
+              <h3>PM Schedules</h3>
+              <span>${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}</span>
+            </div>
+            <form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
+              <input name="title" required placeholder="PM for ${escapeHtml(asset.name)}">
+              <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
+              <select name="frequency">
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+              </select>
+              <select name="procedure_template_id">
+                ${renderProcedureOptions ? renderProcedureOptions() : `<option value="">No procedure checklist</option>`}
+              </select>
+              <input name="next_due_at" type="date" required>
+              <p class="error-text" data-pm-error></p>
+              <button class="secondary-button asset-action-button" type="submit">Add Schedule</button>
+            </form>
             <div class="mini-list">
               ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
             </div>

@@ -2991,7 +2991,7 @@ function renderWorkspace() {
               <h2>Preventive Maintenance</h2>
               <span>${visibleSchedules.length} shown</span>
             </div>
-            <form class="inline-form pm-form" id="create-pm-form">
+            <form class="inline-form pm-form" id="create-pm-form" data-create-pm-form>
               <input name="title" required placeholder="Monthly compressor PM">
               <select name="asset_id" required data-location-sensitive-asset>
                 <option value="">Machine / equipment</option>
@@ -3331,6 +3331,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   assetDeleteBlockerMessage,
   canDeleteEquipment,
   renderEquipmentStructureGuide,
+  renderProcedureOptions,
 });
 
 const {

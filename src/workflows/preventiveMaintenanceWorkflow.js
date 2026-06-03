@@ -5,15 +5,17 @@
     const cssRef = deps.CSSRef || CSS;
 
     function bindPreventiveMaintenanceWorkflowEvents() {
-      const pmForm = documentRef.querySelector("#create-pm-form");
-      if (pmForm) pmForm.addEventListener("submit", createPreventiveSchedule);
+      const forms = Array.from(documentRef.querySelectorAll?.("[data-create-pm-form]") || []);
+      const legacyForm = documentRef.querySelector("#create-pm-form");
+      if (legacyForm && !forms.includes(legacyForm)) forms.push(legacyForm);
+      forms.forEach((pmForm) => pmForm.addEventListener("submit", createPreventiveSchedule));
     }
 
     async function createPreventiveSchedule(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
       const submitButton = formElement.querySelector("button[type='submit']");
-      const errorElement = documentRef.querySelector("#pm-error");
+      const errorElement = formElement.querySelector("[data-pm-error]") || documentRef.querySelector("#pm-error");
       if (errorElement) errorElement.textContent = "";
       if (submitButton) {
         submitButton.disabled = true;
