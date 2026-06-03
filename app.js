@@ -2782,9 +2782,7 @@ function renderWorkspace() {
           </div>
         </header>
 
-        ${appNotice ? `<div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>` : ""}
-        ${appNotice && appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
-        ${appNotice && appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">ACTION NEEDED</div>` : ""}
+        <div id="app-notice-slot">${renderAppNoticeMarkup()}</div>
 
         <label class="search-bar">
           Search workspace
@@ -3271,12 +3269,28 @@ function updateAssetLocationWarning(select) {
 function showNotice(message, tone = "success") {
   appNotice = message;
   appNoticeTone = tone;
+  updateAppNoticeUi();
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => {
     appNotice = "";
     appNoticeTone = "success";
-    renderWorkspace();
+    updateAppNoticeUi();
   }, tone === "warning" ? 4200 : 2600);
+}
+
+function renderAppNoticeMarkup() {
+  if (!appNotice) return "";
+  return `
+    <div class="app-notice ${appNoticeTone}">${escapeHtml(appNotice)}</div>
+    ${appNoticeTone === "success" ? `<div class="save-overlay" aria-hidden="true">SAVED</div>` : ""}
+    ${appNoticeTone === "warning" ? `<div class="warning-overlay" aria-hidden="true">ACTION NEEDED</div>` : ""}
+  `;
+}
+
+function updateAppNoticeUi() {
+  const slot = document.querySelector("#app-notice-slot");
+  if (!slot) return;
+  slot.innerHTML = renderAppNoticeMarkup();
 }
 
 function setWorkOrderActionWarning(id, message) {
