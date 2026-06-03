@@ -73,6 +73,7 @@ const requiredResources = [
   "src/services/companyService.js",
   "src/services/appIssueReportsService.js",
   "src/services/userPreferencesService.js",
+  "src/services/requestEmailNotificationService.js",
   "src/render/displayHelpers.js",
   "src/render/relationshipDisplay.js",
   "src/render/dashboardDisplay.js",

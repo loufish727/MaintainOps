@@ -144,6 +144,7 @@ const {
   listCompaniesByIds,
   listCompaniesByIdsLegacy,
 } = window.MaintainOpsCompanyService;
+const { notifyRequestEmailer } = window.MaintainOpsRequestEmailNotificationService;
 const {
   listAppIssueReports,
   createAppIssueReportRecord,
@@ -1701,6 +1702,8 @@ async function submitPublicRequest(event, token, intake) {
       const photoError = await addPhotoToMaintenanceRequest(requestId, photo);
       if (photoError) photoWarning = `Request sent, but the photo did not upload: ${photoError.message || photoError}`;
     }
+    const emailResult = await notifyRequestEmailer(supabaseClient, requestId);
+    if (emailResult.error) console.warn("Request email notification did not send", emailResult.error);
 
     app.innerHTML = publicRequestSuccess(intake, photoWarning);
     document.querySelector("#public-request-another").addEventListener("click", () => renderPublicRequestIntake(token));
@@ -4815,6 +4818,7 @@ const {
   isMissingColumnError,
   databaseSetupRequiredMessage,
   addPhotoToMaintenanceRequest,
+  notifyRequestEmailer: (requestId) => notifyRequestEmailer(supabaseClient, requestId),
   setLocationsReady: (value) => { locationsReady = value; },
   setActiveSection: setActiveSectionState,
   setActiveWorkOrderId: setActiveWorkOrderIdState,

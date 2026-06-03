@@ -82,6 +82,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-public-request-photo-attach-hardening.sql`
 - `step-next-public-request-rate-limit.sql`
 - `step-next-request-notification-recipients.sql`
+- `step-next-request-email-outbox.sql`
 - `step-next-qa-rls-location-fixture.sql`
 - `step-next-record-work-order-part-usage.sql`
 - `step-next-rls-bulletproof-hardening.sql`
@@ -101,6 +102,28 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-work-order-events.sql`
 - `step-next-work-order-outcomes.sql`
 - `step-next-work-order-type.sql`
+
+## Request Email Notifications
+
+MaintainOps stores request-email recipients in `public.request_notification_recipients`, then queues one private email notification per matching recipient when a new row is inserted into `public.maintenance_requests`.
+
+Setup steps:
+
+1. Run `supabase/step-next-request-notification-recipients.sql` if it is not already installed.
+2. Run `supabase/step-next-request-email-outbox.sql`.
+3. Deploy the Edge Function:
+
+```powershell
+npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay
+```
+
+4. Set the email-provider secrets. The current function expects Resend:
+
+```powershell
+npx supabase secrets set RESEND_API_KEY="paste-provider-key" REQUEST_EMAIL_FROM="MaintainOps <requests@your-verified-domain.com>" REQUEST_EMAIL_APP_URL="https://loufish727.github.io/MaintainOps" --project-ref lbphkzznvvumemdkqoay
+```
+
+The frontend calls the Edge Function after a request is created, but request creation does not fail if the email sender is not configured. This keeps the maintenance request durable even during email-provider outages.
 
 ## Recent Required SQL
 

@@ -37,6 +37,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Message center.
 - Message links to work orders.
 - Team invites.
+- Team-managed request email recipient routing.
 - Team role updates.
 - Company logo upload.
 - Public request QR/link intake per location.
@@ -78,6 +79,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Highlighted "Very common" reference rows now use row-specific teaching text instead of only generic category fallback, so examples like 14 AWG, 10mm, and 6205 explain the actual nearby mistake and field reason they matter.
 - Shop reference source validation is now documented separately: identification charts require 4-source validation, decision charts require 10-source validation, and highlighted rows require row-specific support before deeper teaching text is treated as reviewed.
 - A new Spark Plug Condition Reference chart was added as the first source-validation process trial: it uses 4-source validation, mechanic-facing condition rows, signal-only detail expansion, and row-specific teaching text for common failure/high-consequence plug conditions.
+- Request email notifications now have a backend outbox and Supabase Edge Function sender path. The feature is provider-gated until email-provider secrets and a verified sender are configured in Supabase.
 - Badged shop reference rows now have a stricter detail gate: signal rows must use row-specific teaching, not generic category fallback. Spark Plug Ash deposits was corrected, and Hydraulic Fluid Condition Reference was added as the second trial.
 - Extension Cord Load Reference now applies the same signal-detail rule as a simple-looking but higher-scrutiny common-spec chart: selected cord/load/jacket rows get row-specific teaching while unbadged rows stay clean.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.

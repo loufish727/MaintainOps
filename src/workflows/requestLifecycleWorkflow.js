@@ -62,6 +62,8 @@
           const photoError = await deps.addPhotoToMaintenanceRequest(data.id, photo);
           if (photoError) photoWarning = ` Photo did not upload: ${photoError.message || photoError}`;
         }
+        const emailResult = await deps.notifyRequestEmailer(data.id);
+        if (emailResult?.error) console.warn("Request email notification did not send", emailResult.error);
         deps.setActiveSection("requests");
         deps.setRequestViewFilter("active");
         deps.resetRequestsPage();

@@ -138,6 +138,10 @@ function createWorkflow(options = {}) {
       calls.push(["photo", id, photo.name]);
       return null;
     },
+    notifyRequestEmailer: async (id) => {
+      calls.push(["notifyRequestEmailer", id]);
+      return { data: { sent: 1 }, error: null };
+    },
     setLocationsReady: (value) => calls.push(["locationsReady", value]),
     setActiveSection: (value) => calls.push(["activeSection", value]),
     setActiveWorkOrderId: (value) => calls.push(["activeWorkOrderId", value]),
@@ -185,6 +189,7 @@ function createWorkflow(options = {}) {
   assert.equal(created.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests" && call[2].requested_by_name === "Lee Requester"), true);
   assert.equal(created.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests" && /Machine \/ area: Thalmann line/.test(call[2].description)), true);
   assert.equal(created.calls.some((call) => call[0] === "photo" && call[1] === "request-new"), true);
+  assert.equal(created.calls.some((call) => call[0] === "notifyRequestEmailer" && call[1] === "request-new"), true);
   assert.equal(created.calls.some((call) => call[0] === "activeSection" && call[1] === "requests"), true);
   assert.equal(requestForm.button.disabled, false);
 
