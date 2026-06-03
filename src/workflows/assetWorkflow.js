@@ -16,6 +16,7 @@
       if (errorElement) errorElement.textContent = "";
       const submitButton = formElement.querySelector("button[type='submit']");
       const originalButtonText = submitButton?.textContent || "Add Equipment";
+      const shouldContinue = event.submitter?.dataset?.assetContinue === "true";
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.textContent = "Saving...";
@@ -33,8 +34,10 @@
           safety_devices_required: form.get("safety_devices_required") === "on",
           status: "running",
         };
-        const { error } = await deps.withOperationTimeout(
-          deps.supabaseClient().from("assets").insert(payload),
+        let query = deps.supabaseClient().from("assets").insert(payload);
+        if (shouldContinue) query = query.select("id").single();
+        const { data, error } = await deps.withOperationTimeout(
+          query,
           "Equipment save timed out. Check your connection and try again.",
           15000
         );
@@ -46,7 +49,12 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
-        deps.showNotice("Equipment added.");
+        if (shouldContinue && data?.id) {
+          deps.setActiveAssetId(data.id);
+          deps.showNotice("Equipment saved. Add PM, parts, files, or sub-equipment from this page.");
+        } else {
+          deps.showNotice("Equipment added.");
+        }
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = error.message;

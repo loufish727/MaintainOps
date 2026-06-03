@@ -39,7 +39,7 @@ class FakeFormData {
 function createSupabase(calls, responses = {}) {
   function query(table) {
     const state = { table, action: "", payload: null };
-    const api = {
+  const api = {
       insert(payload) {
         state.action = "insert";
         state.payload = payload;
@@ -59,7 +59,7 @@ function createSupabase(calls, responses = {}) {
       },
       select(_columns, options) {
         state.action = state.action || "select";
-        calls.push(["select", table, options || null]);
+        calls.push(["select", table, _columns || null, options || null]);
         return api;
       },
       eq(column, value) {
@@ -160,6 +160,30 @@ function createWorkflow(options = {}) {
   assert.equal(create.calls.some((call) => call[0] === "notice" && call[1] === "Equipment added."), true);
   assert.equal(createForm.button.disabled, false);
   assert.equal(createForm.button.textContent, "Add Equipment");
+
+  const continued = createWorkflow();
+  const continueForm = createElement({
+    buttonText: "Save Equipment and Continue",
+    formValues: {
+      name: "Press 2",
+      location_id: "location-1",
+      asset_code: "P-2",
+      location_existing: "Bay 2",
+      location_new: "",
+      parent_asset_id: "",
+      asset_type: "machine",
+      safety_devices_required: "on",
+    },
+  });
+  await continued.workflow.createAsset({
+    preventDefault() {},
+    currentTarget: continueForm,
+    submitter: { dataset: { assetContinue: "true" } },
+  });
+  assert.equal(continued.calls.some((call) => call[0] === "select" && call[1] === "assets" && call[2] === "id"), true);
+  assert.equal(continued.calls.some((call) => call[0] === "single" && call[1] === "assets"), true);
+  assert.equal(continued.calls.some((call) => call[0] === "activeAssetId" && call[1] === "asset-new"), true);
+  assert.equal(continued.calls.some((call) => call[0] === "notice" && call[1].includes("Equipment saved. Add PM")), true);
 
   const update = createWorkflow();
   const editForm = createElement({

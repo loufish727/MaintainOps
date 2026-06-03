@@ -2969,6 +2969,7 @@ function renderWorkspace() {
               </select>
               <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety devices</label>
               <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
+              <button class="secondary-button asset-action-button" data-asset-continue="true" type="submit">Save Equipment and Continue</button>
             </form>
             <p class="error-text" id="asset-create-error"></p>
             ${renderEquipmentStructureGuide()}
