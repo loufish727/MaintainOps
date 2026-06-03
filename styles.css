@@ -3151,6 +3151,66 @@ textarea {
 .asset-health.degraded { border-left-color: var(--asset-degraded-ink); }
 .asset-health.offline { border-left-color: var(--asset-offline-ink); }
 
+.asset-master-summary {
+  margin-top: 14px;
+}
+
+.asset-status-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.asset-status-mini {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 6px 5px;
+  text-align: left;
+}
+
+.asset-status-mini:hover,
+.asset-status-mini.active {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    var(--surface-3);
+}
+
+.asset-status-mini span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.asset-status-mini strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.asset-status-mini.running { border-left-color: var(--asset-running-ink); }
+.asset-status-mini.watch { border-left-color: var(--asset-watch-ink); }
+.asset-status-mini.degraded { border-left-color: var(--asset-degraded-ink); }
+.asset-status-mini.offline { border-left-color: var(--asset-offline-ink); }
+
+.asset-clear-status-filter {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 0;
+}
+
 .asset-card {
   display: flex;
   justify-content: space-between;
