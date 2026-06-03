@@ -15,6 +15,7 @@
     if (!state || typeof options.renderWorkspace !== "function") return;
 
     const storage = options.storage || localStorage;
+    const scrollToSectionTop = typeof options.scrollToSectionTop === "function" ? options.scrollToSectionTop : () => {};
 
     doc.querySelectorAll("[data-section]").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -35,6 +36,7 @@
         options.resetWorkOrderPage();
         storage.setItem("maintainops.activeSection", nextSection);
         options.renderWorkspace();
+        scrollToSectionTop();
         if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
         if (nextSection === "requests") await options.reloadRequestQueue();
       });

@@ -3325,6 +3325,19 @@ function scrollQuickFixFormIntoView() {
   });
 }
 
+function scrollWorkspaceTopIntoView() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector(".workspace") || document.querySelector(".topbar-main");
+      if (target?.scrollIntoView) {
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  });
+}
+
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
@@ -3985,6 +3998,7 @@ function bindWorkspaceEvents() {
     reloadWorkOrderQueue,
     renderWorkspace,
     resetWorkOrderPage,
+    scrollToSectionTop: scrollWorkspaceTopIntoView,
     setWorkOrderSearchMode,
     visibleNavItems,
   });

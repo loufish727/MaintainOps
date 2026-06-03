@@ -55,6 +55,7 @@ const stateValues = {
 let workSearchModeCalls = [];
 let resetCount = 0;
 let renderCount = 0;
+let scrollCount = 0;
 let workReloadCount = 0;
 let requestReloadCount = 0;
 
@@ -78,6 +79,7 @@ let requestReloadCount = 0;
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
+    scrollToSectionTop: () => { scrollCount += 1; },
     reloadWorkOrderQueue: async () => { workReloadCount += 1; },
     reloadRequestQueue: async () => { requestReloadCount += 1; },
   });
@@ -97,6 +99,7 @@ let requestReloadCount = 0;
   assert.equal(storage.values["maintainops.activeSection"], "work");
   assert.equal(resetCount, 1);
   assert.equal(renderCount, 1);
+  assert.equal(scrollCount, 1);
   assert.equal(workReloadCount, 1);
   assert.equal(requestReloadCount, 0);
 
@@ -106,6 +109,7 @@ let requestReloadCount = 0;
   assert.equal(storage.values["maintainops.activeSection"], "mywork");
   assert.equal(resetCount, 2);
   assert.equal(renderCount, 2);
+  assert.equal(scrollCount, 2);
   assert.equal(workReloadCount, 2);
   assert.equal(requestReloadCount, 0);
 
@@ -115,6 +119,7 @@ let requestReloadCount = 0;
   assert.equal(storage.values["maintainops.activeSection"], "requests");
   assert.equal(resetCount, 3);
   assert.equal(renderCount, 3);
+  assert.equal(scrollCount, 3);
   assert.equal(workReloadCount, 2);
   assert.equal(requestReloadCount, 1);
 
@@ -124,12 +129,14 @@ let requestReloadCount = 0;
   assert.equal(storage.values["maintainops.activeSection"], "equipment");
   assert.equal(resetCount, 4);
   assert.equal(renderCount, 4);
+  assert.equal(scrollCount, 4);
   assert.equal(workReloadCount, 2);
   assert.equal(requestReloadCount, 1);
 
   await blockedButton.dispatch("click");
   assert.equal(stateValues.activeSection, "equipment");
   assert.equal(renderCount, 4);
+  assert.equal(scrollCount, 4);
   assert.equal(workReloadCount, 2);
 
   bindWorkspaceSectionNavigationEvents({
