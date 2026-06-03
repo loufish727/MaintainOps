@@ -50,6 +50,7 @@
     });
 
     doc.querySelectorAll(".asset-card").forEach((card) => {
+      if (card.dataset.assetId) return;
       card.addEventListener("click", () => {
         state.setActiveAssetId(card.dataset.assetId);
         state.setActiveWorkOrderId(null);

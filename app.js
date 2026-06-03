@@ -4003,7 +4003,13 @@ function bindWorkspaceEvents() {
       setReportIssueMode: (value) => { reportIssueMode = value; },
     },
     renderWorkspace,
-    scrollToDetailTop: () => window.scrollTo({ top: 0, behavior: "auto" }),
+    scrollToDetailTop: () => {
+      window.setTimeout(() => {
+        const target = document.querySelector(".asset-command-summary") || document.querySelector(".workspace");
+        if (target?.scrollIntoView) target.scrollIntoView({ behavior: "auto", block: "start" });
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }, 0);
+    },
   });
 
   bindWorkspaceSubmitRequestCommandEvents({

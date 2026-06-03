@@ -33,8 +33,9 @@ require("../../src/utils/workspaceDetailNavigationEvents.js");
 
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 
-const assetCard = createElement({ assetId: "asset-1" });
+const legacyAssetCard = createElement({});
 const openAssetButton = createElement({ openAsset: "asset-2" });
+const assetCard = createElement({ assetId: "asset-1" });
 const keyboardAssetCard = createElement({ assetId: "asset-3" });
 const stateValues = {
   activeSection: "assets",
@@ -48,9 +49,9 @@ let scrollCount = 0;
 bindWorkspaceDetailNavigationEvents({
   documentRef: createDocument({
     ".work-card": [],
-    ".asset-card": [assetCard],
+    ".asset-card": [legacyAssetCard, assetCard],
     "[data-open-asset]": [openAssetButton],
-    "[data-asset-id]": [keyboardAssetCard],
+    "[data-asset-id]": [assetCard, keyboardAssetCard],
     "[data-mini-work-order]": [],
   }),
   storage: { setItem() {} },
