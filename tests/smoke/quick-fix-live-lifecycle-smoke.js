@@ -33,9 +33,11 @@ const token = `QA disposable quick fix ${Date.now()}`;
   await page.getByRole("button", { name: "Quick Fix" }).click();
   await page.locator("#quick-fix-form").waitFor({ state: "visible", timeout: 15000 });
   await page.locator('#quick-fix-form input[name="title"]').fill(token);
+  await page.locator('#quick-fix-form textarea[name="description"]').fill(`${token} description`);
   await page.getByRole("button", { name: "Log Quick Fix" }).click();
 
   await page.getByRole("heading", { name: token, exact: true }).waitFor({ state: "visible", timeout: 30000 });
+  await page.getByText(`${token} description`).waitFor({ state: "visible", timeout: 15000 });
   const status = await page.locator("#status-select").inputValue().catch(() => null);
   await page.locator("[data-delete-work-order]").waitFor({ state: "visible", timeout: 15000 });
   await page.locator("[data-delete-work-order]").click();

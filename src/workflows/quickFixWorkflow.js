@@ -64,8 +64,10 @@
         const currentQuickFixRequestId = getQuickFixRequestId();
         const currentActiveCompanyId = getActiveCompanyId();
         const currentSession = getSession();
+        const issueDescription = String(form.get("description") || "").trim();
         const resolutionSummary = String(form.get("resolution_summary") || "").trim();
         const quickFixSummary = resolutionSummary || title;
+        const workOrderDescription = issueDescription || title;
         const markCompleted = form.get("mark_completed") === "on";
         const machineDown = form.get("machine_down") === "on";
         let assetId = form.get("asset_id") || null;
@@ -100,7 +102,7 @@
           company_id: currentActiveCompanyId,
           location_id: locationIdForAsset(assetId),
           title,
-          description: descriptionWithRequestPhotoNote(descriptionWithAssignmentNote(quickFixSummary, form.get("assigned_to")), sourceRequest),
+          description: descriptionWithRequestPhotoNote(descriptionWithAssignmentNote(workOrderDescription, form.get("assigned_to")), sourceRequest),
           asset_id: assetId,
           assigned_to: assignedUserFromForm(form, currentSession.user.id),
           priority: form.get("priority") || "medium",

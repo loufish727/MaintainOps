@@ -25,6 +25,7 @@ function createWorkflow(formValues = {}) {
   FormDataCtor: function FormDataCtor() {
     return fakeFormData({
       title: "QA quick fix workflow",
+      description: "QA quick fix description",
       resolution_summary: "",
       mark_completed: "",
       machine_down: "",
@@ -109,6 +110,7 @@ function createWorkflow(formValues = {}) {
   assert.equal(defaultRun.submitButton.disabled, false);
   assert.equal(defaultRun.submitButton.textContent, "Log Quick Fix");
   assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "insert").map((call) => [call[1], call[2].title, call[2].status, call[3]]), [["work_orders", "QA quick fix workflow", "open", true]]);
+  assert.equal(defaultRun.calls.find((call) => call[0] === "insert")[2].description, "QA quick fix description");
   assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "activeWorkOrderId"), [["activeWorkOrderId", "wo-1"]]);
   assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "quickFixMode"), [["quickFixMode", false]]);
   assert.equal(defaultRun.calls.some((call) => call[0] === "event" && call[2] === "quick_fix"), true);
@@ -126,6 +128,18 @@ function createWorkflow(formValues = {}) {
   const assetInsert = assetRun.calls.find((call) => call[0] === "insert");
   assert.equal(assetInsert[2].asset_id, "asset-1");
   assert.equal(assetInsert[2].location_id, "location-asset-1");
+
+  const fallbackRun = createWorkflow({ description: "" });
+  await fallbackRun.createQuickFix({
+    preventDefault: () => fallbackRun.calls.push(["preventDefault"]),
+    currentTarget: {
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? fallbackRun.submitButton : null;
+      },
+    },
+  });
+  const fallbackInsert = fallbackRun.calls.find((call) => call[0] === "insert");
+  assert.equal(fallbackInsert[2].description, "QA quick fix workflow");
 
   console.log("quick fix workflow smoke passed");
 })().catch((error) => {

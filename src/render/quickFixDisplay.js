@@ -32,6 +32,7 @@
           </div>
           ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
           <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
+          <label>Description<textarea name="description" rows="3" placeholder="Describe what happened, where it happened, and what should be checked.">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
           <label>Machine / equipment
             <select name="asset_id" data-location-sensitive-asset>
               <option value="">No machine / equipment - general item or area</option>
@@ -72,7 +73,7 @@
               </label>
               <div class="form-section-title">Outcome / Notes</div>
               <label>What did you do?<textarea name="resolution_summary" rows="2" placeholder="Tightened mount, tested switch, line returned to normal."></textarea></label>
-              <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown...">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
+              <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="Loose mount, worn part, operator report, unknown..."></textarea></label>
             <label>Equipment status after fix
               <select name="asset_status">
                 <option value="">Leave unchanged</option>

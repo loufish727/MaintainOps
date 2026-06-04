@@ -25,6 +25,8 @@ assert.match(html, /id="quick-fix-form"/);
 assert.match(html, /Resolving request: Guard loose/);
 assert.match(html, /name="title"/);
 assert.match(html, /value="Guard loose"/);
+assert.match(html, /name="description"/);
+assert.match(html, /Operator reported a loose guard\./);
 assert.match(html, /data-location-sensitive-asset/);
 assert.match(html, /Selected equipment is in this location\./);
 assert.match(html, /name="new_asset_name"/);
