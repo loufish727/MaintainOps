@@ -1600,6 +1600,15 @@ h3 { margin-bottom: 8px; font-size: 1rem; font-weight: 560; }
   font-size: 0.95rem;
   border-color: color-mix(in srgb, var(--rel-comment-ink) 42%, var(--line));
   background: color-mix(in srgb, var(--rel-comment-bg) 58%, var(--control-bg));
+  color: var(--field-ink);
+  caret-color: var(--field-ink);
+}
+
+.quick-fix-form input,
+.quick-fix-form select,
+.quick-fix-form textarea {
+  color: var(--field-ink);
+  caret-color: var(--field-ink);
 }
 
 .quick-fix-more {
