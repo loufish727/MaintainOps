@@ -69,4 +69,20 @@ assert.match(assignmentField, /id="assign-target"/);
 assert.match(assignmentField, /name="assigned_to"/);
 assert.match(assignmentField, /Morgan Manager/);
 
+const completedWorkOrder = {
+  ...workOrder,
+  id: "wo-complete",
+  status: "completed",
+  completed_at: "2026-06-02T12:00:00Z",
+};
+const completedCard = helpers.renderWorkOrderCard(completedWorkOrder);
+assert.doesNotMatch(completedCard, /data-assign-me="wo-complete"/);
+assert.doesNotMatch(completedCard, /data-card-assign="wo-complete"/);
+
+const completedAssignmentField = helpers.renderWorkOrderAssignmentField(completedWorkOrder, "completed-owner");
+assert.match(completedAssignmentField, /id="completed-owner"/);
+assert.match(completedAssignmentField, /Completed by \/ assigned to/);
+assert.match(completedAssignmentField, /disabled/);
+assert.doesNotMatch(completedAssignmentField, /<select name="assigned_to"/);
+
 console.log("work queue display smoke passed");

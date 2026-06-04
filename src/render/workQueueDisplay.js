@@ -65,6 +65,7 @@
       const procedure = getProcedureTemplates().find((template) => template.id === workOrder.procedure_template_id);
       const createdDate = workOrder.created_at ? new Date(workOrder.created_at) : null;
       const createdLabel = createdDate && !Number.isNaN(createdDate.getTime()) ? createdDate.toLocaleDateString() : "";
+      const isCompleted = workOrder.status === "completed";
       return `
         <article class="work-card status-card status-${workOrder.status} ${workOrder.id === getActiveWorkOrderId() ? "selected" : ""}" data-id="${workOrder.id}" tabindex="0">
           <div class="work-card-header">
@@ -89,8 +90,8 @@
           </div>
           ${renderRelationshipChips(workOrder)}
           <div class="quick-actions work-card-actions">
-            ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
-            ${canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
+            ${!isCompleted && canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
+            ${!isCompleted && canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
           ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
           `).join("")}
@@ -138,6 +139,14 @@
 
     function renderWorkOrderAssignmentField(workOrder, id = "") {
       const currentValue = assignmentFormValue(workOrder);
+      if (workOrder?.status === "completed") {
+        return `
+          <label ${id ? `id="${id}"` : ""}>Completed by / assigned to
+            <input value="${escapeHtml(assignmentLabel(workOrder))}" disabled>
+            <input name="assigned_to" type="hidden" value="${escapeHtml(currentValue)}">
+          </label>
+        `;
+      }
       if (canManageTeam()) {
         return `
           <label ${id ? `id="${id}"` : ""}>Assign to

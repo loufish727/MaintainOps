@@ -5041,6 +5041,9 @@ async function assignWorkOrderToMe(id) {
     const hasProfile = await ensureProfileForActiveCompany();
     if (!hasProfile) return alert(appError);
     const workOrder = workOrders.find((item) => item.id === id);
+    if (workOrder?.status === "completed") {
+      return alert("Completed work orders cannot be reassigned.");
+    }
     if (!canAssignWorkOrderToMe(workOrder)) {
       return alert("Technicians can only claim unassigned work. Managers can reassign work.");
     }
@@ -5075,6 +5078,10 @@ async function assignWorkOrderFromCard(event) {
   const workOrder = workOrders.find((item) => item.id === formElement.dataset.cardAssign);
   const form = new FormData(formElement);
   if (!workOrder) return;
+  if (workOrder.status === "completed") {
+    showNotice("Completed work orders cannot be reassigned.", "warning");
+    return;
+  }
   if (formElement.dataset.saving === "true") return;
 
   const assignmentValue = form.get("assigned_to") || "";
@@ -5234,6 +5241,7 @@ function canDeleteOperationalRecords() {
 
 function canAssignWorkOrderToMe(workOrder) {
   if (!workOrder || workOrder.assigned_to === session?.user?.id) return false;
+  if (workOrder.status === "completed") return false;
   if (canManageTeam()) return true;
   return !workOrder.assigned_to && !isVendorAssigned(workOrder);
 }
