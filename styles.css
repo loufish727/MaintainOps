@@ -231,6 +231,10 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
   right: 8px;
   top: 7px;
   min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   background: var(--red);
   color: #fff;
@@ -241,10 +245,9 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 }
 
 .nav-alert-badge {
-  min-width: 26px;
-  background: linear-gradient(180deg, #ff4b4b, #b90918);
+  background: var(--red);
   color: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14), 0 0 18px rgba(255, 31, 47, 0.55);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
   font-weight: 800;
 }
 
