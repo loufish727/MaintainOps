@@ -8843,3 +8843,18 @@ textarea:focus {
     height: 50px;
   }
 }
+
+/* Final field contrast guard: Quick Fix runs on phones in mixed theme states. */
+.quick-fix-form input:not([type="checkbox"]):not([type="file"]),
+.quick-fix-form textarea {
+  background: #0f1714 !important;
+  color: #f5fbf8 !important;
+  caret-color: #f5fbf8 !important;
+  -webkit-text-fill-color: #f5fbf8;
+}
+
+.quick-fix-form input:not([type="checkbox"]):not([type="file"])::placeholder,
+.quick-fix-form textarea::placeholder {
+  color: #c7d4ce !important;
+  -webkit-text-fill-color: #c7d4ce;
+}
