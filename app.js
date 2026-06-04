@@ -150,6 +150,7 @@ const {
   listAppIssueReports,
   createAppIssueReportRecord,
   updateAppIssueReportStatusRecord,
+  deleteAppIssueReportRecord,
 } = window.MaintainOpsAppIssueReportsService;
 const {
   getUserPreferences,
@@ -3775,6 +3776,7 @@ const {
   listAppIssueReports,
   createAppIssueReportRecord,
   updateAppIssueReportStatusRecord,
+  deleteAppIssueReportRecord,
   appIssueReportErrorState,
   activeLocationDatabaseId,
   requiredText,
@@ -3786,6 +3788,7 @@ const {
   setAppIssueReports: (value) => { appIssueReports = value; },
   setReportIssueMode: (value) => { reportIssueMode = value; },
   showNotice,
+  confirmUser: (message) => confirm(message),
   renderWorkspace,
 });
 const {

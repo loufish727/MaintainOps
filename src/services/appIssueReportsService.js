@@ -22,9 +22,18 @@
       .eq("id", reportId);
   }
 
+  function deleteAppIssueReportRecord(supabaseClient, companyId, reportId) {
+    return supabaseClient
+      .from("app_issue_reports")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("id", reportId);
+  }
+
   window.MaintainOpsAppIssueReportsService = {
     listAppIssueReports,
     createAppIssueReportRecord,
     updateAppIssueReportStatusRecord,
+    deleteAppIssueReportRecord,
   };
 })();

@@ -62,9 +62,13 @@ class FakeFormData {
     dataset: { appIssueStatus: "issue-1" },
     formValues: { status: "resolved" },
   });
+  const deleteButton = createElement({
+    dataset: { deleteAppIssue: "issue-1" },
+  });
   const documentRef = createDocument({
     "#app-issue-report-form": reportForm,
     "[data-app-issue-status]": [statusForm],
+    "[data-delete-app-issue]": [deleteButton],
     "#app-issue-report-error": { textContent: "" },
   });
   const calls = [];
@@ -94,6 +98,10 @@ class FakeFormData {
       calls.push(["updateAppIssueReportStatusRecord", companyId, reportId, nextStatus]);
       return { error: null };
     },
+    deleteAppIssueReportRecord: async (_client, companyId, reportId) => {
+      calls.push(["deleteAppIssueReportRecord", companyId, reportId]);
+      return { error: null };
+    },
     appIssueReportErrorState: (error) => ({ message: error.message || String(error), appIssueReportsReady: null }),
     activeLocationDatabaseId: () => "location-1",
     requiredText: (value) => String(value || "").trim(),
@@ -105,6 +113,7 @@ class FakeFormData {
     setAppIssueReports: (value) => { state.appIssueReports = value; },
     setReportIssueMode: (value) => { state.reportIssueMode = value; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
+    confirmUser: () => true,
     renderWorkspace: () => { state.renderWorkspaceCount += 1; },
   });
 
@@ -119,6 +128,11 @@ class FakeFormData {
   assert.equal(state.notices.at(-1)[0], "Issue report updated.");
   assert.ok(calls.some((call) => call[0] === "updateAppIssueReportStatusRecord" && call[3] === "resolved"));
   assert.equal(state.renderWorkspaceCount, 2);
+
+  await deleteButton.dispatch("click");
+  assert.equal(state.notices.at(-1)[0], "Issue report deleted.");
+  assert.ok(calls.some((call) => call[0] === "deleteAppIssueReportRecord" && call[2] === "issue-1"));
+  assert.equal(state.renderWorkspaceCount, 3);
 
   console.log("app issue workflow smoke passed");
 })();

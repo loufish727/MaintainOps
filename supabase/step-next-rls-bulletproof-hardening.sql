@@ -84,7 +84,7 @@ grant select, insert on public.messages to authenticated;
 grant select, insert, update on public.message_reads to authenticated;
 grant select on public.company_invites to authenticated;
 grant select, insert, update on public.public_request_links to authenticated;
-grant select, insert, update on public.app_issue_reports to authenticated;
+grant select, insert, update, delete on public.app_issue_reports to authenticated;
 
 grant select, insert, update, delete on public.companies to service_role;
 grant select, insert, update, delete on public.company_members to service_role;

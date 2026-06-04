@@ -1866,13 +1866,13 @@ textarea {
 }
 
 .report-issue-button {
-  border-color: color-mix(in srgb, var(--amber) 62%, var(--line));
-  background: color-mix(in srgb, var(--amber) 16%, var(--control-bg));
-  color: var(--amber);
+  border-color: color-mix(in srgb, var(--yellow) 62%, var(--line));
+  background: color-mix(in srgb, var(--yellow) 16%, var(--control-bg));
+  color: var(--yellow);
 }
 
 .report-issue-button:hover {
-  background: color-mix(in srgb, var(--amber) 26%, var(--control-bg));
+  background: color-mix(in srgb, var(--yellow) 26%, var(--control-bg));
   color: var(--ink);
 }
 
@@ -1935,7 +1935,7 @@ textarea {
 }
 
 .app-issue-report-panel {
-  border-left: 5px solid var(--amber);
+  border-left: 5px solid var(--yellow);
 }
 
 .app-issue-report-form textarea {
@@ -1957,13 +1957,30 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
-  border: 1px solid color-mix(in srgb, var(--amber) 26%, var(--line));
-  border-left: 5px solid var(--amber);
+  border: 1px solid color-mix(in srgb, var(--yellow) 26%, var(--line));
+  border-left: 5px solid var(--yellow);
   border-radius: 10px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--amber) 8%, transparent), transparent 60%),
+    linear-gradient(135deg, color-mix(in srgb, var(--yellow) 8%, transparent), transparent 60%),
     var(--surface);
   padding: 12px;
+}
+
+.issue-report-card.issue-reviewing {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-left-color: var(--blue);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 60%),
+    var(--surface);
+}
+
+.issue-report-card.issue-resolved {
+  border-color: color-mix(in srgb, var(--green) 24%, var(--line));
+  border-left-color: var(--green);
+  opacity: 0.76;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 8%, transparent), transparent 60%),
+    var(--surface);
 }
 
 .issue-report-card strong {
@@ -1993,6 +2010,27 @@ textarea {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.issue-admin-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.issue-status-chip.issue-status-open {
+  background: color-mix(in srgb, var(--yellow) 18%, var(--surface));
+  color: var(--yellow);
+}
+
+.issue-status-chip.issue-status-reviewing {
+  background: color-mix(in srgb, var(--blue) 15%, var(--surface));
+  color: var(--blue);
+}
+
+.issue-status-chip.issue-status-resolved {
+  background: color-mix(in srgb, var(--green) 15%, var(--surface));
+  color: var(--green);
 }
 
 .delete-zone h3 {

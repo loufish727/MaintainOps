@@ -34,10 +34,20 @@
       `;
     }
 
+    function sortedAppIssueReports(reports) {
+      const statusRank = { open: 0, reviewing: 1, resolved: 2 };
+      return [...reports].sort((a, b) => {
+        const statusDelta = (statusRank[a.status || "open"] ?? 1) - (statusRank[b.status || "open"] ?? 1);
+        if (statusDelta) return statusDelta;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
+    }
+
     function renderAppIssueReportsPanel() {
       if (!canManageTeam()) return "";
       const appIssueReportsReady = getAppIssueReportsReady();
       const appIssueReports = getAppIssueReports();
+      const sortedReports = sortedAppIssueReports(appIssueReports);
       return `
         <section class="settings-summary app-issue-report-list">
           <div class="settings-section-heading">
@@ -48,7 +58,7 @@
           </div>
           ${appIssueReportsReady ? `
             <div class="issue-report-list">
-              ${appIssueReports.map(renderAppIssueReport).join("") || `<p class="muted">No app issues reported yet.</p>`}
+              ${sortedReports.map(renderAppIssueReport).join("") || `<p class="muted">No app issues reported yet.</p>`}
             </div>
           ` : `<p class="warning-text">Run supabase/step-next-app-issue-reports.sql to capture tester feedback inside the app.</p>`}
         </section>
@@ -58,6 +68,7 @@
     return {
       renderAppIssueReportForm,
       renderAppIssueReportsPanel,
+      sortedAppIssueReports,
     };
   }
 

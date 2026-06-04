@@ -21,7 +21,7 @@ on public.app_issue_reports(company_id, status);
 
 alter table public.app_issue_reports enable row level security;
 
-grant select, insert, update on public.app_issue_reports to authenticated;
+grant select, insert, update, delete on public.app_issue_reports to authenticated;
 
 drop policy if exists "Members can read app issue reports" on public.app_issue_reports;
 create policy "Members can read app issue reports"
@@ -53,6 +53,21 @@ using (
   )
 )
 with check (
+  private.is_company_member(company_id)
+  and exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = app_issue_reports.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager')
+  )
+);
+
+drop policy if exists "Managers can delete app issue reports" on public.app_issue_reports;
+create policy "Managers can delete app issue reports"
+on public.app_issue_reports for delete
+to authenticated
+using (
   private.is_company_member(company_id)
   and exists (
     select 1

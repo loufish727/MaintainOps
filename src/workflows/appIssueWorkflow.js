@@ -3,6 +3,7 @@
     const documentRef = deps.documentRef || document;
     const windowRef = deps.windowRef || window;
     const FormDataCtor = deps.FormDataCtor || FormData;
+    const confirmUser = deps.confirmUser || ((message) => windowRef.confirm(message));
 
     function bindAppIssueWorkflowEvents() {
       const appIssueReportForm = documentRef.querySelector("#app-issue-report-form");
@@ -10,6 +11,10 @@
 
       documentRef.querySelectorAll("[data-app-issue-status]").forEach((form) => {
         form.addEventListener("submit", updateAppIssueReportStatus);
+      });
+
+      documentRef.querySelectorAll("[data-delete-app-issue]").forEach((button) => {
+        button.addEventListener("click", deleteAppIssueReport);
       });
     }
 
@@ -114,12 +119,50 @@
       }
     }
 
+    async function deleteAppIssueReport(event) {
+      event.preventDefault();
+      if (!deps.canManageTeam()) return;
+      const button = event.currentTarget;
+      const reportId = button.dataset.deleteAppIssue;
+      if (!reportId) return;
+      if (!confirmUser("Delete this app issue report? This cannot be undone.")) return;
+
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Deleting...";
+
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.deleteAppIssueReportRecord(
+            deps.supabaseClient(),
+            deps.getActiveCompanyId(),
+            reportId
+          ),
+          "Issue report delete timed out. Check your connection and try again.",
+          12000
+        );
+        if (error) throw error;
+
+        deps.showNotice("Issue report deleted.");
+        await reloadAppIssueReports();
+        deps.renderWorkspace();
+      } catch (error) {
+        deps.showNotice(`Could not delete issue report: ${appIssueReportError(error)}`, "warning");
+      } finally {
+        if (button?.isConnected) {
+          button.disabled = false;
+          button.textContent = originalText || "Delete";
+        }
+      }
+    }
+
     return {
       bindAppIssueWorkflowEvents,
       reloadAppIssueReports,
       appIssueReportError,
       createAppIssueReport,
       updateAppIssueReportStatus,
+      deleteAppIssueReport,
     };
   }
 
