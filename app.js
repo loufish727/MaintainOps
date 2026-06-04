@@ -175,6 +175,7 @@ const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
 const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
 const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
 const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
+const { createNavBadgeDisplayHelpers } = window.MaintainOpsNavBadgeDisplay;
 const { createAppIssueDisplayHelpers } = window.MaintainOpsAppIssueDisplay;
 const { createWorkMessageDisplayHelpers } = window.MaintainOpsWorkMessageDisplay;
 const { createWorkRecommendationDisplayHelpers } = window.MaintainOpsWorkRecommendationDisplay;
@@ -1078,6 +1079,9 @@ const {
   directUnreadMessages,
   totalUnreadMessages,
 });
+const {
+  renderNavCountBadge,
+} = createNavBadgeDisplayHelpers();
 const {
   setupItems,
 } = createSetupStatusDisplayHelpers({
@@ -2587,6 +2591,12 @@ function renderWorkspace() {
   const visibleRequestCount = requestCounts[activeRequestViewFilter] ?? requestServerTotal;
   const visibleWorkOrders = workOrders;
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
+  const renderSectionNavBadge = (id) => {
+    if (id === "messages") return renderMessageNavBadge();
+    if (id === "work") return renderNavCountBadge(workOrderDashboardCounts?.newWork || 0);
+    if (id === "requests") return renderNavCountBadge(requestCounts.active || 0, { alert: true });
+    return "";
+  };
   const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
   if (workspaceUiState.getWorkOrderPage() > totalWorkOrderPages) workspaceUiState.setWorkOrderPage(totalWorkOrderPages);
   if (workspaceUiState.getWorkOrderPage() < 1) workspaceUiState.setWorkOrderPage(1);
@@ -2822,7 +2832,7 @@ function renderWorkspace() {
         <button class="text-button inverse desktop-sign-out" data-sign-out type="button">Sign out</button>
         ${renderCommandStack("mobile")}
         <nav class="section-nav" aria-label="Workspace sections">
-          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${id === "messages" ? renderMessageNavBadge() : ""}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${renderSectionNavBadge(id)}</button>`).join("")}
         </nav>
       </aside>
 
