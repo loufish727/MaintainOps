@@ -42,7 +42,11 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
     { id: "child-1", name: "Feeder", asset_type: "machine", status: "watch", parent_asset_id: "asset-1" },
   ],
   getActiveAssetId: () => "asset-1",
-  getWorkOrders: () => [workOrder, { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-04T16:00:00Z", completed_by: "user-1" }],
+  getWorkOrders: () => [
+    workOrder,
+    { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-04T16:00:00Z", completed_by: "user-1" },
+    { id: "wo-3", title: "Older Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-03T16:00:00Z", assigned_to: "user-1" },
+  ],
   getPreventiveSchedules: () => [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }],
   getParts: () => [
     { id: "part-1", name: "Guard Bolt", sku: "GB-1" },
@@ -134,6 +138,8 @@ assert.match(html, /Open Work/);
 assert.match(html, /Completed History/);
 assert.match(html, /Done/);
 assert.match(html, /by QA Completer/);
+assert.match(html, /Older Done/);
+assert.match(html, /owner QA Completer/);
 assert.match(html, /data-mini-work-order="wo-2"/);
 assert.match(html, /PM Schedules/);
 assert.match(html, /class="asset-relationship-panel relationship-detail procedure"/);

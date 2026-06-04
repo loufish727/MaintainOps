@@ -21,6 +21,12 @@
       const photosCount = (getPhotosByWorkOrder()[workOrder.id] || []).length;
       const completedDate = workOrder.completed_at ? new Date(workOrder.completed_at).toLocaleDateString() : "";
       const completedBy = workOrder.completed_by ? teamMemberName(workOrder.completed_by) : "";
+      const ownerFallback = !completedBy && workOrder.assigned_to ? teamMemberName(workOrder.assigned_to) : "";
+      const completedActorText = completedBy
+        ? ` by ${escapeHtml(completedBy)}`
+        : ownerFallback
+          ? ` - owner ${escapeHtml(ownerFallback)}`
+          : "";
       const outcome = workOrder.resolution_summary || workOrder.completion_notes || "";
       return `
         <article class="mini-work-order ${workOrder.status === "completed" ? "completed-history" : ""}" data-mini-work-order="${workOrder.id}">
@@ -31,7 +37,7 @@
             ${photosCount ? `<span class="relationship-chip photo">${relationshipIcon("photo")}<span>${photosCount}</span></span>` : ""}
           </div>
           <strong>${escapeHtml(workOrder.title)}</strong>
-          <span>${completedDate ? `Completed ${completedDate}${completedBy ? ` by ${escapeHtml(completedBy)}` : ""}` : `Due ${workOrder.due_at || "unset"}`}</span>
+          <span>${completedDate ? `Completed ${completedDate}${completedActorText}` : `Due ${workOrder.due_at || "unset"}`}</span>
           ${workOrder.failure_cause ? `<p><b>Finding:</b> ${escapeHtml(workOrder.failure_cause)}</p>` : ""}
           ${outcome ? `<p><b>Resolution:</b> ${escapeHtml(outcome)}</p>` : ""}
         </article>
