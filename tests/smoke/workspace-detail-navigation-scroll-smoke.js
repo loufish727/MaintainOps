@@ -37,6 +37,7 @@ const legacyAssetCard = createElement({});
 const openAssetButton = createElement({ openAsset: "asset-2" });
 const assetCard = createElement({ assetId: "asset-1" });
 const keyboardAssetCard = createElement({ assetId: "asset-3" });
+const miniWorkOrder = createElement({ miniWorkOrder: "wo-2" });
 const stateValues = {
   activeSection: "assets",
   activeAssetId: null,
@@ -52,7 +53,7 @@ bindWorkspaceDetailNavigationEvents({
     ".asset-card": [legacyAssetCard, assetCard],
     "[data-open-asset]": [openAssetButton],
     "[data-asset-id]": [assetCard, keyboardAssetCard],
-    "[data-mini-work-order]": [],
+    "[data-mini-work-order]": [miniWorkOrder],
   }),
   storage: { setItem() {} },
   state: {
@@ -86,5 +87,12 @@ keyboardAssetCard.dispatch("keydown", { key: "Enter", preventDefault() {} });
 assert.equal(stateValues.activeAssetId, "asset-3");
 assert.equal(renderCount, 3);
 assert.equal(scrollCount, 3);
+
+miniWorkOrder.dispatch("click");
+assert.equal(stateValues.activeWorkOrderId, "wo-2");
+assert.equal(stateValues.activeAssetId, null);
+assert.equal(stateValues.activeSection, "work");
+assert.equal(renderCount, 4);
+assert.equal(scrollCount, 4);
 
 console.log("workspace detail navigation scroll smoke passed");

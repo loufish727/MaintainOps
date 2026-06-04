@@ -5,6 +5,7 @@
     relationshipIcon,
     getPartsUsedByWorkOrder,
     getPhotosByWorkOrder,
+    teamMemberName,
   }) {
     function renderMiniWorkOrder(workOrder) {
       return `
@@ -19,6 +20,7 @@
       const partsCount = (getPartsUsedByWorkOrder()[workOrder.id] || []).length;
       const photosCount = (getPhotosByWorkOrder()[workOrder.id] || []).length;
       const completedDate = workOrder.completed_at ? new Date(workOrder.completed_at).toLocaleDateString() : "";
+      const completedBy = workOrder.completed_by ? teamMemberName(workOrder.completed_by) : "";
       const outcome = workOrder.resolution_summary || workOrder.completion_notes || "";
       return `
         <article class="mini-work-order ${workOrder.status === "completed" ? "completed-history" : ""}" data-mini-work-order="${workOrder.id}">
@@ -29,7 +31,7 @@
             ${photosCount ? `<span class="relationship-chip photo">${relationshipIcon("photo")}<span>${photosCount}</span></span>` : ""}
           </div>
           <strong>${escapeHtml(workOrder.title)}</strong>
-          <span>${completedDate ? `Completed ${completedDate}` : `Due ${workOrder.due_at || "unset"}`}</span>
+          <span>${completedDate ? `Completed ${completedDate}${completedBy ? ` by ${escapeHtml(completedBy)}` : ""}` : `Due ${workOrder.due_at || "unset"}`}</span>
           ${workOrder.failure_cause ? `<p><b>Finding:</b> ${escapeHtml(workOrder.failure_cause)}</p>` : ""}
           ${outcome ? `<p><b>Resolution:</b> ${escapeHtml(outcome)}</p>` : ""}
         </article>
@@ -45,4 +47,8 @@
   window.MaintainOpsMiniWorkOrderDisplay = {
     createMiniWorkOrderDisplayHelpers,
   };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createMiniWorkOrderDisplayHelpers };
+  }
 })();

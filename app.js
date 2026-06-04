@@ -857,6 +857,7 @@ const {
   relationshipIcon,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getPhotosByWorkOrder: () => photosByWorkOrder,
+  teamMemberName,
 });
 const {
   renderWorkPagination,

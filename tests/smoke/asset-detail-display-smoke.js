@@ -4,6 +4,7 @@ global.window = {};
 
 const { createAssetDetailDisplayHelpers } = require("../../src/render/assetDetailDisplay.js");
 const { createEquipmentStructureGuideDisplayHelpers } = require("../../src/render/equipmentStructureGuideDisplay.js");
+const { createMiniWorkOrderDisplayHelpers } = require("../../src/render/miniWorkOrderDisplay.js");
 
 const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 
@@ -24,6 +25,14 @@ const workOrder = {
   status: "open",
   asset_id: "asset-1",
 };
+const miniHelpers = createMiniWorkOrderDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
+  statusLabel: (status) => status,
+  relationshipIcon: (type) => `<i>${type}</i>`,
+  getPartsUsedByWorkOrder: () => ({}),
+  getPhotosByWorkOrder: () => ({}),
+  teamMemberName: (userId) => userId === "user-1" ? "QA Completer" : userId,
+});
 
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
@@ -33,7 +42,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
     { id: "child-1", name: "Feeder", asset_type: "machine", status: "watch", parent_asset_id: "asset-1" },
   ],
   getActiveAssetId: () => "asset-1",
-  getWorkOrders: () => [workOrder, { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1" }],
+  getWorkOrders: () => [workOrder, { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-04T16:00:00Z", completed_by: "user-1" }],
   getPreventiveSchedules: () => [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }],
   getParts: () => [
     { id: "part-1", name: "Guard Bolt", sku: "GB-1" },
@@ -62,7 +71,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   renderLocationOptions: () => '<option value="loc-1">Plant 1</option>',
   renderAssetAreaOptions: (selected) => `<option value="Bay 1" ${selected === "Bay 1" ? "selected" : ""}>Bay 1</option>`,
   assetStatusLabel: (status) => status,
-  renderAssetMiniWorkOrder: (row) => `<article data-open-work-order="${row.id}">${row.title}</article>`,
+  renderAssetMiniWorkOrder: miniHelpers.renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage: () => "",
   canDeleteEquipment: () => true,
   renderEquipmentStructureGuide,
@@ -123,6 +132,9 @@ assert.match(html, /data-open-asset="parent-1"/);
 assert.match(html, /data-open-asset="child-1"/);
 assert.match(html, /Open Work/);
 assert.match(html, /Completed History/);
+assert.match(html, /Done/);
+assert.match(html, /by QA Completer/);
+assert.match(html, /data-mini-work-order="wo-2"/);
 assert.match(html, /PM Schedules/);
 assert.match(html, /class="asset-relationship-panel relationship-detail procedure"/);
 assert.match(html, /data-create-pm-form/);

@@ -100,8 +100,11 @@
       item.addEventListener("click", () => {
         state.setActiveWorkOrderId(item.dataset.miniWorkOrder);
         state.setActiveAssetId(null);
+        state.setActiveSection("work");
         resetWorkCreationState();
+        storage.setItem("maintainops.activeSection", state.getActiveSection());
         options.renderWorkspace();
+        scrollToDetailTop();
       });
     });
   }
