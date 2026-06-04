@@ -2835,7 +2835,6 @@ function renderWorkspace() {
               <summary>More</summary>
               <div>
                 <button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>
-                <button class="secondary-button request-action-button" id="show-request${suffix}" data-command-action="request" type="button">Submit Request</button>
                 <button class="secondary-button export-action-button" id="export-csv${suffix}" data-command-action="export-csv" type="button">Export CSV</button>
               </div>
             </details>
@@ -2993,8 +2992,14 @@ function renderWorkspace() {
               <h2>Requests</h2>
               <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequestCount) : "setup needed"}</span>
             </div>
-            ${renderRequestFormContent()}
             ${requestsReady ? `
+              <div class="queue-context-card request-intake-context">
+                <div>
+                  <strong>Request Intake Queue</strong>
+                  <span>Requests come from posted QR/public intake links. Review, quick-fix, convert, or delete from this queue.</span>
+                </div>
+                <small>Paged ${LIST_ITEMS_PER_PAGE} at a time, newest first.</small>
+              </div>
               ${renderRequestFilterBar(requestCounts, activeRequestViewFilter)}
               <div class="request-list">
                 ${pagedRequests.map(renderMaintenanceRequest).join("") || `<p class="muted">${escapeHtml(requestEmptyStateText(activeRequestViewFilter))}</p>`}

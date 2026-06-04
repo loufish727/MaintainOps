@@ -3465,11 +3465,19 @@ textarea {
 }
 
 .request-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+}
+
+.request-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .request-card-main {
@@ -3489,6 +3497,37 @@ textarea {
 .request-card.converted-request h3,
 .request-card.converted-request p {
   color: var(--muted);
+}
+
+.request-source-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid rgba(86, 210, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(86, 210, 255, 0.12);
+  color: #d6f6ff;
+  font-size: 0.74rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.request-card .meta-row span {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.request-card .meta-row strong {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.request-intake-context {
+  margin-bottom: 12px;
 }
 
 .request-photo-preview {
@@ -3550,6 +3589,27 @@ textarea {
   color: var(--text);
   font-size: 0.74rem;
   font-weight: 800;
+}
+
+.queue-context-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+
+.queue-context-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.queue-context-card span,
+.queue-context-card small {
+  color: var(--muted);
 }
 
 .checklist-list {
@@ -6668,6 +6728,12 @@ textarea {
   }
 
   .request-card {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .request-card-header,
+  .queue-context-card {
     align-items: stretch;
     flex-direction: column;
   }

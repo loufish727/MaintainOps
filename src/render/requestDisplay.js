@@ -36,6 +36,10 @@
       const converted = isConvertedRequest(request);
       const confirming = getPendingDeleteRequestId() === request.id;
       const profilesByUserId = getProfilesByUserId();
+      const requestedAt = request.created_at ? new Date(request.created_at) : null;
+      const requestedAtLabel = requestedAt && !Number.isNaN(requestedAt.getTime()) ? requestedAt.toLocaleString() : "date unavailable";
+      const equipmentLabel = request.assets?.name || request.locations?.name || "No equipment";
+      const requesterLabel = request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester";
       const deleteControls = canDeleteOperationalRecords() ? confirming ? `
         <button class="secondary-button" data-cancel-delete-request type="button">Cancel</button>
         <button class="danger-action-button confirm-delete-button" data-confirm-delete-request="${escapeHtml(request.id)}" type="button">Permanently Delete</button>
@@ -45,17 +49,20 @@
       return `
         <article class="request-card ${converted ? "converted-request" : "active-request"}">
           <div class="request-card-main">
-            <div class="chip-row">
-              <span class="chip ${request.priority}">${escapeHtml(request.priority)}</span>
-              <span class="chip ${converted ? "completed" : "open"}">${converted ? "converted" : escapeHtml(request.status)}</span>
+            <div class="request-card-header">
+              <div class="chip-row">
+                <span class="chip ${request.priority}">${escapeHtml(request.priority)}</span>
+                <span class="chip ${converted ? "completed" : "open"}">${converted ? "converted" : escapeHtml(request.status)}</span>
+              </div>
+              <span class="request-source-pill">Public intake</span>
             </div>
             <h3>${escapeHtml(request.title)}</h3>
             <p>${escapeHtml(request.description || "No description.")}</p>
             ${renderMaintenanceRequestPhoto(request)}
             <div class="meta-row">
-              <span>${escapeHtml(request.assets?.name || request.locations?.name || "No equipment")}</span>
-              <span>${escapeHtml(request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester")}</span>
-              <span>${new Date(request.created_at).toLocaleString()}</span>
+              <span><strong>Machine / area</strong>${escapeHtml(equipmentLabel)}</span>
+              <span><strong>Requester</strong>${escapeHtml(requesterLabel)}</span>
+              <span><strong>Received</strong>${escapeHtml(requestedAtLabel)}</span>
             </div>
           </div>
           ${!converted && request.status === "submitted" ? `
