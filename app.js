@@ -50,6 +50,7 @@ const {
 const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
+const { shouldRenderForAuthEvent } = window.MaintainOpsAuthRenderPolicy;
 const { createMessageWorkflow } = window.MaintainOpsMessageWorkflow;
 const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMaintenanceWorkflow;
 const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
@@ -1260,8 +1261,10 @@ async function init() {
     return;
   }
 
-  supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
+  supabaseClient.auth.onAuthStateChange((eventName, nextSession) => {
+    const previousSession = session;
     session = nextSession;
+    if (!shouldRenderForAuthEvent(eventName, previousSession, nextSession)) return;
     setTimeout(() => {
       render().catch((error) => {
         appError = `Could not load workspace: ${error.message || error}`;

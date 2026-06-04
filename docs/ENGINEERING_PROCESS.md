@@ -40,4 +40,10 @@ Browser smoke fallback:
 - If in-app browser control is unavailable, use CLI Playwright smokes for the touched browser interaction before deploy.
 - For equipment attachment regressions, run `npm run test:smoke:work-attach`; this combines selector-source, mutation-payload, and browser DOM checks.
 
+Unsaved form input must survive background system events:
+
+- Background auth/session events, cache refreshes, read-only reloads, and polling-style updates must not rebuild active create/edit forms unless the user explicitly navigated, submitted, or signed out.
+- Same-user token refresh should update session state without calling the full workspace render.
+- If a touched path can re-render while a user is typing in a work order, Quick Fix, request, PM, procedure, equipment, message, or part form, add a targeted smoke or policy check proving active input will not be wiped.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.
