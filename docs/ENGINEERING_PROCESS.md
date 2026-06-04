@@ -52,4 +52,10 @@ Workspace data loads must fail by area, not as one opaque block:
 - Each workspace startup read should have a named timeout or isolated fallback so one slow optional area does not block the whole app.
 - A startup warning should name the slow area whenever possible.
 
+Related record panels must not depend on the current board slice:
+
+- Equipment detail sections for open work, completed history, linked parts, and parts-used history should be collapsed by default when the related data can grow.
+- Expanding a related section should load the needed relationship data for that equipment instead of assuming the current paged work-order queue contains the complete history.
+- Related lists should follow the same 12-item paging pattern used elsewhere in the app when the result set can grow.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.

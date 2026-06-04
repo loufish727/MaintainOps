@@ -80,6 +80,9 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   canDeleteEquipment: () => true,
   renderEquipmentStructureGuide,
   renderProcedureOptions: () => '<option value="">No procedure checklist</option><option value="procedure-1">Press checklist</option>',
+  getAssetRelationshipOpen: () => true,
+  getAssetRelationshipPage: () => 1,
+  LIST_ITEMS_PER_PAGE: 12,
 });
 
 const html = renderAssetDetail();
@@ -135,7 +138,9 @@ assert.doesNotMatch(html, /asset-photo-card/);
 assert.match(html, /data-open-asset="parent-1"/);
 assert.match(html, /data-open-asset="child-1"/);
 assert.match(html, /Open Work/);
+assert.match(html, /data-asset-relationship-section="open-work"/);
 assert.match(html, /Completed History/);
+assert.match(html, /data-asset-relationship-section="completed-history"/);
 assert.match(html, /Done/);
 assert.match(html, /by QA Completer/);
 assert.match(html, /Older Done/);
@@ -152,6 +157,7 @@ assert.match(html, /data-section="pm"/);
 assert.match(html, /Go to PM/);
 assert.match(html, /Linked Parts/);
 assert.match(html, /class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target"/);
+assert.match(html, /data-asset-relationship-section="linked-parts"/);
 assert.match(html, /data-section="parts"/);
 assert.match(html, /Go to Parts/);
 assert.match(html, /data-attach-asset-part="asset-1"/);
@@ -159,6 +165,7 @@ assert.match(html, /data-remove-asset-part="asset-part-1"/);
 assert.match(html, /Drive Belt - B-42/);
 assert.match(html, /recommended qty 4/);
 assert.match(html, /Parts Used History/);
+assert.match(html, /data-asset-relationship-section="parts-used"/);
 assert.match(html, /data-cancel-delete-asset/);
 assert.match(html, /data-confirm-delete-asset="asset-1"/);
 assert.doesNotMatch(html, /Degraded needs a reason/);

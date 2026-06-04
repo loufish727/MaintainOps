@@ -134,6 +134,7 @@ const {
   selectWorkOrders,
   countWorkOrdersQuery,
   fetchWorkOrderById,
+  fetchWorkOrdersByAsset,
   fetchWorkOrdersByIds,
   scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
   fetchPagedSearchRows,
@@ -331,6 +332,8 @@ let workOrderDashboardCounts = null;
 let myWorkDashboardCounts = null;
 let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
 let exactWorkOrderSearchCache = { key: "", rows: [] };
+const assetRelationshipOpenKeys = new Set();
+const assetRelationshipPages = {};
 let maintenanceRequests = [];
 let requestServerTotal = 0;
 let requestDashboardCounts = { active: 0, converted: 0, all: 0 };
@@ -1945,6 +1948,61 @@ async function loadServerWorkOrderSlice() {
   return pageResponse;
 }
 
+function mergeWorkOrdersById(rows = []) {
+  if (!rows.length) return;
+  const incoming = new Map(rows.map((row) => [row.id, row]));
+  const existingIds = new Set(workOrders.map((row) => row.id));
+  workOrders = workOrders.map((row) => incoming.get(row.id) || row);
+  rows.forEach((row) => {
+    if (!existingIds.has(row.id)) workOrders.push(row);
+  });
+}
+
+function assetRelationshipKey(assetId, section) {
+  return `${assetId}:${section}`;
+}
+
+function getAssetRelationshipOpen(assetId, section) {
+  return assetRelationshipOpenKeys.has(assetRelationshipKey(assetId, section));
+}
+
+function setAssetRelationshipOpen(assetId, section, isOpen) {
+  const key = assetRelationshipKey(assetId, section);
+  if (isOpen) assetRelationshipOpenKeys.add(key);
+  else assetRelationshipOpenKeys.delete(key);
+}
+
+function getAssetRelationshipPage(assetId, section) {
+  return assetRelationshipPages[assetRelationshipKey(assetId, section)] || 1;
+}
+
+function setAssetRelationshipPage(assetId, section, page) {
+  assetRelationshipPages[assetRelationshipKey(assetId, section)] = Math.max(1, Number(page) || 1);
+}
+
+async function loadAssetWorkOrderHistory(assetId) {
+  if (!assetId || !activeCompanyId) return;
+  const response = await withOperationTimeout(
+    fetchWorkOrdersByAsset(supabaseClient, activeCompanyId, assetId, WORK_ORDER_RELATION_SELECT),
+    "Equipment work history timed out.",
+    12000
+  );
+  if (response.error) {
+    showNotice(`Could not load equipment work history: ${response.error.message}`, "warning");
+    return;
+  }
+  const rows = response.data || [];
+  mergeWorkOrdersById(rows);
+  const ids = rows.map((row) => row.id);
+  await Promise.all([
+    loadCommentsForWorkOrderIds(ids),
+    loadPhotosForWorkOrderIds(ids),
+    loadPartsUsedForWorkOrderIds(ids),
+    loadStepResultsForWorkOrderIds(ids),
+    loadWorkOrderEventsForWorkOrderIds(ids),
+  ]);
+}
+
 const REQUEST_RELATION_SELECT = "*, assets(name, location_id), locations(name)";
 const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name)";
 const REQUEST_FALLBACK_SELECT = "*";
@@ -2373,6 +2431,47 @@ async function loadComments() {
   }, {});
 }
 
+function replaceArrayGroupsForIds(currentGroups, ids, rows) {
+  const idSet = new Set(ids);
+  const nextGroups = { ...currentGroups };
+  idSet.forEach((id) => { delete nextGroups[id]; });
+  (rows || []).forEach((row) => {
+    nextGroups[row.work_order_id] ||= [];
+    nextGroups[row.work_order_id].push(row);
+  });
+  return nextGroups;
+}
+
+function replaceStepResultGroupsForIds(currentGroups, ids, rows) {
+  const idSet = new Set(ids);
+  const nextGroups = { ...currentGroups };
+  idSet.forEach((id) => { delete nextGroups[id]; });
+  (rows || []).forEach((result) => {
+    nextGroups[result.work_order_id] ||= {};
+    nextGroups[result.work_order_id][result.procedure_step_id] = result;
+  });
+  return nextGroups;
+}
+
+async function loadCommentsForWorkOrderIds(ids = []) {
+  commentsError = "";
+  if (!ids.length) return;
+
+  const { data, error } = await supabaseClient
+    .from("work_order_comments")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("work_order_id", ids)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    commentsError = `Could not load comments: ${error.message}`;
+    return;
+  }
+
+  commentsByWorkOrder = replaceArrayGroupsForIds(commentsByWorkOrder, ids, data || []);
+}
+
 async function loadPhotos() {
   if (!workOrders.length) {
     photosByWorkOrder = {};
@@ -2403,6 +2502,27 @@ async function loadPhotos() {
   await addSignedPhotoUrls();
 }
 
+async function loadPhotosForWorkOrderIds(ids = []) {
+  if (!ids.length) return;
+
+  const { data, error } = await supabaseClient
+    .from("work_order_photos")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("work_order_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    photosReady = false;
+    return;
+  }
+  photosReady = true;
+
+  const rows = data || [];
+  photosByWorkOrder = replaceArrayGroupsForIds(photosByWorkOrder, ids, rows);
+  await addSignedPhotoUrlsForRows(rows);
+}
+
 async function loadPartsUsed() {
   if (!workOrders.length) {
     partsUsedByWorkOrder = {};
@@ -2422,6 +2542,19 @@ async function loadPartsUsed() {
     groups[row.work_order_id].push(row);
     return groups;
   }, {});
+}
+
+async function loadPartsUsedForWorkOrderIds(ids = []) {
+  if (!ids.length) return;
+
+  const { data } = await supabaseClient
+    .from("work_order_parts")
+    .select("*, parts(*)")
+    .eq("company_id", activeCompanyId)
+    .in("work_order_id", ids)
+    .order("created_at", { ascending: true });
+
+  partsUsedByWorkOrder = replaceArrayGroupsForIds(partsUsedByWorkOrder, ids, data || []);
 }
 
 async function loadAssetParts() {
@@ -2537,6 +2670,21 @@ async function loadWorkOrderEvents() {
   }, {});
 }
 
+async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
+  if (!ids.length) return;
+
+  const { data } = await supabaseClient
+    .from("work_order_events")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("work_order_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (!data) return;
+
+  eventsByWorkOrder = replaceArrayGroupsForIds(eventsByWorkOrder, ids, data || []);
+}
+
 async function loadStepResults() {
   if (!workOrders.length) {
     stepResultsByWorkOrder = {};
@@ -2557,8 +2705,24 @@ async function loadStepResults() {
   }, {});
 }
 
+async function loadStepResultsForWorkOrderIds(ids = []) {
+  if (!ids.length) return;
+
+  const { data } = await supabaseClient
+    .from("work_order_step_results")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("work_order_id", ids);
+
+  stepResultsByWorkOrder = replaceStepResultGroupsForIds(stepResultsByWorkOrder, ids, data || []);
+}
+
 async function addSignedPhotoUrls() {
   const photos = Object.values(photosByWorkOrder).flat();
+  await addSignedPhotoUrlsForRows(photos);
+}
+
+async function addSignedPhotoUrlsForRows(photos = []) {
   await Promise.all(photos.map(async (photo) => {
     const { data } = await supabaseClient.storage
       .from("work-order-photos")
@@ -3434,6 +3598,9 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   canDeleteEquipment,
   renderEquipmentStructureGuide,
   renderProcedureOptions,
+  getAssetRelationshipOpen,
+  getAssetRelationshipPage,
+  LIST_ITEMS_PER_PAGE,
 });
 
 const {
@@ -4223,7 +4390,11 @@ function bindWorkspaceEvents() {
         reportIssueMode = value;
       },
     },
+    getAssetRelationshipPage,
+    loadAssetWorkOrderHistory,
     renderWorkspace,
+    setAssetRelationshipOpen,
+    setAssetRelationshipPage,
     scrollToDetailTop: scrollEquipmentDetailToActions,
   });
 

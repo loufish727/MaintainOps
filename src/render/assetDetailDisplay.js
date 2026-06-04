@@ -42,8 +42,12 @@
       const parent = parentAssetFor(asset);
       const children = childAssetsFor(asset.id);
       const assetWorkOrders = workOrders.filter((workOrder) => workOrder.asset_id === asset.id);
-      const openWork = assetWorkOrders.filter((workOrder) => workOrder.status !== "completed");
-      const completedWork = assetWorkOrders.filter((workOrder) => workOrder.status === "completed");
+      const openWork = assetWorkOrders
+        .filter((workOrder) => workOrder.status !== "completed")
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      const completedWork = assetWorkOrders
+        .filter((workOrder) => workOrder.status === "completed")
+        .sort((a, b) => new Date(b.completed_at || b.created_at || 0) - new Date(a.completed_at || a.created_at || 0));
       const assetSchedules = preventiveSchedules.filter((schedule) => schedule.asset_id === asset.id);
       const usedParts = Object.values(partsUsedByWorkOrder)
         .flat()
@@ -51,6 +55,31 @@
       const linkedParts = assetParts.filter((row) => row.asset_id === asset.id);
       const linkedPartIds = new Set(linkedParts.map((row) => row.part_id));
       const attachableParts = parts.filter((part) => !linkedPartIds.has(part.id));
+      const pageSize = deps.LIST_ITEMS_PER_PAGE || 12;
+      const relationOpen = (section) => deps.getAssetRelationshipOpen?.(asset.id, section) || false;
+      const relationPage = (section, total) => Math.min(
+        Math.max(1, deps.getAssetRelationshipPage?.(asset.id, section) || 1),
+        Math.max(1, Math.ceil(total / pageSize))
+      );
+      const pageRows = (rows, section) => {
+        const page = relationPage(section, rows.length);
+        return rows.slice((page - 1) * pageSize, page * pageSize);
+      };
+      const relationPagination = (section, total) => {
+        if (total <= pageSize) return "";
+        const page = relationPage(section, total);
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        const firstShown = ((page - 1) * pageSize) + 1;
+        const lastShown = Math.min(total, page * pageSize);
+        return `
+          <div class="pagination-bar">
+            <button class="secondary-button page-action-button" data-asset-relation-page="prev" data-asset-id="${escapeHtml(asset.id)}" data-asset-relation-section="${escapeHtml(section)}" type="button" ${page <= 1 ? "disabled" : ""}>Previous</button>
+            <span>Showing ${firstShown}-${lastShown} of ${total} - Page ${page} of ${totalPages}</span>
+            <button class="secondary-button page-action-button" data-asset-relation-page="next" data-asset-id="${escapeHtml(asset.id)}" data-asset-relation-section="${escapeHtml(section)}" type="button" ${page >= totalPages ? "disabled" : ""}>Next</button>
+          </div>
+        `;
+      };
+      const relationshipDetailsAttrs = (section) => `class="asset-relationship-panel relationship-detail comment" data-asset-relationship-section="${escapeHtml(section)}" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen(section) ? "open" : ""}`;
       const locationName = locations.find((location) => location.id === asset.location_id)?.name || asset.location || "No location set";
       const primaryLabel = parent ? parent.name : "Top level equipment";
       const statusTone = asset.status === "offline"
@@ -230,19 +259,25 @@
             </div>
           </section>
 
-          <section class="asset-relationship-panel relationship-detail comment" id="asset-open-work-target">
-            <h3>Open Work</h3>
+          <details ${relationshipDetailsAttrs("open-work")} id="asset-open-work-target">
+            <summary>Open Work <span>${openWork.length}</span></summary>
             <div class="mini-list">
-              ${openWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`}
+              ${relationOpen("open-work")
+                ? pageRows(openWork, "open-work").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`
+                : `<p class="muted">Open this section to load and review active work for this equipment.</p>`}
             </div>
-          </section>
+            ${relationOpen("open-work") ? relationPagination("open-work", openWork.length) : ""}
+          </details>
 
-          <section class="asset-relationship-panel relationship-detail comment">
-            <h3>Completed History</h3>
+          <details ${relationshipDetailsAttrs("completed-history")}>
+            <summary>Completed History <span>${completedWork.length}</span></summary>
             <div class="mini-list">
-              ${completedWork.map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>`}
+              ${relationOpen("completed-history")
+                ? pageRows(completedWork, "completed-history").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>`
+                : `<p class="muted">Open this section to load completed work history for this equipment.</p>`}
             </div>
-          </section>
+            ${relationOpen("completed-history") ? relationPagination("completed-history", completedWork.length) : ""}
+          </details>
 
           <section class="asset-relationship-panel relationship-detail procedure">
             <div class="panel-header compact">
@@ -272,12 +307,12 @@
             </div>
           </section>
 
-          <section class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target">
+          <details class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target" data-asset-relationship-section="linked-parts" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("linked-parts") ? "open" : ""}>
+            <summary>Linked Parts <span>${linkedParts.length}</span></summary>
             <div class="panel-header compact">
-              <h3>Linked Parts</h3>
               <button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>
             </div>
-            ${assetPartsReady ? `
+            ${relationOpen("linked-parts") && assetPartsReady ? `
               <form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
                 <label>Part
                   <select name="part_id" ${attachableParts.length ? "" : "disabled"}>
@@ -291,21 +326,25 @@
               </form>
               <p class="error-text" data-asset-part-error="${escapeHtml(asset.id)}"></p>
               <div class="mini-list">
-                ${linkedParts.map((row) => `<article>
+                ${pageRows(linkedParts, "linked-parts").map((row) => `<article>
                   <strong>${escapeHtml(row.parts?.name || "Part")}</strong>
                   <span>${escapeHtml(row.parts?.sku || "No SKU")} - recommended qty ${escapeHtml(row.quantity_recommended || 1)}${row.note ? ` - ${escapeHtml(row.note)}` : ""}</span>
                   <button class="text-button danger-link" data-remove-asset-part="${escapeHtml(row.id)}" type="button">Remove Link</button>
                 </article>`).join("") || `<p class="muted">No parts are linked to this equipment yet.</p>`}
               </div>
-            ` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
-          </section>
+              ${relationPagination("linked-parts", linkedParts.length)}
+            ` : assetPartsReady ? `<p class="muted">Open this section to review or attach linked parts for this equipment.</p>` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
+          </details>
 
-          <section class="asset-relationship-panel relationship-detail parts">
-            <h3>Parts Used History</h3>
+          <details class="asset-relationship-panel relationship-detail parts" data-asset-relationship-section="parts-used" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("parts-used") ? "open" : ""}>
+            <summary>Parts Used History <span>${usedParts.length}</span></summary>
             <div class="mini-list">
-              ${usedParts.map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`}
+              ${relationOpen("parts-used")
+                ? pageRows(usedParts, "parts-used").map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`
+                : `<p class="muted">Open this section to load parts used history for this equipment.</p>`}
             </div>
-          </section>
+            ${relationOpen("parts-used") ? relationPagination("parts-used", usedParts.length) : ""}
+          </details>
 
           ${renderAssetDangerZone(asset)}
         </div>

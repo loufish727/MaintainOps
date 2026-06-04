@@ -21,6 +21,16 @@
       state.setQuickFixRequestId(null);
     };
 
+    async function loadAssetHistory(assetId) {
+      if (typeof options.loadAssetWorkOrderHistory === "function") {
+        await options.loadAssetWorkOrderHistory(assetId);
+      }
+    }
+
+    function sectionNeedsAssetWorkHistory(section) {
+      return section === "open-work" || section === "completed-history" || section === "parts-used";
+    }
+
     const backToMyWork = doc.querySelector("#back-to-my-work");
     if (backToMyWork) {
       backToMyWork.addEventListener("click", () => {
@@ -105,6 +115,38 @@
         storage.setItem("maintainops.activeSection", state.getActiveSection());
         options.renderWorkspace();
         scrollToDetailTop();
+      });
+    });
+
+    doc.querySelectorAll("[data-asset-relationship-section]").forEach((details) => {
+      details.addEventListener("toggle", async () => {
+        const assetId = details.dataset.assetId;
+        const section = details.dataset.assetRelationshipSection;
+        if (!assetId || !section) return;
+        if (typeof options.setAssetRelationshipOpen === "function") {
+          options.setAssetRelationshipOpen(assetId, section, details.open);
+        }
+        if (details.open && sectionNeedsAssetWorkHistory(section)) {
+          await loadAssetHistory(assetId);
+        }
+        options.renderWorkspace();
+      });
+    });
+
+    doc.querySelectorAll("[data-asset-relation-page]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const assetId = button.dataset.assetId;
+        const section = button.dataset.assetRelationSection;
+        const currentPage = typeof options.getAssetRelationshipPage === "function"
+          ? options.getAssetRelationshipPage(assetId, section)
+          : 1;
+        const nextPage = currentPage + (button.dataset.assetRelationPage === "next" ? 1 : -1);
+        if (typeof options.setAssetRelationshipPage === "function") {
+          options.setAssetRelationshipPage(assetId, section, nextPage);
+        }
+        options.renderWorkspace();
       });
     });
   }

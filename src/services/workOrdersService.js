@@ -20,6 +20,16 @@
       .maybeSingle();
   }
 
+  function fetchWorkOrdersByAsset(supabaseClient, companyId, assetId, selectClause) {
+    return supabaseClient
+      .from("work_orders")
+      .select(selectClause)
+      .eq("company_id", companyId)
+      .eq("asset_id", assetId)
+      .order("completed_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
   async function fetchWorkOrdersByIds(supabaseClient, params) {
     const {
       companyId,
@@ -66,6 +76,7 @@
     selectWorkOrders,
     countWorkOrdersQuery,
     fetchWorkOrderById,
+    fetchWorkOrdersByAsset,
     fetchWorkOrdersByIds,
     scopedWorkOrderSearchQuery,
     fetchPagedSearchRows,
