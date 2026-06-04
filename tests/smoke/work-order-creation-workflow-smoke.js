@@ -128,6 +128,8 @@ function createWorkflow(overrides = {}) {
   const normal = createWorkflow();
   const normalButton = await normal.run();
   assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].title === "Create work order"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].asset_id === "asset-1"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].location_id === "location-asset-1"), true);
   assert.equal(normal.calls.some((call) => call[0] === "event" && call[2] === "created"), true);
   assert.deepEqual(normal.calls.filter((call) => call[0] === "activeWorkOrderId"), [["activeWorkOrderId", "wo-1"]]);
   assert.equal(normalButton.disabled, false);

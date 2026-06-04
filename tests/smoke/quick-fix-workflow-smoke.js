@@ -12,14 +12,14 @@ function fakeFormData(values) {
   };
 }
 
-const submitButton = { disabled: false, textContent: "Log Quick Fix", isConnected: true };
-const errorTarget = { textContent: "" };
-const calls = [];
-
-const { createQuickFix } = createQuickFixWorkflow({
+function createWorkflow(formValues = {}) {
+  const localCalls = [];
+  const localErrorTarget = { textContent: "" };
+  const localSubmitButton = { disabled: false, textContent: "Log Quick Fix", isConnected: true };
+  const { createQuickFix } = createQuickFixWorkflow({
   documentRef: {
     querySelector(selector) {
-      return selector === "#quick-fix-error" ? errorTarget : null;
+      return selector === "#quick-fix-error" ? localErrorTarget : null;
     },
   },
   FormDataCtor: function FormDataCtor() {
@@ -43,6 +43,7 @@ const { createQuickFix } = createQuickFixWorkflow({
       quantity_used: "1",
       photo: { name: "" },
       asset_status: "",
+      ...formValues,
     });
   },
   withOperationTimeout: async (operation) => operation,
@@ -57,8 +58,8 @@ const { createQuickFix } = createQuickFixWorkflow({
   confirmAssetLocationRouting: () => true,
   assetRequiresSafety: () => false,
   blocksProcedureCompletion: () => "",
-  setWorkOrderActionWarning: (...args) => calls.push(["setWorkOrderActionWarning", ...args]),
-  locationIdForAsset: () => "location-1",
+  setWorkOrderActionWarning: (...args) => localCalls.push(["setWorkOrderActionWarning", ...args]),
+  locationIdForAsset: (assetId) => `location-${assetId || "none"}`,
   descriptionWithRequestPhotoNote: (description) => description,
   descriptionWithAssignmentNote: (description) => description,
   assignedUserFromForm: () => "user-1",
@@ -71,7 +72,7 @@ const { createQuickFix } = createQuickFixWorkflow({
     payload.safety_devices_checked = checked;
   },
   insertWithOptionalProcedure: async (table, payload, options) => {
-    calls.push(["insert", table, payload.title, payload.status, options.returnSingle]);
+    localCalls.push(["insert", table, payload, options.returnSingle]);
     return { data: { id: "wo-1" }, error: null };
   },
   friendlyWorkOrderSaveError: (error) => error.message,
@@ -79,36 +80,52 @@ const { createQuickFix } = createQuickFixWorkflow({
   addPhotoToWorkOrder: async () => null,
   updateAssetStatus: async () => null,
   recordWorkOrderEvent: async (id, type, summary) => {
-    calls.push(["event", id, type, summary]);
+    localCalls.push(["event", id, type, summary]);
   },
-  setActiveWorkOrderIdState: (value) => calls.push(["activeWorkOrderId", value]),
-  setActiveAssetIdState: (value) => calls.push(["activeAssetId", value]),
-  setCreateWorkOrderMode: (value) => calls.push(["createWorkOrderMode", value]),
-  setQuickFixMode: (value) => calls.push(["quickFixMode", value]),
-  setQuickFixAssetId: (value) => calls.push(["quickFixAssetId", value]),
-  setQuickFixRequestId: (value) => calls.push(["quickFixRequestId", value]),
-  showNotice: (message, tone) => calls.push(["notice", message, tone || "success"]),
-  render: async () => calls.push(["render"]),
+  setActiveWorkOrderIdState: (value) => localCalls.push(["activeWorkOrderId", value]),
+  setActiveAssetIdState: (value) => localCalls.push(["activeAssetId", value]),
+  setCreateWorkOrderMode: (value) => localCalls.push(["createWorkOrderMode", value]),
+  setQuickFixMode: (value) => localCalls.push(["quickFixMode", value]),
+  setQuickFixAssetId: (value) => localCalls.push(["quickFixAssetId", value]),
+  setQuickFixRequestId: (value) => localCalls.push(["quickFixRequestId", value]),
+  showNotice: (message, tone) => localCalls.push(["notice", message, tone || "success"]),
+  render: async () => localCalls.push(["render"]),
 });
+  return { createQuickFix, calls: localCalls, errorTarget: localErrorTarget, submitButton: localSubmitButton };
+}
 
 (async () => {
-  await createQuickFix({
-    preventDefault: () => calls.push(["preventDefault"]),
+  const defaultRun = createWorkflow();
+  await defaultRun.createQuickFix({
+    preventDefault: () => defaultRun.calls.push(["preventDefault"]),
     currentTarget: {
       querySelector(selector) {
-        return selector === "button[type='submit']" ? submitButton : null;
+        return selector === "button[type='submit']" ? defaultRun.submitButton : null;
       },
     },
   });
 
-  assert.equal(errorTarget.textContent, "");
-  assert.equal(submitButton.disabled, false);
-  assert.equal(submitButton.textContent, "Log Quick Fix");
-  assert.deepEqual(calls.filter((call) => call[0] === "insert"), [["insert", "work_orders", "QA quick fix workflow", "open", true]]);
-  assert.deepEqual(calls.filter((call) => call[0] === "activeWorkOrderId"), [["activeWorkOrderId", "wo-1"]]);
-  assert.deepEqual(calls.filter((call) => call[0] === "quickFixMode"), [["quickFixMode", false]]);
-  assert.equal(calls.some((call) => call[0] === "event" && call[2] === "quick_fix"), true);
-  assert.equal(calls.at(-1)[0], "render");
+  assert.equal(defaultRun.errorTarget.textContent, "");
+  assert.equal(defaultRun.submitButton.disabled, false);
+  assert.equal(defaultRun.submitButton.textContent, "Log Quick Fix");
+  assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "insert").map((call) => [call[1], call[2].title, call[2].status, call[3]]), [["work_orders", "QA quick fix workflow", "open", true]]);
+  assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "activeWorkOrderId"), [["activeWorkOrderId", "wo-1"]]);
+  assert.deepEqual(defaultRun.calls.filter((call) => call[0] === "quickFixMode"), [["quickFixMode", false]]);
+  assert.equal(defaultRun.calls.some((call) => call[0] === "event" && call[2] === "quick_fix"), true);
+  assert.equal(defaultRun.calls.at(-1)[0], "render");
+
+  const assetRun = createWorkflow({ asset_id: "asset-1" });
+  await assetRun.createQuickFix({
+    preventDefault: () => assetRun.calls.push(["preventDefault"]),
+    currentTarget: {
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? assetRun.submitButton : null;
+      },
+    },
+  });
+  const assetInsert = assetRun.calls.find((call) => call[0] === "insert");
+  assert.equal(assetInsert[2].asset_id, "asset-1");
+  assert.equal(assetInsert[2].location_id, "location-asset-1");
 
   console.log("quick fix workflow smoke passed");
 })().catch((error) => {

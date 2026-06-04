@@ -28,4 +28,10 @@ Event and navigation changes need path-owned verification:
 - If a change depends on post-render focus, scroll position, section changes, or selected-record landing position, add a targeted smoke that opens the record through the same selector a user clicks.
 - Resource-load checks do not prove interaction placement, scroll anchoring, or post-render landing behavior.
 
+Operational selectors must not inherit display filters:
+
+- Board, card, search, status, type, area, and pagination filters are display concerns.
+- Work order, Quick Fix, request, PM, and edit forms that attach equipment or parts must source selector options from the authoritative active-location data set unless the workflow explicitly requires a narrower list.
+- When a display filter changes around equipment, parts, procedures, or people, add a targeted smoke proving related operational selectors still include valid attachable records and submit the selected id into the mutation payload.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.

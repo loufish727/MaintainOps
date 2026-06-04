@@ -4,7 +4,6 @@
     getLocations,
     getActiveLocationId,
     getAssets,
-    filteredAssets,
     matchesActiveLocation,
     isAssetDescendantOf,
     parentAssetFor,
@@ -19,7 +18,9 @@
     }
 
     function renderAssetOptions(selectedId = "") {
-      const options = filteredAssets();
+      const options = getAssets()
+        .filter(matchesActiveLocation)
+        .sort((a, b) => assetOptionLabel(a).localeCompare(assetOptionLabel(b)));
       const selectedAsset = selectedId ? getAssets().find((asset) => asset.id === selectedId) : null;
       const list = selectedAsset && !options.some((asset) => asset.id === selectedAsset.id)
         ? [selectedAsset, ...options]

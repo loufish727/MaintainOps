@@ -879,7 +879,6 @@ const {
   getLocations: () => locations,
   getActiveLocationId: () => activeLocationId,
   getAssets: () => assets,
-  filteredAssets,
   matchesActiveLocation,
   isAssetDescendantOf,
   parentAssetFor,
