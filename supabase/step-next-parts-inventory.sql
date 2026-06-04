@@ -14,13 +14,18 @@ create table if not exists public.work_order_parts (
   company_id uuid not null references public.companies(id) on delete cascade,
   work_order_id uuid not null references public.work_orders(id) on delete cascade,
   part_id uuid not null references public.parts(id) on delete restrict,
+  created_by uuid references auth.users(id) on delete set null,
   quantity_used integer not null check (quantity_used > 0),
   created_at timestamptz not null default now()
 );
 
+alter table public.work_order_parts
+  add column if not exists created_by uuid references auth.users(id) on delete set null;
+
 create index if not exists parts_company_id_idx on public.parts(company_id);
 create index if not exists work_order_parts_company_id_idx on public.work_order_parts(company_id);
 create index if not exists work_order_parts_work_order_id_idx on public.work_order_parts(work_order_id);
+create index if not exists work_order_parts_created_by_idx on public.work_order_parts(created_by);
 
 alter table public.parts enable row level security;
 alter table public.work_order_parts enable row level security;

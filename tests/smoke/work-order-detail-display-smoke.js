@@ -27,7 +27,7 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   getCommentsByWorkOrder: () => ({ "wo-1": [{ author_id: "user-1", body: "Checked pump", created_at: "2026-05-27T00:00:00Z" }] }),
   getPhotosByWorkOrder: () => ({ "wo-1": [{ file_name: "before.jpg", signedUrl: "https://example.test/before.jpg", content_type: "image/jpeg" }] }),
   getEventsByWorkOrder: () => ({ "wo-1": [{ event_type: "updated", summary: "Status changed" }] }),
-  getPartsUsedByWorkOrder: () => ({ "wo-1": [{ quantity_used: 2, unit_cost: 5, parts: { name: "Hose" } }] }),
+  getPartsUsedByWorkOrder: () => ({ "wo-1": [{ quantity_used: 2, unit_cost: 5, created_by: "user-1", created_at: "2026-05-27T00:00:00Z", parts: { name: "Hose" } }] }),
   getProcedureTemplates: () => [{ id: "proc-1", name: "Lockout", procedure_steps: [{ id: "step-1", title: "Check guard" }] }],
   getWorkOrderActionWarningId: () => "wo-1",
   getWorkOrderActionWarning: () => "Finish checklist first.",
@@ -71,6 +71,8 @@ assert.match(html, /data-copy-downtime="subject"/);
 assert.match(html, /id="edit-work-order-form"/);
 assert.match(html, /id="complete-work-order-form"/);
 assert.match(html, /id="parts-used-form"/);
+assert.match(html, /Hose/);
+assert.match(html, /QA User/);
 assert.match(html, /id="photo-form"/);
 assert.match(html, /id="comment-form"/);
 assert.match(html, /id="work-order-history-target"/);

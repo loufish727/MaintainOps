@@ -16,7 +16,7 @@
       return `
       <article class="relationship-detail photo">
         <strong>Photo uploaded</strong>
-        <span>${deps.photoMetaText(item)}</span>
+        <span>${deps.photoMetaText(item)} &middot; ${deps.escapeHtml(profilesByUserId[item.uploaded_by]?.full_name || "Team member")}</span>
         <p>${deps.escapeHtml(item.file_name)}</p>
         ${item.signedUrl ? `<a href="${deps.escapeHtml(item.signedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
       </article>
@@ -29,7 +29,7 @@
       return `
       <article class="relationship-detail parts">
         <strong>Part used</strong>
-        <span>${new Date(item.created_at).toLocaleString()}</span>
+        <span>${new Date(item.created_at).toLocaleString()} &middot; ${deps.escapeHtml(profilesByUserId[item.created_by]?.full_name || "Team member")}</span>
         <p>${deps.escapeHtml(item.parts?.name || "Part")} - ${Number(item.quantity_used) || 0} used - ${deps.money(totalCost)}</p>
       </article>
     `;
@@ -118,4 +118,8 @@
   window.MaintainOpsRelationshipDisplay = Object.freeze({
     createRelationshipDisplayHelpers,
   });
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createRelationshipDisplayHelpers };
+  }
 })();

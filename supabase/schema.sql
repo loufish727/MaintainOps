@@ -150,6 +150,7 @@ create table if not exists public.work_order_parts (
   company_id uuid not null references public.companies(id) on delete cascade,
   work_order_id uuid not null references public.work_orders(id) on delete cascade,
   part_id uuid not null references public.parts(id) on delete restrict,
+  created_by uuid references auth.users(id) on delete set null,
   quantity_used integer not null check (quantity_used > 0),
   unit_cost_at_use numeric(12,2) not null default 0,
   created_at timestamptz not null default now()
@@ -445,6 +446,7 @@ create index if not exists parts_location_id_idx on public.parts(location_id);
 create index if not exists parts_company_supplier_name_idx on public.parts(company_id, supplier_name);
 create index if not exists work_order_parts_company_id_idx on public.work_order_parts(company_id);
 create index if not exists work_order_parts_work_order_id_idx on public.work_order_parts(work_order_id);
+create index if not exists work_order_parts_created_by_idx on public.work_order_parts(created_by);
 create index if not exists part_documents_company_id_idx on public.part_documents(company_id);
 create index if not exists part_documents_part_id_idx on public.part_documents(part_id);
 create index if not exists work_order_events_company_id_idx on public.work_order_events(company_id);

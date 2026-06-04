@@ -1,5 +1,3 @@
-drop function if exists public.record_work_order_part_usage(uuid, uuid, uuid, integer);
-
 alter table public.work_order_parts
   add column if not exists created_by uuid references auth.users(id) on delete set null;
 

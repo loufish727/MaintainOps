@@ -309,6 +309,7 @@
             <article class="relationship-detail parts">
               <strong>${escapeHtml(row.parts?.name || "Part")}</strong>
               <span>${row.quantity_used} used - ${money((Number(row.quantity_used) || 0) * partUsageUnitCost(row))}</span>
+              <small>${row.created_at ? new Date(row.created_at).toLocaleString() : "time unavailable"} &middot; ${escapeHtml(profilesByUserId[row.created_by]?.full_name || "Team member")}</small>
             </article>
           `).join("") || `<p class="muted">No parts used yet.</p>`}
         </div>
