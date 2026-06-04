@@ -34,4 +34,10 @@ Operational selectors must not inherit display filters:
 - Work order, Quick Fix, request, PM, and edit forms that attach equipment or parts must source selector options from the authoritative active-location data set unless the workflow explicitly requires a narrower list.
 - When a display filter changes around equipment, parts, procedures, or people, add a targeted smoke proving related operational selectors still include valid attachable records and submit the selected id into the mutation payload.
 
+Browser smoke fallback:
+
+- The in-app browser is useful but not required for release verification.
+- If in-app browser control is unavailable, use CLI Playwright smokes for the touched browser interaction before deploy.
+- For equipment attachment regressions, run `npm run test:smoke:work-attach`; this combines selector-source, mutation-payload, and browser DOM checks.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.
