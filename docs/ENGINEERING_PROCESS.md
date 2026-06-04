@@ -46,4 +46,10 @@ Unsaved form input must survive background system events:
 - Same-user token refresh should update session state without calling the full workspace render.
 - If a touched path can re-render while a user is typing in a work order, Quick Fix, request, PM, procedure, equipment, message, or part form, add a targeted smoke or policy check proving active input will not be wiped.
 
+Workspace data loads must fail by area, not as one opaque block:
+
+- Do not put many Supabase startup reads behind one unnamed timeout.
+- Each workspace startup read should have a named timeout or isolated fallback so one slow optional area does not block the whole app.
+- A startup warning should name the slow area whenever possible.
+
 Internal operating details, phase logs, and procedural playbooks are intentionally kept outside the public repository.

@@ -344,6 +344,7 @@ let teamInviteCancelError = "";
 let requestNotificationRecipients = [];
 let requestNotificationRecipientsReady = true;
 let requestNotificationRecipientError = "";
+let workspaceLoadWarnings = [];
 let messageThreads = [];
 let messageThreadMembers = [];
 let messagesByThreadId = {};
@@ -2073,21 +2074,22 @@ async function countWorkOrders(options = {}) {
 }
 
 async function loadCompanyData() {
+  workspaceLoadWarnings = [];
   let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
-    listLocations(supabaseClient, activeCompanyId),
-    listAssets(supabaseClient, activeCompanyId),
-    supabaseClient
+    loadWorkspaceResponse("Locations", listLocations(supabaseClient, activeCompanyId)),
+    loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
+    loadWorkspaceResponse("PM schedules", supabaseClient
       .from("preventive_schedules")
       .select("*, assets(name, location_id)")
       .eq("company_id", activeCompanyId)
-      .order("next_due_at", { ascending: true }),
-    listParts(supabaseClient, activeCompanyId),
-    supabaseClient
+      .order("next_due_at", { ascending: true })),
+    loadWorkspaceResponse("Parts", listParts(supabaseClient, activeCompanyId)),
+    loadWorkspaceResponse("Procedure checklists", supabaseClient
       .from("procedure_templates")
       .select("*, procedure_steps(*)")
       .eq("company_id", activeCompanyId)
-      .order("name"),
-    listAppIssueReports(supabaseClient, activeCompanyId),
+      .order("name")),
+    loadWorkspaceResponse("App issue reports", listAppIssueReports(supabaseClient, activeCompanyId)),
   ]);
 
   locationsReady = !locationResponse.error;
@@ -2103,10 +2105,10 @@ async function loadCompanyData() {
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
-  const workOrderResponse = await loadServerWorkOrderSlice();
-  const requestResponse = await loadServerRequestSlice();
+  const workOrderResponse = await loadWorkspaceResponse("Work orders", loadServerWorkOrderSlice(), 16000);
+  const requestResponse = await loadWorkspaceResponse("Requests", loadServerRequestSlice(), 14000);
   if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
-    const activeResponse = await fetchWorkOrderById(supabaseClient, activeCompanyId, activeWorkOrderId, WORK_ORDER_RELATION_SELECT);
+    const activeResponse = await loadWorkspaceResponse("Selected work order", fetchWorkOrderById(supabaseClient, activeCompanyId, activeWorkOrderId, WORK_ORDER_RELATION_SELECT));
     if (!activeResponse.error && activeResponse.data) {
       workOrders = [activeResponse.data, ...workOrders];
     }
@@ -2118,7 +2120,49 @@ async function loadCompanyData() {
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
   proceduresReady = !procedureResponse.error;
-  await Promise.all([loadProfiles(), loadMembers(), loadMessageCenter(), loadPublicRequestLinks(), addSignedRequestPhotoUrls(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadPartDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+  await Promise.all([
+    runWorkspaceLoader("Profiles", loadProfiles),
+    runWorkspaceLoader("Team members", loadMembers),
+    runWorkspaceLoader("Messages", loadMessageCenter),
+    runWorkspaceLoader("Public request links", loadPublicRequestLinks),
+    runWorkspaceLoader("Request photos", addSignedRequestPhotoUrls),
+    runWorkspaceLoader("Comments", loadComments),
+    runWorkspaceLoader("Work photos", loadPhotos),
+    runWorkspaceLoader("Parts used", loadPartsUsed),
+    runWorkspaceLoader("Equipment parts", loadAssetParts),
+    runWorkspaceLoader("Equipment files", loadAssetDocuments),
+    runWorkspaceLoader("Part files", loadPartDocuments),
+    runWorkspaceLoader("Checklist results", loadStepResults),
+    runWorkspaceLoader("Work history", loadWorkOrderEvents),
+  ]);
+  applyWorkspaceLoadWarnings();
+}
+
+async function loadWorkspaceResponse(label, promise, timeoutMs = 12000) {
+  const response = await withOperationTimeout(
+    promise,
+    `${label} timed out.`,
+    timeoutMs
+  ).catch((error) => ({ error, data: [] }));
+  if (response.error) workspaceLoadWarnings.push(`${label}: ${response.error.message || response.error}`);
+  return response;
+}
+
+async function runWorkspaceLoader(label, loader, timeoutMs = 12000) {
+  const error = await withOperationTimeout(
+    loader(),
+    `${label} timed out.`,
+    timeoutMs
+  ).then(() => null).catch((failure) => failure);
+  if (error) workspaceLoadWarnings.push(`${label}: ${error.message || error}`);
+}
+
+function applyWorkspaceLoadWarnings() {
+  if (!workspaceLoadWarnings.length) return;
+  const visibleWarnings = workspaceLoadWarnings.slice(0, 2).join("; ");
+  const extraCount = workspaceLoadWarnings.length > 2 ? ` (+${workspaceLoadWarnings.length - 2} more)` : "";
+  appNotice = `Some workspace data loaded slowly: ${visibleWarnings}${extraCount}`;
+  appNoticeTone = "warning";
 }
 
 async function reloadWorkOrderQueue() {
