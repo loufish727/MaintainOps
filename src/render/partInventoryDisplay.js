@@ -15,18 +15,27 @@
     }
 
     function filteredParts() {
-      return deps.getParts().filter((part) => {
+      const rows = deps.getParts().filter((part) => {
         if (!deps.matchesActiveLocation(part)) return false;
         if (deps.getPartInventoryFilter() === "low" && !isLowStockPart(part)) return false;
         return matchesPartSearch([
           part.name,
           part.sku,
           part.supplier_name,
+          part.machine_note,
           part.quantity_on_hand,
           part.reorder_point,
           part.unit_cost,
         ]);
       });
+      if (deps.getPartSort && deps.getPartSort() === "source") {
+        return [...rows].sort((a, b) => {
+          const sourceCompare = String(a.supplier_name || "zzzzzz").localeCompare(String(b.supplier_name || "zzzzzz"), undefined, { sensitivity: "base" });
+          if (sourceCompare) return sourceCompare;
+          return String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
+        });
+      }
+      return rows;
     }
 
     function partSourceOptions() {

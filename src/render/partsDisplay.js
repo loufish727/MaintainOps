@@ -15,6 +15,7 @@
     partUsageRows,
     canDeleteParts,
     renderPartSourceOptions,
+    renderPartMachineOptions,
     renderPartSourceManager,
   }) {
     const PART_DOCUMENT_TYPES = [
@@ -116,6 +117,7 @@
             <div class="chip-row">
               ${part.sku ? `<span class="chip">${escapeHtml(part.sku)}</span>` : ""}
               ${part.supplier_name ? `<span class="chip part-source-chip">${escapeHtml(part.supplier_name)}</span>` : ""}
+              ${part.machine_note ? `<span class="chip">${escapeHtml(part.machine_note)}</span>` : ""}
               ${low ? `<span class="chip overdue">low stock</span>` : `<span class="chip open">stocked</span>`}
             </div>
             <h3>${escapeHtml(part.name)}</h3>
@@ -146,7 +148,7 @@
       `).join("");
     }
 
-    function renderPartSearch() {
+    function renderPartSearch(partSort = "default") {
       return `
         <form class="part-search-bar" id="part-search-form">
           <label>
@@ -155,6 +157,11 @@
           </label>
           <button class="secondary-button" type="submit">Search</button>
         </form>
+        <div class="part-sort-bar relationship-detail parts" aria-label="Parts sort">
+          <span>Sort</span>
+          <button class="secondary-button ${partSort === "default" ? "active" : ""}" data-part-sort="default" type="button">Default</button>
+          <button class="secondary-button ${partSort === "source" ? "active" : ""}" data-part-sort="source" type="button">Source / vendor</button>
+        </div>
       `;
     }
 
@@ -167,12 +174,14 @@
       return `
         <section class="part-detail-shell">
           ${renderPartSourceOptions()}
+          ${renderPartMachineOptions()}
           <div class="part-detail-summary relationship-detail parts">
             <button class="secondary-button part-back-button" data-close-part-detail type="button">Back to parts</button>
             <div>
               <div class="chip-row">
                 ${part.sku ? `<span class="chip">${escapeHtml(part.sku)}</span>` : ""}
                 ${part.supplier_name ? `<span class="chip part-source-chip">${escapeHtml(part.supplier_name)}</span>` : ""}
+                ${part.machine_note ? `<span class="chip">${escapeHtml(part.machine_note)}</span>` : ""}
                 <span class="chip ${quantity <= reorderPoint ? "overdue" : "open"}">${quantity <= reorderPoint ? "low stock" : "stocked"}</span>
               </div>
               <h3>${escapeHtml(part.name)}</h3>
@@ -202,6 +211,7 @@
             <label>Name<input name="name" required value="${escapeHtml(part.name)}"></label>
             <label>SKU<input name="sku" value="${escapeHtml(part.sku || "")}"></label>
             <label>Source / vendor<input name="supplier_name" list="part-source-options" value="${escapeHtml(part.supplier_name || "")}" placeholder="Where this part usually comes from"><button class="text-button danger-link inline-label-action" data-toggle-part-sources type="button">Edit sources</button></label>
+            <label>Common machine / area<input name="machine_note" list="part-machine-options" value="${escapeHtml(part.machine_note || "")}" placeholder="Optional display/search note"></label>
             <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="${quantity}"></label>
             <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="${reorderPoint}"></label>
             <label>Listed unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="${unitCost}"></label>

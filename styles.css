@@ -1356,6 +1356,31 @@ button.gauge-readout {
   min-height: 42px;
 }
 
+.part-sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+}
+
+.part-sort-bar span {
+  color: var(--rel-parts-ink);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.part-sort-bar button {
+  min-height: 34px;
+}
+
+.part-sort-bar button.active {
+  border-color: color-mix(in srgb, var(--rel-parts-ink) 50%, var(--line));
+  background: color-mix(in srgb, var(--rel-parts-bg) 64%, var(--surface));
+  color: var(--rel-parts-ink);
+}
+
 .eyebrow {
   margin: 0 0 4px;
   text-transform: uppercase;

@@ -391,6 +391,7 @@ function setMessageComposerOpenState(value) {
 let parts = [];
 let partCostsReady = true;
 let partSuppliersReady = true;
+let partMachineNotesReady = true;
 let partDocumentsReady = true;
 let partDocumentsByPartId = {};
 let assetParts = [];
@@ -668,6 +669,7 @@ const {
 } = createPartInventoryDisplayHelpers({
   getParts: () => parts,
   getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
+  getPartSort: () => workspaceUiState.getPartSort(),
   getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   matchesActiveLocation,
 });
@@ -1005,6 +1007,20 @@ const {
   getPartSources: () => partSourceOptions(),
   getPartSuppliersReady: () => partSuppliersReady,
 });
+function partMachineOptions() {
+  return [...new Set(assets
+    .filter(matchesActiveLocation)
+    .map((asset) => String(asset.name || "").trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+}
+function renderPartMachineOptions() {
+  return `
+    <datalist id="part-machine-options">
+      ${partMachineOptions().map((name) => `<option value="${escapeHtml(name)}"></option>`).join("")}
+    </datalist>
+  `;
+}
 const {
   renderPart,
   renderPartsHealth,
@@ -1027,6 +1043,7 @@ const {
   partUsageRows,
   canDeleteParts,
   renderPartSourceOptions,
+  renderPartMachineOptions,
   renderPartSourceManager,
 });
 const {
@@ -1072,6 +1089,7 @@ const {
 } = createPartSetupDisplayHelpers({
   getPartCostsReady: () => partCostsReady,
   getPartSuppliersReady: () => partSuppliersReady,
+  getPartMachineNotesReady: () => partMachineNotesReady,
 });
 const messageDisplayHelpers = createMessageDisplayHelpers({
   escapeHtml,
@@ -2238,6 +2256,7 @@ async function loadCompanyData() {
   requestsReady = !requestResponse.error;
   partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
   partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
+  partMachineNotesReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "machine_note");
   schedulesReady = !scheduleResponse.error;
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
@@ -3385,8 +3404,9 @@ function renderWorkspace() {
               <div class="parts-health-grid">
                 ${renderPartsHealth()}
               </div>
-              ${renderPartSearch()}
+              ${renderPartSearch(workspaceUiState.getPartSort())}
               ${renderPartSourceOptions()}
+              ${renderPartMachineOptions()}
               <form class="inline-form parts-form relationship-detail parts" id="create-part-form">
                 <div class="parts-form-header">
                   <h3>Add Part</h3>
@@ -3395,6 +3415,7 @@ function renderWorkspace() {
                 <label>Part name<input name="name" required placeholder="Motor bearing"></label>
                 <label>SKU<input name="sku" placeholder="BRG-204"></label>
                 <label>Source / vendor<input name="supplier_name" list="part-source-options" placeholder="Grainger, McMaster, local supplier"></label>
+                <label>Common machine / area<input name="machine_note" list="part-machine-options" placeholder="Optional, for sorting/search context"></label>
                 <label>On hand<input name="quantity_on_hand" type="number" min="0" step="1" value="0"></label>
                 <label>Reorder at<input name="reorder_point" type="number" min="0" step="1" value="0"></label>
                 <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="0"></label>
@@ -4069,6 +4090,7 @@ const {
   setLocationsReady: (value) => { locationsReady = value; },
   setPartSuppliersReady: (value) => { partSuppliersReady = value; },
   setPartCostsReady: (value) => { partCostsReady = value; },
+  setPartMachineNotesReady: (value) => { partMachineNotesReady = value; },
   setActivePartId: setActivePartIdState,
   clearPartSearchState,
   showNotice,

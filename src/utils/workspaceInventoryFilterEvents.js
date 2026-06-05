@@ -20,6 +20,15 @@
       });
     });
 
+    doc.querySelectorAll("[data-part-sort]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!state.setPartSort) return;
+        state.setPartSort(button.dataset.partSort || "default");
+        options.resetPartsPage();
+        options.renderWorkspace();
+      });
+    });
+
     doc.querySelectorAll("[data-asset-status-filter]").forEach((button) => {
       button.addEventListener("click", () => {
         const nextFilter = state.getAssetStatusFilter() === button.dataset.assetStatusFilter

@@ -43,6 +43,7 @@ const storage = createStorage({
 });
 const state = createWorkspaceUiState({ storage });
 const lowPartsButton = createButton({ partInventoryFilter: "low" });
+const sourceSortButton = createButton({ partSort: "source" });
 const runningAssetButton = createButton({ assetStatusFilter: "running" });
 const degradedAssetButton = createButton({ assetStatusFilter: "degraded" });
 const toolingAssetButton = createButton({ assetTypeFilter: "tooling" });
@@ -51,6 +52,7 @@ areaSelect.value = "Bay 1";
 const doc = {
   querySelectorAll(selector) {
     if (selector === "[data-part-inventory-filter]") return [lowPartsButton];
+    if (selector === "[data-part-sort]") return [sourceSortButton];
     if (selector === "[data-asset-status-filter]") return [runningAssetButton, degradedAssetButton];
     if (selector === "[data-asset-type-filter]") return [toolingAssetButton];
     if (selector === "[data-asset-area-filter]") return [areaSelect];
@@ -78,6 +80,14 @@ assert.equal(storage.values["maintainops.partInventoryFilter"], "low");
 assert.equal(storage.values["maintainops.partsPage"], "1");
 assert.equal(renderCount, 1);
 
+state.setPartsPage(3);
+sourceSortButton.dispatch("click");
+assert.equal(state.getPartSort(), "source");
+assert.equal(state.getPartsPage(), 1);
+assert.equal(storage.values["maintainops.partSort"], "source");
+assert.equal(storage.values["maintainops.partsPage"], "1");
+assert.equal(renderCount, 2);
+
 runningAssetButton.dispatch("click");
 assert.equal(state.getAssetStatusFilter(), "running");
 assert.equal(state.getAssetTypeFilter(), "all");
@@ -85,25 +95,25 @@ assert.equal(state.getAssetsPage(), 1);
 assert.equal(storage.values["maintainops.assetStatusFilter"], "running");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
 assert.equal(storage.values["maintainops.assetsPage"], "1");
-assert.equal(renderCount, 2);
+assert.equal(renderCount, 3);
 
 toolingAssetButton.dispatch("click");
 assert.equal(state.getAssetStatusFilter(), "all");
 assert.equal(state.getAssetTypeFilter(), "tooling");
 assert.equal(storage.values["maintainops.assetStatusFilter"], "all");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "tooling");
-assert.equal(renderCount, 3);
+assert.equal(renderCount, 4);
 
 toolingAssetButton.dispatch("click");
 assert.equal(state.getAssetTypeFilter(), "all");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
-assert.equal(renderCount, 4);
+assert.equal(renderCount, 5);
 
 runningAssetButton.dispatch("click");
 runningAssetButton.dispatch("click");
 assert.equal(state.getAssetStatusFilter(), "all");
 assert.equal(storage.values["maintainops.assetStatusFilter"], "all");
-assert.equal(renderCount, 6);
+assert.equal(renderCount, 7);
 
 state.setAssetsPage(4);
 degradedAssetButton.dispatch("click");
@@ -113,7 +123,7 @@ assert.equal(state.getAssetsPage(), 1);
 assert.equal(storage.values["maintainops.assetStatusFilter"], "degraded");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "all");
 assert.equal(storage.values["maintainops.assetsPage"], "1");
-assert.equal(renderCount, 7);
+assert.equal(renderCount, 8);
 
 state.setAssetsPage(5);
 areaSelect.dispatch("change");
@@ -121,10 +131,10 @@ assert.equal(state.getAssetAreaFilter(), "Bay 1");
 assert.equal(state.getAssetsPage(), 1);
 assert.equal(storage.values["maintainops.assetAreaFilter"], "Bay 1");
 assert.equal(storage.values["maintainops.assetsPage"], "1");
-assert.equal(renderCount, 8);
+assert.equal(renderCount, 9);
 
 areaSelect.value = "";
 areaSelect.dispatch("change");
 assert.equal(state.getAssetAreaFilter(), "all");
 assert.equal(storage.values["maintainops.assetAreaFilter"], "all");
-assert.equal(renderCount, 9);
+assert.equal(renderCount, 10);

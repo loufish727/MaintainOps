@@ -44,6 +44,7 @@
           name: String(form.get("name") || "").trim(),
           sku: String(form.get("sku") || "").trim() || null,
           supplier_name: String(form.get("supplier_name") || "").trim() || null,
+          machine_note: String(form.get("machine_note") || "").trim() || null,
           quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
           reorder_point: Number(form.get("reorder_point")) || 0,
           unit_cost: Number(form.get("unit_cost")) || 0,
@@ -72,6 +73,10 @@
         if (error && deps.isMissingColumnError(error, "unit_cost")) {
           deps.setPartCostsReady(false);
           throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then add the part again.");
+        }
+        if (error && deps.isMissingColumnError(error, "machine_note")) {
+          deps.setPartMachineNotesReady(false);
+          throw new Error("Machine note is not active in Supabase yet. Run supabase/step-next-part-machine-note.sql, then add the part again.");
         }
         if (error) throw error;
 
@@ -183,6 +188,7 @@
         name: String(form.get("name") || "").trim(),
         sku: form.get("sku") || null,
         supplier_name: form.get("supplier_name") || null,
+        machine_note: form.get("machine_note") || null,
         quantity_on_hand: Number(form.get("quantity_on_hand")) || 0,
         reorder_point: Number(form.get("reorder_point")) || 0,
         unit_cost: Number(form.get("unit_cost")) || 0,
@@ -209,6 +215,11 @@
         if (error && deps.isMissingColumnError(error, "unit_cost")) {
           deps.setPartCostsReady(false);
           throw new Error("Unit cost is not active in Supabase yet. Run supabase/step-next-part-costs.sql, then save again.");
+        }
+
+        if (error && deps.isMissingColumnError(error, "machine_note")) {
+          deps.setPartMachineNotesReady(false);
+          throw new Error("Machine note is not active in Supabase yet. Run supabase/step-next-part-machine-note.sql, then save again.");
         }
 
         if (error) throw error;

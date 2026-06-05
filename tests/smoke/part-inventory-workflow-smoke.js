@@ -85,13 +85,13 @@ function createQuery(table, calls) {
 
 (async () => {
   const createForm = createElement({
-    formValues: { name: "Filter", sku: "F-1", supplier_name: "Acme", quantity_on_hand: "5", reorder_point: "2", unit_cost: "3.5" },
+    formValues: { name: "Filter", sku: "F-1", supplier_name: "Acme", machine_note: "MS200", quantity_on_hand: "5", reorder_point: "2", unit_cost: "3.5" },
   });
   const restockForm = createElement({ dataset: { restockPart: "part-1" }, formValues: { quantity: "3" } });
   const useForm = createElement({ dataset: { usePart: "part-1" }, formValues: { quantity: "4" } });
   const editForm = createElement({
     dataset: { editPart: "part-1" },
-    formValues: { name: "Filter XL", sku: "F-2", supplier_name: "Acme", quantity_on_hand: "7", reorder_point: "2", unit_cost: "4" },
+    formValues: { name: "Filter XL", sku: "F-2", supplier_name: "Acme", machine_note: "ASC Line", quantity_on_hand: "7", reorder_point: "2", unit_cost: "4" },
   });
   const sourceForm = createElement({ formValues: { old_source: "Acme", new_source: "Supply Co" } });
   const documentRef = createDocument({
@@ -130,6 +130,7 @@ function createQuery(table, calls) {
     setLocationsReady: (value) => { state.locationsReady = value; },
     setPartSuppliersReady: (value) => { state.partSuppliersReady = value; },
     setPartCostsReady: (value) => { state.partCostsReady = value; },
+    setPartMachineNotesReady: (value) => { state.partMachineNotesReady = value; },
     setActivePartId: (value) => { state.activePartId = value; },
     clearPartSearchState: () => { state.clearPartSearchCount += 1; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
@@ -140,6 +141,7 @@ function createQuery(table, calls) {
 
   await createForm.dispatch("submit");
   assert.equal(state.activePartId, "part-new");
+  assert.ok(calls.some((call) => call[0] === "insert" && call[2].machine_note === "MS200"));
   assert.equal(createForm.resetCalled, true);
   assert.equal(state.notices.at(-1)[0], "Part added.");
 
@@ -152,6 +154,7 @@ function createQuery(table, calls) {
   assert.equal(state.notices.at(-1)[0], "Part used.");
 
   await editForm.dispatch("submit");
+  assert.ok(calls.some((call) => call[0] === "update" && call[2].machine_note === "ASC Line"));
   assert.equal(state.activePartId, null);
   assert.equal(state.notices.at(-1)[0], "Part saved.");
 

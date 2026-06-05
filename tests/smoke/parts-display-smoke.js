@@ -16,7 +16,7 @@ const helpers = createPartsDisplayHelpers({
   isLowStockPart: (part) => Number(part.quantity_on_hand) <= Number(part.reorder_point),
   matchesActiveLocation: () => true,
   getParts: () => [
-    { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 },
+    { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", machine_note: "MS200", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 },
   ],
   getPartDocumentsByPartId: () => ({
     "part-1": [
@@ -33,22 +33,26 @@ const helpers = createPartsDisplayHelpers({
   partUsageRows: () => [],
   canDeleteParts: () => true,
   renderPartSourceOptions: () => '<datalist id="part-source-options"></datalist>',
+  renderPartMachineOptions: () => '<datalist id="part-machine-options"></datalist>',
   renderPartSourceManager: () => '<section class="part-source-manager"></section>',
 });
 
-const part = helpers.getParts ? helpers.getParts()[0] : { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 };
+const part = helpers.getParts ? helpers.getParts()[0] : { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", machine_note: "MS200", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 };
 
 const listCard = helpers.renderPart(part);
 assert.match(listCard, /data-open-part="part-1"/);
 assert.match(listCard, /Bearing &lt;A&gt;/);
 assert.match(listCard, /low stock/);
+assert.match(listCard, /MS200/);
 
 const health = helpers.renderPartsHealth();
 assert.match(health, /data-part-inventory-filter="low"/);
 
-const search = helpers.renderPartSearch();
+const search = helpers.renderPartSearch("source");
 assert.match(search, /id="part-search-form"/);
 assert.match(search, /value="bearing"/);
+assert.match(search, /data-part-sort="source"/);
+assert.match(search, /Source \/ vendor/);
 
 const detail = helpers.renderPartDetail(part);
 assert.match(detail, /data-close-part-detail/);
@@ -57,6 +61,9 @@ assert.match(detail, /data-restock-part="part-1"/);
 assert.match(detail, /data-edit-part="part-1"/);
 assert.match(detail, /data-toggle-part-sources/);
 assert.match(detail, /part-source-manager/);
+assert.match(detail, /part-machine-options/);
+assert.match(detail, /name="machine_note"/);
+assert.match(detail, /value="MS200"/);
 assert.match(detail, /data-part-document="part-1"/);
 assert.match(detail, /name="document_type"/);
 assert.match(detail, /Part photos/);

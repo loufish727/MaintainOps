@@ -11,6 +11,7 @@
     assetTypeFilter: "maintainops.assetTypeFilter",
     assetAreaFilter: "maintainops.assetAreaFilter",
     partInventoryFilter: "maintainops.partInventoryFilter",
+    partSort: "maintainops.partSort",
     partSearchQuery: "maintainops.partSearchQuery",
     myWorkFilter: "maintainops.myWorkFilter",
     workOrderFilter: "maintainops.workOrderFilter",
@@ -89,6 +90,7 @@
       assetTypeFilter: readStorage(storage, STORAGE_KEYS.assetTypeFilter, "all"),
       assetAreaFilter: readStorage(storage, STORAGE_KEYS.assetAreaFilter, "all"),
       partInventoryFilter: readStorage(storage, STORAGE_KEYS.partInventoryFilter, "all"),
+      partSort: readStorage(storage, STORAGE_KEYS.partSort, "default"),
       partSearchQuery: readStorage(storage, STORAGE_KEYS.partSearchQuery, ""),
     };
 
@@ -179,6 +181,8 @@
       setAssetAreaFilter: (value) => setValue("assetAreaFilter", value, STORAGE_KEYS.assetAreaFilter),
       getPartInventoryFilter: () => state.partInventoryFilter,
       setPartInventoryFilter: (value) => setValue("partInventoryFilter", value, STORAGE_KEYS.partInventoryFilter),
+      getPartSort: () => state.partSort,
+      setPartSort: (value) => setValue("partSort", value || "default", STORAGE_KEYS.partSort),
       getPartSearchQuery: () => state.partSearchQuery,
       setPartSearchQuery: (value) => setValue("partSearchQuery", value, STORAGE_KEYS.partSearchQuery),
       snapshot: () => ({ ...state }),
