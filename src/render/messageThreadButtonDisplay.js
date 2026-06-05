@@ -10,9 +10,10 @@
   }) {
     function renderMessageThreadButton(thread) {
       const messages = getMessagesByThreadId()[thread.id] || [];
-      const lastMessage = messages[messages.length - 1];
+      const visibleMessages = messages.filter((message) => !message.deleted_at);
+      const lastMessage = visibleMessages[visibleMessages.length - 1];
       const unreadCount = unreadMessageCount(thread.id);
-      const lastMessageText = lastMessage?.deleted_at ? "Message deleted" : escapeHtml(lastMessage?.body || "");
+      const lastMessageText = escapeHtml(lastMessage?.body || "");
       return `
         <button class="message-thread-button ${thread.id === getActiveMessageThreadId() ? "active" : ""}" data-message-thread="${thread.id}" type="button">
           <strong>${escapeHtml(thread.title)}${unreadCount ? `<span class="message-unread-pill">${unreadCount}</span>` : ""}</strong>

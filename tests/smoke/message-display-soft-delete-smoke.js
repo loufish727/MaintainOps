@@ -23,16 +23,17 @@ const ownMessage = helpers.renderMessageBubble({
 assert.match(ownMessage, /data-delete-message="message-1"/);
 assert.match(ownMessage, /Please review &lt;script&gt;/);
 
-const deletedMessage = helpers.renderMessageBubble({
+const deletedList = helpers.renderMessageList([{
   id: "message-2",
   sender_id: "user-1",
   body: "Transcript body remains in Supabase",
   deleted_at: "2026-06-05T12:05:00Z",
   created_at: "2026-06-05T12:00:00Z",
-});
-assert.match(deletedMessage, /Message deleted/);
-assert.doesNotMatch(deletedMessage, /Transcript body remains/);
-assert.doesNotMatch(deletedMessage, /data-delete-message/);
+}]);
+assert.match(deletedList, /No messages yet/);
+assert.doesNotMatch(deletedList, /Message deleted/);
+assert.doesNotMatch(deletedList, /Transcript body remains/);
+assert.doesNotMatch(deletedList, /data-delete-message/);
 
 const teammateMessage = helpers.renderMessageBubble({
   id: "message-3",
