@@ -143,14 +143,27 @@ function createWorkflow(options = {}) {
     preventDefault() {},
     currentTarget: {
       dataset: { partDocument: "part-1" },
-      formValues: { document: { name: "manual.pdf", type: "application/pdf", size: 3 * 1024 * 1024 }, document_type: "manual" },
+      formValues: { document: { name: "manual.pdf", type: "application/pdf", size: 30 * 1024 * 1024 }, document_type: "manual" },
       querySelector(selector) {
         return selector === "button[type='submit']" ? button : null;
       },
     },
   });
-  assert.match(largePartDoc.errors['[data-part-document-error="part-1"]'].textContent, /over 2 MB/);
+  assert.match(largePartDoc.errors['[data-part-document-error="part-1"]'].textContent, /over 25 MB/);
   assert.equal(largePartDoc.calls.some((call) => call[0] === "upload"), false);
+
+  const mediumPartDoc = createWorkflow();
+  await mediumPartDoc.workflow.uploadPartDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { partDocument: "part-1" },
+      formValues: { document: { name: "manual-small.pdf", type: "application/pdf", size: 10 * 1024 * 1024 }, document_type: "manual" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(mediumPartDoc.calls.some((call) => call[0] === "upload" && call[1] === "part-documents"), true);
 
   const partPhoto = createWorkflow();
   await partPhoto.workflow.uploadPartDocument({
@@ -185,14 +198,27 @@ function createWorkflow(options = {}) {
     preventDefault() {},
     currentTarget: {
       dataset: { assetDocument: "asset-1" },
-      formValues: { document: { name: "Large manual.pdf", type: "application/pdf", size: 4 * 1024 * 1024 }, document_type: "manual" },
+      formValues: { document: { name: "Large manual.pdf", type: "application/pdf", size: 30 * 1024 * 1024 }, document_type: "manual" },
       querySelector(selector) {
         return selector === "button[type='submit']" ? button : null;
       },
     },
   });
-  assert.match(largeAssetDocument.errors['[data-asset-document-error="asset-1"]'].textContent, /over 2 MB/);
+  assert.match(largeAssetDocument.errors['[data-asset-document-error="asset-1"]'].textContent, /over 25 MB/);
   assert.equal(largeAssetDocument.calls.some((call) => call[0] === "upload"), false);
+
+  const mediumAssetDocument = createWorkflow();
+  await mediumAssetDocument.workflow.uploadAssetDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { assetDocument: "asset-1" },
+      formValues: { document: { name: "Controller backup.pdf", type: "application/pdf", size: 10 * 1024 * 1024 }, document_type: "settings" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(mediumAssetDocument.calls.some((call) => call[0] === "upload" && call[1] === "asset-documents"), true);
 
   const assetImageDocument = createWorkflow();
   await assetImageDocument.workflow.uploadAssetDocument({

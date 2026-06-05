@@ -5,7 +5,7 @@
     const cryptoRef = deps.cryptoRef || crypto;
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
-    const largeDocumentLimitBytes = 2 * 1024 * 1024;
+    const largeDocumentLimitBytes = 25 * 1024 * 1024;
 
     async function uploadPartDocument(event) {
       event.preventDefault();
@@ -413,7 +413,7 @@
     }
 
     function largeDocumentMessage() {
-      return "This non-image file is over 2 MB. Large-file storage is not enabled yet, so this upload is blocked to protect Supabase storage.";
+      return "This non-image file is over 25 MB. Compress it or split it before uploading.";
     }
 
     async function renderOptimizedImage(bitmap, maxDimension, quality) {
