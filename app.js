@@ -86,6 +86,7 @@ const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkV
 const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
 const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
+const { bindWorkspaceManagerDashboardEvents } = window.MaintainOpsWorkspaceManagerDashboardEvents;
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
 const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
@@ -778,9 +779,12 @@ const {
   matchesActiveLocation,
   isConvertedRequest,
   getDueState,
+  getManagerDashboardMetric: () => workspaceUiState.getManagerDashboardMetric(),
+  getManagerDashboardUserId: () => workspaceUiState.getManagerDashboardUserId(),
   teamMemberName,
   roleLabel,
   normalizeRole,
+  statusLabel,
   escapeHtml,
 });
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
@@ -4355,6 +4359,11 @@ function bindWorkspaceEvents() {
       setMessageComposerOpen: setMessageComposerOpenState,
     },
     markMessageThreadRead,
+    renderWorkspace,
+  });
+
+  bindWorkspaceManagerDashboardEvents({
+    state: workspaceUiState,
     renderWorkspace,
   });
 

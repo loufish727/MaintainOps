@@ -33,6 +33,7 @@ const requiredResources = [
   "src/utils/workspacePartDetailEvents.js",
   "src/utils/workspaceMessageUiEvents.js",
   "src/utils/workspacePartSearchEvents.js",
+  "src/utils/workspaceManagerDashboardEvents.js",
   "src/utils/workspaceSectionNavigationEvents.js",
   "src/utils/workspaceMessageThreadEvents.js",
   "src/utils/workspaceIssueAdminUiEvents.js",

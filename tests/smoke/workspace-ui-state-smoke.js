@@ -31,6 +31,8 @@ const storage = createStorage({
   "maintainops.assetAreaFilter": "Bay 1",
   "maintainops.partInventoryFilter": "low",
   "maintainops.partSearchQuery": "hose",
+  "maintainops.managerDashboardUserId": "tech-1",
+  "maintainops.managerDashboardMetric": "blocked",
 });
 
 const state = createWorkspaceUiState({ storage });
@@ -47,6 +49,8 @@ assert.equal(state.getAssetTypeFilter(), "tooling");
 assert.equal(state.getAssetAreaFilter(), "Bay 1");
 assert.equal(state.getPartInventoryFilter(), "low");
 assert.equal(state.getPartSearchQuery(), "hose");
+assert.equal(state.getManagerDashboardUserId(), "tech-1");
+assert.equal(state.getManagerDashboardMetric(), "blocked");
 
 state.setActiveSection("parts");
 state.setSearchQuery("motor");
@@ -58,6 +62,8 @@ state.setAssetTypeFilter("component");
 state.setAssetAreaFilter("Line 2");
 state.setPartSearchQuery("belt");
 state.setWorkOrderAssigneeFilter("");
+state.setManagerDashboardUserId("tech-2");
+state.setManagerDashboardMetric("overdue");
 
 assert.equal(state.getActiveSection(), "parts");
 assert.equal(storage.values["maintainops.activeSection"], "parts");
@@ -77,8 +83,13 @@ assert.equal(state.getPartSearchQuery(), "belt");
 assert.equal(storage.values["maintainops.partSearchQuery"], "belt");
 assert.equal(state.getWorkOrderAssigneeFilter(), "");
 assert.equal(storage.values["maintainops.workOrderAssigneeFilter"], undefined);
+assert.equal(state.getManagerDashboardUserId(), "tech-2");
+assert.equal(storage.values["maintainops.managerDashboardUserId"], "tech-2");
+assert.equal(state.getManagerDashboardMetric(), "overdue");
+assert.equal(storage.values["maintainops.managerDashboardMetric"], "overdue");
 
 const snapshot = state.snapshot();
 assert.equal(snapshot.activeSection, "parts");
 assert.equal(snapshot.searchQuery, "motor");
 assert.equal(snapshot.partSearchQuery, "belt");
+assert.equal(snapshot.managerDashboardUserId, "tech-2");

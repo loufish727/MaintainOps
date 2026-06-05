@@ -23,12 +23,15 @@ const helpers = createManagerDashboardDisplayHelpers({
   ],
   getWorkOrderDashboardCounts: () => ({ activeWork: 3, overdue: 1, completedWeek: 1 }),
   getRequestDashboardCounts: () => ({ active: 1, converted: 1 }),
+  getManagerDashboardUserId: () => "tech-1",
+  getManagerDashboardMetric: () => "overdue",
   matchesActiveLocation: (row) => row.location_id === "loc-1",
   isConvertedRequest: (request) => request.status === "converted" || Boolean(request.converted_work_order_id),
   getDueState: (workOrder) => workOrder.id === "wo-2" ? { className: "overdue" } : { className: "" },
   teamMemberName: (userId) => userId === "tech-1" ? "Taylor Tech" : "QA Manager",
   roleLabel: (role) => role === "manager" ? "Manager" : "Technician",
   normalizeRole: (role) => role,
+  statusLabel: (status) => status === "in_progress" ? "In Progress" : status,
 });
 
 const cards = helpers.managerSummaryCards();
@@ -47,5 +50,10 @@ assert.match(html, /Manager Beta Dashboard/);
 assert.match(html, /Technician Workload/);
 assert.match(html, /Taylor Tech/);
 assert.match(html, /Phase 1 uses current loaded workspace data/);
+assert.match(html, /data-manager-drill-user="tech-1"/);
+assert.match(html, /data-manager-drill-metric="overdue"/);
+assert.match(html, /data-manager-drill-in/);
+assert.match(html, /Overdue . 1 loaded item/);
+assert.match(html, /data-mini-work-order="wo-2"/);
 
 console.log("manager dashboard display smoke passed");

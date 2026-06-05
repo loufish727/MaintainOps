@@ -30,6 +30,8 @@
     messageThreadFilter: "maintainops.messageThreadFilter",
     messageSearchQuery: "maintainops.messageSearchQuery",
     messageComposerWorkOrderId: "maintainops.messageComposerWorkOrderId",
+    managerDashboardUserId: "maintainops.managerDashboardUserId",
+    managerDashboardMetric: "maintainops.managerDashboardMetric",
     sectionSplitDone: "maintainops.sectionSplitDone",
   };
 
@@ -68,6 +70,8 @@
       messageSearchQuery: readStorage(storage, STORAGE_KEYS.messageSearchQuery, ""),
       messageComposerWorkOrderId: readStorage(storage, STORAGE_KEYS.messageComposerWorkOrderId, ""),
       messageComposerOpen: false,
+      managerDashboardUserId: readStorage(storage, STORAGE_KEYS.managerDashboardUserId, ""),
+      managerDashboardMetric: readStorage(storage, STORAGE_KEYS.managerDashboardMetric, "open"),
       activeStatusFilter: "active",
       myWorkFilter: readStorage(storage, STORAGE_KEYS.myWorkFilter, "assigned"),
       workOrderFilter: readStorage(storage, STORAGE_KEYS.workOrderFilter, "all"),
@@ -122,6 +126,10 @@
       setMessageComposerWorkOrderId: (value) => setValue("messageComposerWorkOrderId", value, STORAGE_KEYS.messageComposerWorkOrderId),
       getMessageComposerOpen: () => state.messageComposerOpen,
       setMessageComposerOpen: (value) => setValue("messageComposerOpen", Boolean(value)),
+      getManagerDashboardUserId: () => state.managerDashboardUserId,
+      setManagerDashboardUserId: (value) => setValue("managerDashboardUserId", value || "", STORAGE_KEYS.managerDashboardUserId),
+      getManagerDashboardMetric: () => state.managerDashboardMetric,
+      setManagerDashboardMetric: (value) => setValue("managerDashboardMetric", value || "open", STORAGE_KEYS.managerDashboardMetric),
       getSearchQuery: () => state.searchQuery,
       setSearchQuery: (value) => setValue("searchQuery", value, STORAGE_KEYS.searchQuery),
       getWorkOrderSearchMode: () => state.workOrderSearchMode,

@@ -3679,6 +3679,7 @@ textarea {
 }
 
 .manager-tech-row > div,
+.manager-drill-button,
 .manager-tech-row > small {
   display: grid;
   align-content: center;
@@ -3688,6 +3689,26 @@ textarea {
   border-radius: 6px;
   background: color-mix(in srgb, var(--surface-3) 78%, transparent);
   padding: 8px;
+}
+
+.manager-drill-button {
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.manager-drill-button:hover,
+.manager-drill-button:focus-visible,
+.manager-drill-button.active {
+  border-color: color-mix(in srgb, var(--blue) 58%, var(--line));
+  background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+  outline: none;
+}
+
+.manager-tech-row.selected {
+  border-color: color-mix(in srgb, var(--blue) 52%, var(--line));
 }
 
 .manager-tech-row span,
@@ -3706,6 +3727,16 @@ textarea {
 
 .manager-tech-person strong {
   font-size: 0.95rem;
+}
+
+.manager-drill-panel,
+.manager-drill-list {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-drill-work-order {
+  cursor: pointer;
 }
 
 .checklist-list {

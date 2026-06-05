@@ -36,6 +36,36 @@
       return openWorkOrders().filter((workOrder) => workOrder.assigned_to === userId);
     }
 
+    function selectedUserId() {
+      return typeof deps.getManagerDashboardUserId === "function" ? deps.getManagerDashboardUserId() : "";
+    }
+
+    function selectedMetric() {
+      return typeof deps.getManagerDashboardMetric === "function" ? deps.getManagerDashboardMetric() : "open";
+    }
+
+    function metricLabel(metric) {
+      return ({
+        open: "Open Work",
+        in_progress: "In Progress",
+        blocked: "Blocked",
+        overdue: "Overdue",
+        completed_week: "Done 7d",
+        completed_month: "Done 30d",
+      })[metric] || "Open Work";
+    }
+
+    function metricWorkOrders(userId, metric) {
+      const assigned = assignedOpenWork(userId);
+      const completed = completedWorkOrders().filter((workOrder) => workOrder.completed_by === userId || workOrder.assigned_to === userId);
+      if (metric === "in_progress") return assigned.filter((workOrder) => workOrder.status === "in_progress");
+      if (metric === "blocked") return assigned.filter((workOrder) => workOrder.status === "blocked");
+      if (metric === "overdue") return assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue");
+      if (metric === "completed_week") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
+      if (metric === "completed_month") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
+      return assigned;
+    }
+
     function latestActivityFor(userId) {
       const dates = deps.getWorkOrders()
         .filter((workOrder) => deps.matchesActiveLocation(workOrder) && (workOrder.assigned_to === userId || workOrder.completed_by === userId || workOrder.created_by === userId))
@@ -109,21 +139,69 @@
     }
 
     function renderTechnicianRow(row) {
+      const activeUserId = selectedUserId();
+      const activeMetric = selectedMetric();
+      const activeClass = (metric) => row.userId === activeUserId && metric === activeMetric ? " active" : "";
       return `
-        <article class="manager-tech-row">
-          <div class="manager-tech-person">
+        <article class="manager-tech-row${row.userId === activeUserId ? " selected" : ""}">
+          <button type="button" class="manager-tech-person manager-drill-button${activeClass("open")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="open">
             <strong>${deps.escapeHtml(row.name)}</strong>
             <span>${deps.escapeHtml(row.role)}</span>
-          </div>
-          <div><span>Open</span><strong>${row.open}</strong></div>
-          <div><span>In Progress</span><strong>${row.inProgress}</strong></div>
-          <div><span>Blocked</span><strong>${row.blocked}</strong></div>
-          <div><span>Overdue</span><strong>${row.overdue}</strong></div>
-          <div><span>Done 7d</span><strong>${row.completedWeek}</strong></div>
-          <div><span>Done 30d</span><strong>${row.completedMonth}</strong></div>
+          </button>
+          <button type="button" class="manager-drill-button${activeClass("open")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="open"><span>Open</span><strong>${row.open}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("in_progress")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="in_progress"><span>In Progress</span><strong>${row.inProgress}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("blocked")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="blocked"><span>Blocked</span><strong>${row.blocked}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("overdue")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="overdue"><span>Overdue</span><strong>${row.overdue}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("completed_week")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_week"><span>Done 7d</span><strong>${row.completedWeek}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("completed_month")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_month"><span>Done 30d</span><strong>${row.completedMonth}</strong></button>
           <div><span>Avg Age</span><strong>${row.averageAge}d</strong></div>
           <small>${deps.escapeHtml(row.latestActivity)}</small>
         </article>
+      `;
+    }
+
+    function formatDate(value) {
+      if (!value) return "Date unset";
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return String(value);
+      return date.toLocaleDateString();
+    }
+
+    function workOrderTitle(workOrder) {
+      return workOrder.title || workOrder.description || workOrder.name || "Untitled work order";
+    }
+
+    function renderDrillWorkOrder(workOrder) {
+      const dueState = deps.getDueState(workOrder) || {};
+      const dueLabel = dueState.label || (workOrder.due_at ? `Due ${formatDate(workOrder.due_at)}` : "Due date unset");
+      return `
+        <article class="mini-work-order manager-drill-work-order" data-mini-work-order="${deps.escapeHtml(workOrder.id)}">
+          <strong>${deps.escapeHtml(workOrderTitle(workOrder))}</strong>
+          <span>${deps.escapeHtml(deps.statusLabel ? deps.statusLabel(workOrder.status) : workOrder.status || "Open")}</span>
+          <small>${deps.escapeHtml(dueLabel)} · Created ${deps.escapeHtml(formatDate(workOrder.created_at))}</small>
+        </article>
+      `;
+    }
+
+    function renderManagerDrillIn(rows) {
+      const userId = selectedUserId();
+      if (!userId) return "";
+      const metric = selectedMetric();
+      const userRow = rows.find((row) => row.userId === userId);
+      const workRows = metricWorkOrders(userId, metric);
+      return `
+        <section class="manager-drill-panel relationship-detail comment" data-manager-drill-in>
+          <div class="panel-header compact">
+            <div>
+              <h3>${deps.escapeHtml(userRow?.name || deps.teamMemberName(userId))}</h3>
+              <span>${deps.escapeHtml(metricLabel(metric))} · ${workRows.length} loaded item${workRows.length === 1 ? "" : "s"}</span>
+            </div>
+            <button type="button" class="secondary-button small" data-manager-drill-clear>Clear</button>
+          </div>
+          <div class="manager-drill-list">
+            ${workRows.map(renderDrillWorkOrder).join("") || `<p class="muted">No loaded work orders match this view.</p>`}
+          </div>
+        </section>
       `;
     }
 
@@ -150,12 +228,14 @@
               ${rows.map(renderTechnicianRow).join("") || `<p class="muted">No team members loaded yet.</p>`}
             </div>
           </section>
+          ${renderManagerDrillIn(rows)}
         </section>
       `;
     }
 
     return {
       renderManagerDashboard,
+      metricWorkOrders,
       managerSummaryCards,
       technicianRows,
     };
