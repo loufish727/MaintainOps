@@ -79,7 +79,7 @@
     }
 
     if (photosCount) {
-      chips.push(relationshipChip("photo", "Photos", String(photosCount), deps));
+      chips.push(photoJumpChip(workOrder.id, String(photosCount), deps));
     }
 
     return chips.length ? `<div class="relationship-row">${chips.join("")}</div>` : "";
@@ -91,6 +91,15 @@
       ${relationshipIcon(type)}
       <span>${deps.escapeHtml(value)}</span>
     </span>
+  `;
+  }
+
+  function photoJumpChip(workOrderId, value, deps) {
+    return `
+    <button class="relationship-chip photo photo-jump-chip" type="button" data-work-photo-jump="${deps.escapeHtml(workOrderId)}" title="Open photos">
+      ${relationshipIcon("photo")}
+      <span>${deps.escapeHtml(value)}</span>
+    </button>
   `;
   }
 
@@ -111,6 +120,7 @@
       renderActivityItem: (item) => renderActivityItem(item, deps),
       renderRelationshipChips: (workOrder) => renderRelationshipChips(workOrder, deps),
       relationshipChip: (type, label, value) => relationshipChip(type, label, value, deps),
+      photoJumpChip: (workOrderId, value) => photoJumpChip(workOrderId, value, deps),
       relationshipIcon,
     });
   }

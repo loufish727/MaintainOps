@@ -44,6 +44,23 @@
       restoreScroll();
     }
 
+    function scrollToWorkPhotos() {
+      const target = doc.querySelector("#work-order-photos-target");
+      if (!target) return;
+      if ("open" in target) target.open = true;
+      if (typeof target.scrollIntoView === "function") {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function queueWorkPhotoScroll() {
+      if (win && typeof win.requestAnimationFrame === "function") {
+        win.requestAnimationFrame(scrollToWorkPhotos);
+        return;
+      }
+      scrollToWorkPhotos();
+    }
+
     const backToMyWork = doc.querySelector("#back-to-my-work");
     if (backToMyWork) {
       backToMyWork.addEventListener("click", () => {
@@ -69,6 +86,20 @@
         state.setActiveAssetId(null);
         resetWorkCreationState();
         options.renderWorkspace();
+      });
+    });
+
+    doc.querySelectorAll("[data-work-photo-jump]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        state.setActiveWorkOrderId(button.dataset.workPhotoJump);
+        state.setActiveAssetId(null);
+        state.setActiveSection("work");
+        resetWorkCreationState();
+        storage.setItem("maintainops.activeSection", state.getActiveSection());
+        options.renderWorkspace();
+        queueWorkPhotoScroll();
       });
     });
 

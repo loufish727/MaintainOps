@@ -34,8 +34,8 @@
   --rel-parts-ink: #8a641f;
   --rel-comment-bg: #eef0f7;
   --rel-comment-ink: #475a96;
-  --rel-photo-bg: #f4eef7;
-  --rel-photo-ink: #74518a;
+  --rel-photo-bg: #fae8ff;
+  --rel-photo-ink: #8a2bb0;
   --asset-running-bg: #dcf8e6;
   --asset-running-ink: #187a3f;
   --asset-watch-bg: #fff0d9;
@@ -84,8 +84,8 @@
   --rel-parts-ink: #e8c36f;
   --rel-comment-bg: #222a42;
   --rel-comment-ink: #a8b8f0;
-  --rel-photo-bg: #33263c;
-  --rel-photo-ink: #d5a9ef;
+  --rel-photo-bg: #432151;
+  --rel-photo-ink: #f0b5ff;
   --asset-running-bg: #173f29;
   --asset-running-ink: #8beaab;
   --asset-watch-bg: #362d1c;
@@ -2626,6 +2626,24 @@ textarea {
 .relationship-chip.photo {
   background: var(--rel-photo-bg);
   color: var(--rel-photo-ink);
+}
+
+.relationship-chip.photo-jump-chip {
+  appearance: none;
+  border-color: color-mix(in srgb, var(--rel-photo-ink) 40%, var(--line));
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rel-photo-ink) 14%, transparent);
+}
+
+.relationship-chip.photo-jump-chip:hover,
+.relationship-chip.photo-jump-chip:focus-visible {
+  border-color: var(--rel-photo-ink);
+  background: color-mix(in srgb, var(--rel-photo-bg) 76%, #fff);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .relationship-detail {
@@ -7002,8 +7020,8 @@ textarea {
   --rel-parts-ink: #f0bc63;
   --rel-comment-bg: rgba(120, 168, 255, 0.12);
   --rel-comment-ink: #9bb9ff;
-  --rel-photo-bg: rgba(213, 169, 239, 0.12);
-  --rel-photo-ink: #d5a9ef;
+  --rel-photo-bg: rgba(240, 181, 255, 0.16);
+  --rel-photo-ink: #f0b5ff;
   --asset-running-bg: rgba(139, 234, 171, 0.15);
   --asset-running-ink: #8beaab;
   --asset-watch-bg: rgba(240, 188, 99, 0.13);

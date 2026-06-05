@@ -41,4 +41,21 @@ const photoHistory = helpers.renderActivityItem({
 assert.match(photoHistory, /QA User/);
 assert.match(photoHistory, /before\.jpg/);
 
+const chips = createRelationshipDisplayHelpers({
+  getProfilesByUserId: () => ({}),
+  escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+  photoMetaText: () => "",
+  partUsageUnitCost: () => 0,
+  money: () => "$0.00",
+  getProcedureTemplates: () => [],
+  getPartsUsedByWorkOrder: () => ({}),
+  getCommentsByWorkOrder: () => ({}),
+  getPhotosByWorkOrder: () => ({ "wo-photos": [{ id: "photo-1" }] }),
+  getMessageThreads: () => [],
+  checklistProgress: () => ({ done: 0, total: 0 }),
+}).renderRelationshipChips({ id: "wo-photos" });
+assert.match(chips, /photo-jump-chip/);
+assert.match(chips, /data-work-photo-jump="wo-photos"/);
+assert.match(chips, /Open photos/);
+
 console.log("relationship display history actor smoke passed");

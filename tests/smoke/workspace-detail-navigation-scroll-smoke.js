@@ -16,9 +16,10 @@ function createElement(dataset = {}) {
 }
 
 function createDocument(groups = {}) {
+  const selectors = groups.__selectors || {};
   return {
-    querySelector() {
-      return null;
+    querySelector(selector) {
+      return selectors[selector] || null;
     },
     querySelectorAll(selector) {
       return groups[selector] || [];
@@ -39,6 +40,14 @@ const openAssetButton = createElement({ openAsset: "asset-2" });
 const assetCard = createElement({ assetId: "asset-1" });
 const keyboardAssetCard = createElement({ assetId: "asset-3" });
 const miniWorkOrder = createElement({ miniWorkOrder: "wo-2" });
+const photoJumpButton = createElement({ workPhotoJump: "wo-photo" });
+const photoTarget = {
+  open: false,
+  scrolled: false,
+  scrollIntoView(options) {
+    this.scrolled = options;
+  },
+};
 const completedHistoryDetails = createElement({ assetId: "asset-1", assetRelationshipSection: "completed-history" });
 const completedHistoryNext = createElement({
   assetId: "asset-1",
@@ -71,10 +80,14 @@ bindWorkspaceDetailNavigationEvents({
     ".work-card": [],
     ".asset-card": [legacyAssetCard, assetCard],
     "[data-open-asset]": [openAssetButton],
+    "[data-work-photo-jump]": [photoJumpButton],
     "[data-asset-id]": [assetCard, keyboardAssetCard],
     "[data-mini-work-order]": [miniWorkOrder],
     "[data-asset-relationship-section]": [completedHistoryDetails],
     "[data-asset-relation-page]": [completedHistoryNext],
+    __selectors: {
+      "#work-order-photos-target": photoTarget,
+    },
   }),
   storage: { setItem() {} },
   state: {
@@ -144,6 +157,15 @@ assert.equal(stateValues.activeAssetId, null);
 assert.equal(stateValues.activeSection, "work");
 assert.equal(renderCount, 6);
 assert.equal(scrollCount, 4);
+
+await photoJumpButton.dispatch("click", { preventDefault() {}, stopPropagation() {} });
+assert.equal(stateValues.activeWorkOrderId, "wo-photo");
+assert.equal(stateValues.activeAssetId, null);
+assert.equal(stateValues.activeSection, "work");
+assert.equal(renderCount, 7);
+assert.equal(scrollCount, 4);
+assert.equal(photoTarget.open, true);
+assert.deepEqual(photoTarget.scrolled, { behavior: "smooth", block: "start" });
 
 console.log("workspace detail navigation scroll smoke passed");
 })().catch((error) => {
