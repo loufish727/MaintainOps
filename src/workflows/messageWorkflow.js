@@ -22,6 +22,10 @@
       documentRef.querySelectorAll("[data-delete-message]").forEach((button) => {
         button.addEventListener("click", deleteOwnMessage);
       });
+
+      documentRef.querySelectorAll("[data-delete-message-thread]").forEach((button) => {
+        button.addEventListener("click", deleteMessageThread);
+      });
     }
 
     async function createMessageThread(event) {
@@ -182,6 +186,35 @@
       }
     }
 
+    async function deleteMessageThread(event) {
+      const button = event.currentTarget;
+      const threadId = button?.dataset?.deleteMessageThread;
+      if (!threadId) return;
+      if (typeof deps.confirmUser === "function" && !deps.confirmUser("Delete this thread from your messages? Admins can still review the Supabase transcript if needed.")) {
+        return;
+      }
+      button.disabled = true;
+      button.textContent = "Deleting...";
+      try {
+        const response = await deps.withOperationTimeout(
+          deps.supabaseClient().rpc("soft_delete_own_message_thread", { target_thread_id: threadId }),
+          "Message thread delete timed out. Check your connection and try again.",
+          10000
+        );
+        if (response.error) throw response.error;
+        deps.setActiveMessageThreadId("");
+        deps.showNotice("Thread deleted.");
+        await deps.render();
+      } catch (error) {
+        deps.showNotice(friendlyMessageCenterError(error), "warning");
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = "Delete Thread";
+        }
+      }
+    }
+
+
     async function markMessageThreadRead(threadId) {
       if (!deps.getMessagesReady() || !threadId) return;
       const readAt = new Date().toISOString();
@@ -242,6 +275,7 @@
       createMessageThread,
       sendThreadReply,
       deleteOwnMessage,
+      deleteMessageThread,
       markMessageThreadRead,
       insertThreadMessage,
       friendlyMessageCenterError,

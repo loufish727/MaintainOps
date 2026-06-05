@@ -2453,6 +2453,14 @@ async function loadMessageCenter() {
   }
 
   messageThreadMembers = memberResponse.data || [];
+  const visibleThreadIds = new Set(messageThreadMembers
+    .filter((member) => member.user_id === session.user.id && !member.deleted_at)
+    .map((member) => member.thread_id));
+  messageThreads = messageThreads.filter((thread) => visibleThreadIds.has(thread.id));
+  if (!messageThreads.length) {
+    setActiveMessageThreadIdState("");
+    return;
+  }
   messagesByThreadId = (messageResponse.data || []).reduce((groups, message) => {
     if (!groups[message.thread_id]) groups[message.thread_id] = [];
     groups[message.thread_id].push(message);

@@ -103,10 +103,12 @@ function createQuery(table, calls) {
     formValues: { body: "On it" },
   });
   const deleteButton = createElement({ dataset: { deleteMessage: "message-1" } });
+  const deleteThreadButton = createElement({ dataset: { deleteMessageThread: "thread-1" } });
   const documentRef = createDocument({
     "#message-thread-form": threadForm,
     "#message-reply-form": replyForm,
     "[data-delete-message]": [deleteButton],
+    "[data-delete-message-thread]": [deleteThreadButton],
     "#message-thread-error": { textContent: "" },
     "#message-reply-error": { textContent: "" },
   });
@@ -182,6 +184,13 @@ function createQuery(table, calls) {
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message" && call[2].target_message_id === "message-1"));
   assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted."]);
   assert.equal(state.renders, 3);
+
+  await deleteThreadButton.dispatch("click");
+  assert.match(state.confirms[1], /Delete this thread/);
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message_thread" && call[2].target_thread_id === "thread-1"));
+  assert.equal(state.activeThread, "");
+  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted.", "Thread deleted."]);
+  assert.equal(state.renders, 4);
 
   assert.deepEqual(workflow.messageThreadMembersForType("direct", "user-2"), ["user-1", "user-2"]);
 

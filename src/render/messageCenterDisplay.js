@@ -115,6 +115,7 @@
                   <div class="message-header-actions">
                     ${activeThread.work_order_id ? `<button class="secondary-button message-linked-work-button" data-open-linked-work-order="${activeThread.work_order_id}" type="button">Open Work Order</button>` : ""}
                     <span class="chip comment">${threadMessages.length} message${threadMessages.length === 1 ? "" : "s"}</span>
+                    <button class="text-button danger-link" data-delete-message-thread="${escapeHtml(activeThread.id)}" type="button">Delete Thread</button>
                   </div>
                 </div>
                 <div class="message-list">
