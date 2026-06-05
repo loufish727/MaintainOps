@@ -364,22 +364,24 @@
       try {
         if (!createImageBitmapRef) throw new Error("Browser image optimization is unavailable.");
         const bitmap = await createImageBitmapRef(file);
-        const maxDimension = 2400;
-        const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-        const width = Math.max(1, Math.round(bitmap.width * scale));
-        const height = Math.max(1, Math.round(bitmap.height * scale));
-        const canvas = documentRef.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext("2d", { alpha: false });
-        context.drawImage(bitmap, 0, 0, width, height);
+        const targetBytes = 1.5 * 1024 * 1024;
+        const optimizationPasses = [
+          { maxDimension: 2000, quality: 0.82 },
+          { maxDimension: 1800, quality: 0.78 },
+          { maxDimension: 1600, quality: 0.74 },
+        ];
+        let optimizedBlob = null;
+        for (const pass of optimizationPasses) {
+          const optimized = await renderOptimizedImage(bitmap, pass.maxDimension, pass.quality);
+          optimizedBlob = optimized;
+          if (optimized.size <= targetBytes) break;
+        }
         if (bitmap.close) bitmap.close();
 
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
-        if (!blob) throw new Error("Browser could not optimize this image.");
+        if (!optimizedBlob) throw new Error("Browser could not optimize this image.");
 
         return {
-          blob,
+          blob: optimizedBlob,
           fileName: `${deps.fileBaseName(file.name || "photo")}.jpg`,
           contentType: "image/jpeg",
         };
@@ -391,6 +393,21 @@
           contentType: file.type || "application/octet-stream",
         };
       }
+    }
+
+    async function renderOptimizedImage(bitmap, maxDimension, quality) {
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = documentRef.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d", { alpha: false });
+      context.drawImage(bitmap, 0, 0, width, height);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (!blob) throw new Error("Browser could not optimize this image.");
+      return blob;
     }
 
     return {

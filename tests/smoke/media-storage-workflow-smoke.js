@@ -201,6 +201,42 @@ function createWorkflow(options = {}) {
   assert.equal(upload.calls.some((call) => call[0] === "event" && call[2] === "photo_uploaded"), true);
   assert.equal(upload.calls.some((call) => call[0] === "notice" && call[1] === "Photo uploaded."), true);
 
+  const optimizerCalls = [];
+  const optimizerWorkflow = createMediaStorageWorkflow({
+    documentRef: {
+      createElement() {
+        return {
+          width: 0,
+          height: 0,
+          getContext() {
+            return { drawImage() {} };
+          },
+          toBlob(resolve, type, quality) {
+            optimizerCalls.push({ width: this.width, height: this.height, type, quality });
+            const size = quality === 0.82 ? 2 * 1024 * 1024 : 1.2 * 1024 * 1024;
+            resolve({ size, type });
+          },
+        };
+      },
+    },
+    createImageBitmapRef: async () => ({
+      width: 4000,
+      height: 3000,
+      close() {
+        optimizerCalls.push({ closed: true });
+      },
+    }),
+    safeFileName: (name) => String(name),
+    fileBaseName: (name) => String(name).replace(/\.[^.]+$/, ""),
+    consoleRef: { warn: (...args) => optimizerCalls.push(["warn", ...args]) },
+  });
+  const optimizedPhoto = await optimizerWorkflow.optimizePhoto({ name: "plate.png", type: "image/png", size: 5 * 1024 * 1024 });
+  assert.equal(optimizedPhoto.fileName, "plate.jpg");
+  assert.equal(optimizedPhoto.contentType, "image/jpeg");
+  assert.equal(optimizedPhoto.blob.size <= 1.5 * 1024 * 1024, true);
+  assert.deepEqual(optimizerCalls.slice(0, 2).map((call) => [call.width, call.quality]), [[2000, 0.82], [1800, 0.78]]);
+  assert.equal(optimizerCalls.some((call) => call.closed), true);
+
   console.log("media storage workflow smoke passed");
 })().catch((error) => {
   console.error(error);
