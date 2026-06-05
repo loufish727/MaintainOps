@@ -401,6 +401,7 @@ let assetParts = [];
 let assetPartsReady = true;
 let assetDocumentsReady = true;
 let assetDocumentsByAssetId = {};
+let assetDocumentSigningByAssetId = {};
 let procedureTemplates = [];
 let proceduresReady = false;
 let schedulesReady = false;
@@ -2693,8 +2694,6 @@ async function loadAssetDocuments() {
     groups[document.asset_id].push(document);
     return groups;
   }, {});
-
-  await addSignedAssetDocumentUrls();
 }
 
 async function loadPartDocuments() {
@@ -2841,6 +2840,32 @@ async function addSignedAssetDocumentUrls() {
       .createSignedUrl(document.storage_path, 60 * 10);
     document.signedUrl = data?.signedUrl || "";
   }));
+}
+
+function ensureAssetDocumentSignedUrls(assetId) {
+  if (!assetId || !assetDocumentsReady) return;
+  const documents = assetDocumentsByAssetId[assetId] || [];
+  const pending = documents.filter((document) => document.storage_path && !document.signedUrl);
+  if (!pending.length || assetDocumentSigningByAssetId[assetId]) return;
+
+  assetDocumentSigningByAssetId[assetId] = true;
+  withOperationTimeout(
+    Promise.all(pending.map(async (document) => {
+      const { data } = await supabaseClient.storage
+        .from("asset-documents")
+        .createSignedUrl(document.storage_path, 60 * 10);
+      document.signedUrl = data?.signedUrl || "";
+    })),
+    "Equipment file link load timed out.",
+    10000
+  )
+    .catch((error) => {
+      console.warn("Could not load equipment file links", error);
+    })
+    .finally(() => {
+      delete assetDocumentSigningByAssetId[assetId];
+      if (activeAssetId === assetId) renderWorkspace();
+    });
 }
 
 async function addSignedPartDocumentUrls() {
@@ -3674,6 +3699,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getAssetPartsReady: () => assetPartsReady,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getAssetDocumentsReady: () => assetDocumentsReady,
+  ensureAssetDocumentSignedUrls,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getMaintenanceRequests: () => maintenanceRequests,
   getPendingDeleteAssetId: () => pendingDeleteAssetId,

@@ -28,6 +28,7 @@
       const activeAssetId = deps.getActiveAssetId();
       const asset = assets.find((item) => item.id === activeAssetId);
       if (!asset) return renderCreateWorkOrder();
+      if (typeof deps.ensureAssetDocumentSignedUrls === "function") deps.ensureAssetDocumentSignedUrls(asset.id);
       const workOrders = deps.getWorkOrders();
       const preventiveSchedules = deps.getPreventiveSchedules();
       const parts = deps.getParts();

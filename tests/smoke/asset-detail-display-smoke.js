@@ -34,6 +34,7 @@ const miniHelpers = createMiniWorkOrderDisplayHelpers({
   teamMemberName: (userId) => userId === "user-1" ? "QA Completer" : userId,
 });
 
+const signedAssetDocumentRequests = [];
 const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
   getAssets: () => [
@@ -61,6 +62,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
     ],
   }),
   getAssetDocumentsReady: () => true,
+  ensureAssetDocumentSignedUrls: (assetId) => signedAssetDocumentRequests.push(assetId),
   getPartsUsedByWorkOrder: () => ({ "wo-1": [{ work_order_id: "wo-1", quantity_used: 2, parts: { name: "Guard Bolt" } }] }),
   getMaintenanceRequests: () => [],
   getPendingDeleteAssetId: () => "asset-1",
@@ -86,6 +88,7 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
 });
 
 const html = renderAssetDetail();
+assert.deepEqual(signedAssetDocumentRequests, ["asset-1"]);
 
 assert.match(html, /Press 1/);
 assert.match(html, /id="edit-asset-form"/);
