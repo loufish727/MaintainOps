@@ -138,6 +138,20 @@ function createWorkflow(options = {}) {
   assert.equal(partDoc.calls.some((call) => call[0] === "insert" && call[1] === "part_documents" && call[2].document_type === "receipt" && call[2].original_file_name === "receipt.pdf"), true);
   assert.equal(button.disabled, false);
 
+  const largePartDoc = createWorkflow();
+  await largePartDoc.workflow.uploadPartDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { partDocument: "part-1" },
+      formValues: { document: { name: "manual.pdf", type: "application/pdf", size: 3 * 1024 * 1024 }, document_type: "manual" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.match(largePartDoc.errors['[data-part-document-error="part-1"]'].textContent, /over 2 MB/);
+  assert.equal(largePartDoc.calls.some((call) => call[0] === "upload"), false);
+
   const partPhoto = createWorkflow();
   await partPhoto.workflow.uploadPartDocument({
     preventDefault() {},
@@ -165,6 +179,20 @@ function createWorkflow(options = {}) {
   });
   assert.equal(assetDocument.calls.some((call) => call[0] === "upload" && call[1] === "asset-documents"), true);
   assert.equal(assetDocument.calls.some((call) => call[0] === "insert" && call[1] === "asset_documents" && call[2].document_type === "settings" && call[2].original_file_name === "Controller-settings.pdf"), true);
+
+  const largeAssetDocument = createWorkflow();
+  await largeAssetDocument.workflow.uploadAssetDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { assetDocument: "asset-1" },
+      formValues: { document: { name: "Large manual.pdf", type: "application/pdf", size: 4 * 1024 * 1024 }, document_type: "manual" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.match(largeAssetDocument.errors['[data-asset-document-error="asset-1"]'].textContent, /over 2 MB/);
+  assert.equal(largeAssetDocument.calls.some((call) => call[0] === "upload"), false);
 
   const assetImageDocument = createWorkflow();
   await assetImageDocument.workflow.uploadAssetDocument({

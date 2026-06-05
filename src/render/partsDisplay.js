@@ -234,7 +234,7 @@
             </div>
             <form class="part-document-form" data-part-document="${part.id}">
               <label>File type<select name="document_type">${renderDocumentTypeOptions()}</select></label>
-              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"></label>
+              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Images are optimized. Non-image files over 2 MB are blocked until large-file storage is enabled.</small></label>
               <p class="error-text" data-part-document-error="${part.id}">${getPartDocumentsReady() ? "" : "Run supabase/step-next-part-documents.sql before attaching files."}</p>
               <button class="secondary-button" type="submit" ${getPartDocumentsReady() ? "" : "disabled"}>Attach File</button>
             </form>

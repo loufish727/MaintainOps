@@ -5,6 +5,7 @@
     const cryptoRef = deps.cryptoRef || crypto;
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
+    const largeDocumentLimitBytes = 2 * 1024 * 1024;
 
     async function uploadPartDocument(event) {
       event.preventDefault();
@@ -23,6 +24,10 @@
       }
       if (!file || !file.name) {
         if (errorElement) errorElement.textContent = "Choose a receipt, invoice, photo, or PDF first.";
+        return;
+      }
+      if (isLargeUnoptimizedDocument(file)) {
+        if (errorElement) errorElement.textContent = largeDocumentMessage();
         return;
       }
 
@@ -115,6 +120,10 @@
       }
       if (!file || !file.name) {
         if (errorElement) errorElement.textContent = "Choose a machine file first.";
+        return;
+      }
+      if (isLargeUnoptimizedDocument(file)) {
+        if (errorElement) errorElement.textContent = largeDocumentMessage();
         return;
       }
 
@@ -393,6 +402,18 @@
           contentType: file.type || "application/octet-stream",
         };
       }
+    }
+
+    function isOptimizableImage(file) {
+      return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+    }
+
+    function isLargeUnoptimizedDocument(file) {
+      return !isOptimizableImage(file) && Number(file.size || 0) > largeDocumentLimitBytes;
+    }
+
+    function largeDocumentMessage() {
+      return "This non-image file is over 2 MB. Large-file storage is not enabled yet, so this upload is blocked to protect Supabase storage.";
     }
 
     async function renderOptimizedImage(bitmap, maxDimension, quality) {
