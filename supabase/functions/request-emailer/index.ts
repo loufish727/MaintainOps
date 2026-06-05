@@ -31,7 +31,7 @@ function emailBody(row: Record<string, unknown>, appUrl: string) {
   const contact = cleanText(row.requested_by_contact);
   const description = cleanText(row.request_description, "No details provided.");
   const lines = [
-    `New MaintainOps request: ${title}`,
+    `New MaintainOps Request: ${title}`,
     "",
     `Priority: ${priority}`,
     `Submitted by: ${requester}`,
@@ -51,7 +51,7 @@ function emailBody(row: Record<string, unknown>, appUrl: string) {
   return {
     text: lines.join("\n"),
     html: `
-      <h2>New MaintainOps request</h2>
+      <h2>New MaintainOps Request</h2>
       <p><strong>${title}</strong></p>
       <p><strong>Priority:</strong> ${priority}</p>
       <p><strong>Submitted by:</strong> ${requester}</p>
@@ -64,7 +64,7 @@ function emailBody(row: Record<string, unknown>, appUrl: string) {
 
 async function sendEmail(apiKey: string, from: string, row: Record<string, unknown>, appUrl: string) {
   const { text, html } = emailBody(row, appUrl);
-  const subject = `MaintainOps request: ${cleanText(row.request_title, "New request")}`;
+  const subject = `MaintainOps Request: ${cleanText(row.request_title, "New Request")}`;
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -96,7 +96,7 @@ async function sendGoogleScriptEmail(webhookUrl: string, webhookSecret: string, 
     body: JSON.stringify({
       secret: webhookSecret,
       to: cleanText(row.recipient_email),
-      subject: `MaintainOps request: ${cleanText(row.request_title, "New request")}`,
+      subject: `MaintainOps Request: ${cleanText(row.request_title, "New Request")}`,
       text,
       html,
       request_id: cleanText(row.request_id),
