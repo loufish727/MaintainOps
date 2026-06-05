@@ -18,45 +18,83 @@ function cleanText(value: unknown, fallback = "") {
   return String(value || fallback).trim();
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function displayLabel(value: string) {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
 function appRequestUrl(appUrl: string, requestId: string) {
   const base = appUrl.replace(/\/+$/, "");
   return base ? `${base}/?request_id=${encodeURIComponent(requestId)}` : "";
 }
 
+function requestSummaryFromDescription(description: string) {
+  const lines = description.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  let machineArea = "";
+  const detailLines: string[] = [];
+
+  for (const line of lines) {
+    const machineMatch = line.match(/^machine\s*\/\s*area:\s*(.+)$/i);
+    if (machineMatch) {
+      machineArea = machineMatch[1].trim();
+      continue;
+    }
+    if (/^submitted by:/i.test(line) || /^contact:/i.test(line)) continue;
+    detailLines.push(line);
+  }
+
+  return {
+    machineArea,
+    details: detailLines.join("\n") || "No details provided.",
+  };
+}
+
 function emailBody(row: Record<string, unknown>, appUrl: string) {
   const link = appRequestUrl(appUrl, cleanText(row.request_id));
-  const title = cleanText(row.request_title, "New maintenance request");
-  const priority = cleanText(row.request_priority, "medium");
+  const title = cleanText(row.request_title, "New Maintenance Request");
+  const priority = displayLabel(cleanText(row.request_priority, "medium"));
   const requester = cleanText(row.requested_by_name, "Unknown requester");
   const contact = cleanText(row.requested_by_contact);
-  const description = cleanText(row.request_description, "No details provided.");
+  const { machineArea, details } = requestSummaryFromDescription(cleanText(row.request_description, "No details provided."));
   const lines = [
-    `New MaintainOps Request: ${title}`,
+    "New MaintainOps Request",
+    "",
+    title,
     "",
     `Priority: ${priority}`,
+    machineArea ? `Machine / Area: ${machineArea}` : "",
     `Submitted by: ${requester}`,
     contact ? `Contact: ${contact}` : "",
     "",
-    description,
+    "Details:",
+    details,
     "",
     link ? `Open MaintainOps: ${link}` : "Open MaintainOps to review the request.",
   ].filter(Boolean);
 
-  const escapedDescription = description
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll("\n", "<br>");
+  const escapedDetails = escapeHtml(details).replaceAll("\n", "<br>");
 
   return {
     text: lines.join("\n"),
     html: `
       <h2>New MaintainOps Request</h2>
-      <p><strong>${title}</strong></p>
-      <p><strong>Priority:</strong> ${priority}</p>
-      <p><strong>Submitted by:</strong> ${requester}</p>
-      ${contact ? `<p><strong>Contact:</strong> ${contact}</p>` : ""}
-      <p>${escapedDescription}</p>
+      <p><strong>${escapeHtml(title)}</strong></p>
+      <p><strong>Priority:</strong> ${escapeHtml(priority)}</p>
+      ${machineArea ? `<p><strong>Machine / Area:</strong> ${escapeHtml(machineArea)}</p>` : ""}
+      <p><strong>Submitted by:</strong> ${escapeHtml(requester)}</p>
+      ${contact ? `<p><strong>Contact:</strong> ${escapeHtml(contact)}</p>` : ""}
+      <p><strong>Details:</strong></p>
+      <p>${escapedDetails}</p>
       ${link ? `<p><a href="${link}">Open MaintainOps</a></p>` : "<p>Open MaintainOps to review the request.</p>"}
     `,
   };
