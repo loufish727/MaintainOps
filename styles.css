@@ -4160,6 +4160,52 @@ textarea {
   color: var(--muted);
 }
 
+.message-people-strip {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+  scrollbar-width: thin;
+}
+
+.message-person-card {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: 68px;
+  flex: 0 0 68px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.message-person-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid color-mix(in srgb, var(--rel-comment-ink) 56%, var(--line));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,0.34), transparent 28%),
+    color-mix(in srgb, var(--rel-comment-ink) 62%, #171d22);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.message-person-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .message-thread-form details {
   border: 1px solid color-mix(in srgb, var(--rel-comment-ink) 32%, var(--line));
   border-radius: 14px;

@@ -19,6 +19,16 @@
       renderMessageList,
     } = deps;
 
+    function personInitials(name) {
+      const parts = String(name || "?")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      return (parts.length ? parts.map((part) => part[0]).join("") : "?")
+        .slice(0, 2)
+        .toUpperCase();
+    }
+
     function renderMessageCenter() {
       const messagesReady = deps.getMessagesReady();
       if (!messagesReady) {
@@ -35,11 +45,21 @@
       const messageWorkOrderLinksReady = deps.getMessageWorkOrderLinksReady();
       const messageSearchQuery = deps.getMessageSearchQuery();
       const messageThreadFilter = deps.getMessageThreadFilter();
+      const messagePeople = companyMembers.filter((member) => member.user_id !== session.user.id);
     
       const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
       const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
       const visibleThreads = filteredMessageThreads();
       const linkedDraftWorkOrder = workOrders.find((workOrder) => workOrder.id === messageComposerWorkOrderId);
+      const renderMessagePerson = (member) => {
+        const personName = teamMemberName(member.user_id);
+        return `
+          <span class="message-person-card" title="${escapeHtml(personName)}">
+            <span class="message-person-avatar" aria-hidden="true">${escapeHtml(personInitials(personName))}</span>
+            <span class="message-person-name">${escapeHtml(personName)}</span>
+          </span>
+        `;
+      };
     
       return `
         <section class="message-center">
@@ -50,6 +70,9 @@
                   <h3>Messages</h3>
                   <p>${totalUnreadMessages()} unread</p>
                 </div>
+              </div>
+              <div class="message-people-strip" aria-label="Company message contacts">
+                ${messagePeople.map(renderMessagePerson).join("") || `<span class="muted">No teammates added yet.</span>`}
               </div>
               <form class="message-thread-form" id="message-thread-form">
                 <details ${messageComposerOpen || linkedDraftWorkOrder ? "open" : ""}>
