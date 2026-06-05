@@ -10,6 +10,7 @@
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;
     const state = options.state;
+    const win = options.windowRef || (typeof window !== "undefined" ? window : null);
     const scrollToDetailTop = typeof options.scrollToDetailTop === "function" ? options.scrollToDetailTop : () => {};
 
     if (!state) return;
@@ -29,6 +30,18 @@
 
     function sectionNeedsAssetWorkHistory(section) {
       return section === "open-work" || section === "completed-history" || section === "parts-used";
+    }
+
+    function renderWorkspacePreservingScroll() {
+      const top = Number(win?.scrollY ?? win?.pageYOffset ?? 0);
+      options.renderWorkspace();
+      if (!win || typeof win.scrollTo !== "function") return;
+      const restoreScroll = () => win.scrollTo({ top, behavior: "auto" });
+      if (typeof win.requestAnimationFrame === "function") {
+        win.requestAnimationFrame(restoreScroll);
+        return;
+      }
+      restoreScroll();
     }
 
     const backToMyWork = doc.querySelector("#back-to-my-work");
@@ -129,7 +142,7 @@
         if (details.open && sectionNeedsAssetWorkHistory(section)) {
           await loadAssetHistory(assetId);
         }
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
 
@@ -146,7 +159,7 @@
         if (typeof options.setAssetRelationshipPage === "function") {
           options.setAssetRelationshipPage(assetId, section, nextPage);
         }
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
   }

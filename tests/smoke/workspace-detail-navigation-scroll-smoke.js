@@ -55,6 +55,16 @@ let renderCount = 0;
 let scrollCount = 0;
 let relationPage = 1;
 const historyLoads = [];
+const scrollRestores = [];
+const windowRef = {
+  scrollY: 460,
+  scrollTo(options) {
+    scrollRestores.push(options);
+  },
+  requestAnimationFrame(callback) {
+    callback();
+  },
+};
 
 bindWorkspaceDetailNavigationEvents({
   documentRef: createDocument({
@@ -89,6 +99,7 @@ bindWorkspaceDetailNavigationEvents({
     assert.equal(section, "completed-history");
     relationPage = page;
   },
+  windowRef,
 });
 
 (async () => {
@@ -114,10 +125,18 @@ completedHistoryDetails.open = true;
 await completedHistoryDetails.dispatch("toggle");
 assert.deepEqual(historyLoads, ["asset-1"]);
 assert.equal(renderCount, 4);
+assert.equal(scrollCount, 3);
+assert.deepEqual(scrollRestores, [{ top: 460, behavior: "auto" }]);
 
+windowRef.scrollY = 720;
 await completedHistoryNext.dispatch("click", { preventDefault() {}, stopPropagation() {} });
 assert.equal(relationPage, 2);
 assert.equal(renderCount, 5);
+assert.equal(scrollCount, 3);
+assert.deepEqual(scrollRestores, [
+  { top: 460, behavior: "auto" },
+  { top: 720, behavior: "auto" },
+]);
 
 await miniWorkOrder.dispatch("click");
 assert.equal(stateValues.activeWorkOrderId, "wo-2");
