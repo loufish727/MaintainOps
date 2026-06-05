@@ -140,6 +140,7 @@ const requiredResources = [
   "src/render/messageCenterDisplay.js",
   "src/render/createWorkOrderDisplay.js",
   "src/render/quickFixDisplay.js",
+  "src/render/managerDashboardDisplay.js",
   "src/render/authDisplay.js",
   "src/render/publicRequestDisplay.js",
   "src/render/messageFormatting.js",

@@ -3612,6 +3612,102 @@ textarea {
   color: var(--muted);
 }
 
+.manager-dashboard {
+  display: grid;
+  gap: 14px;
+}
+
+.manager-context-card {
+  border-color: color-mix(in srgb, var(--blue) 34%, var(--line));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 11%, transparent), transparent 62%),
+    var(--surface-2);
+}
+
+.manager-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manager-metric-card {
+  display: grid;
+  gap: 5px;
+  min-height: 116px;
+  border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--line));
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--blue) 8%, transparent), transparent 70%),
+    var(--surface);
+  padding: 13px;
+}
+
+.manager-metric-card span {
+  color: color-mix(in srgb, var(--blue) 76%, var(--ink));
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.manager-metric-card strong {
+  color: var(--ink);
+  font-size: 2rem;
+  font-weight: 760;
+  line-height: 1;
+}
+
+.manager-metric-card small {
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.manager-tech-panel,
+.manager-tech-list {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-tech-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) repeat(7, minmax(72px, 0.72fr)) minmax(150px, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  border: 1px solid color-mix(in srgb, var(--rel-comment-ink) 28%, var(--line));
+  border-radius: 8px;
+  background: var(--surface-2);
+  padding: 9px;
+}
+
+.manager-tech-row > div,
+.manager-tech-row > small {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-3) 78%, transparent);
+  padding: 8px;
+}
+
+.manager-tech-row span,
+.manager-tech-row small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.manager-tech-row strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.manager-tech-person strong {
+  font-size: 0.95rem;
+}
+
 .checklist-list {
   display: grid;
   gap: 8px;
@@ -8945,6 +9041,32 @@ textarea:focus {
   .company-banner-logo {
     width: 76px;
     height: 50px;
+  }
+}
+
+@media (max-width: 900px) {
+  .manager-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manager-tech-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manager-tech-person,
+  .manager-tech-row > small {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .manager-metric-grid,
+  .manager-tech-row {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-metric-card {
+    min-height: 96px;
   }
 }
 

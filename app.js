@@ -196,6 +196,7 @@ const { createInviteLocationDisplayHelpers } = window.MaintainOpsInviteLocationD
 const { createPartSetupDisplayHelpers } = window.MaintainOpsPartSetupDisplay;
 const { createTeamMemberDisplayHelpers } = window.MaintainOpsTeamMemberDisplay;
 const { createTeamWorkloadDisplayHelpers } = window.MaintainOpsTeamWorkloadDisplay;
+const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashboardDisplay;
 const { createLocationDisplayHelpers } = window.MaintainOpsLocationDisplay;
 const { createDowntimeEmailDisplayHelpers } = window.MaintainOpsDowntimeEmailDisplay;
 const { createSetupErrorDisplayHelpers } = window.MaintainOpsSetupErrorDisplay;
@@ -766,6 +767,22 @@ const {
   averageCompletionMinutes,
   preventiveDueSoon,
 } = dashboardDisplayHelpers;
+const {
+  renderManagerDashboard,
+} = createManagerDashboardDisplayHelpers({
+  getWorkOrders: () => workOrders,
+  getMaintenanceRequests: () => maintenanceRequests,
+  getCompanyMembers: () => companyMembers,
+  getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
+  getRequestDashboardCounts: () => requestDashboardCounts,
+  matchesActiveLocation,
+  isConvertedRequest,
+  getDueState,
+  teamMemberName,
+  roleLabel,
+  normalizeRole,
+  escapeHtml,
+});
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
   getSearchQuery: () => workspaceUiState.getSearchQuery(),
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
@@ -3305,6 +3322,14 @@ function renderWorkspace() {
             ${renderListPagination("members", visibleMembers.length, membersPage, totalMemberPages)}
           </section>
 
+          <section class="panel full-width ${activeSection === "manager" ? "" : "hidden-section"}">
+            <div class="panel-header">
+              <h2>Manager</h2>
+              <span>${escapeHtml(activeLocationName())}</span>
+            </div>
+            ${canManageTeam() ? renderManagerDashboard() : `<p class="muted">Manager dashboard is available to managers and admins.</p>`}
+          </section>
+
           <section class="panel full-width ${activeSection === "parts" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>${activePartId ? "Part Detail" : "Parts Inventory"}</h2>
@@ -5438,7 +5463,7 @@ function visibleNavItems() {
     ["team", "Team"],
   ];
   if (canManageTeam()) {
-    items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
+    items.push(["manager", "Manager"], ["setup", "Admin Setup"], ["settings", "Settings"]);
   }
   return items;
 }
