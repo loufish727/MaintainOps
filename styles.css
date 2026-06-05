@@ -3640,6 +3640,20 @@ textarea {
     linear-gradient(145deg, color-mix(in srgb, var(--blue) 8%, transparent), transparent 70%),
     var(--surface);
   padding: 13px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.manager-metric-card:hover,
+.manager-metric-card:focus-visible,
+.manager-metric-card.active {
+  border-color: color-mix(in srgb, var(--blue) 58%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--blue) 15%, transparent), transparent 70%),
+    color-mix(in srgb, var(--blue) 8%, var(--surface));
+  outline: none;
 }
 
 .manager-metric-card span {
@@ -3697,6 +3711,7 @@ textarea {
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+  font: inherit;
 }
 
 .manager-drill-button:hover,

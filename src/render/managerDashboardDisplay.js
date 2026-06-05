@@ -1,6 +1,7 @@
 (function () {
   function createManagerDashboardDisplayHelpers(deps) {
     const dayMs = 24 * 60 * 60 * 1000;
+    const summaryUserId = "__summary__";
 
     function todayStart() {
       const date = new Date();
@@ -52,7 +53,25 @@
         overdue: "Overdue",
         completed_week: "Done 7d",
         completed_month: "Done 30d",
+        summary_open: "Open Work",
+        summary_requests: "New Requests",
+        summary_overdue: "Overdue",
+        summary_unassigned: "Unassigned",
+        summary_completed_week: "Completed Week",
+        summary_converted_requests: "Converted Requests",
       })[metric] || "Open Work";
+    }
+
+    function summaryWorkOrders(metric) {
+      if (metric === "summary_overdue") return openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue");
+      if (metric === "summary_unassigned") return openWorkOrders().filter((workOrder) => !workOrder.assigned_to);
+      if (metric === "summary_completed_week") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
+      return openWorkOrders();
+    }
+
+    function summaryRequests(metric) {
+      if (metric === "summary_converted_requests") return convertedRequests();
+      return activeRequests();
     }
 
     function metricWorkOrders(userId, metric) {
@@ -92,12 +111,12 @@
       const requestCounts = deps.getRequestDashboardCounts() || {};
       const unassigned = openWorkOrders().filter((workOrder) => !workOrder.assigned_to).length;
       return [
-        ["Open Work", counts.activeWork ?? openWorkOrders().length, "Current active work in this location."],
-        ["New Requests", requestCounts.active ?? activeRequests().length, "Submitted requests waiting for review."],
-        ["Overdue", counts.overdue ?? openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length, "Open work past due."],
-        ["Unassigned", unassigned, "Open work with no internal owner."],
-        ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length, "Work completed in the last 7 days."],
-        ["Converted Requests", requestCounts.converted ?? convertedRequests().length, "Requests already turned into work orders."],
+        ["Open Work", counts.activeWork ?? openWorkOrders().length, "Current active work in this location.", "summary_open"],
+        ["New Requests", requestCounts.active ?? activeRequests().length, "Submitted requests waiting for review.", "summary_requests"],
+        ["Overdue", counts.overdue ?? openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length, "Open work past due.", "summary_overdue"],
+        ["Unassigned", unassigned, "Open work with no internal owner.", "summary_unassigned"],
+        ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length, "Work completed in the last 7 days.", "summary_completed_week"],
+        ["Converted Requests", requestCounts.converted ?? convertedRequests().length, "Requests already turned into work orders.", "summary_converted_requests"],
       ];
     }
 
@@ -128,13 +147,14 @@
         .sort((a, b) => b.open - a.open || b.overdue - a.overdue || a.name.localeCompare(b.name));
     }
 
-    function renderMetricCard([label, value, detail]) {
+    function renderMetricCard([label, value, detail, metric]) {
+      const activeClass = selectedUserId() === summaryUserId && selectedMetric() === metric ? " active" : "";
       return `
-        <article class="manager-metric-card">
+        <button type="button" class="manager-metric-card${activeClass}" data-manager-drill-user="${summaryUserId}" data-manager-drill-metric="${deps.escapeHtml(metric)}">
           <span>${deps.escapeHtml(label)}</span>
           <strong>${deps.escapeHtml(value)}</strong>
           <small>${deps.escapeHtml(detail)}</small>
-        </article>
+        </button>
       `;
     }
 
@@ -178,7 +198,29 @@
         <article class="mini-work-order manager-drill-work-order" data-mini-work-order="${deps.escapeHtml(workOrder.id)}">
           <strong>${deps.escapeHtml(workOrderTitle(workOrder))}</strong>
           <span>${deps.escapeHtml(deps.statusLabel ? deps.statusLabel(workOrder.status) : workOrder.status || "Open")}</span>
-          <small>${deps.escapeHtml(dueLabel)} · Created ${deps.escapeHtml(formatDate(workOrder.created_at))}</small>
+          <small>${deps.escapeHtml(dueLabel)} - Created ${deps.escapeHtml(formatDate(workOrder.created_at))}</small>
+        </article>
+      `;
+    }
+
+    function requestTitle(request) {
+      return request.title || request.description || "Untitled request";
+    }
+
+    function requestRequester(request) {
+      return request.requested_by_name || request.requester_name || "Requester unknown";
+    }
+
+    function requestEquipmentLabel(request) {
+      return request.assets?.name || request.equipment_note || "Machine / area not set";
+    }
+
+    function renderDrillRequest(request) {
+      return `
+        <article class="mini-work-order manager-drill-request">
+          <strong>${deps.escapeHtml(requestTitle(request))}</strong>
+          <span>${deps.escapeHtml(request.priority || "Medium")} priority</span>
+          <small>${deps.escapeHtml(requestEquipmentLabel(request))} - ${deps.escapeHtml(requestRequester(request))} - ${deps.escapeHtml(formatDate(request.created_at))}</small>
         </article>
       `;
     }
@@ -187,6 +229,27 @@
       const userId = selectedUserId();
       if (!userId) return "";
       const metric = selectedMetric();
+      if (userId === summaryUserId) {
+        const requestMetric = metric === "summary_requests" || metric === "summary_converted_requests";
+        const workRows = requestMetric ? [] : summaryWorkOrders(metric);
+        const requestRows = requestMetric ? summaryRequests(metric) : [];
+        const itemCount = requestMetric ? requestRows.length : workRows.length;
+        return `
+          <section class="manager-drill-panel relationship-detail comment" data-manager-drill-in>
+            <div class="panel-header compact">
+              <div>
+                <h3>${deps.escapeHtml(metricLabel(metric))}</h3>
+                <span>Manager snapshot - ${itemCount} loaded item${itemCount === 1 ? "" : "s"}</span>
+              </div>
+              <button type="button" class="secondary-button small" data-manager-drill-clear>Clear</button>
+            </div>
+            <div class="manager-drill-list">
+              ${requestMetric ? requestRows.map(renderDrillRequest).join("") : workRows.map(renderDrillWorkOrder).join("")}
+              ${itemCount ? "" : `<p class="muted">No loaded items match this view.</p>`}
+            </div>
+          </section>
+        `;
+      }
       const userRow = rows.find((row) => row.userId === userId);
       const workRows = metricWorkOrders(userId, metric);
       return `
@@ -194,7 +257,7 @@
           <div class="panel-header compact">
             <div>
               <h3>${deps.escapeHtml(userRow?.name || deps.teamMemberName(userId))}</h3>
-              <span>${deps.escapeHtml(metricLabel(metric))} · ${workRows.length} loaded item${workRows.length === 1 ? "" : "s"}</span>
+              <span>${deps.escapeHtml(metricLabel(metric))} - ${workRows.length} loaded item${workRows.length === 1 ? "" : "s"}</span>
             </div>
             <button type="button" class="secondary-button small" data-manager-drill-clear>Clear</button>
           </div>

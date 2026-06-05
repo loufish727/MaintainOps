@@ -56,4 +56,33 @@ assert.match(html, /data-manager-drill-in/);
 assert.match(html, /Overdue . 1 loaded item/);
 assert.match(html, /data-mini-work-order="wo-2"/);
 
+const summaryHelpers = createManagerDashboardDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getWorkOrders: () => [
+    { id: "wo-5", assigned_to: "", status: "open", title: "Unassigned repair", created_at: "2026-06-05T12:00:00Z", location_id: "loc-1" },
+  ],
+  getMaintenanceRequests: () => [
+    { id: "req-3", title: "Mouse request", status: "submitted", priority: "critical", equipment_note: "Salem office", requested_by_name: "Louie", created_at: "2026-06-05T12:00:00Z", location_id: "loc-1" },
+  ],
+  getCompanyMembers: () => [],
+  getWorkOrderDashboardCounts: () => null,
+  getRequestDashboardCounts: () => null,
+  getManagerDashboardUserId: () => "__summary__",
+  getManagerDashboardMetric: () => "summary_requests",
+  matchesActiveLocation: (row) => row.location_id === "loc-1",
+  isConvertedRequest: (request) => request.status === "converted" || Boolean(request.converted_work_order_id),
+  getDueState: () => ({ className: "" }),
+  teamMemberName: () => "Summary",
+  roleLabel: (role) => role,
+  normalizeRole: (role) => role,
+  statusLabel: (status) => status,
+});
+
+const summaryHtml = summaryHelpers.renderManagerDashboard();
+assert.match(summaryHtml, /data-manager-drill-user="__summary__"/);
+assert.match(summaryHtml, /data-manager-drill-metric="summary_requests"/);
+assert.match(summaryHtml, /Manager snapshot - 1 loaded item/);
+assert.match(summaryHtml, /Mouse request/);
+assert.match(summaryHtml, /Salem office - Louie/);
+
 console.log("manager dashboard display smoke passed");
