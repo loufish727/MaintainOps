@@ -10,6 +10,7 @@
     const state = options.state;
     const renderWorkspace = typeof options.renderWorkspace === "function" ? options.renderWorkspace : () => {};
     const win = options.windowRef || (typeof window !== "undefined" ? window : null);
+    const storage = options.storage || (typeof localStorage !== "undefined" ? localStorage : null);
 
     if (!state) return;
 
@@ -36,6 +37,19 @@
       button.addEventListener("click", () => {
         state.setManagerDashboardUserId("");
         state.setManagerDashboardMetric("open");
+        renderWorkspace();
+      });
+    });
+
+    doc.querySelectorAll("[data-manager-request-jump]").forEach((item) => {
+      item.addEventListener("click", () => {
+        if (typeof state.setActiveSection === "function") {
+          state.setActiveSection("requests");
+          storage?.setItem?.("maintainops.activeSection", "requests");
+        }
+        if (typeof state.setRequestViewFilter === "function") {
+          state.setRequestViewFilter(item.dataset.managerRequestJump === "converted" ? "converted" : "active");
+        }
         renderWorkspace();
       });
     });

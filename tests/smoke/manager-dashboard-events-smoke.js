@@ -27,16 +27,26 @@ function createElement(dataset = {}) {
 
 const drillButton = createElement({ managerDrillUser: "tech-1", managerDrillMetric: "blocked" });
 const clearButton = createElement({});
+const requestJump = createElement({ managerRequestJump: "converted" });
 const drillPanel = createElement({});
 let renderCount = 0;
+const stored = {};
 const state = {
   userId: "",
   metric: "",
+  section: "manager",
+  requestFilter: "active",
   setManagerDashboardUserId(value) {
     this.userId = value;
   },
   setManagerDashboardMetric(value) {
     this.metric = value;
+  },
+  setActiveSection(value) {
+    this.section = value;
+  },
+  setRequestViewFilter(value) {
+    this.requestFilter = value;
   },
 };
 
@@ -44,6 +54,7 @@ const documentRef = {
   querySelectorAll(selector) {
     if (selector === "[data-manager-drill-user][data-manager-drill-metric]") return [drillButton];
     if (selector === "[data-manager-drill-clear]") return [clearButton];
+    if (selector === "[data-manager-request-jump]") return [requestJump];
     return [];
   },
   querySelector(selector) {
@@ -55,6 +66,11 @@ const documentRef = {
 bindWorkspaceManagerDashboardEvents({
   documentRef,
   state,
+  storage: {
+    setItem(key, value) {
+      stored[key] = value;
+    },
+  },
   renderWorkspace: () => { renderCount += 1; },
   windowRef: global.window,
 });
@@ -69,5 +85,11 @@ clearButton.click();
 assert.equal(state.userId, "");
 assert.equal(state.metric, "open");
 assert.equal(renderCount, 2);
+
+requestJump.click();
+assert.equal(state.section, "requests");
+assert.equal(state.requestFilter, "converted");
+assert.equal(stored["maintainops.activeSection"], "requests");
+assert.equal(renderCount, 3);
 
 console.log("manager dashboard events smoke passed");

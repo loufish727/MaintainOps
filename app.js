@@ -4406,7 +4406,12 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceManagerDashboardEvents({
-    state: workspaceUiState,
+    state: {
+      setActiveSection: setActiveSectionState,
+      setManagerDashboardMetric: (value) => workspaceUiState.setManagerDashboardMetric(value),
+      setManagerDashboardUserId: (value) => workspaceUiState.setManagerDashboardUserId(value),
+      setRequestViewFilter: (value) => workspaceUiState.setRequestViewFilter(value),
+    },
     renderWorkspace,
   });
 

@@ -17,7 +17,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   ],
   getManagerCompletedWorkReady: () => true,
   getMaintenanceRequests: () => [
-    { id: "req-1", status: "submitted", location_id: "loc-1" },
+    { id: "req-1", status: "submitted", created_at: "2026-05-30T12:00:00Z", location_id: "loc-1" },
     { id: "req-2", status: "converted", converted_work_order_id: "wo-3", location_id: "loc-1" },
   ],
   getCompanyMembers: () => [
@@ -41,6 +41,8 @@ const cards = helpers.managerSummaryCards();
 assert.equal(cards.find(([label]) => label === "Open Work")[1], 3);
 assert.equal(cards.find(([label]) => label === "New Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Converted Requests")[1], 1);
+assert.equal(cards.find(([label]) => label === "Stale Requests")[1], 1);
+assert.match(String(cards.find(([label]) => label === "7d Completion Rate")[1]), /%/);
 assert.equal(cards.find(([label]) => label === "Completed Week")[1], 1);
 assert.equal(cards.find(([label]) => label === "Completed Month")[1], 1);
 assert.equal(cards.find(([label]) => label === "Critical Open")[1], 1);
@@ -54,8 +56,10 @@ assert.equal(rows[0].inProgress, 1);
 assert.equal(rows[0].overdue, 1);
 assert.equal(rows[0].critical, 1);
 assert.equal(rows[0].followUp, 1);
+assert.equal(rows[0].overloadLevel, "high");
 assert.equal(helpers.metricWorkOrders("tech-1", "critical").length, 1);
 assert.equal(helpers.metricWorkOrders("tech-1", "follow_up").length, 1);
+assert.equal(helpers.managerCompletionRate() > 0, true);
 assert.equal(helpers.managerAttentionItems()[0].count >= 1, true);
 
 const html = helpers.renderManagerDashboard();
@@ -63,6 +67,8 @@ assert.match(html, /Manager Beta Dashboard/);
 assert.match(html, /Technician Workload/);
 assert.match(html, /Taylor Tech/);
 assert.match(html, /Completed metrics include recent manager history/);
+assert.match(html, /Manager Trends/);
+assert.match(html, /Manager Report/);
 assert.match(html, /data-manager-drill-user="tech-1"/);
 assert.match(html, /data-manager-drill-metric="overdue"/);
 assert.match(html, /data-manager-drill-in/);
@@ -72,6 +78,8 @@ assert.match(html, /Manager Attention/);
 assert.match(html, /data-manager-drill-metric="summary_critical"/);
 assert.match(html, /data-manager-drill-metric="critical"/);
 assert.match(html, /data-manager-drill-metric="follow_up"/);
+assert.match(html, /workload-high/);
+assert.match(html, /Needs manager review/);
 assert.match(html, /critical/);
 
 const summaryHelpers = createManagerDashboardDisplayHelpers({
@@ -104,5 +112,32 @@ assert.match(summaryHtml, /data-manager-drill-metric="summary_requests"/);
 assert.match(summaryHtml, /Manager snapshot - 1 loaded item/);
 assert.match(summaryHtml, /Mouse request/);
 assert.match(summaryHtml, /Salem office - Louie/);
+assert.match(summaryHtml, /data-manager-request-jump="active"/);
+
+const completedHelpers = createManagerDashboardDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getWorkOrders: () => [],
+  getManagerCompletedWorkOrders: () => [
+    { id: "wo-done", title: "Completed repair", assigned_to: "tech-1", completed_by: "tech-2", status: "completed", completed_at: new Date().toISOString(), created_at: "2026-06-01T12:00:00Z", location_id: "loc-1" },
+  ],
+  getManagerCompletedWorkReady: () => true,
+  getMaintenanceRequests: () => [],
+  getCompanyMembers: () => [{ user_id: "tech-2", role: "manager" }],
+  getWorkOrderDashboardCounts: () => ({}),
+  getRequestDashboardCounts: () => ({}),
+  getManagerDashboardUserId: () => "__summary__",
+  getManagerDashboardMetric: () => "summary_completed_week",
+  matchesActiveLocation: (row) => row.location_id === "loc-1",
+  isConvertedRequest: () => false,
+  getDueState: () => ({ className: "" }),
+  teamMemberName: (userId) => userId === "tech-2" ? "QA Manager" : "Taylor Tech",
+  roleLabel: (role) => role,
+  normalizeRole: (role) => role,
+  statusLabel: (status) => status,
+});
+
+const completedHtml = completedHelpers.renderManagerDashboard();
+assert.match(completedHtml, /Completed by QA Manager/);
+assert.match(completedHtml, /data-mini-work-order="wo-done"/);
 
 console.log("manager dashboard display smoke passed");

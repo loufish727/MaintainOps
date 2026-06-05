@@ -3744,6 +3744,16 @@ textarea {
   border-color: color-mix(in srgb, var(--blue) 52%, var(--line));
 }
 
+.manager-tech-row.workload-high {
+  border-color: color-mix(in srgb, var(--red) 48%, var(--line));
+  background: color-mix(in srgb, var(--red) 7%, var(--surface));
+}
+
+.manager-tech-row.workload-watch {
+  border-color: color-mix(in srgb, var(--yellow) 48%, var(--line));
+  background: color-mix(in srgb, var(--yellow) 6%, var(--surface));
+}
+
 .manager-tech-row span,
 .manager-tech-row small {
   color: var(--muted);
@@ -3769,6 +3779,10 @@ textarea {
 }
 
 .manager-drill-work-order {
+  cursor: pointer;
+}
+
+.manager-drill-request {
   cursor: pointer;
 }
 
@@ -3819,6 +3833,50 @@ textarea {
 .manager-attention-card strong {
   font-size: 1.7rem;
   line-height: 1;
+}
+
+.manager-trend-panel,
+.manager-report-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-trend-grid,
+.manager-report-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manager-report-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.manager-trend-grid article,
+.manager-report-grid article,
+.manager-report-card {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px;
+}
+
+.manager-trend-grid strong,
+.manager-report-card strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.manager-trend-grid span,
+.manager-report-grid span,
+.manager-report-card span,
+.manager-report-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
 }
 
 .checklist-list {
@@ -9170,6 +9228,11 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .manager-trend-grid,
+  .manager-report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .manager-tech-person,
   .manager-tech-row > small {
     grid-column: 1 / -1;
@@ -9180,6 +9243,11 @@ textarea:focus {
   .manager-metric-grid,
   .manager-tech-row,
   .manager-attention-list {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-trend-grid,
+  .manager-report-grid {
     grid-template-columns: 1fr;
   }
 
