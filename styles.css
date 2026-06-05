@@ -3633,6 +3633,25 @@ textarea {
 .manager-dashboard {
   display: grid;
   gap: 14px;
+  min-width: 0;
+}
+
+.manager-dashboard > * {
+  min-width: 0;
+}
+
+.manager-dashboard .panel-header {
+  min-width: 0;
+}
+
+.manager-dashboard .panel-header > div {
+  min-width: 0;
+}
+
+.manager-dashboard .panel-header span,
+.manager-dashboard .panel-header small {
+  min-width: 0;
+  white-space: normal;
 }
 
 .manager-context-card {
@@ -3697,6 +3716,12 @@ textarea {
 .manager-tech-list {
   display: grid;
   gap: 10px;
+  min-width: 0;
+}
+
+.manager-tech-list {
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .manager-tech-row {
@@ -3704,6 +3729,7 @@ textarea {
   grid-template-columns: minmax(150px, 1.3fr) repeat(9, minmax(72px, 0.72fr)) minmax(150px, 1fr);
   gap: 8px;
   align-items: stretch;
+  min-width: 980px;
   border: 1px solid color-mix(in srgb, var(--rel-comment-ink) 28%, var(--line));
   border-radius: 8px;
   background: var(--surface-2);
@@ -3790,6 +3816,7 @@ textarea {
 .manager-attention-list {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .manager-attention-list {
@@ -3839,6 +3866,7 @@ textarea {
 .manager-report-panel {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .manager-trend-grid,
@@ -9222,6 +9250,7 @@ textarea:focus {
 
   .manager-tech-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
   }
 
   .manager-attention-list {
