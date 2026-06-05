@@ -133,6 +133,8 @@ See `docs/GOOGLE_APPS_SCRIPT_REQUEST_EMAILER.md`.
 
 The frontend calls the Edge Function after a request is created, but request creation does not fail if the email sender is not configured. The function is deployed without JWT verification so anonymous public QR submissions can invoke it after the database creates the request. The function only processes existing queued request IDs and sends only to configured company recipients; it does not accept arbitrary recipient addresses from the browser.
 
+Taylor beta note: `maintenance@taylormetal.com` is currently configured as the request notification recipient while Salem is the only active QR request flow. Before activating QR request links for another Taylor location, scope request notification recipients by `location_id` so each location can use its own email routing.
+
 ## Recent Required SQL
 
 Explicit Data API grants:
