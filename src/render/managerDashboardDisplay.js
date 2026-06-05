@@ -200,6 +200,17 @@
       return Math.round(total / rows.length);
     }
 
+    function shortDateTime(value) {
+      if (!value) return "No recent activity";
+      return value.toLocaleString([], {
+        month: "numeric",
+        day: "numeric",
+        year: "2-digit",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+
     function managerSummaryCards() {
       const counts = deps.getWorkOrderDashboardCounts() || {};
       const requestCounts = deps.getRequestDashboardCounts() || {};
@@ -245,7 +256,7 @@
             completedWeek: completed.filter((workOrder) => isCompletedSince(workOrder, weekCutoff)).length,
             completedMonth: completed.filter((workOrder) => isCompletedSince(workOrder, monthCutoff)).length,
             averageAge: averageAgeDays(assigned),
-            latestActivity: latest ? latest.toLocaleString() : "No recent loaded activity",
+            latestActivity: shortDateTime(latest),
           };
         })
         .map((row) => {
