@@ -149,13 +149,7 @@ serve(async (request) => {
   });
 
   const { data: pendingRows, error: selectError } = await supabase
-    .schema("private")
-    .from("request_email_notifications")
-    .select("*")
-    .eq("request_id", requestId)
-    .in("status", ["queued", "failed"])
-    .lt("attempt_count", 3)
-    .order("created_at", { ascending: true });
+    .rpc("claim_request_email_notifications", { p_request_id: requestId });
 
   if (selectError) return jsonResponse({ error: selectError.message }, 500);
   if (!pendingRows?.length) return jsonResponse({ sent: 0, skipped: false });
@@ -164,23 +158,6 @@ serve(async (request) => {
   const failed: Array<{ id: string; error: string }> = [];
 
   for (const row of pendingRows) {
-    const { error: lockError } = await supabase
-      .schema("private")
-      .from("request_email_notifications")
-      .update({
-        status: "sending",
-        attempt_count: Number(row.attempt_count || 0) + 1,
-        locked_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", row.id)
-      .in("status", ["queued", "failed"]);
-
-    if (lockError) {
-      failed.push({ id: row.id, error: lockError.message });
-      continue;
-    }
-
     try {
       if (hasResendSender) {
         await sendEmail(resendApiKey, fromEmail, row, appUrl);
@@ -188,28 +165,19 @@ serve(async (request) => {
         await sendGoogleScriptEmail(googleScriptWebhookUrl, googleScriptWebhookSecret, row, appUrl);
       }
       sent += 1;
-      await supabase
-        .schema("private")
-        .from("request_email_notifications")
-        .update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          last_error: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", row.id);
+      await supabase.rpc("complete_request_email_notification", {
+        p_notification_id: row.id,
+        p_sent: true,
+        p_error: null,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       failed.push({ id: row.id, error: message });
-      await supabase
-        .schema("private")
-        .from("request_email_notifications")
-        .update({
-          status: "failed",
-          last_error: message.slice(0, 1000),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", row.id);
+      await supabase.rpc("complete_request_email_notification", {
+        p_notification_id: row.id,
+        p_sent: false,
+        p_error: message,
+      });
     }
   }
 

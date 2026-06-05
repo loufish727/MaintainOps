@@ -111,13 +111,14 @@ Setup steps:
 
 1. Run `supabase/step-next-request-notification-recipients.sql` if it is not already installed.
 2. Run `supabase/step-next-request-email-outbox.sql`.
-3. Deploy the Edge Function:
+3. Run `supabase/step-next-request-email-outbox-rpc.sql` so the Edge Function can claim and complete private outbox rows without exposing the `private` schema.
+4. Deploy the Edge Function:
 
 ```powershell
 npx supabase functions deploy request-emailer --project-ref lbphkzznvvumemdkqoay --no-verify-jwt
 ```
 
-4. Set the email-provider secrets. The current function expects Resend:
+5. Set the email-provider secrets. The current function expects Resend:
 
 ```powershell
 npx supabase secrets set RESEND_API_KEY="paste-provider-key" REQUEST_EMAIL_FROM="MaintainOps <requests@your-verified-domain.com>" REQUEST_EMAIL_APP_URL="https://loufish727.github.io/MaintainOps" --project-ref lbphkzznvvumemdkqoay
