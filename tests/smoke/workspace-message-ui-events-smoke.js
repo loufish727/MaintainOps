@@ -15,6 +15,9 @@ function createElement({ dataset = {}, value = "", selectorMap = {} } = {}) {
         if (force) this.values.add(name);
         else this.values.delete(name);
       },
+      remove(name) {
+        this.values.delete(name);
+      },
       contains(name) {
         return this.values.has(name);
       },
@@ -89,16 +92,22 @@ const directSelect = createElement();
 const directField = createElement({ selectorMap: { select: directSelect } });
 const scopeNote = createElement();
 const typeSelect = createElement({ value: "direct" });
+const composerDetails = createElement();
+const subjectField = createElement();
 const threadForm = createElement({
   selectorMap: {
+    details: composerDetails,
     "#message-thread-type": typeSelect,
     ".message-direct-field": directField,
     "#message-scope-note": scopeNote,
+    "select[name='direct_user_id']": directSelect,
+    "input[name='title']": subjectField,
   },
 });
 const replyField = createElement({ value: "Existing" });
 const replyForm = createElement({ selectorMap: { "textarea[name='body']": replyField } });
 const quickReplyButton = createElement({ dataset: { quickReply: "On it" } });
+const personButton = createElement({ dataset: { messagePerson: "user-2" } });
 
 const doc = createDocument({
   "[data-message-filter]": [filterButton],
@@ -108,6 +117,7 @@ const doc = createDocument({
   "#message-thread-form": threadForm,
   "#message-reply-form": replyForm,
   "[data-quick-reply]": [quickReplyButton],
+  "[data-message-person]": [personButton],
 });
 
 bindWorkspaceMessageUiEvents({
@@ -165,6 +175,15 @@ typeSelect.dispatch("change");
 assert.equal(directField.classList.contains("hidden-section"), true);
 assert.equal(directSelect.disabled, true);
 assert.equal(scopeNote.textContent, "scope:work_order");
+
+personButton.dispatch("click");
+assert.equal(composerDetails.open, true);
+assert.equal(typeSelect.value, "direct");
+assert.equal(directSelect.value, "user-2");
+assert.equal(directSelect.disabled, false);
+assert.equal(directField.classList.contains("hidden-section"), false);
+assert.equal(scopeNote.textContent, "scope:direct");
+assert.equal(subjectField.focused, true);
 
 quickReplyButton.dispatch("click");
 assert.equal(replyField.value, "Existing\nOn it");

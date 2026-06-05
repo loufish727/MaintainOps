@@ -83,6 +83,30 @@
       }
     }
 
+    doc.querySelectorAll("[data-message-person]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const form = doc.querySelector("#message-thread-form");
+        if (!form) return;
+        const details = form.querySelector("details");
+        const typeSelect = form.querySelector("#message-thread-type");
+        const directSelect = form.querySelector("select[name='direct_user_id']");
+        const directField = form.querySelector(".message-direct-field");
+        const scopeNote = form.querySelector("#message-scope-note");
+        const subjectField = form.querySelector("input[name='title']");
+        if (details) details.open = true;
+        if (typeSelect) typeSelect.value = "direct";
+        if (directSelect) {
+          directSelect.value = button.dataset.messagePerson || "";
+          directSelect.disabled = false;
+        }
+        if (directField) directField.classList.remove("hidden-section");
+        if (scopeNote && typeof messageComposerScopeNote === "function") {
+          scopeNote.textContent = messageComposerScopeNote("direct");
+        }
+        if (subjectField) subjectField.focus();
+      });
+    });
+
     doc.querySelectorAll("[data-quick-reply]").forEach((button) => {
       button.addEventListener("click", () => {
         const replyForm = doc.querySelector("#message-reply-form");

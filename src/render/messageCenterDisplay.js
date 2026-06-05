@@ -54,10 +54,10 @@
       const renderMessagePerson = (member) => {
         const personName = teamMemberName(member.user_id);
         return `
-          <span class="message-person-card" title="${escapeHtml(personName)}">
+          <button class="message-person-card" data-message-person="${escapeHtml(member.user_id)}" title="Message ${escapeHtml(personName)}" type="button">
             <span class="message-person-avatar" aria-hidden="true">${escapeHtml(personInitials(personName))}</span>
             <span class="message-person-name">${escapeHtml(personName)}</span>
-          </span>
+          </button>
         `;
       };
     

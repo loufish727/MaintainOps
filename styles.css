@@ -4175,8 +4175,18 @@ textarea {
   gap: 5px;
   width: 68px;
   flex: 0 0 68px;
+  border: 0;
+  background: transparent;
   color: var(--ink);
+  cursor: pointer;
+  padding: 0;
   text-align: center;
+}
+
+.message-person-card:hover .message-person-avatar,
+.message-person-card:focus-visible .message-person-avatar {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 24%, transparent);
 }
 
 .message-person-avatar {
