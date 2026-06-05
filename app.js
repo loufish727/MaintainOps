@@ -388,6 +388,9 @@ function setMessageComposerOpenState(value) {
   messageComposerOpen = Boolean(value);
   workspaceUiState.setMessageComposerOpen(value);
 }
+function currentPartSort() {
+  return workspaceUiState.getPartSort ? workspaceUiState.getPartSort() : "default";
+}
 let parts = [];
 let partCostsReady = true;
 let partSuppliersReady = true;
@@ -669,7 +672,7 @@ const {
 } = createPartInventoryDisplayHelpers({
   getParts: () => parts,
   getPartInventoryFilter: () => workspaceUiState.getPartInventoryFilter(),
-  getPartSort: () => workspaceUiState.getPartSort(),
+  getPartSort: currentPartSort,
   getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   matchesActiveLocation,
 });
@@ -3404,7 +3407,7 @@ function renderWorkspace() {
               <div class="parts-health-grid">
                 ${renderPartsHealth()}
               </div>
-              ${renderPartSearch(workspaceUiState.getPartSort())}
+              ${renderPartSearch(currentPartSort())}
               ${renderPartSourceOptions()}
               ${renderPartMachineOptions()}
               <form class="inline-form parts-form relationship-detail parts" id="create-part-form">
