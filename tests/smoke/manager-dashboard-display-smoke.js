@@ -8,8 +8,8 @@ const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashbo
 const helpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
   getWorkOrders: () => [
-    { id: "wo-1", assigned_to: "tech-1", status: "open", created_at: "2026-06-01T12:00:00Z", location_id: "loc-1" },
-    { id: "wo-2", assigned_to: "tech-1", status: "in_progress", created_at: "2026-06-02T12:00:00Z", due_at: "2026-06-03", location_id: "loc-1" },
+    { id: "wo-1", assigned_to: "tech-1", status: "open", priority: "critical", follow_up_needed: true, created_at: "2026-05-20T12:00:00Z", location_id: "loc-1" },
+    { id: "wo-2", assigned_to: "tech-1", status: "in_progress", priority: "high", created_at: "2026-06-02T12:00:00Z", due_at: "2026-06-03", location_id: "loc-1" },
     { id: "wo-4", assigned_to: null, status: "open", created_at: "2026-06-04T12:00:00Z", location_id: "loc-1" },
   ],
   getManagerCompletedWorkOrders: () => [
@@ -43,12 +43,20 @@ assert.equal(cards.find(([label]) => label === "New Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Converted Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Completed Week")[1], 1);
 assert.equal(cards.find(([label]) => label === "Completed Month")[1], 1);
+assert.equal(cards.find(([label]) => label === "Critical Open")[1], 1);
+assert.equal(cards.find(([label]) => label === "Stale 7d+")[1], 1);
+assert.equal(cards.find(([label]) => label === "Follow-up Needed")[1], 1);
 
 const rows = helpers.technicianRows();
 assert.equal(rows[0].name, "Taylor Tech");
 assert.equal(rows[0].open, 2);
 assert.equal(rows[0].inProgress, 1);
 assert.equal(rows[0].overdue, 1);
+assert.equal(rows[0].critical, 1);
+assert.equal(rows[0].followUp, 1);
+assert.equal(helpers.metricWorkOrders("tech-1", "critical").length, 1);
+assert.equal(helpers.metricWorkOrders("tech-1", "follow_up").length, 1);
+assert.equal(helpers.managerAttentionItems()[0].count >= 1, true);
 
 const html = helpers.renderManagerDashboard();
 assert.match(html, /Manager Beta Dashboard/);
@@ -60,6 +68,11 @@ assert.match(html, /data-manager-drill-metric="overdue"/);
 assert.match(html, /data-manager-drill-in/);
 assert.match(html, /Overdue . 1 loaded item/);
 assert.match(html, /data-mini-work-order="wo-2"/);
+assert.match(html, /Manager Attention/);
+assert.match(html, /data-manager-drill-metric="summary_critical"/);
+assert.match(html, /data-manager-drill-metric="critical"/);
+assert.match(html, /data-manager-drill-metric="follow_up"/);
+assert.match(html, /critical/);
 
 const summaryHelpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),

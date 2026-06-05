@@ -3683,7 +3683,7 @@ textarea {
 
 .manager-tech-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1.3fr) repeat(7, minmax(72px, 0.72fr)) minmax(150px, 1fr);
+  grid-template-columns: minmax(150px, 1.3fr) repeat(9, minmax(72px, 0.72fr)) minmax(150px, 1fr);
   gap: 8px;
   align-items: stretch;
   border: 1px solid color-mix(in srgb, var(--rel-comment-ink) 28%, var(--line));
@@ -3752,6 +3752,55 @@ textarea {
 
 .manager-drill-work-order {
   cursor: pointer;
+}
+
+.manager-attention-panel,
+.manager-attention-list {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-attention-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.manager-attention-card {
+  display: grid;
+  gap: 4px;
+  min-height: 82px;
+  border: 1px solid color-mix(in srgb, var(--orange) 42%, var(--line));
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--orange) 13%, transparent), transparent 72%),
+    var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.manager-attention-card:hover,
+.manager-attention-card:focus-visible {
+  border-color: color-mix(in srgb, var(--orange) 72%, var(--line));
+  outline: none;
+}
+
+.manager-attention-card.empty {
+  border-color: var(--line);
+  opacity: 0.76;
+}
+
+.manager-attention-card span {
+  color: color-mix(in srgb, var(--orange) 82%, var(--ink));
+  font-size: 0.76rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.manager-attention-card strong {
+  font-size: 1.7rem;
+  line-height: 1;
 }
 
 .checklist-list {
@@ -9099,6 +9148,10 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .manager-attention-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .manager-tech-person,
   .manager-tech-row > small {
     grid-column: 1 / -1;
@@ -9107,7 +9160,8 @@ textarea:focus {
 
 @media (max-width: 520px) {
   .manager-metric-grid,
-  .manager-tech-row {
+  .manager-tech-row,
+  .manager-attention-list {
     grid-template-columns: 1fr;
   }
 

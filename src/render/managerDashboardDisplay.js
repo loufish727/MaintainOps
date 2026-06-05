@@ -17,6 +17,32 @@
       return Boolean(workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
     }
 
+    function ageDays(workOrder) {
+      const created = new Date(workOrder.created_at || Date.now()).getTime();
+      if (!Number.isFinite(created)) return 0;
+      return Math.max(0, Math.round((Date.now() - created) / dayMs));
+    }
+
+    function priorityRank(priority) {
+      return { critical: 4, high: 3, medium: 2, low: 1 }[String(priority || "").toLowerCase()] || 0;
+    }
+
+    function isCriticalOpen(workOrder) {
+      return workOrder.status !== "completed" && priorityRank(workOrder.priority) >= 4;
+    }
+
+    function isHighPriorityOpen(workOrder) {
+      return workOrder.status !== "completed" && priorityRank(workOrder.priority) >= 3;
+    }
+
+    function isStaleOpen(workOrder) {
+      return workOrder.status !== "completed" && ageDays(workOrder) >= 7;
+    }
+
+    function needsFollowUp(workOrder) {
+      return workOrder.status !== "completed" && Boolean(workOrder.follow_up_needed);
+    }
+
     function openWorkOrders() {
       return deps.getWorkOrders().filter((workOrder) => deps.matchesActiveLocation(workOrder) && workOrder.status !== "completed");
     }
@@ -67,6 +93,10 @@
         summary_requests: "New Requests",
         summary_overdue: "Overdue",
         summary_unassigned: "Unassigned",
+        summary_critical: "Critical Open",
+        summary_high_priority: "High Priority",
+        summary_stale: "Stale 7d+",
+        summary_follow_up: "Follow-up Needed",
         summary_completed_week: "Completed Week",
         summary_completed_month: "Completed Month",
         summary_converted_requests: "Converted Requests",
@@ -76,6 +106,10 @@
     function summaryWorkOrders(metric) {
       if (metric === "summary_overdue") return openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue");
       if (metric === "summary_unassigned") return openWorkOrders().filter((workOrder) => !workOrder.assigned_to);
+      if (metric === "summary_critical") return openWorkOrders().filter(isCriticalOpen);
+      if (metric === "summary_high_priority") return openWorkOrders().filter(isHighPriorityOpen);
+      if (metric === "summary_stale") return openWorkOrders().filter(isStaleOpen);
+      if (metric === "summary_follow_up") return openWorkOrders().filter(needsFollowUp);
       if (metric === "summary_completed_week") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
       if (metric === "summary_completed_month") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return openWorkOrders();
@@ -92,6 +126,9 @@
       if (metric === "in_progress") return assigned.filter((workOrder) => workOrder.status === "in_progress");
       if (metric === "blocked") return assigned.filter((workOrder) => workOrder.status === "blocked");
       if (metric === "overdue") return assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue");
+      if (metric === "critical") return assigned.filter(isCriticalOpen);
+      if (metric === "stale") return assigned.filter(isStaleOpen);
+      if (metric === "follow_up") return assigned.filter(needsFollowUp);
       if (metric === "completed_week") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
       if (metric === "completed_month") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return assigned;
@@ -121,12 +158,16 @@
     function managerSummaryCards() {
       const counts = deps.getWorkOrderDashboardCounts() || {};
       const requestCounts = deps.getRequestDashboardCounts() || {};
+      const openRows = openWorkOrders();
       const unassigned = openWorkOrders().filter((workOrder) => !workOrder.assigned_to).length;
       return [
         ["Open Work", counts.activeWork ?? openWorkOrders().length, "Current active work in this location.", "summary_open"],
         ["New Requests", requestCounts.active ?? activeRequests().length, "Submitted requests waiting for review.", "summary_requests"],
         ["Overdue", counts.overdue ?? openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length, "Open work past due.", "summary_overdue"],
         ["Unassigned", unassigned, "Open work with no internal owner.", "summary_unassigned"],
+        ["Critical Open", openRows.filter(isCriticalOpen).length, "Critical open work needing manager attention.", "summary_critical"],
+        ["Stale 7d+", openRows.filter(isStaleOpen).length, "Open work older than 7 days.", "summary_stale"],
+        ["Follow-up Needed", openRows.filter(needsFollowUp).length, "Open work marked for follow-up.", "summary_follow_up"],
         ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length, "Work completed in the last 7 days.", "summary_completed_week"],
         ["Completed Month", counts.completedMonth ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30))).length, "Work completed in the last 30 days.", "summary_completed_month"],
         ["Converted Requests", requestCounts.converted ?? convertedRequests().length, "Requests already turned into work orders.", "summary_converted_requests"],
@@ -151,6 +192,8 @@
             inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,
             blocked: assigned.filter((workOrder) => workOrder.status === "blocked").length,
             overdue: assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length,
+            critical: assigned.filter(isCriticalOpen).length,
+            followUp: assigned.filter(needsFollowUp).length,
             completedWeek: completed.filter((workOrder) => isCompletedSince(workOrder, weekCutoff)).length,
             completedMonth: completed.filter((workOrder) => isCompletedSince(workOrder, monthCutoff)).length,
             averageAge: averageAgeDays(assigned),
@@ -185,6 +228,8 @@
           <button type="button" class="manager-drill-button${activeClass("in_progress")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="in_progress"><span>In Progress</span><strong>${row.inProgress}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("blocked")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="blocked"><span>Blocked</span><strong>${row.blocked}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("overdue")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="overdue"><span>Overdue</span><strong>${row.overdue}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("critical")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="critical"><span>Critical</span><strong>${row.critical}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("follow_up")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="follow_up"><span>Follow-up</span><strong>${row.followUp}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("completed_week")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_week"><span>Done 7d</span><strong>${row.completedWeek}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("completed_month")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_month"><span>Done 30d</span><strong>${row.completedMonth}</strong></button>
           <div><span>Avg Age</span><strong>${row.averageAge}d</strong></div>
@@ -207,11 +252,13 @@
     function renderDrillWorkOrder(workOrder) {
       const dueState = deps.getDueState(workOrder) || {};
       const dueLabel = dueState.label || (workOrder.due_at ? `Due ${formatDate(workOrder.due_at)}` : "Due date unset");
+      const assignedLabel = workOrder.assigned_to ? deps.teamMemberName(workOrder.assigned_to) : "Unassigned";
+      const ageLabel = workOrder.status === "completed" ? "completed" : `${ageDays(workOrder)}d open`;
       return `
         <article class="mini-work-order manager-drill-work-order" data-mini-work-order="${deps.escapeHtml(workOrder.id)}">
           <strong>${deps.escapeHtml(workOrderTitle(workOrder))}</strong>
-          <span>${deps.escapeHtml(deps.statusLabel ? deps.statusLabel(workOrder.status) : workOrder.status || "Open")}</span>
-          <small>${deps.escapeHtml(dueLabel)} - Created ${deps.escapeHtml(formatDate(workOrder.created_at))}</small>
+          <span>${deps.escapeHtml(deps.statusLabel ? deps.statusLabel(workOrder.status) : workOrder.status || "Open")} - ${deps.escapeHtml(workOrder.priority || "medium")} - ${deps.escapeHtml(assignedLabel)}</span>
+          <small>${deps.escapeHtml(dueLabel)} - ${deps.escapeHtml(ageLabel)} - Created ${deps.escapeHtml(formatDate(workOrder.created_at))}${workOrder.follow_up_needed ? " - follow-up" : ""}</small>
         </article>
       `;
     }
@@ -281,6 +328,39 @@
       `;
     }
 
+    function managerAttentionItems() {
+      const openRows = openWorkOrders();
+      const items = [
+        ["Critical Open", openRows.filter(isCriticalOpen), "summary_critical"],
+        ["Stale 7d+", openRows.filter(isStaleOpen), "summary_stale"],
+        ["Follow-up Needed", openRows.filter(needsFollowUp), "summary_follow_up"],
+        ["New Requests", activeRequests(), "summary_requests"],
+      ];
+      return items
+        .map(([label, rows, metric]) => ({ label, count: rows.length, metric }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    }
+
+    function renderManagerAttentionBoard() {
+      const items = managerAttentionItems();
+      return `
+        <section class="manager-attention-panel relationship-detail warning">
+          <div class="panel-header compact">
+            <h3>Manager Attention</h3>
+            <span>Review first</span>
+          </div>
+          <div class="manager-attention-list">
+            ${items.map((item) => `
+              <button type="button" class="manager-attention-card ${item.count ? "" : "empty"}" data-manager-drill-user="${summaryUserId}" data-manager-drill-metric="${deps.escapeHtml(item.metric)}">
+                <span>${deps.escapeHtml(item.label)}</span>
+                <strong>${item.count}</strong>
+              </button>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
     function renderManagerDashboard() {
       const rows = technicianRows();
       return `
@@ -295,6 +375,7 @@
           <div class="manager-metric-grid">
             ${managerSummaryCards().map(renderMetricCard).join("")}
           </div>
+          ${renderManagerAttentionBoard()}
           <section class="manager-tech-panel relationship-detail comment">
             <div class="panel-header compact">
               <h3>Technician Workload</h3>
@@ -312,6 +393,7 @@
     return {
       renderManagerDashboard,
       metricWorkOrders,
+      managerAttentionItems,
       managerSummaryCards,
       technicianRows,
     };
