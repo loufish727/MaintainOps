@@ -158,9 +158,12 @@
           <button class="secondary-button" type="submit">Search</button>
         </form>
         <div class="part-sort-bar relationship-detail parts" aria-label="Parts sort">
-          <span>Sort</span>
-          <button class="secondary-button ${partSort === "default" ? "active" : ""}" data-part-sort="default" type="button">Default</button>
-          <button class="secondary-button ${partSort === "source" ? "active" : ""}" data-part-sort="source" type="button">Source / vendor</button>
+          <label>Sort parts
+            <select data-part-sort>
+              <option value="default" ${partSort === "default" ? "selected" : ""}>Default</option>
+              <option value="source" ${partSort === "source" ? "selected" : ""}>Source / vendor</option>
+            </select>
+          </label>
         </div>
       `;
     }

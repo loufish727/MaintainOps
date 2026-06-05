@@ -51,7 +51,8 @@ assert.match(health, /data-part-inventory-filter="low"/);
 const search = helpers.renderPartSearch("source");
 assert.match(search, /id="part-search-form"/);
 assert.match(search, /value="bearing"/);
-assert.match(search, /data-part-sort="source"/);
+assert.match(search, /data-part-sort/);
+assert.match(search, /value="source" selected/);
 assert.match(search, /Source \/ vendor/);
 
 const detail = helpers.renderPartDetail(part);

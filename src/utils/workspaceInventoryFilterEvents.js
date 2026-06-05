@@ -20,10 +20,10 @@
       });
     });
 
-    doc.querySelectorAll("[data-part-sort]").forEach((button) => {
-      button.addEventListener("click", () => {
+    doc.querySelectorAll("[data-part-sort]").forEach((select) => {
+      select.addEventListener("change", () => {
         if (!state.setPartSort) return;
-        state.setPartSort(button.dataset.partSort || "default");
+        state.setPartSort(select.value || "default");
         options.resetPartsPage();
         options.renderWorkspace();
       });

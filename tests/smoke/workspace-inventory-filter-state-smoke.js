@@ -43,7 +43,8 @@ const storage = createStorage({
 });
 const state = createWorkspaceUiState({ storage });
 const lowPartsButton = createButton({ partInventoryFilter: "low" });
-const sourceSortButton = createButton({ partSort: "source" });
+const sourceSortSelect = createButton({ partSort: "" });
+sourceSortSelect.value = "source";
 const runningAssetButton = createButton({ assetStatusFilter: "running" });
 const degradedAssetButton = createButton({ assetStatusFilter: "degraded" });
 const toolingAssetButton = createButton({ assetTypeFilter: "tooling" });
@@ -52,7 +53,7 @@ areaSelect.value = "Bay 1";
 const doc = {
   querySelectorAll(selector) {
     if (selector === "[data-part-inventory-filter]") return [lowPartsButton];
-    if (selector === "[data-part-sort]") return [sourceSortButton];
+    if (selector === "[data-part-sort]") return [sourceSortSelect];
     if (selector === "[data-asset-status-filter]") return [runningAssetButton, degradedAssetButton];
     if (selector === "[data-asset-type-filter]") return [toolingAssetButton];
     if (selector === "[data-asset-area-filter]") return [areaSelect];
@@ -81,7 +82,7 @@ assert.equal(storage.values["maintainops.partsPage"], "1");
 assert.equal(renderCount, 1);
 
 state.setPartsPage(3);
-sourceSortButton.dispatch("click");
+sourceSortSelect.dispatch("change");
 assert.equal(state.getPartSort(), "source");
 assert.equal(state.getPartsPage(), 1);
 assert.equal(storage.values["maintainops.partSort"], "source");
