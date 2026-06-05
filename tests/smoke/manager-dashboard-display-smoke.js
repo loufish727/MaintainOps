@@ -10,9 +10,12 @@ const helpers = createManagerDashboardDisplayHelpers({
   getWorkOrders: () => [
     { id: "wo-1", assigned_to: "tech-1", status: "open", created_at: "2026-06-01T12:00:00Z", location_id: "loc-1" },
     { id: "wo-2", assigned_to: "tech-1", status: "in_progress", created_at: "2026-06-02T12:00:00Z", due_at: "2026-06-03", location_id: "loc-1" },
-    { id: "wo-3", assigned_to: "tech-2", status: "completed", completed_at: new Date().toISOString(), completed_by: "tech-2", location_id: "loc-1" },
     { id: "wo-4", assigned_to: null, status: "open", created_at: "2026-06-04T12:00:00Z", location_id: "loc-1" },
   ],
+  getManagerCompletedWorkOrders: () => [
+    { id: "wo-3", assigned_to: "tech-2", status: "completed", completed_at: new Date().toISOString(), completed_by: "tech-2", location_id: "loc-1" },
+  ],
+  getManagerCompletedWorkReady: () => true,
   getMaintenanceRequests: () => [
     { id: "req-1", status: "submitted", location_id: "loc-1" },
     { id: "req-2", status: "converted", converted_work_order_id: "wo-3", location_id: "loc-1" },
@@ -21,7 +24,7 @@ const helpers = createManagerDashboardDisplayHelpers({
     { user_id: "tech-1", role: "technician" },
     { user_id: "tech-2", role: "manager" },
   ],
-  getWorkOrderDashboardCounts: () => ({ activeWork: 3, overdue: 1, completedWeek: 1 }),
+  getWorkOrderDashboardCounts: () => ({ activeWork: 3, overdue: 1, completedWeek: 1, completedMonth: 1 }),
   getRequestDashboardCounts: () => ({ active: 1, converted: 1 }),
   getManagerDashboardUserId: () => "tech-1",
   getManagerDashboardMetric: () => "overdue",
@@ -38,6 +41,8 @@ const cards = helpers.managerSummaryCards();
 assert.equal(cards.find(([label]) => label === "Open Work")[1], 3);
 assert.equal(cards.find(([label]) => label === "New Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Converted Requests")[1], 1);
+assert.equal(cards.find(([label]) => label === "Completed Week")[1], 1);
+assert.equal(cards.find(([label]) => label === "Completed Month")[1], 1);
 
 const rows = helpers.technicianRows();
 assert.equal(rows[0].name, "Taylor Tech");
@@ -49,7 +54,7 @@ const html = helpers.renderManagerDashboard();
 assert.match(html, /Manager Beta Dashboard/);
 assert.match(html, /Technician Workload/);
 assert.match(html, /Taylor Tech/);
-assert.match(html, /Phase 1 uses current loaded workspace data/);
+assert.match(html, /Completed metrics include recent manager history/);
 assert.match(html, /data-manager-drill-user="tech-1"/);
 assert.match(html, /data-manager-drill-metric="overdue"/);
 assert.match(html, /data-manager-drill-in/);
@@ -61,6 +66,8 @@ const summaryHelpers = createManagerDashboardDisplayHelpers({
   getWorkOrders: () => [
     { id: "wo-5", assigned_to: "", status: "open", title: "Unassigned repair", created_at: "2026-06-05T12:00:00Z", location_id: "loc-1" },
   ],
+  getManagerCompletedWorkOrders: () => [],
+  getManagerCompletedWorkReady: () => true,
   getMaintenanceRequests: () => [
     { id: "req-3", title: "Mouse request", status: "submitted", priority: "critical", equipment_note: "Salem office", requested_by_name: "Louie", created_at: "2026-06-05T12:00:00Z", location_id: "loc-1" },
   ],

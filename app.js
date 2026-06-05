@@ -140,6 +140,7 @@ const {
   scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
   fetchPagedSearchRows,
 } = window.MaintainOpsWorkOrdersService;
+const { fetchRecentCompletedWorkOrders } = window.MaintainOpsManagerDashboardService;
 const {
   getMyCompanies,
   listUserCompanyMemberships,
@@ -334,6 +335,8 @@ let workOrderDashboardCounts = null;
 let myWorkDashboardCounts = null;
 let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
 let exactWorkOrderSearchCache = { key: "", rows: [] };
+let managerCompletedWorkOrders = [];
+let managerCompletedWorkReady = true;
 const assetRelationshipOpenKeys = new Set();
 const assetRelationshipPages = {};
 let maintenanceRequests = [];
@@ -772,6 +775,8 @@ const {
   renderManagerDashboard,
 } = createManagerDashboardDisplayHelpers({
   getWorkOrders: () => workOrders,
+  getManagerCompletedWorkOrders: () => managerCompletedWorkOrders,
+  getManagerCompletedWorkReady: () => managerCompletedWorkReady,
   getMaintenanceRequests: () => maintenanceRequests,
   getCompanyMembers: () => companyMembers,
   getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
@@ -1359,6 +1364,9 @@ async function render() {
       "Workspace data load timed out. One of the Supabase data requests is not returning.",
       22000
     );
+    if (activeSection === "manager" && canManageTeam()) {
+      await loadManagerDashboardCompletedWork();
+    }
     renderWorkspace();
   } catch (error) {
     appError = error.message || String(error);
@@ -2022,6 +2030,39 @@ async function loadAssetWorkOrderHistory(assetId) {
     loadStepResultsForWorkOrderIds(ids),
     loadWorkOrderEventsForWorkOrderIds(ids),
   ]);
+}
+
+async function loadManagerDashboardCompletedWork() {
+  if (!activeCompanyId) return;
+  managerCompletedWorkReady = false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const params = {
+    companyId: activeCompanyId,
+    locationId: activeLocationId,
+    locationsReady,
+    selectClause: WORK_ORDER_RELATION_SELECT,
+    cutoffIso: cutoff.toISOString(),
+  };
+  const response = await withOperationTimeout(
+    fetchRecentCompletedWorkOrders(supabaseClient, params),
+    "Manager completed work load timed out.",
+    12000
+  );
+  if (response.error && isColumnSchemaError(response.error, ["location_id", "locations"])) {
+    const fallbackResponse = await withOperationTimeout(
+      fetchRecentCompletedWorkOrders(supabaseClient, { ...params, selectClause: WORK_ORDER_FALLBACK_SELECT, locationsReady: false }),
+      "Manager completed work fallback load timed out.",
+      12000
+    );
+    managerCompletedWorkReady = !fallbackResponse.error;
+    managerCompletedWorkOrders = fallbackResponse.data || [];
+    if (fallbackResponse.error) showNotice(`Could not load manager completed work: ${fallbackResponse.error.message}`, "warning");
+    return;
+  }
+  managerCompletedWorkReady = !response.error;
+  managerCompletedWorkOrders = response.data || [];
+  if (response.error) showNotice(`Could not load manager completed work: ${response.error.message}`, "warning");
 }
 
 const REQUEST_RELATION_SELECT = "*, assets(name, location_id), locations(name)";
@@ -4259,6 +4300,7 @@ function bindWorkspaceEvents() {
       setShowPartSourceManager: (value) => { showPartSourceManager = value; },
     },
     reloadRequestQueue,
+    loadManagerDashboardCompletedWork,
     reloadWorkOrderQueue,
     renderWorkspace,
     resetWorkOrderPage,

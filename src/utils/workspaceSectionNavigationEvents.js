@@ -39,6 +39,10 @@
         scrollToSectionTop();
         if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
         if (nextSection === "requests") await options.reloadRequestQueue();
+        if (nextSection === "manager" && typeof options.loadManagerDashboardCompletedWork === "function") {
+          await options.loadManagerDashboardCompletedWork();
+          options.renderWorkspace();
+        }
       });
     });
   }

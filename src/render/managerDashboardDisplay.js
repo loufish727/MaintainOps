@@ -22,7 +22,17 @@
     }
 
     function completedWorkOrders() {
-      return deps.getWorkOrders().filter((workOrder) => deps.matchesActiveLocation(workOrder) && workOrder.status === "completed");
+      const rowsById = new Map();
+      const loadedRows = [
+        ...deps.getWorkOrders(),
+        ...(typeof deps.getManagerCompletedWorkOrders === "function" ? deps.getManagerCompletedWorkOrders() : []),
+      ];
+      loadedRows.forEach((workOrder) => {
+        if (workOrder?.id && deps.matchesActiveLocation(workOrder) && workOrder.status === "completed") {
+          rowsById.set(workOrder.id, workOrder);
+        }
+      });
+      return [...rowsById.values()];
     }
 
     function activeRequests() {
@@ -58,6 +68,7 @@
         summary_overdue: "Overdue",
         summary_unassigned: "Unassigned",
         summary_completed_week: "Completed Week",
+        summary_completed_month: "Completed Month",
         summary_converted_requests: "Converted Requests",
       })[metric] || "Open Work";
     }
@@ -66,6 +77,7 @@
       if (metric === "summary_overdue") return openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue");
       if (metric === "summary_unassigned") return openWorkOrders().filter((workOrder) => !workOrder.assigned_to);
       if (metric === "summary_completed_week") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
+      if (metric === "summary_completed_month") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return openWorkOrders();
     }
 
@@ -116,6 +128,7 @@
         ["Overdue", counts.overdue ?? openWorkOrders().filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length, "Open work past due.", "summary_overdue"],
         ["Unassigned", unassigned, "Open work with no internal owner.", "summary_unassigned"],
         ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length, "Work completed in the last 7 days.", "summary_completed_week"],
+        ["Completed Month", counts.completedMonth ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30))).length, "Work completed in the last 30 days.", "summary_completed_month"],
         ["Converted Requests", requestCounts.converted ?? convertedRequests().length, "Requests already turned into work orders.", "summary_converted_requests"],
       ];
     }
@@ -277,7 +290,7 @@
               <strong>Manager Beta Dashboard</strong>
               <span>Operational snapshot for workload, request intake, and team follow-up.</span>
             </div>
-            <small>Phase 1 uses current loaded workspace data; full historical drilldowns come later.</small>
+            <small>${deps.getManagerCompletedWorkReady && !deps.getManagerCompletedWorkReady() ? "Recent completed work is still loading or needs refresh." : "Completed metrics include recent manager history when loaded."}</small>
           </div>
           <div class="manager-metric-grid">
             ${managerSummaryCards().map(renderMetricCard).join("")}
