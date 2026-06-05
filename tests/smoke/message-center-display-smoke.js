@@ -31,7 +31,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   totalUnreadMessages: () => 2,
   teamMemberName: (id) => (id === "user-2" ? "QA Teammate" : "QA User"),
   escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
-  messageComposerScopeNote: () => "Everyone at the company can see this.",
+  messageComposerScopeNote: (type) => type === "location" ? "Only the current location can see this." : "Direct thread.",
   recentMessageLinkWorkOrders: () => [{ id: "wo-1", title: "Hydraulic Leak", status: "open" }],
   statusLabel: (status) => status,
   renderMessageThreadButton: (row) => `<button data-open-message-thread="${row.id}">${row.title}</button>`,
@@ -44,6 +44,10 @@ const html = renderMessageCenter();
 assert.match(html, /class="message-center"/);
 assert.match(html, /id="message-thread-form"/);
 assert.match(html, /id="message-thread-type"/);
+assert.doesNotMatch(html, /Whole company/);
+assert.match(html, /Current location/);
+assert.match(html, /Direct message/);
+assert.match(html, /Only the current location can see this\./);
 assert.match(html, /QA Teammate/);
 assert.match(html, /data-clear-message-work-link/);
 assert.match(html, /id="message-search"/);

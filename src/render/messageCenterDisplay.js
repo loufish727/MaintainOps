@@ -57,7 +57,6 @@
                   <div class="message-thread-fields">
                     <label>Send to
                       <select name="thread_type" id="message-thread-type">
-                        <option value="company">Whole company</option>
                         <option value="location">Current location</option>
                         <option value="direct">Direct message</option>
                       </select>
@@ -67,7 +66,7 @@
                         ${companyMembers.filter((member) => member.user_id !== session.user.id).map((member) => `<option value="${member.user_id}">${escapeHtml(teamMemberName(member.user_id))}</option>`).join("") || `<option value="">No teammates yet</option>`}
                       </select>
                     </label>
-                    <div class="message-scope-note" id="message-scope-note">${messageComposerScopeNote("company")}</div>
+                    <div class="message-scope-note" id="message-scope-note">${messageComposerScopeNote("location")}</div>
                     <label>Subject<input name="title" required placeholder="Thread subject" value="${linkedDraftWorkOrder ? `Work order: ${escapeHtml(linkedDraftWorkOrder.title)}` : ""}"></label>
                     ${linkedDraftWorkOrder ? `
                       <input name="work_order_id" type="hidden" value="${linkedDraftWorkOrder.id}">

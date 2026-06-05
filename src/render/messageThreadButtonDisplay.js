@@ -12,11 +12,12 @@
       const messages = getMessagesByThreadId()[thread.id] || [];
       const lastMessage = messages[messages.length - 1];
       const unreadCount = unreadMessageCount(thread.id);
+      const lastMessageText = lastMessage?.deleted_at ? "Message deleted" : escapeHtml(lastMessage?.body || "");
       return `
         <button class="message-thread-button ${thread.id === getActiveMessageThreadId() ? "active" : ""}" data-message-thread="${thread.id}" type="button">
           <strong>${escapeHtml(thread.title)}${unreadCount ? `<span class="message-unread-pill">${unreadCount}</span>` : ""}</strong>
           <span>${escapeHtml(messageThreadScopeLabel(thread))}</span>
-          <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)} Â· ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
+          <small>${lastMessage ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${lastMessageText} - ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet"}</small>
         </button>
       `;
     }

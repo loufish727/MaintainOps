@@ -4410,7 +4410,7 @@ textarea {
   color: var(--on-light-highlight);
 }
 
-.message-bubble div {
+.message-bubble-meta {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -4421,6 +4421,31 @@ textarea {
 .message-bubble p {
   margin: 0;
   white-space: pre-wrap;
+}
+
+.message-bubble.deleted {
+  opacity: 0.78;
+}
+
+.message-bubble.deleted p {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.message-delete-button {
+  margin-top: 8px;
+  border: 1px solid color-mix(in srgb, var(--red) 44%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: color-mix(in srgb, var(--red) 88%, var(--ink));
+  padding: 4px 9px;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.message-delete-button:hover,
+.message-delete-button:focus-visible {
+  background: color-mix(in srgb, var(--red) 22%, transparent);
 }
 
 .message-reply-form {

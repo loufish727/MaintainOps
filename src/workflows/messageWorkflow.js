@@ -18,6 +18,10 @@
       if (messageReplyForm) {
         messageReplyForm.addEventListener("submit", sendThreadReply);
       }
+
+      documentRef.querySelectorAll("[data-delete-message]").forEach((button) => {
+        button.addEventListener("click", deleteOwnMessage);
+      });
     }
 
     async function createMessageThread(event) {
@@ -37,6 +41,10 @@
       const memberIds = messageThreadMembersForType(threadType, directUserId);
       const title = String(form.get("title") || "").trim();
       const body = String(form.get("body") || "").trim();
+      if (threadType === "company") {
+        if (errorElement) errorElement.textContent = "Company-wide broadcast threads are disabled. Choose location or direct.";
+        return;
+      }
       if (threadType === "direct" && !directUserId) {
         if (errorElement) errorElement.textContent = "Choose a teammate for a direct message.";
         return;
@@ -147,6 +155,33 @@
       }
     }
 
+    async function deleteOwnMessage(event) {
+      const button = event.currentTarget;
+      const messageId = button?.dataset?.deleteMessage;
+      if (!messageId) return;
+      if (typeof deps.confirmUser === "function" && !deps.confirmUser("Delete this message from the thread? Admins can still review the Supabase transcript if needed.")) {
+        return;
+      }
+      button.disabled = true;
+      button.textContent = "Deleting...";
+      try {
+        const response = await deps.withOperationTimeout(
+          deps.supabaseClient().rpc("soft_delete_own_message", { target_message_id: messageId }),
+          "Message delete timed out. Check your connection and try again.",
+          10000
+        );
+        if (response.error) throw response.error;
+        deps.showNotice("Message deleted.");
+        await deps.render();
+      } catch (error) {
+        deps.showNotice(friendlyMessageCenterError(error), "warning");
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = "Delete";
+        }
+      }
+    }
+
     async function markMessageThreadRead(threadId) {
       if (!deps.getMessagesReady() || !threadId) return;
       const readAt = new Date().toISOString();
@@ -206,6 +241,7 @@
       bindMessageWorkflowEvents,
       createMessageThread,
       sendThreadReply,
+      deleteOwnMessage,
       markMessageThreadRead,
       insertThreadMessage,
       friendlyMessageCenterError,

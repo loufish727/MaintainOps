@@ -31,6 +31,11 @@ function createDocument(selectors) {
       if (!elements.has(selector)) elements.set(selector, { textContent: "" });
       return elements.get(selector);
     },
+    querySelectorAll(selector) {
+      const value = elements.get(selector);
+      if (!value) return [];
+      return Array.isArray(value) ? value : [value];
+    },
   };
 }
 
@@ -87,7 +92,7 @@ function createQuery(table, calls) {
 (async () => {
   const threadForm = createElement({
     formValues: {
-      thread_type: "team",
+      thread_type: "location",
       title: "Pump issue",
       body: "Please review",
       work_order_id: "wo-1",
@@ -97,9 +102,11 @@ function createQuery(table, calls) {
     dataset: { threadId: "thread-1" },
     formValues: { body: "On it" },
   });
+  const deleteButton = createElement({ dataset: { deleteMessage: "message-1" } });
   const documentRef = createDocument({
     "#message-thread-form": threadForm,
     "#message-reply-form": replyForm,
+    "[data-delete-message]": [deleteButton],
     "#message-thread-error": { textContent: "" },
     "#message-reply-error": { textContent: "" },
   });
@@ -113,12 +120,19 @@ function createQuery(table, calls) {
     reads: {},
     notices: [],
     renders: 0,
+    confirms: [],
   };
 
   const workflow = createMessageWorkflow({
     documentRef,
     FormDataCtor: FakeFormData,
-    supabaseClient: () => ({ from: (table) => createQuery(table, calls) }),
+    supabaseClient: () => ({
+      from: (table) => createQuery(table, calls),
+      rpc: (name, payload) => {
+        calls.push(["rpc", name, payload]);
+        return Promise.resolve({ data: null, error: null });
+      },
+    }),
     withOperationTimeout: (value) => value,
     isMissingColumnError: () => false,
     messageCenterErrorState: (error) => ({ message: error.message || String(error) }),
@@ -136,6 +150,10 @@ function createQuery(table, calls) {
     setMessageComposerOpen: (value) => { state.composerOpen = value; },
     setMessageThreadRead: (threadId, readRow) => { state.reads[threadId] = readRow; },
     showNotice: (message) => { state.notices.push(message); },
+    confirmUser: (message) => {
+      state.confirms.push(message);
+      return true;
+    },
     render: async () => { state.renders += 1; },
   });
 
@@ -152,12 +170,44 @@ function createQuery(table, calls) {
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "message_thread_members"));
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "messages"));
   assert.ok(calls.some((call) => call[0] === "upsert" && call[1] === "message_reads"));
+  const threadInsert = calls.find((call) => call[0] === "insert" && call[1] === "message_threads");
+  assert.equal(threadInsert[2].thread_type, "location");
 
   await replyForm.dispatch("submit");
   assert.deepEqual(state.notices, ["Thread started.", "Message sent."]);
   assert.equal(state.renders, 2);
 
+  await deleteButton.dispatch("click");
+  assert.match(state.confirms[0], /Admins can still review/);
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message" && call[2].target_message_id === "message-1"));
+  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted."]);
+  assert.equal(state.renders, 3);
+
   assert.deepEqual(workflow.messageThreadMembersForType("direct", "user-2"), ["user-1", "user-2"]);
+
+  const companyForm = createElement({
+    formValues: {
+      thread_type: "company",
+      title: "Broadcast",
+      body: "Everyone",
+    },
+  });
+  const companyError = { textContent: "" };
+  const companyDocument = createDocument({
+    "#message-thread-form": companyForm,
+    "#message-reply-form": null,
+    "#message-thread-error": companyError,
+  });
+  const companyWorkflow = createMessageWorkflow({
+    documentRef: companyDocument,
+    FormDataCtor: FakeFormData,
+    getMessagesReady: () => true,
+    getCompanyMembers: () => [{ user_id: "user-1" }, { user_id: "user-2" }],
+    getSession: () => ({ user: { id: "user-1" } }),
+  });
+  companyWorkflow.bindMessageWorkflowEvents();
+  await companyForm.dispatch("submit");
+  assert.match(companyError.textContent, /Company-wide broadcast threads are disabled/);
 
   console.log("message workflow smoke passed");
 })();
