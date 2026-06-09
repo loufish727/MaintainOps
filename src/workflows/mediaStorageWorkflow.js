@@ -6,6 +6,8 @@
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
     const largeDocumentLimitBytes = 25 * 1024 * 1024;
+    const photoUploadLimitBytes = 5 * 1024 * 1024;
+    const photoMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"]);
 
     async function uploadPartDocument(event) {
       event.preventDefault();
@@ -240,6 +242,11 @@
         if (errorTarget) errorTarget.textContent = "Choose a photo first.";
         return;
       }
+      const validationError = validatePhotoUpload(file);
+      if (validationError) {
+        if (errorTarget) errorTarget.textContent = validationError;
+        return;
+      }
 
       submitButton.disabled = true;
       submitButton.textContent = "Uploading...";
@@ -281,7 +288,11 @@
       const hasProfile = await deps.ensureProfileForActiveCompany();
       if (!hasProfile) return new Error(deps.getAppError());
 
+      const validationError = validatePhotoUpload(file);
+      if (validationError) return new Error(validationError);
       const optimized = await optimizePhoto(file);
+      const optimizedError = validateOptimizedPhoto(optimized);
+      if (optimizedError) return new Error(optimizedError);
       const path = `${deps.getActiveCompanyId()}/${workOrderId}/${cryptoRef.randomUUID()}-${optimized.fileName}`;
       const upload = await deps.withOperationTimeout(
         deps.supabaseClient().storage.from("work-order-photos").upload(path, optimized.blob, {
@@ -328,7 +339,11 @@
     async function addPhotoToMaintenanceRequest(requestId, file) {
       if (!requestId) return new Error("Request was not saved before photo upload.");
 
+      const validationError = validatePhotoUpload(file);
+      if (validationError) return new Error(validationError);
       const optimized = await optimizePhoto(file);
+      const optimizedError = validateOptimizedPhoto(optimized);
+      if (optimizedError) return new Error(optimizedError);
       const path = `${requestId}/${cryptoRef.randomUUID()}-${optimized.fileName}`;
       const upload = await deps.withOperationTimeout(
         deps.supabaseClient().storage.from("maintenance-request-photos").upload(path, optimized.blob, {
@@ -362,11 +377,12 @@
     async function optimizePhoto(file) {
       if (typeof deps.optimizePhotoOverride === "function") return deps.optimizePhotoOverride(file);
       const imageTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!imageTypes.includes(file.type)) {
+      const contentType = contentTypeForFile(file);
+      if (!imageTypes.includes(contentType)) {
         return {
           blob: file,
           fileName: deps.safeFileName(file.name || "photo"),
-          contentType: file.type || "application/octet-stream",
+          contentType,
         };
       }
 
@@ -399,13 +415,13 @@
         return {
           blob: file,
           fileName: deps.safeFileName(file.name || "photo"),
-          contentType: file.type || "application/octet-stream",
+          contentType,
         };
       }
     }
 
     function isOptimizableImage(file) {
-      return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+      return ["image/jpeg", "image/png", "image/webp"].includes(contentTypeForFile(file));
     }
 
     function isLargeUnoptimizedDocument(file) {
@@ -414,6 +430,47 @@
 
     function largeDocumentMessage() {
       return "This non-image file is over 25 MB. Compress it or split it before uploading.";
+    }
+
+    function contentTypeForFile(file) {
+      const explicitType = String(file?.type || "").trim().toLowerCase();
+      if (explicitType) return explicitType;
+      const name = String(file?.name || "").toLowerCase();
+      if (/\.(jpe?g)$/.test(name)) return "image/jpeg";
+      if (/\.png$/.test(name)) return "image/png";
+      if (/\.webp$/.test(name)) return "image/webp";
+      if (/\.gif$/.test(name)) return "image/gif";
+      if (/\.heic$/.test(name)) return "image/heic";
+      if (/\.heif$/.test(name)) return "image/heif";
+      if (/\.pdf$/.test(name)) return "application/pdf";
+      if (/\.txt$/.test(name)) return "text/plain";
+      if (/\.csv$/.test(name)) return "text/csv";
+      if (/\.doc$/.test(name)) return "application/msword";
+      if (/\.docx$/.test(name)) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      if (/\.xls$/.test(name)) return "application/vnd.ms-excel";
+      if (/\.xlsx$/.test(name)) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      return "application/octet-stream";
+    }
+
+    function validatePhotoUpload(file) {
+      const contentType = contentTypeForFile(file);
+      if (!photoMimeTypes.has(contentType)) {
+        return "This photo type is not supported. Use JPG, PNG, WEBP, GIF, HEIC, or HEIF.";
+      }
+      if (!isOptimizableImage(file) && Number(file.size || 0) > photoUploadLimitBytes) {
+        return "This photo is over 5 MB and the browser cannot optimize that format. Try a JPG/PNG, screenshot it, or choose a smaller photo.";
+      }
+      return "";
+    }
+
+    function validateOptimizedPhoto(optimized) {
+      if (!photoMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
+        return "This photo type is not supported. Use JPG, PNG, WEBP, GIF, HEIC, or HEIF.";
+      }
+      if (Number(optimized?.blob?.size || 0) > photoUploadLimitBytes) {
+        return "This photo is still over 5 MB after optimization. Try a smaller photo or screenshot it first.";
+      }
+      return "";
     }
 
     async function renderOptimizedImage(bitmap, maxDimension, quality) {

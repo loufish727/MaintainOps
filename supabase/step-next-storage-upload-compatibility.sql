@@ -1,5 +1,5 @@
--- Restrict upload MIME types on private buckets that previously relied on
--- client-side file inputs and browser-provided content types.
+-- Align storage bucket rules with current MaintainOps upload UI.
+-- Photo-only buckets stay image-only. Document buckets allow common shop files up to 25 MB.
 
 update storage.buckets
 set file_size_limit = 5242880,
@@ -11,7 +11,7 @@ set file_size_limit = 5242880,
       'image/heic',
       'image/heif'
     ]
-where id = 'work-order-photos';
+where id in ('work-order-photos', 'maintenance-request-photos');
 
 update storage.buckets
 set file_size_limit = 26214400,
@@ -30,25 +30,6 @@ set file_size_limit = 26214400,
       'image/heic',
       'image/heif'
     ]
-where id = 'part-documents';
-
-update storage.buckets
-set file_size_limit = 26214400,
-    allowed_mime_types = array[
-      'application/pdf',
-      'text/plain',
-      'text/csv',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'image/heic',
-      'image/heif'
-    ]
-where id = 'asset-documents';
+where id in ('part-documents', 'asset-documents');
 
 notify pgrst, 'reload schema';

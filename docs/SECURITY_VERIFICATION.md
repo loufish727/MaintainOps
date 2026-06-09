@@ -56,7 +56,7 @@ Additional live probe expansion:
 - forbidden-company storage upload to `company-logos`: PASS; rejected.
 - anonymous upload to a random `maintenance-request-photos` request path: PASS; rejected.
 - anonymous storage list probes returned no objects for private buckets.
-- storage MIME hardening: PASS; `work-order-photos` and `part-documents` now enforce bucket-level MIME allowlists and size limits.
+- storage MIME hardening: PASS; photo-only buckets enforce image allowlists and 5 MB limits, while part/equipment document buckets enforce common shop-file allowlists and 25 MB limits.
 - public request rate limit: PASS; live throttle probe allowed 10 rapid disposable public requests and rejected the next 2 with `Too many requests. Please wait a minute and try again.`
 - public request rate-limit cleanup: PASS; all disposable throttle-probe requests were deleted after verification.
 

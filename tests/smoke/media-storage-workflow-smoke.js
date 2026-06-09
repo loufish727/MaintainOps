@@ -116,6 +116,11 @@ function createWorkflow(options = {}) {
   assert.equal(workPhoto.calls.some((call) => call[0] === "upload" && call[1] === "work-order-photos" && call[2] === "company-1/wo-1/uuid-1-optimized.jpg"), true);
   assert.equal(workPhoto.calls.some((call) => call[0] === "insert" && call[1] === "work_order_photos" && call[2].file_size_bytes === 123), true);
 
+  const largeHeicPhoto = createWorkflow();
+  const largeHeicError = await largeHeicPhoto.workflow.addPhotoToWorkOrder("wo-1", { name: "phone.heic", type: "image/heic", size: 8 * 1024 * 1024 });
+  assert.match(largeHeicError.message, /over 5 MB/);
+  assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "upload"), false);
+
   const requestPhoto = createWorkflow();
   const requestError = await requestPhoto.workflow.addPhotoToMaintenanceRequest("request-1", { name: "request.png", type: "image/png", size: 321 });
   assert.equal(requestError, null);
@@ -164,6 +169,19 @@ function createWorkflow(options = {}) {
     },
   });
   assert.equal(mediumPartDoc.calls.some((call) => call[0] === "upload" && call[1] === "part-documents"), true);
+
+  const wordPartDoc = createWorkflow();
+  await wordPartDoc.workflow.uploadPartDocument({
+    preventDefault() {},
+    currentTarget: {
+      dataset: { partDocument: "part-1" },
+      formValues: { document: { name: "parts-list.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1024 }, document_type: "manual" },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(wordPartDoc.calls.some((call) => call[0] === "upload" && call[1] === "part-documents" && call[4] === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"), true);
 
   const partPhoto = createWorkflow();
   await partPhoto.workflow.uploadPartDocument({
@@ -289,6 +307,12 @@ function createWorkflow(options = {}) {
   assert.equal(optimizedPhoto.contentType, "image/jpeg");
   assert.equal(optimizedPhoto.blob.size <= 1.5 * 1024 * 1024, true);
   assert.deepEqual(optimizerCalls.slice(0, 2).map((call) => [call.width, call.quality]), [[2000, 0.82], [1800, 0.78]]);
+  assert.equal(optimizerCalls.some((call) => call.closed), true);
+
+  optimizerCalls.length = 0;
+  const optimizedInferredPhoto = await optimizerWorkflow.optimizePhoto({ name: "blank-type.jpg", type: "", size: 5 * 1024 * 1024 });
+  assert.equal(optimizedInferredPhoto.fileName, "blank-type.jpg");
+  assert.equal(optimizedInferredPhoto.contentType, "image/jpeg");
   assert.equal(optimizerCalls.some((call) => call.closed), true);
 
   console.log("media storage workflow smoke passed");

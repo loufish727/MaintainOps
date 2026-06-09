@@ -179,7 +179,9 @@ Run `supabase/step-next-public-request-photo-attach-hardening.sql` after `step-n
 
 Storage MIME hardening:
 
-Run `supabase/step-next-storage-mime-hardening.sql` after the storage buckets exist. It enforces bucket-level MIME allowlists and file-size limits for `work-order-photos` and `part-documents`.
+Run `supabase/step-next-storage-mime-hardening.sql` after the storage buckets exist. It enforces bucket-level MIME allowlists and file-size limits for `work-order-photos`, `maintenance-request-photos`, `part-documents`, and `asset-documents`.
+
+Run `supabase/step-next-storage-upload-compatibility.sql` if the live bucket settings drift from the UI copy. Photo-only buckets should allow common image MIME types up to 5 MB. Part/equipment document buckets should allow common shop files and optimized images up to 25 MB.
 
 Public request rate limiting:
 
@@ -220,8 +222,9 @@ Known storage usage:
 - Maintenance request photos.
 - Company logos.
 - Part documents/receipts/invoices.
+- Equipment photos, schematics, settings, manuals, and related machine files.
 
-Client-side image resizing is used for work order photos, maintenance request photos, and logos to avoid storing oversized uploads.
+Client-side image resizing is used for work order photos, maintenance request photos, part/equipment image files, and logos to avoid storing oversized uploads. Large HEIC/HEIF photos may need to be converted, screenshotted, or retaken as JPG/PNG if the browser cannot optimize them.
 
 ## Common Recovery Snippets
 
