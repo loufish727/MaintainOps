@@ -80,6 +80,8 @@ function createWorkflow(options = {}) {
     getActiveCompanyId: () => "company-1",
     getActiveWorkOrderId: () => "wo-1",
     getSession: () => ({ user: { id: "user-1" } }),
+    getActiveSection: () => "work",
+    getPageUrl: () => "https://example.test/MaintainOps/?qa=media-smoke",
     safeFileName: (name) => String(name).replace(/\s+/g, "-"),
     fileBaseName: (name) => String(name).replace(/\.[^.]+$/, ""),
     isColumnSchemaError: () => false,
@@ -90,6 +92,12 @@ function createWorkflow(options = {}) {
     setAssetDocumentsReady: (value) => calls.push(["assetDocumentsReady", value]),
     getPartDocumentsReady: () => options.partDocumentsReady !== false,
     setPartDocumentsReady: (value) => calls.push(["partDocumentsReady", value]),
+    getAppIssueReportsReady: () => options.appIssueReportsReady !== false,
+    activeLocationDatabaseId: () => "loc-1",
+    createAppIssueReportRecord: async (_client, payload) => {
+      calls.push(["appIssue", payload]);
+      return { error: null };
+    },
     setPhotosReady: (value) => calls.push(["photosReady", value]),
     setRequestPhotosReady: (value) => calls.push(["requestPhotosReady", value]),
     showNotice: (message, tone) => calls.push(["notice", message, tone || "success"]),
@@ -120,6 +128,7 @@ function createWorkflow(options = {}) {
   const largeHeicError = await largeHeicPhoto.workflow.addPhotoToWorkOrder("wo-1", { name: "phone.heic", type: "image/heic", size: 8 * 1024 * 1024 });
   assert.match(largeHeicError.message, /over 5 MB/);
   assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "upload"), false);
+  assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "appIssue" && /Upload failed: work order photo/.test(call[1].title) && /phone.heic/.test(call[1].details)), true);
 
   const requestPhoto = createWorkflow();
   const requestError = await requestPhoto.workflow.addPhotoToMaintenanceRequest("request-1", { name: "request.png", type: "image/png", size: 321 });
@@ -156,6 +165,7 @@ function createWorkflow(options = {}) {
   });
   assert.match(largePartDoc.errors['[data-part-document-error="part-1"]'].textContent, /over 25 MB/);
   assert.equal(largePartDoc.calls.some((call) => call[0] === "upload"), false);
+  assert.equal(largePartDoc.calls.some((call) => call[0] === "appIssue" && /Upload failed: part document/.test(call[1].title) && /manual.pdf/.test(call[1].details)), true);
 
   const mediumPartDoc = createWorkflow();
   await mediumPartDoc.workflow.uploadPartDocument({

@@ -5060,6 +5060,11 @@ const {
   setPartDocumentsReady: (value) => { partDocumentsReady = value; },
   setPhotosReady: (value) => { photosReady = value; },
   setRequestPhotosReady: (value) => { requestPhotosReady = value; },
+  getAppIssueReportsReady: () => appIssueReportsReady,
+  createAppIssueReportRecord,
+  activeLocationDatabaseId,
+  getActiveSection: () => activeSection,
+  getPageUrl: () => window.location.href,
   showNotice,
   render,
 });

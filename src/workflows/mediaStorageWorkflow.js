@@ -8,6 +8,7 @@
     const largeDocumentLimitBytes = 25 * 1024 * 1024;
     const photoUploadLimitBytes = 5 * 1024 * 1024;
     const photoMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"]);
+    const reportedUploadFailures = new Set();
 
     async function uploadPartDocument(event) {
       event.preventDefault();
@@ -30,6 +31,7 @@
       }
       if (isLargeUnoptimizedDocument(file)) {
         if (errorElement) errorElement.textContent = largeDocumentMessage();
+        await reportUploadFailure("part document", file, largeDocumentMessage());
         return;
       }
 
@@ -96,6 +98,7 @@
         deps.showNotice("Part file attached.");
         await deps.render();
       } catch (error) {
+        await reportUploadFailure("part document", file, error);
         if (errorElement) errorElement.textContent = error.message || "Could not attach file.";
       } finally {
         if (submitButton) {
@@ -126,6 +129,7 @@
       }
       if (isLargeUnoptimizedDocument(file)) {
         if (errorElement) errorElement.textContent = largeDocumentMessage();
+        await reportUploadFailure("equipment file", file, largeDocumentMessage());
         return;
       }
 
@@ -175,6 +179,7 @@
         deps.showNotice("Machine file attached.");
         await deps.render();
       } catch (error) {
+        await reportUploadFailure("equipment file", file, error);
         if (errorElement) errorElement.textContent = error.message || "Could not upload machine file.";
       } finally {
         if (submitButton) {
@@ -245,6 +250,7 @@
       const validationError = validatePhotoUpload(file);
       if (validationError) {
         if (errorTarget) errorTarget.textContent = validationError;
+        await reportUploadFailure("work order photo", file, validationError);
         return;
       }
 
@@ -264,6 +270,7 @@
         deps.showNotice("Photo uploaded.");
         await deps.render();
       } catch (error) {
+        await reportUploadFailure("work order photo", file, error);
         if (errorTarget) errorTarget.textContent = `Could not upload photo: ${error.message || error}`;
       } finally {
         submitButton.disabled = false;
@@ -289,10 +296,16 @@
       if (!hasProfile) return new Error(deps.getAppError());
 
       const validationError = validatePhotoUpload(file);
-      if (validationError) return new Error(validationError);
+      if (validationError) {
+        await reportUploadFailure("work order photo", file, validationError);
+        return new Error(validationError);
+      }
       const optimized = await optimizePhoto(file);
       const optimizedError = validateOptimizedPhoto(optimized);
-      if (optimizedError) return new Error(optimizedError);
+      if (optimizedError) {
+        await reportUploadFailure("work order photo", file, optimizedError);
+        return new Error(optimizedError);
+      }
       const path = `${deps.getActiveCompanyId()}/${workOrderId}/${cryptoRef.randomUUID()}-${optimized.fileName}`;
       const upload = await deps.withOperationTimeout(
         deps.supabaseClient().storage.from("work-order-photos").upload(path, optimized.blob, {
@@ -302,7 +315,10 @@
         "Photo upload timed out. Check your connection and try again.",
         25000
       );
-      if (upload.error) return upload.error;
+      if (upload.error) {
+        await reportUploadFailure("work order photo", file, upload.error);
+        return upload.error;
+      }
 
       const photoRecord = {
         company_id: deps.getActiveCompanyId(),
@@ -333,6 +349,7 @@
         error = retry.error;
       }
       if (error) await removeUploadedObject("work-order-photos", path);
+      if (error) await reportUploadFailure("work order photo", file, error);
       return error || null;
     }
 
@@ -340,10 +357,16 @@
       if (!requestId) return new Error("Request was not saved before photo upload.");
 
       const validationError = validatePhotoUpload(file);
-      if (validationError) return new Error(validationError);
+      if (validationError) {
+        await reportUploadFailure("request photo", file, validationError);
+        return new Error(validationError);
+      }
       const optimized = await optimizePhoto(file);
       const optimizedError = validateOptimizedPhoto(optimized);
-      if (optimizedError) return new Error(optimizedError);
+      if (optimizedError) {
+        await reportUploadFailure("request photo", file, optimizedError);
+        return new Error(optimizedError);
+      }
       const path = `${requestId}/${cryptoRef.randomUUID()}-${optimized.fileName}`;
       const upload = await deps.withOperationTimeout(
         deps.supabaseClient().storage.from("maintenance-request-photos").upload(path, optimized.blob, {
@@ -353,7 +376,10 @@
         "Request photo upload timed out. Check your connection and try again.",
         25000
       );
-      if (upload.error) return upload.error;
+      if (upload.error) {
+        await reportUploadFailure("request photo", file, upload.error);
+        return upload.error;
+      }
 
       const { error } = await deps.withOperationTimeout(
         deps.supabaseClient().rpc("attach_maintenance_request_photo", {
@@ -370,8 +396,49 @@
       );
       if (error) {
         await removeUploadedObject("maintenance-request-photos", path);
+        await reportUploadFailure("request photo", file, error);
       }
       return error || null;
+    }
+
+    async function reportUploadFailure(uploadContext, file, error) {
+      if (typeof deps.createAppIssueReportRecord !== "function") return;
+      if (!deps.getActiveCompanyId?.() || !deps.getSession?.()?.user?.id) return;
+      if (deps.getAppIssueReportsReady && !deps.getAppIssueReportsReady()) return;
+
+      const message = String(error?.message || error || "Upload failed").slice(0, 500);
+      const fileName = deps.safeFileName(file?.name || "unknown-file");
+      const contentType = contentTypeForFile(file);
+      const size = Number(file?.size || 0);
+      const dedupeKey = [uploadContext, fileName, contentType, size, message].join("|");
+      if (reportedUploadFailures.has(dedupeKey)) return;
+      reportedUploadFailures.add(dedupeKey);
+
+      try {
+        await deps.withOperationTimeout(
+          deps.createAppIssueReportRecord(deps.supabaseClient(), {
+            company_id: deps.getActiveCompanyId(),
+            location_id: deps.activeLocationDatabaseId ? deps.activeLocationDatabaseId() : null,
+            reporter_id: deps.getSession().user.id,
+            screen: String(deps.getActiveSection?.() || uploadContext || "upload").slice(0, 80),
+            page_url: deps.getPageUrl ? deps.getPageUrl() : "",
+            severity: "normal",
+            title: `Upload failed: ${uploadContext}`.slice(0, 140),
+            details: [
+              `Upload context: ${uploadContext}`,
+              `File: ${fileName}`,
+              `Type: ${contentType}`,
+              `Size: ${size}`,
+              `Error: ${message}`,
+            ].join("\n"),
+            status: "open",
+          }),
+          "Upload failure report timed out.",
+          8000
+        );
+      } catch (reportError) {
+        consoleRef.warn("Could not report upload failure", reportError);
+      }
     }
 
     async function optimizePhoto(file) {
@@ -493,6 +560,7 @@
       addPhotoToWorkOrder,
       optimizePhoto,
       removeUploadedObject,
+      reportUploadFailure,
       deleteAssetDocument,
       uploadAssetDocument,
       uploadPartDocument,
