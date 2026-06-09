@@ -29,7 +29,12 @@
       event.preventDefault();
       const formElement = event.currentTarget;
       const form = new FormDataCtor(formElement);
+      const selectedRole = String(form.get("role") || "technician").trim().toLowerCase();
       const submitButton = formElement.querySelector("button[type='submit']");
+      if (!deps.canAdministerTeamRoles?.() && selectedRole !== "technician") {
+        deps.alertUser("Only admins can grant manager or admin roles.");
+        return;
+      }
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.textContent = "Adding...";
@@ -39,7 +44,7 @@
           deps.supabaseClient().from("company_members").insert({
             company_id: deps.getActiveCompanyId(),
             user_id: form.get("user_id"),
-            role: form.get("role"),
+            role: selectedRole,
           }),
           "Team member save timed out."
         );
@@ -59,7 +64,12 @@
       event.preventDefault();
       const formElement = event.currentTarget;
       const form = new FormDataCtor(formElement);
+      const selectedRole = String(form.get("role") || "").trim().toLowerCase();
       const submitButton = formElement.querySelector("button[type='submit']");
+      if (!deps.canAdministerTeamRoles?.()) {
+        deps.showNotice("Only admins can change team roles.", "warning");
+        return;
+      }
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.textContent = "Saving...";
@@ -70,7 +80,7 @@
           deps.supabaseClient().rpc("update_company_member_role", {
             target_company_id: deps.getActiveCompanyId(),
             target_user_id: formElement.dataset.memberRole,
-            new_role: form.get("role"),
+            new_role: selectedRole,
           }),
           "Role save timed out. Check your connection and try again.",
           15000
@@ -149,9 +159,14 @@
       const errorElement = documentRef.querySelector("#team-invite-error");
       const submitButton = formElement.querySelector("button[type='submit']");
       const form = new FormDataCtor(formElement);
+      const selectedRole = String(form.get("role") || "technician").trim().toLowerCase();
       if (errorElement) errorElement.textContent = "";
       if (!deps.getTeamInvitesReady()) {
         if (errorElement) errorElement.textContent = "Run supabase/step-next-invite-default-location.sql before inviting by email.";
+        return;
+      }
+      if (!deps.canAdministerTeamRoles?.() && selectedRole !== "technician") {
+        if (errorElement) errorElement.textContent = "Only admins can invite managers or admins.";
         return;
       }
       if (submitButton) {
@@ -164,7 +179,7 @@
           deps.supabaseClient().rpc("create_company_invite", {
             target_company_id: deps.getActiveCompanyId(),
             invite_email: String(form.get("email") || "").trim(),
-            invite_role: form.get("role"),
+            invite_role: selectedRole,
             invite_default_location_id: form.get("default_location_id") || null,
           }),
           "Invite save timed out. Check your connection and try again.",

@@ -208,7 +208,7 @@ Core rules:
 - Location-bearing records must belong to the same company/location.
 - Profiles can be read by company members.
 - Users can update their own profile.
-- Managers/admins can manage team roles through RPC.
+- Admins can manage team roles through RPC. Managers can invite technicians, but cannot grant manager/admin authority.
 
 Do not disable RLS as a quick fix.
 

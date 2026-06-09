@@ -1,66 +1,25 @@
--- Simplify MaintainOps roles to the three roles used by the app:
--- technician, manager, admin.
---
--- Existing legacy "member" rows are converted to technician before the
--- database checks are tightened.
+-- LFES team authority guardrails
+-- Goal: managers can manage work and invite technicians, but only admins can grant authority.
 
-update public.company_members
-set role = 'technician'
-where role = 'member';
-
-update public.company_invites
-set role = 'technician'
-where role = 'member';
-
-alter table public.company_members
-alter column role set default 'technician';
-
-alter table public.company_invites
-alter column role set default 'technician';
-
-do $$
-declare
-  constraint_name text;
-begin
-  for constraint_name in
-    select con.conname
-    from pg_constraint con
-    join pg_class rel on rel.oid = con.conrelid
-    join pg_namespace nsp on nsp.oid = rel.relnamespace
-    where nsp.nspname = 'public'
-      and rel.relname = 'company_members'
-      and con.contype = 'c'
-      and pg_get_constraintdef(con.oid) ilike '%role%'
-  loop
-    execute format('alter table public.company_members drop constraint %I', constraint_name);
-  end loop;
-end $$;
-
-alter table public.company_members
-add constraint company_members_role_check
-check (role in ('admin', 'manager', 'technician'));
-
-do $$
-declare
-  constraint_name text;
-begin
-  for constraint_name in
-    select con.conname
-    from pg_constraint con
-    join pg_class rel on rel.oid = con.conrelid
-    join pg_namespace nsp on nsp.oid = rel.relnamespace
-    where nsp.nspname = 'public'
-      and rel.relname = 'company_invites'
-      and con.contype = 'c'
-      and pg_get_constraintdef(con.oid) ilike '%role%'
-  loop
-    execute format('alter table public.company_invites drop constraint %I', constraint_name);
-  end loop;
-end $$;
-
-alter table public.company_invites
-add constraint company_invites_role_check
-check (role in ('admin', 'manager', 'technician'));
+drop policy if exists "Members can add company members" on public.company_members;
+create policy "Members can add company members"
+on public.company_members for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.company_members actor
+    where actor.company_id = company_members.company_id
+      and actor.user_id = auth.uid()
+      and (
+        actor.role = 'admin'
+        or (
+          actor.role = 'manager'
+          and company_members.role = 'technician'
+        )
+      )
+  )
+);
 
 create or replace function public.update_company_member_role(
   target_company_id uuid,
@@ -125,7 +84,8 @@ $$;
 create or replace function public.create_company_invite(
   target_company_id uuid,
   invite_email text,
-  invite_role text default 'technician'
+  invite_role text default 'technician',
+  invite_default_location_id uuid default null
 )
 returns uuid
 language plpgsql
@@ -140,6 +100,10 @@ declare
 begin
   normalized_email := lower(trim(invite_email));
   selected_role := coalesce(nullif(invite_role, ''), 'technician');
+
+  if auth.uid() is null then
+    raise exception 'Sign in before inviting teammates.';
+  end if;
 
   if normalized_email = '' or normalized_email not like '%@%' then
     raise exception 'Enter a valid email address.';
@@ -162,11 +126,21 @@ begin
     raise exception 'Only admins can invite managers or admins.';
   end if;
 
-  insert into public.company_invites (company_id, email, role, invited_by)
-  values (target_company_id, normalized_email, selected_role, auth.uid())
+  if invite_default_location_id is not null and not exists (
+    select 1
+    from public.locations loc
+    where loc.company_id = target_company_id
+      and loc.id = invite_default_location_id
+  ) then
+    raise exception 'Default location does not belong to this company.';
+  end if;
+
+  insert into public.company_invites (company_id, email, role, invited_by, default_location_id)
+  values (target_company_id, normalized_email, selected_role, auth.uid(), invite_default_location_id)
   on conflict (company_id, email) do update
   set role = excluded.role,
       invited_by = auth.uid(),
+      default_location_id = excluded.default_location_id,
       accepted_by = null,
       accepted_at = null
   returning id into new_invite_id;
@@ -175,7 +149,10 @@ begin
 end;
 $$;
 
-grant execute on function public.update_company_member_role(uuid, uuid, text) to authenticated;
-grant execute on function public.create_company_invite(uuid, text, text) to authenticated;
+revoke all on function public.update_company_member_role(uuid, uuid, text) from public, anon;
+revoke all on function public.create_company_invite(uuid, text, text, uuid) from public, anon;
+
+grant execute on function public.update_company_member_role(uuid, uuid, text) to authenticated, service_role;
+grant execute on function public.create_company_invite(uuid, text, text, uuid) to authenticated, service_role;
 
 notify pgrst, 'reload schema';

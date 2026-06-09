@@ -19,11 +19,16 @@
     normalizeRole,
     teamMemberWorkload,
     canManageTeam,
+    canAdministerTeamRoles,
+    teamRoleOptionsForActor,
     COMPANY_ROLES,
     renderLocationOptions,
     inviteDefaultLocationLabel,
     teamInviteSignupUrl,
   }) {
+    const canGrantRoles = canAdministerTeamRoles || (() => false);
+    const roleOptionsForActor = teamRoleOptionsForActor || (() => COMPANY_ROLES);
+
     function teamMemberName(userId) {
       const profile = getProfilesByUserId()[userId];
       const currentUser = getCurrentUser();
@@ -43,7 +48,8 @@
       const profile = getProfilesByUserId()[member.user_id];
       const currentUser = getSession().user;
       const isCurrentUser = member.user_id === currentUser.id;
-      const canEditRole = canManageTeam() && !isCurrentUser;
+      const editableRoleOptions = roleOptionsForActor(member.role);
+      const canEditRole = canGrantRoles() && !isCurrentUser && editableRoleOptions.length > 1;
       const workload = teamMemberWorkload(member.user_id);
       return `
         <article class="member-card">
@@ -63,7 +69,7 @@
             ${canEditRole ? `
               <form class="member-role-form" data-member-role="${member.user_id}">
                 <select name="role" aria-label="Role for ${escapeHtml(profile?.full_name || member.user_id)}">
-                  ${COMPANY_ROLES.map((role) => `<option value="${role}" ${role === normalizeRole(member.role) ? "selected" : ""}>${roleLabel(role)}</option>`).join("")}
+                  ${editableRoleOptions.map((role) => `<option value="${role}" ${role === normalizeRole(member.role) ? "selected" : ""}>${roleLabel(role)}</option>`).join("")}
                 </select>
                 <button class="secondary-button" type="submit">Save Role</button>
               </form>
@@ -141,6 +147,7 @@
     function renderTeamInviteForm(activeLocationId) {
       const teamInvitesReady = getTeamInvitesReady();
       const locations = getLocations();
+      const inviteRoleOptions = roleOptionsForActor();
       return `
         <form class="team-invite-form relationship-detail comment" id="team-invite-form">
           <div>
@@ -150,9 +157,7 @@
           <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required pattern="[^@\\s]+@[^@\\s]+\\.[^@\\s]+" placeholder="tech@company.com" ${teamInvitesReady ? "" : "disabled"}></label>
           <label>Role
             <select name="role" ${teamInvitesReady ? "" : "disabled"}>
-              <option value="technician">Technician</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
+              ${inviteRoleOptions.map((role) => `<option value="${role}">${roleLabel(role)}</option>`).join("")}
             </select>
           </label>
           <label>Default location

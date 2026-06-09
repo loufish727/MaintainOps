@@ -554,6 +554,8 @@ const {
   normalizeRole,
   teamMemberWorkload: (...args) => teamMemberWorkload(...args),
   canManageTeam,
+  canAdministerTeamRoles,
+  teamRoleOptionsForActor,
   COMPANY_ROLES,
   renderLocationOptions: (...args) => renderLocationOptions(...args),
   inviteDefaultLocationLabel: (...args) => inviteDefaultLocationLabel(...args),
@@ -3409,14 +3411,12 @@ function renderWorkspace() {
                 <form class="inline-form team-form" id="add-member-form">
                   <input name="user_id" required placeholder="User UUID">
                   <select name="role">
-                    <option value="technician">Technician</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
+                    ${teamRoleOptionsForActor().map((role) => `<option value="${role}">${escapeHtml(roleLabel(role))}</option>`).join("")}
                   </select>
                   <button class="secondary-button" type="submit">Add Member</button>
                 </form>
               </details>
-            ` : `<p class="muted team-permission-note">Admins and managers can invite teammates and change roles.</p>`}
+            ` : `<p class="muted team-permission-note">Admins can grant roles. Managers can invite technicians.</p>`}
             <div class="member-list">
               ${pagedMembers.map(renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
             </div>
@@ -4030,6 +4030,8 @@ const {
   getSession: () => session,
   getActiveCompanyId: () => activeCompanyId,
   getProfilesByUserId: () => profilesByUserId,
+  activeCompanyRole,
+  canAdministerTeamRoles,
   getTeamInvitesReady: () => teamInvitesReady,
   setTeamInvitesReady: (value) => { teamInvitesReady = value; },
   getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
@@ -5531,6 +5533,14 @@ function activeCompanyRole() {
 
 function canManageTeam() {
   return ["admin", "manager"].includes(activeCompanyRole());
+}
+
+function canAdministerTeamRoles() {
+  return activeCompanyRole() === "admin";
+}
+
+function teamRoleOptionsForActor() {
+  return canAdministerTeamRoles() ? COMPANY_ROLES : ["technician"];
 }
 
 function canAdministerPublicRequestLinks() {

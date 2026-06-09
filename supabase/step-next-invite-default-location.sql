@@ -22,6 +22,7 @@ declare
   new_invite_id uuid;
   normalized_email text;
   selected_role text;
+  actor_role text;
 begin
   normalized_email := lower(trim(invite_email));
   selected_role := coalesce(nullif(invite_role, ''), 'technician');
@@ -38,14 +39,17 @@ begin
     raise exception 'Invalid role.';
   end if;
 
-  if not exists (
-    select 1
-    from public.company_members cm
-    where cm.company_id = target_company_id
-      and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager')
-  ) then
+  select cm.role into actor_role
+  from public.company_members cm
+  where cm.company_id = target_company_id
+    and cm.user_id = auth.uid();
+
+  if actor_role not in ('admin', 'manager') then
     raise exception 'Only admins or managers can invite teammates.';
+  end if;
+
+  if actor_role <> 'admin' and selected_role <> 'technician' then
+    raise exception 'Only admins can invite managers or admins.';
   end if;
 
   if invite_default_location_id is not null and not exists (

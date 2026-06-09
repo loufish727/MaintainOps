@@ -4,7 +4,7 @@ global.window = {};
 
 const { createTeamMemberDisplayHelpers } = require("../../src/render/teamMemberDisplay.js");
 
-const helpers = createTeamMemberDisplayHelpers({
+const baseDeps = {
   getProfilesByUserId: () => ({
     "user-1": { full_name: "Louie", mobile_tech: true },
     "user-2": { full_name: "Taylor Tech" },
@@ -27,11 +27,15 @@ const helpers = createTeamMemberDisplayHelpers({
   normalizeRole: (role) => role,
   teamMemberWorkload: () => ({ newWork: 1, inProgress: 2, blocked: 3, overdue: 4 }),
   canManageTeam: () => true,
+  canAdministerTeamRoles: () => true,
+  teamRoleOptionsForActor: () => ["technician", "manager", "admin"],
   COMPANY_ROLES: ["technician", "manager", "admin"],
   renderLocationOptions: () => '<option value="loc-1">QA Facility</option>',
   inviteDefaultLocationLabel: () => "Default location: QA Facility",
   teamInviteSignupUrl: () => "https://example.test/MaintainOps/",
-});
+};
+
+const helpers = createTeamMemberDisplayHelpers(baseDeps);
 
 assert.equal(helpers.teamMemberName("user-1"), "Louie");
 assert.equal(helpers.filteredMembers().length, 2);
@@ -59,6 +63,8 @@ const inviteForm = helpers.renderTeamInviteForm("loc-1");
 assert.match(inviteForm, /id="team-invite-form"/);
 assert.match(inviteForm, /name="default_location_id"/);
 assert.match(inviteForm, /QA Facility/);
+assert.match(inviteForm, /value="manager"/);
+assert.match(inviteForm, /value="admin"/);
 
 const invites = helpers.renderTeamInvites();
 assert.match(invites, /tech@example\.test/);
@@ -68,5 +74,16 @@ assert.match(invites, /https:\/\/example\.test\/MaintainOps\//);
 assert.match(invites, /Cancel &lt;failed&gt;/);
 assert.match(invites, /data-cancel-invite-cancel/);
 assert.match(invites, /data-confirm-cancel-invite="invite-1"/);
+
+const managerHelpers = createTeamMemberDisplayHelpers({
+  ...baseDeps,
+  canAdministerTeamRoles: () => false,
+  teamRoleOptionsForActor: () => ["technician"],
+});
+const managerInviteForm = managerHelpers.renderTeamInviteForm("loc-1");
+assert.doesNotMatch(managerInviteForm, /value="manager"/);
+assert.doesNotMatch(managerInviteForm, /value="admin"/);
+const managerMember = managerHelpers.renderMember({ user_id: "user-2", role: "technician" });
+assert.doesNotMatch(managerMember, /data-member-role="user-2"/);
 
 console.log("team member display smoke passed");

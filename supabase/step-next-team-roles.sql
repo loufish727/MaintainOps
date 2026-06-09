@@ -21,16 +21,12 @@ begin
   where cm.company_id = target_company_id
     and cm.user_id = auth.uid();
 
-  if current_role not in ('admin', 'manager') then
-    raise exception 'Only admins or managers can change team roles.';
+  if current_role <> 'admin' then
+    raise exception 'Only admins can change team roles.';
   end if;
 
   if target_user_id = auth.uid() then
     raise exception 'You cannot change your own role here.';
-  end if;
-
-  if current_role = 'manager' and new_role = 'admin' then
-    raise exception 'Only admins can make another user an admin.';
   end if;
 
   if not exists (
