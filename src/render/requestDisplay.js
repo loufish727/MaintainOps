@@ -88,7 +88,7 @@
           <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
           <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
           <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional. Photos are optimized near 1.5 MB before upload.</small></label>
+          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are optimized near 1.5 MB.</small></label>
           <label>Link to saved equipment
             <select name="asset_id" data-location-sensitive-asset>
               <option value="">No saved equipment link</option>

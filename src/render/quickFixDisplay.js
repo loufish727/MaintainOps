@@ -42,7 +42,7 @@
           </label>
           <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(selectedAssetId || sourceRequest?.asset_id || ""))}</p>
           <label>New machine / equipment name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
-          <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional. Choose a saved photo or take a new one. Photos are optimized near 1.5 MB before upload.</small></label>
+          <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are attached from equipment or parts. Photos are optimized near 1.5 MB.</small></label>
           <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
           <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>
           <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked if completing equipment work: E-stops, sensors, guards, and interlocks</label>

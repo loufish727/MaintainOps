@@ -522,7 +522,7 @@
     function validatePhotoUpload(file) {
       const contentType = contentTypeForFile(file);
       if (!photoMimeTypes.has(contentType)) {
-        return "This photo type is not supported. Use JPG, PNG, WEBP, GIF, HEIC, or HEIF.";
+        return "This upload box accepts photos only. PDF quotes and documents need to be attached in an equipment or part file area.";
       }
       if (!isOptimizableImage(file) && Number(file.size || 0) > photoUploadLimitBytes) {
         return "This photo is over 5 MB and the browser cannot optimize that format. Try a JPG/PNG, screenshot it, or choose a smaller photo.";
@@ -532,7 +532,7 @@
 
     function validateOptimizedPhoto(optimized) {
       if (!photoMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
-        return "This photo type is not supported. Use JPG, PNG, WEBP, GIF, HEIC, or HEIF.";
+        return "This upload box accepts photos only. PDF quotes and documents need to be attached in an equipment or part file area.";
       }
       if (Number(optimized?.blob?.size || 0) > photoUploadLimitBytes) {
         return "This photo is still over 5 MB after optimization. Try a smaller photo or screenshot it first.";

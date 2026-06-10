@@ -283,6 +283,22 @@ function createWorkflow(options = {}) {
   assert.equal(upload.calls.some((call) => call[0] === "event" && call[2] === "photo_uploaded"), true);
   assert.equal(upload.calls.some((call) => call[0] === "notice" && call[1] === "Photo uploaded."), true);
 
+  const pdfPhotoUpload = createWorkflow();
+  await pdfPhotoUpload.workflow.uploadPhoto({
+    preventDefault() {},
+    currentTarget: {
+      formValues: { photo: { name: "quote.pdf", type: "application/pdf", size: 99 } },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? uploadButton : null;
+      },
+    },
+  });
+  assert.equal(pdfPhotoUpload.calls.some((call) => call[0] === "upload"), false);
+  assert.match(
+    pdfPhotoUpload.errors["#photo-error"].textContent,
+    /accepts photos only/
+  );
+
   const optimizerCalls = [];
   const optimizerWorkflow = createMediaStorageWorkflow({
     documentRef: {

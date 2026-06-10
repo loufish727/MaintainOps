@@ -318,7 +318,7 @@
         <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
           <summary>Photos</summary>
         <form class="form-grid relationship-detail photo" id="photo-form">
-          <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Photos are optimized near 1.5 MB before upload.</small></label>
+          <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Images only. PDF quotes/documents are attached from equipment or parts. Photos are optimized near 1.5 MB.</small></label>
           <p class="error-text" id="photo-error"></p>
           <button class="secondary-button" type="submit">Upload Photo</button>
         </form>
