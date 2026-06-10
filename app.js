@@ -840,6 +840,8 @@ const {
 const {
   renderManagerDashboard,
 } = createManagerDashboardDisplayHelpers({
+  getAssets: () => assets,
+  getPreventiveSchedules: () => preventiveSchedules,
   getWorkOrders: () => workOrders,
   getManagerCompletedWorkOrders: () => managerCompletedWorkOrders,
   getManagerCompletedWorkReady: () => managerCompletedWorkReady,

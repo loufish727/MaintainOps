@@ -69,6 +69,14 @@
       return deps.getMaintenanceRequests().filter((request) => deps.matchesActiveLocation(request) && deps.isConvertedRequest(request));
     }
 
+    function equipmentRows() {
+      return (typeof deps.getAssets === "function" ? deps.getAssets() : []).filter(deps.matchesActiveLocation);
+    }
+
+    function preventiveRows() {
+      return (typeof deps.getPreventiveSchedules === "function" ? deps.getPreventiveSchedules() : []).filter(deps.matchesActiveLocation);
+    }
+
     function assignedOpenWork(userId) {
       return openWorkOrders().filter((workOrder) => workOrder.assigned_to === userId);
     }
@@ -95,6 +103,58 @@
     function requestConvertedByLabel(request) {
       const userId = request.converted_by || request.created_by || "";
       return userId ? deps.teamMemberName(userId) : "Converter not recorded";
+    }
+
+    function dateOnly(value) {
+      if (!value) return null;
+      const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+      return Number.isFinite(date.getTime()) ? date : null;
+    }
+
+    function scheduleDueState(schedule) {
+      const due = dateOnly(schedule.next_due_at || schedule.due_at);
+      if (!due) return "unscheduled";
+      const days = Math.round((due.getTime() - todayStart().getTime()) / dayMs);
+      if (days < 0) return "overdue";
+      if (days <= 7) return "due_soon";
+      return "planned";
+    }
+
+    function workAgeBuckets() {
+      const buckets = { fresh: 0, watch: 0, stale: 0, old: 0 };
+      openWorkOrders().forEach((workOrder) => {
+        const age = ageDays(workOrder);
+        if (age <= 2) buckets.fresh += 1;
+        else if (age <= 7) buckets.watch += 1;
+        else if (age <= 14) buckets.stale += 1;
+        else buckets.old += 1;
+      });
+      return buckets;
+    }
+
+    function requestFunnel() {
+      return {
+        submitted: activeRequests().length,
+        converted: convertedRequests().length,
+        stale: activeRequests().filter(isStaleRequest).length,
+      };
+    }
+
+    function equipmentHealthSummary() {
+      const rows = equipmentRows();
+      const down = rows.filter((asset) => asset.status === "offline");
+      const degraded = rows.filter((asset) => asset.status === "degraded");
+      const watch = rows.filter((asset) => asset.status === "watch");
+      const running = rows.filter((asset) => asset.status === "running");
+      return { total: rows.length, running, watch, degraded, down };
+    }
+
+    function preventiveSummary() {
+      const rows = preventiveRows();
+      const overdue = rows.filter((schedule) => scheduleDueState(schedule) === "overdue");
+      const dueSoon = rows.filter((schedule) => scheduleDueState(schedule) === "due_soon");
+      const unscheduled = rows.filter((schedule) => scheduleDueState(schedule) === "unscheduled");
+      return { total: rows.length, overdue, dueSoon, unscheduled };
     }
 
     function selectedUserId() {
@@ -457,6 +517,58 @@
       `;
     }
 
+    function renderIntelligenceCard(label, value, detail, tone = "normal") {
+      return `
+        <article class="manager-intel-card intel-${deps.escapeHtml(tone)}">
+          <span>${deps.escapeHtml(label)}</span>
+          <strong>${deps.escapeHtml(value)}</strong>
+          <small>${deps.escapeHtml(detail)}</small>
+        </article>
+      `;
+    }
+
+    function renderMiniSignalList(title, items, emptyText) {
+      return `
+        <article class="manager-signal-list">
+          <strong>${deps.escapeHtml(title)}</strong>
+          <div>
+            ${items.slice(0, 5).map((item) => `<span>${deps.escapeHtml(item)}</span>`).join("") || `<span>${deps.escapeHtml(emptyText)}</span>`}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderOperationsIntelligenceBoard() {
+      const equipment = equipmentHealthSummary();
+      const pm = preventiveSummary();
+      const funnel = requestFunnel();
+      const aging = workAgeBuckets();
+      const downEquipmentNames = equipment.down.map((asset) => asset.name || "Unnamed equipment");
+      const degradedNames = equipment.degraded.map((asset) => asset.name || "Unnamed equipment");
+      const duePmNames = [...pm.overdue, ...pm.dueSoon].map((schedule) => schedule.title || schedule.name || schedule.assets?.name || "PM schedule");
+      return `
+        <section class="manager-intelligence-panel relationship-detail asset">
+          <div class="panel-header compact">
+            <div>
+              <h3>Operations Intelligence</h3>
+              <span>Exception-first view across equipment, PM, request flow, and work age.</span>
+            </div>
+          </div>
+          <div class="manager-intel-grid">
+            ${renderIntelligenceCard("Equipment Risk", equipment.down.length + equipment.degraded.length, `${equipment.down.length} down, ${equipment.degraded.length} degraded, ${equipment.watch.length} watch`, equipment.down.length ? "danger" : equipment.degraded.length ? "watch" : "normal")}
+            ${renderIntelligenceCard("PM Risk", pm.overdue.length + pm.dueSoon.length, `${pm.overdue.length} overdue, ${pm.dueSoon.length} due in 7 days`, pm.overdue.length ? "danger" : pm.dueSoon.length ? "watch" : "normal")}
+            ${renderIntelligenceCard("Request Flow", `${funnel.converted}/${funnel.submitted + funnel.converted}`, `${funnel.submitted} new, ${funnel.converted} converted, ${funnel.stale} stale`, funnel.stale ? "watch" : "normal")}
+            ${renderIntelligenceCard("Aging Load", aging.stale + aging.old, `${aging.fresh} fresh, ${aging.watch} 3-7d, ${aging.stale} 8-14d, ${aging.old} 15d+`, aging.old ? "danger" : aging.stale ? "watch" : "normal")}
+          </div>
+          <div class="manager-signal-grid">
+            ${renderMiniSignalList("Down Equipment", downEquipmentNames, "No equipment marked offline/down.")}
+            ${renderMiniSignalList("Degraded Equipment", degradedNames, "No equipment marked degraded.")}
+            ${renderMiniSignalList("PM To Watch", duePmNames, "No PM schedules due soon.")}
+          </div>
+        </section>
+      `;
+    }
+
     function renderManagerReportBoard() {
       return `
         <section class="manager-report-panel relationship-detail procedure">
@@ -507,6 +619,7 @@
           <div class="manager-metric-grid">
             ${managerSummaryCards().map(renderMetricCard).join("")}
           </div>
+          ${renderOperationsIntelligenceBoard()}
           ${renderManagerAttentionBoard()}
           ${renderManagerTrendBoard()}
           <section class="manager-tech-panel relationship-detail comment">
@@ -532,6 +645,10 @@
       managerCompletionRate,
       technicianRows,
       metricRequests,
+      equipmentHealthSummary,
+      preventiveSummary,
+      requestFunnel,
+      workAgeBuckets,
     };
   }
 

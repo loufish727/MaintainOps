@@ -7,6 +7,15 @@ const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashbo
 
 const helpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getAssets: () => [
+    { id: "asset-1", name: "Forklift 4", status: "offline", location_id: "loc-1" },
+    { id: "asset-2", name: "ASC Line", status: "degraded", location_id: "loc-1" },
+    { id: "asset-3", name: "Panel Saw", status: "watch", location_id: "loc-1" },
+  ],
+  getPreventiveSchedules: () => [
+    { id: "pm-1", name: "Forklift inspection", next_due_at: "2026-06-01", location_id: "loc-1" },
+    { id: "pm-2", name: "ASC weekly PM", next_due_at: new Date().toISOString().slice(0, 10), location_id: "loc-1" },
+  ],
   getWorkOrders: () => [
     { id: "wo-1", assigned_to: "tech-1", status: "open", priority: "critical", follow_up_needed: true, created_at: "2026-05-20T12:00:00Z", location_id: "loc-1" },
     { id: "wo-2", assigned_to: "tech-1", status: "in_progress", priority: "medium", created_at: new Date().toISOString(), due_at: "2026-06-03", location_id: "loc-1" },
@@ -63,6 +72,11 @@ assert.equal(helpers.metricWorkOrders("tech-1", "follow_up").length, 1);
 assert.equal(helpers.metricRequests("tech-1", "converted_requests").length, 1);
 assert.equal(helpers.managerCompletionRate() > 0, true);
 assert.equal(helpers.managerAttentionItems()[0].count >= 1, true);
+assert.equal(helpers.equipmentHealthSummary().down.length, 1);
+assert.equal(helpers.equipmentHealthSummary().degraded.length, 1);
+assert.equal(helpers.preventiveSummary().overdue.length, 1);
+assert.equal(helpers.requestFunnel().converted, 1);
+assert.equal(helpers.workAgeBuckets().old >= 1, true);
 
 const html = helpers.renderManagerDashboard();
 assert.match(html, /Manager Beta Dashboard/);
@@ -71,6 +85,14 @@ assert.match(html, /Taylor Tech/);
 assert.match(html, /Completed metrics include recent manager history/);
 assert.match(html, /Manager Trends/);
 assert.match(html, /Manager Report/);
+assert.match(html, /Operations Intelligence/);
+assert.match(html, /Equipment Risk/);
+assert.match(html, /PM Risk/);
+assert.match(html, /Request Flow/);
+assert.match(html, /Aging Load/);
+assert.match(html, /Forklift 4/);
+assert.match(html, /ASC Line/);
+assert.match(html, /Forklift inspection/);
 assert.match(html, /data-manager-drill-user="tech-1"/);
 assert.match(html, /data-manager-drill-metric="overdue"/);
 assert.match(html, /data-manager-drill-in/);
@@ -88,6 +110,8 @@ assert.match(html, /critical/);
 
 const summaryHelpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getAssets: () => [],
+  getPreventiveSchedules: () => [],
   getWorkOrders: () => [
     { id: "wo-5", assigned_to: "", status: "open", title: "Unassigned repair", created_at: "2026-06-05T12:00:00Z", location_id: "loc-1" },
   ],
@@ -120,6 +144,8 @@ assert.match(summaryHtml, /data-manager-request-jump="active"/);
 
 const completedHelpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getAssets: () => [],
+  getPreventiveSchedules: () => [],
   getWorkOrders: () => [],
   getManagerCompletedWorkOrders: () => [
     { id: "wo-done", title: "Completed repair", assigned_to: "tech-1", completed_by: "tech-2", status: "completed", completed_at: new Date().toISOString(), created_at: "2026-06-01T12:00:00Z", location_id: "loc-1" },
@@ -146,6 +172,8 @@ assert.match(completedHtml, /data-mini-work-order="wo-done"/);
 
 const convertedDrillHelpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getAssets: () => [],
+  getPreventiveSchedules: () => [],
   getWorkOrders: () => [],
   getManagerCompletedWorkOrders: () => [],
   getManagerCompletedWorkReady: () => true,

@@ -3909,14 +3909,17 @@ textarea {
 }
 
 .manager-trend-panel,
-.manager-report-panel {
+.manager-report-panel,
+.manager-intelligence-panel {
   display: grid;
   gap: 10px;
   min-width: 0;
 }
 
 .manager-trend-grid,
-.manager-report-grid {
+.manager-report-grid,
+.manager-intel-grid,
+.manager-signal-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
@@ -3926,9 +3929,15 @@ textarea {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.manager-signal-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .manager-trend-grid article,
 .manager-report-grid article,
-.manager-report-card {
+.manager-report-card,
+.manager-intel-card,
+.manager-signal-list {
   display: grid;
   gap: 5px;
   border: 1px solid var(--line);
@@ -3937,8 +3946,45 @@ textarea {
   padding: 10px;
 }
 
+.manager-intel-card {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--blue) 8%, transparent), transparent 70%),
+    var(--surface);
+}
+
+.manager-intel-card.intel-watch {
+  border-color: color-mix(in srgb, var(--yellow) 52%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--yellow) 18%, transparent), transparent 70%),
+    var(--surface);
+}
+
+.manager-intel-card.intel-danger {
+  border-color: color-mix(in srgb, var(--red) 50%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--red) 12%, transparent), transparent 70%),
+    var(--surface);
+}
+
+.manager-signal-list > div {
+  display: grid;
+  gap: 4px;
+}
+
+.manager-signal-list > div span {
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  padding: 6px 7px;
+}
+
 .manager-trend-grid strong,
-.manager-report-card strong {
+.manager-report-card strong,
+.manager-intel-card strong {
   color: var(--ink);
   font-size: 1.35rem;
   line-height: 1;
@@ -3947,10 +3993,20 @@ textarea {
 .manager-trend-grid span,
 .manager-report-grid span,
 .manager-report-card span,
-.manager-report-card small {
+.manager-report-card small,
+.manager-intel-card span,
+.manager-intel-card small,
+.manager-signal-list strong {
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.25;
+}
+
+.manager-intel-card span,
+.manager-signal-list strong {
+  color: var(--ink);
+  font-weight: 760;
+  text-transform: uppercase;
 }
 
 .checklist-list {
