@@ -33,7 +33,7 @@
           ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
           <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
           <label>Description<textarea name="description" rows="3" placeholder="Describe what happened, where it happened, and what should be checked.">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
-          <label>Complete by / due date<input name="due_at" type="date"><small>Optional deadline for the work order, even if the machine is not down.</small></label>
+          <label>Complete by / due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD"><small>Optional deadline for the work order, even if the machine is not down.</small></label>
           <label>Machine / equipment
             <select name="asset_id" data-location-sensitive-asset>
               <option value="">No machine / equipment - general item or area</option>

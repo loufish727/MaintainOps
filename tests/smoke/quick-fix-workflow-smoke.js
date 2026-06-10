@@ -65,7 +65,7 @@ function createWorkflow(formValues = {}) {
   descriptionWithAssignmentNote: (description) => description,
   assignedUserFromForm: () => "user-1",
   procedureColumn: () => ({}),
-  workOrderDateValue: () => null,
+  workOrderDateValue: (value) => value || null,
   applySafetyRequirementPayload: (payload) => {
     payload.safety_check_required = false;
   },
@@ -128,6 +128,18 @@ function createWorkflow(formValues = {}) {
   const assetInsert = assetRun.calls.find((call) => call[0] === "insert");
   assert.equal(assetInsert[2].asset_id, "asset-1");
   assert.equal(assetInsert[2].location_id, "location-asset-1");
+
+  const deadlineRun = createWorkflow({ due_at: "2026-06-14" });
+  await deadlineRun.createQuickFix({
+    preventDefault: () => deadlineRun.calls.push(["preventDefault"]),
+    currentTarget: {
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? deadlineRun.submitButton : null;
+      },
+    },
+  });
+  const deadlineInsert = deadlineRun.calls.find((call) => call[0] === "insert");
+  assert.equal(deadlineInsert[2].due_at, "2026-06-14");
 
   const fallbackRun = createWorkflow({ description: "" });
   await fallbackRun.createQuickFix({
