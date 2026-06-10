@@ -27,6 +27,8 @@ assert.match(html, /name="title"/);
 assert.match(html, /value="Guard loose"/);
 assert.match(html, /name="description"/);
 assert.match(html, /Operator reported a loose guard\./);
+assert.match(html, /Complete by \/ due date/);
+assert.match(html, /Optional deadline for the work order, even if the machine is not down/);
 assert.match(html, /data-location-sensitive-asset/);
 assert.match(html, /Selected equipment is in this location\./);
 assert.match(html, /name="new_asset_name"/);
@@ -44,6 +46,7 @@ assert.match(html, /name="part_id"/);
 assert.match(html, /Guard Bolt \(6 on hand\)/);
 assert.match(html, /name="follow_up_needed"/);
 assert.match(html, /name="due_at" type="date"/);
+assert.equal((html.match(/name="due_at"/g) || []).length, 1);
 assert.match(html, /id="quick-fix-error"/);
 assert.doesNotMatch(html, /<option value="request" selected>request<\/option>/);
 

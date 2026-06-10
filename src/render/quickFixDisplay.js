@@ -33,6 +33,7 @@
           ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
           <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
           <label>Description<textarea name="description" rows="3" placeholder="Describe what happened, where it happened, and what should be checked.">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
+          <label>Complete by / due date<input name="due_at" type="date"><small>Optional deadline for the work order, even if the machine is not down.</small></label>
           <label>Machine / equipment
             <select name="asset_id" data-location-sensitive-asset>
               <option value="">No machine / equipment - general item or area</option>
@@ -50,7 +51,6 @@
             <summary>Optional details</summary>
             <div class="form-grid">
               <div class="form-section-title">Work Order Info</div>
-              <label>Expected back up / due date<input name="due_at" type="date"></label>
               <label>Priority
                 <select name="priority">
                   ${["medium", "high", "critical", "low"].map((priority) => `<option value="${priority}">${priority}</option>`).join("")}
