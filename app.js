@@ -2925,7 +2925,7 @@ function renderWorkspace() {
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const renderSectionNavBadge = (id) => {
     if (id === "messages") return renderMessageNavBadge();
-    if (id === "mywork") return renderNavCountBadge(myWorkDashboardCounts?.newWork || 0);
+    if (id === "mywork") return renderNavCountBadge(myWorkDashboardCounts?.activeWork || 0);
     if (id === "work") return renderNavCountBadge(workOrderDashboardCounts?.newWork || 0);
     if (id === "requests") return renderNavCountBadge(requestCounts.active || 0, { alert: true });
     return "";
