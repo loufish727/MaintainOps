@@ -68,6 +68,7 @@ assert.match(html, /id="status-select"/);
 assert.match(html, /id="quick-update-work-order-form"/);
 assert.match(html, /name="due_at" type="date" value="2026-06-01"/);
 assert.equal((html.match(/name="due_at" type="date"/g) || []).length, 2);
+assert.equal((html.match(/data-open-date-picker/g) || []).length, 2);
 assert.doesNotMatch(html, /name="due_at" type="text"/);
 assert.match(html, /data-copy-downtime="subject"/);
 assert.match(html, /id="edit-work-order-form"/);

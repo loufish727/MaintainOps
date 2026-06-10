@@ -305,7 +305,10 @@
               <select name="procedure_template_id">
                 ${renderProcedureOptions ? renderProcedureOptions() : `<option value="">No procedure checklist</option>`}
               </select>
-              <input name="next_due_at" type="date" value="${todayDateValue()}" required>
+              <span class="date-picker-row inline-date-picker" data-date-picker-field>
+                <input name="next_due_at" type="date" value="${todayDateValue()}" required>
+                <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+              </span>
               <p class="error-text" data-pm-error></p>
               <button class="secondary-button asset-action-button" type="submit">Add Schedule</button>
             </form>

@@ -101,6 +101,7 @@ const { bindWorkspaceRequestDeleteCancelEvents } = window.MaintainOpsWorkspaceRe
 const { bindWorkspaceScheduleDeleteCancelEvents } = window.MaintainOpsWorkspaceScheduleDeleteCancelEvents;
 const { bindWorkspaceProcedureDeleteCancelEvents } = window.MaintainOpsWorkspaceProcedureDeleteCancelEvents;
 const { autoGrowTextarea, bindWorkspaceTextareaAutoGrow } = window.MaintainOpsWorkspaceTextareaAutoGrow;
+const { bindWorkspaceDatePickerControls } = window.MaintainOpsWorkspaceDatePickerControls;
 const { bindWorkspaceTeamInviteCancelEvents } = window.MaintainOpsWorkspaceTeamInviteCancelEvents;
 const { bindWorkspaceTeamInviteCopyEvents } = window.MaintainOpsWorkspaceTeamInviteCopyEvents;
 const { bindWorkspaceQuickFixCommandEvents } = window.MaintainOpsWorkspaceQuickFixCommandEvents;
@@ -3357,7 +3358,10 @@ function renderWorkspace() {
               <select name="procedure_template_id">
                 ${renderProcedureOptions()}
               </select>
-              <input name="next_due_at" type="date" value="${isoDate(startOfToday())}" required>
+              <span class="date-picker-row inline-date-picker" data-date-picker-field>
+                <input name="next_due_at" type="date" value="${isoDate(startOfToday())}" required>
+                <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+              </span>
               <p class="error-text" id="pm-error"></p>
               <button class="secondary-button" type="submit">Add Schedule</button>
             </form>
@@ -4651,6 +4655,7 @@ function bindWorkspaceEvents() {
   });
 
   bindAutoGrowTextareas();
+  bindWorkspaceDatePickerControls();
 
   const createForm = document.querySelector("#create-work-order-form");
   if (createForm) createForm.addEventListener("submit", createWorkOrder);

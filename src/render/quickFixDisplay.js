@@ -39,7 +39,13 @@
           ${sourceRequest ? `<p class="completion-note">Resolving request: ${escapeHtml(sourceRequest.title)}</p>` : ""}
           <label>Issue<input name="title" required autofocus placeholder="Loose guard switch fixed" value="${escapeHtml(sourceRequest?.title || "")}"></label>
           <label>Description<textarea name="description" rows="3" placeholder="Describe what happened, where it happened, and what should be checked.">${escapeHtml(sourceRequest?.description || "")}</textarea></label>
-          <label>Complete by / due date<input name="due_at" type="date" value="${todayDateValue()}"><small>Defaults to today. Use the calendar to choose a different deadline.</small></label>
+          <label>Complete by / due date
+            <span class="date-picker-row" data-date-picker-field>
+              <input name="due_at" type="date" value="${todayDateValue()}">
+              <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+            </span>
+            <small>Defaults to today. Use the calendar to choose a different deadline.</small>
+          </label>
           <label>Machine / equipment
             <select name="asset_id" data-location-sensitive-asset>
               <option value="">No machine / equipment - general item or area</option>

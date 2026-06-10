@@ -67,7 +67,13 @@
                   ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
                 </select>
               </label>
-              <label>Complete by / due date<input name="due_at" type="date" value="${todayDateValue()}"><small>Defaults to today. Use the calendar to choose a different deadline.</small></label>
+              <label>Complete by / due date
+                <span class="date-picker-row" data-date-picker-field>
+                  <input name="due_at" type="date" value="${todayDateValue()}">
+                  <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+                </span>
+                <small>Defaults to today. Use the calendar to choose a different deadline.</small>
+              </label>
             </div>
           </details>
     

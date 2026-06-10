@@ -175,7 +175,12 @@
             </div>
             <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(workOrder.asset_id || ""))}</p>
             <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
-            <label id="quick-update-due-field">Expected back up / due date<input name="due_at" type="date" value="${escapeHtml(workOrder.due_at || "")}"></label>
+            <label id="quick-update-due-field">Expected back up / due date
+              <span class="date-picker-row" data-date-picker-field>
+                <input name="due_at" type="date" value="${escapeHtml(workOrder.due_at || "")}">
+                <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+              </span>
+            </label>
             <label id="quick-update-status-field">Status
               <select name="status">
                 ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
@@ -219,7 +224,12 @@
         <form class="form-grid" id="edit-work-order-form">
           <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
           <label>Description<textarea name="description" rows="3">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
-          <label>Due date<input name="due_at" type="date" value="${escapeHtml(workOrder.due_at || "")}"></label>
+          <label>Due date
+            <span class="date-picker-row" data-date-picker-field>
+              <input name="due_at" type="date" value="${escapeHtml(workOrder.due_at || "")}">
+              <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
+            </span>
+          </label>
           <label>Priority
             <select name="priority">
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}

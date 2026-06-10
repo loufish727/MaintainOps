@@ -1841,6 +1841,34 @@ option {
   text-transform: none;
 }
 
+.date-picker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.date-picker-row input[type="date"] {
+  min-width: 0;
+}
+
+.date-picker-button {
+  min-height: var(--control-height);
+  padding-inline: 12px;
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--field-line));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04)),
+    color-mix(in srgb, var(--accent) 18%, var(--control-bg));
+  color: color-mix(in srgb, var(--accent) 78%, var(--ink));
+  font-size: 0.78rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.inline-date-picker {
+  min-width: min(260px, 100%);
+}
+
 textarea {
   min-height: 70px;
   max-height: 260px;
@@ -9397,4 +9425,14 @@ textarea:focus {
 .quick-fix-form textarea::placeholder {
   color: #c7d4ce !important;
   -webkit-text-fill-color: #c7d4ce;
+}
+
+/* Final date picker affordance guard: the calendar action must stay obvious. */
+.date-picker-button,
+.relationship-detail .date-picker-button,
+.quick-fix-form .date-picker-button {
+  border-color: #77d7ff !important;
+  background: linear-gradient(180deg, #e5f8ff, #73cfff) !important;
+  color: #061116 !important;
+  font-weight: 780 !important;
 }

@@ -26,6 +26,7 @@ test("Quick Fix complete-by date is browser editable", async ({ page }) => {
   await expect(dueField).toBeVisible();
   await expect(dueField).toHaveAttribute("type", "date");
   await expect(dueField).toHaveValue(/\d{4}-\d{2}-\d{2}/);
+  await expect(page.locator("#quick-fix-form [data-open-date-picker]")).toBeVisible();
   await dueField.fill("2026-06-14");
 
   await expect(dueField).toHaveValue("2026-06-14");
@@ -49,6 +50,7 @@ test("Create Work Order due date is browser editable", async ({ page }) => {
   await expect(dueField).toBeVisible();
   await expect(dueField).toHaveAttribute("type", "date");
   await expect(dueField).toHaveValue(/\d{4}-\d{2}-\d{2}/);
+  await expect(page.locator("#create-work-order-form [data-open-date-picker]")).toBeVisible();
   await dueField.fill("2026-06-15");
 
   await expect(dueField).toHaveValue("2026-06-15");
