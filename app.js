@@ -156,6 +156,7 @@ const {
 } = window.MaintainOpsCompanyService;
 const { notifyRequestEmailer } = window.MaintainOpsRequestEmailNotificationService;
 const { addSignedUrlsToRows, createDeferredSignedUrlLoader } = window.MaintainOpsSignedUrlService;
+const { createWorkspaceQueueLoaders } = window.MaintainOpsWorkspaceQueueLoadersService;
 const {
   listAppIssueReports,
   createAppIssueReportRecord,
@@ -1987,6 +1988,34 @@ const REQUEST_RELATION_SELECT = "*, assets(name, location_id), locations(name)";
 const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name)";
 const REQUEST_FALLBACK_SELECT = "*";
 
+const {
+  fetchRequestPage,
+  countRequests,
+  loadRequestDashboardCounts,
+  fetchWorkOrderPage,
+  countWorkOrders,
+  loadWorkOrderDashboardCounts,
+  loadMyWorkDashboardCounts,
+} = createWorkspaceQueueLoaders({
+  supabaseClient: () => supabaseClient,
+  workspaceUiState,
+  applyRequestQueryFilters,
+  applyWorkOrderListFilters,
+  applyWorkOrderFilters,
+  selectWorkOrders,
+  countWorkOrdersQuery,
+  fetchExactSearchedWorkOrderPage,
+  isColumnSchemaError,
+  warn: console.warn,
+  LIST_ITEMS_PER_PAGE,
+  WORK_ORDERS_PER_PAGE,
+  REQUEST_RELATION_SELECT,
+  REQUEST_ASSET_FALLBACK_SELECT,
+  REQUEST_FALLBACK_SELECT,
+  WORK_ORDER_RELATION_SELECT,
+  WORK_ORDER_FALLBACK_SELECT,
+});
+
 async function loadServerRequestSlice() {
   const activeFilter = workspaceUiState.getRequestViewFilter() || "active";
   const [pageResponse, counts] = await Promise.all([
@@ -1999,118 +2028,6 @@ async function loadServerRequestSlice() {
   requestDashboardCounts = counts;
 
   return pageResponse;
-}
-
-async function fetchRequestPage(filter = workspaceUiState.getRequestViewFilter(), options = {}) {
-  const page = Math.max(1, workspaceUiState.getRequestsPage());
-  const from = (page - 1) * LIST_ITEMS_PER_PAGE;
-  const to = from + LIST_ITEMS_PER_PAGE - 1;
-  const selectClause = options.includeRelations === false
-    ? REQUEST_FALLBACK_SELECT
-    : options.includeLocationRelation === false
-      ? REQUEST_ASSET_FALLBACK_SELECT
-      : REQUEST_RELATION_SELECT;
-
-  const response = await applyRequestQueryFilters(
-    supabaseClient
-      .from("maintenance_requests")
-      .select(selectClause, { count: "exact" }),
-    filter
-  )
-    .order("created_at", { ascending: false })
-    .range(from, to);
-
-  if (response.error && options.includeLocationRelation !== false && isColumnSchemaError(response.error, ["location_id", "locations"])) {
-    return fetchRequestPage(filter, { includeLocationRelation: false });
-  }
-  if (response.error && options.includeRelations !== false) {
-    return fetchRequestPage(filter, { includeRelations: false });
-  }
-  if (!response.error && response.count && page > 1 && from >= response.count) {
-    workspaceUiState.setRequestsPage(Math.max(1, Math.ceil(response.count / LIST_ITEMS_PER_PAGE)));
-    return fetchRequestPage(filter, options);
-  }
-  return response;
-}
-
-async function loadRequestDashboardCounts() {
-  const [active, converted, all] = await Promise.all([
-    countRequests("active"),
-    countRequests("converted"),
-    countRequests("all"),
-  ]);
-  return { active, converted, all };
-}
-
-async function countRequests(filter) {
-  const response = await applyRequestQueryFilters(
-    supabaseClient
-      .from("maintenance_requests")
-      .select("id", { count: "exact", head: true }),
-    filter
-  );
-  if (response.error) {
-    console.warn("Request count failed", response.error);
-    return 0;
-  }
-  return response.count || 0;
-}
-
-async function fetchWorkOrderPage(options = {}) {
-  if (workspaceUiState.getWorkOrderSearchMode() && workspaceUiState.getSearchQuery().trim()) {
-    return fetchExactSearchedWorkOrderPage(options);
-  }
-
-  const page = Math.max(1, workspaceUiState.getWorkOrderPage());
-  const from = (page - 1) * WORK_ORDERS_PER_PAGE;
-  const to = from + WORK_ORDERS_PER_PAGE - 1;
-  const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
-  const response = await applyWorkOrderListFilters(
-    selectWorkOrders(supabaseClient, selectClause, { count: "exact" })
-  )
-    .range(from, to);
-
-  if (!response.error && response.count && page > 1 && from >= response.count) {
-    workspaceUiState.setWorkOrderPage(Math.max(1, Math.ceil(response.count / WORK_ORDERS_PER_PAGE)));
-    return fetchWorkOrderPage(options);
-  }
-
-  return response;
-}
-
-async function loadWorkOrderDashboardCounts() {
-  const [activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek] = await Promise.all([
-    countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false }),
-    countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false }),
-  ]);
-  return { activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek };
-}
-
-async function loadMyWorkDashboardCounts() {
-  const [activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek] = await Promise.all([
-    countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true }),
-    countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true }),
-  ]);
-  return { activeWork, newWork, inProgress, blocked, overdue, completedMonth, completedWeek };
-}
-
-async function countWorkOrders(options = {}) {
-  const response = await applyWorkOrderFilters(countWorkOrdersQuery(supabaseClient), options);
-  if (response.error) {
-    console.warn("Work order count failed", response.error);
-    return 0;
-  }
-  return response.count || 0;
 }
 
 async function loadCompanyData() {

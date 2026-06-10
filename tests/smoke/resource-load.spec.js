@@ -84,6 +84,7 @@ const requiredResources = [
   "src/services/userPreferencesService.js",
   "src/services/requestEmailNotificationService.js",
   "src/services/signedUrlService.js",
+  "src/services/workspaceQueueLoadersService.js",
   "src/render/displayHelpers.js",
   "src/render/relationshipDisplay.js",
   "src/render/dashboardDisplay.js",
