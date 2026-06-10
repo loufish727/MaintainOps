@@ -1388,7 +1388,7 @@ async function render() {
       "Workspace data load timed out. One of the Supabase data requests is not returning.",
       22000
     );
-    if (activeSection === "manager" && canManageTeam()) {
+    if (activeSection === "manager" && canAdministerTeamRoles()) {
       await loadManagerDashboardCompletedWork();
     }
     renderWorkspace();
@@ -5593,8 +5593,11 @@ function visibleNavItems() {
     ["messages", "Messages"],
     ["team", "Team"],
   ];
+  if (canAdministerTeamRoles()) {
+    items.push(["manager", "Manager"]);
+  }
   if (canManageTeam()) {
-    items.push(["manager", "Manager"], ["setup", "Admin Setup"], ["settings", "Settings"]);
+    items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
   }
   return items;
 }

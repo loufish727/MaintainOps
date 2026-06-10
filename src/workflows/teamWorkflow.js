@@ -243,6 +243,12 @@
       const submitButton = formElement.querySelector("button[type='submit']");
       const form = new FormDataCtor(formElement);
       if (errorElement) errorElement.textContent = "";
+      if (!deps.canAdministerTeamRoles?.()) {
+        const message = "Only admins can change request email routing.";
+        deps.setRequestNotificationRecipientError(message);
+        if (errorElement) errorElement.textContent = message;
+        return;
+      }
       if (!deps.getRequestNotificationRecipientsReady()) {
         if (errorElement) errorElement.textContent = "Run supabase/step-next-request-notification-recipients.sql before routing request emails.";
         return;
@@ -293,6 +299,11 @@
 
     async function deleteRequestNotificationRecipient(recipientId) {
       if (!recipientId || !deps.getActiveCompanyId()) return;
+      if (!deps.canAdministerTeamRoles?.()) {
+        deps.setRequestNotificationRecipientError("Only admins can change request email routing.");
+        deps.renderWorkspace();
+        return;
+      }
       try {
         const { error } = await deps.withOperationTimeout(
           deps.supabaseClient()

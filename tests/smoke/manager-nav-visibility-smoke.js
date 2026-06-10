@@ -7,12 +7,17 @@ assert.ok(visibleNavMatch, "visibleNavItems should exist");
 
 const visibleNavSource = visibleNavMatch[0];
 const managerIndex = visibleNavSource.indexOf('["manager", "Manager"]');
-const gateIndex = visibleNavSource.indexOf("if (canManageTeam())");
-assert.ok(managerIndex > gateIndex, "Manager nav item should stay inside canManageTeam gate");
+const adminGateIndex = visibleNavSource.indexOf("if (canAdministerTeamRoles())");
+const managerGateIndex = visibleNavSource.indexOf("if (canManageTeam())");
+assert.ok(managerIndex > adminGateIndex, "Manager nav item should stay inside admin role gate");
 assert.doesNotMatch(
-  visibleNavSource.slice(0, gateIndex),
+  visibleNavSource.slice(0, adminGateIndex),
   /\["manager", "Manager"\]/,
   "Manager nav item must not be visible to base technician nav"
+);
+assert.ok(
+  managerGateIndex < 0 || managerGateIndex > managerIndex,
+  "Manager nav item must not be introduced by the manager/admin team gate"
 );
 
 const iconSource = readFileSync("src/render/iconDisplay.js", "utf8");

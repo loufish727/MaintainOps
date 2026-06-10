@@ -58,6 +58,7 @@ assert.match(requestRecipients, /maintenance@example\.test/);
 assert.match(requestRecipients, /Maintenance Desk/);
 assert.match(requestRecipients, /QA Facility/);
 assert.match(requestRecipients, /data-delete-request-notification-recipient="recipient-1"/);
+assert.match(requestRecipients, /id="request-notification-recipient-form"/);
 
 const inviteForm = helpers.renderTeamInviteForm("loc-1");
 assert.match(inviteForm, /id="team-invite-form"/);
@@ -85,5 +86,9 @@ assert.doesNotMatch(managerInviteForm, /value="manager"/);
 assert.doesNotMatch(managerInviteForm, /value="admin"/);
 const managerMember = managerHelpers.renderMember({ user_id: "user-2", role: "technician" });
 assert.doesNotMatch(managerMember, /data-member-role="user-2"/);
+const managerRequestRecipients = managerHelpers.renderRequestNotificationRecipients("loc-1");
+assert.match(managerRequestRecipients, /Only admins can change request email routing/);
+assert.doesNotMatch(managerRequestRecipients, /id="request-notification-recipient-form"/);
+assert.doesNotMatch(managerRequestRecipients, /data-delete-request-notification-recipient/);
 
 console.log("team member display smoke passed");

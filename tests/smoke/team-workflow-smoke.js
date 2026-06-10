@@ -135,6 +135,7 @@ function createQuery(table, calls) {
     getSession: () => ({ user: { id: "user-1" } }),
     getActiveCompanyId: () => "company-1",
     getProfilesByUserId: () => ({ "user-1": { mobile_tech: false } }),
+    canAdministerTeamRoles: () => true,
     getTeamInvitesReady: () => state.teamInvitesReady,
     setTeamInvitesReady: (value) => { state.teamInvitesReady = value; },
     getRequestNotificationRecipientsReady: () => state.requestNotificationRecipientsReady,
