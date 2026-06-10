@@ -67,6 +67,11 @@ const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailE
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
+const { createPartDeleteWorkflow } = window.MaintainOpsPartDeleteWorkflow;
+const { createProcedureChecklistWorkflow } = window.MaintainOpsProcedureChecklistWorkflow;
+const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
+const { createCompanySetupWorkflow } = window.MaintainOpsCompanySetupWorkflow;
+const { createWorkOrderStatusWorkflow } = window.MaintainOpsWorkOrderStatusWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -150,6 +155,7 @@ const {
   listCompaniesByIdsLegacy,
 } = window.MaintainOpsCompanyService;
 const { notifyRequestEmailer } = window.MaintainOpsRequestEmailNotificationService;
+const { addSignedUrlsToRows, createDeferredSignedUrlLoader } = window.MaintainOpsSignedUrlService;
 const {
   listAppIssueReports,
   createAppIssueReportRecord,
@@ -492,6 +498,23 @@ let noticeTimer;
 let workOrderActionWarningId = "";
 let workOrderActionWarning = "";
 
+const { renderCompanyCreate } = createCompanySetupWorkflow({
+  FormDataCtor: FormData,
+  companyCreateForm,
+  createCompanyRecord: (name) => supabaseClient.rpc("create_company", { company_name: name }),
+  documentRef: document,
+  ensureProfileForActiveCompany,
+  getAppError: () => appError,
+  getCompanies: () => companies,
+  persistActiveCompanyId: (companyId) => localStorage.setItem("maintainops.activeCompanyId", companyId),
+  render,
+  seedStarterAssets,
+  setActiveCompanyId: (companyId) => { activeCompanyId = companyId; },
+  setAppHtml: (html) => { app.innerHTML = html; },
+  signOut: () => supabaseClient.auth.signOut(),
+  withOperationTimeout,
+});
+
 const {
   matchesSearch,
   matchesQuery,
@@ -688,6 +711,39 @@ const {
 function assetPartRows(partId) {
   return assetParts.filter((row) => row.part_id === partId);
 }
+const {
+  deletePart,
+  requestDeletePart,
+} = createPartDeleteWorkflow({
+  CSSRef: CSS,
+  alertUser: alert,
+  assetPartRows,
+  canDeleteParts,
+  deletePartRecord: (id) => supabaseClient
+    .from("parts")
+    .delete()
+    .eq("id", id)
+    .eq("company_id", activeCompanyId)
+    .select("id"),
+  documentRef: document,
+  getPartDocumentsByPartId: () => partDocumentsByPartId,
+  getParts: () => parts,
+  getPendingDeletePartId: () => pendingDeletePartId,
+  partUsageRows,
+  removePartDocumentStorage: (documentPaths) => supabaseClient.storage.from("part-documents").remove(documentPaths),
+  render,
+  renderWorkspace,
+  setActivePartId: setActivePartIdState,
+  setPendingDeletePartId: (value) => { pendingDeletePartId = value; },
+  showNotice,
+  verifyPartDeleted: (id) => supabaseClient
+    .from("parts")
+    .select("id")
+    .eq("id", id)
+    .eq("company_id", activeCompanyId)
+    .maybeSingle(),
+  withOperationTimeout,
+});
 const {
   openMaintenanceRequests,
   requestMatchesBaseFilters,
@@ -1675,114 +1731,6 @@ function publicRequestQrTokenFromUrl() {
   return String(url.searchParams.get("qr") || "").trim();
 }
 
-async function renderPublicRequestQrPage(token) {
-  document.body.classList.add("public-qr-mode");
-  app.innerHTML = loadingQrPage();
-
-  let intake = null;
-  try {
-    const { data, error } = await withOperationTimeout(
-      supabaseClient.rpc("get_public_request_intake", { request_token: token }),
-      "Request QR lookup timed out."
-    );
-    intake = Array.isArray(data) ? data[0] : data;
-    if (error || !intake) {
-      renderPublicRequestError("This QR code link is inactive or invalid.");
-      return;
-    }
-  } catch (error) {
-    renderPublicRequestError("This QR code link is inactive or invalid.");
-    return;
-  }
-
-  const requestUrl = publicRequestUrl(token);
-  app.innerHTML = publicRequestQrPage(intake, requestUrl);
-
-  bindPublicQrPrintEvents();
-}
-
-async function renderPublicRequestIntake(token) {
-  document.body.classList.remove("public-qr-mode");
-  app.innerHTML = loadingRequestForm();
-
-  let intake = null;
-  try {
-    const { data, error } = await withOperationTimeout(
-      supabaseClient.rpc("get_public_request_intake", { request_token: token }),
-      "Request form lookup timed out."
-    );
-    if (error) {
-      renderPublicRequestError("This request link is not ready yet. The company needs to run the public request link setup in Supabase.");
-      return;
-    }
-    intake = Array.isArray(data) ? data[0] : data;
-  } catch (error) {
-    renderPublicRequestError(error.message || "This request link could not be loaded.");
-    return;
-  }
-  if (!intake) {
-    renderPublicRequestError("This request link is inactive or invalid.");
-    return;
-  }
-
-  app.innerHTML = publicRequestForm(intake);
-
-  document.querySelector("#public-request-form").addEventListener("submit", (event) => submitPublicRequest(event, token, intake));
-}
-
-function renderPublicRequestError(message) {
-  app.innerHTML = publicRequestError(message);
-}
-
-// SECURITY: Public QR intake is intentionally anonymous; all company/location authority must stay inside scoped Supabase RPCs.
-async function submitPublicRequest(event, token, intake) {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const form = new FormData(formElement);
-  const errorElement = document.querySelector("#public-request-error");
-  const submitButton = formElement.querySelector("button[type='submit']");
-  if (errorElement) errorElement.textContent = "";
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Sending...";
-  }
-
-  try {
-    const { data: requestId, error } = await withOperationTimeout(
-      supabaseClient.rpc("submit_public_location_request", {
-        request_token: token,
-        request_title: requiredText(form.get("title"), "Request title"),
-        equipment_note: requiredText(form.get("equipment_note"), "Machine / area"),
-        request_description: requiredText(form.get("description"), "Request details"),
-        requester_name: requiredText(form.get("requester_name"), "Your name"),
-        requester_contact: String(form.get("requester_contact") || "").trim() || null,
-        request_priority: form.get("priority") || "medium",
-      }),
-      "Request send timed out."
-    );
-
-    if (error) throw error;
-    const photo = form.get("photo");
-    let photoWarning = "";
-    if (photo && photo.name) {
-      const photoError = await addPhotoToMaintenanceRequest(requestId, photo);
-      if (photoError) photoWarning = `Request sent, but the photo did not upload: ${photoError.message || photoError}`;
-    }
-    const emailResult = await notifyRequestEmailer(supabaseClient, requestId);
-    if (emailResult.error) console.warn("Request email notification did not send", emailResult.error);
-
-    app.innerHTML = publicRequestSuccess(intake, photoWarning);
-    document.querySelector("#public-request-another").addEventListener("click", () => renderPublicRequestIntake(token));
-  } catch (error) {
-    if (errorElement) errorElement.textContent = error.message || "Could not send the request.";
-  } finally {
-    if (submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Send Request";
-    }
-  }
-}
-
 async function loadCompanies() {
   appError = "";
   const companyRpc = await getMyCompanies(supabaseClient);
@@ -1884,61 +1832,6 @@ async function loadCompanyLogoUrls() {
     }
     company.logoUrl = data?.signedUrl || "";
   }));
-}
-
-function renderCompanyCreate() {
-  app.innerHTML = companyCreateForm(appError);
-
-  document.querySelector("#company-form").addEventListener("submit", createCompany);
-  document.querySelector("#sign-out").addEventListener("click", () => supabaseClient.auth.signOut());
-}
-
-async function createCompany(event) {
-  event.preventDefault();
-  const formElement = event.target;
-  const submitButton = formElement.querySelector("button[type='submit']");
-  const errorTarget = document.querySelector("#company-error");
-  const name = String(new FormData(formElement).get("name") || "").trim();
-  submitButton.disabled = true;
-  submitButton.textContent = "Creating...";
-  errorTarget.textContent = "";
-
-  try {
-    if (!name) throw new Error("Company name is required.");
-    const existing = companies.find((company) => company.name.trim().toLowerCase() === name.trim().toLowerCase());
-    if (existing) {
-      activeCompanyId = existing.id;
-      localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
-      await render();
-      return;
-    }
-
-    const { data, error } = await withOperationTimeout(
-      supabaseClient.rpc("create_company", { company_name: name }),
-      "Company creation timed out."
-    );
-
-    if (error) {
-      errorTarget.textContent = error.message.includes("create_company")
-        ? "Database setup is not finished. Run supabase/schema.sql in the Supabase SQL editor, then wait a few seconds and try again."
-        : error.message;
-      return;
-    }
-
-    activeCompanyId = data;
-    localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
-    const profileReady = await ensureProfileForActiveCompany(name);
-    if (!profileReady) throw new Error(appError || "Could not create your company profile.");
-    await seedStarterAssets();
-    await render();
-  } catch (error) {
-    errorTarget.textContent = error.message || "Could not create company.";
-  } finally {
-    if (submitButton?.isConnected) {
-      submitButton.disabled = false;
-      submitButton.textContent = "Create Company";
-    }
-  }
 }
 
 async function ensureProfileForActiveCompany() {
@@ -2817,12 +2710,7 @@ async function addSignedPhotoUrls() {
 }
 
 async function addSignedPhotoUrlsForRows(photos = []) {
-  await Promise.all(photos.map(async (photo) => {
-    const { data } = await supabaseClient.storage
-      .from("work-order-photos")
-      .createSignedUrl(photo.storage_path, 60 * 10);
-    photo.signedUrl = data?.signedUrl || "";
-  }));
+  await addSignedUrlsToRows(supabaseClient, "work-order-photos", photos);
 }
 
 async function addSignedRequestPhotoUrls() {
@@ -2830,64 +2718,38 @@ async function addSignedRequestPhotoUrls() {
   const requestsWithPhotos = maintenanceRequests.filter((request) => request.photo_storage_path);
   if (!requestsWithPhotos.length) return;
 
-  await Promise.all(requestsWithPhotos.map(async (request) => {
-    const { data, error } = await supabaseClient.storage
-      .from("maintenance-request-photos")
-      .createSignedUrl(request.photo_storage_path, 60 * 10);
-    if (error) {
+  await addSignedUrlsToRows(supabaseClient, "maintenance-request-photos", requestsWithPhotos, {
+    pathKey: "photo_storage_path",
+    urlKey: "photoSignedUrl",
+    onError: (_request, _error) => {
       requestPhotosReady = false;
-      request.photoSignedUrl = "";
-      return;
-    }
-    request.photoSignedUrl = data?.signedUrl || "";
-  }));
+    },
+  });
 }
 
 async function addSignedAssetDocumentUrls() {
   const documents = Object.values(assetDocumentsByAssetId).flat();
-  await Promise.all(documents.map(async (document) => {
-    const { data } = await supabaseClient.storage
-      .from("asset-documents")
-      .createSignedUrl(document.storage_path, 60 * 10);
-    document.signedUrl = data?.signedUrl || "";
-  }));
-}
-
-function ensureAssetDocumentSignedUrls(assetId) {
-  if (!assetId || !assetDocumentsReady) return;
-  const documents = assetDocumentsByAssetId[assetId] || [];
-  const pending = documents.filter((document) => document.storage_path && !document.signedUrl);
-  if (!pending.length || assetDocumentSigningByAssetId[assetId]) return;
-
-  assetDocumentSigningByAssetId[assetId] = true;
-  withOperationTimeout(
-    Promise.all(pending.map(async (document) => {
-      const { data } = await supabaseClient.storage
-        .from("asset-documents")
-        .createSignedUrl(document.storage_path, 60 * 10);
-      document.signedUrl = data?.signedUrl || "";
-    })),
-    "Equipment file link load timed out.",
-    10000
-  )
-    .catch((error) => {
-      console.warn("Could not load equipment file links", error);
-    })
-    .finally(() => {
-      delete assetDocumentSigningByAssetId[assetId];
-      if (activeAssetId === assetId) renderWorkspace();
-    });
+  await addSignedUrlsToRows(supabaseClient, "asset-documents", documents);
 }
 
 async function addSignedPartDocumentUrls() {
   const documents = Object.values(partDocumentsByPartId).flat();
-  await Promise.all(documents.map(async (document) => {
-    const { data } = await supabaseClient.storage
-      .from("part-documents")
-      .createSignedUrl(document.storage_path, 60 * 10);
-    document.signedUrl = data?.signedUrl || "";
-  }));
+  await addSignedUrlsToRows(supabaseClient, "part-documents", documents);
 }
+
+const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredSignedUrlLoader({
+  bucketName: "asset-documents",
+  getActiveGroupId: () => activeAssetId,
+  getReady: () => assetDocumentsReady,
+  getRows: (assetId) => assetDocumentsByAssetId[assetId] || [],
+  getSigningMap: () => assetDocumentSigningByAssetId,
+  renderWorkspace,
+  supabaseClient: () => supabaseClient,
+  timeoutMessage: "Equipment file link load timed out.",
+  timeoutMs: 10000,
+  warn: console.warn.bind(console),
+  withOperationTimeout,
+});
 
 function renderWorkspace() {
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
@@ -4861,129 +4723,6 @@ function bindWorkspaceEvents() {
   if (logoForm) logoForm.addEventListener("submit", uploadCompanyLogo);
 }
 
-function requestDeletePart(id) {
-  if (!canDeleteParts()) {
-    alert("Only company admins and managers can delete parts.");
-    return;
-  }
-
-  const part = parts.find((item) => item.id === id);
-  if (!part) return;
-  if (partUsageRows(id).length) {
-    alert("This part has work order usage history and is kept for traceability.");
-    return;
-  }
-  if (assetPartRows(id).length) {
-    alert("This part is linked to equipment and is kept for traceability.");
-    return;
-  }
-
-  const confirmButtonVisible = Boolean(document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`));
-  if (pendingDeletePartId === id || confirmButtonVisible) {
-    deletePart(id);
-    return;
-  }
-
-  pendingDeletePartId = id;
-  renderWorkspace();
-}
-
-async function deletePart(id) {
-  if (!canDeleteParts()) {
-    alert("Only company admins and managers can delete parts.");
-    return;
-  }
-
-  const part = parts.find((item) => item.id === id);
-  const errorElement = document.querySelector("#part-delete-error");
-  if (errorElement) errorElement.textContent = "";
-  if (!part) return;
-
-  if (partUsageRows(id).length) {
-    if (errorElement) errorElement.textContent = "This part has work order usage history and is kept for traceability.";
-    return;
-  }
-  if (assetPartRows(id).length) {
-    if (errorElement) errorElement.textContent = "This part is linked to equipment and is kept for traceability.";
-    return;
-  }
-  const confirmButton = document.querySelector(`[data-delete-part="${CSS.escape(id)}"].permanent-delete-button`);
-  if (confirmButton) {
-    confirmButton.disabled = true;
-    confirmButton.textContent = "Deleting...";
-  }
-
-  try {
-    const documentPaths = (partDocumentsByPartId[id] || [])
-      .map((document) => document.storage_path)
-      .filter(Boolean);
-    if (documentPaths.length) {
-      const storageDelete = await withOperationTimeout(
-        supabaseClient.storage.from("part-documents").remove(documentPaths),
-        "Part document cleanup timed out. Try deleting again.",
-        15000
-      );
-      if (storageDelete.error) {
-        throw new Error(`Could not remove filed receipts/invoices: ${storageDelete.error.message}`);
-      }
-    }
-
-    const { data, error } = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .delete()
-        .eq("id", id)
-        .eq("company_id", activeCompanyId)
-        .select("id"),
-      "Part delete timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) {
-      throw new Error(error.message.includes("violates foreign key constraint")
-        ? "This part is linked to work or equipment and cannot be deleted."
-        : error.message);
-    }
-
-    if (!data?.length) {
-      throw new Error("Part was not deleted. Check that your company role is admin or manager and that supabase/step-next-part-delete.sql has been run.");
-    }
-
-    const verification = await withOperationTimeout(
-      supabaseClient
-        .from("parts")
-        .select("id")
-        .eq("id", id)
-        .eq("company_id", activeCompanyId)
-        .maybeSingle(),
-      "Part delete verification timed out. Refresh and check the part list.",
-      15000
-    );
-
-    if (verification.error) {
-      throw new Error(`Part delete verification failed: ${verification.error.message}`);
-    }
-
-    if (verification.data) {
-      throw new Error("Part delete did not persist in Supabase. Run supabase/step-next-part-delete.sql, then try again.");
-    }
-
-    setActivePartIdState(null);
-    pendingDeletePartId = null;
-    showNotice("Part deleted.");
-    await render();
-  } catch (error) {
-    showNotice(error.message || "Could not delete part.", "warning");
-    if (errorElement) {
-      errorElement.textContent = error.message || "Could not delete part.";
-    }
-    if (confirmButton) {
-      confirmButton.disabled = false;
-      confirmButton.textContent = "Permanently Delete";
-    }
-  }
-}
-
 async function createFollowUpWorkOrder(sourceId, dueInDays) {
   const source = workOrders.find((item) => item.id === sourceId);
   if (!source) return;
@@ -5072,6 +4811,32 @@ const {
   getPageUrl: () => window.location.href,
   showNotice,
   render,
+});
+
+const {
+  renderPublicRequestError,
+  renderPublicRequestIntake,
+  renderPublicRequestQrPage,
+} = createPublicRequestIntakeWorkflow({
+  FormDataCtor: FormData,
+  addPhotoToMaintenanceRequest,
+  bindPublicQrPrintEvents,
+  bodyRef: document.body,
+  documentRef: document,
+  getPublicRequestIntake: (token) => supabaseClient.rpc("get_public_request_intake", { request_token: token }),
+  loadingQrPage,
+  loadingRequestForm,
+  notifyRequestEmailer: (requestId) => notifyRequestEmailer(supabaseClient, requestId),
+  publicRequestError,
+  publicRequestForm,
+  publicRequestQrPage,
+  publicRequestSuccess,
+  publicRequestUrl,
+  requiredText,
+  setAppHtml: (html) => { app.innerHTML = html; },
+  submitPublicLocationRequest: (payload) => supabaseClient.rpc("submit_public_location_request", payload),
+  warn: console.warn.bind(console),
+  withOperationTimeout,
 });
 
 const { uploadCompanyLogo } = createCompanyLogoWorkflow({
@@ -5256,115 +5021,43 @@ const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
   render,
 });
 
-async function updateWorkOrderStatus(event) {
-  const previous = workOrders.find((item) => item.id === activeWorkOrderId);
-  event.target.disabled = true;
-  try {
-    const saved = await setWorkOrderStatus(activeWorkOrderId, event.target.value);
-    if (!saved) event.target.value = previous?.status || "open";
-  } catch (error) {
-    event.target.value = previous?.status || "open";
-    showNotice(`Could not update status: ${error.message || error}`, "warning");
-  } finally {
-    event.target.disabled = false;
-  }
-}
+const { saveStepResult } = createProcedureChecklistWorkflow({
+  blocksProcedureCompletion,
+  getActiveCompanyId: () => activeCompanyId,
+  getSession: () => session,
+  getWorkOrderActionWarningId: () => workOrderActionWarningId,
+  getWorkOrders: () => workOrders,
+  loadStepResults,
+  recordWorkOrderEvent,
+  renderWorkspace,
+  setWorkOrderActionWarning,
+  showNotice,
+  upsertStepResult: (payload) => supabaseClient.from("work_order_step_results").upsert(payload, { onConflict: "work_order_id,procedure_step_id" }),
+  withOperationTimeout,
+});
 
-async function saveStepResult(event) {
-  const field = event.target;
-  const value = field.type === "checkbox" ? (field.checked ? "checked" : "") : field.value;
-  field.disabled = true;
-  try {
-    const { error } = await withOperationTimeout(
-      supabaseClient.from("work_order_step_results").upsert({
-        company_id: activeCompanyId,
-        work_order_id: field.dataset.workOrderId,
-        procedure_step_id: field.dataset.stepResult,
-        completed_by: value ? session.user.id : null,
-        value,
-        completed_at: value ? new Date().toISOString() : null,
-      }, { onConflict: "work_order_id,procedure_step_id" }),
-      "Checklist save timed out. Check your connection and try again.",
-      15000
-    );
-
-    if (error) throw error;
-    await withOperationTimeout(
-      recordWorkOrderEvent(field.dataset.workOrderId, "checklist_updated", "Procedure checklist updated."),
-      "Activity log timed out.",
-      8000
-    ).catch(() => null);
-    const reloadError = await withOperationTimeout(
-      loadStepResults(),
-      "Checklist refresh timed out. Refresh the workspace to confirm the latest checklist state.",
-      10000
-    ).catch((error) => error);
-    if (reloadError) {
-      showNotice(`Checklist saved, but refresh did not finish: ${reloadError.message || reloadError}`, "warning");
-      field.disabled = false;
-      return;
-    }
-    if (workOrderActionWarningId === field.dataset.workOrderId) {
-      const refreshedWorkOrder = workOrders.find((item) => item.id === field.dataset.workOrderId);
-      if (!blocksProcedureCompletion(refreshedWorkOrder)) setWorkOrderActionWarning("", "");
-    }
-    renderWorkspace();
-  } catch (error) {
-    showNotice(`Could not save checklist step: ${error.message || error}`, "warning");
-    field.disabled = false;
-  }
-}
-
-async function setWorkOrderStatus(id, status) {
-  const workOrder = workOrders.find((item) => item.id === id);
-  if (status === "completed") {
-    const procedureCompletionMessage = blocksProcedureCompletion(workOrder);
-    if (procedureCompletionMessage) {
-      setActiveWorkOrderIdState(id);
-      setWorkOrderActionWarning(id, procedureCompletionMessage);
-      showNotice(procedureCompletionMessage, "warning");
-      await render();
-      return false;
-    }
-  }
-  const safetyCheckedNow = currentSafetyCheckboxCheckedForWorkOrder(id);
-  const hasSafetyCheck = hasCompletedSafetyDeviceCheck(workOrder) || safetyCheckedNow;
-  if (status === "completed" && requiresSafetyDeviceCheck(workOrder) && !hasSafetyCheck) {
-    setActiveWorkOrderIdState(id);
-    const safetyMessage = "Safety devices must be checked before completing equipment work. Open the work order and use Complete Work.";
-    setWorkOrderActionWarning(id, safetyMessage);
-    showNotice(safetyMessage, "warning");
-    await render();
-    return false;
-  }
-  const payload = {
-    status,
-    asset_id: workOrder?.asset_id || null,
-    completed_at: status === "completed" ? new Date().toISOString() : null,
-  };
-  applySafetyRequirementPayload(payload);
-  if (status === "completed") {
-    applySafetyCheckPayload(payload, payload.safety_check_required && hasSafetyCheck);
-  } else if (status !== "completed") {
-    applySafetyCheckPayload(payload, false);
-  }
-  delete payload.asset_id;
-  const { error } = await withOperationTimeout(
-    updateWorkOrderSafely(payload, id),
-    "Status save timed out. Check your connection and try again.",
-    15000
-  );
-  if (error) {
-    showNotice(`Could not update status: ${friendlyWorkOrderSaveError(error)}`, "warning");
-    return false;
-  }
-  setActiveWorkOrderIdState(id);
-  setWorkOrderActionWarning("", "");
-  await recordWorkOrderEvent(id, "status_changed", `Status changed to ${statusLabel(status)}.`);
-  showNotice(`Status changed to ${statusLabel(status)}.`);
-  await render();
-  return true;
-}
+const {
+  setWorkOrderStatus,
+  updateWorkOrderStatus,
+} = createWorkOrderStatusWorkflow({
+  applySafetyCheckPayload,
+  applySafetyRequirementPayload,
+  blocksProcedureCompletion,
+  currentSafetyCheckboxCheckedForWorkOrder,
+  friendlyWorkOrderSaveError,
+  getActiveWorkOrderId: () => activeWorkOrderId,
+  getWorkOrders: () => workOrders,
+  hasCompletedSafetyDeviceCheck,
+  recordWorkOrderEvent,
+  render,
+  requiresSafetyDeviceCheck,
+  setActiveWorkOrderId: setActiveWorkOrderIdState,
+  setWorkOrderActionWarning,
+  showNotice,
+  statusLabel,
+  updateWorkOrderSafely,
+  withOperationTimeout,
+});
 
 async function assignWorkOrderToMe(id) {
   try {
