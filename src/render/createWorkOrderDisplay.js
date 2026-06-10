@@ -16,6 +16,12 @@
       escapeHtml,
     } = deps;
 
+    function todayDateValue() {
+      const now = new Date();
+      const local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+      return local.toISOString().slice(0, 10);
+    }
+
     function renderCreateWorkOrder() {
           const parts = deps.getParts();
       return `
@@ -61,7 +67,7 @@
                   ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
                 </select>
               </label>
-              <label>Expected back up / due date<input name="due_at" type="date"></label>
+              <label>Complete by / due date<input name="due_at" type="date" value="${todayDateValue()}"><small>Defaults to today. Use the calendar to choose a different deadline.</small></label>
             </div>
           </details>
     

@@ -23,6 +23,12 @@
       renderProcedureOptions,
     } = deps;
 
+    function todayDateValue() {
+      const now = new Date();
+      const local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+      return local.toISOString().slice(0, 10);
+    }
+
     function renderAssetDetail() {
       const assets = deps.getAssets();
       const activeAssetId = deps.getActiveAssetId();
@@ -299,7 +305,7 @@
               <select name="procedure_template_id">
                 ${renderProcedureOptions ? renderProcedureOptions() : `<option value="">No procedure checklist</option>`}
               </select>
-              <input name="next_due_at" type="date" required>
+              <input name="next_due_at" type="date" value="${todayDateValue()}" required>
               <p class="error-text" data-pm-error></p>
               <button class="secondary-button asset-action-button" type="submit">Add Schedule</button>
             </form>

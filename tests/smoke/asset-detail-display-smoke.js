@@ -154,6 +154,7 @@ assert.match(html, /class="asset-relationship-panel relationship-detail procedur
 assert.match(html, /data-create-pm-form/);
 assert.match(html, /data-equipment-pm-form="asset-1"/);
 assert.match(html, /name="asset_id" type="hidden" value="asset-1"/);
+assert.match(html, /name="next_due_at" type="date" value="\d{4}-\d{2}-\d{2}" required/);
 assert.match(html, /PM for Press 1/);
 assert.match(html, /Press checklist/);
 assert.match(html, /data-section="pm"/);

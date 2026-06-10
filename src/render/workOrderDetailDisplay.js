@@ -219,7 +219,7 @@
         <form class="form-grid" id="edit-work-order-form">
           <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
           <label>Description<textarea name="description" rows="3">${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "")}</textarea></label>
-          <label>Due date<input name="due_at" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${escapeHtml(workOrder.due_at || "")}"></label>
+          <label>Due date<input name="due_at" type="date" value="${escapeHtml(workOrder.due_at || "")}"></label>
           <label>Priority
             <select name="priority">
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}

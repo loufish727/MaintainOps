@@ -3357,7 +3357,7 @@ function renderWorkspace() {
               <select name="procedure_template_id">
                 ${renderProcedureOptions()}
               </select>
-              <input name="next_due_at" type="date" required>
+              <input name="next_due_at" type="date" value="${isoDate(startOfToday())}" required>
               <p class="error-text" id="pm-error"></p>
               <button class="secondary-button" type="submit">Add Schedule</button>
             </form>
