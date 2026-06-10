@@ -8,8 +8,8 @@ const { assetStatusLabel, assetTypeLabel } = global.window.MaintainOpsEquipmentL
 
 assert.equal(assetStatusLabel("offline"), "Offline / Down");
 assert.equal(assetStatusLabel("running"), "Running");
-assert.equal(assetTypeLabel("machine"), "Machine / Line");
+assert.equal(assetTypeLabel("machine"), "Primary");
 assert.equal(assetTypeLabel("forklift"), "Forklift");
-assert.equal(assetTypeLabel("secondary_machine"), "Sub-assembly");
+assert.equal(assetTypeLabel("secondary_machine"), "Sub Equipment");
 
 console.log("equipment labels smoke passed");

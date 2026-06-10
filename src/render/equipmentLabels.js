@@ -1,9 +1,9 @@
 (function () {
   function assetTypeLabel(type) {
     const labels = {
-      machine: "Machine / Line",
+      machine: "Primary",
       forklift: "Forklift",
-      secondary_machine: "Sub-assembly",
+      secondary_machine: "Sub Equipment",
       tooling: "Tooling / Setup",
       component: "Component",
       shop_item: "Shop Item",

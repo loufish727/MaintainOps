@@ -2795,6 +2795,15 @@ function renderWorkspace() {
       empty: "No primary equipment yet.",
     },
     {
+      type: "forklift",
+      label: "Forklifts",
+      count: assetTypeCounts.forklift || 0,
+      tone: "command-equipment",
+      typeFilter: "forklift",
+      detail: "Lift trucks and mobile equipment with repair or inspection history.",
+      empty: "No forklifts yet.",
+    },
+    {
       type: "secondary_machine",
       label: "Sub Equipment",
       count: assetTypeCounts.secondary_machine || 0,

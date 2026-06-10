@@ -9,16 +9,18 @@ const html = renderEquipmentStructureGuide();
 
 assert.match(html, /aria-label="Equipment structure guide"/);
 assert.match(html, /Structure Guide/);
-assert.match(html, /Machine \/ Line/);
-assert.match(html, /Sub-assembly/);
+assert.match(html, /Primary/);
+assert.match(html, /Forklift/);
+assert.match(html, /Sub Equipment/);
 assert.match(html, /Tooling \/ Setup/);
 assert.match(html, /Component/);
-assert.match(html, /Machine sub-history/);
+assert.match(html, /tracked piece/i);
 assert.match(html, /Part/);
 assert.match(html, /Inventory item/);
 assert.match(html, /Shop Item/);
 assert.match(html, /Standalone support asset/);
-assert.match(html, /part = inventory/);
+assert.match(html, /Primary = main equipment/);
+assert.match(html, /Part = inventory/);
 assert.match(html, /Roll former rule/);
 assert.match(html, /station = position on the machine/);
 
