@@ -113,6 +113,7 @@
         overdue: "Overdue",
         completed_week: "Done 7d",
         completed_month: "Done 30d",
+        converted_requests: "Converted Requests",
         summary_open: "Open Work",
         summary_requests: "New Requests",
         summary_overdue: "Overdue",
@@ -159,6 +160,11 @@
       if (metric === "completed_week") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
       if (metric === "completed_month") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return assigned;
+    }
+
+    function metricRequests(userId, metric) {
+      if (metric === "converted_requests") return convertedRequests().filter((request) => request.converted_by === userId || (!request.converted_by && request.created_by === userId));
+      return [];
     }
 
     function managerCompletionRate() {
@@ -242,6 +248,7 @@
           const userId = member.user_id;
           const assigned = assignedOpenWork(userId);
           const completed = completedWorkOrders().filter((workOrder) => workOrder.completed_by === userId || workOrder.assigned_to === userId);
+          const converted = metricRequests(userId, "converted_requests");
           const latest = latestActivityFor(userId);
           return {
             userId,
@@ -255,6 +262,7 @@
             followUp: assigned.filter(needsFollowUp).length,
             completedWeek: completed.filter((workOrder) => isCompletedSince(workOrder, weekCutoff)).length,
             completedMonth: completed.filter((workOrder) => isCompletedSince(workOrder, monthCutoff)).length,
+            convertedRequests: converted.length,
             averageAge: averageAgeDays(assigned),
             latestActivity: shortDateTime(latest),
           };
@@ -295,6 +303,7 @@
           <button type="button" class="manager-drill-button${activeClass("follow_up")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="follow_up"><span>Follow-up</span><strong>${row.followUp}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("completed_week")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_week"><span>Done 7d</span><strong>${row.completedWeek}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("completed_month")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_month"><span>Done 30d</span><strong>${row.completedMonth}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("converted_requests")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="converted_requests"><span>Converted</span><strong>${row.convertedRequests}</strong></button>
           <div><span>Avg Age</span><strong>${row.averageAge}d</strong></div>
           <small>${deps.escapeHtml(row.latestActivity)}</small>
         </article>
@@ -379,17 +388,21 @@
       }
       const userRow = rows.find((row) => row.userId === userId);
       const workRows = metricWorkOrders(userId, metric);
+      const requestRows = metricRequests(userId, metric);
+      const isRequestMetric = metric === "converted_requests";
       return `
         <section class="manager-drill-panel relationship-detail comment" data-manager-drill-in>
           <div class="panel-header compact">
             <div>
               <h3>${deps.escapeHtml(userRow?.name || deps.teamMemberName(userId))}</h3>
-              <span>${deps.escapeHtml(metricLabel(metric))} - ${workRows.length} loaded item${workRows.length === 1 ? "" : "s"}</span>
+              <span>${deps.escapeHtml(metricLabel(metric))} - ${isRequestMetric ? requestRows.length : workRows.length} loaded item${(isRequestMetric ? requestRows.length : workRows.length) === 1 ? "" : "s"}</span>
             </div>
             <button type="button" class="secondary-button small" data-manager-drill-clear>Clear</button>
           </div>
           <div class="manager-drill-list">
-            ${workRows.map(renderDrillWorkOrder).join("") || `<p class="muted">No loaded work orders match this view.</p>`}
+            ${isRequestMetric
+              ? (requestRows.map(renderDrillRequest).join("") || `<p class="muted">No loaded requests match this view.</p>`)
+              : (workRows.map(renderDrillWorkOrder).join("") || `<p class="muted">No loaded work orders match this view.</p>`)}
           </div>
         </section>
       `;
@@ -518,6 +531,7 @@
       managerSummaryCards,
       managerCompletionRate,
       technicianRows,
+      metricRequests,
     };
   }
 

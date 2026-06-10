@@ -9,7 +9,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
   getWorkOrders: () => [
     { id: "wo-1", assigned_to: "tech-1", status: "open", priority: "critical", follow_up_needed: true, created_at: "2026-05-20T12:00:00Z", location_id: "loc-1" },
-    { id: "wo-2", assigned_to: "tech-1", status: "in_progress", priority: "high", created_at: "2026-06-02T12:00:00Z", due_at: "2026-06-03", location_id: "loc-1" },
+    { id: "wo-2", assigned_to: "tech-1", status: "in_progress", priority: "medium", created_at: new Date().toISOString(), due_at: "2026-06-03", location_id: "loc-1" },
     { id: "wo-4", assigned_to: null, status: "open", created_at: "2026-06-04T12:00:00Z", location_id: "loc-1" },
   ],
   getManagerCompletedWorkOrders: () => [
@@ -18,7 +18,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   getManagerCompletedWorkReady: () => true,
   getMaintenanceRequests: () => [
     { id: "req-1", status: "submitted", created_at: "2026-05-30T12:00:00Z", location_id: "loc-1" },
-    { id: "req-2", status: "converted", converted_work_order_id: "wo-3", location_id: "loc-1" },
+    { id: "req-2", status: "converted", converted_work_order_id: "wo-3", converted_by: "tech-1", title: "Converted repair", equipment_note: "Line 2", requested_by_name: "Lee", location_id: "loc-1" },
   ],
   getCompanyMembers: () => [
     { user_id: "tech-1", role: "technician" },
@@ -56,9 +56,11 @@ assert.equal(rows[0].inProgress, 1);
 assert.equal(rows[0].overdue, 1);
 assert.equal(rows[0].critical, 1);
 assert.equal(rows[0].followUp, 1);
+assert.equal(rows[0].convertedRequests, 1);
 assert.equal(rows[0].overloadLevel, "high");
 assert.equal(helpers.metricWorkOrders("tech-1", "critical").length, 1);
 assert.equal(helpers.metricWorkOrders("tech-1", "follow_up").length, 1);
+assert.equal(helpers.metricRequests("tech-1", "converted_requests").length, 1);
 assert.equal(helpers.managerCompletionRate() > 0, true);
 assert.equal(helpers.managerAttentionItems()[0].count >= 1, true);
 
@@ -78,6 +80,8 @@ assert.match(html, /Manager Attention/);
 assert.match(html, /data-manager-drill-metric="summary_critical"/);
 assert.match(html, /data-manager-drill-metric="critical"/);
 assert.match(html, /data-manager-drill-metric="follow_up"/);
+assert.match(html, /data-manager-drill-metric="converted_requests"/);
+assert.match(html, /<span>Converted<\/span><strong>1<\/strong>/);
 assert.match(html, /workload-high/);
 assert.match(html, /Needs manager review/);
 assert.match(html, /critical/);
@@ -139,5 +143,33 @@ const completedHelpers = createManagerDashboardDisplayHelpers({
 const completedHtml = completedHelpers.renderManagerDashboard();
 assert.match(completedHtml, /Completed by QA Manager/);
 assert.match(completedHtml, /data-mini-work-order="wo-done"/);
+
+const convertedDrillHelpers = createManagerDashboardDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
+  getWorkOrders: () => [],
+  getManagerCompletedWorkOrders: () => [],
+  getManagerCompletedWorkReady: () => true,
+  getMaintenanceRequests: () => [
+    { id: "req-converted", title: "Converted request", status: "converted", converted_work_order_id: "wo-new", converted_by: "tech-1", priority: "high", equipment_note: "Forklift 4", requested_by_name: "Luis", created_at: "2026-06-06T12:00:00Z", location_id: "loc-1" },
+  ],
+  getCompanyMembers: () => [{ user_id: "tech-1", role: "technician" }],
+  getWorkOrderDashboardCounts: () => ({}),
+  getRequestDashboardCounts: () => ({}),
+  getManagerDashboardUserId: () => "tech-1",
+  getManagerDashboardMetric: () => "converted_requests",
+  matchesActiveLocation: (row) => row.location_id === "loc-1",
+  isConvertedRequest: (request) => request.status === "converted" || Boolean(request.converted_work_order_id),
+  getDueState: () => ({ className: "" }),
+  teamMemberName: () => "Taylor Tech",
+  roleLabel: (role) => role,
+  normalizeRole: (role) => role,
+  statusLabel: (status) => status,
+});
+
+const convertedDrillHtml = convertedDrillHelpers.renderManagerDashboard();
+assert.match(convertedDrillHtml, /Converted Requests - 1 loaded item/);
+assert.match(convertedDrillHtml, /Converted request/);
+assert.match(convertedDrillHtml, /Forklift 4 - Luis/);
+assert.match(convertedDrillHtml, /data-manager-request-jump="converted"/);
 
 console.log("manager dashboard display smoke passed");
