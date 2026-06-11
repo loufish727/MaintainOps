@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 
 global.window = {};
 
-const { notifyRequestEmailer } = require("../../src/services/requestEmailNotificationService.js");
+const { notifyRequestEmailer, notifyTeamInviteEmailer } = require("../../src/services/requestEmailNotificationService.js");
 
 (async () => {
   const missingClient = await notifyRequestEmailer(null, "request-1");
@@ -23,6 +23,10 @@ const { notifyRequestEmailer } = require("../../src/services/requestEmailNotific
   assert.deepEqual(calls, [["request-emailer", { request_id: "request-1" }]]);
   assert.deepEqual(result.data, { sent: 1 });
   assert.equal(result.error, null);
+
+  const inviteResult = await notifyTeamInviteEmailer(supabaseClient, "invite-1");
+  assert.equal(inviteResult.skipped, false);
+  assert.deepEqual(calls.at(-1), ["request-emailer", { invite_id: "invite-1" }]);
 
   const throwingClient = {
     functions: {

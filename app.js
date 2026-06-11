@@ -154,7 +154,7 @@ const {
   listCompaniesByIds,
   listCompaniesByIdsLegacy,
 } = window.MaintainOpsCompanyService;
-const { notifyRequestEmailer } = window.MaintainOpsRequestEmailNotificationService;
+const { notifyRequestEmailer, notifyTeamInviteEmailer } = window.MaintainOpsRequestEmailNotificationService;
 const { addSignedUrlsToRows, createDeferredSignedUrlLoader } = window.MaintainOpsSignedUrlService;
 const { createWorkspaceQueueLoaders } = window.MaintainOpsWorkspaceQueueLoadersService;
 const {
@@ -3832,6 +3832,7 @@ const {
   getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
   setRequestNotificationRecipientsReady: (value) => { requestNotificationRecipientsReady = value; },
   setRequestNotificationRecipientError: (value) => { requestNotificationRecipientError = value; },
+  notifyTeamInviteEmailer: (inviteId) => notifyTeamInviteEmailer(supabaseClient, inviteId),
   setPendingCancelInviteId: (value) => { pendingCancelInviteId = value; },
   setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
   loadMembers,

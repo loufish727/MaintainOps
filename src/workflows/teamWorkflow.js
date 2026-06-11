@@ -175,7 +175,7 @@
       }
 
       try {
-        const { error } = await deps.withOperationTimeout(
+        const { data: inviteId, error } = await deps.withOperationTimeout(
           deps.supabaseClient().rpc("create_company_invite", {
             target_company_id: deps.getActiveCompanyId(),
             invite_email: String(form.get("email") || "").trim(),
@@ -194,7 +194,13 @@
           throw error;
         }
 
-        deps.showNotice("Invite created.");
+        const emailResult = await deps.notifyTeamInviteEmailer?.(inviteId);
+        if (emailResult?.error) {
+          console.warn("Invite email did not send", emailResult.error);
+          deps.showNotice("Invite created. Email did not send; copy the invite link.", "warning");
+        } else {
+          deps.showNotice(emailResult?.skipped ? "Invite created." : "Invite created and email sent.");
+        }
         deps.setTeamInviteCancelError("");
         await deps.render();
       } catch (error) {
