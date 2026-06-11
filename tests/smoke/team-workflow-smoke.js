@@ -116,7 +116,6 @@ function createQuery(table, calls) {
     pendingCancelInviteId: "invite-1",
     teamInviteCancelError: "old",
     loadRequestNotificationRecipientsCount: 0,
-    inviteEmailerCalls: [],
   };
 
   const workflow = createTeamWorkflow({
@@ -126,7 +125,7 @@ function createQuery(table, calls) {
       from: (table) => createQuery(table, calls),
       rpc: (name, payload) => {
         calls.push(["rpc", name, payload]);
-        return Promise.resolve({ data: name === "create_company_invite" ? "invite-1" : null, error: null });
+        return Promise.resolve({ error: null });
       },
     }),
     withOperationTimeout: (value) => value,
@@ -142,10 +141,6 @@ function createQuery(table, calls) {
     getRequestNotificationRecipientsReady: () => state.requestNotificationRecipientsReady,
     setRequestNotificationRecipientsReady: (value) => { state.requestNotificationRecipientsReady = value; },
     setRequestNotificationRecipientError: (value) => { state.requestNotificationRecipientError = value; },
-    notifyTeamInviteEmailer: async (inviteId) => {
-      state.inviteEmailerCalls.push(inviteId);
-      return { data: { sent: 1 }, error: null, skipped: false };
-    },
     setPendingCancelInviteId: (value) => { state.pendingCancelInviteId = value; },
     setTeamInviteCancelError: (value) => { state.teamInviteCancelError = value; },
     loadMembers: async () => { state.loadMembersCount += 1; },
@@ -172,9 +167,8 @@ function createQuery(table, calls) {
 
   await inviteForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "create_company_invite"));
-  assert.deepEqual(state.inviteEmailerCalls, ["invite-1"]);
   assert.equal(state.teamInviteCancelError, "");
-  assert.equal(state.notices.at(-1)[0], "Invite created and email sent.");
+  assert.equal(state.notices.at(-1)[0], "Invite created.");
 
   await requestNotificationForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "request_notification_recipients" && call[2].email === "notify@example.com"));
