@@ -10,9 +10,22 @@ Restore validation is not complete.
 
 The current Supabase project has been upgraded to Pro, so the original Free-plan blocker is no longer the blocker.
 
+What is now confirmed:
+
+- Supabase Pro is active.
+- `npx supabase backups list --project-ref lbphkzznvvumemdkqoay` lists completed daily physical backups.
+- Confirmed available backups:
+  - 2026-06-11 07:59:29 UTC
+  - 2026-06-10 08:00:03 UTC
+  - 2026-06-09 07:58:43 UTC
+  - 2026-06-08 07:58:20 UTC
+  - 2026-06-07 07:56:34 UTC
+  - 2026-06-06 07:54:28 UTC
+  - 2026-06-05 07:55:25 UTC
+  - 2026-06-04 07:56:35 UTC
+
 What is still missing:
 
-- confirm a recent managed backup exists
 - perform one restore into a scratch/restored project
 - point a local/test app config at that restored project
 - verify auth/onboarding path, data reads, RLS, RPCs, and storage behavior
@@ -72,8 +85,8 @@ Use one of these paths.
 
 ### Required: Supabase Managed Restore
 
-1. Confirm the Pro project has a recent managed backup.
-2. Use Supabase restore tooling to create a scratch/restored project.
+1. Confirm the Pro project has a recent managed backup. Completed 2026-06-11.
+2. Use Supabase dashboard restore tooling to create a scratch/restored project.
 3. Capture the restored project's URL and publishable anon key.
 4. Temporarily point local `supabase-config.js` at the restored project.
 5. Run:
@@ -89,6 +102,10 @@ npm run test:smoke:resources
 8. Verify storage buckets and signed URL behavior.
 9. Verify request-emailer and auth callback config are either intentionally disabled or restored.
 10. Record restore duration, missing pieces, and manual recovery actions.
+
+Current hard stop:
+
+Supabase's "Restore to a New Project" flow creates a new independent project and presents costs before starting. Do not trigger the restore until the operator explicitly approves that cost/action in the Supabase dashboard.
 
 ### Alternate: Manual Rebuild Restore Drill
 
