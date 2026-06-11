@@ -1419,7 +1419,7 @@ async function render() {
       Promise.all([acceptTeamInvites(), acceptPendingTeamJoinLink()]),
       "Team invite check timed out.",
       5000
-    ).catch((error) => error);
+    ).then(() => null).catch((error) => error);
     if (inviteError) {
       appNotice = `Team invite check skipped: ${inviteError.message || inviteError}`;
       appNoticeTone = "warning";
