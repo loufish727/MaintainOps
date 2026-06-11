@@ -572,6 +572,7 @@ const {
   getRequestNotificationRecipientError: () => requestNotificationRecipientError,
   getSession: () => session,
   getLocations: () => locations,
+  getActiveCompanyMembership: () => activeCompanyMembership(),
   matchesSearch,
   escapeHtml,
   roleDescription,

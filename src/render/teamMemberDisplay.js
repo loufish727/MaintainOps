@@ -12,6 +12,7 @@
     getRequestNotificationRecipientError,
     getSession,
     getLocations,
+    getActiveCompanyMembership,
     matchesSearch,
     escapeHtml,
     roleDescription,
@@ -29,6 +30,14 @@
     const canGrantRoles = canAdministerTeamRoles || (() => false);
     const roleOptionsForActor = teamRoleOptionsForActor || (() => COMPANY_ROLES);
     const canAdministerRequestNotificationRecipients = canAdministerTeamRoles || (() => false);
+
+    function locationName(locationId) {
+      return getLocations().find((location) => location.id === locationId)?.name || "Default location";
+    }
+
+    function managerInviteLocationId(activeLocationId) {
+      return getActiveCompanyMembership?.()?.default_location_id || activeLocationId || getLocations()[0]?.id || "";
+    }
 
     function teamMemberName(userId) {
       const profile = getProfilesByUserId()[userId];
@@ -152,6 +161,8 @@
       const teamInvitesReady = getTeamInvitesReady();
       const locations = getLocations();
       const inviteRoleOptions = roleOptionsForActor();
+      const canChooseInviteLocation = canGrantRoles();
+      const fixedLocationId = managerInviteLocationId(activeLocationId);
       return `
         <form class="team-invite-form relationship-detail comment" id="team-invite-form">
           <div>
@@ -164,12 +175,20 @@
               ${inviteRoleOptions.map((role) => `<option value="${role}">${roleLabel(role)}</option>`).join("")}
             </select>
           </label>
-          <label>Default location
-            <select name="default_location_id" ${teamInvitesReady && locations.length ? "" : "disabled"}>
-              ${locations.length ? "" : `<option value="">Run location setup first</option>`}
-              ${renderLocationOptions(activeLocationId)}
-            </select>
-          </label>
+          ${canChooseInviteLocation ? `
+            <label>Default location
+              <select name="default_location_id" ${teamInvitesReady && locations.length ? "" : "disabled"}>
+                ${locations.length ? "" : `<option value="">Run location setup first</option>`}
+                ${renderLocationOptions(activeLocationId)}
+              </select>
+            </label>
+          ` : `
+            <label>Default location
+              <input value="${escapeHtml(locationName(fixedLocationId))}" disabled>
+              <input name="default_location_id" type="hidden" value="${escapeHtml(fixedLocationId)}">
+            </label>
+            <p class="muted">Manager invites add technicians to your default location.</p>
+          `}
           <p class="error-text" id="team-invite-error">${teamInvitesReady ? "" : "Run supabase/step-next-invite-default-location.sql before inviting by email."}</p>
           <button class="secondary-button" type="submit" ${teamInvitesReady ? "" : "disabled"}>Create Invite</button>
         </form>

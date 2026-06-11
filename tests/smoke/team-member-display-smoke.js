@@ -20,6 +20,7 @@ const baseDeps = {
   getRequestNotificationRecipientError: () => "",
   getSession: () => ({ user: { id: "user-1", email: "louie@example.test" } }),
   getLocations: () => [{ id: "loc-1", name: "QA Facility" }],
+  getActiveCompanyMembership: () => ({ default_location_id: "loc-1" }),
   matchesSearch: () => true,
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
   roleDescription: (role) => `${role} role`,
@@ -84,6 +85,9 @@ const managerHelpers = createTeamMemberDisplayHelpers({
 const managerInviteForm = managerHelpers.renderTeamInviteForm("loc-1");
 assert.doesNotMatch(managerInviteForm, /value="manager"/);
 assert.doesNotMatch(managerInviteForm, /value="admin"/);
+assert.match(managerInviteForm, /Manager invites add technicians to your default location/);
+assert.match(managerInviteForm, /name="default_location_id" type="hidden" value="loc-1"/);
+assert.doesNotMatch(managerInviteForm, /<select name="default_location_id"/);
 const managerMember = managerHelpers.renderMember({ user_id: "user-2", role: "technician" });
 assert.doesNotMatch(managerMember, /data-member-role="user-2"/);
 const managerRequestRecipients = managerHelpers.renderRequestNotificationRecipients("loc-1");
