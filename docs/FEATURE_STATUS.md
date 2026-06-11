@@ -104,6 +104,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Mobile tech setting moved to Team under My Profile.
 - Invite default location is enforced for team invites.
 - Team join links are single-use, expire after 7 days, and are copy/send manual; they do not send email automatically.
+- Applied SQL migration tracking exists in `public.applied_migrations`; initial rows were backfilled for join links and the tracking migration itself.
 
 ## Deferred / Not Yet Fully Built
 
@@ -128,7 +129,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 - Operational readiness.
   - Backup/restore validation is a known production-readiness item.
-  - Current Supabase Free-plan project does not include scheduled backups or restore-to-new-project; see `BACKUP_RESTORE_VALIDATION.md`.
+  - Supabase Pro is active, but a restore drill has not been completed yet; see `BACKUP_RESTORE_VALIDATION.md`.
   - Pilot hardening gates for support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `PILOT_HARDENING_PLAN.md`.
   - Public exposure review is ongoing as the app remains publicly hosted and publicly reviewable.
 

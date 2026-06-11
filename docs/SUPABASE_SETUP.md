@@ -44,6 +44,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 ## Current Step Files
 
 - `step-next-admin-delete-work-orders.sql`
+- `step-next-applied-migrations.sql`
 - `step-next-app-issue-reports.sql`
 - `step-next-asset-hierarchy.sql`
 - `step-next-asset-type-secondary-machine.sql`
@@ -56,6 +57,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-equipment-delete.sql`
 - `step-next-explicit-data-api-grants.sql`
 - `step-next-invite-default-location.sql`
+- `step-next-invite-links.sql`
 - `step-next-invite-role-preservation.sql`
 - `step-next-location-integrity.sql`
 - `step-next-locations.sql`
@@ -102,6 +104,10 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-work-order-events.sql`
 - `step-next-work-order-outcomes.sql`
 - `step-next-work-order-type.sql`
+
+Migration tracking:
+
+Run `supabase/step-next-applied-migrations.sql` before relying on the app to record which manual SQL steps have been applied live. Older migrations still need one-time backfill from dashboard inspection and known handoff history.
 
 ## Request Email Notifications
 

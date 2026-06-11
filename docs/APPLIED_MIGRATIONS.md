@@ -1,0 +1,46 @@
+# Applied Migration Tracking
+
+This file closes the review gap where the repository contains many `supabase/step-next-*.sql` files but the live application state is not obvious from Git alone.
+
+## Current Status
+
+Tracking has been introduced after many SQL steps were already applied manually through the Supabase dashboard. Older rows still must be backfilled from live database inspection and known handoff history.
+
+## Source Of Truth Going Forward
+
+Preferred live source:
+
+- `public.applied_migrations`
+
+Live status:
+
+- `supabase/step-next-applied-migrations.sql` was applied to project `lbphkzznvvumemdkqoay` on 2026-06-11 through `npx supabase db query --linked --file`.
+- Initial rows were backfilled for `step-next-applied-migrations.sql` and `step-next-invite-links.sql`.
+
+Repo source:
+
+- this file records known manual state when live access is not available.
+
+## Known Recently Applied
+
+| SQL file | Live status | Evidence |
+|---|---|---|
+| `supabase/step-next-applied-migrations.sql` | Applied | Applied with Supabase CLI on 2026-06-11; query verified rows exist in `public.applied_migrations`. |
+| `supabase/step-next-invite-links.sql` | Applied | User confirmed SQL success on 2026-06-11; frontend join-link phase verified live afterward. |
+
+## Known Needs Confirmation
+
+| SQL file | Reason |
+|---|---|
+| `supabase/step-next-audit-log.sql` | SQL foundation exists in repo, but live application status was unknown in the 2026-06-11 review. |
+
+## Rule
+
+Every new SQL run should record:
+
+- SQL file name
+- applied timestamp
+- project ref
+- who/what applied it
+- verification performed
+- rollback note if applicable

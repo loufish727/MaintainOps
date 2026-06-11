@@ -1,6 +1,6 @@
 # Backup And Restore Validation
 
-Last checked: 2026-05-28.
+Last checked: 2026-06-11.
 
 This document records the current backup/restore posture for MaintainOps and the result of the first restore-validation pass.
 
@@ -8,23 +8,27 @@ This document records the current backup/restore posture for MaintainOps and the
 
 Restore validation is not complete.
 
-The current Supabase project is on the Free plan. In the Supabase dashboard:
+The current Supabase project has been upgraded to Pro, so the original Free-plan blocker is no longer the blocker.
 
-- Scheduled backups page reports: Free Plan does not include project backups.
-- Point-in-time recovery reports: PITR is a Pro Plan add-on.
-- Restore to new project reports: restore to a new project requires Pro Plan and physical backups.
+What is still missing:
 
-Because of that, a true Supabase-managed restore test could not be completed from the current project state.
+- confirm a recent managed backup exists
+- perform one restore into a scratch/restored project
+- point a local/test app config at that restored project
+- verify auth/onboarding path, data reads, RLS, RPCs, and storage behavior
+- record restore duration, missing pieces, and manual recovery actions
+
+Because no restore drill has been completed yet, MaintainOps should not claim disaster-recovery readiness.
 
 ## Local Tooling Result
 
-The current local machine does not have the tooling needed for a local database restore simulation:
+The current local machine does not have the full tooling needed for a local database restore simulation:
 
-- Supabase CLI: not available.
+- Supabase CLI: available through `npx supabase`.
 - `psql`: not available.
 - Docker/Postgres runtime: not available.
 
-This means a local restore dry run cannot currently be performed from this workspace alone.
+This means a local restore dry run cannot currently be performed from this workspace alone without adding `psql` and/or a local Postgres/Docker restore target.
 
 ## What The Repository Can Rebuild
 
@@ -66,14 +70,13 @@ At the moment, the security posture is better verified than the operational reco
 
 Use one of these paths.
 
-### Preferred: Supabase Managed Restore
+### Required: Supabase Managed Restore
 
-1. Upgrade the Supabase org/project to a plan that includes scheduled physical backups.
-2. Confirm backups are enabled and a recent backup exists.
-3. Use Supabase "Restore to new project" to create a restore target.
-4. Capture the restored project's URL and publishable anon key.
-5. Temporarily point local `supabase-config.js` at the restored project.
-6. Run:
+1. Confirm the Pro project has a recent managed backup.
+2. Use Supabase restore tooling to create a scratch/restored project.
+3. Capture the restored project's URL and publishable anon key.
+4. Temporarily point local `supabase-config.js` at the restored project.
+5. Run:
 
 ```bash
 npm run test:security:static
@@ -81,9 +84,10 @@ npm run test:security:boundary
 npm run test:smoke:resources
 ```
 
-7. Sign in or create/reinvite a test user in the restored project.
-8. Verify the app loads company/workspace data.
-9. Verify storage buckets and signed URL behavior.
+6. Sign in or create/reinvite a test user in the restored project.
+7. Verify the app loads company/workspace data.
+8. Verify storage buckets and signed URL behavior.
+9. Verify request-emailer and auth callback config are either intentionally disabled or restored.
 10. Record restore duration, missing pieces, and manual recovery actions.
 
 ### Alternate: Manual Rebuild Restore Drill
@@ -130,9 +134,4 @@ Until restore validation is complete:
 
 OPERATOR ACTION REQUIRED:
 
-A true backup/restore validation requires either:
-
-- Supabase Pro backup/restore capability, or
-- a separate restore-test Supabase project plus database/export tooling.
-
-The current Free-plan project and local machine tooling cannot complete a real restore validation today.
+Supabase Pro removes the prior plan blocker. The remaining required step is an actual restore drill into a scratch/restored project and documentation of the result.
