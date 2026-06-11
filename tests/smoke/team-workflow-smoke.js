@@ -86,21 +86,36 @@ function createQuery(table, calls) {
   const inviteForm = createElement({
     formValues: { email: "new@example.com", role: "technician", default_location_id: "loc-1" },
   });
+  const inviteLinkForm = createElement({
+    formValues: { role: "technician", default_location_id: "loc-1" },
+  });
   const requestNotificationForm = createElement({
     formValues: { email: "notify@example.com", label: "Desk", location_id: "loc-1" },
   });
   const deleteRequestNotificationButton = createElement({
     dataset: { deleteRequestNotificationRecipient: "recipient-1" },
   });
+  const revokeInviteLinkButton = createElement({
+    dataset: { revokeInviteLink: "link-1" },
+  });
+  const keepInviteLinkButton = createElement();
+  const confirmRevokeInviteLinkButton = createElement({
+    dataset: { confirmRevokeInviteLink: "link-1" },
+  });
   const documentRef = createDocument({
     "#add-member-form": memberForm,
     "[data-member-role]": [roleForm],
     "#profile-form": profileForm,
     "#team-invite-form": inviteForm,
+    "#team-invite-link-form": inviteLinkForm,
+    "[data-revoke-invite-link]": [revokeInviteLinkButton],
+    "[data-revoke-invite-link-cancel]": [keepInviteLinkButton],
+    "[data-confirm-revoke-invite-link]": [confirmRevokeInviteLinkButton],
     "#request-notification-recipient-form": requestNotificationForm,
     "[data-delete-request-notification-recipient]": [deleteRequestNotificationButton],
     "#profile-error": { textContent: "" },
     "#team-invite-error": { textContent: "" },
+    "#team-invite-link-error": { textContent: "" },
     "#request-notification-recipient-error": { textContent: "" },
   });
   const calls = [];
@@ -110,7 +125,10 @@ function createQuery(table, calls) {
     renderWorkspaceCount: 0,
     loadMembersCount: 0,
     loadTeamInvitesCount: 0,
+    loadTeamInviteLinksCount: 0,
     teamInvitesReady: true,
+    teamInviteLinksReady: true,
+    teamInviteLinkError: "",
     requestNotificationRecipientsReady: true,
     requestNotificationRecipientError: "",
     pendingCancelInviteId: "invite-1",
@@ -138,13 +156,18 @@ function createQuery(table, calls) {
     canAdministerTeamRoles: () => true,
     getTeamInvitesReady: () => state.teamInvitesReady,
     setTeamInvitesReady: (value) => { state.teamInvitesReady = value; },
+    getTeamInviteLinksReady: () => state.teamInviteLinksReady,
+    setTeamInviteLinksReady: (value) => { state.teamInviteLinksReady = value; },
+    setTeamInviteLinkError: (value) => { state.teamInviteLinkError = value; },
     getRequestNotificationRecipientsReady: () => state.requestNotificationRecipientsReady,
     setRequestNotificationRecipientsReady: (value) => { state.requestNotificationRecipientsReady = value; },
     setRequestNotificationRecipientError: (value) => { state.requestNotificationRecipientError = value; },
     setPendingCancelInviteId: (value) => { state.pendingCancelInviteId = value; },
+    setPendingRevokeInviteLinkId: (value) => { state.pendingRevokeInviteLinkId = value; },
     setTeamInviteCancelError: (value) => { state.teamInviteCancelError = value; },
     loadMembers: async () => { state.loadMembersCount += 1; },
     loadTeamInvites: async () => { state.loadTeamInvitesCount += 1; },
+    loadTeamInviteLinks: async () => { state.loadTeamInviteLinksCount += 1; },
     loadRequestNotificationRecipients: async () => { state.loadRequestNotificationRecipientsCount += 1; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
     render: async () => { state.renders += 1; },
@@ -169,6 +192,22 @@ function createQuery(table, calls) {
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "create_company_invite"));
   assert.equal(state.teamInviteCancelError, "");
   assert.equal(state.notices.at(-1)[0], "Invite created.");
+
+  await inviteLinkForm.dispatch("submit");
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "create_company_invite_link"));
+  assert.equal(state.teamInviteLinkError, "");
+  assert.equal(state.loadTeamInviteLinksCount, 1);
+  assert.equal(state.notices.at(-1)[0], "Join link created.");
+
+  await revokeInviteLinkButton.dispatch("click");
+  assert.equal(state.pendingRevokeInviteLinkId, "link-1");
+  await keepInviteLinkButton.dispatch("click");
+  assert.equal(state.pendingRevokeInviteLinkId, null);
+  await confirmRevokeInviteLinkButton.dispatch("click");
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "revoke_company_invite_link"));
+  assert.equal(state.pendingRevokeInviteLinkId, null);
+  assert.equal(state.loadTeamInviteLinksCount, 2);
+  assert.equal(state.notices.at(-1)[0], "Join link revoked.");
 
   await requestNotificationForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "request_notification_recipients" && call[2].email === "notify@example.com"));

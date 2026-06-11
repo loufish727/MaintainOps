@@ -7,6 +7,10 @@
     getTeamInvitesReady,
     getTeamInviteCancelError,
     getPendingCancelInviteId,
+    getTeamInviteLinks,
+    getTeamInviteLinksReady,
+    getTeamInviteLinkError,
+    getPendingRevokeInviteLinkId,
     getRequestNotificationRecipients,
     getRequestNotificationRecipientsReady,
     getRequestNotificationRecipientError,
@@ -26,6 +30,7 @@
     renderLocationOptions,
     inviteDefaultLocationLabel,
     teamInviteSignupUrl,
+    teamJoinUrl,
   }) {
     const canGrantRoles = canAdministerTeamRoles || (() => false);
     const roleOptionsForActor = teamRoleOptionsForActor || (() => COMPANY_ROLES);
@@ -236,6 +241,75 @@
       `;
     }
 
+    function renderTeamInviteLinks(activeLocationId) {
+      const ready = getTeamInviteLinksReady();
+      const links = getTeamInviteLinks();
+      const locations = getLocations();
+      const canChooseInviteLocation = canGrantRoles();
+      const fixedLocationId = managerInviteLocationId(activeLocationId);
+      const linkRoleOptions = canChooseInviteLocation ? ["technician", "manager"] : ["technician"];
+      const now = Date.now();
+      return `
+        <section class="team-invites">
+          <div class="panel-header compact">
+            <h3>Join Links</h3>
+            <span>${links.filter((link) => !link.used_at && !link.revoked_at && new Date(link.expires_at).getTime() > now).length} active</span>
+          </div>
+          <p class="muted">${canChooseInviteLocation ? "Create single-use links for technicians or managers. Admin links are never created by link." : "Create one technician join link for your default location."}</p>
+          <form class="inline-form team-form" id="team-invite-link-form">
+            <label>Role
+              <select name="role" ${ready ? "" : "disabled"}>
+                ${linkRoleOptions.map((role) => `<option value="${role}">${roleLabel(role)}</option>`).join("")}
+              </select>
+            </label>
+            ${canChooseInviteLocation ? `
+              <label>Default location
+                <select name="default_location_id" ${ready && locations.length ? "" : "disabled"}>
+                  ${locations.length ? "" : `<option value="">Run location setup first</option>`}
+                  ${renderLocationOptions(activeLocationId)}
+                </select>
+              </label>
+            ` : `
+              <label>Default location
+                <input value="${escapeHtml(locationName(fixedLocationId))}" disabled>
+                <input name="default_location_id" type="hidden" value="${escapeHtml(fixedLocationId)}">
+              </label>
+            `}
+            <button class="secondary-button" type="submit" ${ready ? "" : "disabled"}>Create Join Link</button>
+          </form>
+          <p class="error-text" id="team-invite-link-error">${escapeHtml(getTeamInviteLinkError() || (ready ? "" : "Run supabase/step-next-invite-links.sql before creating join links."))}</p>
+          <div class="member-list">
+            ${links.map((link) => {
+              const expired = new Date(link.expires_at).getTime() <= now;
+              const status = link.revoked_at ? "Revoked" : link.used_at ? "Used" : expired ? "Expired" : "Active";
+              const joinUrl = teamJoinUrl(link.token);
+              const copyMessage = `You have a MaintainOps join link. Sign up or sign in here: ${joinUrl}`;
+              return `
+                <article class="member-card invite-card">
+                  <div>
+                    <strong>${escapeHtml(roleLabel(link.role))} join link</strong>
+                    <p>${escapeHtml(locationName(link.default_location_id))}</p>
+                    <p>Expires ${new Date(link.expires_at).toLocaleString()}</p>
+                    <p class="muted">Single-use link. Email is not sent automatically.</p>
+                  </div>
+                  <div class="button-row">
+                    <span class="chip">${escapeHtml(status)}</span>
+                    ${status === "Active" ? `<button class="secondary-button" data-copy-team-invite="${escapeHtml(copyMessage)}" type="button">Copy Link</button>` : ""}
+                    ${status === "Active" ? (getPendingRevokeInviteLinkId() === link.id ? `
+                      <button class="secondary-button" data-revoke-invite-link-cancel type="button">Keep</button>
+                      <button class="danger-action-button confirm-delete-button" data-confirm-revoke-invite-link="${escapeHtml(link.id)}" type="button">Revoke Link</button>
+                    ` : `
+                      <button class="danger-action-button" data-revoke-invite-link="${escapeHtml(link.id)}" type="button">Revoke Link</button>
+                    `) : ""}
+                  </div>
+                </article>
+              `;
+            }).join("") || `<p class="muted">No join links yet.</p>`}
+          </div>
+        </section>
+      `;
+    }
+
     return {
       teamMemberName,
       filteredMembers,
@@ -244,6 +318,7 @@
       renderRequestNotificationRecipients,
       renderTeamInviteForm,
       renderTeamInvites,
+      renderTeamInviteLinks,
     };
   }
 

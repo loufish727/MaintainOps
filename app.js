@@ -16,6 +16,7 @@ const {
   COMPANY_ROLES,
   ACTIVE_LOCATION_STORAGE_KEY,
 } = window.MaintainOpsConstants;
+const PENDING_JOIN_TOKEN_STORAGE_KEY = "maintainops.pendingJoinToken";
 const { escapeHtml } = window.MaintainOpsDom;
 const {
   postgrestSearchTerm,
@@ -133,6 +134,7 @@ const {
   listCompanyMembers,
   listTeamInvites,
   listTeamInvitesLegacy,
+  listTeamInviteLinks,
   listRequestNotificationRecipients,
 } = window.MaintainOpsProfilesService;
 const { listParts } = window.MaintainOpsPartsService;
@@ -358,6 +360,9 @@ let companyMembers = [];
 let teamInvites = [];
 let teamInvitesReady = true;
 let teamInviteCancelError = "";
+let teamInviteLinks = [];
+let teamInviteLinksReady = true;
+let teamInviteLinkError = "";
 let requestNotificationRecipients = [];
 let requestNotificationRecipientsReady = true;
 let requestNotificationRecipientError = "";
@@ -447,6 +452,7 @@ let pendingDeleteRequestId = null;
 let pendingDeleteScheduleId = null;
 let pendingDeleteProcedureId = null;
 let pendingCancelInviteId = null;
+let pendingRevokeInviteLinkId = null;
 let showPartSourceManager = false;
 let createWorkOrderMode = false;
 let quickFixMode = false;
@@ -559,6 +565,7 @@ const {
   renderRequestNotificationRecipients,
   renderTeamInviteForm,
   renderTeamInvites,
+  renderTeamInviteLinks,
 } = createTeamMemberDisplayHelpers({
   getProfilesByUserId: () => profilesByUserId,
   getCurrentUser: () => session?.user,
@@ -567,6 +574,10 @@ const {
   getTeamInvitesReady: () => teamInvitesReady,
   getTeamInviteCancelError: () => teamInviteCancelError,
   getPendingCancelInviteId: () => pendingCancelInviteId,
+  getTeamInviteLinks: () => teamInviteLinks,
+  getTeamInviteLinksReady: () => teamInviteLinksReady,
+  getTeamInviteLinkError: () => teamInviteLinkError,
+  getPendingRevokeInviteLinkId: () => pendingRevokeInviteLinkId,
   getRequestNotificationRecipients: () => requestNotificationRecipients,
   getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
   getRequestNotificationRecipientError: () => requestNotificationRecipientError,
@@ -586,6 +597,7 @@ const {
   renderLocationOptions: (...args) => renderLocationOptions(...args),
   inviteDefaultLocationLabel: (...args) => inviteDefaultLocationLabel(...args),
   teamInviteSignupUrl,
+  teamJoinUrl,
 });
 const {
   teamMemberWorkload,
@@ -1352,6 +1364,7 @@ async function init() {
   try {
     const recoveryParams = passwordRecoveryParamsFromHref(window.location.href);
     supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    capturePendingJoinTokenFromUrl();
     if (isPasswordRecoveryParams(recoveryParams)) {
       await startPasswordRecovery(recoveryParams);
       return;
@@ -1403,7 +1416,7 @@ async function render() {
   try {
     renderWorkspaceLoading("Checking team access...");
     const inviteError = await withOperationTimeout(
-      acceptTeamInvites(),
+      Promise.all([acceptTeamInvites(), acceptPendingTeamJoinLink()]),
       "Team invite check timed out.",
       5000
     ).catch((error) => error);
@@ -1861,6 +1874,33 @@ async function acceptTeamInvites() {
   }
 }
 
+async function acceptPendingTeamJoinLink() {
+  const token = pendingJoinToken();
+  if (!token || !teamInviteLinksReady) return;
+  const { data, error } = await supabaseClient.rpc("accept_company_invite_link", {
+    join_token: token,
+  });
+
+  if (error) {
+    if (error.message.includes("accept_company_invite_link") || isColumnSchemaError(error, ["company_invite_links"])) {
+      teamInviteLinksReady = false;
+      return;
+    }
+    clearPendingJoinToken();
+    appNotice = `Join link could not be accepted: ${error.message || error}`;
+    appNoticeTone = "warning";
+    return;
+  }
+
+  clearPendingJoinToken();
+  if (data) {
+    activeCompanyId = data;
+    localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
+  }
+  appNotice = "Join link accepted.";
+  appNoticeTone = "success";
+}
+
 async function seedStarterAssets() {
   const locationId = activeLocationDatabaseId();
   await withOperationTimeout(
@@ -2169,7 +2209,7 @@ async function loadMembers() {
   const { data } = await listCompanyMembers(supabaseClient, activeCompanyId);
 
   companyMembers = data || [];
-  await Promise.all([loadTeamInvites(), loadRequestNotificationRecipients()]);
+  await Promise.all([loadTeamInvites(), loadTeamInviteLinks(), loadRequestNotificationRecipients()]);
 }
 
 async function loadTeamInvites() {
@@ -2198,6 +2238,24 @@ async function loadTeamInvites() {
   }
 
   teamInvites = data || [];
+}
+
+async function loadTeamInviteLinks() {
+  if (!teamInviteLinksReady) {
+    teamInviteLinks = [];
+    return;
+  }
+  const { data, error } = await listTeamInviteLinks(supabaseClient, activeCompanyId);
+
+  if (error) {
+    if (isColumnSchemaError(error, ["company_invite_links"]) || error.message.includes("company_invite_links")) {
+      teamInviteLinksReady = false;
+    }
+    teamInviteLinks = [];
+    return;
+  }
+
+  teamInviteLinks = data || [];
 }
 
 async function loadRequestNotificationRecipients() {
@@ -3199,6 +3257,7 @@ function renderWorkspace() {
             ${renderRoleGuide()}
             ${canManageTeam() ? `
               ${renderRequestNotificationRecipients(activeLocationId)}
+              ${renderTeamInviteLinks(activeLocationId)}
               ${renderTeamInviteForm(activeLocationId)}
               ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
               <details class="developer-details">
@@ -3626,6 +3685,29 @@ function teamInviteSignupUrl() {
   return url.toString();
 }
 
+function teamJoinUrl(token) {
+  const url = new URL(teamInviteSignupUrl());
+  url.searchParams.set("join", token);
+  return url.toString();
+}
+
+function capturePendingJoinTokenFromUrl() {
+  const url = new URL(window.location.href);
+  const token = String(url.searchParams.get("join") || "").trim();
+  if (!token) return;
+  localStorage.setItem(PENDING_JOIN_TOKEN_STORAGE_KEY, token);
+  url.searchParams.delete("join");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function pendingJoinToken() {
+  return String(localStorage.getItem(PENDING_JOIN_TOKEN_STORAGE_KEY) || "").trim();
+}
+
+function clearPendingJoinToken() {
+  localStorage.removeItem(PENDING_JOIN_TOKEN_STORAGE_KEY);
+}
+
 const WORK_ORDER_SCHEMA_FIELDS = [
   "location_id",
   "assigned_to",
@@ -3829,13 +3911,18 @@ const {
   canAdministerTeamRoles,
   getTeamInvitesReady: () => teamInvitesReady,
   setTeamInvitesReady: (value) => { teamInvitesReady = value; },
+  getTeamInviteLinksReady: () => teamInviteLinksReady,
+  setTeamInviteLinksReady: (value) => { teamInviteLinksReady = value; },
+  setTeamInviteLinkError: (value) => { teamInviteLinkError = value; },
   getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
   setRequestNotificationRecipientsReady: (value) => { requestNotificationRecipientsReady = value; },
   setRequestNotificationRecipientError: (value) => { requestNotificationRecipientError = value; },
   setPendingCancelInviteId: (value) => { pendingCancelInviteId = value; },
+  setPendingRevokeInviteLinkId: (value) => { pendingRevokeInviteLinkId = value; },
   setTeamInviteCancelError: (value) => { teamInviteCancelError = value; },
   loadMembers,
   loadTeamInvites,
+  loadTeamInviteLinks,
   loadRequestNotificationRecipients,
   showNotice,
   render: () => render(),

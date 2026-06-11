@@ -17,6 +17,27 @@
       const inviteForm = documentRef.querySelector("#team-invite-form");
       if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
 
+      const inviteLinkForm = documentRef.querySelector("#team-invite-link-form");
+      if (inviteLinkForm) inviteLinkForm.addEventListener("submit", createTeamInviteLink);
+
+      documentRef.querySelectorAll("[data-revoke-invite-link]").forEach((button) => {
+        button.addEventListener("click", () => {
+          deps.setPendingRevokeInviteLinkId(button.dataset.revokeInviteLink);
+          deps.renderWorkspace();
+        });
+      });
+
+      documentRef.querySelectorAll("[data-revoke-invite-link-cancel]").forEach((button) => {
+        button.addEventListener("click", () => {
+          deps.setPendingRevokeInviteLinkId(null);
+          deps.renderWorkspace();
+        });
+      });
+
+      documentRef.querySelectorAll("[data-confirm-revoke-invite-link]").forEach((button) => {
+        button.addEventListener("click", () => revokeTeamInviteLink(button.dataset.confirmRevokeInviteLink));
+      });
+
       const requestNotificationForm = documentRef.querySelector("#request-notification-recipient-form");
       if (requestNotificationForm) requestNotificationForm.addEventListener("submit", createRequestNotificationRecipient);
 
@@ -236,6 +257,104 @@
       }
     }
 
+    async function createTeamInviteLink(event) {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const errorElement = documentRef.querySelector("#team-invite-link-error");
+      const submitButton = formElement.querySelector("button[type='submit']");
+      const form = new FormDataCtor(formElement);
+      const selectedRole = String(form.get("role") || "technician").trim().toLowerCase();
+      if (errorElement) errorElement.textContent = "";
+      deps.setTeamInviteLinkError("");
+      if (!deps.getTeamInviteLinksReady()) {
+        const message = "Run supabase/step-next-invite-links.sql before creating join links.";
+        deps.setTeamInviteLinkError(message);
+        if (errorElement) errorElement.textContent = message;
+        return;
+      }
+      if (selectedRole === "admin") {
+        const message = "Admin join links are not allowed.";
+        deps.setTeamInviteLinkError(message);
+        if (errorElement) errorElement.textContent = message;
+        return;
+      }
+      if (!deps.canAdministerTeamRoles?.() && selectedRole !== "technician") {
+        const message = "Managers can only create technician join links.";
+        deps.setTeamInviteLinkError(message);
+        if (errorElement) errorElement.textContent = message;
+        return;
+      }
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Creating...";
+      }
+
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().rpc("create_company_invite_link", {
+            target_company_id: deps.getActiveCompanyId(),
+            link_role: selectedRole,
+            link_location_id: form.get("default_location_id") || null,
+          }),
+          "Join link save timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) {
+          if (error.message.includes("create_company_invite_link") || deps.isColumnSchemaError(error, ["company_invite_links"])) {
+            deps.setTeamInviteLinksReady(false);
+            throw new Error("Run supabase/step-next-invite-links.sql before creating join links.");
+          }
+          throw error;
+        }
+
+        deps.setTeamInviteLinkError("");
+        deps.showNotice("Join link created.");
+        await deps.loadTeamInviteLinks();
+        deps.renderWorkspace();
+      } catch (error) {
+        const message = error.message || "Could not create join link.";
+        deps.setTeamInviteLinkError(message);
+        if (errorElement) errorElement.textContent = message;
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Create Join Link";
+        }
+      }
+    }
+
+    async function revokeTeamInviteLink(linkId) {
+      if (!linkId || !deps.getActiveCompanyId()) return;
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().rpc("revoke_company_invite_link", {
+            link_id: linkId,
+          }),
+          "Join link revoke timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) {
+          if (error.message.includes("revoke_company_invite_link") || deps.isColumnSchemaError(error, ["company_invite_links"])) {
+            deps.setTeamInviteLinksReady(false);
+            throw new Error("Run supabase/step-next-invite-links.sql before revoking join links.");
+          }
+          throw error;
+        }
+
+        deps.setPendingRevokeInviteLinkId(null);
+        deps.setTeamInviteLinkError("");
+        deps.showNotice("Join link revoked.");
+        await deps.loadTeamInviteLinks();
+        deps.renderWorkspace();
+      } catch (error) {
+        deps.setPendingRevokeInviteLinkId(null);
+        deps.setTeamInviteLinkError(error.message || "Could not revoke join link.");
+        deps.renderWorkspace();
+      }
+    }
+
     async function createRequestNotificationRecipient(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
@@ -340,6 +459,8 @@
       updateMyProfile,
       createTeamInvite,
       cancelTeamInvite,
+      createTeamInviteLink,
+      revokeTeamInviteLink,
       createRequestNotificationRecipient,
       deleteRequestNotificationRecipient,
     };

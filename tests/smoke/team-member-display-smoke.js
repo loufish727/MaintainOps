@@ -15,6 +15,10 @@ const baseDeps = {
   getTeamInvitesReady: () => true,
   getTeamInviteCancelError: () => "Cancel <failed>",
   getPendingCancelInviteId: () => "invite-1",
+  getTeamInviteLinks: () => [{ id: "link-1", token: "join-token", role: "technician", default_location_id: "loc-1", created_at: "2026-05-27T12:00:00Z", expires_at: "2099-05-27T12:00:00Z" }],
+  getTeamInviteLinksReady: () => true,
+  getTeamInviteLinkError: () => "",
+  getPendingRevokeInviteLinkId: () => "link-1",
   getRequestNotificationRecipients: () => [{ id: "recipient-1", email: "maintenance@example.test", label: "Maintenance Desk", location_id: "loc-1", is_active: true }],
   getRequestNotificationRecipientsReady: () => true,
   getRequestNotificationRecipientError: () => "",
@@ -34,6 +38,7 @@ const baseDeps = {
   renderLocationOptions: () => '<option value="loc-1">QA Facility</option>',
   inviteDefaultLocationLabel: () => "Default location: QA Facility",
   teamInviteSignupUrl: () => "https://example.test/MaintainOps/",
+  teamJoinUrl: (token) => `https://example.test/MaintainOps/?join=${token}`,
 };
 
 const helpers = createTeamMemberDisplayHelpers(baseDeps);
@@ -68,6 +73,15 @@ assert.match(inviteForm, /QA Facility/);
 assert.match(inviteForm, /value="manager"/);
 assert.match(inviteForm, /value="admin"/);
 
+const inviteLinks = helpers.renderTeamInviteLinks("loc-1");
+assert.match(inviteLinks, /Join Links/);
+assert.match(inviteLinks, /TECHNICIAN join link/);
+assert.match(inviteLinks, /https:\/\/example\.test\/MaintainOps\/\?join=join-token/);
+assert.match(inviteLinks, /Email is not sent automatically/);
+assert.match(inviteLinks, /data-copy-team-invite/);
+assert.match(inviteLinks, /data-revoke-invite-link-cancel/);
+assert.match(inviteLinks, /data-confirm-revoke-invite-link="link-1"/);
+
 const invites = helpers.renderTeamInvites();
 assert.match(invites, /tech@example\.test/);
 assert.match(invites, /Email is not sent automatically/);
@@ -94,5 +108,9 @@ const managerRequestRecipients = managerHelpers.renderRequestNotificationRecipie
 assert.match(managerRequestRecipients, /Only admins can change request email routing/);
 assert.doesNotMatch(managerRequestRecipients, /id="request-notification-recipient-form"/);
 assert.doesNotMatch(managerRequestRecipients, /data-delete-request-notification-recipient/);
+const managerInviteLinks = managerHelpers.renderTeamInviteLinks("loc-1");
+assert.match(managerInviteLinks, /Create one technician join link/);
+assert.doesNotMatch(managerInviteLinks, /value="manager"/);
+assert.doesNotMatch(managerInviteLinks, /value="admin"/);
 
 console.log("team member display smoke passed");

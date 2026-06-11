@@ -36,7 +36,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Work order history/events.
 - Message center.
 - Message links to work orders.
-- Team invites.
+- Team invites and single-use join links.
 - Team-managed request email recipient routing.
 - Team role updates.
 - Company logo upload.
@@ -102,14 +102,14 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - `profiles.mobile_tech` added.
 - Location switching locked unless manager/admin or Mobile tech.
 - Mobile tech setting moved to Team under My Profile.
+- Invite default location is enforced for team invites.
+- Team join links are single-use, expire after 7 days, and are copy/send manual; they do not send email automatically.
 
 ## Deferred / Not Yet Fully Built
 
-- Invite default location.
-  - Desired behavior: invite carries a default `location_id`; first login lands user in that branch.
-
-- User location default.
-  - We likely need `company_members.default_location_id` or similar.
+- User location default self-service.
+  - `company_members.default_location_id` exists for invite/location-lock behavior.
+  - A fuller admin/user-facing default-location management screen can still be refined later.
 
 - Location-specific permission rules.
   - User does not want this overcomplicated now. Do not build per-location access restrictions unless specifically requested.

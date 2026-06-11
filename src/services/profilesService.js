@@ -30,6 +30,14 @@
       .order("created_at", { ascending: false });
   }
 
+  function listTeamInviteLinks(supabaseClient, companyId) {
+    return supabaseClient
+      .from("company_invite_links")
+      .select("id, token, role, default_location_id, created_by, created_at, expires_at, used_at, used_by, revoked_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+  }
+
   function listRequestNotificationRecipients(supabaseClient, companyId) {
     return supabaseClient
       .from("request_notification_recipients")
@@ -43,6 +51,7 @@
     listCompanyMembers,
     listTeamInvites,
     listTeamInvitesLegacy,
+    listTeamInviteLinks,
     listRequestNotificationRecipients,
   };
 })();
