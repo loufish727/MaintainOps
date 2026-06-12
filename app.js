@@ -2301,7 +2301,7 @@ async function loadMessageCenter() {
   }
 
   const threadIds = messageThreads.map((thread) => thread.id);
-  const [memberResponse, messageResponse, readResponse] = await Promise.all([
+  const [memberResponse, messageMetaResponse, readResponse] = await Promise.all([
     supabaseClient
       .from("message_thread_members")
       .select("*")
@@ -2309,7 +2309,7 @@ async function loadMessageCenter() {
       .in("thread_id", threadIds),
     supabaseClient
       .from("messages")
-      .select("*")
+      .select("id, thread_id, sender_id, created_at, deleted_at")
       .eq("company_id", activeCompanyId)
       .in("thread_id", threadIds)
       .order("created_at", { ascending: true }),
@@ -2321,7 +2321,7 @@ async function loadMessageCenter() {
       .in("thread_id", threadIds),
   ]);
 
-  if (memberResponse.error || messageResponse.error || readResponse.error) {
+  if (memberResponse.error || messageMetaResponse.error || readResponse.error) {
     messagesReady = false;
     return;
   }
@@ -2335,7 +2335,7 @@ async function loadMessageCenter() {
     setActiveMessageThreadIdState("");
     return;
   }
-  messagesByThreadId = (messageResponse.data || []).reduce((groups, message) => {
+  messagesByThreadId = (messageMetaResponse.data || []).reduce((groups, message) => {
     if (!groups[message.thread_id]) groups[message.thread_id] = [];
     groups[message.thread_id].push(message);
     return groups;
@@ -2348,6 +2348,25 @@ async function loadMessageCenter() {
   if (!activeMessageThreadId || !messageThreads.some((thread) => thread.id === activeMessageThreadId)) {
     setActiveMessageThreadIdState(messageThreads[0]?.id || "");
   }
+
+  if (activeMessageThreadId) await loadActiveMessageThreadMessages(activeMessageThreadId);
+}
+
+async function loadActiveMessageThreadMessages(threadId) {
+  if (!threadId) return;
+  const activeMessageResponse = await supabaseClient
+    .from("messages")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .eq("thread_id", threadId)
+    .order("created_at", { ascending: true });
+
+  if (activeMessageResponse.error) {
+    messagesReady = false;
+    return;
+  }
+
+  messagesByThreadId[threadId] = activeMessageResponse.data || [];
 }
 
 async function loadPublicRequestLinks() {
@@ -3802,6 +3821,8 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
   getMessageSearchQuery: () => messageSearchQuery,
   getMessageThreadFilter: () => messageThreadFilter,
+  getMessageThreadsPage: () => workspaceUiState.getMessageThreadsPage(),
+  LIST_ITEMS_PER_PAGE,
   filteredMessageThreads,
   totalUnreadMessages,
   teamMemberName,
@@ -3812,6 +3833,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   renderMessageThreadButton,
   messageThreadScopeLabel,
   renderMessageList,
+  renderListPagination,
 });
 
 const {
@@ -4344,6 +4366,7 @@ function bindWorkspaceEvents() {
       setActiveSection: setActiveSectionState,
       setMessageComposerOpen: setMessageComposerOpenState,
     },
+    loadActiveMessageThreadMessages,
     markMessageThreadRead,
     renderWorkspace,
   });
@@ -4382,6 +4405,7 @@ function bindWorkspaceEvents() {
       setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
       setMessageSearchQuery: setMessageSearchQueryState,
       setMessageThreadFilter: setMessageThreadFilterState,
+      resetMessageThreadsPage: () => workspaceUiState.resetMessageThreadsPage(),
       setQuickFixMode: (value) => { quickFixMode = value; },
     },
     autoGrowTextarea,

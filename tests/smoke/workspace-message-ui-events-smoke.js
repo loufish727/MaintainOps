@@ -77,6 +77,7 @@ let stateValues = {
   activeWorkOrderId: null,
   createWorkOrderMode: true,
   messageComposerWorkOrderId: "wo-linked",
+  messageThreadsPage: 4,
   messageSearchQuery: "",
   messageThreadFilter: "all",
   quickFixMode: true,
@@ -130,6 +131,7 @@ bindWorkspaceMessageUiEvents({
     setActiveWorkOrderId: (value) => { stateValues.activeWorkOrderId = value; },
     setCreateWorkOrderMode: (value) => { stateValues.createWorkOrderMode = value; },
     setMessageComposerWorkOrderId: (value) => { stateValues.messageComposerWorkOrderId = value; },
+    resetMessageThreadsPage: () => { stateValues.messageThreadsPage = 1; },
     setMessageSearchQuery: (value) => { stateValues.messageSearchQuery = value; },
     setMessageThreadFilter: (value) => { stateValues.messageThreadFilter = value; },
     setQuickFixMode: (value) => { stateValues.quickFixMode = value; },
@@ -145,7 +147,9 @@ assert.equal(scopeNote.textContent, "scope:direct");
 
 filterButton.dispatch("click");
 assert.equal(stateValues.messageThreadFilter, "unread");
+assert.equal(stateValues.messageThreadsPage, 1);
 assert.equal(storage.values["maintainops.messageThreadFilter"], "unread");
+assert.equal(storage.values["maintainops.messageThreadsPage"], "1");
 assert.equal(renderCount, 1);
 
 linkedWorkButton.dispatch("click");
@@ -165,7 +169,9 @@ assert.equal(renderCount, 3);
 
 searchInput.dispatch("input");
 assert.equal(stateValues.messageSearchQuery, "pump");
+assert.equal(stateValues.messageThreadsPage, 1);
 assert.equal(storage.values["maintainops.messageSearchQuery"], "pump");
+assert.equal(storage.values["maintainops.messageThreadsPage"], "1");
 assert.equal(searchInput.focused, true);
 assert.deepEqual(searchInput.selectionRange, [4, 4]);
 assert.equal(renderCount, 4);

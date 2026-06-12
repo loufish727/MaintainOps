@@ -33,5 +33,6 @@ assert.match(helpers.renderAssetsPagination(13, 2), /Showing 1-12 of 13 - Page 1
 assert.match(helpers.renderWorkPagination(24, 2), /Showing 13-24 of 24 - Page 2 of 2/);
 assert.match(helpers.renderPartsPagination(13, 2), /Showing 1-12 of 13 - Page 1 of 2/);
 assert.match(helpers.renderListPagination("procedures", 13, 1, 2), /Showing 1-12 of 13 - Page 1 of 2/);
+assert.match(helpers.renderListPagination("messages", 13, 1, 2), /data-list-page="messages"/);
 
 console.log("pagination standard smoke passed");

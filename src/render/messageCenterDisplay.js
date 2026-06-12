@@ -50,6 +50,10 @@
       const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
       const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
       const visibleThreads = filteredMessageThreads();
+      const messageThreadsPage = deps.getMessageThreadsPage();
+      const totalMessageThreadPages = Math.max(1, Math.ceil(visibleThreads.length / deps.LIST_ITEMS_PER_PAGE));
+      const safeMessageThreadsPage = Math.min(Math.max(messageThreadsPage, 1), totalMessageThreadPages);
+      const pagedVisibleThreads = visibleThreads.slice((safeMessageThreadsPage - 1) * deps.LIST_ITEMS_PER_PAGE, safeMessageThreadsPage * deps.LIST_ITEMS_PER_PAGE);
       const linkedDraftWorkOrder = workOrders.find((workOrder) => workOrder.id === messageComposerWorkOrderId);
       const renderMessagePerson = (member) => {
         const personName = teamMemberName(member.user_id);
@@ -125,8 +129,9 @@
                 ].map(([id, label]) => `<button class="${messageThreadFilter === id ? "active" : ""}" data-message-filter="${id}" type="button">${label}</button>`).join("")}
               </div>
               <div class="message-thread-list">
-                ${visibleThreads.map(renderMessageThreadButton).join("") || `<p class="muted">No threads match this filter.</p>`}
+                ${pagedVisibleThreads.map(renderMessageThreadButton).join("") || `<p class="muted">No threads match this filter.</p>`}
               </div>
+              ${deps.renderListPagination("messages", visibleThreads.length, safeMessageThreadsPage, totalMessageThreadPages)}
             </aside>
             <section class="message-thread-detail">
               ${activeThread ? `

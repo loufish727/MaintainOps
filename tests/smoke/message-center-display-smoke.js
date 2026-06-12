@@ -4,16 +4,17 @@ global.window = {};
 
 const { createMessageCenterDisplayHelpers } = require("../../src/render/messageCenterDisplay.js");
 
-const thread = {
-  id: "thread-1",
-  title: "Line 1 update",
+const threads = Array.from({ length: 13 }, (_, index) => ({
+  id: `thread-${index + 1}`,
+  title: `Line ${index + 1} update`,
   thread_type: "company",
-  work_order_id: "wo-1",
-};
+  work_order_id: index === 0 ? "wo-1" : "",
+}));
+const thread = threads[0];
 
 const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessagesReady: () => true,
-  getMessageThreads: () => [thread],
+  getMessageThreads: () => threads,
   getActiveMessageThreadId: () => "thread-1",
   getMessagesByThreadId: () => ({ "thread-1": [{ body: "Checked line", author_id: "user-2" }] }),
   getWorkOrders: () => [{ id: "wo-1", title: "Hydraulic Leak", status: "open" }],
@@ -27,7 +28,9 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessageWorkOrderLinksReady: () => true,
   getMessageSearchQuery: () => "line",
   getMessageThreadFilter: () => "unread",
-  filteredMessageThreads: () => [thread],
+  getMessageThreadsPage: () => 1,
+  LIST_ITEMS_PER_PAGE: 12,
+  filteredMessageThreads: () => threads,
   totalUnreadMessages: () => 2,
   teamMemberName: (id) => (id === "user-2" ? "QA Teammate" : "QA User"),
   escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
@@ -37,6 +40,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   renderMessageThreadButton: (row) => `<button data-open-message-thread="${row.id}">${row.title}</button>`,
   messageThreadScopeLabel: () => "Company thread",
   renderMessageList: (messages) => messages.map((message) => `<article>${message.body}</article>`).join(""),
+  renderListPagination: (kind, totalCount, currentPage, totalPages) => `<nav data-page-kind="${kind}">${totalCount}:${currentPage}:${totalPages}</nav>`,
 });
 
 const html = renderMessageCenter();
@@ -60,6 +64,9 @@ assert.match(html, /id="message-search"/);
 assert.match(html, /value="line"/);
 assert.match(html, /data-message-filter="unread"/);
 assert.match(html, /data-open-message-thread="thread-1"/);
+assert.match(html, /data-open-message-thread="thread-12"/);
+assert.doesNotMatch(html, /data-open-message-thread="thread-13"/);
+assert.match(html, /data-page-kind="messages">13:1:2/);
 assert.match(html, /data-open-linked-work-order="wo-1"/);
 assert.match(html, /data-delete-message-thread="thread-1"/);
 assert.match(html, /Delete Thread/);

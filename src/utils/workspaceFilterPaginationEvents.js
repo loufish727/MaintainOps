@@ -106,6 +106,9 @@
         if (button.dataset.listPage === "members") {
           state.setMembersPage(state.getMembersPage() + delta);
         }
+        if (button.dataset.listPage === "messages") {
+          state.setMessageThreadsPage(state.getMessageThreadsPage() + delta);
+        }
         options.renderWorkspace();
       });
     });

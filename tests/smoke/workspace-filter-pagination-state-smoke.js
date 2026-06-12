@@ -46,6 +46,7 @@ const storage = createStorage({
   "maintainops.schedulesPage": "2",
   "maintainops.proceduresPage": "2",
   "maintainops.membersPage": "2",
+  "maintainops.messageThreadsPage": "2",
 });
 const state = createWorkspaceUiState({ storage });
 const statusRequests = createButton({ statusFilter: "requests" });
@@ -58,6 +59,7 @@ const requestNext = createButton({ listPage: "requests", pageDirection: "next" }
 const scheduleNext = createButton({ listPage: "schedules", pageDirection: "next" });
 const procedureNext = createButton({ listPage: "procedures", pageDirection: "next" });
 const memberNext = createButton({ listPage: "members", pageDirection: "next" });
+const messageNext = createButton({ listPage: "messages", pageDirection: "next" });
 const clearAssignee = createButton({});
 
 const doc = {
@@ -71,7 +73,7 @@ const doc = {
     if (selector === "[data-work-page]") return [workNext];
     if (selector === "[data-parts-page]") return [];
     if (selector === "[data-assets-page]") return [];
-    if (selector === "[data-list-page]") return [requestNext, scheduleNext, procedureNext, memberNext];
+    if (selector === "[data-list-page]") return [requestNext, scheduleNext, procedureNext, memberNext, messageNext];
     return [];
   },
 };
@@ -146,10 +148,13 @@ bindWorkspaceFilterPaginationEvents({
   await scheduleNext.dispatch("click");
   await procedureNext.dispatch("click");
   await memberNext.dispatch("click");
+  await messageNext.dispatch("click");
   assert.equal(state.getSchedulesPage(), 3);
   assert.equal(state.getProceduresPage(), 3);
   assert.equal(state.getMembersPage(), 3);
-  assert.equal(renderCount, 3);
+  assert.equal(state.getMessageThreadsPage(), 3);
+  assert.equal(storage.values["maintainops.messageThreadsPage"], "3");
+  assert.equal(renderCount, 4);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

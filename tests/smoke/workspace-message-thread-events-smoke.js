@@ -43,6 +43,7 @@ const stateValues = {
   messageComposerOpen: true,
 };
 const readCalls = [];
+const loadCalls = [];
 let renderCount = 0;
 
 bindWorkspaceMessageThreadEvents({
@@ -56,6 +57,7 @@ bindWorkspaceMessageThreadEvents({
     setActiveSection: (value) => { stateValues.activeSection = value; },
     setMessageComposerOpen: (value) => { stateValues.messageComposerOpen = value; },
   },
+  loadActiveMessageThreadMessages: async (threadId) => { loadCalls.push(threadId); },
   markMessageThreadRead: async (threadId) => { readCalls.push(threadId); },
   renderWorkspace: () => { renderCount += 1; },
 });
@@ -64,6 +66,7 @@ bindWorkspaceMessageThreadEvents({
   await threadButton.dispatch("click");
   assert.equal(stateValues.activeMessageThreadId, "thread-1");
   assert.equal(storage.values["maintainops.activeMessageThreadId"], "thread-1");
+  assert.deepEqual(loadCalls, ["thread-1"]);
   assert.deepEqual(readCalls, ["thread-1"]);
   assert.equal(renderCount, 1);
 
@@ -73,6 +76,7 @@ bindWorkspaceMessageThreadEvents({
   assert.equal(stateValues.activeSection, "messages");
   assert.equal(storage.values["maintainops.activeMessageThreadId"], "thread-2");
   assert.equal(storage.values["maintainops.activeSection"], "messages");
+  assert.deepEqual(loadCalls, ["thread-1", "thread-2"]);
   assert.deepEqual(readCalls, ["thread-1", "thread-2"]);
   assert.equal(renderCount, 2);
 

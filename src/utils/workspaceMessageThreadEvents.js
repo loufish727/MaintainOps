@@ -3,7 +3,7 @@
    * Module contract: owns Message Center thread-open event binding only.
    * Requires app.js-owned state setters, storage, render callback, and read-state callback.
    * May set active thread, close composer, switch to Messages, persist state,
-   * call the injected read-state marker, and render.
+   * call the injected active-message loader and read-state marker, and render.
    * Must not create threads, send replies, mutate message bodies, touch Supabase/RLS
    * directly, or own auth/company/location state.
    */
@@ -20,6 +20,7 @@
         const threadId = button.dataset.messageThread;
         state.setActiveMessageThreadId(threadId);
         storage.setItem("maintainops.activeMessageThreadId", threadId);
+        if (typeof options.loadActiveMessageThreadMessages === "function") await options.loadActiveMessageThreadMessages(threadId);
         await options.markMessageThreadRead(threadId);
         options.renderWorkspace();
       });
@@ -33,6 +34,7 @@
         state.setActiveSection("messages");
         storage.setItem("maintainops.activeMessageThreadId", threadId);
         storage.setItem("maintainops.activeSection", "messages");
+        if (typeof options.loadActiveMessageThreadMessages === "function") await options.loadActiveMessageThreadMessages(threadId);
         await options.markMessageThreadRead(threadId);
         options.renderWorkspace();
       });

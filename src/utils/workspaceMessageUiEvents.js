@@ -24,7 +24,9 @@
       button.addEventListener("click", () => {
         const value = button.dataset.messageFilter;
         state.setMessageThreadFilter(value);
+        if (typeof state.resetMessageThreadsPage === "function") state.resetMessageThreadsPage();
         storage.setItem("maintainops.messageThreadFilter", value);
+        storage.setItem("maintainops.messageThreadsPage", "1");
         renderWorkspace();
       });
     });
@@ -56,7 +58,9 @@
       messageSearch.addEventListener("input", () => {
         const value = messageSearch.value;
         state.setMessageSearchQuery(value);
+        if (typeof state.resetMessageThreadsPage === "function") state.resetMessageThreadsPage();
         storage.setItem("maintainops.messageSearchQuery", value);
+        storage.setItem("maintainops.messageThreadsPage", "1");
         renderWorkspace();
         const nextSearch = doc.querySelector("#message-search");
         if (!nextSearch) return;

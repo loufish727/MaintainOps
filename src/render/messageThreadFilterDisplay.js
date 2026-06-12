@@ -26,7 +26,7 @@
         thread.title,
         deps.messageThreadScopeLabel(thread),
         ...participants,
-        ...messages.map((message) => message.body),
+        ...messages.map((message) => message.body || ""),
       ];
     }
 
