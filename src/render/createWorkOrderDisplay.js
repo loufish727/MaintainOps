@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   /*
    * Module contract: renders Create Work Order form markup and existing contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
@@ -99,7 +99,7 @@
               <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
               <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
               <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
-              <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>
+              <label class="check-row safety-check-row"><input name="safety_devices_checked" type="checkbox"> Safety devices identified before completion: E-stops, sensors, guards, and interlocks</label>
               <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="0"></label>
               <label>Completion notes<textarea name="completion_notes" rows="2" placeholder="Final notes if this is already complete."></textarea></label>
             </div>
@@ -137,3 +137,4 @@
     module.exports = { createCreateWorkOrderDisplayHelpers };
   }
 })();
+

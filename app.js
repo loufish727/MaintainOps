@@ -1,4 +1,4 @@
-const app = document.querySelector("#app");
+﻿const app = document.querySelector("#app");
 
 const {
   STATUS_OPTIONS,
@@ -3186,7 +3186,7 @@ function renderWorkspace() {
               <select name="location_id" ${locations.length ? "required" : "disabled"}>
                 ${renderLocationOptions()}
               </select>
-              <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety devices</label>
+              <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety device identification</label>
               <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
               <button class="secondary-button asset-action-button" data-asset-continue="true" type="submit">Save Equipment and Continue</button>
             </form>
@@ -5433,3 +5433,4 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
 }
 
 init();
+

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   /*
    * Module contract: renders Equipment Detail markup and existing data-* contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
@@ -116,7 +116,7 @@
             <button class="command-card ${statusTone}" data-jump-work-section="edit-asset-status-field" type="button">
               <span>Status</span>
               <strong>${escapeHtml(assetStatusLabel(asset.status))}</strong>
-              <small>${asset.safety_devices_required === false ? "No safety completion gate" : "Safety check required before completing work"}</small>
+              <small>${asset.safety_devices_required === false ? "No safety completion gate" : "Safety device identification required before completing work"}</small>
             </button>
             <button class="command-card command-equipment" data-jump-work-section="edit-asset-location-field" type="button">
               <span>Location</span>
@@ -249,7 +249,7 @@
                 ${["running", "watch", "degraded", "offline"].map((status) => `<option value="${status}" ${status === asset.status ? "selected" : ""}>${assetStatusLabel(status)}</option>`).join("")}
               </select>
             </label>
-            <label class="check-row safety-check-toggle"><input name="safety_devices_required" type="checkbox" ${asset.safety_devices_required === false ? "" : "checked"}> Safety devices required before completion</label>
+            <label class="check-row safety-check-toggle"><input name="safety_devices_required" type="checkbox" ${asset.safety_devices_required === false ? "" : "checked"}> Safety device identification required before completion</label>
             <p class="error-text" id="asset-edit-error"></p>
             <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
           </form>
@@ -433,3 +433,4 @@
     module.exports = { createAssetDetailDisplayHelpers };
   }
 })();
+

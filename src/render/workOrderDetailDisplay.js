@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   /*
    * Module contract: renders Work Order Detail markup and existing data-* contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
@@ -128,8 +128,8 @@
           <h2>${escapeHtml(workOrder.title)}</h2>
           <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
           ${renderRelationshipChips(workOrder)}
-          ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} · ${workOrder.actual_minutes || 0} min</p>` : ""}
-          ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices checked before completion.</p>` : ""}
+          ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} Â· ${workOrder.actual_minutes || 0} min</p>` : ""}
+          ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices identified before completion.</p>` : ""}
           ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
         </div>
   
@@ -199,7 +199,7 @@
             </label>
             <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
             ${requiresSafetyDeviceCheck(workOrder) ? (
-              `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices checked before completion: E-stops, sensors, guards, and interlocks</label>`
+              `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices identified before completion: E-stops, sensors, guards, and interlocks</label>`
             ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>No machine / equipment selected, so no equipment safety check is required.</span></div>`}
             <p class="error-text" id="quick-update-error"></p>
             <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
@@ -253,7 +253,7 @@
           ${requiresSafetyDeviceCheck(workOrder) ? `
             <label class="check-row safety-check-row">
               <input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}>
-              Safety devices checked before completion: E-stops, sensors, guards, and interlocks
+              Safety devices identified before completion: E-stops, sensors, guards, and interlocks
             </label>
           ` : ""}
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
@@ -267,7 +267,7 @@
             <summary>Procedure Checklist</summary>
             <div class="panel-header compact-header">
               <h3>${escapeHtml(procedure.name)}</h3>
-              <span>${progress.done} of ${progress.total} complete · required ${requiredProgress.done}/${requiredProgress.total}</span>
+              <span>${progress.done} of ${progress.total} complete Â· required ${requiredProgress.done}/${requiredProgress.total}</span>
             </div>
             <div class="checklist-list">
               ${procedure.procedure_steps.map((step) => renderChecklistStep(workOrder, step)).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
@@ -289,7 +289,7 @@
             ${requiresSafetyDeviceCheck(workOrder) ? `
               <label class="check-row safety-check-row">
                 <input name="safety_devices_checked" type="checkbox" required ${hasCompletedSafetyDeviceCheck(workOrder) ? "checked" : ""}>
-                Safety devices checked and functioning: E-stops, sensors, guards, and interlocks
+                Safety devices identified: E-stops, sensors, guards, and interlocks
               </label>
             ` : ""}
             <p class="error-text" id="completion-error"></p>
@@ -393,3 +393,4 @@
     module.exports = { createWorkOrderDetailDisplayHelpers };
   }
 })();
+
