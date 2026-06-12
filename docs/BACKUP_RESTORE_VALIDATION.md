@@ -2,153 +2,57 @@
 
 Last checked: 2026-06-11.
 
-This document records the current backup/restore posture for MaintainOps and the result of the first restore-validation pass.
+This document records the current backup/restore posture for MaintainOps and the validated restore procedure.
 
 ## Current Result
 
-Restore validation is not complete.
+**Restore validation: PASS (first drill completed 2026-06-11).**
 
-The current Supabase project has been upgraded to Pro, so the original Free-plan blocker is no longer the blocker.
+A daily physical backup (12 Jun 2026 07:59 UTC) was restored into a new scratch project (`taylor-restore-drill`) using the Supabase dashboard "Restore to new project" flow. The restored database matched live production exactly on every checked table:
 
-What is now confirmed:
+| Table | Live | Restored |
+|---|---:|---:|
+| companies | 7 | 7 |
+| company_members | 13 | 13 |
+| work_orders | 24 | 24 |
+| assets | 94 | 94 |
+| parts | 4 | 4 |
+| maintenance_requests | 11 | 11 |
+| messages | 7 | 7 |
+| company_invites | 6 | 6 |
 
-- Supabase Pro is active.
-- `npx supabase backups list --project-ref lbphkzznvvumemdkqoay` lists completed daily physical backups.
-- Confirmed available backups:
-  - 2026-06-11 07:59:29 UTC
-  - 2026-06-10 08:00:03 UTC
-  - 2026-06-09 07:58:43 UTC
-  - 2026-06-08 07:58:20 UTC
-  - 2026-06-07 07:56:34 UTC
-  - 2026-06-06 07:54:28 UTC
-  - 2026-06-05 07:55:25 UTC
-  - 2026-06-04 07:56:35 UTC
+Spot checks: known equipment ("New thalmann") present; newest work order timestamp consistent with the backup window; work_order_photos metadata rows present (13).
 
-What is still missing:
+Restore duration: about 3 minutes from confirmation to ACTIVE_HEALTHY. Additional cost shown by the dashboard: $0 (the drill project should still be deleted after validation).
 
-- perform one restore into a scratch/restored project
-- point a local/test app config at that restored project
-- verify auth/onboarding path, data reads, RLS, RPCs, and storage behavior
-- record restore duration, missing pieces, and manual recovery actions
+## Validated Restore Procedure
 
-Because no restore drill has been completed yet, MaintainOps should not claim disaster-recovery readiness.
+1. Dashboard → Taylor project → Database → Backups → **Restore to new project** tab.
+   - Never use the plain "Restore" buttons on the Scheduled backups tab — those overwrite the live project.
+2. Pick the newest backup → Restore → Continue.
+3. Name the new project (e.g. `taylor-restore-drill`), set a generated database password (store it in a password manager), submit.
+4. Wait for ACTIVE_HEALTHY (~3 minutes observed; poll with `npx supabase projects list`).
+5. Verify with row-count comparison between live and restored (SQL editor on both), plus named-record spot checks.
+6. For a drill: delete the restored project after validation (Project Settings → General → Delete project — triple-check the project name).
+7. For a real recovery: repoint `supabase-config.js` at the restored project, then complete the manual reconfiguration list below.
 
-## Local Tooling Result
+## Known Gaps (confirmed by the dashboard during the drill)
 
-The current local machine does not have the full tooling needed for a local database restore simulation:
+Database backups DO NOT include:
 
-- Supabase CLI: available through `npx supabase`.
-- `psql`: not available.
-- Docker/Postgres runtime: not available.
+1. **Storage objects** — work-order photos, equipment files, part documents, and company logos are NOT backed up. Only their metadata rows are. A real disaster would lose every uploaded file. ACTION: MaintainOps needs a periodic storage mirror (e.g. scheduled script listing buckets and copying objects out) before storage data can be considered protected.
+2. **Edge Functions** — `request-emailer` must be redeployed from the repo (`npx supabase functions deploy request-emailer --project-ref <new-ref>`) and its env vars (Google Apps Script webhook URL/secret, app URL) re-entered.
+3. **Auth settings & API keys** — Auth URL configuration (callback URLs) must be re-entered; the new project has new anon/service keys, so `supabase-config.js` must be updated.
+4. **Database extensions/settings and read replicas** — re-check after restore.
 
-This means a local restore dry run cannot currently be performed from this workspace alone without adding `psql` and/or a local Postgres/Docker restore target.
+Auth USERS and passwords ARE included in the database restore (they live in the `auth` schema), so users do not need to re-register.
 
-## What The Repository Can Rebuild
+## Disaster Recovery Statement
 
-The repository contains the app source, SQL schema, and incremental SQL step files:
+MaintainOps can now claim a tested database recovery path with roughly one day of maximum data loss (daily backups) plus the manual reconfiguration steps above. It cannot yet claim recovery of stored files (photos/documents) — that requires the storage mirror noted in gap 1.
 
-- `supabase/schema.sql`
-- `supabase/step-next-*.sql`
-- app frontend files
-- auth callback files
-- smoke/security probe scripts
+Next maturity steps:
 
-This is enough to rebuild a project structure manually in a clean Supabase project, but it is not the same as a verified backup restore.
-
-The repo does not by itself contain:
-
-- Supabase Auth users/passwords/sessions.
-- live table data snapshots.
-- storage object bytes.
-- database extension/runtime state outside the checked-in SQL.
-- a known-good restore target configuration.
-
-## Current Backup Gap
-
-For real production dependence, MaintainOps needs a tested recovery path that includes:
-
-- database schema
-- table data
-- RLS policies
-- grants
-- RPC functions
-- auth users or an account recovery/reinvite process
-- storage buckets
-- storage object files
-- app environment/config values
-
-At the moment, the security posture is better verified than the operational recovery posture.
-
-## Required Path To Complete Restore Validation
-
-Use one of these paths.
-
-### Required: Supabase Managed Restore
-
-1. Confirm the Pro project has a recent managed backup. Completed 2026-06-11.
-2. Use Supabase dashboard restore tooling to create a scratch/restored project.
-3. Capture the restored project's URL and publishable anon key.
-4. Temporarily point local `supabase-config.js` at the restored project.
-5. Run:
-
-```bash
-npm run test:security:static
-npm run test:security:boundary
-npm run test:smoke:resources
-```
-
-6. Sign in or create/reinvite a test user in the restored project.
-7. Verify the app loads company/workspace data.
-8. Verify storage buckets and signed URL behavior.
-9. Verify request-emailer and auth callback config are either intentionally disabled or restored.
-10. Record restore duration, missing pieces, and manual recovery actions.
-
-Current hard stop:
-
-Supabase's "Restore to a New Project" flow creates a new independent project and presents costs before starting. Do not trigger the restore until the operator explicitly approves that cost/action in the Supabase dashboard.
-
-### Alternate: Manual Rebuild Restore Drill
-
-This validates rebuildability, not full production backup recovery.
-
-1. Create a separate Supabase restore-test project.
-2. Run `supabase/schema.sql`.
-3. Run the current `supabase/step-next-*.sql` files that are not already represented in the schema.
-4. Configure auth redirect URLs for the restore-test project.
-5. Create/reinvite test users.
-6. Seed representative company/location/work-order data.
-7. Create required storage buckets and policies through SQL.
-8. Point local `supabase-config.js` at the restore-test project.
-9. Run smoke and security probes.
-10. Document all manual gaps.
-
-This path does not prove live data recovery unless table data and storage objects are also exported and restored.
-
-## Storage Recovery Notes
-
-Storage must be treated as a separate restore concern.
-
-Known buckets:
-
-- `work-order-photos`
-- `maintenance-request-photos`
-- `company-logos`
-- `part-documents`
-
-For production readiness, storage object backup must be validated separately from database schema/table restore.
-
-## Provisional Incident Guidance
-
-Until restore validation is complete:
-
-- Do not claim full production disaster-recovery readiness.
-- Treat the live database as pilot/internal operational data only.
-- Export critical data before high-risk database work.
-- Keep SQL changes reversible where possible.
-- Use a restore-test project before major schema rewrites.
-
-## Current Status
-
-OPERATOR ACTION REQUIRED:
-
-Supabase Pro removes the prior plan blocker. The remaining required step is an actual restore drill into a scratch/restored project and documentation of the result.
+- schedule the restore drill quarterly
+- build the storage-objects mirror/backup script
+- consider the PITR add-on if sub-day recovery point becomes necessary
