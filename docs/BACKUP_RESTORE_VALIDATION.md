@@ -40,7 +40,7 @@ Restore duration: about 3 minutes from confirmation to ACTIVE_HEALTHY. Additiona
 
 Database backups DO NOT include:
 
-1. **Storage objects** — work-order photos, equipment files, part documents, and company logos are NOT backed up. Only their metadata rows are. A real disaster would lose every uploaded file. ACTION: MaintainOps needs a periodic storage mirror (e.g. scheduled script listing buckets and copying objects out) before storage data can be considered protected.
+1. **Storage objects** — work-order photos, equipment files, part documents, and company logos are NOT backed up by Supabase. Only their metadata rows are. MITIGATION (2026-06-11): `npm run backup:storage` (`scripts/storage-backup-mirror.js`) mirrors all buckets to a local directory incrementally; requires `MAINTAINOPS_SERVICE_ROLE_KEY` in env (fetch via `npx supabase projects api-keys`; never commit it). First full mirror completed: 172 objects across 5 buckets, 0 errors. Run it at least weekly until scheduled.
 2. **Edge Functions** — `request-emailer` must be redeployed from the repo (`npx supabase functions deploy request-emailer --project-ref <new-ref>`) and its env vars (Google Apps Script webhook URL/secret, app URL) re-entered.
 3. **Auth settings & API keys** — Auth URL configuration (callback URLs) must be re-entered; the new project has new anon/service keys, so `supabase-config.js` must be updated.
 4. **Database extensions/settings and read replicas** — re-check after restore.
