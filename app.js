@@ -340,6 +340,7 @@ let locationsReady = true;
 let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
+let planningWorkOrders = [];
 let workOrderServerTotal = 0;
 let workOrderDashboardCounts = null;
 let myWorkDashboardCounts = null;
@@ -667,6 +668,7 @@ const {
   matchesQuery,
   matchesSearch,
   parts: () => parts,
+  planningWorkOrders: () => planningWorkOrders,
   preventiveSchedules: () => preventiveSchedules,
   procedureTemplates: () => procedureTemplates,
   profilesByUserId: () => profilesByUserId,
@@ -2073,6 +2075,49 @@ async function loadServerRequestSlice() {
   return pageResponse;
 }
 
+async function loadPlanningWorkOrders(options = {}) {
+  const selectClause = options.includeLocationRelation === false ? WORK_ORDER_FALLBACK_SELECT : WORK_ORDER_RELATION_SELECT;
+  const applyScope = (query) => {
+    let nextQuery = query.eq("company_id", activeCompanyId);
+    if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
+    return nextQuery;
+  };
+
+  const [dueResponse, followUpResponse] = await Promise.all([
+    applyScope(supabaseClient
+      .from("work_orders")
+      .select(selectClause))
+      .neq("status", "completed")
+      .not("due_at", "is", null)
+      .order("due_at", { ascending: true }),
+    applyScope(supabaseClient
+      .from("work_orders")
+      .select(selectClause))
+      .eq("follow_up_needed", true)
+      .order("completed_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (
+    options.includeLocationRelation !== false &&
+    ((dueResponse.error && isColumnSchemaError(dueResponse.error, ["location_id", "locations"])) ||
+      (followUpResponse.error && isColumnSchemaError(followUpResponse.error, ["location_id", "locations"])))
+  ) {
+    return loadPlanningWorkOrders({ includeLocationRelation: false });
+  }
+
+  if (dueResponse.error || followUpResponse.error) {
+    return { error: dueResponse.error || followUpResponse.error, data: [] };
+  }
+
+  const byId = new Map();
+  [...(dueResponse.data || []), ...(followUpResponse.data || [])].forEach((workOrder) => {
+    byId.set(workOrder.id, workOrder);
+  });
+  planningWorkOrders = [...byId.values()];
+  return { data: planningWorkOrders, error: null };
+}
+
 async function loadCompanyData() {
   workspaceLoadWarnings = [];
   let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
@@ -2106,6 +2151,7 @@ async function loadCompanyData() {
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
   const workOrderResponse = await loadWorkspaceResponse("Work orders", loadServerWorkOrderSlice(), 16000);
+  const planningWorkOrderResponse = await loadWorkspaceResponse("Planning work orders", loadPlanningWorkOrders(), 16000);
   const requestResponse = await loadWorkspaceResponse("Requests", loadServerRequestSlice(), 14000);
   if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
     const activeResponse = await loadWorkspaceResponse("Selected work order", fetchWorkOrderById(supabaseClient, activeCompanyId, activeWorkOrderId, WORK_ORDER_RELATION_SELECT));
@@ -2114,6 +2160,7 @@ async function loadCompanyData() {
     }
   }
   requestsReady = !requestResponse.error;
+  if (planningWorkOrderResponse.error) planningWorkOrders = [];
   partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
   partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
   partMachineNotesReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "machine_note");
@@ -2173,7 +2220,7 @@ async function reloadWorkOrderQueue() {
       showNotice(`Could not load work orders: ${response.error.message}`, "warning");
       return;
     }
-    await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+    await Promise.all([loadPlanningWorkOrders(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
     renderWorkspace();
   } catch (error) {
     showNotice(`Could not load work orders: ${error.message || error}`, "warning");

@@ -59,7 +59,7 @@
       const soon = new Date(today);
       soon.setDate(soon.getDate() + 7);
 
-      return state("workOrders")
+      return state("planningWorkOrders")
         .filter(deps.matchesActiveLocation)
         .filter((workOrder) => workOrder.status !== "completed" && workOrder.due_at)
         .filter((workOrder) => deps.matchesSearch([
@@ -122,7 +122,7 @@
     }
 
     function followUpItems() {
-      return state("workOrders")
+      return state("planningWorkOrders")
         .filter(deps.matchesActiveLocation)
         .filter((workOrder) => workOrder.follow_up_needed)
         .filter((workOrder) => deps.matchesSearch([
