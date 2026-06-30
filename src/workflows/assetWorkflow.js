@@ -9,6 +9,31 @@
       return String(form.get("location_new") || form.get("location_existing") || form.get("location") || "").trim() || null;
     }
 
+    function currentUserId() {
+      return deps.getSession?.()?.user?.id || null;
+    }
+
+    function assetById(assetId) {
+      return (deps.getAssets?.() || []).find((asset) => asset.id === assetId) || null;
+    }
+
+    function changedFieldLabels(previous, next) {
+      if (!previous) return [];
+      const labels = {
+        name: "name",
+        asset_code: "equipment ID",
+        location_id: "location",
+        location: "area / spot",
+        parent_asset_id: "primary equipment",
+        asset_type: "type",
+        safety_devices_required: "safety requirement",
+        status: "status",
+      };
+      return Object.keys(labels)
+        .filter((key) => String(previous[key] ?? "") !== String(next[key] ?? ""))
+        .map((key) => labels[key]);
+    }
+
     async function createAsset(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
@@ -33,9 +58,9 @@
           asset_type: form.get("asset_type") || "machine",
           safety_devices_required: form.get("safety_devices_required") === "on",
           status: "running",
+          created_by: currentUserId(),
         };
-        let query = deps.supabaseClient().from("assets").insert(payload);
-        if (shouldContinue) query = query.select("id").single();
+        const query = deps.supabaseClient().from("assets").insert(payload).select("id").single();
         const { data, error } = await deps.withOperationTimeout(
           query,
           "Equipment save timed out. Check your connection and try again.",
@@ -45,10 +70,16 @@
           deps.setLocationsReady(false);
           throw new Error(deps.databaseSetupRequiredMessage("saving equipment locations"));
         }
+        if (error && deps.isMissingColumnError(error, "created_by")) {
+          throw new Error("Run supabase/step-next-asset-events.sql before saving equipment history.");
+        }
         if (error && deps.isAssetHierarchySchemaError(error)) {
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
+        if (data?.id && typeof deps.recordAssetEvent === "function") {
+          await deps.recordAssetEvent(data.id, "created", `Created ${payload.name}.`);
+        }
         if (shouldContinue && data?.id) {
           deps.setActiveAssetId(data.id);
           deps.showNotice("Equipment saved. Add PM, parts, files, or sub-equipment from this page.");
@@ -80,6 +111,7 @@
       }
       try {
         const form = new FormDataCtor(formElement);
+        const previous = assetById(deps.getActiveAssetId());
         const payload = {
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
@@ -107,6 +139,10 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
+        const changed = changedFieldLabels(previous, payload);
+        if (changed.length && typeof deps.recordAssetEvent === "function") {
+          await deps.recordAssetEvent(deps.getActiveAssetId(), "updated", `Updated ${changed.join(", ")}.`);
+        }
         deps.showNotice("Equipment saved.");
         await deps.render();
       } catch (error) {
@@ -130,6 +166,9 @@
         "Equipment status save timed out. Check your connection and try again.",
         12000
       );
+      if (!error && typeof deps.recordAssetEvent === "function") {
+        await deps.recordAssetEvent(assetId, "status_changed", `Status changed to ${status}.`);
+      }
       return error || null;
     }
 
@@ -342,6 +381,7 @@
         asset_type: "machine",
         safety_devices_required: true,
         status,
+        created_by: currentUserId(),
       };
       const response = await deps.withOperationTimeout(
         deps.supabaseClient()
@@ -356,8 +396,14 @@
         deps.setLocationsReady(false);
         return deps.withSetupError(response, deps.databaseSetupRequiredMessage("adding equipment in this location"));
       }
+      if (response.error && deps.isMissingColumnError(response.error, "created_by")) {
+        return deps.withSetupError(response, "Run supabase/step-next-asset-events.sql before saving equipment history.");
+      }
       if (response.error && deps.isAssetHierarchySchemaError(response.error)) {
         return deps.withSetupError(response, deps.equipmentSchemaMessage(response.error).replace("saving", "adding"));
+      }
+      if (!response.error && response.data?.id && typeof deps.recordAssetEvent === "function") {
+        await deps.recordAssetEvent(response.data.id, "created", `Created ${name}.`);
       }
       return response;
     }

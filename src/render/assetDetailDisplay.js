@@ -42,6 +42,8 @@
       const assetPartsReady = deps.getAssetPartsReady();
       const assetDocuments = (deps.getAssetDocumentsByAssetId?.()[asset.id] || []);
       const assetDocumentsReady = deps.getAssetDocumentsReady?.() !== false;
+      const assetEventsReady = deps.getAssetEventsReady?.() !== false;
+      const profilesByUserId = deps.getProfilesByUserId?.() || {};
       const partsUsedByWorkOrder = deps.getPartsUsedByWorkOrder();
       const locations = deps.getLocations();
       const activeLocationId = deps.getActiveLocationId();
@@ -62,6 +64,18 @@
       const linkedParts = assetParts.filter((row) => row.asset_id === asset.id);
       const linkedPartIds = new Set(linkedParts.map((row) => row.part_id));
       const attachableParts = parts.filter((part) => !linkedPartIds.has(part.id));
+      const assetEvents = (deps.getAssetEventsByAssetId?.()[asset.id] || [])
+        .filter((event) => event.event_type !== "created")
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      const creationHistory = asset.created_at ? [{
+        id: `${asset.id}-created`,
+        event_type: "created",
+        summary: `${assetTypeLabel(asset.asset_type)} created.`,
+        actor_id: asset.created_by || "",
+        created_at: asset.created_at,
+      }] : [];
+      const machineHistory = [...assetEvents, ...creationHistory]
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       const pageSize = deps.LIST_ITEMS_PER_PAGE || 12;
       const relationOpen = (section) => deps.getAssetRelationshipOpen?.(asset.id, section) || false;
       const relationPage = (section, total) => Math.min(
@@ -284,6 +298,23 @@
                 : `<p class="muted">Open this section to load completed work history for this equipment.</p>`}
             </div>
             ${relationOpen("completed-history") ? relationPagination("completed-history", completedWork.length) : ""}
+          </details>
+
+          <details ${relationshipDetailsAttrs("asset-history")}>
+            <summary>Machine History <span>${machineHistory.length}</span></summary>
+            <div class="timeline">
+              ${assetEventsReady ? "" : `<p class="error-text">Run supabase/step-next-asset-events.sql to show equipment history notes.</p>`}
+              ${relationOpen("asset-history")
+                ? pageRows(machineHistory, "asset-history").map((event) => `
+                  <article>
+                    <strong>${escapeHtml(event.event_type.replaceAll("_", " "))}</strong>
+                    <span>${event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"} &middot; ${escapeHtml(profilesByUserId[event.actor_id]?.full_name || "Team member")}</span>
+                    <p>${escapeHtml(event.summary || "Equipment history noted.")}</p>
+                  </article>
+                `).join("") || `<p class="muted">No machine history notes yet.</p>`
+                : `<p class="muted">Open this section to review who created or changed this equipment.</p>`}
+            </div>
+            ${relationOpen("asset-history") ? relationPagination("asset-history", machineHistory.length) : ""}
           </details>
 
           <section class="asset-relationship-panel relationship-detail procedure">

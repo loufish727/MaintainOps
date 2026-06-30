@@ -64,6 +64,7 @@ create table if not exists public.assets (
   safety_devices_required boolean not null default true,
   location text,
   status text not null default 'running' check (status in ('running', 'watch', 'degraded', 'offline')),
+  created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -177,6 +178,16 @@ create table if not exists public.work_order_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.asset_events (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  asset_id uuid not null references public.assets(id) on delete cascade,
+  actor_id uuid not null references auth.users(id) on delete restrict,
+  event_type text not null,
+  summary text not null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.work_orders
 add column if not exists assigned_to uuid references auth.users(id) on delete set null;
 
@@ -188,6 +199,9 @@ add column if not exists parent_asset_id uuid references public.assets(id) on de
 
 alter table public.assets
 add column if not exists asset_type text not null default 'machine';
+
+alter table public.assets
+add column if not exists created_by uuid references auth.users(id) on delete set null;
 
 alter table public.assets
 add column if not exists safety_devices_required boolean not null default true;
@@ -451,6 +465,9 @@ create index if not exists part_documents_company_id_idx on public.part_document
 create index if not exists part_documents_part_id_idx on public.part_documents(part_id);
 create index if not exists work_order_events_company_id_idx on public.work_order_events(company_id);
 create index if not exists work_order_events_work_order_id_idx on public.work_order_events(work_order_id);
+create index if not exists asset_events_company_id_idx on public.asset_events(company_id);
+create index if not exists asset_events_asset_id_idx on public.asset_events(asset_id);
+create index if not exists asset_events_company_asset_created_idx on public.asset_events(company_id, asset_id, created_at desc);
 
 grant usage on schema public to authenticated;
 grant select, insert, update on public.companies to authenticated;
@@ -467,6 +484,7 @@ grant select, insert, update, delete on public.parts to authenticated;
 grant select, insert on public.work_order_parts to authenticated;
 grant select, insert on public.part_documents to authenticated;
 grant select, insert on public.work_order_events to authenticated;
+grant select, insert on public.asset_events to authenticated;
 grant execute on function public.create_company(text) to authenticated;
 grant execute on function public.ensure_company_profile(uuid) to authenticated;
 
@@ -596,6 +614,7 @@ alter table public.parts enable row level security;
 alter table public.work_order_parts enable row level security;
 alter table public.part_documents enable row level security;
 alter table public.work_order_events enable row level security;
+alter table public.asset_events enable row level security;
 
 drop policy if exists "Members can read companies" on public.companies;
 create policy "Members can read companies"
@@ -1004,6 +1023,26 @@ with check (
     select 1 from public.work_orders wo
     where wo.id = work_order_id
       and wo.company_id = work_order_events.company_id
+  )
+);
+
+drop policy if exists "Members can read asset events" on public.asset_events;
+create policy "Members can read asset events"
+on public.asset_events for select
+to authenticated
+using (private.is_company_member(company_id));
+
+drop policy if exists "Members can create asset events" on public.asset_events;
+create policy "Members can create asset events"
+on public.asset_events for insert
+to authenticated
+with check (
+  private.is_company_member(company_id)
+  and actor_id = auth.uid()
+  and exists (
+    select 1 from public.assets a
+    where a.id = asset_id
+      and a.company_id = asset_events.company_id
   )
 );
 

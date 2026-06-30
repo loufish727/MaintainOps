@@ -28,6 +28,12 @@
       }
     }
 
+    async function loadAssetEventHistory(assetId) {
+      if (typeof options.loadAssetEventsForAssetIds === "function") {
+        await options.loadAssetEventsForAssetIds([assetId]);
+      }
+    }
+
     function sectionNeedsAssetWorkHistory(section) {
       return section === "open-work" || section === "completed-history" || section === "parts-used";
     }
@@ -172,6 +178,9 @@
         }
         if (details.open && sectionNeedsAssetWorkHistory(section)) {
           await loadAssetHistory(assetId);
+        }
+        if (details.open && section === "asset-history") {
+          await loadAssetEventHistory(assetId);
         }
         renderWorkspacePreservingScroll();
       });

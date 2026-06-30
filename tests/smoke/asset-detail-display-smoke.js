@@ -17,6 +17,8 @@ const asset = {
   location: "Bay 1",
   location_id: "loc-1",
   safety_devices_required: true,
+  created_by: "user-1",
+  created_at: "2026-06-01T12:00:00Z",
 };
 
 const workOrder = {
@@ -62,6 +64,13 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
     ],
   }),
   getAssetDocumentsReady: () => true,
+  getAssetEventsByAssetId: () => ({
+    "asset-1": [
+      { id: "event-1", asset_id: "asset-1", event_type: "updated", summary: "Updated status.", actor_id: "user-1", created_at: "2026-06-05T15:00:00Z" },
+    ],
+  }),
+  getAssetEventsReady: () => true,
+  getProfilesByUserId: () => ({ "user-1": { full_name: "QA Completer" } }),
   ensureAssetDocumentSignedUrls: (assetId) => signedAssetDocumentRequests.push(assetId),
   getPartsUsedByWorkOrder: () => ({ "wo-1": [{ work_order_id: "wo-1", quantity_used: 2, parts: { name: "Guard Bolt" } }] }),
   getMaintenanceRequests: () => [],
@@ -149,6 +158,11 @@ assert.match(html, /by QA Completer/);
 assert.match(html, /Older Done/);
 assert.match(html, /owner QA Completer/);
 assert.match(html, /data-mini-work-order="wo-2"/);
+assert.match(html, /Machine History/);
+assert.match(html, /data-asset-relationship-section="asset-history"/);
+assert.match(html, /Updated status\./);
+assert.match(html, /machine created\./i);
+assert.match(html, /QA Completer/);
 assert.match(html, /PM Schedules/);
 assert.match(html, /class="asset-relationship-panel relationship-detail procedure"/);
 assert.match(html, /data-create-pm-form/);

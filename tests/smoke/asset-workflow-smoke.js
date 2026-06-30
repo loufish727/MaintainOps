@@ -102,6 +102,8 @@ function createWorkflow(options = {}) {
     supabaseClient: () => createSupabase(calls, options.responses),
     withOperationTimeout: async (operation) => await operation,
     withSetupError: (response, message) => ({ ...response, setupMessage: message }),
+    getSession: () => ({ user: { id: "user-1" } }),
+    getAssets: () => [{ id: "asset-1", name: "Pump 1", status: "running", location: "Line 1", location_id: "location-1", asset_type: "machine", safety_devices_required: true }],
     getActiveCompanyId: () => "company-1",
     getActiveAssetId: () => "asset-1",
     getWorkOrders: () => [{ id: "wo-1", asset_id: "asset-2" }],
@@ -132,6 +134,7 @@ function createWorkflow(options = {}) {
     setActiveAssetId: (value) => calls.push(["activeAssetId", value]),
     setActiveSection: (value) => calls.push(["activeSection", value]),
     showNotice: (message, tone) => calls.push(["notice", message, tone || "success"]),
+    recordAssetEvent: async (assetId, eventType, summary) => calls.push(["assetEvent", assetId, eventType, summary]),
     render: async () => calls.push(["render"]),
     renderWorkspace: () => calls.push(["renderWorkspace"]),
   });
@@ -156,7 +159,9 @@ function createWorkflow(options = {}) {
   });
   await create.workflow.createAsset({ preventDefault() {}, currentTarget: createForm });
   assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].name === "Pump 1" && call[2].asset_type === "tooling"), true);
+  assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].created_by === "user-1"), true);
   assert.equal(create.calls.some((call) => call[0] === "insert" && call[1] === "assets" && call[2].location === "Line 1"), true);
+  assert.equal(create.calls.some((call) => call[0] === "assetEvent" && call[2] === "created"), true);
   assert.equal(create.calls.some((call) => call[0] === "notice" && call[1] === "Equipment added."), true);
   assert.equal(createForm.button.disabled, false);
   assert.equal(createForm.button.textContent, "Add Equipment");
@@ -199,12 +204,14 @@ function createWorkflow(options = {}) {
   await update.workflow.updateAsset({ preventDefault() {}, currentTarget: editForm });
   assert.equal(update.calls.some((call) => call[0] === "update" && call[1] === "assets" && call[2].status === "watch"), true);
   assert.equal(update.calls.some((call) => call[0] === "update" && call[1] === "assets" && call[2].location === "Line 2"), true);
+  assert.equal(update.calls.some((call) => call[0] === "assetEvent" && call[2] === "updated" && call[3].includes("status")), true);
   assert.equal(update.calls.some((call) => call[0] === "eq" && call[2] === "id" && call[3] === "asset-1"), true);
 
   const status = createWorkflow();
   const statusError = await status.workflow.updateAssetStatus("asset-1", "offline");
   assert.equal(statusError, null);
   assert.equal(status.calls.some((call) => call[0] === "update" && call[2].status === "offline"), true);
+  assert.equal(status.calls.some((call) => call[0] === "assetEvent" && call[2] === "status_changed"), true);
 
   const attached = createWorkflow();
   const attachForm = createElement({
@@ -246,6 +253,7 @@ function createWorkflow(options = {}) {
   const response = await quickFix.workflow.createQuickFixAsset("New machine", "running");
   assert.equal(response.error, null);
   assert.equal(quickFix.calls.some((call) => call[0] === "insert" && call[2].name === "New machine"), true);
+  assert.equal(quickFix.calls.some((call) => call[0] === "assetEvent" && call[2] === "created"), true);
 
   console.log("asset workflow smoke passed");
 })().catch((error) => {

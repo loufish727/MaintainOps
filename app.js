@@ -433,6 +433,8 @@ let photosReady = true;
 let adminDeleteSqlConfirmed = localStorage.getItem("maintainops.adminDeleteSqlConfirmed") === "true";
 let partsUsedByWorkOrder = {};
 let eventsByWorkOrder = {};
+let assetEventsByAssetId = {};
+let assetEventsReady = true;
 let commentsByWorkOrder = {};
 let photosByWorkOrder = {};
 let stepResultsByWorkOrder = {};
@@ -2237,6 +2239,7 @@ function initialWorkspaceLoaders() {
       ["Part files", loadPartDocuments],
       ["Checklist results", loadStepResults],
       ["Work history", loadWorkOrderEvents],
+      ["Equipment history", loadAssetEvents],
     );
   }
   return loaders;
@@ -2259,6 +2262,7 @@ function scheduleWorkspaceHydration() {
         runWorkspaceLoader("Part files", loadPartDocuments),
         runWorkspaceLoader("Checklist results", loadStepResults),
         runWorkspaceLoader("Work history", loadWorkOrderEvents),
+        runWorkspaceLoader("Equipment history", loadAssetEvents),
       ]);
       if (token === workspaceHydrationToken && session && activeCompanyId) applyWorkspaceLoadWarnings();
     })
@@ -2802,6 +2806,54 @@ async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
   if (!data) return;
 
   eventsByWorkOrder = replaceArrayGroupsForIds(eventsByWorkOrder, ids, data || []);
+}
+
+async function loadAssetEvents() {
+  if (!activeCompanyId || !assets.length) {
+    assetEventsByAssetId = {};
+    assetEventsReady = true;
+    return;
+  }
+
+  const ids = assets.map((asset) => asset.id);
+  const { data, error } = await supabaseClient
+    .from("asset_events")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("asset_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    assetEventsByAssetId = {};
+    assetEventsReady = false;
+    return;
+  }
+
+  assetEventsReady = true;
+  assetEventsByAssetId = (data || []).reduce((groups, event) => {
+    groups[event.asset_id] ||= [];
+    groups[event.asset_id].push(event);
+    return groups;
+  }, {});
+}
+
+async function loadAssetEventsForAssetIds(ids = []) {
+  if (!activeCompanyId || !ids.length) return;
+
+  const { data, error } = await supabaseClient
+    .from("asset_events")
+    .select("*")
+    .eq("company_id", activeCompanyId)
+    .in("asset_id", ids)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    assetEventsReady = false;
+    return;
+  }
+
+  assetEventsReady = true;
+  assetEventsByAssetId = replaceArrayGroupsForIds(assetEventsByAssetId, ids, data || []);
 }
 
 async function loadStepResults() {
@@ -3716,6 +3768,9 @@ const { renderAssetDetail } = createAssetDetailDisplayHelpers({
   getAssetPartsReady: () => assetPartsReady,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getAssetDocumentsReady: () => assetDocumentsReady,
+  getAssetEventsByAssetId: () => assetEventsByAssetId,
+  getAssetEventsReady: () => assetEventsReady,
+  getProfilesByUserId: () => profilesByUserId,
   ensureAssetDocumentSignedUrls,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getMaintenanceRequests: () => maintenanceRequests,
@@ -3758,6 +3813,8 @@ const {
   supabaseClient: () => supabaseClient,
   withOperationTimeout,
   withSetupError,
+  getSession: () => session,
+  getAssets: () => assets,
   getActiveCompanyId: () => activeCompanyId,
   getActiveAssetId: () => activeAssetId,
   getWorkOrders: () => workOrders,
@@ -3783,6 +3840,7 @@ const {
   setActiveAssetId: setActiveAssetIdState,
   setActiveSection: setActiveSectionState,
   showNotice,
+  recordAssetEvent,
   render,
   renderWorkspace,
 });
@@ -4576,6 +4634,7 @@ function bindWorkspaceEvents() {
       },
     },
     getAssetRelationshipPage,
+    loadAssetEventsForAssetIds,
     loadAssetWorkOrderHistory,
     renderWorkspace,
     setAssetRelationshipOpen,
@@ -5566,6 +5625,24 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
     );
   } catch (error) {
     console.warn("Could not record work order event", error);
+  }
+}
+
+async function recordAssetEvent(assetId, eventType, summary) {
+  try {
+    await withOperationTimeout(
+      supabaseClient.from("asset_events").insert({
+        company_id: activeCompanyId,
+        asset_id: assetId,
+        actor_id: session.user.id,
+        event_type: eventType,
+        summary,
+      }),
+      "Equipment history log timed out.",
+      8000
+    );
+  } catch (error) {
+    console.warn("Could not record equipment event", error);
   }
 }
 
