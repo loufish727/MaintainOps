@@ -44,7 +44,10 @@
       if (!win || typeof win.scrollTo !== "function") return;
       const restoreScroll = () => win.scrollTo({ top, behavior: "auto" });
       if (typeof win.requestAnimationFrame === "function") {
-        win.requestAnimationFrame(restoreScroll);
+        win.requestAnimationFrame(() => {
+          restoreScroll();
+          win.requestAnimationFrame(restoreScroll);
+        });
         return;
       }
       restoreScroll();

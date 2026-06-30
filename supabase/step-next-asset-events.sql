@@ -1,6 +1,24 @@
 alter table public.assets
 add column if not exists created_by uuid references auth.users(id) on delete set null;
 
+create or replace function private.set_asset_created_by()
+returns trigger
+language plpgsql
+set search_path = public, private, pg_temp
+as $$
+begin
+  if new.created_by is null then
+    new.created_by := auth.uid();
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists assets_set_created_by_trigger on public.assets;
+create trigger assets_set_created_by_trigger
+before insert on public.assets
+for each row execute function private.set_asset_created_by();
+
 do $$
 begin
   if to_regclass('public.audit_log') is not null then

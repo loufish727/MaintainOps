@@ -10,110 +10,150 @@
   function bindWorkspaceFilterPaginationEvents(options = {}) {
     const doc = options.documentRef || document;
     const state = options.state;
+    const win = options.windowRef || (typeof window !== "undefined" ? window : null);
 
     if (!state) return;
 
+    function restoreScroll(top) {
+      if (!win || typeof win.scrollTo !== "function") return;
+      win.scrollTo({ top, behavior: "auto" });
+    }
+
+    async function preserveScroll(action) {
+      const top = Number(win?.scrollY ?? win?.pageYOffset ?? 0);
+      await action();
+      if (!win || typeof win.scrollTo !== "function") return;
+      if (typeof win.requestAnimationFrame === "function") {
+        win.requestAnimationFrame(() => {
+          restoreScroll(top);
+          win.requestAnimationFrame(() => restoreScroll(top));
+        });
+        return;
+      }
+      restoreScroll(top);
+    }
+
     doc.querySelectorAll("[data-status-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setActiveStatusFilter(button.dataset.statusFilter);
-        options.resetWorkOrderPage();
-        if (state.getActiveStatusFilter() === "requests") {
-          options.resetRequestsPage();
-        }
-        await options.reloadWorkOrderQueue();
-        if (state.getActiveStatusFilter() === "requests") await options.reloadRequestQueue();
+        await preserveScroll(async () => {
+          state.setActiveStatusFilter(button.dataset.statusFilter);
+          options.resetWorkOrderPage();
+          if (state.getActiveStatusFilter() === "requests") {
+            options.resetRequestsPage();
+          }
+          await options.reloadWorkOrderQueue();
+          if (state.getActiveStatusFilter() === "requests") await options.reloadRequestQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-my-work-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setMyWorkFilter(button.dataset.myWorkFilter);
-        options.resetWorkOrderPage();
-        await options.reloadWorkOrderQueue();
+        await preserveScroll(async () => {
+          state.setMyWorkFilter(button.dataset.myWorkFilter);
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-work-order-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setWorkOrderFilter(button.dataset.workOrderFilter);
-        state.setWorkOrderAssigneeFilter("");
-        options.resetWorkOrderPage();
-        await options.reloadWorkOrderQueue();
+        await preserveScroll(async () => {
+          state.setWorkOrderFilter(button.dataset.workOrderFilter);
+          state.setWorkOrderAssigneeFilter("");
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setWorkOrderAssigneeFilter("");
-        options.resetWorkOrderPage();
-        await options.reloadWorkOrderQueue();
+        await preserveScroll(async () => {
+          state.setWorkOrderAssigneeFilter("");
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-work-sort]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setWorkSort(button.dataset.workSort);
-        options.invalidateExactWorkOrderSearchCache();
-        options.resetWorkOrderPage();
-        await options.reloadWorkOrderQueue();
+        await preserveScroll(async () => {
+          state.setWorkSort(button.dataset.workSort);
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-request-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
         if (button.disabled) return;
-        state.setRequestViewFilter(button.dataset.requestFilter || "active");
-        options.resetRequestsPage();
-        await options.reloadRequestQueue();
+        await preserveScroll(async () => {
+          state.setRequestViewFilter(button.dataset.requestFilter || "active");
+          options.resetRequestsPage();
+          await options.reloadRequestQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-work-page]").forEach((button) => {
       button.addEventListener("click", async () => {
-        state.setWorkOrderPage(state.getWorkOrderPage() + (button.dataset.workPage === "next" ? 1 : -1));
-        await options.reloadWorkOrderQueue();
+        await preserveScroll(async () => {
+          state.setWorkOrderPage(state.getWorkOrderPage() + (button.dataset.workPage === "next" ? 1 : -1));
+          await options.reloadWorkOrderQueue();
+        });
       });
     });
 
     doc.querySelectorAll("[data-parts-page]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.setPartsPage(state.getPartsPage() + (button.dataset.partsPage === "next" ? 1 : -1));
-        options.renderWorkspace();
+      button.addEventListener("click", async () => {
+        await preserveScroll(async () => {
+          state.setPartsPage(state.getPartsPage() + (button.dataset.partsPage === "next" ? 1 : -1));
+          options.renderWorkspace();
+        });
       });
     });
 
     doc.querySelectorAll("[data-assets-page]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.setAssetsPage(state.getAssetsPage() + (button.dataset.assetsPage === "next" ? 1 : -1));
-        options.renderWorkspace();
+      button.addEventListener("click", async () => {
+        await preserveScroll(async () => {
+          state.setAssetsPage(state.getAssetsPage() + (button.dataset.assetsPage === "next" ? 1 : -1));
+          options.renderWorkspace();
+        });
       });
     });
 
     doc.querySelectorAll("[data-list-page]").forEach((button) => {
       button.addEventListener("click", async () => {
-        const delta = button.dataset.pageDirection === "next" ? 1 : -1;
-        if (button.dataset.listPage === "requests") {
-          state.setRequestsPage(state.getRequestsPage() + delta);
-          await options.reloadRequestQueue();
-          return;
-        }
-        if (button.dataset.listPage === "schedules") {
-          state.setSchedulesPage(state.getSchedulesPage() + delta);
-        }
-        if (button.dataset.listPage === "procedures") {
-          state.setProceduresPage(state.getProceduresPage() + delta);
-        }
-        if (button.dataset.listPage === "members") {
-          state.setMembersPage(state.getMembersPage() + delta);
-        }
-        if (button.dataset.listPage === "messages") {
-          state.setMessageThreadsPage(state.getMessageThreadsPage() + delta);
-        }
-        if (button.dataset.listPage?.startsWith("planning-")) {
-          const planningKind = button.dataset.listPage.replace("planning-", "");
-          state.setPlanningPage(planningKind, state.getPlanningPage(planningKind) + delta);
-        }
-        options.renderWorkspace();
+        await preserveScroll(async () => {
+          const delta = button.dataset.pageDirection === "next" ? 1 : -1;
+          if (button.dataset.listPage === "requests") {
+            state.setRequestsPage(state.getRequestsPage() + delta);
+            await options.reloadRequestQueue();
+            return;
+          }
+          if (button.dataset.listPage === "schedules") {
+            state.setSchedulesPage(state.getSchedulesPage() + delta);
+          }
+          if (button.dataset.listPage === "procedures") {
+            state.setProceduresPage(state.getProceduresPage() + delta);
+          }
+          if (button.dataset.listPage === "members") {
+            state.setMembersPage(state.getMembersPage() + delta);
+          }
+          if (button.dataset.listPage === "messages") {
+            state.setMessageThreadsPage(state.getMessageThreadsPage() + delta);
+          }
+          if (button.dataset.listPage?.startsWith("planning-")) {
+            const planningKind = button.dataset.listPage.replace("planning-", "");
+            state.setPlanningPage(planningKind, state.getPlanningPage(planningKind) + delta);
+          }
+          options.renderWorkspace();
+        });
       });
     });
   }

@@ -139,7 +139,10 @@ await completedHistoryDetails.dispatch("toggle");
 assert.deepEqual(historyLoads, ["asset-1"]);
 assert.equal(renderCount, 4);
 assert.equal(scrollCount, 3);
-assert.deepEqual(scrollRestores, [{ top: 460, behavior: "auto" }]);
+assert.deepEqual(scrollRestores, [
+  { top: 460, behavior: "auto" },
+  { top: 460, behavior: "auto" },
+]);
 
 windowRef.scrollY = 720;
 await completedHistoryNext.dispatch("click", { preventDefault() {}, stopPropagation() {} });
@@ -148,6 +151,8 @@ assert.equal(renderCount, 5);
 assert.equal(scrollCount, 3);
 assert.deepEqual(scrollRestores, [
   { top: 460, behavior: "auto" },
+  { top: 460, behavior: "auto" },
+  { top: 720, behavior: "auto" },
   { top: 720, behavior: "auto" },
 ]);
 

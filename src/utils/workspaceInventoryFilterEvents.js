@@ -9,14 +9,34 @@
   function bindWorkspaceInventoryFilterEvents(options = {}) {
     const doc = options.documentRef || document;
     const state = options.state;
+    const win = options.windowRef || (typeof window !== "undefined" ? window : null);
 
     if (!state) return;
+
+    function restoreScroll(top) {
+      if (!win || typeof win.scrollTo !== "function") return;
+      win.scrollTo({ top, behavior: "auto" });
+    }
+
+    function renderWorkspacePreservingScroll() {
+      const top = Number(win?.scrollY ?? win?.pageYOffset ?? 0);
+      options.renderWorkspace();
+      if (!win || typeof win.scrollTo !== "function") return;
+      if (typeof win.requestAnimationFrame === "function") {
+        win.requestAnimationFrame(() => {
+          restoreScroll(top);
+          win.requestAnimationFrame(() => restoreScroll(top));
+        });
+        return;
+      }
+      restoreScroll(top);
+    }
 
     doc.querySelectorAll("[data-part-inventory-filter]").forEach((button) => {
       button.addEventListener("click", () => {
         state.setPartInventoryFilter(button.dataset.partInventoryFilter);
         options.resetPartsPage();
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
 
@@ -25,7 +45,7 @@
         if (!state.setPartSort) return;
         state.setPartSort(select.value || "default");
         options.resetPartsPage();
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
 
@@ -37,7 +57,7 @@
         state.setAssetStatusFilter(nextFilter);
         if (state.setAssetTypeFilter) state.setAssetTypeFilter("all");
         options.resetAssetsPage();
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
 
@@ -50,7 +70,7 @@
         state.setAssetTypeFilter(nextFilter);
         if (state.setAssetStatusFilter) state.setAssetStatusFilter("all");
         options.resetAssetsPage();
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
 
@@ -59,7 +79,7 @@
         if (!state.setAssetAreaFilter) return;
         state.setAssetAreaFilter(select.value || "all");
         options.resetAssetsPage();
-        options.renderWorkspace();
+        renderWorkspacePreservingScroll();
       });
     });
   }
