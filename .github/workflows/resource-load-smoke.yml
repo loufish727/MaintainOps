@@ -26,5 +26,10 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run resource-load smoke
-        run: npm run test:smoke:resources
+      - name: Run hosted resource-load smoke
+        run: npx playwright test tests/smoke/resource-load.spec.js -g "serves required app resources"
+
+      - name: Run local app-shell smoke
+        run: |
+          node scripts/local-static-server.js 4195 &
+          MAINTAINOPS_BASE_URL="http://127.0.0.1:4195/" npx playwright test tests/smoke/resource-load.spec.js -g "renders the app shell"
