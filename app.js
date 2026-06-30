@@ -313,6 +313,8 @@ let conversionResourcesPromise = null;
 let conversionResourcesError = "";
 let conversionDisplayHelpers = null;
 let qrLibraryPromise = null;
+let workspaceHydrationToken = 0;
+let workspaceHydrationPromise = null;
 const {
   authCallbackRedirectUrl,
   passwordResetRedirectUrl,
@@ -2162,6 +2164,7 @@ async function loadPlanningWorkOrders(options = {}) {
 
 async function loadCompanyData() {
   workspaceLoadWarnings = [];
+  workspaceHydrationToken += 1;
   let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
     loadWorkspaceResponse("Locations", listLocations(supabaseClient, activeCompanyId)),
     loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
@@ -2213,19 +2216,62 @@ async function loadCompanyData() {
   await Promise.all([
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
-    runWorkspaceLoader("Messages", loadMessageCenter),
-    runWorkspaceLoader("Public request links", loadPublicRequestLinks),
-    runWorkspaceLoader("Request photos", addSignedRequestPhotoUrls),
-    runWorkspaceLoader("Comments", loadComments),
-    runWorkspaceLoader("Work photos", loadPhotos),
-    runWorkspaceLoader("Parts used", loadPartsUsed),
-    runWorkspaceLoader("Equipment parts", loadAssetParts),
-    runWorkspaceLoader("Equipment files", loadAssetDocuments),
-    runWorkspaceLoader("Part files", loadPartDocuments),
-    runWorkspaceLoader("Checklist results", loadStepResults),
-    runWorkspaceLoader("Work history", loadWorkOrderEvents),
+    ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
   ]);
   applyWorkspaceLoadWarnings();
+  scheduleWorkspaceHydration();
+}
+
+function initialWorkspaceLoaders() {
+  const loaders = [];
+  if (activeSection === "messages") loaders.push(["Messages", loadMessageCenter]);
+  if (activeSection === "settings") loaders.push(["Public request links", loadPublicRequestLinks]);
+  if (activeSection === "requests") loaders.push(["Request photos", addSignedRequestPhotoUrls]);
+  if (activeWorkOrderId || activeAssetId || activeSection === "parts") {
+    loaders.push(
+      ["Comments", loadComments],
+      ["Work photos", loadPhotos],
+      ["Parts used", loadPartsUsed],
+      ["Equipment parts", loadAssetParts],
+      ["Equipment files", loadAssetDocuments],
+      ["Part files", loadPartDocuments],
+      ["Checklist results", loadStepResults],
+      ["Work history", loadWorkOrderEvents],
+    );
+  }
+  return loaders;
+}
+
+function scheduleWorkspaceHydration() {
+  const token = workspaceHydrationToken;
+  const hydration = Promise.resolve()
+    .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    .then(async () => {
+      await Promise.all([
+        runWorkspaceLoader("Messages", loadMessageCenter),
+        runWorkspaceLoader("Public request links", loadPublicRequestLinks),
+        runWorkspaceLoader("Request photos", addSignedRequestPhotoUrls),
+        runWorkspaceLoader("Comments", loadComments),
+        runWorkspaceLoader("Work photos", loadPhotos),
+        runWorkspaceLoader("Parts used", loadPartsUsed),
+        runWorkspaceLoader("Equipment parts", loadAssetParts),
+        runWorkspaceLoader("Equipment files", loadAssetDocuments),
+        runWorkspaceLoader("Part files", loadPartDocuments),
+        runWorkspaceLoader("Checklist results", loadStepResults),
+        runWorkspaceLoader("Work history", loadWorkOrderEvents),
+      ]);
+      if (token === workspaceHydrationToken && session && activeCompanyId) applyWorkspaceLoadWarnings();
+    })
+    .catch((error) => {
+      workspaceLoadWarnings.push(`Background workspace hydration: ${error.message || error}`);
+      applyWorkspaceLoadWarnings();
+    })
+    .finally(() => {
+      if (workspaceHydrationPromise === hydration) workspaceHydrationPromise = null;
+    });
+
+  workspaceHydrationPromise = hydration;
+  return workspaceHydrationPromise;
 }
 
 async function loadWorkspaceResponse(label, promise, timeoutMs = 12000) {
