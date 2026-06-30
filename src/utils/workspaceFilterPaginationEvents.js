@@ -109,6 +109,10 @@
         if (button.dataset.listPage === "messages") {
           state.setMessageThreadsPage(state.getMessageThreadsPage() + delta);
         }
+        if (button.dataset.listPage?.startsWith("planning-")) {
+          const planningKind = button.dataset.listPage.replace("planning-", "");
+          state.setPlanningPage(planningKind, state.getPlanningPage(planningKind) + delta);
+        }
         options.renderWorkspace();
       });
     });

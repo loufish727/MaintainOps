@@ -957,6 +957,9 @@ const {
   renderPlanningItem,
 } = createPlanningDisplayHelpers({
   escapeHtml,
+  LIST_ITEMS_PER_PAGE,
+  getPlanningPage: (kind) => workspaceUiState.getPlanningPage(kind),
+  renderListPagination,
   statusLabel,
   renderRelationshipChips,
 });
@@ -3180,11 +3183,11 @@ function renderWorkspace() {
               <span>${planningItems().length + followUpItems().length} items</span>
             </div>
             <div class="planning-grid">
-              ${renderPlanningGroup("Overdue", planningItems("overdue"), "overdue")}
-              ${renderPlanningGroup("Due Today", planningItems("today"), "due_today")}
-              ${renderPlanningGroup("Next 7 Days", planningItems("soon"), "in_progress")}
-              ${renderPlanningGroup("Follow-up Needed", followUpItems(), "blocked")}
-              ${renderPlanningGroup("PM Due Soon", planningPmItems(), "open")}
+              ${renderPlanningGroup("Overdue", planningItems("overdue"), "overdue", "overdue")}
+              ${renderPlanningGroup("Due Today", planningItems("today"), "due_today", "today")}
+              ${renderPlanningGroup("Next 7 Days", planningItems("soon"), "in_progress", "soon")}
+              ${renderPlanningGroup("Follow-up Needed", followUpItems(), "blocked", "follow-up")}
+              ${renderPlanningGroup("PM Due Soon", planningPmItems(), "open", "pm")}
             </div>
           </section>
 

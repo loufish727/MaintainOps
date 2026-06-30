@@ -22,6 +22,11 @@
     assetsPage: "maintainops.assetsPage",
     requestsPage: "maintainops.requestsPage",
     requestViewFilter: "maintainops.requestViewFilter",
+    planningOverduePage: "maintainops.planningOverduePage",
+    planningTodayPage: "maintainops.planningTodayPage",
+    planningSoonPage: "maintainops.planningSoonPage",
+    planningFollowUpPage: "maintainops.planningFollowUpPage",
+    planningPmPage: "maintainops.planningPmPage",
     schedulesPage: "maintainops.schedulesPage",
     proceduresPage: "maintainops.proceduresPage",
     membersPage: "maintainops.membersPage",
@@ -85,6 +90,11 @@
       partsPage: readPage(storage, STORAGE_KEYS.partsPage),
       assetsPage: readPage(storage, STORAGE_KEYS.assetsPage),
       requestsPage: readPage(storage, STORAGE_KEYS.requestsPage),
+      planningOverduePage: readPage(storage, STORAGE_KEYS.planningOverduePage),
+      planningTodayPage: readPage(storage, STORAGE_KEYS.planningTodayPage),
+      planningSoonPage: readPage(storage, STORAGE_KEYS.planningSoonPage),
+      planningFollowUpPage: readPage(storage, STORAGE_KEYS.planningFollowUpPage),
+      planningPmPage: readPage(storage, STORAGE_KEYS.planningPmPage),
       schedulesPage: readPage(storage, STORAGE_KEYS.schedulesPage),
       proceduresPage: readPage(storage, STORAGE_KEYS.proceduresPage),
       membersPage: readPage(storage, STORAGE_KEYS.membersPage),
@@ -169,6 +179,21 @@
       getRequestsPage: () => state.requestsPage,
       setRequestsPage: (value) => setValue("requestsPage", value, STORAGE_KEYS.requestsPage),
       resetRequestsPage: () => resetPage("requestsPage", STORAGE_KEYS.requestsPage),
+      getPlanningPage: (kind) => {
+        if (kind === "overdue") return state.planningOverduePage;
+        if (kind === "today") return state.planningTodayPage;
+        if (kind === "soon") return state.planningSoonPage;
+        if (kind === "follow-up") return state.planningFollowUpPage;
+        if (kind === "pm") return state.planningPmPage;
+        return 1;
+      },
+      setPlanningPage: (kind, value) => {
+        if (kind === "overdue") setValue("planningOverduePage", value, STORAGE_KEYS.planningOverduePage);
+        if (kind === "today") setValue("planningTodayPage", value, STORAGE_KEYS.planningTodayPage);
+        if (kind === "soon") setValue("planningSoonPage", value, STORAGE_KEYS.planningSoonPage);
+        if (kind === "follow-up") setValue("planningFollowUpPage", value, STORAGE_KEYS.planningFollowUpPage);
+        if (kind === "pm") setValue("planningPmPage", value, STORAGE_KEYS.planningPmPage);
+      },
       getSchedulesPage: () => state.schedulesPage,
       setSchedulesPage: (value) => setValue("schedulesPage", value, STORAGE_KEYS.schedulesPage),
       resetSchedulesPage: () => resetPage("schedulesPage", STORAGE_KEYS.schedulesPage),

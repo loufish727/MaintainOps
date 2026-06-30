@@ -1,10 +1,18 @@
 (function () {
   function createPlanningDisplayHelpers({
     escapeHtml,
+    LIST_ITEMS_PER_PAGE,
+    getPlanningPage,
+    renderListPagination,
     statusLabel,
     renderRelationshipChips,
   }) {
-    function renderPlanningGroup(title, items, chipClass) {
+    function renderPlanningGroup(title, items, chipClass, pageKind) {
+      const pageSize = LIST_ITEMS_PER_PAGE || 12;
+      const currentPage = typeof getPlanningPage === "function" ? getPlanningPage(pageKind) : 1;
+      const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+      const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+      const pagedItems = items.slice((safePage - 1) * pageSize, safePage * pageSize);
       return `
         <section class="planning-group">
           <div class="panel-header compact-header">
@@ -12,8 +20,9 @@
             <span class="chip ${chipClass}">${items.length}</span>
           </div>
           <div class="planning-list">
-            ${items.map(renderPlanningItem).join("") || `<p class="muted">Nothing here.</p>`}
+            ${pagedItems.map(renderPlanningItem).join("") || `<p class="muted">Nothing here.</p>`}
           </div>
+          ${typeof renderListPagination === "function" ? renderListPagination(`planning-${pageKind}`, items.length, safePage, totalPages) : ""}
         </section>
       `;
     }
@@ -29,6 +38,7 @@
               ${item.resolution ? `<p>${escapeHtml(item.resolution)}</p>` : ""}
             </div>
             <div class="follow-up-create" data-follow-up-create>
+              <button class="secondary-button" data-mini-work-order="${escapeHtml(item.id)}" type="button">Open Original</button>
               <label>Due in days<input name="follow_up_days" type="number" min="0" max="365" step="1" value="7"></label>
               <button class="secondary-button" data-create-follow-up="${escapeHtml(item.id)}" type="button">Create Work</button>
             </div>

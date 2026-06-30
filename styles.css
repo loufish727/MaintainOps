@@ -3437,6 +3437,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  align-items: start;
 }
 
 .planning-group {
@@ -3444,6 +3445,7 @@ textarea {
   border-radius: 8px;
   background: var(--surface-3);
   padding: 12px;
+  align-self: start;
 }
 
 .planning-list {
@@ -3475,7 +3477,7 @@ textarea {
 
 .follow-up-create {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) auto;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
   align-items: end;
   gap: 8px;
 }
@@ -7151,6 +7153,14 @@ textarea {
 
   .brand-row {
     align-items: flex-start;
+  }
+
+  .follow-up-create {
+    grid-template-columns: 1fr;
+  }
+
+  .follow-up-create button {
+    width: 100%;
   }
 
   .brand-row h1 {
