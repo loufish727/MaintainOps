@@ -953,6 +953,20 @@ const {
   canManageTeam,
 });
 const {
+  renderWorkPagination,
+  renderPartsPagination,
+  renderAssetsPagination,
+  renderListPagination,
+} = createPaginationDisplayHelpers({
+  WORK_ORDERS_PER_PAGE,
+  PARTS_PER_PAGE,
+  ASSETS_PER_PAGE,
+  LIST_ITEMS_PER_PAGE,
+  getWorkOrderPage: () => workspaceUiState.getWorkOrderPage(),
+  getPartsPage: () => workspaceUiState.getPartsPage(),
+  getAssetsPage: () => workspaceUiState.getAssetsPage(),
+});
+const {
   renderPlanningGroup,
   renderPlanningItem,
 } = createPlanningDisplayHelpers({
@@ -973,20 +987,6 @@ const {
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
   getPhotosByWorkOrder: () => photosByWorkOrder,
   teamMemberName,
-});
-const {
-  renderWorkPagination,
-  renderPartsPagination,
-  renderAssetsPagination,
-  renderListPagination,
-} = createPaginationDisplayHelpers({
-  WORK_ORDERS_PER_PAGE,
-  PARTS_PER_PAGE,
-  ASSETS_PER_PAGE,
-  LIST_ITEMS_PER_PAGE,
-  getWorkOrderPage: () => workspaceUiState.getWorkOrderPage(),
-  getPartsPage: () => workspaceUiState.getPartsPage(),
-  getAssetsPage: () => workspaceUiState.getAssetsPage(),
 });
 const {
   renderLocationOptions,

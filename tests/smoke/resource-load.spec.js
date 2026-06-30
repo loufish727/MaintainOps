@@ -221,4 +221,23 @@ test.describe("MaintainOps hosted resource smoke", () => {
 
     throw lastError;
   });
+
+  test("live GitHub Pages renders the app shell", async ({ page, baseURL }) => {
+    test.setTimeout(90000);
+
+    const pageErrors = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await page.goto(`${baseURL}index.html?qa_bust=app-shell-${Date.now()}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForFunction(() => {
+      const app = document.querySelector("#app");
+      return Boolean(app && app.innerHTML.trim().length > 0);
+    }, null, { timeout: 30000 });
+
+    expect(pageErrors).toEqual([]);
+  });
 });
