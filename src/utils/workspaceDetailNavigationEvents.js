@@ -42,19 +42,38 @@
       return Number(win?.scrollY ?? win?.pageYOffset ?? 0);
     }
 
-    function renderWorkspacePreservingScroll(savedTop) {
-      const top = Number.isFinite(savedTop) ? savedTop : currentScrollTop();
+    function captureScrollAnchor(element) {
+      return {
+        top: currentScrollTop(),
+        rectTop: Number(element?.getBoundingClientRect?.().top),
+        assetId: element?.dataset?.assetId || "",
+        section: element?.dataset?.assetRelationshipSection || "",
+      };
+    }
+
+    function targetForAnchor(anchor) {
+      if (!anchor?.assetId || !anchor?.section) return null;
+      return doc.querySelector(`[data-asset-relationship-section="${anchor.section}"][data-asset-id="${anchor.assetId}"]`);
+    }
+
+    function restoreScrollAnchor(anchor) {
+      if (!win || typeof win.scrollTo !== "function") return;
+      const target = targetForAnchor(anchor);
+      const nextRectTop = Number(target?.getBoundingClientRect?.().top);
+      const top = Number.isFinite(anchor?.rectTop) && Number.isFinite(nextRectTop)
+        ? currentScrollTop() + nextRectTop - anchor.rectTop
+        : Number(anchor?.top);
+      if (Number.isFinite(top)) win.scrollTo({ top, behavior: "auto" });
+    }
+
+    function renderWorkspacePreservingScroll(anchor) {
       options.renderWorkspace();
       if (!win || typeof win.scrollTo !== "function") return;
-      const restoreScroll = () => win.scrollTo({ top, behavior: "auto" });
       if (typeof win.requestAnimationFrame === "function") {
-        win.requestAnimationFrame(() => {
-          restoreScroll();
-          win.requestAnimationFrame(restoreScroll);
-        });
+        win.requestAnimationFrame(() => restoreScrollAnchor(anchor));
         return;
       }
-      restoreScroll();
+      restoreScrollAnchor(anchor);
     }
 
     function scrollToWorkPhotos() {
@@ -176,9 +195,9 @@
     });
 
     doc.querySelectorAll("[data-asset-relationship-section]").forEach((details) => {
-      let interactionScrollTop = null;
+      let interactionAnchor = null;
       const rememberInteractionScroll = () => {
-        interactionScrollTop = currentScrollTop();
+        interactionAnchor = captureScrollAnchor(details);
       };
       details.addEventListener("pointerdown", rememberInteractionScroll);
       details.addEventListener("mousedown", rememberInteractionScroll);
@@ -186,8 +205,8 @@
         if (event.key === "Enter" || event.key === " ") rememberInteractionScroll();
       });
       details.addEventListener("toggle", async () => {
-        const restoreTop = Number.isFinite(interactionScrollTop) ? interactionScrollTop : currentScrollTop();
-        interactionScrollTop = null;
+        const restoreAnchor = interactionAnchor || captureScrollAnchor(details);
+        interactionAnchor = null;
         const assetId = details.dataset.assetId;
         const section = details.dataset.assetRelationshipSection;
         if (!assetId || !section) return;
@@ -200,7 +219,7 @@
         if (details.open && section === "asset-history") {
           await loadAssetEventHistory(assetId);
         }
-        renderWorkspacePreservingScroll(restoreTop);
+        renderWorkspacePreservingScroll(restoreAnchor);
       });
     });
 
@@ -217,7 +236,7 @@
         if (typeof options.setAssetRelationshipPage === "function") {
           options.setAssetRelationshipPage(assetId, section, nextPage);
         }
-        renderWorkspacePreservingScroll();
+        renderWorkspacePreservingScroll(captureScrollAnchor(button.closest?.("[data-asset-relationship-section]") || null));
       });
     });
   }

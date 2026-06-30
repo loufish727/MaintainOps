@@ -23,10 +23,7 @@
       options.renderWorkspace();
       if (!win || typeof win.scrollTo !== "function") return;
       if (typeof win.requestAnimationFrame === "function") {
-        win.requestAnimationFrame(() => {
-          restoreScroll(top);
-          win.requestAnimationFrame(() => restoreScroll(top));
-        });
+        win.requestAnimationFrame(() => restoreScroll(top));
         return;
       }
       restoreScroll(top);
