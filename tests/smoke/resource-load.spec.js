@@ -192,6 +192,7 @@ test.describe("MaintainOps hosted resource smoke", () => {
         expect(indexResponse.status(), "index.html should load").toBe(200);
 
         const indexHtml = await indexResponse.text();
+        expect(indexHtml, "QR code generator should lazy-load only on QR surfaces").not.toContain("qrcode-generator");
 
         for (const resource of requiredResources) {
           expect(indexHtml, `index.html should reference ${resource}`).toContain(resource);

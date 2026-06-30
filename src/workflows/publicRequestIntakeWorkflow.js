@@ -41,6 +41,14 @@
       const requestUrl = deps.publicRequestUrl(token);
       deps.setAppHtml(deps.publicRequestQrPage(intake, requestUrl));
       deps.bindPublicQrPrintEvents();
+      if (typeof deps.ensureQrLibrary === "function") {
+        deps.ensureQrLibrary()
+          .then(() => {
+            deps.setAppHtml(deps.publicRequestQrPage(intake, requestUrl));
+            deps.bindPublicQrPrintEvents();
+          })
+          .catch(() => {});
+      }
     }
 
     async function renderPublicRequestIntake(token) {

@@ -287,6 +287,11 @@ const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 let supabaseClient;
 let session;
+const QR_CODE_RESOURCE = {
+  src: "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js",
+  integrity: "sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz",
+  crossOrigin: "anonymous",
+};
 const CONVERSION_RESOURCE_PATHS = [
   "src/utils/conversions.js?v=conversion-lazy-load-1",
   "src/data/reference/fasteners.js?v=conversion-lazy-load-1",
@@ -307,6 +312,7 @@ const CONVERSION_RESOURCE_PATHS = [
 let conversionResourcesPromise = null;
 let conversionResourcesError = "";
 let conversionDisplayHelpers = null;
+let qrLibraryPromise = null;
 const {
   authCallbackRedirectUrl,
   passwordResetRedirectUrl,
@@ -1489,7 +1495,7 @@ function renderWorkspaceLoadError(message) {
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
 }
 
-function loadScriptResource(src) {
+function loadScriptResource(src, options = {}) {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[data-lazy-src="${src}"]`);
     if (existing?.dataset.loaded === "true") {
@@ -1504,7 +1510,9 @@ function loadScriptResource(src) {
     const script = document.createElement("script");
     script.src = src;
     script.dataset.lazySrc = src;
-    script.async = false;
+    script.async = Boolean(options.async);
+    if (options.integrity) script.integrity = options.integrity;
+    if (options.crossOrigin) script.crossOrigin = options.crossOrigin;
     script.onload = () => {
       script.dataset.loaded = "true";
       resolve();
@@ -1512,6 +1520,23 @@ function loadScriptResource(src) {
     script.onerror = () => reject(new Error(`Could not load ${src}`));
     document.body.appendChild(script);
   });
+}
+
+function ensureQrLibraryLoaded() {
+  if (window.qrcode) return Promise.resolve();
+  if (!qrLibraryPromise) {
+    qrLibraryPromise = loadScriptResource(QR_CODE_RESOURCE.src, {
+      async: true,
+      integrity: QR_CODE_RESOURCE.integrity,
+      crossOrigin: QR_CODE_RESOURCE.crossOrigin,
+    }).then(() => {
+      if (!window.qrcode) throw new Error("QR code generator did not initialize.");
+    }).catch((error) => {
+      qrLibraryPromise = null;
+      throw error;
+    });
+  }
+  return qrLibraryPromise;
 }
 
 async function ensureConversionResourcesLoaded() {
@@ -1553,6 +1578,20 @@ function renderConversionsLazyPanel() {
       ${conversionResourcesError ? `<button class="secondary-button" data-retry-conversions type="button">Retry</button>` : ""}
     </section>
   `;
+}
+
+function scheduleQrLibraryLoad() {
+  if (window.qrcode || qrLibraryPromise) return;
+  const settingsNeedsQr = activeSection === "settings" &&
+    canManageTeam() &&
+    publicRequestLinks.some((link) => link && link.is_active !== false);
+  if (!settingsNeedsQr) return;
+
+  ensureQrLibraryLoaded()
+    .then(() => {
+      if (activeSection === "settings") renderWorkspace();
+    })
+    .catch(() => {});
 }
 
 function scheduleConversionResourceLoad() {
@@ -3453,6 +3492,7 @@ function renderWorkspace() {
   `;
 
   bindWorkspaceEvents();
+  scheduleQrLibraryLoad();
 }
 
 function filteredWorkOrders() {
@@ -4914,6 +4954,7 @@ const {
   bodyRef: document.body,
   documentRef: document,
   getPublicRequestIntake: (token) => supabaseClient.rpc("get_public_request_intake", { request_token: token }),
+  ensureQrLibrary: ensureQrLibraryLoaded,
   loadingQrPage,
   loadingRequestForm,
   notifyRequestEmailer: (requestId) => notifyRequestEmailer(supabaseClient, requestId),

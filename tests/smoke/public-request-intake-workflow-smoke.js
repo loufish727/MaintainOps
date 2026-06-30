@@ -63,6 +63,7 @@ const workflow = createPublicRequestIntakeWorkflow({
     calls.push(["getPublicRequestIntake", token]);
     return { data: { company_name: "Taylor Metal", location_name: "Salem" }, error: null };
   },
+  ensureQrLibrary: async () => calls.push(["ensureQrLibrary"]),
   loadingQrPage: () => "<p>QR loading</p>",
   loadingRequestForm: () => "<p>Form loading</p>",
   notifyRequestEmailer: async (requestId) => {
@@ -95,6 +96,7 @@ const workflow = createPublicRequestIntakeWorkflow({
   assert.equal(calls.some((call) => call[0] === "bodyAdd" && call[1] === "public-qr-mode"), true);
   assert.equal(appState.html.includes("request=qr-token"), true);
   assert.equal(calls.some((call) => call[0] === "bindPublicQrPrintEvents"), true);
+  assert.equal(calls.some((call) => call[0] === "ensureQrLibrary"), true);
 
   await workflow.renderPublicRequestIntake("request-token");
   assert.equal(calls.some((call) => call[0] === "bodyRemove" && call[1] === "public-qr-mode"), true);

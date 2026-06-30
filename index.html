@@ -6,13 +6,14 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://lbphkzznvvumemdkqoay.supabase.co wss://lbphkzznvvumemdkqoay.supabase.co; img-src 'self' data: blob: https://lbphkzznvvumemdkqoay.supabase.co; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>MaintainOps</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://lbphkzznvvumemdkqoay.supabase.co" crossorigin>
     <link rel="stylesheet" href="styles.css?v=mo-build-20260630-planning-buckets-1">
   </head>
   <body>
     <main id="app" class="app"></main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4" integrity="sha384-AkNSQdptcXlJ0/NBZc4qGk86cDVXcCevwoWgEKIpHOEfbvlXGLlIkimQtONt8KNf" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
     <script src="supabase-config.js?v=mo-build-20260603-2"></script>
     <script src="src/utils/authRedirects.js?v=mo-build-20260603-3"></script>
     <script src="src/utils/constants.js?v=mo-build-20260603-4"></script>
@@ -94,7 +95,7 @@
     <script src="src/workflows/companyLogoWorkflow.js?v=mo-build-20260603-77"></script>
     <script src="src/workflows/partDeleteWorkflow.js?v=mo-build-20260610-authority-workflows-1"></script>
     <script src="src/workflows/procedureChecklistWorkflow.js?v=mo-build-20260610-authority-workflows-1"></script>
-    <script src="src/workflows/publicRequestIntakeWorkflow.js?v=mo-build-20260610-authority-workflows-1"></script>
+    <script src="src/workflows/publicRequestIntakeWorkflow.js?v=mo-build-20260630-lazy-qr-1"></script>
     <script src="src/workflows/companySetupWorkflow.js?v=mo-build-20260610-authority-workflows-1"></script>
     <script src="src/workflows/workOrderStatusWorkflow.js?v=mo-build-20260610-authority-workflows-1"></script>
     <script src="src/utils/requestQueryFilters.js?v=mo-build-20260603-78"></script>
@@ -183,6 +184,6 @@
     <script src="src/render/publicRequestDisplay.js?v=mo-build-20260610-photo-pdf-guidance-1"></script>
     <script src="src/render/messageFormatting.js?v=mo-build-20260603-156"></script>
     <script src="src/render/messageDisplay.js?v=mo-build-20260605-message-delete-hide-1"></script>
-    <script src="app.js?v=mo-build-20260630-planning-init-1"></script>
+    <script src="app.js?v=mo-build-20260630-lazy-qr-1"></script>
   </body>
 </html>
