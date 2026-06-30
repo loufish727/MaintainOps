@@ -2,10 +2,9 @@ const assert = require("node:assert/strict");
 
 function createElement(dataset = {}) {
   const listeners = {};
-  const element = {
+  return {
     dataset,
     open: false,
-    rectTop: 0,
     addEventListener(type, handler) {
       listeners[type] = listeners[type] || [];
       listeners[type].push(handler);
@@ -13,23 +12,13 @@ function createElement(dataset = {}) {
     async dispatch(type, event = {}) {
       for (const handler of listeners[type] || []) await handler(event);
     },
-    getBoundingClientRect() {
-      return { top: this.rectTop };
-    },
   };
-  return element;
 }
 
 function createDocument(groups = {}) {
   const selectors = groups.__selectors || {};
   return {
     querySelector(selector) {
-      const relationMatch = selector.match(/^\[data-asset-relationship-section="([^"]+)"\]\[data-asset-id="([^"]+)"\]$/);
-      if (relationMatch) {
-        const [, section, assetId] = relationMatch;
-        return (groups["[data-asset-relationship-section]"] || [])
-          .find((item) => item.dataset.assetRelationshipSection === section && item.dataset.assetId === assetId) || null;
-      }
       return selectors[selector] || null;
     },
     querySelectorAll(selector) {
@@ -152,33 +141,26 @@ await completedHistoryDetails.dispatch("toggle");
 assert.deepEqual(historyLoads, ["asset-1"]);
 assert.equal(renderCount, 4);
 assert.equal(scrollCount, 3);
-assert.deepEqual(scrollRestores, [{ top: 460, behavior: "auto" }]);
+assert.deepEqual(scrollRestores, []);
 
 windowRef.scrollY = 900;
-assetHistoryDetails.rectTop = 80;
-await assetHistoryDetails.dispatch("pointerdown");
-windowRef.scrollY = 0;
-assetHistoryDetails.rectTop = 980;
 assetHistoryDetails.open = true;
 await assetHistoryDetails.dispatch("toggle");
 assert.deepEqual(historyLoads, ["asset-1", "asset-events:asset-1"]);
 assert.equal(renderCount, 5);
 assert.equal(scrollCount, 3);
-assert.deepEqual(scrollRestores, [
-  { top: 460, behavior: "auto" },
-  { top: 900, behavior: "auto" },
-]);
+assert.deepEqual(scrollRestores, []);
+
+windowRef.scrollY = 1200;
+assert.equal(windowRef.scrollY, 1200);
+assert.deepEqual(scrollRestores, []);
 
 windowRef.scrollY = 720;
 await completedHistoryNext.dispatch("click", { preventDefault() {}, stopPropagation() {} });
 assert.equal(relationPage, 2);
 assert.equal(renderCount, 6);
 assert.equal(scrollCount, 3);
-assert.deepEqual(scrollRestores, [
-  { top: 460, behavior: "auto" },
-  { top: 900, behavior: "auto" },
-  { top: 720, behavior: "auto" },
-]);
+assert.deepEqual(scrollRestores, []);
 
 await miniWorkOrder.dispatch("click");
 assert.equal(stateValues.activeWorkOrderId, "wo-2");

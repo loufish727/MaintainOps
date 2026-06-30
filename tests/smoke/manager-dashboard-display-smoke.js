@@ -19,7 +19,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   getWorkOrders: () => [
     { id: "wo-1", assigned_to: "tech-1", status: "open", priority: "critical", follow_up_needed: true, created_at: "2026-05-20T12:00:00Z", location_id: "loc-1" },
     { id: "wo-2", assigned_to: "tech-1", status: "in_progress", priority: "medium", created_at: new Date().toISOString(), due_at: "2026-06-03", location_id: "loc-1" },
-    { id: "wo-4", assigned_to: null, status: "open", created_at: "2026-06-04T12:00:00Z", location_id: "loc-1" },
+    { id: "wo-4", assigned_to: null, status: "open", created_at: new Date().toISOString(), location_id: "loc-1" },
   ],
   getManagerCompletedWorkOrders: () => [
     { id: "wo-3", assigned_to: "tech-2", status: "completed", completed_at: new Date().toISOString(), completed_by: "tech-2", location_id: "loc-1" },

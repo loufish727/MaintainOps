@@ -38,42 +38,8 @@
       return section === "open-work" || section === "completed-history" || section === "parts-used";
     }
 
-    function currentScrollTop() {
-      return Number(win?.scrollY ?? win?.pageYOffset ?? 0);
-    }
-
-    function captureScrollAnchor(element) {
-      return {
-        top: currentScrollTop(),
-        rectTop: Number(element?.getBoundingClientRect?.().top),
-        assetId: element?.dataset?.assetId || "",
-        section: element?.dataset?.assetRelationshipSection || "",
-      };
-    }
-
-    function targetForAnchor(anchor) {
-      if (!anchor?.assetId || !anchor?.section) return null;
-      return doc.querySelector(`[data-asset-relationship-section="${anchor.section}"][data-asset-id="${anchor.assetId}"]`);
-    }
-
-    function restoreScrollAnchor(anchor) {
-      if (!win || typeof win.scrollTo !== "function") return;
-      const target = targetForAnchor(anchor);
-      const nextRectTop = Number(target?.getBoundingClientRect?.().top);
-      const top = Number.isFinite(anchor?.rectTop) && Number.isFinite(nextRectTop)
-        ? currentScrollTop() + nextRectTop - anchor.rectTop
-        : Number(anchor?.top);
-      if (Number.isFinite(top)) win.scrollTo({ top, behavior: "auto" });
-    }
-
-    function renderWorkspacePreservingScroll(anchor) {
+    function renderWorkspaceWithoutScrollControl() {
       options.renderWorkspace();
-      if (!win || typeof win.scrollTo !== "function") return;
-      if (typeof win.requestAnimationFrame === "function") {
-        win.requestAnimationFrame(() => restoreScrollAnchor(anchor));
-        return;
-      }
-      restoreScrollAnchor(anchor);
     }
 
     function scrollToWorkPhotos() {
@@ -195,18 +161,7 @@
     });
 
     doc.querySelectorAll("[data-asset-relationship-section]").forEach((details) => {
-      let interactionAnchor = null;
-      const rememberInteractionScroll = () => {
-        interactionAnchor = captureScrollAnchor(details);
-      };
-      details.addEventListener("pointerdown", rememberInteractionScroll);
-      details.addEventListener("mousedown", rememberInteractionScroll);
-      details.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") rememberInteractionScroll();
-      });
       details.addEventListener("toggle", async () => {
-        const restoreAnchor = interactionAnchor || captureScrollAnchor(details);
-        interactionAnchor = null;
         const assetId = details.dataset.assetId;
         const section = details.dataset.assetRelationshipSection;
         if (!assetId || !section) return;
@@ -219,7 +174,7 @@
         if (details.open && section === "asset-history") {
           await loadAssetEventHistory(assetId);
         }
-        renderWorkspacePreservingScroll(restoreAnchor);
+        renderWorkspaceWithoutScrollControl();
       });
     });
 
@@ -236,7 +191,7 @@
         if (typeof options.setAssetRelationshipPage === "function") {
           options.setAssetRelationshipPage(assetId, section, nextPage);
         }
-        renderWorkspacePreservingScroll(captureScrollAnchor(button.closest?.("[data-asset-relationship-section]") || null));
+        renderWorkspaceWithoutScrollControl();
       });
     });
   }
