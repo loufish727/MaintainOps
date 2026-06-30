@@ -42,6 +42,10 @@
       options.renderWorkspace();
     }
 
+    function closeAssetHistoryScreen() {
+      if (typeof options.setActiveAssetHistoryId === "function") options.setActiveAssetHistoryId(null);
+    }
+
     function scrollToWorkPhotos() {
       const target = doc.querySelector("#work-order-photos-target");
       if (!target) return;
@@ -64,6 +68,7 @@
       backToMyWork.addEventListener("click", () => {
         state.setActiveWorkOrderId(null);
         state.setActiveAssetId(null);
+        closeAssetHistoryScreen();
         resetWorkCreationState();
         options.renderWorkspace();
       });
@@ -73,6 +78,7 @@
     if (backToEquipment) {
       backToEquipment.addEventListener("click", () => {
         state.setActiveAssetId(null);
+        closeAssetHistoryScreen();
         state.setPendingDeleteAssetId(null);
         options.renderWorkspace();
       });
@@ -82,6 +88,7 @@
       card.addEventListener("click", () => {
         state.setActiveWorkOrderId(card.dataset.id);
         state.setActiveAssetId(null);
+        closeAssetHistoryScreen();
         resetWorkCreationState();
         options.renderWorkspace();
       });
@@ -93,6 +100,7 @@
         event.stopPropagation();
         state.setActiveWorkOrderId(button.dataset.workPhotoJump);
         state.setActiveAssetId(null);
+        closeAssetHistoryScreen();
         state.setActiveSection("work");
         resetWorkCreationState();
         storage.setItem("maintainops.activeSection", state.getActiveSection());
@@ -106,6 +114,7 @@
       card.addEventListener("click", () => {
         state.setActiveAssetId(card.dataset.assetId);
         state.setActiveWorkOrderId(null);
+        closeAssetHistoryScreen();
         resetWorkCreationState();
         state.setActiveSection("assets");
         storage.setItem("maintainops.activeSection", state.getActiveSection());
@@ -119,6 +128,7 @@
         event.stopPropagation();
         state.setActiveAssetId(button.dataset.openAsset);
         state.setActiveWorkOrderId(null);
+        closeAssetHistoryScreen();
         resetWorkCreationState();
         if (state.getActiveSection() !== "assets") state.setActiveSection("work");
         storage.setItem("maintainops.activeSection", state.getActiveSection());
@@ -132,6 +142,7 @@
         state.setActiveAssetId(card.dataset.assetId);
         state.setActiveWorkOrderId(null);
         state.setActivePartId(null);
+        closeAssetHistoryScreen();
         resetWorkCreationState();
         state.setReportIssueMode(false);
         state.setActiveSection("assets");
@@ -152,6 +163,7 @@
       item.addEventListener("click", () => {
         state.setActiveWorkOrderId(item.dataset.miniWorkOrder);
         state.setActiveAssetId(null);
+        closeAssetHistoryScreen();
         state.setActiveSection("work");
         resetWorkCreationState();
         storage.setItem("maintainops.activeSection", state.getActiveSection());
@@ -192,6 +204,51 @@
           options.setAssetRelationshipPage(assetId, section, nextPage);
         }
         renderWorkspaceWithoutScrollControl();
+      });
+    });
+
+    doc.querySelectorAll("[data-open-asset-history]").forEach((button) => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const assetId = button.dataset.openAssetHistory;
+        if (!assetId) return;
+        state.setActiveAssetId(assetId);
+        state.setActiveWorkOrderId(null);
+        resetWorkCreationState();
+        if (typeof options.setActiveAssetHistoryId === "function") options.setActiveAssetHistoryId(assetId);
+        await loadAssetEventHistory(assetId);
+        options.renderWorkspace();
+        scrollToDetailTop();
+      });
+    });
+
+    doc.querySelectorAll("[data-back-asset-history]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const assetId = button.dataset.backAssetHistory;
+        if (assetId) state.setActiveAssetId(assetId);
+        closeAssetHistoryScreen();
+        options.renderWorkspace();
+        scrollToDetailTop();
+      });
+    });
+
+    doc.querySelectorAll("[data-asset-history-page]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const assetId = button.dataset.assetId;
+        const currentPage = typeof options.getAssetRelationshipPage === "function"
+          ? options.getAssetRelationshipPage(assetId, "asset-history")
+          : 1;
+        const nextPage = currentPage + (button.dataset.assetHistoryPage === "next" ? 1 : -1);
+        if (typeof options.setAssetRelationshipPage === "function") {
+          options.setAssetRelationshipPage(assetId, "asset-history", nextPage);
+        }
+        options.renderWorkspace();
+        scrollToDetailTop();
       });
     });
   }

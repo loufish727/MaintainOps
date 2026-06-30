@@ -3,17 +3,14 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "../..");
 
-test("equipment history expansion does not lock or force scroll", async ({ page }) => {
+test("equipment history screen does not lock or force scroll", async ({ page }) => {
   await page.setContent(`
     <!doctype html>
     <html>
       <body>
         <main id="workspace">
           <div style="height: 900px">before</div>
-          <details data-asset-relationship-section="asset-history" data-asset-id="asset-1">
-            <summary>Equipment History</summary>
-            <div style="height: 500px">history</div>
-          </details>
+          <button data-open-asset-history="asset-1" type="button">View Equipment History</button>
           <div style="height: 1600px">after</div>
         </main>
       </body>
@@ -47,16 +44,21 @@ test("equipment history expansion does not lock or force scroll", async ({ page 
       },
       loadAssetEventsForAssetIds: () => new Promise((resolve) => setTimeout(resolve, 30)),
       renderWorkspace: () => {
-        document.querySelector('[data-asset-relationship-section="asset-history"]').dataset.rendered = "true";
+        document.querySelector('[data-open-asset-history="asset-1"]').dataset.rendered = "true";
+      },
+      setActiveAssetHistoryId(value) {
+        window.__activeAssetHistoryId = value;
       },
       setAssetRelationshipOpen() {},
+      scrollToDetailTop: () => window.scrollTo(0, 0),
       windowRef: window,
     });
   });
 
   await page.evaluate(() => window.scrollTo(0, 850));
-  await page.locator('[data-asset-relationship-section="asset-history"] summary').click();
-  await expect(page.locator('[data-asset-relationship-section="asset-history"][data-rendered="true"]')).toBeVisible();
+  await page.locator('[data-open-asset-history="asset-1"]').click();
+  await expect(page.locator('[data-open-asset-history="asset-1"][data-rendered="true"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.__activeAssetHistoryId)).toBe("asset-1");
 
   await page.evaluate(() => {
     window.__scrollToCalls = [];

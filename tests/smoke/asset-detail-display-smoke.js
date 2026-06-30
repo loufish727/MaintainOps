@@ -37,7 +37,7 @@ const miniHelpers = createMiniWorkOrderDisplayHelpers({
 });
 
 const signedAssetDocumentRequests = [];
-const { renderAssetDetail } = createAssetDetailDisplayHelpers({
+const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
   getAssets: () => [
     asset,
@@ -159,10 +159,10 @@ assert.match(html, /Older Done/);
 assert.match(html, /owner QA Completer/);
 assert.match(html, /data-mini-work-order="wo-2"/);
 assert.match(html, /Equipment History/);
-assert.match(html, /data-asset-relationship-section="asset-history"/);
-assert.match(html, /Updated status\./);
-assert.match(html, /machine created\./i);
-assert.match(html, /QA Completer/);
+assert.match(html, /data-open-asset-history="asset-1"/);
+assert.match(html, /View Equipment History/);
+assert.match(html, /Review who created or changed this equipment on its own history screen/);
+assert.doesNotMatch(html, /data-asset-relationship-section="asset-history"/);
 assert.doesNotMatch(html, /Team member<\/span>/);
 assert.match(html, /PM Schedules/);
 assert.match(html, /class="asset-relationship-panel relationship-detail procedure"/);
@@ -189,6 +189,15 @@ assert.match(html, /data-asset-relationship-section="parts-used"/);
 assert.match(html, /data-cancel-delete-asset/);
 assert.match(html, /data-confirm-delete-asset="asset-1"/);
 assert.doesNotMatch(html, /Degraded needs a reason/);
+
+const historyHtml = renderAssetHistoryScreen();
+assert.match(historyHtml, /Equipment History/);
+assert.match(historyHtml, /Press 1 - 2 events/);
+assert.match(historyHtml, /data-back-asset-history="asset-1"/);
+assert.match(historyHtml, /Back to Equipment/);
+assert.match(historyHtml, /Updated status\./);
+assert.match(historyHtml, /machine created\./i);
+assert.match(historyHtml, /QA Completer/);
 
 const degradedRenderer = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS: ["machine"],

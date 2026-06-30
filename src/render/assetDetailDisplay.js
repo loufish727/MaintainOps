@@ -29,6 +29,78 @@
       return local.toISOString().slice(0, 10);
     }
 
+    function assetHistoryFor(asset, assetEvents, profilesByUserId) {
+      const hasCreatedEvent = assetEvents.some((event) => event.event_type === "created");
+      const creationHistory = asset.created_at && !hasCreatedEvent ? [{
+        id: `${asset.id}-created`,
+        event_type: "created",
+        summary: `${assetTypeLabel(asset.asset_type)} created.`,
+        actor_id: asset.created_by || "",
+        created_at: asset.created_at,
+      }] : [];
+      const equipmentHistory = [...assetEvents, ...creationHistory]
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      const historyActorLabel = (event) => {
+        if (event.actor_id && profilesByUserId[event.actor_id]?.full_name) return profilesByUserId[event.actor_id].full_name;
+        if (event.actor_id) return `User ${String(event.actor_id).slice(0, 8)}`;
+        return event.event_type === "created" ? "Creator not recorded" : "Team member not recorded";
+      };
+      return { equipmentHistory, historyActorLabel };
+    }
+
+    function renderHistoryEvents(rows, historyActorLabel) {
+      return rows.map((event) => `
+        <article>
+          <strong>${escapeHtml(String(event.event_type || "noted").replaceAll("_", " "))}</strong>
+          <span>${event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"} &middot; ${escapeHtml(historyActorLabel(event))}</span>
+          <p>${escapeHtml(event.summary || "Equipment history noted.")}</p>
+        </article>
+      `).join("");
+    }
+
+    function renderAssetHistoryScreen() {
+      const assets = deps.getAssets();
+      const activeAssetId = deps.getActiveAssetId();
+      const asset = assets.find((item) => item.id === activeAssetId);
+      if (!asset) return renderCreateWorkOrder();
+      const assetEventsReady = deps.getAssetEventsReady?.() !== false;
+      const profilesByUserId = deps.getProfilesByUserId?.() || {};
+      const assetEvents = (deps.getAssetEventsByAssetId?.()[asset.id] || [])
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      const { equipmentHistory, historyActorLabel } = assetHistoryFor(asset, assetEvents, profilesByUserId);
+      const pageSize = deps.LIST_ITEMS_PER_PAGE || 12;
+      const totalPages = Math.max(1, Math.ceil(equipmentHistory.length / pageSize));
+      const page = Math.min(Math.max(1, deps.getAssetRelationshipPage?.(asset.id, "asset-history") || 1), totalPages);
+      const firstShown = equipmentHistory.length ? ((page - 1) * pageSize) + 1 : 0;
+      const lastShown = Math.min(equipmentHistory.length, page * pageSize);
+      const rows = equipmentHistory.slice((page - 1) * pageSize, page * pageSize);
+
+      return `
+        <div class="detail-stack">
+          <section class="asset-relationship-panel relationship-detail comment">
+            <div class="panel-header compact">
+              <div>
+                <h3>Equipment History</h3>
+                <span>${escapeHtml(asset.name)} - ${equipmentHistory.length} event${equipmentHistory.length === 1 ? "" : "s"}</span>
+              </div>
+              <button class="secondary-button back-action-button" data-back-asset-history="${escapeHtml(asset.id)}" type="button">Back to Equipment</button>
+            </div>
+            <div class="timeline">
+              ${assetEventsReady ? "" : `<p class="error-text">Run supabase/step-next-asset-events.sql to show equipment history notes.</p>`}
+              ${renderHistoryEvents(rows, historyActorLabel) || `<p class="muted">No equipment history notes yet.</p>`}
+            </div>
+            ${equipmentHistory.length > pageSize ? `
+              <div class="pagination-bar">
+                <button class="secondary-button page-action-button" data-asset-history-page="prev" data-asset-id="${escapeHtml(asset.id)}" type="button" ${page <= 1 ? "disabled" : ""}>Previous</button>
+                <span>Showing ${firstShown}-${lastShown} of ${equipmentHistory.length} - Page ${page} of ${totalPages}</span>
+                <button class="secondary-button page-action-button" data-asset-history-page="next" data-asset-id="${escapeHtml(asset.id)}" type="button" ${page >= totalPages ? "disabled" : ""}>Next</button>
+              </div>
+            ` : ""}
+          </section>
+        </div>
+      `;
+    }
+
     function renderAssetDetail() {
       const assets = deps.getAssets();
       const activeAssetId = deps.getActiveAssetId();
@@ -66,21 +138,7 @@
       const attachableParts = parts.filter((part) => !linkedPartIds.has(part.id));
       const assetEvents = (deps.getAssetEventsByAssetId?.()[asset.id] || [])
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      const hasCreatedEvent = assetEvents.some((event) => event.event_type === "created");
-      const creationHistory = asset.created_at && !hasCreatedEvent ? [{
-        id: `${asset.id}-created`,
-        event_type: "created",
-        summary: `${assetTypeLabel(asset.asset_type)} created.`,
-        actor_id: asset.created_by || "",
-        created_at: asset.created_at,
-      }] : [];
-      const equipmentHistory = [...assetEvents, ...creationHistory]
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      const historyActorLabel = (event) => {
-        if (event.actor_id && profilesByUserId[event.actor_id]?.full_name) return profilesByUserId[event.actor_id].full_name;
-        if (event.actor_id) return `User ${String(event.actor_id).slice(0, 8)}`;
-        return event.event_type === "created" ? "Creator not recorded" : "Team member not recorded";
-      };
+      const { equipmentHistory } = assetHistoryFor(asset, assetEvents, profilesByUserId);
       const pageSize = deps.LIST_ITEMS_PER_PAGE || 12;
       const relationOpen = (section) => deps.getAssetRelationshipOpen?.(asset.id, section) || false;
       const relationPage = (section, total) => Math.min(
@@ -305,22 +363,16 @@
             ${relationOpen("completed-history") ? relationPagination("completed-history", completedWork.length) : ""}
           </details>
 
-          <details ${relationshipDetailsAttrs("asset-history")}>
-            <summary>Equipment History <span>${equipmentHistory.length}</span></summary>
-            <div class="timeline">
-              ${assetEventsReady ? "" : `<p class="error-text">Run supabase/step-next-asset-events.sql to show equipment history notes.</p>`}
-              ${relationOpen("asset-history")
-                ? pageRows(equipmentHistory, "asset-history").map((event) => `
-                  <article>
-                    <strong>${escapeHtml(event.event_type.replaceAll("_", " "))}</strong>
-                    <span>${event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"} &middot; ${escapeHtml(historyActorLabel(event))}</span>
-                    <p>${escapeHtml(event.summary || "Equipment history noted.")}</p>
-                  </article>
-                `).join("") || `<p class="muted">No equipment history notes yet.</p>`
-                : `<p class="muted">Open this section to review who created or changed this equipment.</p>`}
+          <section class="asset-relationship-panel relationship-detail comment">
+            <div class="panel-header compact">
+              <h3>Equipment History</h3>
+              <div class="panel-header-actions">
+                <span>${equipmentHistory.length} event${equipmentHistory.length === 1 ? "" : "s"}</span>
+                <button class="secondary-button asset-action-button" data-open-asset-history="${escapeHtml(asset.id)}" type="button">View Equipment History</button>
+              </div>
             </div>
-            ${relationOpen("asset-history") ? relationPagination("asset-history", equipmentHistory.length) : ""}
-          </details>
+            ${assetEventsReady ? `<p class="muted">Review who created or changed this equipment on its own history screen.</p>` : `<p class="error-text">Run supabase/step-next-asset-events.sql to show equipment history notes.</p>`}
+          </section>
 
           <section class="asset-relationship-panel relationship-detail procedure">
             <div class="panel-header compact">
@@ -458,7 +510,7 @@
     }
 
 
-    return { renderAssetDetail };
+    return { renderAssetDetail, renderAssetHistoryScreen };
   }
 
   window.MaintainOpsAssetDetailDisplay = {

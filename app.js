@@ -451,6 +451,7 @@ function setActiveAssetIdState(value) {
   activeAssetId = value;
   workspaceUiState.setActiveAssetId(value);
 }
+let activeAssetHistoryId = null;
 let activePartId = workspaceUiState.getActivePartId();
 function setActivePartIdState(value) {
   activePartId = value;
@@ -2019,6 +2020,10 @@ function setAssetRelationshipPage(assetId, section, page) {
   assetRelationshipPages[assetRelationshipKey(assetId, section)] = Math.max(1, Number(page) || 1);
 }
 
+function setActiveAssetHistoryId(value) {
+  activeAssetHistoryId = value || null;
+}
+
 async function loadAssetWorkOrderHistory(assetId) {
   if (!assetId || !activeCompanyId) return;
   const response = await withOperationTimeout(
@@ -3351,10 +3356,10 @@ function renderWorkspace() {
 
           <section class="panel full-width ${activeSection === "assets" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>${activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
-              ${activeAssetId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : `<span>${visibleAssets.length} shown</span>`}
+              <h2>${activeAssetHistoryId ? "Equipment History" : activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
+              ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
-            ${activeAssetId ? renderAssetDetail() : `
+            ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
             <form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
               <input name="asset_code" placeholder="Equipment ID">
@@ -3757,7 +3762,7 @@ function scrollWorkspaceTopIntoView() {
   });
 }
 
-const { renderAssetDetail } = createAssetDetailDisplayHelpers({
+const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
   getActiveAssetId: () => activeAssetId,
@@ -4637,6 +4642,7 @@ function bindWorkspaceEvents() {
     loadAssetEventsForAssetIds,
     loadAssetWorkOrderHistory,
     renderWorkspace,
+    setActiveAssetHistoryId,
     setAssetRelationshipOpen,
     setAssetRelationshipPage,
     scrollToDetailTop: scrollEquipmentDetailToActions,
