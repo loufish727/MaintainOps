@@ -38,8 +38,12 @@
       return section === "open-work" || section === "completed-history" || section === "parts-used";
     }
 
-    function renderWorkspacePreservingScroll() {
-      const top = Number(win?.scrollY ?? win?.pageYOffset ?? 0);
+    function currentScrollTop() {
+      return Number(win?.scrollY ?? win?.pageYOffset ?? 0);
+    }
+
+    function renderWorkspacePreservingScroll(savedTop) {
+      const top = Number.isFinite(savedTop) ? savedTop : currentScrollTop();
       options.renderWorkspace();
       if (!win || typeof win.scrollTo !== "function") return;
       const restoreScroll = () => win.scrollTo({ top, behavior: "auto" });
@@ -172,7 +176,18 @@
     });
 
     doc.querySelectorAll("[data-asset-relationship-section]").forEach((details) => {
+      let interactionScrollTop = null;
+      const rememberInteractionScroll = () => {
+        interactionScrollTop = currentScrollTop();
+      };
+      details.addEventListener("pointerdown", rememberInteractionScroll);
+      details.addEventListener("mousedown", rememberInteractionScroll);
+      details.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") rememberInteractionScroll();
+      });
       details.addEventListener("toggle", async () => {
+        const restoreTop = Number.isFinite(interactionScrollTop) ? interactionScrollTop : currentScrollTop();
+        interactionScrollTop = null;
         const assetId = details.dataset.assetId;
         const section = details.dataset.assetRelationshipSection;
         if (!assetId || !section) return;
@@ -185,7 +200,7 @@
         if (details.open && section === "asset-history") {
           await loadAssetEventHistory(assetId);
         }
-        renderWorkspacePreservingScroll();
+        renderWorkspacePreservingScroll(restoreTop);
       });
     });
 

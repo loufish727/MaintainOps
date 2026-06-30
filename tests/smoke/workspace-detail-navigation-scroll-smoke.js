@@ -49,6 +49,7 @@ const photoTarget = {
   },
 };
 const completedHistoryDetails = createElement({ assetId: "asset-1", assetRelationshipSection: "completed-history" });
+const assetHistoryDetails = createElement({ assetId: "asset-1", assetRelationshipSection: "asset-history" });
 const completedHistoryNext = createElement({
   assetId: "asset-1",
   assetRelationSection: "completed-history",
@@ -83,7 +84,7 @@ bindWorkspaceDetailNavigationEvents({
     "[data-work-photo-jump]": [photoJumpButton],
     "[data-asset-id]": [assetCard, keyboardAssetCard],
     "[data-mini-work-order]": [miniWorkOrder],
-    "[data-asset-relationship-section]": [completedHistoryDetails],
+    "[data-asset-relationship-section]": [completedHistoryDetails, assetHistoryDetails],
     "[data-asset-relation-page]": [completedHistoryNext],
     __selectors: {
       "#work-order-photos-target": photoTarget,
@@ -104,6 +105,7 @@ bindWorkspaceDetailNavigationEvents({
     setReportIssueMode() {},
   },
   getAssetRelationshipPage: () => relationPage,
+  loadAssetEventsForAssetIds: async (assetIds) => { historyLoads.push(`asset-events:${assetIds.join(",")}`); },
   loadAssetWorkOrderHistory: async (assetId) => { historyLoads.push(assetId); },
   renderWorkspace: () => { renderCount += 1; },
   scrollToDetailTop: () => { scrollCount += 1; },
@@ -144,14 +146,31 @@ assert.deepEqual(scrollRestores, [
   { top: 460, behavior: "auto" },
 ]);
 
-windowRef.scrollY = 720;
-await completedHistoryNext.dispatch("click", { preventDefault() {}, stopPropagation() {} });
-assert.equal(relationPage, 2);
+windowRef.scrollY = 900;
+await assetHistoryDetails.dispatch("pointerdown");
+windowRef.scrollY = 0;
+assetHistoryDetails.open = true;
+await assetHistoryDetails.dispatch("toggle");
+assert.deepEqual(historyLoads, ["asset-1", "asset-events:asset-1"]);
 assert.equal(renderCount, 5);
 assert.equal(scrollCount, 3);
 assert.deepEqual(scrollRestores, [
   { top: 460, behavior: "auto" },
   { top: 460, behavior: "auto" },
+  { top: 900, behavior: "auto" },
+  { top: 900, behavior: "auto" },
+]);
+
+windowRef.scrollY = 720;
+await completedHistoryNext.dispatch("click", { preventDefault() {}, stopPropagation() {} });
+assert.equal(relationPage, 2);
+assert.equal(renderCount, 6);
+assert.equal(scrollCount, 3);
+assert.deepEqual(scrollRestores, [
+  { top: 460, behavior: "auto" },
+  { top: 460, behavior: "auto" },
+  { top: 900, behavior: "auto" },
+  { top: 900, behavior: "auto" },
   { top: 720, behavior: "auto" },
   { top: 720, behavior: "auto" },
 ]);
@@ -160,14 +179,14 @@ await miniWorkOrder.dispatch("click");
 assert.equal(stateValues.activeWorkOrderId, "wo-2");
 assert.equal(stateValues.activeAssetId, null);
 assert.equal(stateValues.activeSection, "work");
-assert.equal(renderCount, 6);
+assert.equal(renderCount, 7);
 assert.equal(scrollCount, 4);
 
 await photoJumpButton.dispatch("click", { preventDefault() {}, stopPropagation() {} });
 assert.equal(stateValues.activeWorkOrderId, "wo-photo");
 assert.equal(stateValues.activeAssetId, null);
 assert.equal(stateValues.activeSection, "work");
-assert.equal(renderCount, 7);
+assert.equal(renderCount, 8);
 assert.equal(scrollCount, 4);
 assert.equal(photoTarget.open, true);
 assert.deepEqual(photoTarget.scrolled, { behavior: "smooth", block: "start" });
