@@ -14,6 +14,17 @@
       options.renderWorkspace?.();
     }
 
+    function openEquipmentPage(assetId) {
+      if (!assetId) return;
+      state.clearActiveFinancialAssetId();
+      state.setActiveAssetId?.(assetId);
+      state.setActiveWorkOrderId?.(null);
+      state.setActivePartId?.(null);
+      state.setActiveSection?.("assets");
+      options.renderWorkspace?.();
+      options.scrollToDetailTop?.();
+    }
+
     doc.querySelectorAll("[data-open-financial-asset]").forEach((card) => {
       card.addEventListener("click", () => {
         openAsset(card.dataset.openFinancialAsset);
@@ -29,6 +40,12 @@
       button.addEventListener("click", () => {
         state.clearActiveFinancialAssetId();
         options.renderWorkspace?.();
+      });
+    });
+
+    doc.querySelectorAll("[data-open-financial-equipment]").forEach((button) => {
+      button.addEventListener("click", () => {
+        openEquipmentPage(button.dataset.openFinancialEquipment);
       });
     });
   }

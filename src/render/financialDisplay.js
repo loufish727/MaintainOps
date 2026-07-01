@@ -209,7 +209,10 @@
             <strong>${escapeHtml(asset.name || "Equipment")}</strong>
             <span>${escapeHtml(assetTypeLabel(asset.asset_type))} - ${escapeHtml(locationName(asset.location_id) || "Location unset")} - ${escapeHtml(asset.location || "Department unset")}</span>
           </div>
-          <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
+          <div class="team-actions">
+            <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
+            <button class="secondary-button asset-action-button" data-open-financial-equipment="${escapeHtml(asset.id)}" type="button">Open Equipment Page</button>
+          </div>
         </div>
         <section class="relationship-detail asset">
           <div class="chip-row">

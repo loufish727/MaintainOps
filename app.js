@@ -4932,8 +4932,13 @@ function bindWorkspaceEvents() {
     state: {
       setActiveFinancialAssetId: setActiveFinancialAssetIdState,
       clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
+      setActiveAssetId: setActiveAssetIdState,
+      setActiveWorkOrderId: setActiveWorkOrderIdState,
+      setActivePartId: setActivePartIdState,
+      setActiveSection: setActiveSectionState,
     },
     renderWorkspace,
+    scrollToDetailTop,
   });
 
   const editAssetForm = document.querySelector("#edit-asset-form");

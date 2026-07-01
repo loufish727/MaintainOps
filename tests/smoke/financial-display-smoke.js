@@ -107,6 +107,8 @@ assert.doesNotMatch(html, /Marion County/);
 const detailHtml = helpers.renderFinancialDetail("asset-1");
 assert.match(detailHtml, /Financial Details/);
 assert.match(detailHtml, /data-back-financial-list/);
+assert.match(detailHtml, /data-open-financial-equipment="asset-1"/);
+assert.match(detailHtml, /Open Equipment Page/);
 assert.match(detailHtml, /data-financial-asset="asset-1"/);
 assert.match(detailHtml, /Asset tag \/ fixed asset number/);
 assert.match(detailHtml, /Straight-line/);
