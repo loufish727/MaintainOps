@@ -427,6 +427,7 @@ let assetPartsReady = true;
 let assetDocumentsReady = true;
 let assetDocumentsByAssetId = {};
 let assetFinancialsReady = true;
+let assetFinancials = [];
 let assetFinancialsByAssetId = {};
 let assetDocumentSigningByAssetId = {};
 let procedureTemplates = [];
@@ -920,6 +921,7 @@ const {
   getWorkOrders: () => workOrders,
   getAssets: () => assets,
   getLocations: () => locations,
+  getAssetFinancials: () => assetFinancials,
   getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getMaintenanceRequests: () => maintenanceRequests,
@@ -1177,6 +1179,7 @@ const {
   getAssets: () => assets,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
+  getAssetFinancials: () => assetFinancials,
   getAssetFinancialsReady: () => assetFinancialsReady,
   getProfilesByUserId: () => profilesByUserId,
   getLocations: () => locations,
@@ -2850,6 +2853,7 @@ async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
 
 async function loadAssetFinancials() {
   if (!activeCompanyId) {
+    assetFinancials = [];
     assetFinancialsByAssetId = {};
     assetFinancialsReady = true;
     return;
@@ -2857,14 +2861,16 @@ async function loadAssetFinancials() {
 
   const { data, error } = await listAssetFinancials(supabaseClient, activeCompanyId);
   if (error) {
+    assetFinancials = [];
     assetFinancialsByAssetId = {};
     assetFinancialsReady = false;
     return;
   }
 
   assetFinancialsReady = true;
+  assetFinancials = data || [];
   assetFinancialsByAssetId = (data || []).reduce((groups, row) => {
-    groups[row.asset_id] = row;
+    if (row.asset_id) groups[row.asset_id] = row;
     return groups;
   }, {});
 }
@@ -3929,6 +3935,7 @@ const {
   documentRef: document,
   FormDataCtor: FormData,
   CSSRef: CSS,
+  confirmRef: confirm,
   supabaseClient: () => supabaseClient,
   withOperationTimeout,
   getActiveCompanyId: () => activeCompanyId,
@@ -3937,6 +3944,7 @@ const {
   isMissingTableError,
   setAssetFinancialsReady: (value) => { assetFinancialsReady = value; },
   loadAssetFinancials,
+  clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
   showNotice,
   renderWorkspace,
 });

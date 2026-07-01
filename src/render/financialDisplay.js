@@ -6,6 +6,7 @@
     getAssets,
     getAssetDocumentsByAssetId,
     getAssetFinancialsByAssetId,
+    getAssetFinancials,
     getAssetFinancialsReady,
     getProfilesByUserId,
     getLocations,
@@ -41,8 +42,16 @@
       return getAssetFinancialsByAssetId?.()[assetId] || {};
     }
 
+    function financeForAsset(asset) {
+      return asset?.financialRecord || financeFor(asset?.id);
+    }
+
+    function isArchivedFinancialAsset(asset) {
+      return Boolean(asset?.financialRecord && !asset.financialRecord.asset_id);
+    }
+
     function isMissingFinancialInfo(asset) {
-      const finance = financeFor(asset.id);
+      const finance = financeForAsset(asset);
       return requiredFinancialFields.some((field) => finance[field] == null || String(finance[field]).trim() === "");
     }
 
@@ -55,18 +64,46 @@
       return getProfilesByUserId?.()[finance.reviewed_by]?.full_name || `User ${String(finance.reviewed_by).slice(0, 8)}`;
     }
 
+    function deletedByName(finance) {
+      if (!finance.operational_deleted_by) return "";
+      return getProfilesByUserId?.()[finance.operational_deleted_by]?.full_name || `User ${String(finance.operational_deleted_by).slice(0, 8)}`;
+    }
+
+    function archivedFinancialAsset(finance) {
+      return {
+        id: `financial:${finance.id}`,
+        financialRecord: finance,
+        name: finance.archived_asset_name || "Deleted equipment",
+        asset_type: finance.archived_asset_type || "machine",
+        asset_code: finance.archived_asset_code || "",
+        manufacturer: finance.archived_manufacturer || "",
+        model: finance.archived_model || "",
+        location_id: finance.archived_location_id || "",
+        location: finance.archived_location || "",
+        status: "offline",
+      };
+    }
+
+    function financialAssetRows() {
+      const liveAssets = getAssets();
+      const archivedRows = (getAssetFinancials?.() || [])
+        .filter((finance) => !finance.asset_id)
+        .map(archivedFinancialAsset);
+      return [...liveAssets, ...archivedRows];
+    }
+
     function financialAssets() {
       const missingFilter = getFinancialMissingFilter?.() || "all";
       const locationFilter = getFinancialLocationFilter?.() || "all";
       const typeFilter = getFinancialTypeFilter?.() || "all";
       const areaFilter = getFinancialAreaFilter?.() || "all";
-      return getAssets()
+      return financialAssetRows()
         .filter((asset) => locationFilter === "all" || asset.location_id === locationFilter)
         .filter((asset) => typeFilter === "all" || (asset.asset_type || "machine") === typeFilter)
         .filter((asset) => areaFilter === "all" || String(asset.location || "").trim() === areaFilter)
         .filter((asset) => {
           if (missingFilter === "missing") return isMissingFinancialInfo(asset);
-          if (missingFilter === "review") return financeFor(asset.id).needs_review === true;
+          if (missingFilter === "review") return financeForAsset(asset).needs_review === true;
           return true;
         })
         .sort((a, b) => {
@@ -93,7 +130,7 @@
     }
 
     function renderFinancialForm(asset) {
-      const finance = financeFor(asset.id);
+      const finance = financeForAsset(asset);
       return `
         <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}">
           <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
@@ -131,7 +168,7 @@
     }
 
     function renderFinancialReadOnly(asset) {
-      const finance = financeFor(asset.id);
+      const finance = financeForAsset(asset);
       const rows = [
         ["Asset tag / fixed asset number", finance.asset_tag],
         ["Acquisition date", dateValue(finance.acquisition_date)],
@@ -165,11 +202,13 @@
     function renderFinancialAssetCard(asset) {
       const parent = parentAssetFor(asset);
       const pictures = assetPictureDocuments(asset.id);
-      const finance = financeFor(asset.id);
+      const finance = financeForAsset(asset);
       const missing = isMissingFinancialInfo(asset);
+      const archived = isArchivedFinancialAsset(asset);
       return `
-        <article class="asset-card asset-state-${escapeHtml(asset.status || "running")} financial-asset-card" data-open-financial-asset="${escapeHtml(asset.id)}" tabindex="0" role="button" aria-label="Open financial details for ${escapeHtml(asset.name || "equipment")}">
+        <article class="asset-card asset-state-${escapeHtml(asset.status || "running")} financial-asset-card ${archived ? "financial-asset-deleted" : ""}" data-open-financial-asset="${escapeHtml(asset.id)}" tabindex="0" role="button" aria-label="Open financial details for ${escapeHtml(asset.name || "equipment")}">
           <div class="part-card-main">
+            ${archived ? `<div class="financial-deleted-banner">Operational equipment deleted${finance.operational_deleted_at ? ` ${escapeHtml(new Date(finance.operational_deleted_at).toLocaleDateString())}` : ""}${finance.operational_deleted_by ? ` by ${escapeHtml(deletedByName(finance))}` : ""}</div>` : ""}
             <div class="chip-row">
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
               <span class="chip">${escapeHtml(locationName(asset.location_id) || "Location unset")}</span>
@@ -195,9 +234,10 @@
       const activeType = getFinancialTypeFilter?.() || "all";
       const activeArea = getFinancialAreaFilter?.() || "all";
       const locations = getLocations?.() || [];
-      const areaOptions = [...new Set(getAssets().map((asset) => String(asset.location || "").trim()).filter(Boolean))]
+      const allFinancialAssets = financialAssetRows();
+      const areaOptions = [...new Set(allFinancialAssets.map((asset) => String(asset.location || "").trim()).filter(Boolean))]
         .sort((a, b) => a.localeCompare(b));
-      const typeOptions = [...new Set(getAssets().map((asset) => asset.asset_type || "machine"))]
+      const typeOptions = [...new Set(allFinancialAssets.map((asset) => asset.asset_type || "machine"))]
         .sort((a, b) => (assetTypeOrder[a] || 999) - (assetTypeOrder[b] || 999));
       return `
         <div class="asset-area-filter relationship-detail asset" aria-label="Financial asset filters">
@@ -232,7 +272,7 @@
     }
 
     function renderFinancialDetail(assetId) {
-      const asset = getAssets().find((row) => row.id === assetId);
+      const asset = financialAssetRows().find((row) => row.id === assetId || row.financialRecord?.asset_id === assetId);
       if (!asset) {
         return `
           <div class="relationship-detail asset">
@@ -243,8 +283,9 @@
       }
       const parent = parentAssetFor(asset);
       const pictures = assetPictureDocuments(asset.id);
-      const finance = financeFor(asset.id);
+      const finance = financeForAsset(asset);
       const missing = isMissingFinancialInfo(asset);
+      const archived = isArchivedFinancialAsset(asset);
       return `
         <div class="queue-context-card asset-command-summary">
           <div>
@@ -253,9 +294,17 @@
           </div>
           <div class="team-actions">
             <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
-            <button class="secondary-button asset-action-button" data-open-financial-equipment="${escapeHtml(asset.id)}" type="button">Open Equipment Page</button>
+            ${archived ? "" : `<button class="secondary-button asset-action-button" data-open-financial-equipment="${escapeHtml(asset.id)}" type="button">Open Equipment Page</button>`}
           </div>
         </div>
+        ${archived ? `
+          <section class="relationship-detail asset financial-deleted-detail">
+            <div class="financial-deleted-banner">Operational equipment deleted${finance.operational_deleted_at ? ` ${escapeHtml(new Date(finance.operational_deleted_at).toLocaleDateString())}` : ""}${finance.operational_deleted_by ? ` by ${escapeHtml(deletedByName(finance))}` : ""}</div>
+            <p class="muted">This financial history was retained after the shop equipment record was deleted.</p>
+            ${canEditFinancial() ? `<button class="danger-action-button" data-delete-financial-record="${escapeHtml(finance.id)}" type="button">Delete From Financials</button>` : ""}
+            <p class="error-text" data-financial-delete-error="${escapeHtml(finance.id || "")}"></p>
+          </section>
+        ` : ""}
         <section class="relationship-detail asset">
           <div class="chip-row">
             <span class="chip">${escapeHtml(parent ? `Part of ${parent.name}` : "Top level equipment")}</span>
@@ -266,11 +315,11 @@
             ${missing ? `<span class="chip status-open">missing finance info</span>` : `<span class="chip status-completed">finance complete</span>`}
             ${finance.needs_review ? `<span class="chip status-blocked">needs review</span>` : ""}
           </div>
-          <p class="muted">Operational equipment fields mirror the equipment record. Accounting changes on this screen save only financial fields.</p>
+          <p class="muted">${archived ? "Operational equipment fields are a retained snapshot." : "Operational equipment fields mirror the equipment record. Accounting changes on this screen save only financial fields."}</p>
         </section>
         <section class="relationship-detail asset">
           <h3>Financial Details</h3>
-          ${canEditFinancial() ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
+          ${canEditFinancial() && !archived ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
         </section>
       `;
     }

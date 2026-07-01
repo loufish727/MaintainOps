@@ -45,6 +45,28 @@
       return String(locationName(asset.location_id) || asset.location_id || asset.location || "");
     }
 
+    function archivedFinancialAsset(financial) {
+      return {
+        id: `financial:${financial.id}`,
+        financialRecord: financial,
+        name: financial.archived_asset_name || "Deleted equipment",
+        asset_type: financial.archived_asset_type || "machine",
+        asset_code: financial.archived_asset_code || "",
+        manufacturer: financial.archived_manufacturer || "",
+        model: financial.archived_model || "",
+        location_id: financial.archived_location_id || "",
+        location: financial.archived_location || "",
+        status: "deleted",
+      };
+    }
+
+    function financialAssetRows() {
+      return [
+        ...deps.getAssets(),
+        ...(deps.getAssetFinancials?.() || []).filter((financial) => !financial.asset_id).map(archivedFinancialAsset),
+      ];
+    }
+
     function compareAssetsForAudit(a, b, assetsById) {
       const locationDelta = assetLocationSortKey(a).localeCompare(assetLocationSortKey(b));
       if (locationDelta) return locationDelta;
@@ -76,14 +98,15 @@
     }
 
     function assetFinancialRows() {
-      const assets = deps.getAssets();
+      const assets = financialAssetRows();
       const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
       const financialsByAssetId = deps.getAssetFinancialsByAssetId?.() || {};
       return [...assets]
         .sort((a, b) => compareAssetsForAudit(a, b, assetsById))
         .map((asset) => {
-          const financial = financialsByAssetId[asset.id] || {};
+          const financial = asset.financialRecord || financialsByAssetId[asset.id] || {};
           return {
+            operational_status: asset.financialRecord ? "deleted" : "active",
             equipment_type: assetTypeLabel(asset.asset_type),
             name: asset.name,
             parent_equipment: parentAssetName(asset, assetsById),

@@ -3404,6 +3404,29 @@ textarea {
 .asset-card.asset-state-degraded { border-left-color: var(--asset-degraded-ink); }
 .asset-card.asset-state-offline { border-left-color: var(--asset-offline-ink); }
 
+.asset-card.financial-asset-deleted,
+.financial-deleted-detail {
+  border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+  border-left-color: var(--red);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--red) 12%, transparent), transparent 62%),
+    var(--surface);
+}
+
+.financial-deleted-banner {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--red) 52%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--red) 14%, var(--surface));
+  color: var(--red);
+  padding: 5px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
 .asset-card .chip-row {
   gap: 6px;
 }

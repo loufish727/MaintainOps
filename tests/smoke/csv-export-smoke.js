@@ -120,6 +120,20 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
       reviewed_by: "8f6e618f-bf06-46a7-925b-1001d7d30228",
     },
   }),
+  getAssetFinancials: () => [{
+    id: "finance-archived",
+    asset_id: null,
+    archived_asset_name: "Deleted Salem Brake",
+    archived_asset_type: "machine",
+    archived_asset_code: "DEL-1",
+    archived_manufacturer: "Pacific",
+    archived_model: "PX",
+    archived_location_id: "loc-1",
+    archived_location: "Bay 4",
+    asset_tag: "FA-DEL",
+    ownership_status: "disposed",
+    disposal_date: "2026-06-30",
+  }],
   getMaintenanceRequests: () => [],
   getPreventiveSchedules: () => [],
   getParts: () => [],
@@ -159,10 +173,13 @@ activeSection = "financial";
 exportActiveSectionCsv();
 assert.equal(link.download, "equipment-financial.csv");
 assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
+assert.match(urls[2].parts[0], /operational_status,equipment_type,name,parent_equipment,facility/);
 assert.match(urls[2].parts[0], /asset_tag,acquisition_date,acquisition_cost/);
-assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","Salem, OR","Bay 1"/);
+assert.match(urls[2].parts[0], /"active","Primary","10\u2019 Press Brake","","Salem, OR","Bay 1"/);
 assert.doesNotMatch(urls[2].parts[0], /"loc-1","Bay 1"/);
 assert.ok(urls[2].parts[0].indexOf("Auburn component") < urls[2].parts[0].indexOf("10\u2019 Press Brake"));
+assert.match(urls[2].parts[0], /"deleted","Primary","Deleted Salem Brake","","Salem, OR","Bay 4"/);
+assert.match(urls[2].parts[0], /"FA-DEL"/);
 assert.match(urls[2].parts[0], /"FA-100","2024-01-15","25000.00","Straight-line"/);
 assert.match(urls[2].parts[0], /"Marion County","owned","2024-02-01"/);
 assert.match(urls[2].parts[0], /"Steven Sickles"/);

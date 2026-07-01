@@ -12,8 +12,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/utils\/csvExport\.js\?v=mo-build-20260701-export-location-type-sort-1/,
-  "csvExport must use the export location/type sort cache tag"
+  /src\/utils\/csvExport\.js\?v=mo-build-20260701-financial-delete-retention-1/,
+  "csvExport must use the financial delete-retention cache tag"
 );
 
 assert.match(
@@ -28,18 +28,18 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/render\/financialDisplay\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
-  "financialDisplay must use the financial manager readonly cache tag"
+  /src\/render\/financialDisplay\.js\?v=mo-build-20260701-financial-delete-retention-1/,
+  "financialDisplay must use the financial delete-retention cache tag"
 );
 assert.match(
   indexHtml,
-  /src\/workflows\/assetFinancialWorkflow\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
-  "assetFinancialWorkflow must use the financial manager readonly cache tag"
+  /src\/workflows\/assetFinancialWorkflow\.js\?v=mo-build-20260701-financial-delete-retention-1/,
+  "assetFinancialWorkflow must use the financial delete-retention cache tag"
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-company-duplicate-select-1/,
-  "app.js must use the company duplicate select cache tag"
+  /app\.js\?v=mo-build-20260701-financial-delete-retention-1/,
+  "app.js must use the financial delete-retention cache tag"
 );
 assert.match(
   indexHtml,

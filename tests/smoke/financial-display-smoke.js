@@ -34,8 +34,9 @@ const helpers = createFinancialDisplayHelpers({
       reviewed_by: "user-1",
     },
   }),
+  getAssetFinancials: () => financialRows,
   getAssetFinancialsReady: () => true,
-  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" } }),
+  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" }, "user-2": { full_name: "Shop Manager" } }),
   getLocations: () => [{ id: "loc-1", name: "Salem, OR" }, { id: "loc-2", name: "Z Auburn, WA" }],
   matchesActiveLocation: (asset) => asset.location_id === "loc-1",
   getFinancialPage: () => 1,
@@ -77,8 +78,9 @@ const readOnlyHelpers = createFinancialDisplayHelpers({
       reviewed_by: "user-1",
     },
   }),
+  getAssetFinancials: () => financialRows,
   getAssetFinancialsReady: () => true,
-  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" } }),
+  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" }, "user-2": { full_name: "Shop Manager" } }),
   getLocations: () => [{ id: "loc-1", name: "Salem, OR" }, { id: "loc-2", name: "Z Auburn, WA" }],
   matchesActiveLocation: (asset) => asset.location_id === "loc-1",
   getFinancialPage: () => 1,
@@ -119,10 +121,33 @@ const assets = [{
   status: "running",
 }];
 
+const financialRows = [{
+  id: "finance-archived",
+  company_id: "company-1",
+  asset_id: null,
+  archived_asset_id: "asset-deleted",
+  archived_asset_name: "Sold Press Brake",
+  archived_asset_type: "machine",
+  archived_asset_code: "SOLD-10",
+  archived_manufacturer: "Pacific",
+  archived_model: "PBX",
+  archived_location_id: "loc-1",
+  archived_location: "Bay 2",
+  asset_tag: "FA-SOLD",
+  ownership_status: "disposed",
+  disposal_date: "2026-06-30",
+  disposal_notes: "Sold at auction",
+  cost_center: "Salem Production",
+  needs_review: false,
+  operational_deleted_at: "2026-07-01T12:00:00Z",
+  operational_deleted_by: "user-2",
+}];
+
 const rows = helpers.financialAssets();
-assert.equal(rows.length, 3);
+assert.equal(rows.length, 4);
 assert.equal(rows[0].id, "asset-1");
 assert.equal(rows.some((row) => row.id === "asset-2"), true);
+assert.equal(rows.some((row) => row.id === "financial:finance-archived"), true);
 
 const html = helpers.renderFinancialPanel();
 assert.match(html, /Equipment Financial Register/);
@@ -140,7 +165,7 @@ assert.match(html, /data-financial-filter="type"/);
 assert.match(html, /data-financial-filter="area"/);
 assert.match(html, /data-open-financial-asset="asset-1"/);
 assert.match(html, /data-financial-page="next"/);
-assert.match(html, /Showing 1-1 of 3 - Page 1 of 3/);
+assert.match(html, /Showing 1-1 of 4 - Page 1 of 4/);
 assert.doesNotMatch(html, /Part of 10\u2019 Press Brake/);
 assert.doesNotMatch(html, /Other Location/);
 assert.doesNotMatch(html, /<form/);
@@ -171,5 +196,17 @@ assert.match(readOnlyDetailHtml, /Salem Production/);
 assert.match(readOnlyDetailHtml, /Finance Lead/);
 assert.doesNotMatch(readOnlyDetailHtml, /data-financial-asset="asset-1"/);
 assert.doesNotMatch(readOnlyDetailHtml, /Save Financial Info/);
+
+const archivedDetailHtml = helpers.renderFinancialDetail("financial:finance-archived");
+assert.match(archivedDetailHtml, /Sold Press Brake/);
+assert.match(archivedDetailHtml, /Operational equipment deleted/);
+assert.match(archivedDetailHtml, /Shop Manager/);
+assert.match(archivedDetailHtml, /retained after the shop equipment record was deleted/);
+assert.match(archivedDetailHtml, /Delete From Financials/);
+assert.match(archivedDetailHtml, /data-delete-financial-record="finance-archived"/);
+assert.match(archivedDetailHtml, /FA-SOLD/);
+assert.match(archivedDetailHtml, /Sold at auction/);
+assert.doesNotMatch(archivedDetailHtml, /Open Equipment Page/);
+assert.doesNotMatch(archivedDetailHtml, /data-financial-asset=/);
 
 console.log("financial display smoke passed");

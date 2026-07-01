@@ -34,6 +34,7 @@ class FakeFormData {
 }
 
 const calls = [];
+const deleteError = { textContent: "" };
 const form = {
   dataset: { financialAsset: "asset-1" },
   querySelector(selector) {
@@ -44,7 +45,7 @@ const form = {
 
 const workflow = createAssetFinancialWorkflow({
   documentRef: {
-    querySelector: () => ({ textContent: "" }),
+    querySelector: (selector) => selector === '[data-financial-delete-error="finance-archived"]' ? deleteError : ({ textContent: "" }),
     querySelectorAll: () => [],
   },
   FormDataCtor: FakeFormData,
@@ -65,13 +66,28 @@ const workflow = createAssetFinancialWorkflow({
             },
           };
         },
+        delete() {
+          calls.push(["delete", table]);
+          return {
+            eq(column, value) {
+              calls.push(["eq", table, column, value]);
+              return this;
+            },
+            is(column, value) {
+              calls.push(["is", table, column, value]);
+              return Promise.resolve({ error: null });
+            },
+          };
+        },
       };
     },
   }),
   withOperationTimeout: async (promise) => promise,
   loadAssetFinancials: async () => calls.push(["loadAssetFinancials"]),
+  clearActiveFinancialAssetId: () => calls.push(["clearActiveFinancialAssetId"]),
   renderWorkspace: () => calls.push(["renderWorkspace"]),
   showNotice: (message) => calls.push(["notice", message]),
+  confirmRef: () => true,
   canEditFinancialRecords: () => true,
 });
 
@@ -90,6 +106,13 @@ const workflow = createAssetFinancialWorkflow({
   assert.ok(calls.some((call) => call[0] === "loadAssetFinancials"));
   assert.ok(calls.some((call) => call[0] === "renderWorkspace"));
   assert.ok(calls.some((call) => call[0] === "notice" && call[1] === "Financial info saved."));
+
+  await workflow.deleteFinancialRecord("finance-archived");
+  assert.equal(calls.some((call) => call[0] === "delete" && call[1] === "asset_financials"), true);
+  assert.equal(calls.some((call) => call[0] === "eq" && call[2] === "id" && call[3] === "finance-archived"), true);
+  assert.equal(calls.some((call) => call[0] === "is" && call[2] === "asset_id" && call[3] === null), true);
+  assert.equal(calls.some((call) => call[0] === "clearActiveFinancialAssetId"), true);
+  assert.ok(calls.some((call) => call[0] === "notice" && call[1] === "Archived financial record deleted."));
 
   const readOnlyCalls = [];
   const readOnlyError = { textContent: "" };
@@ -113,6 +136,9 @@ const workflow = createAssetFinancialWorkflow({
   await readOnlyWorkflow.saveAssetFinancial({ preventDefault() {}, currentTarget: form });
   assert.equal(readOnlyCalls.some((call) => call[0] === "from"), false);
   assert.equal(readOnlyError.textContent, "Managers can view financial records, but only admins and accounting can edit financial info.");
+
+  await readOnlyWorkflow.deleteFinancialRecord("finance-archived");
+  assert.equal(readOnlyCalls.some((call) => call[0] === "from"), false);
 
   console.log("asset financial workflow smoke passed");
 })().catch((error) => {

@@ -74,7 +74,17 @@ create table if not exists public.assets (
 create table if not exists public.asset_financials (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
-  asset_id uuid not null references public.assets(id) on delete cascade,
+  asset_id uuid references public.assets(id) on delete set null,
+  archived_asset_id uuid,
+  archived_asset_name text,
+  archived_asset_type text,
+  archived_asset_code text,
+  archived_manufacturer text,
+  archived_model text,
+  archived_location_id uuid,
+  archived_location text,
+  operational_deleted_at timestamptz,
+  operational_deleted_by uuid references auth.users(id) on delete set null,
   asset_tag text,
   acquisition_date date,
   acquisition_cost numeric(14, 2),
@@ -527,7 +537,7 @@ grant select, insert, update on public.locations to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, update on public.user_preferences to authenticated;
 grant select, insert, update, delete on public.assets to authenticated;
-grant select, insert, update on public.asset_financials to authenticated;
+grant select, insert, update, delete on public.asset_financials to authenticated;
 grant select, insert, update, delete on public.work_orders to authenticated;
 grant select, insert on public.work_order_comments to authenticated;
 grant select, insert on public.work_order_photos to authenticated;
@@ -1128,6 +1138,39 @@ with check (
   )
 );
 
+create or replace function private.archive_asset_financial_before_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+begin
+  update public.asset_financials af
+  set asset_id = null,
+      archived_asset_id = old.id,
+      archived_asset_name = old.name,
+      archived_asset_type = old.asset_type,
+      archived_asset_code = old.asset_code,
+      archived_manufacturer = old.manufacturer,
+      archived_model = old.model,
+      archived_location_id = old.location_id,
+      archived_location = old.location,
+      operational_deleted_at = now(),
+      operational_deleted_by = auth.uid(),
+      updated_at = now()
+  where af.asset_id = old.id
+    and af.company_id = old.company_id;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists archive_asset_financial_before_delete on public.assets;
+create trigger archive_asset_financial_before_delete
+before delete on public.assets
+for each row
+execute function private.archive_asset_financial_before_delete();
+
 drop policy if exists "Company members can read asset financials" on public.asset_financials;
 create policy "Company members can read asset financials"
 on public.asset_financials for select
@@ -1145,6 +1188,7 @@ with check (
       and cm.user_id = auth.uid()
       and cm.role in ('admin', 'accounting')
   )
+  and asset_financials.asset_id is not null
   and exists (
     select 1 from public.assets a
     where a.id = asset_id
@@ -1171,10 +1215,33 @@ with check (
       and cm.user_id = auth.uid()
       and cm.role in ('admin', 'accounting')
   )
+  and (
+    (
+      asset_financials.asset_id is not null
+      and exists (
+        select 1 from public.assets a
+        where a.id = asset_id
+          and a.company_id = asset_financials.company_id
+      )
+    )
+    or (
+      asset_financials.asset_id is null
+      and asset_financials.archived_asset_id is not null
+    )
+  )
+);
+
+drop policy if exists "Finance roles can delete archived asset financials" on public.asset_financials;
+create policy "Finance roles can delete archived asset financials"
+on public.asset_financials for delete
+to authenticated
+using (
+  asset_financials.asset_id is null
   and exists (
-    select 1 from public.assets a
-    where a.id = asset_id
-      and a.company_id = asset_financials.company_id
+    select 1 from public.company_members cm
+    where cm.company_id = asset_financials.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'accounting')
   )
 );
 

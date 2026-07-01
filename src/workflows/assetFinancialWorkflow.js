@@ -97,14 +97,55 @@
       }
     }
 
+    async function deleteFinancialRecord(financialId) {
+      const errorElement = documentRef.querySelector(`[data-financial-delete-error="${CSSRef.escape(financialId || "")}"]`);
+      if (errorElement) errorElement.textContent = "";
+      if (deps.canEditFinancialRecords && !deps.canEditFinancialRecords()) {
+        const message = "Managers can view financial records, but only admins and accounting can edit financial info.";
+        if (errorElement) errorElement.textContent = message;
+        else deps.showNotice?.(message, "warning");
+        return;
+      }
+      if (!financialId) {
+        if (errorElement) errorElement.textContent = "Choose a financial record before deleting.";
+        return;
+      }
+      const confirmed = deps.confirmRef ? deps.confirmRef("Delete this archived financial record? This cannot be undone.") : true;
+      if (!confirmed) return;
+
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("asset_financials")
+            .delete()
+            .eq("id", financialId)
+            .is("asset_id", null),
+          "Financial record delete timed out. Check your connection and try again.",
+          15000
+        );
+        if (error) throw error;
+        deps.showNotice?.("Archived financial record deleted.");
+        await deps.loadAssetFinancials?.();
+        deps.clearActiveFinancialAssetId?.();
+        deps.renderWorkspace?.();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not delete financial record.";
+        else deps.showNotice?.(error.message || "Could not delete financial record.", "warning");
+      }
+    }
+
     function bindFinancialEvents() {
       documentRef.querySelectorAll("[data-financial-asset]").forEach((form) => {
         form.addEventListener("submit", saveAssetFinancial);
+      });
+      documentRef.querySelectorAll("[data-delete-financial-record]").forEach((button) => {
+        button.addEventListener("click", () => deleteFinancialRecord(button.dataset.deleteFinancialRecord));
       });
     }
 
     return {
       bindFinancialEvents,
+      deleteFinancialRecord,
       saveAssetFinancial,
     };
   }

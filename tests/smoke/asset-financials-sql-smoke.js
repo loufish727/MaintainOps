@@ -7,7 +7,9 @@ const sql = fs.readFileSync(path.join(root, "supabase", "step-next-asset-financi
 const lower = sql.toLowerCase();
 
 assert.match(lower, /create table if not exists public\.asset_financials/);
-assert.match(lower, /asset_id uuid not null references public\.assets\(id\) on delete cascade/);
+assert.match(lower, /asset_id uuid references public\.assets\(id\) on delete set null/);
+assert.match(lower, /archived_asset_name text/);
+assert.match(lower, /operational_deleted_at timestamptz/);
 assert.match(lower, /asset_tag text/);
 assert.match(lower, /current_book_value numeric/);
 assert.match(lower, /needs_review boolean not null default true/);
@@ -16,7 +18,8 @@ assert.match(lower, /alter table public\.asset_financials enable row level secur
 assert.match(lower, /company members can read asset financials/);
 assert.match(lower, /cm\.role in \('admin', 'accounting'\)/);
 assert.doesNotMatch(lower, /cm\.role in \('admin', 'manager', 'accounting'\)/);
-assert.match(lower, /grant select, insert, update on public\.asset_financials to authenticated/);
+assert.match(lower, /finance roles can delete archived asset financials/);
+assert.match(lower, /grant select, insert, update, delete on public\.asset_financials to authenticated/);
 assert.doesNotMatch(lower, /grant .* on public\.assets to anon/);
 
 console.log("asset financials SQL smoke passed");
