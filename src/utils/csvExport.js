@@ -5,6 +5,15 @@
     const BlobCtor = deps.BlobCtor || Blob;
     const alertRef = deps.alertRef || alert;
     const matchesActiveLocation = typeof deps.matchesActiveLocation === "function" ? deps.matchesActiveLocation : () => true;
+    const assetTypeLabel = typeof deps.assetTypeLabel === "function" ? deps.assetTypeLabel : (type) => String(type || "machine").replaceAll("_", " ");
+    const assetTypeOrder = {
+      machine: 10,
+      forklift: 20,
+      secondary_machine: 30,
+      tooling: 40,
+      component: 50,
+      shop_item: 60,
+    };
 
     function assetPictureDocuments(assetId) {
       return (deps.getAssetDocumentsByAssetId?.()[assetId] || [])
@@ -16,6 +25,38 @@
         .map((document) => document.original_file_name || document.file_name || document.storage_path || document.id)
         .filter(Boolean)
         .join("; ");
+    }
+
+    function parentAssetName(asset, assetsById) {
+      return asset?.parent_asset_id ? assetsById.get(asset.parent_asset_id)?.name || "" : "";
+    }
+
+    function compareAssetsForAudit(a, b, assetsById) {
+      const typeDelta = (assetTypeOrder[a.asset_type || "machine"] || 999) - (assetTypeOrder[b.asset_type || "machine"] || 999);
+      if (typeDelta) return typeDelta;
+      return String(parentAssetName(a, assetsById)).localeCompare(String(parentAssetName(b, assetsById)))
+        || String(a.location || "").localeCompare(String(b.location || ""))
+        || String(a.name || "").localeCompare(String(b.name || ""));
+    }
+
+    function assetAuditRows() {
+      const assets = deps.getAssets().filter(matchesActiveLocation);
+      const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+      return [...assets]
+        .sort((a, b) => compareAssetsForAudit(a, b, assetsById))
+        .map((asset) => ({
+          equipment_type: assetTypeLabel(asset.asset_type),
+          name: asset.name,
+          parent_equipment: parentAssetName(asset, assetsById),
+          serial_number: asset.asset_code || "",
+          manufacturer: asset.manufacturer || "",
+          model: asset.model || "",
+          picture_id: assetPictureId(asset.id),
+          picture_count: assetPictureDocuments(asset.id).length,
+          picture_status: assetPictureDocuments(asset.id).length ? "attached" : "missing",
+          location: asset.location || "",
+          status: asset.status,
+        }));
     }
 
     function exportActiveSectionCsv() {
@@ -39,17 +80,7 @@
         },
         assets: {
           filename: "equipment.csv",
-          rows: deps.getAssets().filter(matchesActiveLocation).map((asset) => ({
-            name: asset.name,
-            serial_number: asset.asset_code || "",
-            manufacturer: asset.manufacturer || "",
-            model: asset.model || "",
-            picture_id: assetPictureId(asset.id),
-            picture_count: assetPictureDocuments(asset.id).length,
-            picture_status: assetPictureDocuments(asset.id).length ? "attached" : "missing",
-            location: asset.location || "",
-            status: asset.status,
-          })),
+          rows: assetAuditRows(),
         },
         requests: {
           filename: "maintenance-requests.csv",

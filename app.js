@@ -919,6 +919,7 @@ const {
   getCompanyMembers: () => companyMembers,
   getProfilesByUserId: () => profilesByUserId,
   matchesActiveLocation,
+  assetTypeLabel,
   assignmentLabel,
   csvCell,
 });
