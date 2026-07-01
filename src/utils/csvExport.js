@@ -4,6 +4,19 @@
     const URLRef = deps.URLRef || URL;
     const BlobCtor = deps.BlobCtor || Blob;
     const alertRef = deps.alertRef || alert;
+    const matchesActiveLocation = typeof deps.matchesActiveLocation === "function" ? deps.matchesActiveLocation : () => true;
+
+    function assetPictureDocuments(assetId) {
+      return (deps.getAssetDocumentsByAssetId?.()[assetId] || [])
+        .filter((document) => String(document.content_type || "").startsWith("image/") || document.document_type === "machine_photo" || document.document_type === "nameplate");
+    }
+
+    function assetPictureId(assetId) {
+      return assetPictureDocuments(assetId)
+        .map((document) => document.original_file_name || document.file_name || document.storage_path || document.id)
+        .filter(Boolean)
+        .join("; ");
+    }
 
     function exportActiveSectionCsv() {
       const exports = {
@@ -26,11 +39,14 @@
         },
         assets: {
           filename: "equipment.csv",
-          rows: deps.getAssets().map((asset) => ({
+          rows: deps.getAssets().filter(matchesActiveLocation).map((asset) => ({
             name: asset.name,
             serial_number: asset.asset_code || "",
             manufacturer: asset.manufacturer || "",
             model: asset.model || "",
+            picture_id: assetPictureId(asset.id),
+            picture_count: assetPictureDocuments(asset.id).length,
+            picture_status: assetPictureDocuments(asset.id).length ? "attached" : "missing",
             location: asset.location || "",
             status: asset.status,
           })),
