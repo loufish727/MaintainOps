@@ -12,8 +12,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/utils\/csvExport\.js\?v=mo-build-20260701-financial-reviewed-by-name-1/,
-  "csvExport must use the financial reviewed-by name cache tag"
+  /src\/utils\/csvExport\.js\?v=mo-build-20260701-export-location-type-sort-1/,
+  "csvExport must use the export location/type sort cache tag"
 );
 
 assert.match(

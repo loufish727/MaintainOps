@@ -84,8 +84,8 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
     status: "running",
   }, {
     id: "asset-2",
-    name: "Other plant shear",
-    asset_type: "machine",
+    name: "Auburn component",
+    asset_type: "component",
     asset_code: "SN-200",
     location_id: "loc-2",
     location: "Bay 9",
@@ -151,7 +151,7 @@ assert.equal(urls[1].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[1].parts[0], /equipment_type,name,parent_equipment,serial_number,manufacturer,model,picture_id,picture_count,picture_status/);
 assert.match(urls[1].parts[0], /10\u2019 Press Brake/);
 assert.match(urls[1].parts[0], /"Primary","10\u2019 Press Brake","","SN-100","Engel","RF-42","rollformer-front\.jpg","1","attached"/);
-assert.doesNotMatch(urls[1].parts[0], /Other plant shear/);
+assert.doesNotMatch(urls[1].parts[0], /Auburn component/);
 assert.ok(urls[1].parts[0].indexOf("10\u2019 Press Brake") < urls[1].parts[0].indexOf("Brake Controls"));
 assert.ok(urls[1].parts[0].indexOf("Brake Controls") < urls[1].parts[0].indexOf("Back Gauge"));
 
@@ -162,6 +162,7 @@ assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[2].parts[0], /asset_tag,acquisition_date,acquisition_cost/);
 assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","Salem, OR","Bay 1"/);
 assert.doesNotMatch(urls[2].parts[0], /"loc-1","Bay 1"/);
+assert.ok(urls[2].parts[0].indexOf("Auburn component") < urls[2].parts[0].indexOf("10\u2019 Press Brake"));
 assert.match(urls[2].parts[0], /"FA-100","2024-01-15","25000.00","Straight-line"/);
 assert.match(urls[2].parts[0], /"Marion County","owned","2024-02-01"/);
 assert.match(urls[2].parts[0], /"Steven Sickles"/);

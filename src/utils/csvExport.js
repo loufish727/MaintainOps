@@ -41,7 +41,13 @@
       return profile?.full_name || profile?.email || userId;
     }
 
+    function assetLocationSortKey(asset) {
+      return String(locationName(asset.location_id) || asset.location_id || asset.location || "");
+    }
+
     function compareAssetsForAudit(a, b, assetsById) {
+      const locationDelta = assetLocationSortKey(a).localeCompare(assetLocationSortKey(b));
+      if (locationDelta) return locationDelta;
       const typeDelta = (assetTypeOrder[a.asset_type || "machine"] || 999) - (assetTypeOrder[b.asset_type || "machine"] || 999);
       if (typeDelta) return typeDelta;
       return String(parentAssetName(a, assetsById)).localeCompare(String(parentAssetName(b, assetsById)))
