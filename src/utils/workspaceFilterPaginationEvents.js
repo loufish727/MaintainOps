@@ -133,6 +133,18 @@
       });
     });
 
+    doc.querySelectorAll("[data-financial-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          if (field.dataset.financialFilter === "missing") state.setFinancialMissingFilter(field.value);
+          if (field.dataset.financialFilter === "location") state.setFinancialLocationFilter(field.value);
+          if (field.dataset.financialFilter === "type") state.setFinancialTypeFilter(field.value);
+          state.resetFinancialPage();
+          options.renderWorkspace();
+        });
+      });
+    });
+
     doc.querySelectorAll("[data-list-page]").forEach((button) => {
       button.addEventListener("click", async () => {
         await preserveScroll(async () => {

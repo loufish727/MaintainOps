@@ -68,6 +68,7 @@ const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailE
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
+const { createAssetFinancialWorkflow } = window.MaintainOpsAssetFinancialWorkflow;
 const { createPartDeleteWorkflow } = window.MaintainOpsPartDeleteWorkflow;
 const { createProcedureChecklistWorkflow } = window.MaintainOpsProcedureChecklistWorkflow;
 const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
@@ -138,7 +139,7 @@ const {
   listRequestNotificationRecipients,
 } = window.MaintainOpsProfilesService;
 const { listParts } = window.MaintainOpsPartsService;
-const { listAssets } = window.MaintainOpsAssetsService;
+const { listAssets, listAssetFinancials } = window.MaintainOpsAssetsService;
 const {
   selectWorkOrders,
   countWorkOrdersQuery,
@@ -424,6 +425,8 @@ let assetParts = [];
 let assetPartsReady = true;
 let assetDocumentsReady = true;
 let assetDocumentsByAssetId = {};
+let assetFinancialsReady = true;
+let assetFinancialsByAssetId = {};
 let assetDocumentSigningByAssetId = {};
 let procedureTemplates = [];
 let proceduresReady = false;
@@ -912,6 +915,7 @@ const {
   getActiveSection: () => activeSection,
   getWorkOrders: () => workOrders,
   getAssets: () => assets,
+  getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getMaintenanceRequests: () => maintenanceRequests,
   getPreventiveSchedules: () => preventiveSchedules,
@@ -1164,8 +1168,15 @@ const {
   parentAssetFor,
   getAssets: () => assets,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
+  getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
+  getAssetFinancialsReady: () => assetFinancialsReady,
+  getProfilesByUserId: () => profilesByUserId,
+  getLocations: () => locations,
   matchesActiveLocation,
   getFinancialPage: () => workspaceUiState.getFinancialPage(),
+  getFinancialMissingFilter: () => workspaceUiState.getFinancialMissingFilter(),
+  getFinancialLocationFilter: () => workspaceUiState.getFinancialLocationFilter(),
+  getFinancialTypeFilter: () => workspaceUiState.getFinancialTypeFilter(),
   ASSETS_PER_PAGE,
 });
 const {
@@ -2240,6 +2251,7 @@ async function loadCompanyData() {
   await Promise.all([
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
+    runWorkspaceLoader("Asset financials", loadAssetFinancials),
     ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
   ]);
   applyWorkspaceLoadWarnings();
@@ -2830,6 +2842,27 @@ async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
   eventsByWorkOrder = replaceArrayGroupsForIds(eventsByWorkOrder, ids, data || []);
 }
 
+async function loadAssetFinancials() {
+  if (!activeCompanyId) {
+    assetFinancialsByAssetId = {};
+    assetFinancialsReady = true;
+    return;
+  }
+
+  const { data, error } = await listAssetFinancials(supabaseClient, activeCompanyId);
+  if (error) {
+    assetFinancialsByAssetId = {};
+    assetFinancialsReady = false;
+    return;
+  }
+
+  assetFinancialsReady = true;
+  assetFinancialsByAssetId = (data || []).reduce((groups, row) => {
+    groups[row.asset_id] = row;
+    return groups;
+  }, {});
+}
+
 async function loadAssetEvents() {
   if (!activeCompanyId || !assets.length) {
     assetEventsByAssetId = {};
@@ -3382,7 +3415,7 @@ function renderWorkspace() {
               ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
-            <form class="inline-form" id="create-asset-form">
+            ${canEditEquipmentRecords() ? `<form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
               <input name="asset_code" placeholder="Serial number">
               <input name="manufacturer" placeholder="Manufacturer">
@@ -3406,7 +3439,7 @@ function renderWorkspace() {
               <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
               <button class="secondary-button asset-action-button" data-asset-continue="true" type="submit">Save Equipment and Continue</button>
             </form>
-            <p class="error-text" id="asset-create-error"></p>
+            <p class="error-text" id="asset-create-error"></p>` : `<p class="muted">Accounting can view equipment here. Maintenance and admins manage operational equipment changes.</p>`}
             ${renderEquipmentStructureGuide()}
             <section class="equipment-status-guide" aria-label="Equipment status guide">
               <div><strong>Watch</strong><span>Monitor for a possible issue.</span></div>
@@ -3425,7 +3458,7 @@ function renderWorkspace() {
           <section class="panel full-width ${activeSection === "financial" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Financial</h2>
-              <span>${locationAssets.length} equipment record${locationAssets.length === 1 ? "" : "s"}</span>
+              <span>${financialAssetCount} equipment record${financialAssetCount === 1 ? "" : "s"}</span>
             </div>
             ${canUseFinancialMenu() ? renderFinancialPanel() : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
           </section>
@@ -3826,6 +3859,7 @@ const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplay
   renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage,
   canDeleteEquipment,
+  canEditEquipmentRecords,
   renderEquipmentStructureGuide,
   renderProcedureOptions,
   getAssetRelationshipOpen,
@@ -3879,6 +3913,23 @@ const {
   showNotice,
   recordAssetEvent,
   render,
+  renderWorkspace,
+});
+
+const {
+  bindFinancialEvents,
+} = createAssetFinancialWorkflow({
+  documentRef: document,
+  FormDataCtor: FormData,
+  CSSRef: CSS,
+  supabaseClient: () => supabaseClient,
+  withOperationTimeout,
+  getActiveCompanyId: () => activeCompanyId,
+  getSession: () => session,
+  isMissingTableError,
+  setAssetFinancialsReady: (value) => { assetFinancialsReady = value; },
+  loadAssetFinancials,
+  showNotice,
   renderWorkspace,
 });
 
@@ -4866,6 +4917,8 @@ function bindWorkspaceEvents() {
   const assetForm = document.querySelector("#create-asset-form");
   if (assetForm) assetForm.addEventListener("submit", createAsset);
 
+  bindFinancialEvents();
+
   const editAssetForm = document.querySelector("#edit-asset-form");
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);
 
@@ -5516,6 +5569,10 @@ function canUseFinancialMenu() {
   return ["admin", "manager", "accounting"].includes(activeCompanyRole());
 }
 
+function canEditEquipmentRecords() {
+  return activeCompanyRole() !== "accounting";
+}
+
 function canAdministerTeamRoles() {
   return activeCompanyRole() === "admin";
 }
@@ -5557,7 +5614,7 @@ function canAssignWorkOrderToMe(workOrder) {
 
 function visibleNavItems() {
   if (activeCompanyRole() === "accounting") {
-    return [["financial", "Financial"]];
+    return [["assets", "Equipment"], ["financial", "Financial"]];
   }
 
   const items = [

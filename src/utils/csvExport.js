@@ -59,6 +59,45 @@
         }));
     }
 
+    function assetFinancialRows() {
+      const assets = deps.getAssets();
+      const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+      const financialsByAssetId = deps.getAssetFinancialsByAssetId?.() || {};
+      return [...assets]
+        .sort((a, b) => compareAssetsForAudit(a, b, assetsById))
+        .map((asset) => {
+          const financial = financialsByAssetId[asset.id] || {};
+          return {
+            equipment_type: assetTypeLabel(asset.asset_type),
+            name: asset.name,
+            parent_equipment: parentAssetName(asset, assetsById),
+            facility: asset.location_id || "",
+            area_department: asset.location || "",
+            serial_number: asset.asset_code || "",
+            manufacturer: asset.manufacturer || "",
+            model: asset.model || "",
+            picture_status: assetPictureDocuments(asset.id).length ? "attached" : "missing",
+            asset_tag: financial.asset_tag || "",
+            acquisition_date: financial.acquisition_date || "",
+            acquisition_cost: financial.acquisition_cost || "",
+            depreciation_method: financial.depreciation_method || "",
+            useful_life_years: financial.useful_life_years || "",
+            current_book_value: financial.current_book_value || "",
+            tax_jurisdiction: financial.tax_jurisdiction || "",
+            ownership_status: financial.ownership_status || "",
+            in_service_date: financial.in_service_date || "",
+            disposal_date: financial.disposal_date || "",
+            disposal_notes: financial.disposal_notes || "",
+            gl_account_code: financial.gl_account_code || "",
+            cost_center: financial.cost_center || "",
+            finance_notes: financial.finance_notes || "",
+            needs_review: Boolean(financial.needs_review),
+            last_reviewed_at: financial.last_reviewed_at || "",
+            reviewed_by: financial.reviewed_by || "",
+          };
+        });
+    }
+
     function exportActiveSectionCsv() {
       const exports = {
         work: {
@@ -84,7 +123,7 @@
         },
         financial: {
           filename: "equipment-financial.csv",
-          rows: assetAuditRows(),
+          rows: assetFinancialRows(),
         },
         requests: {
           filename: "maintenance-requests.csv",

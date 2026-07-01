@@ -97,6 +97,25 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
       { original_file_name: "rollformer-manual.pdf", document_type: "manual", content_type: "application/pdf" },
     ],
   }),
+  getAssetFinancialsByAssetId: () => ({
+    "asset-1": {
+      asset_tag: "FA-100",
+      acquisition_date: "2024-01-15",
+      acquisition_cost: "25000.00",
+      depreciation_method: "Straight-line",
+      useful_life_years: "10",
+      current_book_value: "21000.00",
+      tax_jurisdiction: "Marion County",
+      ownership_status: "owned",
+      in_service_date: "2024-02-01",
+      gl_account_code: "1600",
+      cost_center: "Salem Production",
+      finance_notes: "Reviewed for mid-year audit",
+      needs_review: false,
+      last_reviewed_at: "2026-07-01T12:00:00Z",
+      reviewed_by: "user-1",
+    },
+  }),
   getMaintenanceRequests: () => [],
   getPreventiveSchedules: () => [],
   getParts: () => [],
@@ -134,7 +153,9 @@ activeSection = "financial";
 exportActiveSectionCsv();
 assert.equal(link.download, "equipment-financial.csv");
 assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
-assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","SN-100","Engel","RF-42","rollformer-front\.jpg","1","attached"/);
+assert.match(urls[2].parts[0], /asset_tag,acquisition_date,acquisition_cost/);
+assert.match(urls[2].parts[0], /"FA-100","2024-01-15","25000.00","Straight-line"/);
+assert.match(urls[2].parts[0], /"Marion County","owned","2024-02-01"/);
 
 downloadCsv("custom.csv", [{ a: "one", b: "two" }]);
 assert.equal(link.download, "custom.csv");

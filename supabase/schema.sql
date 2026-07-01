@@ -71,6 +71,34 @@ create table if not exists public.assets (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.asset_financials (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  asset_id uuid not null references public.assets(id) on delete cascade,
+  asset_tag text,
+  acquisition_date date,
+  acquisition_cost numeric(14, 2),
+  depreciation_method text,
+  useful_life_years numeric(6, 2),
+  current_book_value numeric(14, 2),
+  tax_jurisdiction text,
+  ownership_status text check (ownership_status in ('owned', 'leased', 'rented', 'disposed') or ownership_status is null),
+  in_service_date date,
+  disposal_date date,
+  disposal_notes text,
+  gl_account_code text,
+  cost_center text,
+  finance_notes text,
+  needs_review boolean not null default true,
+  last_reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id) on delete set null,
+  updated_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (asset_id),
+  unique (company_id, asset_id)
+);
+
 create table if not exists public.work_orders (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -488,6 +516,9 @@ create index if not exists work_order_events_work_order_id_idx on public.work_or
 create index if not exists asset_events_company_id_idx on public.asset_events(company_id);
 create index if not exists asset_events_asset_id_idx on public.asset_events(asset_id);
 create index if not exists asset_events_company_asset_created_idx on public.asset_events(company_id, asset_id, created_at desc);
+create index if not exists asset_financials_company_idx on public.asset_financials(company_id);
+create index if not exists asset_financials_asset_idx on public.asset_financials(asset_id);
+create index if not exists asset_financials_review_idx on public.asset_financials(company_id, needs_review);
 
 grant usage on schema public to authenticated;
 grant select, insert, update on public.companies to authenticated;
@@ -496,6 +527,7 @@ grant select, insert, update on public.locations to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, update on public.user_preferences to authenticated;
 grant select, insert, update, delete on public.assets to authenticated;
+grant select, insert, update on public.asset_financials to authenticated;
 grant select, insert, update, delete on public.work_orders to authenticated;
 grant select, insert on public.work_order_comments to authenticated;
 grant select, insert on public.work_order_photos to authenticated;
@@ -626,6 +658,7 @@ alter table public.locations enable row level security;
 alter table public.profiles enable row level security;
 alter table public.user_preferences enable row level security;
 alter table public.assets enable row level security;
+alter table public.asset_financials enable row level security;
 alter table public.work_orders enable row level security;
 alter table public.work_order_comments enable row level security;
 alter table public.work_order_photos enable row level security;
@@ -1063,6 +1096,56 @@ with check (
     select 1 from public.assets a
     where a.id = asset_id
       and a.company_id = asset_events.company_id
+  )
+);
+
+drop policy if exists "Company members can read asset financials" on public.asset_financials;
+create policy "Company members can read asset financials"
+on public.asset_financials for select
+to authenticated
+using (private.is_company_member(company_id));
+
+drop policy if exists "Finance roles can insert asset financials" on public.asset_financials;
+create policy "Finance roles can insert asset financials"
+on public.asset_financials for insert
+to authenticated
+with check (
+  exists (
+    select 1 from public.company_members cm
+    where cm.company_id = asset_financials.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'accounting')
+  )
+  and exists (
+    select 1 from public.assets a
+    where a.id = asset_id
+      and a.company_id = asset_financials.company_id
+  )
+);
+
+drop policy if exists "Finance roles can update asset financials" on public.asset_financials;
+create policy "Finance roles can update asset financials"
+on public.asset_financials for update
+to authenticated
+using (
+  exists (
+    select 1 from public.company_members cm
+    where cm.company_id = asset_financials.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'accounting')
+  )
+)
+with check (
+  exists (
+    select 1 from public.company_members cm
+    where cm.company_id = asset_financials.company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'accounting')
+  )
+  and exists (
+    select 1 from public.assets a
+    where a.id = asset_id
+      and a.company_id = asset_financials.company_id
   )
 );
 

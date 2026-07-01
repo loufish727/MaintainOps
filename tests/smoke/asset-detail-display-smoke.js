@@ -91,6 +91,7 @@ const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplay
   renderAssetMiniWorkOrder: miniHelpers.renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage: () => "",
   canDeleteEquipment: () => true,
+  canEditEquipmentRecords: () => true,
   renderEquipmentStructureGuide,
   renderProcedureOptions: () => '<option value="">No procedure checklist</option><option value="procedure-1">Press checklist</option>',
   getAssetRelationshipOpen: () => true,
@@ -241,6 +242,46 @@ assert.match(degradedHtml, /Degraded needs a reason/);
 assert.match(degradedHtml, /no open work tied to it/);
 assert.match(degradedHtml, /Create Work for Degraded Condition/);
 assert.match(degradedHtml, /data-quick-fix-asset="asset-1"/);
+
+const readOnlyHtml = createAssetDetailDisplayHelpers({
+  ASSET_TYPE_OPTIONS: ["machine"],
+  getAssets: () => [asset],
+  getActiveAssetId: () => "asset-1",
+  getWorkOrders: () => [],
+  getPreventiveSchedules: () => [],
+  getParts: () => [],
+  getAssetParts: () => [],
+  getAssetPartsReady: () => true,
+  getAssetDocumentsByAssetId: () => ({}),
+  getAssetDocumentsReady: () => true,
+  getAssetEventsByAssetId: () => ({}),
+  getAssetEventsReady: () => true,
+  getProfilesByUserId: () => ({}),
+  getPartsUsedByWorkOrder: () => ({}),
+  getMaintenanceRequests: () => [],
+  getPendingDeleteAssetId: () => "",
+  getLocations: () => [{ id: "loc-1", name: "Plant 1" }],
+  getActiveLocationId: () => "loc-1",
+  renderCreateWorkOrder: () => "<section>Create work order</section>",
+  parentAssetFor: () => null,
+  childAssetsFor: () => [],
+  escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
+  assetTypeLabel: (type) => type,
+  renderParentAssetOptions: () => "",
+  renderLocationOptions: () => "",
+  renderAssetAreaOptions: () => "",
+  assetStatusLabel: (status) => status,
+  renderAssetMiniWorkOrder: (row) => `<article>${row.title}</article>`,
+  assetDeleteBlockerMessage: () => "",
+  canDeleteEquipment: () => false,
+  canEditEquipmentRecords: () => false,
+  renderEquipmentStructureGuide,
+}).renderAssetDetail();
+assert.match(readOnlyHtml, /Accounting has read-only equipment access/);
+assert.doesNotMatch(readOnlyHtml, /id="edit-asset-form"/);
+assert.doesNotMatch(readOnlyHtml, /data-quick-fix-asset/);
+assert.doesNotMatch(readOnlyHtml, /data-asset-document=/);
+assert.doesNotMatch(readOnlyHtml, /data-create-pm-form/);
 
 const missingRenderer = createAssetDetailDisplayHelpers({
   getAssets: () => [],

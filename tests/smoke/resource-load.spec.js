@@ -65,6 +65,7 @@ const requiredResources = [
   "src/utils/workspaceRequestQuickFixEvents.js",
   "src/utils/workspaceAssetLocationWarningEvents.js",
   "src/workflows/quickFixWorkflow.js",
+  "src/workflows/assetFinancialWorkflow.js",
   "src/workflows/partDeleteWorkflow.js",
   "src/workflows/procedureChecklistWorkflow.js",
   "src/workflows/publicRequestIntakeWorkflow.js",

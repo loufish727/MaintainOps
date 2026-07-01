@@ -172,6 +172,10 @@ Accounting role:
 
 Run `supabase/step-next-accounting-role.sql` before assigning the Accounting role. It expands team role constraints and role-management RPCs while keeping accounting out of manager/admin operational permissions.
 
+Asset financial register:
+
+Run `supabase/step-next-asset-financials.sql` before saving finance-only equipment fields from the Financial tab. It creates `asset_financials`, keyed by equipment, with RLS that allows company members to read and only admin/manager/accounting roles to insert or update finance records.
+
 Equipment part links:
 
 Run `supabase/step-next-asset-parts.sql` before linking parts directly to equipment. This creates the `asset_parts` join table so equipment can list recommended/common parts without recording work-order usage or changing inventory quantity.

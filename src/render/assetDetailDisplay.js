@@ -19,6 +19,7 @@
       renderAssetMiniWorkOrder,
       assetDeleteBlockerMessage,
       canDeleteEquipment,
+      canEditEquipmentRecords = () => true,
       renderEquipmentStructureGuide,
       renderProcedureOptions,
     } = deps;
@@ -174,6 +175,7 @@
             ? "status-in_progress"
             : "status-completed";
       const degradedWithoutOpenWork = asset.status === "degraded" && openWork.length === 0;
+      const canEditEquipment = canEditEquipmentRecords();
 
       return `
         <div class="detail-stack">
@@ -235,7 +237,7 @@
             <div><strong>Offline / Down</strong><span>Do not count on this equipment.</span></div>
           </section>
 
-          ${degradedWithoutOpenWork ? `
+          ${degradedWithoutOpenWork && canEditEquipment ? `
             <section class="equipment-status-nudge degraded" aria-label="Degraded equipment follow-up">
               <strong>Degraded needs a reason</strong>
               <p>This equipment is marked degraded but has no open work tied to it. Create or attach a work order so the condition is traceable.</p>
@@ -245,16 +247,16 @@
 
           ${renderEquipmentStructureGuide ? renderEquipmentStructureGuide() : ""}
 
-          <div class="quick-actions detail-quick-actions">
+          ${canEditEquipment ? `<div class="quick-actions detail-quick-actions">
             <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
-          </div>
+          </div>` : ""}
 
           <section class="relationship-detail photo asset-photo-panel" id="asset-documents-target">
             <div class="panel-header compact">
               <h3>Machine Files</h3>
               <span>${assetDocuments.length} file${assetDocuments.length === 1 ? "" : "s"}</span>
             </div>
-            <form class="form-grid asset-photo-form relationship-detail photo" data-asset-document="${escapeHtml(asset.id)}">
+            ${canEditEquipment ? `<form class="form-grid asset-photo-form relationship-detail photo" data-asset-document="${escapeHtml(asset.id)}">
               <label>File type
                 <select name="document_type">
                   <option value="machine_photo">Machine photo</option>
@@ -270,7 +272,7 @@
               <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Images are optimized. Non-image files over 25 MB are blocked.</small></label>
               <p class="error-text" data-asset-document-error="${escapeHtml(asset.id)}">${assetDocumentsReady ? "" : "Run supabase/step-next-asset-documents.sql before uploading equipment files."}</p>
               <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Attach Machine File</button>
-            </form>
+            </form>` : `<p class="muted">Accounting can view machine files. Maintenance/admins attach or remove files.</p>`}
             <div class="asset-file-list">
               ${assetDocuments.map((document) => `
                 <details class="asset-file-item">
@@ -289,7 +291,7 @@
                     <div class="asset-file-meta">
                       <span>${escapeHtml(document.content_type || "file")}</span>
                       <a class="secondary-button" href="${escapeHtml(document.signedUrl || "#")}" target="_blank" rel="noreferrer">Open File</a>
-                      <button class="text-button danger-link" data-delete-asset-document="${escapeHtml(document.id)}" data-asset-document-path="${escapeHtml(document.storage_path || "")}" type="button">Delete File</button>
+                      ${canEditEquipment ? `<button class="text-button danger-link" data-delete-asset-document="${escapeHtml(document.id)}" data-asset-document-path="${escapeHtml(document.storage_path || "")}" type="button">Delete File</button>` : ""}
                     </div>
                   </div>
                 </details>
@@ -297,7 +299,7 @@
             </div>
           </section>
 
-          <form class="form-grid" id="edit-asset-form">
+          ${canEditEquipment ? `<form class="form-grid" id="edit-asset-form">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
             <label>Serial Number<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
             <label>Manufacturer<input name="manufacturer" value="${escapeHtml(asset.manufacturer || "")}"></label>
@@ -333,7 +335,7 @@
             <label class="check-row safety-check-toggle"><input name="safety_devices_required" type="checkbox" ${asset.safety_devices_required === false ? "" : "checked"}> Safety device identification required before completion</label>
             <p class="error-text" id="asset-edit-error"></p>
             <button class="secondary-button asset-action-button" type="submit">Save Equipment</button>
-          </form>
+          </form>` : `<section class="relationship-detail asset"><h3>Operational Equipment</h3><p class="muted">Accounting has read-only equipment access. Use the Financial tab to update finance-only fields or flag maintenance/admin review.</p></section>`}
 
           <section class="asset-relationship-panel relationship-detail asset" id="asset-linked-equipment-target">
             <h3>Linked Equipment</h3>
@@ -383,10 +385,10 @@
               <h3>PM Schedules</h3>
               <div class="panel-header-actions">
                 <span>${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}</span>
-                <button class="secondary-button asset-action-button" data-section="pm" type="button">Go to PM</button>
+                ${canEditEquipment ? `<button class="secondary-button asset-action-button" data-section="pm" type="button">Go to PM</button>` : ""}
               </div>
             </div>
-            <form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
+            ${canEditEquipment ? `<form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
               <input name="title" required placeholder="PM for ${escapeHtml(asset.name)}">
               <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
               <select name="frequency">
@@ -403,7 +405,7 @@
               </span>
               <p class="error-text" data-pm-error></p>
               <button class="secondary-button asset-action-button" type="submit">Add Schedule</button>
-            </form>
+            </form>` : ""}
             <div class="mini-list">
               ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
             </div>
@@ -412,10 +414,10 @@
           <details class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target" data-asset-relationship-section="linked-parts" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("linked-parts") ? "open" : ""}>
             <summary>Linked Parts <span>${linkedParts.length}</span></summary>
             <div class="panel-header compact">
-              <button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>
+              ${canEditEquipment ? `<button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>` : ""}
             </div>
             ${relationOpen("linked-parts") && assetPartsReady ? `
-              <form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
+              ${canEditEquipment ? `<form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
                 <label>Part
                   <select name="part_id" ${attachableParts.length ? "" : "disabled"}>
                     <option value="">Select part</option>
@@ -425,13 +427,13 @@
                 <label>Recommended qty<input name="quantity_recommended" type="number" min="1" step="1" value="1"></label>
                 <label>Note<input name="note" maxlength="180" placeholder="Filter, belt, seal, common spare..."></label>
                 <button class="secondary-button asset-action-button" type="submit" ${attachableParts.length ? "" : "disabled"}>Attach Part</button>
-              </form>
+              </form>` : ""}
               <p class="error-text" data-asset-part-error="${escapeHtml(asset.id)}"></p>
               <div class="mini-list">
                 ${pageRows(linkedParts, "linked-parts").map((row) => `<article>
                   <strong>${escapeHtml(row.parts?.name || "Part")}</strong>
                   <span>${escapeHtml(row.parts?.sku || "No SKU")} - recommended qty ${escapeHtml(row.quantity_recommended || 1)}${row.note ? ` - ${escapeHtml(row.note)}` : ""}</span>
-                  <button class="text-button danger-link" data-remove-asset-part="${escapeHtml(row.id)}" type="button">Remove Link</button>
+                  ${canEditEquipment ? `<button class="text-button danger-link" data-remove-asset-part="${escapeHtml(row.id)}" type="button">Remove Link</button>` : ""}
                 </article>`).join("") || `<p class="muted">No parts are linked to this equipment yet.</p>`}
               </div>
               ${relationPagination("linked-parts", linkedParts.length)}
@@ -448,7 +450,7 @@
             ${relationOpen("parts-used") ? relationPagination("parts-used", usedParts.length) : ""}
           </details>
 
-          ${renderAssetDangerZone(asset)}
+          ${canEditEquipment ? renderAssetDangerZone(asset) : ""}
         </div>
       `;
     }

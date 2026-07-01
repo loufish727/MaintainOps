@@ -16,8 +16,32 @@ const helpers = createFinancialDisplayHelpers({
   getAssetDocumentsByAssetId: () => ({
     "asset-1": [{ document_type: "machine_photo", content_type: "image/jpeg", original_file_name: "press.jpg" }],
   }),
+  getAssetFinancialsByAssetId: () => ({
+    "asset-1": {
+      asset_tag: "FA-100",
+      acquisition_date: "2024-01-15",
+      acquisition_cost: "25000.00",
+      depreciation_method: "Straight-line",
+      useful_life_years: "10",
+      current_book_value: "21000.00",
+      tax_jurisdiction: "Marion County",
+      ownership_status: "owned",
+      in_service_date: "2024-02-01",
+      gl_account_code: "1600",
+      cost_center: "Salem Production",
+      needs_review: false,
+      last_reviewed_at: "2026-07-01T12:00:00Z",
+      reviewed_by: "user-1",
+    },
+  }),
+  getAssetFinancialsReady: () => true,
+  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" } }),
+  getLocations: () => [{ id: "loc-1", name: "Salem, OR" }, { id: "loc-2", name: "Z Auburn, WA" }],
   matchesActiveLocation: (asset) => asset.location_id === "loc-1",
   getFinancialPage: () => 1,
+  getFinancialMissingFilter: () => "all",
+  getFinancialLocationFilter: () => "all",
+  getFinancialTypeFilter: () => "all",
   ASSETS_PER_PAGE: 1,
 });
 
@@ -51,9 +75,9 @@ const assets = [{
 }];
 
 const rows = helpers.financialAssets();
-assert.equal(rows.length, 2);
+assert.equal(rows.length, 3);
 assert.equal(rows[0].id, "asset-1");
-assert.equal(rows[1].id, "asset-2");
+assert.equal(rows.some((row) => row.id === "asset-2"), true);
 
 const html = helpers.renderFinancialPanel();
 assert.match(html, /Equipment Financial Register/);
@@ -62,10 +86,19 @@ assert.match(html, /PB-10/);
 assert.match(html, /Cincinnati/);
 assert.match(html, /90CB/);
 assert.match(html, /1 photo/);
+assert.match(html, /FA-100/);
+assert.match(html, /Straight-line/);
+assert.match(html, /Marion County/);
+assert.match(html, /Salem Production/);
+assert.match(html, /Finance Lead/);
+assert.match(html, /data-financial-filter="missing"/);
+assert.match(html, /data-financial-filter="location"/);
+assert.match(html, /data-financial-filter="type"/);
+assert.match(html, /data-financial-asset="asset-1"/);
 assert.match(html, /data-financial-page="next"/);
-assert.match(html, /Showing 1-1 of 2 - Page 1 of 2/);
+assert.match(html, /Showing 1-1 of 3 - Page 1 of 3/);
 assert.doesNotMatch(html, /Part of 10\u2019 Press Brake/);
 assert.doesNotMatch(html, /Other Location/);
-assert.doesNotMatch(html, /<form/);
+assert.match(html, /<form/);
 
 console.log("financial display smoke passed");
