@@ -113,7 +113,7 @@
         headers.join(","),
         ...rows.map((row) => headers.map((header) => deps.csvCell(row[header])).join(",")),
       ];
-      const blob = new BlobCtor([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const blob = new BlobCtor([`\uFEFF${lines.join("\n")}`], { type: "text/csv;charset=utf-8" });
       const url = URLRef.createObjectURL(blob);
       const link = documentRef.createElement("a");
       link.href = url;

@@ -56,7 +56,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
   }],
   getAssets: () => [{
     id: "asset-1",
-    name: "Roll former",
+    name: "10\u2019 Press Brake",
     asset_code: "SN-100",
     manufacturer: "Engel",
     model: "RF-42",
@@ -91,12 +91,15 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
 exportActiveSectionCsv();
 assert.equal(link.download, "work-orders.csv");
 assert.equal(clicks.some((call) => call[0] === "click" && call[1] === "work-orders.csv"), true);
+assert.equal(urls[0].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[0].parts[0], /"Pump, leaking"/);
 
 activeSection = "assets";
 exportActiveSectionCsv();
 assert.equal(link.download, "equipment.csv");
+assert.equal(urls[1].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[1].parts[0], /serial_number,manufacturer,model,picture_id,picture_count,picture_status/);
+assert.match(urls[1].parts[0], /10\u2019 Press Brake/);
 assert.match(urls[1].parts[0], /"SN-100","Engel","RF-42","rollformer-front\.jpg","1","attached"/);
 assert.doesNotMatch(urls[1].parts[0], /Other plant shear/);
 
