@@ -4938,7 +4938,7 @@ function bindWorkspaceEvents() {
       setActiveSection: setActiveSectionState,
     },
     renderWorkspace,
-    scrollToDetailTop,
+    scrollToDetailTop: scrollEquipmentDetailToActions,
   });
 
   const editAssetForm = document.querySelector("#edit-asset-form");

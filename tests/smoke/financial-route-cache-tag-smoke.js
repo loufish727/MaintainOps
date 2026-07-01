@@ -22,7 +22,7 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-financial-open-equipment-1/,
+  /app\.js\?v=mo-build-20260701-financial-open-equipment-2/,
   "app.js must use the financial open equipment cache tag"
 );
 
