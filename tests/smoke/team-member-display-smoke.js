@@ -33,8 +33,8 @@ const baseDeps = {
   teamMemberWorkload: () => ({ newWork: 1, inProgress: 2, blocked: 3, overdue: 4 }),
   canManageTeam: () => true,
   canAdministerTeamRoles: () => true,
-  teamRoleOptionsForActor: () => ["technician", "manager", "admin"],
-  COMPANY_ROLES: ["technician", "manager", "admin"],
+  teamRoleOptionsForActor: () => ["technician", "accounting", "manager", "admin"],
+  COMPANY_ROLES: ["technician", "accounting", "manager", "admin"],
   renderLocationOptions: () => '<option value="loc-1">QA Facility</option>',
   inviteDefaultLocationLabel: () => "Default location: QA Facility",
   teamInviteSignupUrl: () => "https://example.test/MaintainOps/",
@@ -71,6 +71,7 @@ assert.match(inviteForm, /id="team-invite-form"/);
 assert.match(inviteForm, /name="default_location_id"/);
 assert.match(inviteForm, /QA Facility/);
 assert.match(inviteForm, /value="manager"/);
+assert.match(inviteForm, /value="accounting"/);
 assert.match(inviteForm, /value="admin"/);
 
 const inviteLinks = helpers.renderTeamInviteLinks("loc-1");
@@ -98,6 +99,7 @@ const managerHelpers = createTeamMemberDisplayHelpers({
 });
 const managerInviteForm = managerHelpers.renderTeamInviteForm("loc-1");
 assert.doesNotMatch(managerInviteForm, /value="manager"/);
+assert.doesNotMatch(managerInviteForm, /value="accounting"/);
 assert.doesNotMatch(managerInviteForm, /value="admin"/);
 assert.match(managerInviteForm, /Manager invites add technicians to your default location/);
 assert.match(managerInviteForm, /name="default_location_id" type="hidden" value="loc-1"/);
@@ -111,6 +113,7 @@ assert.doesNotMatch(managerRequestRecipients, /data-delete-request-notification-
 const managerInviteLinks = managerHelpers.renderTeamInviteLinks("loc-1");
 assert.match(managerInviteLinks, /Create one technician join link/);
 assert.doesNotMatch(managerInviteLinks, /value="manager"/);
+assert.doesNotMatch(managerInviteLinks, /value="accounting"/);
 assert.doesNotMatch(managerInviteLinks, /value="admin"/);
 
 console.log("team member display smoke passed");

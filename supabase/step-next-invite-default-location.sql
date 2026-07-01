@@ -35,7 +35,7 @@ begin
     raise exception 'Enter a valid email address.';
   end if;
 
-  if selected_role not in ('admin', 'manager', 'technician') then
+  if selected_role not in ('admin', 'manager', 'accounting', 'technician') then
     raise exception 'Invalid role.';
   end if;
 
@@ -49,7 +49,7 @@ begin
   end if;
 
   if actor_role <> 'admin' and selected_role <> 'technician' then
-    raise exception 'Only admins can invite managers or admins.';
+    raise exception 'Only admins can invite managers, accounting, or admins.';
   end if;
 
   if invite_default_location_id is not null and not exists (
@@ -84,6 +84,7 @@ as $$
   select case role_name
     when 'admin' then 4
     when 'manager' then 3
+    when 'accounting' then 2
     when 'technician' then 2
     when 'member' then 1
     else 0

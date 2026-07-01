@@ -14,7 +14,7 @@
   }
 
   function renderRoleGuide() {
-    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "manager", "admin"];
+    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "accounting", "manager", "admin"];
     const roleLabel = window.MaintainOpsFormatting?.roleLabel || ((role) => String(role || ""));
     const roleDescription = window.MaintainOpsFormatting?.roleDescription || (() => "");
     const escapeHtml = window.MaintainOpsDom?.escapeHtml || ((value) => String(value ?? ""));

@@ -111,6 +111,7 @@ const requiredResources = [
   "src/render/missingWorkDetailDisplay.js",
   "src/render/partSourceDisplay.js",
   "src/render/assetCardDisplay.js",
+  "src/render/financialDisplay.js",
   "src/render/procedureOptionsDisplay.js",
   "src/render/messageThreadLabelDisplay.js",
   "src/render/messageThreadButtonDisplay.js",

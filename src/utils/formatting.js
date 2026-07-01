@@ -58,7 +58,7 @@
   }
 
   function normalizeRole(role) {
-    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "manager", "admin"];
+    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "accounting", "manager", "admin"];
     const normalized = String(role || "technician").trim().toLowerCase();
     if (normalized === "member") return "technician";
     return roles.includes(normalized) ? normalized : "technician";
@@ -68,6 +68,7 @@
     const labels = {
       admin: "Admin",
       manager: "Manager",
+      accounting: "Accounting",
       technician: "Technician",
     };
     return labels[normalizeRole(role)] || "Technician";
@@ -77,6 +78,7 @@
     const descriptions = {
       admin: "Full company setup, team, and work access.",
       manager: "Can manage work, settings, and teammates.",
+      accounting: "Can review equipment financial records without changing operations.",
       technician: "Can create work, convert requests, and claim unassigned work.",
     };
     return descriptions[normalizeRole(role)] || descriptions.technician;

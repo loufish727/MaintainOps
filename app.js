@@ -199,6 +199,7 @@ const { createWorkCommandDisplayHelpers } = window.MaintainOpsWorkCommandDisplay
 const { createMissingWorkDetailDisplayHelpers } = window.MaintainOpsMissingWorkDetailDisplay;
 const { createPartSourceDisplayHelpers } = window.MaintainOpsPartSourceDisplay;
 const { createAssetCardDisplayHelpers } = window.MaintainOpsAssetCardDisplay;
+const { createFinancialDisplayHelpers } = window.MaintainOpsFinancialDisplay;
 const { createProcedureOptionsDisplayHelpers } = window.MaintainOpsProcedureOptionsDisplay;
 const { createMessageThreadLabelDisplayHelpers } = window.MaintainOpsMessageThreadLabelDisplay;
 const { createMessageThreadButtonDisplayHelpers } = window.MaintainOpsMessageThreadButtonDisplay;
@@ -1153,6 +1154,19 @@ const {
   getActiveAssetId: () => activeAssetId,
   parentAssetFor,
   childAssetsFor,
+});
+const {
+  renderFinancialPanel,
+} = createFinancialDisplayHelpers({
+  escapeHtml,
+  assetTypeLabel,
+  parentAssetFor,
+  getAssets: () => assets,
+  getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
+  matchesActiveLocation,
+  getAssetsPage: () => workspaceUiState.getAssetsPage(),
+  renderAssetsPagination,
+  ASSETS_PER_PAGE,
 });
 const {
   renderProcedureOptions,
@@ -2947,9 +2961,10 @@ function renderWorkspace() {
   const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const navItems = visibleNavItems();
   if (!navItems.some(([id]) => id === activeSection)) {
-    setActiveSectionState("mywork");
+    setActiveSectionState(navItems[0]?.[0] || "mywork");
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
+  const isAccountingOnly = activeCompanyRole() === "accounting";
   const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed_month", "completed_week"];
   if (activeSection === "mywork" && !myWorkGaugeFilters.includes(workspaceUiState.getActiveStatusFilter())) {
     workspaceUiState.setActiveStatusFilter("active");
@@ -3003,7 +3018,7 @@ function renderWorkspace() {
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
   const visibleParts = filteredParts();
-  const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
+  const showGlobalSearch = !isAccountingOnly && Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
   if (workspaceUiState.getPartsPage() > totalPartsPages) workspaceUiState.setPartsPage(totalPartsPages);
@@ -3178,12 +3193,12 @@ function renderWorkspace() {
             </div>
           </div>
           <div class="topbar-actions">
-            <button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>
-            <button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>
+            ${isAccountingOnly ? "" : `<button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>`}
+            ${isAccountingOnly ? "" : `<button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>`}
             <details class="topbar-more">
               <summary>More</summary>
               <div>
-                <button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>
+                ${isAccountingOnly ? "" : `<button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>`}
                 <button class="secondary-button export-action-button" id="export-csv${suffix}" data-command-action="export-csv" type="button">Export CSV</button>
               </div>
             </details>
@@ -3192,10 +3207,10 @@ function renderWorkspace() {
 
         <div id="app-notice-slot">${renderAppNoticeMarkup()}</div>
 
-        <label class="search-bar">
+        ${isAccountingOnly ? "" : `<label class="search-bar">
           Search workspace
           <input id="workspace-search${suffix}" class="workspace-search-input" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
-        </label>
+        </label>`}
       </div>
     `;
   };
@@ -3401,6 +3416,14 @@ function renderWorkspace() {
             </div>
             ${renderAssetsPagination(visibleAssets.length, totalAssetPages)}
             `}
+          </section>
+
+          <section class="panel full-width ${activeSection === "financial" ? "" : "hidden-section"}">
+            <div class="panel-header">
+              <h2>Financial</h2>
+              <span>${locationAssets.length} equipment record${locationAssets.length === 1 ? "" : "s"}</span>
+            </div>
+            ${canUseFinancialMenu() ? renderFinancialPanel() : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
           </section>
 
           <section class="panel full-width ${activeSection === "pm" ? "" : "hidden-section"}">
@@ -5485,6 +5508,10 @@ function canManageTeam() {
   return ["admin", "manager"].includes(activeCompanyRole());
 }
 
+function canUseFinancialMenu() {
+  return ["admin", "manager", "accounting"].includes(activeCompanyRole());
+}
+
 function canAdministerTeamRoles() {
   return activeCompanyRole() === "admin";
 }
@@ -5525,19 +5552,28 @@ function canAssignWorkOrderToMe(workOrder) {
 }
 
 function visibleNavItems() {
+  if (activeCompanyRole() === "accounting") {
+    return [["financial", "Financial"]];
+  }
+
   const items = [
     ["mywork", "My Work"],
     ["work", "Work Orders"],
     ["planning", "Planning"],
     ["requests", "Requests"],
     ["assets", "Equipment"],
+  ];
+  if (canUseFinancialMenu()) {
+    items.push(["financial", "Financial"]);
+  }
+  items.push(
     ["pm", "PM"],
     ["procedures", "Procedure Checklist"],
     ["parts", "Parts"],
     ["conversions", "Conversions"],
     ["messages", "Messages"],
     ["team", "Team"],
-  ];
+  );
   if (canAdministerTeamRoles()) {
     items.push(["manager", "Manager"]);
   }

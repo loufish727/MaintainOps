@@ -130,6 +130,12 @@ assert.doesNotMatch(urls[1].parts[0], /Other plant shear/);
 assert.ok(urls[1].parts[0].indexOf("10\u2019 Press Brake") < urls[1].parts[0].indexOf("Brake Controls"));
 assert.ok(urls[1].parts[0].indexOf("Brake Controls") < urls[1].parts[0].indexOf("Back Gauge"));
 
+activeSection = "financial";
+exportActiveSectionCsv();
+assert.equal(link.download, "equipment-financial.csv");
+assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
+assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","SN-100","Engel","RF-42","rollformer-front\.jpg","1","attached"/);
+
 downloadCsv("custom.csv", [{ a: "one", b: "two" }]);
 assert.equal(link.download, "custom.csv");
 assert.deepEqual(alerts, []);

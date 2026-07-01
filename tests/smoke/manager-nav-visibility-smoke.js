@@ -9,7 +9,11 @@ const visibleNavSource = visibleNavMatch[0];
 const managerIndex = visibleNavSource.indexOf('["manager", "Manager"]');
 const adminGateIndex = visibleNavSource.indexOf("if (canAdministerTeamRoles())");
 const managerGateIndex = visibleNavSource.indexOf("if (canManageTeam())");
+const financialIndex = visibleNavSource.indexOf('["financial", "Financial"]');
 assert.ok(managerIndex > adminGateIndex, "Manager nav item should stay inside admin role gate");
+assert.ok(financialIndex >= 0, "Financial nav item should exist");
+assert.match(visibleNavSource, /activeCompanyRole\(\) === "accounting"[\s\S]*\[\["financial", "Financial"\]\]/);
+assert.match(visibleNavSource, /if \(canUseFinancialMenu\(\)\)/);
 assert.doesNotMatch(
   visibleNavSource.slice(0, adminGateIndex),
   /\["manager", "Manager"\]/,

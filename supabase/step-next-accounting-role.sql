@@ -1,25 +1,74 @@
--- LFES team authority guardrails
--- Goal: managers can manage work and invite technicians, but only admins can grant authority.
+-- LFES financial menu role
+-- Adds a non-operational accounting role for read-only financial equipment views.
 
-drop policy if exists "Members can add company members" on public.company_members;
-create policy "Members can add company members"
-on public.company_members for insert
-to authenticated
-with check (
-  exists (
-    select 1
-    from public.company_members actor
-    where actor.company_id = company_members.company_id
-      and actor.user_id = auth.uid()
-      and (
-        actor.role = 'admin'
-        or (
-          actor.role = 'manager'
-          and company_members.role = 'technician'
-        )
-      )
-  )
-);
+do $$
+declare
+  constraint_name text;
+begin
+  for constraint_name in
+    select con.conname
+    from pg_constraint con
+    join pg_class rel on rel.oid = con.conrelid
+    join pg_namespace nsp on nsp.oid = rel.relnamespace
+    where nsp.nspname = 'public'
+      and rel.relname = 'company_members'
+      and con.contype = 'c'
+      and pg_get_constraintdef(con.oid) ilike '%role%'
+  loop
+    execute format('alter table public.company_members drop constraint %I', constraint_name);
+  end loop;
+end $$;
+
+alter table public.company_members
+add constraint company_members_role_check
+check (role in ('admin', 'manager', 'accounting', 'technician', 'member'));
+
+do $$
+declare
+  constraint_name text;
+begin
+  if to_regclass('public.company_invites') is null then
+    return;
+  end if;
+
+  for constraint_name in
+    select con.conname
+    from pg_constraint con
+    join pg_class rel on rel.oid = con.conrelid
+    join pg_namespace nsp on nsp.oid = rel.relnamespace
+    where nsp.nspname = 'public'
+      and rel.relname = 'company_invites'
+      and con.contype = 'c'
+      and pg_get_constraintdef(con.oid) ilike '%role%'
+  loop
+    execute format('alter table public.company_invites drop constraint %I', constraint_name);
+  end loop;
+end $$;
+
+do $$
+begin
+  if to_regclass('public.company_invites') is not null then
+    alter table public.company_invites
+    add constraint company_invites_role_check
+    check (role in ('admin', 'manager', 'accounting', 'technician'));
+  end if;
+end $$;
+
+create or replace function private.role_rank(role_name text)
+returns integer
+language sql
+immutable
+set search_path = public, private
+as $$
+  select case role_name
+    when 'admin' then 4
+    when 'manager' then 3
+    when 'accounting' then 2
+    when 'technician' then 2
+    when 'member' then 1
+    else 0
+  end;
+$$;
 
 create or replace function public.update_company_member_role(
   target_company_id uuid,

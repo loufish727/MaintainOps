@@ -82,6 +82,10 @@
           filename: "equipment.csv",
           rows: assetAuditRows(),
         },
+        financial: {
+          filename: "equipment-financial.csv",
+          rows: assetAuditRows(),
+        },
         requests: {
           filename: "maintenance-requests.csv",
           rows: deps.getMaintenanceRequests().map((request) => ({
