@@ -31,6 +31,10 @@
       return asset?.parent_asset_id ? assetsById.get(asset.parent_asset_id)?.name || "" : "";
     }
 
+    function locationName(locationId) {
+      return deps.getLocations?.().find((location) => location.id === locationId)?.name || "";
+    }
+
     function compareAssetsForAudit(a, b, assetsById) {
       const typeDelta = (assetTypeOrder[a.asset_type || "machine"] || 999) - (assetTypeOrder[b.asset_type || "machine"] || 999);
       if (typeDelta) return typeDelta;
@@ -71,7 +75,7 @@
             equipment_type: assetTypeLabel(asset.asset_type),
             name: asset.name,
             parent_equipment: parentAssetName(asset, assetsById),
-            facility: asset.location_id || "",
+            facility: locationName(asset.location_id) || asset.location_id || "",
             area_department: asset.location || "",
             serial_number: asset.asset_code || "",
             manufacturer: asset.manufacturer || "",

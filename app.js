@@ -917,6 +917,7 @@ const {
   getActiveSection: () => activeSection,
   getWorkOrders: () => workOrders,
   getAssets: () => assets,
+  getLocations: () => locations,
   getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   getMaintenanceRequests: () => maintenanceRequests,

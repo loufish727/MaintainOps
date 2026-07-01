@@ -97,6 +97,10 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
       { original_file_name: "rollformer-manual.pdf", document_type: "manual", content_type: "application/pdf" },
     ],
   }),
+  getLocations: () => [
+    { id: "loc-1", name: "Salem, OR" },
+    { id: "loc-2", name: "Auburn, WA" },
+  ],
   getAssetFinancialsByAssetId: () => ({
     "asset-1": {
       asset_tag: "FA-100",
@@ -154,6 +158,8 @@ exportActiveSectionCsv();
 assert.equal(link.download, "equipment-financial.csv");
 assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[2].parts[0], /asset_tag,acquisition_date,acquisition_cost/);
+assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","Salem, OR","Bay 1"/);
+assert.doesNotMatch(urls[2].parts[0], /"loc-1","Bay 1"/);
 assert.match(urls[2].parts[0], /"FA-100","2024-01-15","25000.00","Straight-line"/);
 assert.match(urls[2].parts[0], /"Marion County","owned","2024-02-01"/);
 
