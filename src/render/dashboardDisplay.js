@@ -37,6 +37,7 @@
     const inProgress = counts.inProgress || 0;
     const blocked = counts.blocked || 0;
     const overdue = counts.overdue || 0;
+    const completedAll = counts.completedAll || 0;
     const completedMonth = counts.completedMonth || 0;
     const completedWeek = counts.completedWeek || 0;
     const requestCount = deps.getRequestsReady()
@@ -50,6 +51,7 @@
       ${renderGaugeReadout("Blocked", blocked, "blocked", { filter: "blocked" }, deps)}
       ${renderGaugeReadout("Overdue", overdue, "overdue", { filter: "overdue" }, deps)}
       ${renderGaugeReadout("Requests", requestCount, "request", { filter: "requests" }, deps)}
+      ${renderGaugeReadout("All Completed", completedAll, "completed", { filter: "completed" }, deps)}
       ${renderGaugeReadout("Completed Month", completedMonth, "completed", { filter: "completed_month" }, deps)}
       ${renderGaugeReadout("Done This Week", completedWeek, "completed", { filter: "completed_week" }, deps)}
     </div>
@@ -63,6 +65,7 @@
     const blocked = counts.blocked || 0;
     const active = counts.activeWork ?? (newWork + inProgress + blocked);
     const overdue = counts.overdue || 0;
+    const completedAll = counts.completedAll || 0;
     const completedMonth = counts.completedMonth || 0;
     const completedWeek = counts.completedWeek || 0;
     return `
@@ -72,6 +75,7 @@
       ${renderGaugeReadout("In Progress", inProgress, "in_progress workload-pill", { filter: "in_progress" }, deps)}
       ${renderGaugeReadout("Blocked", blocked, "blocked workload-pill", { filter: "blocked" }, deps)}
       ${renderGaugeReadout("Overdue", overdue, "overdue workload-pill", { filter: "overdue" }, deps)}
+      ${renderGaugeReadout("All Completed", completedAll, "completed workload-pill", { filter: "completed" }, deps)}
       ${renderGaugeReadout("Completed Month", completedMonth, "completed workload-pill", { filter: "completed_month" }, deps)}
       ${renderGaugeReadout("Done This Week", completedWeek, "completed workload-pill", { filter: "completed_week" }, deps)}
     </div>

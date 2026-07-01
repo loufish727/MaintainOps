@@ -35,6 +35,12 @@
       return deps.getLocations?.().find((location) => location.id === locationId)?.name || "";
     }
 
+    function profileName(userId) {
+      if (!userId) return "";
+      const profile = deps.getProfilesByUserId?.()[userId];
+      return profile?.full_name || profile?.email || userId;
+    }
+
     function compareAssetsForAudit(a, b, assetsById) {
       const typeDelta = (assetTypeOrder[a.asset_type || "machine"] || 999) - (assetTypeOrder[b.asset_type || "machine"] || 999);
       if (typeDelta) return typeDelta;
@@ -97,7 +103,7 @@
             finance_notes: financial.finance_notes || "",
             needs_review: Boolean(financial.needs_review),
             last_reviewed_at: financial.last_reviewed_at || "",
-            reviewed_by: financial.reviewed_by || "",
+            reviewed_by: profileName(financial.reviewed_by),
           };
         });
     }

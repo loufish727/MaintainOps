@@ -49,6 +49,7 @@
   function statusLabel(status) {
     if (status === "active" || status === "all") return "Active";
     if (status === "overdue") return "Overdue";
+    if (status === "completed") return "All Completed";
     if (status === "completed_month") return "Completed Month";
     if (status === "completed_week") return "Done This Week";
     if (status === "open") return "New";

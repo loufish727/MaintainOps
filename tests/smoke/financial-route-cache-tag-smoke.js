@@ -7,6 +7,17 @@ const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert.match(
   indexHtml,
+  /src\/utils\/formatting\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  "formatting must use the all completed filter cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/utils\/csvExport\.js\?v=mo-build-20260701-financial-reviewed-by-name-1/,
+  "csvExport must use the financial reviewed-by name cache tag"
+);
+
+assert.match(
+  indexHtml,
   /src\/utils\/workspaceDetailNavigationEvents\.js\?v=mo-build-20260701-financial-route-fix-1/,
   "workspaceDetailNavigationEvents must use the financial route fix cache tag"
 );
@@ -22,8 +33,18 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-financial-open-equipment-2/,
-  "app.js must use the financial open equipment cache tag"
+  /app\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  "app.js must use the all completed filter cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/services\/workspaceQueueLoadersService\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  "workspaceQueueLoadersService must use the all completed filter cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/render\/dashboardDisplay\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  "dashboardDisplay must use the all completed filter cache tag"
 );
 
 console.log("financial route cache tag smoke passed");

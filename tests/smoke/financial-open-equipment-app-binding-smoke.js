@@ -18,8 +18,8 @@ assert.doesNotMatch(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-financial-open-equipment-2/,
-  "app.js cache tag must include the financial open equipment hotfix"
+  /app\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  "app.js cache tag must include the latest app hotfix"
 );
 
 console.log("financial open equipment app binding smoke passed");

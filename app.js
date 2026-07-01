@@ -3007,7 +3007,7 @@ function renderWorkspace() {
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const isAccountingOnly = activeCompanyRole() === "accounting";
-  const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed_month", "completed_week"];
+  const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed", "completed_month", "completed_week"];
   if (activeSection === "mywork" && !myWorkGaugeFilters.includes(workspaceUiState.getActiveStatusFilter())) {
     workspaceUiState.setActiveStatusFilter("active");
   }

@@ -35,6 +35,8 @@ const workOrderCountResponses = [
   { count: 11, error: null },
   { count: 12, error: null },
   { count: 13, error: null },
+  { count: 14, error: null },
+  { count: 15, error: null },
 ];
 
 let requestsPage = 1;
@@ -146,11 +148,15 @@ const loaders = createWorkspaceQueueLoaders({
 
   const dashboardCounts = await loaders.loadWorkOrderDashboardCounts();
   assert.equal(dashboardCounts.activeWork, 9);
-  assert.equal(dashboardCounts.completedWeek, 6);
+  assert.equal(dashboardCounts.completedAll, 5);
+  assert.equal(dashboardCounts.completedWeek, 7);
+  assert(calls.some((call) => call[0] === "workOrderCount" && call[1] === "completed" && call[2] === "workspace"));
 
   const myCounts = await loaders.loadMyWorkDashboardCounts();
-  assert.equal(myCounts.activeWork, 7);
-  assert.equal(myCounts.completedWeek, 13);
+  assert.equal(myCounts.activeWork, 8);
+  assert.equal(myCounts.completedAll, 13);
+  assert.equal(myCounts.completedWeek, 15);
+  assert(calls.some((call) => call[0] === "workOrderCount" && call[1] === "completed" && call[2] === "mywork"));
 
   workOrderSearchMode = true;
   searchQuery = "pump";

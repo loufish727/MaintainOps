@@ -117,7 +117,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
       finance_notes: "Reviewed for mid-year audit",
       needs_review: false,
       last_reviewed_at: "2026-07-01T12:00:00Z",
-      reviewed_by: "user-1",
+      reviewed_by: "8f6e618f-bf06-46a7-925b-1001d7d30228",
     },
   }),
   getMaintenanceRequests: () => [],
@@ -125,7 +125,9 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
   getParts: () => [],
   getProcedureTemplates: () => [],
   getCompanyMembers: () => [],
-  getProfilesByUserId: () => ({}),
+  getProfilesByUserId: () => ({
+    "8f6e618f-bf06-46a7-925b-1001d7d30228": { full_name: "Steven Sickles", email: "steven.sickles@taylormetal.com" },
+  }),
   matchesActiveLocation: (row) => row.location_id === "loc-1",
   assetTypeLabel: (type) => ({
     machine: "Primary",
@@ -162,6 +164,8 @@ assert.match(urls[2].parts[0], /"Primary","10\u2019 Press Brake","","Salem, OR",
 assert.doesNotMatch(urls[2].parts[0], /"loc-1","Bay 1"/);
 assert.match(urls[2].parts[0], /"FA-100","2024-01-15","25000.00","Straight-line"/);
 assert.match(urls[2].parts[0], /"Marion County","owned","2024-02-01"/);
+assert.match(urls[2].parts[0], /"Steven Sickles"/);
+assert.doesNotMatch(urls[2].parts[0], /8f6e618f-bf06-46a7-925b-1001d7d30228/);
 
 downloadCsv("custom.csv", [{ a: "one", b: "two" }]);
 assert.equal(link.download, "custom.csv");
