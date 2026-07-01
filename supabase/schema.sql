@@ -1114,7 +1114,7 @@ with check (
     select 1 from public.company_members cm
     where cm.company_id = asset_financials.company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager', 'accounting')
+      and cm.role in ('admin', 'accounting')
   )
   and exists (
     select 1 from public.assets a
@@ -1132,7 +1132,7 @@ using (
     select 1 from public.company_members cm
     where cm.company_id = asset_financials.company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager', 'accounting')
+      and cm.role in ('admin', 'accounting')
   )
 )
 with check (
@@ -1140,7 +1140,7 @@ with check (
     select 1 from public.company_members cm
     where cm.company_id = asset_financials.company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager', 'accounting')
+      and cm.role in ('admin', 'accounting')
   )
   and exists (
     select 1 from public.assets a

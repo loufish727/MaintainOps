@@ -72,6 +72,7 @@ const workflow = createAssetFinancialWorkflow({
   loadAssetFinancials: async () => calls.push(["loadAssetFinancials"]),
   renderWorkspace: () => calls.push(["renderWorkspace"]),
   showNotice: (message) => calls.push(["notice", message]),
+  canEditFinancialRecords: () => true,
 });
 
 (async () => {
@@ -89,6 +90,30 @@ const workflow = createAssetFinancialWorkflow({
   assert.ok(calls.some((call) => call[0] === "loadAssetFinancials"));
   assert.ok(calls.some((call) => call[0] === "renderWorkspace"));
   assert.ok(calls.some((call) => call[0] === "notice" && call[1] === "Financial info saved."));
+
+  const readOnlyCalls = [];
+  const readOnlyError = { textContent: "" };
+  const readOnlyWorkflow = createAssetFinancialWorkflow({
+    documentRef: {
+      querySelector: () => readOnlyError,
+      querySelectorAll: () => [],
+    },
+    FormDataCtor: FakeFormData,
+    CSSRef: { escape: (value) => value },
+    supabaseClient: () => ({
+      from() {
+        readOnlyCalls.push(["from"]);
+        throw new Error("Read-only financial users must not write.");
+      },
+    }),
+    withOperationTimeout: async (promise) => promise,
+    canEditFinancialRecords: () => false,
+    showNotice: (message, tone) => readOnlyCalls.push(["notice", message, tone]),
+  });
+  await readOnlyWorkflow.saveAssetFinancial({ preventDefault() {}, currentTarget: form });
+  assert.equal(readOnlyCalls.some((call) => call[0] === "from"), false);
+  assert.equal(readOnlyError.textContent, "Managers can view financial records, but only admins and accounting can edit financial info.");
+
   console.log("asset financial workflow smoke passed");
 })().catch((error) => {
   console.error(error);

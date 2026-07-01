@@ -43,6 +43,50 @@ const helpers = createFinancialDisplayHelpers({
   getFinancialLocationFilter: () => "all",
   getFinancialTypeFilter: () => "all",
   getFinancialAreaFilter: () => "all",
+  canEditFinancialRecords: () => true,
+  ASSETS_PER_PAGE: 1,
+});
+
+const readOnlyHelpers = createFinancialDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+  assetTypeLabel: (type) => ({
+    machine: "Primary",
+    secondary_machine: "Sub Equipment",
+    component: "Component",
+  }[type] || type),
+  parentAssetFor: (asset) => assets.find((row) => row.id === asset.parent_asset_id) || null,
+  getAssets: () => assets,
+  getAssetDocumentsByAssetId: () => ({
+    "asset-1": [{ document_type: "machine_photo", content_type: "image/jpeg", original_file_name: "press.jpg" }],
+  }),
+  getAssetFinancialsByAssetId: () => ({
+    "asset-1": {
+      asset_tag: "FA-100",
+      acquisition_date: "2024-01-15",
+      acquisition_cost: "25000.00",
+      depreciation_method: "Straight-line",
+      useful_life_years: "10",
+      current_book_value: "21000.00",
+      tax_jurisdiction: "Marion County",
+      ownership_status: "owned",
+      in_service_date: "2024-02-01",
+      gl_account_code: "1600",
+      cost_center: "Salem Production",
+      needs_review: false,
+      last_reviewed_at: "2026-07-01T12:00:00Z",
+      reviewed_by: "user-1",
+    },
+  }),
+  getAssetFinancialsReady: () => true,
+  getProfilesByUserId: () => ({ "user-1": { full_name: "Finance Lead" } }),
+  getLocations: () => [{ id: "loc-1", name: "Salem, OR" }, { id: "loc-2", name: "Z Auburn, WA" }],
+  matchesActiveLocation: (asset) => asset.location_id === "loc-1",
+  getFinancialPage: () => 1,
+  getFinancialMissingFilter: () => "all",
+  getFinancialLocationFilter: () => "all",
+  getFinancialTypeFilter: () => "all",
+  getFinancialAreaFilter: () => "all",
+  canEditFinancialRecords: () => false,
   ASSETS_PER_PAGE: 1,
 });
 
@@ -116,5 +160,16 @@ assert.match(detailHtml, /Marion County/);
 assert.match(detailHtml, /Salem Production/);
 assert.match(detailHtml, /Accounting changes on this screen save only financial fields/);
 assert.doesNotMatch(detailHtml, /data-asset-id="asset-1"/);
+
+const readOnlyDetailHtml = readOnlyHelpers.renderFinancialDetail("asset-1");
+assert.match(readOnlyDetailHtml, /Financial Details/);
+assert.match(readOnlyDetailHtml, /Asset tag \/ fixed asset number/);
+assert.match(readOnlyDetailHtml, /FA-100/);
+assert.match(readOnlyDetailHtml, /Straight-line/);
+assert.match(readOnlyDetailHtml, /Marion County/);
+assert.match(readOnlyDetailHtml, /Salem Production/);
+assert.match(readOnlyDetailHtml, /Finance Lead/);
+assert.doesNotMatch(readOnlyDetailHtml, /data-financial-asset="asset-1"/);
+assert.doesNotMatch(readOnlyDetailHtml, /Save Financial Info/);
 
 console.log("financial display smoke passed");

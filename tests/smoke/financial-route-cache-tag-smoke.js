@@ -28,13 +28,18 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/render\/financialDisplay\.js\?v=mo-build-20260701-financial-open-equipment-1/,
-  "financialDisplay must use the financial open equipment cache tag"
+  /src\/render\/financialDisplay\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
+  "financialDisplay must use the financial manager readonly cache tag"
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-password-change-1/,
-  "app.js must use the password change cache tag"
+  /src\/workflows\/assetFinancialWorkflow\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
+  "assetFinancialWorkflow must use the financial manager readonly cache tag"
+);
+assert.match(
+  indexHtml,
+  /app\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
+  "app.js must use the financial manager readonly cache tag"
 );
 assert.match(
   indexHtml,

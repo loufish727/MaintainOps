@@ -14,7 +14,8 @@ assert.match(lower, /needs_review boolean not null default true/);
 assert.match(lower, /last_reviewed_at timestamptz/);
 assert.match(lower, /alter table public\.asset_financials enable row level security/);
 assert.match(lower, /company members can read asset financials/);
-assert.match(lower, /cm\.role in \('admin', 'manager', 'accounting'\)/);
+assert.match(lower, /cm\.role in \('admin', 'accounting'\)/);
+assert.doesNotMatch(lower, /cm\.role in \('admin', 'manager', 'accounting'\)/);
 assert.match(lower, /grant select, insert, update on public\.asset_financials to authenticated/);
 assert.doesNotMatch(lower, /grant .* on public\.assets to anon/);
 

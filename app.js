@@ -1186,6 +1186,7 @@ const {
   getFinancialLocationFilter: () => workspaceUiState.getFinancialLocationFilter(),
   getFinancialTypeFilter: () => workspaceUiState.getFinancialTypeFilter(),
   getFinancialAreaFilter: () => workspaceUiState.getFinancialAreaFilter(),
+  canEditFinancialRecords,
   ASSETS_PER_PAGE,
 });
 const {
@@ -3940,6 +3941,7 @@ const {
   withOperationTimeout,
   getActiveCompanyId: () => activeCompanyId,
   getSession: () => session,
+  canEditFinancialRecords,
   isMissingTableError,
   setAssetFinancialsReady: (value) => { assetFinancialsReady = value; },
   loadAssetFinancials,
@@ -5596,6 +5598,10 @@ function canManageTeam() {
 
 function canUseFinancialMenu() {
   return ["admin", "manager", "accounting"].includes(activeCompanyRole());
+}
+
+function canEditFinancialRecords() {
+  return ["admin", "accounting"].includes(activeCompanyRole());
 }
 
 function canEditEquipmentRecords() {

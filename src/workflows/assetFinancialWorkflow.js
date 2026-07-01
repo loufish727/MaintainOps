@@ -28,6 +28,12 @@
       const submitButton = formElement.querySelector("button[type='submit']");
       const originalButtonText = submitButton?.textContent || "Save Financial Info";
       if (errorElement) errorElement.textContent = "";
+      if (deps.canEditFinancialRecords && !deps.canEditFinancialRecords()) {
+        const message = "Managers can view financial records, but only admins and accounting can edit financial info.";
+        if (errorElement) errorElement.textContent = message;
+        else deps.showNotice?.(message, "warning");
+        return;
+      }
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.textContent = "Saving...";

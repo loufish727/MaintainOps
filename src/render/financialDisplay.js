@@ -15,10 +15,12 @@
     getFinancialLocationFilter,
     getFinancialTypeFilter,
     getFinancialAreaFilter,
+    canEditFinancialRecords,
     ASSETS_PER_PAGE,
   }) {
     const pageSize = ASSETS_PER_PAGE || 12;
     const currentPage = getFinancialPage || (() => 1);
+    const canEditFinancial = canEditFinancialRecords || (() => true);
     const moneyFields = ["acquisition_cost", "current_book_value"];
     const requiredFinancialFields = ["asset_tag", "acquisition_date", "acquisition_cost", "depreciation_method", "useful_life_years", "current_book_value", "tax_jurisdiction", "ownership_status", "in_service_date", "gl_account_code", "cost_center"];
     const assetTypeOrder = {
@@ -117,6 +119,46 @@
           <p class="error-text" data-financial-error="${escapeHtml(asset.id)}"></p>
           <button class="secondary-button asset-action-button" type="submit" ${getAssetFinancialsReady?.() === false ? "disabled" : ""}>Save Financial Info</button>
         </form>
+      `;
+    }
+
+    function financialDisplayValue(value) {
+      return value == null || value === "" ? "Not recorded" : String(value);
+    }
+
+    function ownershipLabel(value) {
+      return value ? String(value).replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
+    }
+
+    function renderFinancialReadOnly(asset) {
+      const finance = financeFor(asset.id);
+      const rows = [
+        ["Asset tag / fixed asset number", finance.asset_tag],
+        ["Acquisition date", dateValue(finance.acquisition_date)],
+        ["Acquisition cost", fieldValue(finance, "acquisition_cost")],
+        ["Depreciation method", finance.depreciation_method],
+        ["Useful life years", finance.useful_life_years],
+        ["Current book value", fieldValue(finance, "current_book_value")],
+        ["Tax jurisdiction / property tax location", finance.tax_jurisdiction],
+        ["Ownership status", ownershipLabel(finance.ownership_status)],
+        ["In service date", dateValue(finance.in_service_date)],
+        ["Disposal date", dateValue(finance.disposal_date)],
+        ["GL / account code", finance.gl_account_code],
+        ["Cost center / department", finance.cost_center],
+        ["Disposal notes", finance.disposal_notes],
+        ["Finance notes", finance.finance_notes],
+        ["Needs review", finance.needs_review ? "Yes" : "No"],
+        ["Last reviewed", finance.last_reviewed_at ? new Date(finance.last_reviewed_at).toLocaleString() : ""],
+        ["Reviewed by", reviewedByName(finance)],
+      ];
+      return `
+        <div class="financial-readonly-list relationship-detail asset">
+          ${rows.map(([label, value]) => `
+            <div class="meta-row financial-readonly-row">
+              <span><strong>${escapeHtml(label)}</strong>${escapeHtml(financialDisplayValue(value))}</span>
+            </div>
+          `).join("")}
+        </div>
       `;
     }
 
@@ -228,7 +270,7 @@
         </section>
         <section class="relationship-detail asset">
           <h3>Financial Details</h3>
-          ${renderFinancialForm(asset)}
+          ${canEditFinancial() ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
         </section>
       `;
     }
