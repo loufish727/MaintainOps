@@ -33,8 +33,18 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-accounting-readonly-1/,
-  "app.js must use the accounting readonly cache tag"
+  /app\.js\?v=mo-build-20260701-password-change-1/,
+  "app.js must use the password change cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/workflows\/teamWorkflow\.js\?v=mo-build-20260701-password-change-1/,
+  "teamWorkflow must use the password change cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/render\/teamMemberDisplay\.js\?v=mo-build-20260701-password-change-1/,
+  "teamMemberDisplay must use the password change cache tag"
 );
 assert.match(
   indexHtml,

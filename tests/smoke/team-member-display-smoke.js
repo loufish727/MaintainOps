@@ -58,6 +58,14 @@ assert.match(profile, /id="profile-form"/);
 assert.match(profile, /louie@example\.test/);
 assert.match(profile, /name="mobile_tech" type="checkbox" checked/);
 
+const passwordChange = helpers.renderPasswordChangeForm();
+assert.match(passwordChange, /id="password-change-form"/);
+assert.match(passwordChange, /Account Security/);
+assert.match(passwordChange, /name="password" type="password" minlength="8"/);
+assert.match(passwordChange, /name="confirmPassword" type="password" minlength="8"/);
+assert.match(passwordChange, /id="password-change-error"/);
+assert.match(passwordChange, /Update Password/);
+
 const requestRecipients = helpers.renderRequestNotificationRecipients("loc-1");
 assert.match(requestRecipients, /Request Email Recipients/);
 assert.match(requestRecipients, /maintenance@example\.test/);

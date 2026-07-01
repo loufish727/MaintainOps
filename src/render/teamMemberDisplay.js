@@ -112,6 +112,21 @@
       `;
     }
 
+    function renderPasswordChangeForm() {
+      return `
+        <form class="team-profile-form relationship-detail comment" id="password-change-form">
+          <div>
+            <h3>Account Security</h3>
+            <p class="muted">Change the password used to sign in to MaintainOps.</p>
+          </div>
+          <label>New password<input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+          <label>Confirm password<input name="confirmPassword" type="password" minlength="8" required autocomplete="new-password"></label>
+          <p class="error-text" id="password-change-error"></p>
+          <button class="secondary-button" type="submit">Update Password</button>
+        </form>
+      `;
+    }
+
     function requestNotificationLocationLabel(recipient) {
       if (!recipient.location_id) return "All locations";
       const location = getLocations().find((item) => item.id === recipient.location_id);
@@ -315,6 +330,7 @@
       filteredMembers,
       renderMember,
       renderMyProfileForm,
+      renderPasswordChangeForm,
       renderRequestNotificationRecipients,
       renderTeamInviteForm,
       renderTeamInvites,

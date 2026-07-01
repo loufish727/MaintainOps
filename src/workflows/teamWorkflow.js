@@ -14,6 +14,9 @@
       const profileForm = documentRef.querySelector("#profile-form");
       if (profileForm) profileForm.addEventListener("submit", updateMyProfile);
 
+      const passwordChangeForm = documentRef.querySelector("#password-change-form");
+      if (passwordChangeForm) passwordChangeForm.addEventListener("submit", updateMyPassword);
+
       const inviteForm = documentRef.querySelector("#team-invite-form");
       if (inviteForm) inviteForm.addEventListener("submit", createTeamInvite);
 
@@ -257,6 +260,52 @@
       }
     }
 
+    async function updateMyPassword(event) {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const errorElement = documentRef.querySelector("#password-change-error");
+      const submitButton = formElement.querySelector("button[type='submit']");
+      const form = new FormDataCtor(formElement);
+      const password = String(form.get("password") || "");
+      const confirmPassword = String(form.get("confirmPassword") || "");
+      if (errorElement) errorElement.textContent = "";
+
+      if (password.length < 8) {
+        if (errorElement) errorElement.textContent = "Password must be at least 8 characters.";
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        if (errorElement) errorElement.textContent = "Passwords do not match.";
+        return;
+      }
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Updating...";
+      }
+
+      try {
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient().auth.updateUser({ password }),
+          "Password update timed out. Check your connection and try again.",
+          15000
+        );
+
+        if (error) throw error;
+
+        if (typeof formElement.reset === "function") formElement.reset();
+        deps.showNotice("Password updated.");
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not update password.";
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Update Password";
+        }
+      }
+    }
+
     async function createTeamInviteLink(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
@@ -457,6 +506,7 @@
       addCompanyMember,
       updateCompanyMemberRole,
       updateMyProfile,
+      updateMyPassword,
       createTeamInvite,
       cancelTeamInvite,
       createTeamInviteLink,

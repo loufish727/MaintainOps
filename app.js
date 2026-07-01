@@ -580,6 +580,7 @@ const {
   filteredMembers,
   renderMember,
   renderMyProfileForm,
+  renderPasswordChangeForm,
   renderRequestNotificationRecipients,
   renderTeamInviteForm,
   renderTeamInvites,
@@ -3542,6 +3543,7 @@ function renderWorkspace() {
               <span>${visibleMembers.length} shown</span>
             </div>
             ${canEditOperations ? renderMyProfileForm() : ""}
+            ${renderPasswordChangeForm()}
             ${renderRoleGuide()}
             ${canManageTeam() ? `
               ${renderRequestNotificationRecipients(activeLocationId)}

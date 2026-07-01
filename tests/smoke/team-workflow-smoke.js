@@ -17,6 +17,9 @@ function createElement({ dataset = {}, formValues = {}, selectorMap = {} } = {})
     async dispatch(type) {
       await listeners[type]({ preventDefault() {}, currentTarget: this });
     },
+    reset() {
+      this.resetCalled = true;
+    },
     querySelector(selector) {
       if (selector === "button[type='submit']") return button;
       return selectorMap[selector] || null;
@@ -83,6 +86,9 @@ function createQuery(table, calls) {
     formValues: { full_name: "QA User" },
     selectorMap: { 'input[name="mobile_tech"]': mobileTechInput },
   });
+  const passwordChangeForm = createElement({
+    formValues: { password: "newPassword1", confirmPassword: "newPassword1" },
+  });
   const inviteForm = createElement({
     formValues: { email: "new@example.com", role: "technician", default_location_id: "loc-1" },
   });
@@ -106,6 +112,7 @@ function createQuery(table, calls) {
     "#add-member-form": memberForm,
     "[data-member-role]": [roleForm],
     "#profile-form": profileForm,
+    "#password-change-form": passwordChangeForm,
     "#team-invite-form": inviteForm,
     "#team-invite-link-form": inviteLinkForm,
     "[data-revoke-invite-link]": [revokeInviteLinkButton],
@@ -114,6 +121,7 @@ function createQuery(table, calls) {
     "#request-notification-recipient-form": requestNotificationForm,
     "[data-delete-request-notification-recipient]": [deleteRequestNotificationButton],
     "#profile-error": { textContent: "" },
+    "#password-change-error": { textContent: "" },
     "#team-invite-error": { textContent: "" },
     "#team-invite-link-error": { textContent: "" },
     "#request-notification-recipient-error": { textContent: "" },
@@ -140,6 +148,12 @@ function createQuery(table, calls) {
     documentRef,
     FormDataCtor: FakeFormData,
     supabaseClient: () => ({
+      auth: {
+        updateUser: (payload) => {
+          calls.push(["auth.updateUser", payload]);
+          return Promise.resolve({ error: null });
+        },
+      },
       from: (table) => createQuery(table, calls),
       rpc: (name, payload) => {
         calls.push(["rpc", name, payload]);
@@ -187,6 +201,51 @@ function createQuery(table, calls) {
   await profileForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "upsert" && call[1] === "profiles"));
   assert.equal(state.notices.at(-1)[0], "Profile saved.");
+
+  await passwordChangeForm.dispatch("submit");
+  assert.ok(calls.some((call) => call[0] === "auth.updateUser" && call[1].password === "newPassword1"));
+  assert.equal(passwordChangeForm.resetCalled, true);
+  assert.equal(state.notices.at(-1)[0], "Password updated.");
+
+  const shortPasswordForm = createElement({
+    formValues: { password: "short", confirmPassword: "short" },
+  });
+  const shortPasswordError = { textContent: "" };
+  const shortWorkflow = createTeamWorkflow({
+    documentRef: createDocument({ "#password-change-error": shortPasswordError }),
+    FormDataCtor: FakeFormData,
+    supabaseClient: () => ({
+      auth: {
+        updateUser: () => {
+          throw new Error("short password should not call Supabase");
+        },
+      },
+    }),
+    withOperationTimeout: (value) => value,
+    showNotice: () => {},
+  });
+  await shortWorkflow.updateMyPassword({ preventDefault() {}, currentTarget: shortPasswordForm });
+  assert.equal(shortPasswordError.textContent, "Password must be at least 8 characters.");
+
+  const mismatchPasswordForm = createElement({
+    formValues: { password: "newPassword1", confirmPassword: "newPassword2" },
+  });
+  const mismatchPasswordError = { textContent: "" };
+  const mismatchWorkflow = createTeamWorkflow({
+    documentRef: createDocument({ "#password-change-error": mismatchPasswordError }),
+    FormDataCtor: FakeFormData,
+    supabaseClient: () => ({
+      auth: {
+        updateUser: () => {
+          throw new Error("mismatched password should not call Supabase");
+        },
+      },
+    }),
+    withOperationTimeout: (value) => value,
+    showNotice: () => {},
+  });
+  await mismatchWorkflow.updateMyPassword({ preventDefault() {}, currentTarget: mismatchPasswordForm });
+  assert.equal(mismatchPasswordError.textContent, "Passwords do not match.");
 
   await inviteForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "create_company_invite"));
