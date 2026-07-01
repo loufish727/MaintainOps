@@ -21,7 +21,9 @@
       if (!previous) return [];
       const labels = {
         name: "name",
-        asset_code: "equipment ID",
+        asset_code: "serial number",
+        manufacturer: "manufacturer",
+        model: "model",
         location_id: "location",
         location: "area / spot",
         parent_asset_id: "primary equipment",
@@ -32,6 +34,10 @@
       return Object.keys(labels)
         .filter((key) => String(previous[key] ?? "") !== String(next[key] ?? ""))
         .map((key) => labels[key]);
+    }
+
+    function isMissingAuditFieldColumn(error) {
+      return deps.isMissingColumnError(error, "manufacturer") || deps.isMissingColumnError(error, "model");
     }
 
     async function createAsset(event) {
@@ -53,6 +59,8 @@
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
+          manufacturer: String(form.get("manufacturer") || "").trim() || null,
+          model: String(form.get("model") || "").trim() || null,
           location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
           asset_type: form.get("asset_type") || "machine",
@@ -72,6 +80,9 @@
         }
         if (error && deps.isMissingColumnError(error, "created_by")) {
           throw new Error("Run supabase/step-next-asset-events.sql before saving equipment history.");
+        }
+        if (error && isMissingAuditFieldColumn(error)) {
+          throw new Error("Run supabase/step-next-asset-audit-fields.sql before saving manufacturer/model.");
         }
         if (error && deps.isAssetHierarchySchemaError(error)) {
           throw new Error(deps.equipmentSchemaMessage(error));
@@ -115,6 +126,8 @@
         const payload = {
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
+          manufacturer: String(form.get("manufacturer") || "").trim() || null,
+          model: String(form.get("model") || "").trim() || null,
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
@@ -134,6 +147,9 @@
         if (error && deps.isMissingColumnError(error, "location_id")) {
           deps.setLocationsReady(false);
           throw new Error(deps.databaseSetupRequiredMessage("saving equipment locations"));
+        }
+        if (error && isMissingAuditFieldColumn(error)) {
+          throw new Error("Run supabase/step-next-asset-audit-fields.sql before saving manufacturer/model.");
         }
         if (error && deps.isAssetHierarchySchemaError(error)) {
           throw new Error(deps.equipmentSchemaMessage(error));

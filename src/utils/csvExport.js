@@ -28,7 +28,9 @@
           filename: "equipment.csv",
           rows: deps.getAssets().map((asset) => ({
             name: asset.name,
-            equipment_id: asset.asset_code || "",
+            serial_number: asset.asset_code || "",
+            manufacturer: asset.manufacturer || "",
+            model: asset.model || "",
             location: asset.location || "",
             status: asset.status,
           })),

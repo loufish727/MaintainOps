@@ -60,6 +60,8 @@ create table if not exists public.assets (
   parent_asset_id uuid references public.assets(id) on delete set null,
   name text not null,
   asset_code text,
+  manufacturer text,
+  model text,
   asset_type text not null default 'machine' check (asset_type in ('machine', 'secondary_machine', 'tooling', 'component', 'shop_item')),
   safety_devices_required boolean not null default true,
   location text,

@@ -13,7 +13,7 @@
 
       const assetResults = state("assets")
         .filter(deps.matchesActiveLocation)
-        .filter((asset) => deps.matchesQuery([asset.name, asset.asset_code, asset.location, asset.status], query))
+        .filter((asset) => deps.matchesQuery([asset.name, asset.asset_code, asset.manufacturer, asset.model, asset.location, asset.status], query))
         .sort((a, b) => a.name.localeCompare(b.name))
         .slice(0, deps.SEARCH_PREVIEW_LIMIT);
 

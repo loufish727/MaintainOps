@@ -3362,7 +3362,9 @@ function renderWorkspace() {
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
             <form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
-              <input name="asset_code" placeholder="Equipment ID">
+              <input name="asset_code" placeholder="Serial number">
+              <input name="manufacturer" placeholder="Manufacturer">
+              <input name="model" placeholder="Model">
               <select name="location_existing" aria-label="Area / spot">
                 <option value="">Area / spot unset</option>
                 ${renderAssetAreaOptions()}

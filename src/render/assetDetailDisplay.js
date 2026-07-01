@@ -182,6 +182,8 @@
               <span class="chip asset-${asset.status}">${escapeHtml(assetStatusLabel(asset.status))}</span>
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
               ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+              ${asset.manufacturer ? `<span class="chip">${escapeHtml(asset.manufacturer)}</span>` : ""}
+              ${asset.model ? `<span class="chip">${escapeHtml(asset.model)}</span>` : ""}
               ${asset.safety_devices_required === false ? `<span class="safety-check-note disabled">no safety devices identified</span>` : `<span class="safety-check-note">safety devices identified</span>`}
             </div>
             <h2>${escapeHtml(asset.name)}</h2>
@@ -297,7 +299,9 @@
 
           <form class="form-grid" id="edit-asset-form">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
-            <label>Equipment ID<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
+            <label>Serial Number<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
+            <label>Manufacturer<input name="manufacturer" value="${escapeHtml(asset.manufacturer || "")}"></label>
+            <label>Model<input name="model" value="${escapeHtml(asset.model || "")}"></label>
             <label>Type
               <select name="asset_type">
                 ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (asset.asset_type || "machine") ? "selected" : ""}>${assetTypeLabel(type)}</option>`).join("")}

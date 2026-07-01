@@ -46,6 +46,7 @@ The project has evolved quickly, so when in doubt, compare `schema.sql` and the 
 - `step-next-admin-delete-work-orders.sql`
 - `step-next-applied-migrations.sql`
 - `step-next-app-issue-reports.sql`
+- `step-next-asset-audit-fields.sql`
 - `step-next-asset-hierarchy.sql`
 - `step-next-asset-type-secondary-machine.sql`
 - `step-next-asset-type-shop-item.sql`

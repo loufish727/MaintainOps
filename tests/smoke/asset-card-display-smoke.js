@@ -16,6 +16,9 @@ const { renderAssetCard } = global.window.MaintainOpsAssetCardDisplay.createAsse
 const enabledHtml = renderAssetCard({
   id: "asset-1",
   name: "Roll former",
+  asset_code: "SN-100",
+  manufacturer: "Engel",
+  model: "RF-42",
   asset_type: "machine",
   status: "running",
   location: "Bay 1",
@@ -23,6 +26,9 @@ const enabledHtml = renderAssetCard({
 });
 
 assert.match(enabledHtml, /class="chip asset-running">running<\/span>/);
+assert.match(enabledHtml, /SN-100/);
+assert.match(enabledHtml, /Engel/);
+assert.match(enabledHtml, /RF-42/);
 assert.match(enabledHtml, /class="safety-check-note">safety devices identified<\/span>/);
 assert.doesNotMatch(enabledHtml, /chip overdue">safety check/);
 

@@ -12,6 +12,8 @@ const asset = {
   id: "asset-1",
   name: "Press 1",
   asset_code: "P-100",
+  manufacturer: "Engel",
+  model: "RF-42",
   asset_type: "machine",
   status: "running",
   location: "Bay 1",
@@ -102,6 +104,10 @@ assert.deepEqual(signedAssetDocumentRequests, ["asset-1"]);
 assert.match(html, /Press 1/);
 assert.match(html, /id="edit-asset-form"/);
 assert.match(html, /name="location_existing"/);
+assert.match(html, /Serial Number/);
+assert.match(html, /name="asset_code" value="P-100"/);
+assert.match(html, /name="manufacturer" value="Engel"/);
+assert.match(html, /name="model" value="RF-42"/);
 assert.match(html, /<option value="Bay 1" selected>Bay 1<\/option>/);
 assert.match(html, /name="location_new"/);
 assert.match(html, /aria-label="Equipment summary"/);
