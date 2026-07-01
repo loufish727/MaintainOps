@@ -109,20 +109,6 @@
       });
     });
 
-    doc.querySelectorAll(".asset-card").forEach((card) => {
-      if (card.dataset.assetId) return;
-      card.addEventListener("click", () => {
-        state.setActiveAssetId(card.dataset.assetId);
-        state.setActiveWorkOrderId(null);
-        closeAssetHistoryScreen();
-        resetWorkCreationState();
-        state.setActiveSection("assets");
-        storage.setItem("maintainops.activeSection", state.getActiveSection());
-        options.renderWorkspace();
-        scrollToDetailTop();
-      });
-    });
-
     doc.querySelectorAll("[data-open-asset]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();

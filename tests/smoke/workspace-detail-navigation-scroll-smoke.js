@@ -35,7 +35,7 @@ require("../../src/utils/workspaceDetailNavigationEvents.js");
 
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 
-const legacyAssetCard = createElement({});
+const financialAssetCard = createElement({ openFinancialAsset: "asset-financial" });
 const openAssetButton = createElement({ openAsset: "asset-2" });
 const assetCard = createElement({ assetId: "asset-1" });
 const keyboardAssetCard = createElement({ assetId: "asset-3" });
@@ -86,7 +86,7 @@ const windowRef = {
 bindWorkspaceDetailNavigationEvents({
   documentRef: createDocument({
     ".work-card": [],
-    ".asset-card": [legacyAssetCard, assetCard],
+    ".asset-card": [financialAssetCard, assetCard],
     "[data-open-asset]": [openAssetButton],
     "[data-work-photo-jump]": [photoJumpButton],
     "[data-asset-id]": [assetCard, keyboardAssetCard],
@@ -132,6 +132,12 @@ bindWorkspaceDetailNavigationEvents({
 });
 
 (async () => {
+await financialAssetCard.dispatch("click");
+assert.equal(stateValues.activeAssetId, null);
+assert.equal(stateValues.activeSection, "assets");
+assert.equal(renderCount, 0);
+assert.equal(scrollCount, 0);
+
 await assetCard.dispatch("click");
 assert.equal(stateValues.activeAssetId, "asset-1");
 assert.equal(renderCount, 1);
