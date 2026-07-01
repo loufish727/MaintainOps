@@ -37,6 +37,33 @@ const helpers = createPartsDisplayHelpers({
   renderPartSourceManager: () => '<section class="part-source-manager"></section>',
 });
 
+const readOnlyHelpers = createPartsDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+  money: (value) => `$${Number(value).toFixed(2)}`,
+  isLowStockPart: (part) => Number(part.quantity_on_hand) <= Number(part.reorder_point),
+  matchesActiveLocation: () => true,
+  getParts: () => [
+    { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", machine_note: "MS200", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 },
+  ],
+  getPartDocumentsByPartId: () => ({
+    "part-1": [
+      { file_name: "receipt.pdf", document_type: "receipt", content_type: "application/pdf", created_at: "2026-05-27T12:00:00Z", signedUrl: "https://example.test/receipt.pdf" },
+    ],
+  }),
+  getPartDocumentsReady: () => true,
+  getPendingDeletePartId: () => "part-1",
+  getShowPartSourceManager: () => true,
+  getPartCostsReady: () => true,
+  getPartInventoryFilter: () => "low",
+  getPartSearchQuery: () => "bearing",
+  partUsageRows: () => [],
+  canDeleteParts: () => true,
+  canEditOperationalRecords: () => false,
+  renderPartSourceOptions: () => '<datalist id="part-source-options"></datalist>',
+  renderPartMachineOptions: () => '<datalist id="part-machine-options"></datalist>',
+  renderPartSourceManager: () => '<section class="part-source-manager"></section>',
+});
+
 const part = helpers.getParts ? helpers.getParts()[0] : { id: "part-1", name: "Bearing <A>", sku: "BRG", supplier_name: "Local", machine_note: "MS200", quantity_on_hand: 1, reorder_point: 2, unit_cost: 4 };
 
 const listCard = helpers.renderPart(part);
@@ -75,5 +102,15 @@ assert.match(detail, /receipt\.pdf/);
 assert.match(detail, /data-cancel-delete-part/);
 assert.match(detail, /permanent-delete-button/);
 assert.match(detail, /data-delete-part="part-1"/);
+
+const readOnlyDetail = readOnlyHelpers.renderPartDetail(part);
+assert.match(readOnlyDetail, /Bearing &lt;A&gt;/);
+assert.match(readOnlyDetail, /receipt\.pdf/);
+assert.match(readOnlyDetail, /part-machine-options/);
+assert.doesNotMatch(readOnlyDetail, /data-use-part="part-1"/);
+assert.doesNotMatch(readOnlyDetail, /data-restock-part="part-1"/);
+assert.doesNotMatch(readOnlyDetail, /data-edit-part="part-1"/);
+assert.doesNotMatch(readOnlyDetail, /data-part-document="part-1"/);
+assert.doesNotMatch(readOnlyDetail, /data-delete-part="part-1"/);
 
 console.log("parts display smoke passed");

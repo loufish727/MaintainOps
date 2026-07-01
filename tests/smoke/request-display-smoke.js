@@ -22,6 +22,20 @@ const helpers = createRequestDisplayHelpers({
   }),
 });
 
+const readOnlyHelpers = createRequestDisplayHelpers({
+  segmentIcon: (id) => `<i>${id}</i>`,
+  escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
+  renderAssetOptions: () => '<option value="asset-1">Mixer</option>',
+  renderMaintenanceRequestPhoto: () => '<figure class="request-photo"></figure>',
+  isConvertedRequest: (request) => request.status === "converted" || Boolean(request.converted_work_order_id),
+  canDeleteOperationalRecords: () => true,
+  canEditOperationalRecords: () => false,
+  getPendingDeleteRequestId: () => "req-1",
+  getProfilesByUserId: () => ({
+    "user-1": { full_name: "QA Requester" },
+  }),
+});
+
 assert.equal(helpers.requestPanelSubtitle("converted", 3), "3 converted");
 assert.equal(helpers.requestPanelSubtitle("all", 5), "5 total");
 assert.equal(helpers.requestPanelSubtitle("active", 2), "2 active");
@@ -63,6 +77,13 @@ assert.match(confirmingCard, /data-confirm-delete-request="req-1"/);
 const converted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1" });
 assert.match(converted, /request-card converted-request/);
 assert.match(converted, /Converted to work order/);
+
+const readOnlyCard = readOnlyHelpers.renderMaintenanceRequest(request);
+assert.match(readOnlyCard, /Door &lt;jam&gt;/);
+assert.doesNotMatch(readOnlyCard, /data-quick-fix-request="req-1"/);
+assert.doesNotMatch(readOnlyCard, /data-convert-request="req-1"/);
+assert.doesNotMatch(readOnlyCard, /data-delete-request="req-1"/);
+assert.doesNotMatch(readOnlyCard, /Converted to work order/);
 
 const form = helpers.renderRequestFormContent();
 assert.match(form, /id="request-form"/);

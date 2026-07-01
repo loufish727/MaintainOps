@@ -30,6 +30,7 @@
       photoMetaText,
       renderActivityItem,
       canDeleteWorkOrders,
+      canEditOperationalRecords = () => true,
     } = deps;
 
     function renderChecklistStep(workOrder, step) {
@@ -116,6 +117,7 @@
     const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
     const progress = procedure ? checklistProgress(workOrder, procedure) : null;
     const requiredProgress = procedure ? requiredChecklistProgress(workOrder, procedure) : null;
+    const canEditOperational = canEditOperationalRecords();
   
     return `
       <div class="detail-stack">
@@ -145,21 +147,21 @@
           </div>
         ` : ""}
   
-        <label>Status
+        ${canEditOperational ? `<label>Status
           <select id="status-select">
             ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
           </select>
-        </label>
+        </label>` : ""}
   
-        <div class="quick-actions detail-quick-actions">
+        ${canEditOperational ? `<div class="quick-actions detail-quick-actions">
           ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
           ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
           `).join("")}
-        </div>
+        </div>` : ""}
         ${workOrderActionWarningId === workOrder.id && workOrderActionWarning ? `<p class="error-text action-warning">${escapeHtml(workOrderActionWarning)}</p>` : ""}
   
-        <details class="quick-update-panel relationship-detail comment work-detail-section" open>
+        ${canEditOperational ? `<details class="quick-update-panel relationship-detail comment work-detail-section" open>
           <summary>Quick Update</summary>
           <form class="form-grid" id="quick-update-work-order-form">
             <label id="quick-update-issue-field">Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
@@ -204,7 +206,7 @@
             <p class="error-text" id="quick-update-error"></p>
             <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
           </form>
-        </details>
+        </details>` : ""}
   
         <div class="downtime-copy relationship-detail asset" id="work-order-email-helper-target">
           <div>
@@ -219,7 +221,7 @@
   
         ${renderWorkOrderMessages(workOrder)}
   
-        <details class="work-detail-section relationship-detail asset">
+        ${canEditOperational ? `<details class="work-detail-section relationship-detail asset">
           <summary>Full Work Order Details</summary>
         <form class="form-grid" id="edit-work-order-form">
           <label>Title<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
@@ -260,7 +262,7 @@
           <p class="error-text" id="work-order-save-error"></p>
           <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
         </form>
-        </details>
+        </details>` : ""}
   
         ${procedure ? `
           <details class="work-detail-section relationship-detail procedure" open>
@@ -270,12 +272,17 @@
               <span>${progress.done} of ${progress.total} complete Â· required ${requiredProgress.done}/${requiredProgress.total}</span>
             </div>
             <div class="checklist-list">
-              ${procedure.procedure_steps.map((step) => renderChecklistStep(workOrder, step)).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
+              ${procedure.procedure_steps.map((step) => canEditOperational ? renderChecklistStep(workOrder, step) : `
+                <div class="checklist-step relationship-detail procedure">
+                  <span>${step.position}. ${escapeHtml(step.prompt)} ${step.required ? `<small class="required-mark">Required</small>` : ""}</span>
+                  <small>${escapeHtml(deps.getStepResultsByWorkOrder()[workOrder.id]?.[step.id]?.value || "Not recorded")}</small>
+                </div>
+              `).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
             </div>
           </details>
         ` : ""}
   
-        ${workOrder.status !== "completed" ? `
+        ${canEditOperational && workOrder.status !== "completed" ? `
           <details class="work-detail-section completion-section" id="work-order-complete-target">
             <summary>Complete Work</summary>
           <form class="completion-box" id="complete-work-order-form">
@@ -300,7 +307,7 @@
   
         <details class="work-detail-section relationship-detail parts" id="work-order-parts-target">
           <summary>Parts Used</summary>
-        <form class="form-grid relationship-detail parts" id="parts-used-form">
+        ${canEditOperational ? `<form class="form-grid relationship-detail parts" id="parts-used-form">
           <h3>Parts Used</h3>
           <label>Part
             <select name="part_id" required>
@@ -311,7 +318,7 @@
           <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
           <p class="error-text" id="parts-used-error"></p>
           <button class="secondary-button" type="submit">Record Part Used</button>
-        </form>
+        </form>` : ""}
   
         <div class="parts-used-list">
           ${usedParts.length ? `<article class="parts-used-summary"><strong>Parts estimate</strong><span>${money(partsCost)}</span></article>` : ""}
@@ -327,11 +334,11 @@
   
         <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
           <summary>Photos</summary>
-        <form class="form-grid relationship-detail photo" id="photo-form">
+        ${canEditOperational ? `<form class="form-grid relationship-detail photo" id="photo-form">
           <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Images only. PDF quotes/documents are attached from equipment or parts. Photos are optimized near 1.5 MB.</small></label>
           <p class="error-text" id="photo-error"></p>
           <button class="secondary-button" type="submit">Upload Photo</button>
-        </form>
+        </form>` : ""}
   
         <div>
           <h3>Photos</h3>
@@ -352,11 +359,11 @@
   
         <details class="work-detail-section relationship-detail comment" id="work-order-comments-target">
           <summary>Comments</summary>
-        <form class="form-grid relationship-detail comment" id="comment-form">
+        ${canEditOperational ? `<form class="form-grid relationship-detail comment" id="comment-form">
           <label>Comment<textarea name="body" rows="3" required></textarea></label>
           <p class="error-text" id="comment-error"></p>
           <button class="primary-button" type="submit">Add Comment</button>
-        </form>
+        </form>` : ""}
         <div class="comment-list">
           ${comments.map((comment) => `
             <article class="relationship-detail comment">
@@ -376,7 +383,7 @@
         </div>
         </details>
   
-        ${canDeleteWorkOrders() ? renderWorkOrderDangerZone(workOrder) : ""}
+        ${canEditOperational && canDeleteWorkOrders() ? renderWorkOrderDangerZone(workOrder) : ""}
       </div>
     `;
   }

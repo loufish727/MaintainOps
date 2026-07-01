@@ -6,6 +6,7 @@
     const renderMaintenanceRequestPhoto = deps.renderMaintenanceRequestPhoto;
     const isConvertedRequest = deps.isConvertedRequest;
     const canDeleteOperationalRecords = deps.canDeleteOperationalRecords;
+    const canEditOperationalRecords = deps.canEditOperationalRecords || (() => true);
     const getPendingDeleteRequestId = deps.getPendingDeleteRequestId;
     const getProfilesByUserId = deps.getProfilesByUserId;
 
@@ -34,13 +35,14 @@
 
     function renderMaintenanceRequest(request) {
       const converted = isConvertedRequest(request);
+      const canEditOperational = canEditOperationalRecords();
       const confirming = getPendingDeleteRequestId() === request.id;
       const profilesByUserId = getProfilesByUserId();
       const requestedAt = request.created_at ? new Date(request.created_at) : null;
       const requestedAtLabel = requestedAt && !Number.isNaN(requestedAt.getTime()) ? requestedAt.toLocaleString() : "date unavailable";
       const equipmentLabel = request.assets?.name || request.locations?.name || "No equipment";
       const requesterLabel = request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester";
-      const deleteControls = canDeleteOperationalRecords() ? confirming ? `
+      const deleteControls = canEditOperational && canDeleteOperationalRecords() ? confirming ? `
         <button class="secondary-button" data-cancel-delete-request type="button">Cancel</button>
         <button class="danger-action-button confirm-delete-button" data-confirm-delete-request="${escapeHtml(request.id)}" type="button">Permanently Delete</button>
       ` : `
@@ -65,18 +67,18 @@
               <span><strong>Received</strong>${escapeHtml(requestedAtLabel)}</span>
             </div>
           </div>
-          ${!converted && request.status === "submitted" ? `
+          ${canEditOperational && !converted && request.status === "submitted" ? `
             <div class="request-actions">
               <button class="secondary-button request-action-button" data-quick-fix-request="${request.id}" type="button">Quick Fix</button>
               <button class="secondary-button work-action-button" data-convert-request="${request.id}" type="button">Convert to Work Order</button>
               ${deleteControls}
             </div>
-          ` : `
+          ` : converted ? `
             <div class="request-actions request-converted-note">
               <span>Converted to work order</span>
               ${deleteControls}
             </div>
-          `}
+          ` : ""}
         </article>
       `;
     }

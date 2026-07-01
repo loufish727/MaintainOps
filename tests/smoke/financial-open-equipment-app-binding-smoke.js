@@ -18,7 +18,7 @@ assert.doesNotMatch(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-all-completed-filter-1/,
+  /app\.js\?v=mo-build-20260701-accounting-readonly-1/,
   "app.js cache tag must include the latest app hotfix"
 );
 

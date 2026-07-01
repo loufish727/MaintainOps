@@ -14,6 +14,7 @@
     getPartSearchQuery,
     partUsageRows,
     canDeleteParts,
+    canEditOperationalRecords = () => true,
     renderPartSourceOptions,
     renderPartMachineOptions,
     renderPartSourceManager,
@@ -174,9 +175,10 @@
       const unitCost = Number(part.unit_cost) || 0;
       const documents = getPartDocumentsByPartId()[part.id] || [];
       const documentSummary = renderPartDocumentSummary(documents);
+      const canEditOperational = canEditOperationalRecords();
       return `
         <section class="part-detail-shell">
-          ${renderPartSourceOptions()}
+          ${canEditOperational ? renderPartSourceOptions() : ""}
           ${renderPartMachineOptions()}
           <div class="part-detail-summary relationship-detail parts">
             <button class="secondary-button part-back-button" data-close-part-detail type="button">Back to parts</button>
@@ -198,7 +200,7 @@
               <h3>Quick Inventory</h3>
               <span>stock movement</span>
             </div>
-            <div class="part-card-actions">
+            ${canEditOperational ? `<div class="part-card-actions">
               <form class="part-quantity-form use-part-form" data-use-part="${part.id}">
                 <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Use quantity for ${escapeHtml(part.name)}">
                 <button class="secondary-button use-part-button" type="submit">Use</button>
@@ -207,10 +209,10 @@
                 <input name="quantity" type="number" min="1" step="1" value="1" aria-label="Restock quantity for ${escapeHtml(part.name)}">
                 <button class="secondary-button" type="submit">Restock</button>
               </form>
-            </div>
+            </div>` : ""}
           </section>
 
-          <form class="part-detail-form relationship-detail parts" data-edit-part="${part.id}">
+          ${canEditOperational ? `<form class="part-detail-form relationship-detail parts" data-edit-part="${part.id}">
             <label>Name<input name="name" required value="${escapeHtml(part.name)}"></label>
             <label>SKU<input name="sku" value="${escapeHtml(part.sku || "")}"></label>
             <label>Source / vendor<input name="supplier_name" list="part-source-options" value="${escapeHtml(part.supplier_name || "")}" placeholder="Where this part usually comes from"><button class="text-button danger-link inline-label-action" data-toggle-part-sources type="button">Edit sources</button></label>
@@ -223,21 +225,21 @@
               <button class="secondary-button" type="submit">Save Part</button>
               <button class="text-button" data-close-part-detail type="button">Cancel</button>
             </div>
-          </form>
+          </form>` : ""}
 
-          ${getShowPartSourceManager() ? renderPartSourceManager() : ""}
+          ${canEditOperational && getShowPartSourceManager() ? renderPartSourceManager() : ""}
 
           <section class="part-detail-files relationship-detail parts">
             <div class="panel-header compact">
               <h3>Part Files</h3>
               <span>${documents.length} file${documents.length === 1 ? "" : "s"}</span>
             </div>
-            <form class="part-document-form" data-part-document="${part.id}">
+            ${canEditOperational ? `<form class="part-document-form" data-part-document="${part.id}">
               <label>File type<select name="document_type">${renderDocumentTypeOptions()}</select></label>
               <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Images are optimized. Non-image files over 25 MB are blocked.</small></label>
               <p class="error-text" data-part-document-error="${part.id}">${getPartDocumentsReady() ? "" : "Run supabase/step-next-part-documents.sql before attaching files."}</p>
               <button class="secondary-button" type="submit" ${getPartDocumentsReady() ? "" : "disabled"}>Attach File</button>
-            </form>
+            </form>` : ""}
             <div class="part-document-list">
               ${documents.length
                 ? PART_DOCUMENT_TYPES.map((type) => renderPartDocumentSection(type, documents)).join("")
@@ -245,7 +247,7 @@
             </div>
           </section>
 
-          ${renderPartDangerZone(part)}
+          ${canEditOperational ? renderPartDangerZone(part) : ""}
         </section>
       `;
     }

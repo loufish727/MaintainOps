@@ -826,6 +826,7 @@ const {
   getDueState,
   procedureDeleteBlockerMessage,
   canDeleteOperationalRecords,
+  canEditOperationalRecords,
 });
 const relationshipDisplayHelpers = createRelationshipDisplayHelpers({
   escapeHtml,
@@ -1049,6 +1050,7 @@ const {
   renderMaintenanceRequestPhoto,
   isConvertedRequest,
   canDeleteOperationalRecords,
+  canEditOperationalRecords,
   getPendingDeleteRequestId: () => pendingDeleteRequestId,
   getProfilesByUserId: () => profilesByUserId,
 });
@@ -1148,6 +1150,7 @@ const {
   getPartSearchQuery: () => workspaceUiState.getPartSearchQuery(),
   partUsageRows,
   canDeleteParts,
+  canEditOperationalRecords,
   renderPartSourceOptions,
   renderPartMachineOptions,
   renderPartSourceManager,
@@ -3006,7 +3009,7 @@ function renderWorkspace() {
     setActiveSectionState(navItems[0]?.[0] || "mywork");
   }
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
-  const isAccountingOnly = activeCompanyRole() === "accounting";
+  const canEditOperations = canEditOperationalRecords();
   const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed", "completed_month", "completed_week"];
   if (activeSection === "mywork" && !myWorkGaugeFilters.includes(workspaceUiState.getActiveStatusFilter())) {
     workspaceUiState.setActiveStatusFilter("active");
@@ -3060,7 +3063,7 @@ function renderWorkspace() {
   const visibleSchedules = filteredPreventiveSchedules();
   const visibleProcedures = filteredProcedureTemplates();
   const visibleParts = filteredParts();
-  const showGlobalSearch = !isAccountingOnly && Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
+  const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
   if (workspaceUiState.getPartsPage() > totalPartsPages) workspaceUiState.setPartsPage(totalPartsPages);
@@ -3239,12 +3242,12 @@ function renderWorkspace() {
             </div>
           </div>
           <div class="topbar-actions">
-            ${isAccountingOnly ? "" : `<button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>`}
-            ${isAccountingOnly ? "" : `<button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>`}
+            ${canEditOperations ? `<button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>` : ""}
+            ${canEditOperations ? `<button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>` : ""}
             <details class="topbar-more">
               <summary>More</summary>
               <div>
-                ${isAccountingOnly ? "" : `<button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>`}
+                ${canEditOperations ? `<button class="primary-button work-action-button" id="show-create-work-order${suffix}" data-command-action="create-work-order" type="button">New Work Order</button>` : ""}
                 <button class="secondary-button export-action-button" id="export-csv${suffix}" data-command-action="export-csv" type="button">Export CSV</button>
               </div>
             </details>
@@ -3253,10 +3256,10 @@ function renderWorkspace() {
 
         <div id="app-notice-slot">${renderAppNoticeMarkup()}</div>
 
-        ${isAccountingOnly ? "" : `<label class="search-bar">
+        <label class="search-bar">
           Search workspace
           <input id="workspace-search${suffix}" class="workspace-search-input" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
-        </label>`}
+        </label>
       </div>
     `;
   };
@@ -3477,7 +3480,7 @@ function renderWorkspace() {
               <h2>Preventive Maintenance</h2>
               <span>${visibleSchedules.length} shown</span>
             </div>
-            <form class="inline-form pm-form" id="create-pm-form" data-create-pm-form>
+            ${canEditOperations ? `<form class="inline-form pm-form" id="create-pm-form" data-create-pm-form>
               <input name="title" required placeholder="Monthly compressor PM">
               <select name="asset_id" required data-location-sensitive-asset>
                 <option value="">Machine / equipment</option>
@@ -3498,7 +3501,7 @@ function renderWorkspace() {
               </span>
               <p class="error-text" id="pm-error"></p>
               <button class="secondary-button" type="submit">Add Schedule</button>
-            </form>
+            </form>` : ""}
             <div class="pm-list">
               ${pagedSchedules.map(renderPreventiveSchedule).join("") || `<p class="muted">No schedules match this search.</p>`}
             </div>
@@ -3511,13 +3514,13 @@ function renderWorkspace() {
               <span>${visibleProcedures.length} shown</span>
             </div>
             ${proceduresReady ? `
-            <form class="form-grid procedure-form relationship-detail procedure" id="create-procedure-form">
+            ${canEditOperations ? `<form class="form-grid procedure-form relationship-detail procedure" id="create-procedure-form">
               <label>Procedure checklist name<input name="name" required placeholder="Monthly compressor inspection"></label>
               <label>Description<textarea name="description" rows="3" placeholder="Use this checklist when creating repeat work."></textarea></label>
               <p class="error-text" id="procedure-error"></p>
               <button class="secondary-button" type="submit">Add Checklist</button>
             </form>
-            <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection checklist</button>
+            <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection checklist</button>` : ""}
             <div class="procedure-list">
               ${pagedProcedures.map(renderProcedureTemplate).join("") || `<p class="muted">No procedure checklists match this search.</p>`}
             </div>
@@ -3538,7 +3541,7 @@ function renderWorkspace() {
               <h2>Team</h2>
               <span>${visibleMembers.length} shown</span>
             </div>
-            ${renderMyProfileForm()}
+            ${canEditOperations ? renderMyProfileForm() : ""}
             ${renderRoleGuide()}
             ${canManageTeam() ? `
               ${renderRequestNotificationRecipients(activeLocationId)}
@@ -3580,9 +3583,9 @@ function renderWorkspace() {
                 ${renderPartsHealth()}
               </div>
               ${renderPartSearch(currentPartSort())}
-              ${renderPartSourceOptions()}
+              ${canEditOperations ? renderPartSourceOptions() : ""}
               ${renderPartMachineOptions()}
-              <form class="inline-form parts-form relationship-detail parts" id="create-part-form">
+              ${canEditOperations ? `<form class="inline-form parts-form relationship-detail parts" id="create-part-form">
                 <div class="parts-form-header">
                   <h3>Add Part</h3>
                   <button class="text-button danger-link source-edit-button" data-toggle-part-sources type="button">Edit sources</button>
@@ -3596,8 +3599,8 @@ function renderWorkspace() {
                 <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="0"></label>
                 <p class="error-text" id="part-create-error">${partSetupMessage()}</p>
                 <button class="secondary-button add-part-button" type="submit">Add Part</button>
-              </form>
-              ${showPartSourceManager ? renderPartSourceManager() : ""}
+              </form>` : ""}
+              ${canEditOperations && showPartSourceManager ? renderPartSourceManager() : ""}
               <div class="parts-list" id="parts-list">
                 ${pagedParts.map(renderPart).join("") || `<p class="muted">${partEmptyStateText()}</p>`}
               </div>
@@ -4125,6 +4128,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   messageThreadScopeLabel,
   renderMessageList,
   renderListPagination,
+  canEditOperationalRecords,
 });
 
 const {
@@ -4406,6 +4410,7 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   photoMetaText,
   renderActivityItem,
   canDeleteWorkOrders,
+  canEditOperationalRecords,
 });
 
 function recommendedWorkOrderStep(workOrder) {
@@ -5595,6 +5600,10 @@ function canEditEquipmentRecords() {
   return activeCompanyRole() !== "accounting";
 }
 
+function canEditOperationalRecords() {
+  return activeCompanyRole() !== "accounting";
+}
+
 function canAdministerTeamRoles() {
   return activeCompanyRole() === "admin";
 }
@@ -5628,6 +5637,7 @@ function canDeleteOperationalRecords() {
 }
 
 function canAssignWorkOrderToMe(workOrder) {
+  if (!canEditOperationalRecords()) return false;
   if (!workOrder || workOrder.assigned_to === session?.user?.id) return false;
   if (workOrder.status === "completed") return false;
   if (canManageTeam()) return true;
@@ -5635,10 +5645,6 @@ function canAssignWorkOrderToMe(workOrder) {
 }
 
 function visibleNavItems() {
-  if (activeCompanyRole() === "accounting") {
-    return [["assets", "Equipment"], ["financial", "Financial"]];
-  }
-
   const items = [
     ["mywork", "My Work"],
     ["work", "Work Orders"],

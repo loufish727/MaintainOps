@@ -19,7 +19,7 @@ const workOrder = {
   safety_devices_checked: true,
 };
 
-const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
+const workOrderDetailDeps = {
   STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
   TYPE_OPTIONS: ["reactive", "preventive"],
   getActiveWorkOrderId: () => "wo-1",
@@ -59,7 +59,9 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   photoMetaText: () => "uploaded",
   renderActivityItem: () => "<article>Status changed</article>",
   canDeleteWorkOrders: () => true,
-});
+};
+
+const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers(workOrderDetailDeps);
 
 const html = renderWorkOrderDetail();
 
@@ -85,6 +87,24 @@ assert.match(html, /<details class="work-detail-section relationship-detail proc
 assert.match(html, /Procedure Checklist/);
 assert.match(html, /data-step-result="step-1"/);
 assert.match(html, /Finish checklist first\./);
+
+const readOnlyHtml = createWorkOrderDetailDisplayHelpers({
+  ...workOrderDetailDeps,
+  canEditOperationalRecords: () => false,
+}).renderWorkOrderDetail();
+assert.match(readOnlyHtml, /Hydraulic Leak/);
+assert.match(readOnlyHtml, /Hose/);
+assert.match(readOnlyHtml, /QA User/);
+assert.match(readOnlyHtml, /Status changed/);
+assert.doesNotMatch(readOnlyHtml, /id="status-select"/);
+assert.doesNotMatch(readOnlyHtml, /id="quick-update-work-order-form"/);
+assert.doesNotMatch(readOnlyHtml, /id="edit-work-order-form"/);
+assert.doesNotMatch(readOnlyHtml, /id="complete-work-order-form"/);
+assert.doesNotMatch(readOnlyHtml, /id="parts-used-form"/);
+assert.doesNotMatch(readOnlyHtml, /id="photo-form"/);
+assert.doesNotMatch(readOnlyHtml, /id="comment-form"/);
+assert.doesNotMatch(readOnlyHtml, /data-confirm-delete-work-order="wo-1"/);
+assert.doesNotMatch(readOnlyHtml, /data-step-result="step-1"/);
 
 const missingRenderer = createWorkOrderDetailDisplayHelpers({
   ...{},

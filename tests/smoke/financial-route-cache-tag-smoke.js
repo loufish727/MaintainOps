@@ -33,8 +33,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-all-completed-filter-1/,
-  "app.js must use the all completed filter cache tag"
+  /app\.js\?v=mo-build-20260701-accounting-readonly-1/,
+  "app.js must use the accounting readonly cache tag"
 );
 assert.match(
   indexHtml,
@@ -46,5 +46,18 @@ assert.match(
   /src\/render\/dashboardDisplay\.js\?v=mo-build-20260701-all-completed-filter-1/,
   "dashboardDisplay must use the all completed filter cache tag"
 );
+for (const file of [
+  "requestDisplay",
+  "partsDisplay",
+  "maintenanceListDisplay",
+  "workOrderDetailDisplay",
+  "messageCenterDisplay",
+]) {
+  assert.match(
+    indexHtml,
+    new RegExp(`src/render/${file}\\.js\\?v=mo-build-20260701-accounting-readonly-1`),
+    `${file} must use the accounting readonly cache tag`
+  );
+}
 
 console.log("financial route cache tag smoke passed");

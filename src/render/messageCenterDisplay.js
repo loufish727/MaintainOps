@@ -18,6 +18,7 @@
       messageThreadScopeLabel,
       renderMessageList,
     } = deps;
+    const canEditOperationalRecords = deps.canEditOperationalRecords || (() => true);
 
     function personInitials(name) {
       const parts = String(name || "?")
@@ -46,6 +47,7 @@
       const messageSearchQuery = deps.getMessageSearchQuery();
       const messageThreadFilter = deps.getMessageThreadFilter();
       const messagePeople = companyMembers.filter((member) => member.user_id !== session.user.id);
+      const canEditOperational = canEditOperationalRecords();
     
       const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
       const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
@@ -78,7 +80,7 @@
               <div class="message-people-strip" aria-label="Company message contacts">
                 ${messagePeople.map(renderMessagePerson).join("") || `<span class="muted">No teammates added yet.</span>`}
               </div>
-              <form class="message-thread-form" id="message-thread-form">
+              ${canEditOperational ? `<form class="message-thread-form" id="message-thread-form">
                 <details ${messageComposerOpen || linkedDraftWorkOrder ? "open" : ""}>
                   <summary>New message</summary>
                   <div class="message-thread-fields">
@@ -115,7 +117,7 @@
                     <button class="secondary-button message-action-button" type="submit">Start Thread</button>
                   </div>
                 </details>
-              </form>
+              </form>` : ""}
               <label class="message-search">
                 <input id="message-search" type="search" value="${escapeHtml(messageSearchQuery)}" placeholder="Search messages">
               </label>
@@ -143,20 +145,20 @@
                   <div class="message-header-actions">
                     ${activeThread.work_order_id ? `<button class="secondary-button message-linked-work-button" data-open-linked-work-order="${activeThread.work_order_id}" type="button">Open Work Order</button>` : ""}
                     <span class="chip comment">${threadMessages.length} message${threadMessages.length === 1 ? "" : "s"}</span>
-                    <button class="text-button danger-link" data-delete-message-thread="${escapeHtml(activeThread.id)}" type="button">Delete Thread</button>
+                    ${canEditOperational ? `<button class="text-button danger-link" data-delete-message-thread="${escapeHtml(activeThread.id)}" type="button">Delete Thread</button>` : ""}
                   </div>
                 </div>
                 <div class="message-list">
                   ${renderMessageList(threadMessages)}
                 </div>
-                <form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
+                ${canEditOperational ? `<form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
                   <div class="message-quick-replies">
                     ${["On it", "Need more info", "Waiting on parts", "Complete"].map((reply) => `<button data-quick-reply="${escapeHtml(reply)}" type="button">${escapeHtml(reply)}</button>`).join("")}
                   </div>
                   <textarea name="body" rows="2" required placeholder="Reply to this thread..."></textarea>
                   <p class="error-text" id="message-reply-error"></p>
                   <button class="secondary-button message-action-button" type="submit">Send Reply</button>
-                </form>
+                </form>` : ""}
               ` : `<p class="muted">Choose or start a thread.</p>`}
             </section>
           </div>

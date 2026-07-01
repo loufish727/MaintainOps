@@ -4,6 +4,7 @@
     const getDueState = deps.getDueState;
     const procedureDeleteBlockerMessage = deps.procedureDeleteBlockerMessage;
     const canDeleteOperationalRecords = deps.canDeleteOperationalRecords;
+    const canEditOperationalRecords = deps.canEditOperationalRecords || (() => true);
 
     function filteredPreventiveSchedules() {
       return deps.getPreventiveSchedules().filter((schedule) => deps.matchesActiveLocation(schedule) && deps.matchesSearch([
@@ -25,6 +26,7 @@
     function renderPreventiveSchedule(schedule) {
       const dueState = getDueState({ due_at: schedule.next_due_at, status: "open" });
       const confirming = deps.getPendingDeleteScheduleId() === schedule.id;
+      const canEditOperational = canEditOperationalRecords();
       return `
         <article class="pm-card">
           <div>
@@ -35,7 +37,7 @@
             <h3>${escapeHtml(schedule.title)}</h3>
             <p>${escapeHtml(schedule.assets?.name || "No equipment")} - Next due ${schedule.next_due_at}</p>
           </div>
-          <div class="request-actions">
+          ${canEditOperational ? `<div class="request-actions">
             <button class="secondary-button" data-generate-pm="${schedule.id}" type="button">Generate Work</button>
             ${canDeleteOperationalRecords() ? confirming ? `
               <button class="secondary-button" data-cancel-delete-schedule type="button">Cancel</button>
@@ -43,7 +45,7 @@
             ` : `
               <button class="danger-action-button" data-delete-schedule="${escapeHtml(schedule.id)}" type="button">Delete</button>
             ` : ""}
-          </div>
+          </div>` : ""}
         </article>
       `;
     }
@@ -56,6 +58,7 @@
         schedules: linkedScheduleCount,
       });
       const confirming = deps.getPendingDeleteProcedureId() === template.id;
+      const canEditOperational = canEditOperationalRecords();
       return `
         <article class="procedure-card">
           <div>
@@ -75,7 +78,7 @@
               </div>
             `).join("") || `<p class="muted">No steps yet.</p>`}
           </div>
-          <form class="inline-form add-step-form relationship-detail procedure" data-add-step="${template.id}">
+          ${canEditOperational ? `<form class="inline-form add-step-form relationship-detail procedure" data-add-step="${template.id}">
             <input name="prompt" required placeholder="Step prompt">
             <select name="response_type">
               <option value="checkbox">Checkbox</option>
@@ -89,8 +92,8 @@
             </select>
             <p class="error-text" data-step-error="${template.id}"></p>
             <button class="secondary-button" type="submit">Add Step</button>
-          </form>
-          ${canDeleteOperationalRecords() ? `
+          </form>` : ""}
+          ${canEditOperational && canDeleteOperationalRecords() ? `
             <section class="delete-zone procedure-delete-zone">
               <div>
                 <h3>Delete Procedure Checklist</h3>
