@@ -18,7 +18,7 @@ assert.doesNotMatch(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
+  /app\.js\?v=mo-build-20260701-company-duplicate-select-1/,
   "app.js cache tag must include the latest app hotfix"
 );
 

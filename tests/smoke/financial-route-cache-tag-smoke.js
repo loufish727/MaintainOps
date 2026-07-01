@@ -38,8 +38,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260701-financial-manager-readonly-1/,
-  "app.js must use the financial manager readonly cache tag"
+  /app\.js\?v=mo-build-20260701-company-duplicate-select-1/,
+  "app.js must use the company duplicate select cache tag"
 );
 assert.match(
   indexHtml,

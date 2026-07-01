@@ -1372,6 +1372,12 @@ function activeCompanyMembership() {
   return companies.find((company) => company.id === activeCompanyId) || null;
 }
 
+function companyOptionLabel(company) {
+  const name = company?.name || "Company";
+  const duplicateCount = companies.filter((item) => String(item.name || "").trim().toLowerCase() === String(name).trim().toLowerCase()).length;
+  return duplicateCount > 1 ? `${name} (${String(company.id || "").slice(0, 8)})` : name;
+}
+
 function storedLocationForLoadedCompany() {
   const scopedKey = activeLocationStorageKey();
   const scopedLocationId = scopedKey !== ACTIVE_LOCATION_STORAGE_KEY ? localStorage.getItem(scopedKey) : "";
@@ -1839,14 +1845,7 @@ async function loadCompanies() {
   appError = "";
   const companyRpc = await getMyCompanies(supabaseClient);
   if (!companyRpc.error) {
-    const seenCompanies = new Set();
     companies = (companyRpc.data || [])
-      .filter((company) => {
-        const key = String(company.name || "").trim().toLowerCase();
-        if (seenCompanies.has(key)) return false;
-        seenCompanies.add(key);
-        return true;
-      })
       .map((company) => ({
         id: company.id,
         name: company.name,
@@ -1905,14 +1904,7 @@ async function loadCompaniesFromMembershipRows(memberships) {
     return;
   }
 
-  const seenCompanies = new Set();
   companies = companyRows
-    .filter((company) => {
-      const key = company.name.trim().toLowerCase();
-      if (seenCompanies.has(key)) return false;
-      seenCompanies.add(key);
-      return true;
-    })
     .map((company) => ({
       ...company,
       role: normalizeRole(memberships.find((membership) => membership.company_id === company.id)?.role),
@@ -3277,7 +3269,7 @@ function renderWorkspace() {
           <label class="company-switcher">
             Company
             <select id="company-select">
-              ${companies.map((company) => `<option value="${escapeHtml(company.id)}" ${company.id === activeCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("")}
+              ${companies.map((company) => `<option value="${escapeHtml(company.id)}" ${company.id === activeCompanyId ? "selected" : ""}>${escapeHtml(companyOptionLabel(company))}</option>`).join("")}
             </select>
           </label>
           <label class="company-switcher">
