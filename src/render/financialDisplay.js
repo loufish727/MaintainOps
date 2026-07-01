@@ -6,13 +6,11 @@
     getAssets,
     getAssetDocumentsByAssetId,
     matchesActiveLocation,
-    getAssetsPage,
-    renderAssetsPagination,
+    getFinancialPage,
     ASSETS_PER_PAGE,
   }) {
     const pageSize = ASSETS_PER_PAGE || 12;
-    const currentPage = getAssetsPage || (() => 1);
-    const pagination = renderAssetsPagination || (() => "");
+    const currentPage = getFinancialPage || (() => 1);
     const assetTypeOrder = {
       machine: 10,
       forklift: 20,
@@ -69,6 +67,15 @@
       const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
       const page = Math.min(Math.max(Number(currentPage()) || 1, 1), totalPages);
       const pagedRows = rows.slice((page - 1) * pageSize, page * pageSize);
+      const firstShown = ((page - 1) * pageSize) + 1;
+      const lastShown = Math.min(rows.length, page * pageSize);
+      const pagination = rows.length <= pageSize ? "" : `
+        <div class="pagination-bar">
+          <button class="secondary-button page-action-button" data-financial-page="prev" type="button" ${page <= 1 ? "disabled" : ""}>Previous</button>
+          <span>Showing ${firstShown}-${lastShown} of ${rows.length} - Page ${page} of ${totalPages}</span>
+          <button class="secondary-button page-action-button" data-financial-page="next" type="button" ${page >= totalPages ? "disabled" : ""}>Next</button>
+        </div>
+      `;
       return `
         <div class="queue-context-card asset-command-summary">
           <div>
@@ -80,7 +87,7 @@
         <div class="asset-list">
           ${pagedRows.map(renderFinancialAssetCard).join("") || `<p class="muted">No equipment found for this location.</p>`}
         </div>
-        ${pagination(rows.length, totalPages)}
+        ${pagination}
       `;
     }
 

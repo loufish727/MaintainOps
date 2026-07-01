@@ -124,6 +124,15 @@
       });
     });
 
+    doc.querySelectorAll("[data-financial-page]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await preserveScroll(async () => {
+          state.setFinancialPage(state.getFinancialPage() + (button.dataset.financialPage === "next" ? 1 : -1));
+          options.renderWorkspace();
+        });
+      });
+    });
+
     doc.querySelectorAll("[data-list-page]").forEach((button) => {
       button.addEventListener("click", async () => {
         await preserveScroll(async () => {

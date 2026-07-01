@@ -42,6 +42,7 @@ function createButton(dataset, disabled = false) {
 
 const storage = createStorage({
   "maintainops.workOrderPage": "4",
+  "maintainops.financialPage": "2",
   "maintainops.requestsPage": "3",
   "maintainops.schedulesPage": "2",
   "maintainops.proceduresPage": "2",
@@ -56,6 +57,8 @@ const workFilterVendor = createButton({ workOrderFilter: "vendor" });
 const workSortDue = createButton({ workSort: "due" });
 const requestConverted = createButton({ requestFilter: "converted" });
 const workNext = createButton({ workPage: "next" });
+const assetNext = createButton({ assetsPage: "next" });
+const financialNext = createButton({ financialPage: "next" });
 const requestNext = createButton({ listPage: "requests", pageDirection: "next" });
 const scheduleNext = createButton({ listPage: "schedules", pageDirection: "next" });
 const procedureNext = createButton({ listPage: "procedures", pageDirection: "next" });
@@ -74,7 +77,8 @@ const doc = {
     if (selector === "[data-request-filter]") return [requestConverted];
     if (selector === "[data-work-page]") return [workNext];
     if (selector === "[data-parts-page]") return [];
-    if (selector === "[data-assets-page]") return [];
+    if (selector === "[data-assets-page]") return [assetNext];
+    if (selector === "[data-financial-page]") return [financialNext];
     if (selector === "[data-list-page]") return [requestNext, scheduleNext, procedureNext, memberNext, messageNext, planningFollowUpNext];
     return [];
   },
@@ -142,6 +146,18 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(storage.values["maintainops.workOrderPage"], "2");
   assert.equal(workReloadCount, 5);
 
+  await assetNext.dispatch("click");
+  assert.equal(state.getAssetsPage(), 2);
+  assert.equal(storage.values["maintainops.assetsPage"], "2");
+  assert.equal(renderCount, 1);
+
+  await financialNext.dispatch("click");
+  assert.equal(state.getFinancialPage(), 3);
+  assert.equal(storage.values["maintainops.financialPage"], "3");
+  assert.equal(state.getAssetsPage(), 2);
+  assert.equal(storage.values["maintainops.assetsPage"], "2");
+  assert.equal(renderCount, 2);
+
   await requestNext.dispatch("click");
   assert.equal(state.getRequestsPage(), 2);
   assert.equal(storage.values["maintainops.requestsPage"], "2");
@@ -159,7 +175,7 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(state.getPlanningPage("follow-up"), 3);
   assert.equal(storage.values["maintainops.messageThreadsPage"], "3");
   assert.equal(storage.values["maintainops.planningFollowUpPage"], "3");
-  assert.equal(renderCount, 5);
+  assert.equal(renderCount, 7);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

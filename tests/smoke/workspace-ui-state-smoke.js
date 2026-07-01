@@ -26,6 +26,7 @@ const storage = createStorage({
   "maintainops.workOrderSearchMode": "true",
   "maintainops.workOrderPage": "3",
   "maintainops.partsPage": "2",
+  "maintainops.financialPage": "4",
   "maintainops.assetStatusFilter": "inactive",
   "maintainops.assetTypeFilter": "tooling",
   "maintainops.assetAreaFilter": "Bay 1",
@@ -44,6 +45,7 @@ assert.equal(state.getSearchQuery(), "pump");
 assert.equal(state.getWorkOrderSearchMode(), true);
 assert.equal(state.getWorkOrderPage(), 3);
 assert.equal(state.getPartsPage(), 2);
+assert.equal(state.getFinancialPage(), 4);
 assert.equal(state.getAssetStatusFilter(), "inactive");
 assert.equal(state.getAssetTypeFilter(), "tooling");
 assert.equal(state.getAssetAreaFilter(), "Bay 1");
@@ -58,6 +60,7 @@ state.setWorkOrderSearchMode(false);
 state.setWorkOrderAssigneeFilter("user-1");
 state.resetWorkOrderPage();
 state.resetPartsPage();
+state.resetFinancialPage();
 state.setAssetTypeFilter("component");
 state.setAssetAreaFilter("Line 2");
 state.setPartSearchQuery("belt");
@@ -75,6 +78,8 @@ assert.equal(state.getWorkOrderPage(), 1);
 assert.equal(storage.values["maintainops.workOrderPage"], "1");
 assert.equal(state.getPartsPage(), 1);
 assert.equal(storage.values["maintainops.partsPage"], "1");
+assert.equal(state.getFinancialPage(), 1);
+assert.equal(storage.values["maintainops.financialPage"], "1");
 assert.equal(state.getAssetTypeFilter(), "component");
 assert.equal(storage.values["maintainops.assetTypeFilter"], "component");
 assert.equal(state.getAssetAreaFilter(), "Line 2");

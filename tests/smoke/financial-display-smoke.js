@@ -17,8 +17,7 @@ const helpers = createFinancialDisplayHelpers({
     "asset-1": [{ document_type: "machine_photo", content_type: "image/jpeg", original_file_name: "press.jpg" }],
   }),
   matchesActiveLocation: (asset) => asset.location_id === "loc-1",
-  getAssetsPage: () => 1,
-  renderAssetsPagination: (count, pages) => `<nav data-pages="${pages}">${count}</nav>`,
+  getFinancialPage: () => 1,
   ASSETS_PER_PAGE: 1,
 });
 
@@ -63,7 +62,8 @@ assert.match(html, /PB-10/);
 assert.match(html, /Cincinnati/);
 assert.match(html, /90CB/);
 assert.match(html, /1 photo/);
-assert.match(html, /data-pages="2"/);
+assert.match(html, /data-financial-page="next"/);
+assert.match(html, /Showing 1-1 of 2 - Page 1 of 2/);
 assert.doesNotMatch(html, /Part of 10\u2019 Press Brake/);
 assert.doesNotMatch(html, /Other Location/);
 assert.doesNotMatch(html, /<form/);

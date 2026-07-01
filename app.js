@@ -1156,6 +1156,7 @@ const {
   childAssetsFor,
 });
 const {
+  financialAssets,
   renderFinancialPanel,
 } = createFinancialDisplayHelpers({
   escapeHtml,
@@ -1164,8 +1165,7 @@ const {
   getAssets: () => assets,
   getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
   matchesActiveLocation,
-  getAssetsPage: () => workspaceUiState.getAssetsPage(),
-  renderAssetsPagination,
+  getFinancialPage: () => workspaceUiState.getFinancialPage(),
   ASSETS_PER_PAGE,
 });
 const {
@@ -3030,6 +3030,10 @@ function renderWorkspace() {
   if (workspaceUiState.getAssetsPage() < 1) workspaceUiState.setAssetsPage(1);
   const assetsPage = workspaceUiState.getAssetsPage();
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
+  const financialAssetCount = financialAssets().length;
+  const totalFinancialPages = Math.max(1, Math.ceil(financialAssetCount / ASSETS_PER_PAGE));
+  if (workspaceUiState.getFinancialPage() > totalFinancialPages) workspaceUiState.setFinancialPage(totalFinancialPages);
+  if (workspaceUiState.getFinancialPage() < 1) workspaceUiState.setFinancialPage(1);
   const assetTypeCounts = ASSET_TYPE_OPTIONS.reduce((counts, type) => {
     counts[type] = locationAssets.filter((asset) => (asset.asset_type || "machine") === type).length;
     return counts;
