@@ -139,6 +139,7 @@
           if (field.dataset.financialFilter === "missing") state.setFinancialMissingFilter(field.value);
           if (field.dataset.financialFilter === "location") state.setFinancialLocationFilter(field.value);
           if (field.dataset.financialFilter === "type") state.setFinancialTypeFilter(field.value);
+          if (field.dataset.financialFilter === "area") state.setFinancialAreaFilter(field.value);
           state.resetFinancialPage();
           options.renderWorkspace();
         });

@@ -40,6 +40,12 @@ function createButton(dataset, disabled = false) {
   };
 }
 
+function createField(dataset, value) {
+  const field = createButton(dataset);
+  field.value = value;
+  return field;
+}
+
 const storage = createStorage({
   "maintainops.workOrderPage": "4",
   "maintainops.financialPage": "2",
@@ -59,6 +65,7 @@ const requestConverted = createButton({ requestFilter: "converted" });
 const workNext = createButton({ workPage: "next" });
 const assetNext = createButton({ assetsPage: "next" });
 const financialNext = createButton({ financialPage: "next" });
+const financialArea = createField({ financialFilter: "area" }, "Bay 3");
 const requestNext = createButton({ listPage: "requests", pageDirection: "next" });
 const scheduleNext = createButton({ listPage: "schedules", pageDirection: "next" });
 const procedureNext = createButton({ listPage: "procedures", pageDirection: "next" });
@@ -79,6 +86,7 @@ const doc = {
     if (selector === "[data-parts-page]") return [];
     if (selector === "[data-assets-page]") return [assetNext];
     if (selector === "[data-financial-page]") return [financialNext];
+    if (selector === "[data-financial-filter]") return [financialArea];
     if (selector === "[data-list-page]") return [requestNext, scheduleNext, procedureNext, memberNext, messageNext, planningFollowUpNext];
     return [];
   },
@@ -158,6 +166,13 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(storage.values["maintainops.assetsPage"], "2");
   assert.equal(renderCount, 2);
 
+  await financialArea.dispatch("change");
+  assert.equal(state.getFinancialAreaFilter(), "Bay 3");
+  assert.equal(storage.values["maintainops.financialAreaFilter"], "Bay 3");
+  assert.equal(state.getFinancialPage(), 1);
+  assert.equal(storage.values["maintainops.financialPage"], "1");
+  assert.equal(renderCount, 3);
+
   await requestNext.dispatch("click");
   assert.equal(state.getRequestsPage(), 2);
   assert.equal(storage.values["maintainops.requestsPage"], "2");
@@ -175,7 +190,7 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(state.getPlanningPage("follow-up"), 3);
   assert.equal(storage.values["maintainops.messageThreadsPage"], "3");
   assert.equal(storage.values["maintainops.planningFollowUpPage"], "3");
-  assert.equal(renderCount, 7);
+  assert.equal(renderCount, 8);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

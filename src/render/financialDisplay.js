@@ -14,6 +14,7 @@
     getFinancialMissingFilter,
     getFinancialLocationFilter,
     getFinancialTypeFilter,
+    getFinancialAreaFilter,
     ASSETS_PER_PAGE,
   }) {
     const pageSize = ASSETS_PER_PAGE || 12;
@@ -56,9 +57,11 @@
       const missingFilter = getFinancialMissingFilter?.() || "all";
       const locationFilter = getFinancialLocationFilter?.() || "all";
       const typeFilter = getFinancialTypeFilter?.() || "all";
+      const areaFilter = getFinancialAreaFilter?.() || "all";
       return getAssets()
         .filter((asset) => locationFilter === "all" || asset.location_id === locationFilter)
         .filter((asset) => typeFilter === "all" || (asset.asset_type || "machine") === typeFilter)
+        .filter((asset) => areaFilter === "all" || String(asset.location || "").trim() === areaFilter)
         .filter((asset) => {
           if (missingFilter === "missing") return isMissingFinancialInfo(asset);
           if (missingFilter === "review") return financeFor(asset.id).needs_review === true;
@@ -87,13 +90,43 @@
       return moneyFields.includes(field) ? moneyValue(finance[field]) : (finance[field] || "");
     }
 
+    function renderFinancialForm(asset) {
+      const finance = financeFor(asset.id);
+      return `
+        <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}">
+          <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
+          <label>Asset tag / fixed asset number<input name="asset_tag" value="${escapeHtml(fieldValue(finance, "asset_tag"))}"></label>
+          <label>Acquisition date<input name="acquisition_date" type="date" value="${escapeHtml(dateValue(finance.acquisition_date))}"></label>
+          <label>Acquisition cost<input name="acquisition_cost" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "acquisition_cost"))}"></label>
+          <label>Depreciation method<input name="depreciation_method" value="${escapeHtml(fieldValue(finance, "depreciation_method"))}" placeholder="Straight-line"></label>
+          <label>Useful life years<input name="useful_life_years" type="number" min="0" step="0.1" value="${escapeHtml(fieldValue(finance, "useful_life_years"))}"></label>
+          <label>Current book value<input name="current_book_value" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "current_book_value"))}"></label>
+          <label>Tax jurisdiction / property tax location<input name="tax_jurisdiction" value="${escapeHtml(fieldValue(finance, "tax_jurisdiction"))}"></label>
+          <label>Ownership status
+            <select name="ownership_status">
+              ${["", "owned", "leased", "rented", "disposed"].map((value) => `<option value="${value}" ${value === (finance.ownership_status || "") ? "selected" : ""}>${value ? value.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Unset"}</option>`).join("")}
+            </select>
+          </label>
+          <label>In service date<input name="in_service_date" type="date" value="${escapeHtml(dateValue(finance.in_service_date))}"></label>
+          <label>Disposal date<input name="disposal_date" type="date" value="${escapeHtml(dateValue(finance.disposal_date))}"></label>
+          <label>GL / account code<input name="gl_account_code" value="${escapeHtml(fieldValue(finance, "gl_account_code"))}"></label>
+          <label>Cost center / department<input name="cost_center" value="${escapeHtml(fieldValue(finance, "cost_center"))}"></label>
+          <label>Disposal notes<textarea name="disposal_notes" rows="2">${escapeHtml(finance.disposal_notes || "")}</textarea></label>
+          <label>Finance notes<textarea name="finance_notes" rows="2">${escapeHtml(finance.finance_notes || "")}</textarea></label>
+          <label class="check-row"><input name="needs_review" type="checkbox" ${finance.needs_review ? "checked" : ""}> Needs review</label>
+          <p class="error-text" data-financial-error="${escapeHtml(asset.id)}"></p>
+          <button class="secondary-button asset-action-button" type="submit" ${getAssetFinancialsReady?.() === false ? "disabled" : ""}>Save Financial Info</button>
+        </form>
+      `;
+    }
+
     function renderFinancialAssetCard(asset) {
       const parent = parentAssetFor(asset);
       const pictures = assetPictureDocuments(asset.id);
       const finance = financeFor(asset.id);
       const missing = isMissingFinancialInfo(asset);
       return `
-        <article class="asset-card asset-state-${escapeHtml(asset.status || "running")} financial-asset-card">
+        <article class="asset-card asset-state-${escapeHtml(asset.status || "running")} financial-asset-card" data-open-financial-asset="${escapeHtml(asset.id)}" tabindex="0" role="button" aria-label="Open financial details for ${escapeHtml(asset.name || "equipment")}">
           <div class="part-card-main">
             <div class="chip-row">
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
@@ -107,32 +140,9 @@
             <h3>${escapeHtml(asset.name || "Equipment")}</h3>
             <p>${escapeHtml(parent ? `Part of ${parent.name}` : "Top level equipment")}</p>
             <p>${escapeHtml(asset.manufacturer || "Manufacturer blank")} ${asset.model ? `- ${escapeHtml(asset.model)}` : ""}</p>
+            <p>${escapeHtml(finance.asset_tag || "Asset tag blank")} ${finance.cost_center ? `- ${escapeHtml(finance.cost_center)}` : ""}</p>
             <p class="muted">Last reviewed ${finance.last_reviewed_at ? new Date(finance.last_reviewed_at).toLocaleDateString() : "not recorded"}${finance.reviewed_by ? ` by ${escapeHtml(reviewedByName(finance))}` : ""}</p>
           </div>
-          <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}">
-            <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
-            <label>Asset tag / fixed asset number<input name="asset_tag" value="${escapeHtml(fieldValue(finance, "asset_tag"))}"></label>
-            <label>Acquisition date<input name="acquisition_date" type="date" value="${escapeHtml(dateValue(finance.acquisition_date))}"></label>
-            <label>Acquisition cost<input name="acquisition_cost" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "acquisition_cost"))}"></label>
-            <label>Depreciation method<input name="depreciation_method" value="${escapeHtml(fieldValue(finance, "depreciation_method"))}" placeholder="Straight-line"></label>
-            <label>Useful life years<input name="useful_life_years" type="number" min="0" step="0.1" value="${escapeHtml(fieldValue(finance, "useful_life_years"))}"></label>
-            <label>Current book value<input name="current_book_value" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "current_book_value"))}"></label>
-            <label>Tax jurisdiction / property tax location<input name="tax_jurisdiction" value="${escapeHtml(fieldValue(finance, "tax_jurisdiction"))}"></label>
-            <label>Ownership status
-              <select name="ownership_status">
-                ${["", "owned", "leased", "rented", "disposed"].map((value) => `<option value="${value}" ${value === (finance.ownership_status || "") ? "selected" : ""}>${value ? value.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Unset"}</option>`).join("")}
-              </select>
-            </label>
-            <label>In service date<input name="in_service_date" type="date" value="${escapeHtml(dateValue(finance.in_service_date))}"></label>
-            <label>Disposal date<input name="disposal_date" type="date" value="${escapeHtml(dateValue(finance.disposal_date))}"></label>
-            <label>GL / account code<input name="gl_account_code" value="${escapeHtml(fieldValue(finance, "gl_account_code"))}"></label>
-            <label>Cost center / department<input name="cost_center" value="${escapeHtml(fieldValue(finance, "cost_center"))}"></label>
-            <label>Disposal notes<textarea name="disposal_notes" rows="2">${escapeHtml(finance.disposal_notes || "")}</textarea></label>
-            <label>Finance notes<textarea name="finance_notes" rows="2">${escapeHtml(finance.finance_notes || "")}</textarea></label>
-            <label class="check-row"><input name="needs_review" type="checkbox" ${finance.needs_review ? "checked" : ""}> Needs review</label>
-            <p class="error-text" data-financial-error="${escapeHtml(asset.id)}"></p>
-            <button class="secondary-button asset-action-button" type="submit" ${getAssetFinancialsReady?.() === false ? "disabled" : ""}>Save Financial Info</button>
-          </form>
         </article>
       `;
     }
@@ -141,7 +151,10 @@
       const activeMissing = getFinancialMissingFilter?.() || "all";
       const activeLocation = getFinancialLocationFilter?.() || "all";
       const activeType = getFinancialTypeFilter?.() || "all";
+      const activeArea = getFinancialAreaFilter?.() || "all";
       const locations = getLocations?.() || [];
+      const areaOptions = [...new Set(getAssets().map((asset) => String(asset.location || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
       const typeOptions = [...new Set(getAssets().map((asset) => asset.asset_type || "machine"))]
         .sort((a, b) => (assetTypeOrder[a] || 999) - (assetTypeOrder[b] || 999));
       return `
@@ -165,8 +178,55 @@
               ${typeOptions.map((type) => `<option value="${escapeHtml(type)}" ${activeType === type ? "selected" : ""}>${escapeHtml(assetTypeLabel(type))}</option>`).join("")}
             </select>
           </label>
+          <label>Area / spot
+            <select data-financial-filter="area">
+              <option value="all" ${activeArea === "all" ? "selected" : ""}>All areas</option>
+              ${areaOptions.map((area) => `<option value="${escapeHtml(area)}" ${activeArea === area ? "selected" : ""}>${escapeHtml(area)}</option>`).join("")}
+            </select>
+          </label>
           <span>${rows.length} shown</span>
         </div>
+      `;
+    }
+
+    function renderFinancialDetail(assetId) {
+      const asset = getAssets().find((row) => row.id === assetId);
+      if (!asset) {
+        return `
+          <div class="relationship-detail asset">
+            <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
+            <p class="muted">This equipment record is no longer available.</p>
+          </div>
+        `;
+      }
+      const parent = parentAssetFor(asset);
+      const pictures = assetPictureDocuments(asset.id);
+      const finance = financeFor(asset.id);
+      const missing = isMissingFinancialInfo(asset);
+      return `
+        <div class="queue-context-card asset-command-summary">
+          <div>
+            <strong>${escapeHtml(asset.name || "Equipment")}</strong>
+            <span>${escapeHtml(assetTypeLabel(asset.asset_type))} - ${escapeHtml(locationName(asset.location_id) || "Location unset")} - ${escapeHtml(asset.location || "Department unset")}</span>
+          </div>
+          <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
+        </div>
+        <section class="relationship-detail asset">
+          <div class="chip-row">
+            <span class="chip">${escapeHtml(parent ? `Part of ${parent.name}` : "Top level equipment")}</span>
+            ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+            <span class="chip">${escapeHtml(asset.manufacturer || "Manufacturer blank")}</span>
+            <span class="chip">${escapeHtml(asset.model || "Model blank")}</span>
+            ${pictures.length ? `<span class="chip">${pictures.length} photo${pictures.length === 1 ? "" : "s"}</span>` : `<span class="chip">photo missing</span>`}
+            ${missing ? `<span class="chip status-open">missing finance info</span>` : `<span class="chip status-completed">finance complete</span>`}
+            ${finance.needs_review ? `<span class="chip status-blocked">needs review</span>` : ""}
+          </div>
+          <p class="muted">Operational equipment fields mirror the equipment record. Accounting changes on this screen save only financial fields.</p>
+        </section>
+        <section class="relationship-detail asset">
+          <h3>Financial Details</h3>
+          ${renderFinancialForm(asset)}
+        </section>
       `;
     }
 
@@ -205,6 +265,7 @@
       isMissingFinancialInfo,
       renderFinancialPanel,
       renderFinancialAssetCard,
+      renderFinancialDetail,
     };
   }
 

@@ -81,6 +81,7 @@ const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
 const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
+const { bindWorkspaceFinancialNavigationEvents } = window.MaintainOpsWorkspaceFinancialNavigationEvents;
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
@@ -456,6 +457,7 @@ function setActiveAssetIdState(value) {
   workspaceUiState.setActiveAssetId(value);
 }
 let activeAssetHistoryId = null;
+let activeFinancialAssetId = null;
 let activePartId = workspaceUiState.getActivePartId();
 function setActivePartIdState(value) {
   activePartId = value;
@@ -1162,6 +1164,7 @@ const {
 const {
   financialAssets,
   renderFinancialPanel,
+  renderFinancialDetail,
 } = createFinancialDisplayHelpers({
   escapeHtml,
   assetTypeLabel,
@@ -1177,6 +1180,7 @@ const {
   getFinancialMissingFilter: () => workspaceUiState.getFinancialMissingFilter(),
   getFinancialLocationFilter: () => workspaceUiState.getFinancialLocationFilter(),
   getFinancialTypeFilter: () => workspaceUiState.getFinancialTypeFilter(),
+  getFinancialAreaFilter: () => workspaceUiState.getFinancialAreaFilter(),
   ASSETS_PER_PAGE,
 });
 const {
@@ -2050,6 +2054,10 @@ function setAssetRelationshipPage(assetId, section, page) {
 
 function setActiveAssetHistoryId(value) {
   activeAssetHistoryId = value || null;
+}
+
+function setActiveFinancialAssetIdState(value) {
+  activeFinancialAssetId = value || null;
 }
 
 async function loadAssetWorkOrderHistory(assetId) {
@@ -3457,10 +3465,10 @@ function renderWorkspace() {
 
           <section class="panel full-width ${activeSection === "financial" ? "" : "hidden-section"}">
             <div class="panel-header">
-              <h2>Financial</h2>
-              <span>${financialAssetCount} equipment record${financialAssetCount === 1 ? "" : "s"}</span>
+              <h2>${activeFinancialAssetId ? "Financial Detail" : "Financial"}</h2>
+              <span>${activeFinancialAssetId ? "Accounting fields" : `${financialAssetCount} equipment record${financialAssetCount === 1 ? "" : "s"}`}</span>
             </div>
-            ${canUseFinancialMenu() ? renderFinancialPanel() : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
+            ${canUseFinancialMenu() ? (activeFinancialAssetId ? renderFinancialDetail(activeFinancialAssetId) : renderFinancialPanel()) : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
           </section>
 
           <section class="panel full-width ${activeSection === "pm" ? "" : "hidden-section"}">
@@ -4918,6 +4926,14 @@ function bindWorkspaceEvents() {
   if (assetForm) assetForm.addEventListener("submit", createAsset);
 
   bindFinancialEvents();
+  bindWorkspaceFinancialNavigationEvents({
+    documentRef: document,
+    state: {
+      setActiveFinancialAssetId: setActiveFinancialAssetIdState,
+      clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
+    },
+    renderWorkspace,
+  });
 
   const editAssetForm = document.querySelector("#edit-asset-form");
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);

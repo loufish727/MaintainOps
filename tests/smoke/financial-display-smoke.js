@@ -42,6 +42,7 @@ const helpers = createFinancialDisplayHelpers({
   getFinancialMissingFilter: () => "all",
   getFinancialLocationFilter: () => "all",
   getFinancialTypeFilter: () => "all",
+  getFinancialAreaFilter: () => "all",
   ASSETS_PER_PAGE: 1,
 });
 
@@ -87,18 +88,31 @@ assert.match(html, /Cincinnati/);
 assert.match(html, /90CB/);
 assert.match(html, /1 photo/);
 assert.match(html, /FA-100/);
-assert.match(html, /Straight-line/);
-assert.match(html, /Marion County/);
 assert.match(html, /Salem Production/);
 assert.match(html, /Finance Lead/);
 assert.match(html, /data-financial-filter="missing"/);
 assert.match(html, /data-financial-filter="location"/);
 assert.match(html, /data-financial-filter="type"/);
-assert.match(html, /data-financial-asset="asset-1"/);
+assert.match(html, /data-financial-filter="area"/);
+assert.match(html, /data-open-financial-asset="asset-1"/);
 assert.match(html, /data-financial-page="next"/);
 assert.match(html, /Showing 1-1 of 3 - Page 1 of 3/);
 assert.doesNotMatch(html, /Part of 10\u2019 Press Brake/);
 assert.doesNotMatch(html, /Other Location/);
-assert.match(html, /<form/);
+assert.doesNotMatch(html, /<form/);
+assert.doesNotMatch(html, /data-financial-asset="asset-1"/);
+assert.doesNotMatch(html, /Straight-line/);
+assert.doesNotMatch(html, /Marion County/);
+
+const detailHtml = helpers.renderFinancialDetail("asset-1");
+assert.match(detailHtml, /Financial Details/);
+assert.match(detailHtml, /data-back-financial-list/);
+assert.match(detailHtml, /data-financial-asset="asset-1"/);
+assert.match(detailHtml, /Asset tag \/ fixed asset number/);
+assert.match(detailHtml, /Straight-line/);
+assert.match(detailHtml, /Marion County/);
+assert.match(detailHtml, /Salem Production/);
+assert.match(detailHtml, /Accounting changes on this screen save only financial fields/);
+assert.doesNotMatch(detailHtml, /data-asset-id="asset-1"/);
 
 console.log("financial display smoke passed");
