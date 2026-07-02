@@ -30,6 +30,7 @@ function createWorkflow(overrides = {}) {
     priority: "high",
     type: "reactive",
     procedure_template_id: "",
+    asset_id: "asset-1",
     failure_cause: "",
     resolution_summary: "Fixed",
     follow_up_needed: "",
@@ -62,7 +63,14 @@ function createWorkflow(overrides = {}) {
     locationIdForAsset: (assetId) => `location-${assetId || "none"}`,
     assignedUserFromForm: () => "user-1",
     procedureColumn: (value) => value ? { procedure_template_id: value } : {},
-    assetRequiresSafety: () => overrides.assetRequiresSafety || false,
+    confirmAssetLocationRouting: (assetId, actionLabel) => {
+      calls.push(["confirmAssetLocationRouting", assetId, actionLabel]);
+      return overrides.confirmAssetLocationRouting ?? true;
+    },
+    assetRequiresSafety: (assetId) => {
+      calls.push(["assetRequiresSafety", assetId]);
+      return overrides.assetRequiresSafety || false;
+    },
     hasCompletedSafetyDeviceCheck: () => overrides.hasCompletedSafety || false,
     blocksProcedureCompletion: () => overrides.procedureBlockMessage || "",
     setWorkOrderActionWarning: (...args) => calls.push(["warning", ...args]),
@@ -101,6 +109,9 @@ function createWorkflow(overrides = {}) {
   const normal = createWorkflow();
   const button = await normal.run();
   assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].title === "Edited work"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].asset_id === "asset-1"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].location_id === "location-asset-1"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "assetRequiresSafety" && call[1] === "asset-1"), true);
   assert.equal(normal.calls.some((call) => call[0] === "event" && call[2] === "updated"), true);
   assert.equal(normal.calls.at(-1)[0], "render");
   assert.equal(button.disabled, false);
@@ -113,6 +124,26 @@ function createWorkflow(overrides = {}) {
   await safetyBlocked.run();
   assert.equal(safetyBlocked.errorTarget.textContent, "Use Complete Work and check safety devices before completing equipment work.");
   assert.equal(safetyBlocked.calls.some((call) => call[0] === "update"), false);
+
+  const attachToMissingMachine = createWorkflow({
+    workOrders: [{ id: "wo-1", asset_id: null, status: "open", description: "Old" }],
+    values: { asset_id: "asset-2" },
+  });
+  await attachToMissingMachine.run();
+  const attachUpdate = attachToMissingMachine.calls.find((call) => call[0] === "update");
+  assert.equal(attachUpdate[2].asset_id, "asset-2");
+  assert.equal(attachUpdate[2].location_id, "location-asset-2");
+  assert.equal(attachToMissingMachine.calls.some((call) => call[0] === "assetRequiresSafety" && call[1] === "asset-2"), true);
+
+  const completedAttachBlocked = createWorkflow({
+    workOrders: [{ id: "wo-1", asset_id: null, status: "completed", description: "Old" }],
+    statusValue: "completed",
+    values: { asset_id: "asset-2", safety_devices_checked: "" },
+    assetRequiresSafety: true,
+  });
+  await completedAttachBlocked.run();
+  assert.equal(completedAttachBlocked.errorTarget.textContent, "Use Complete Work and check safety devices before completing equipment work.");
+  assert.equal(completedAttachBlocked.calls.some((call) => call[0] === "update"), false);
 
   const procedureBlocked = createWorkflow({
     statusValue: "completed",

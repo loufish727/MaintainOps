@@ -18,11 +18,18 @@
         const activeWorkOrderId = deps.getActiveWorkOrderId();
         const previous = deps.getWorkOrders().find((workOrder) => workOrder.id === activeWorkOrderId);
         const currentStatus = documentRef.querySelector("#status-select")?.value || previous?.status || "open";
+        const assetId = form.get("asset_id") || null;
+        if (typeof deps.confirmAssetLocationRouting === "function" && !deps.confirmAssetLocationRouting(assetId, "saving this work order", errorTarget)) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Save Work Order";
+          return;
+        }
         const payload = {
           title: deps.requiredText(form.get("title"), "Work order title"),
           description: deps.descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
           due_at: deps.workOrderDateValue(form.get("due_at")),
-          location_id: deps.locationIdForAsset(previous?.asset_id || null),
+          asset_id: assetId,
+          location_id: deps.locationIdForAsset(assetId),
           status: currentStatus,
           priority: form.get("priority"),
           type: form.get("type"),
@@ -33,8 +40,8 @@
           follow_up_needed: form.get("follow_up_needed") === "on",
           actual_minutes: Number(form.get("actual_minutes")) || 0,
         };
-        payload.safety_check_required = deps.assetRequiresSafety(previous?.asset_id || null);
-        if (payload.status === "completed" && previous?.status !== "completed" && payload.safety_check_required && !deps.hasCompletedSafetyDeviceCheck(previous) && form.get("safety_devices_checked") !== "on") {
+        payload.safety_check_required = deps.assetRequiresSafety(assetId);
+        if (payload.status === "completed" && payload.safety_check_required && !deps.hasCompletedSafetyDeviceCheck(previous) && form.get("safety_devices_checked") !== "on") {
           submitButton.disabled = false;
           submitButton.textContent = "Save Work Order";
           if (errorTarget) errorTarget.textContent = "Use Complete Work and check safety devices before completing equipment work.";
