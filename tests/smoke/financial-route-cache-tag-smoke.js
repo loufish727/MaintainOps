@@ -12,8 +12,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/utils\/csvExport\.js\?v=mo-build-20260701-financial-delete-retention-1/,
-  "csvExport must use the financial delete-retention cache tag"
+  /src\/utils\/csvExport\.js\?v=mo-build-20260702-equipment-facility-export-1/,
+  "csvExport must use the equipment facility export cache tag"
 );
 
 assert.match(

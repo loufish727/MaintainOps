@@ -92,7 +92,8 @@
           picture_id: assetPictureId(asset.id),
           picture_count: assetPictureDocuments(asset.id).length,
           picture_status: assetPictureDocuments(asset.id).length ? "attached" : "missing",
-          location: asset.location || "",
+          facility: locationName(asset.location_id) || asset.location_id || "",
+          area_department: asset.location || "",
           status: asset.status,
         }));
     }
