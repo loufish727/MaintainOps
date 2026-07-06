@@ -84,13 +84,13 @@
       const rules = [
         {
           label: "Work Order Photos",
-          cap: "Photos are accepted, then resized before upload",
-          optimize: "Resize to 768px, target near 256 KB; blocked only if still over 5 MB",
+          cap: "Photos are automatically resized before upload",
+          optimize: "Stored at 768px, target near 256 KB",
         },
         {
           label: "Request Photos",
-          cap: "Photos are accepted, then resized before upload",
-          optimize: "Resize to 768px, target near 256 KB; blocked only if still over 5 MB",
+          cap: "Photos are automatically resized before upload",
+          optimize: "Stored at 768px, target near 256 KB",
         },
         {
           label: "Equipment Images",
@@ -110,7 +110,7 @@
         {
           label: "Company Logos",
           cap: "JPG, PNG, WebP, GIF, HEIC, and HEIF images are accepted",
-          optimize: "Resize to 1200px PNG when possible; blocked only if still over 25 MB",
+          optimize: "Automatically resized to 1200px when possible",
         },
       ];
       return `
