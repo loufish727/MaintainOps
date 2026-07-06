@@ -510,7 +510,7 @@
       try {
         if (!createImageBitmapRef) throw new Error("Browser image optimization is unavailable.");
         const bitmap = await createImageBitmapRef(file);
-        const targetBytes = Number(options.targetBytes || 0) || 1.5 * 1024 * 1024;
+        const targetBytes = Number(options.targetBytes || 0) || 1 * 1024 * 1024;
         const optimizationPasses = options.passes || [
           { maxDimension: 2000, quality: 0.82 },
           { maxDimension: 1800, quality: 0.78 },

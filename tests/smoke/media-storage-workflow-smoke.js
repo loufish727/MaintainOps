@@ -318,7 +318,7 @@ function createWorkflow(options = {}) {
           },
           toBlob(resolve, type, quality) {
             optimizerCalls.push({ width: this.width, height: this.height, type, quality });
-            const size = quality === 0.82 ? 2 * 1024 * 1024 : 1.2 * 1024 * 1024;
+            const size = quality === 0.82 ? 2 * 1024 * 1024 : quality === 0.78 ? 1.2 * 1024 * 1024 : 900 * 1024;
             resolve({ size, type });
           },
         };
@@ -338,8 +338,8 @@ function createWorkflow(options = {}) {
   const optimizedPhoto = await optimizerWorkflow.optimizePhoto({ name: "plate.png", type: "image/png", size: 5 * 1024 * 1024 });
   assert.equal(optimizedPhoto.fileName, "plate.jpg");
   assert.equal(optimizedPhoto.contentType, "image/jpeg");
-  assert.equal(optimizedPhoto.blob.size <= 1.5 * 1024 * 1024, true);
-  assert.deepEqual(optimizerCalls.slice(0, 2).map((call) => [call.width, call.quality]), [[2000, 0.82], [1800, 0.78]]);
+  assert.equal(optimizedPhoto.blob.size <= 1 * 1024 * 1024, true);
+  assert.deepEqual(optimizerCalls.slice(0, 3).map((call) => [call.width, call.quality]), [[2000, 0.82], [1800, 0.78], [1600, 0.74]]);
   assert.equal(optimizerCalls.some((call) => call.closed), true);
 
   optimizerCalls.length = 0;
