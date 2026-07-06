@@ -102,6 +102,7 @@ const requiredResources = [
   "src/render/partsDisplay.js",
   "src/render/optionDisplay.js",
   "src/render/setupDisplay.js",
+  "src/render/storageDashboardDisplay.js",
   "src/render/requestPhotoDisplay.js",
   "src/render/messageBadgeDisplay.js",
   "src/render/navBadgeDisplay.js",

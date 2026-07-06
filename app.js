@@ -190,6 +190,7 @@ const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
 const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
 const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
 const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
+const { createStorageDashboardDisplayHelpers } = window.MaintainOpsStorageDashboardDisplay;
 const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
 const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
 const { createNavBadgeDisplayHelpers } = window.MaintainOpsNavBadgeDisplay;
@@ -387,6 +388,9 @@ let messagesReady = true;
 let messageWorkOrderLinksReady = true;
 let appIssueReports = [];
 let appIssueReportsReady = true;
+let storageDashboard = null;
+let storageDashboardReady = true;
+let storageDashboardError = "";
 let reportIssueMode = false;
 let activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
 function setActiveMessageThreadIdState(value) {
@@ -1034,6 +1038,12 @@ const {
   renderSetupItem,
 } = createSetupDisplayHelpers({
   escapeHtml,
+});
+const {
+  renderStorageDashboardPanel,
+} = createStorageDashboardDisplayHelpers({
+  escapeHtml,
+  formatBytes,
 });
 const {
   renderMaintenanceRequestPhoto,
@@ -2207,6 +2217,21 @@ async function loadPlanningWorkOrders(options = {}) {
   return { data: planningWorkOrders, error: null };
 }
 
+async function loadStorageDashboard() {
+  if (!activeCompanyId || !canManageTeam()) {
+    storageDashboard = null;
+    storageDashboardReady = true;
+    storageDashboardError = "";
+    return;
+  }
+  const { data, error } = await supabaseClient.rpc("get_storage_dashboard", {
+    target_company_id: activeCompanyId,
+  });
+  storageDashboardReady = !error;
+  storageDashboardError = error ? (error.message || "Could not load storage usage.") : "";
+  storageDashboard = error ? null : (data || null);
+}
+
 async function loadCompanyData() {
   workspaceLoadWarnings = [];
   workspaceHydrationToken += 1;
@@ -2262,6 +2287,7 @@ async function loadCompanyData() {
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
     runWorkspaceLoader("Asset financials", loadAssetFinancials),
+    runWorkspaceLoader("Storage dashboard", loadStorageDashboard),
     ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
   ]);
   applyWorkspaceLoadWarnings();
@@ -3683,6 +3709,12 @@ function renderWorkspace() {
             <div class="setup-list">
               ${setupItems().map(renderSetupItem).join("")}
             </div>
+            ${renderStorageDashboardPanel({
+              canView: canManageTeam(),
+              dashboard: storageDashboard,
+              ready: storageDashboardReady,
+              error: storageDashboardError,
+            })}
             ${renderAppIssueReportsPanel()}
           </section>
         </section>
@@ -4522,6 +4554,67 @@ const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
   render,
 });
 
+async function openStorageLinkedRecord(section, id, label = "") {
+  if (!section) return;
+  setActiveWorkOrderIdState(null);
+  setActiveAssetIdState(null);
+  setActivePartIdState(null);
+  createWorkOrderMode = false;
+  quickFixMode = false;
+  reportIssueMode = false;
+
+  if (section === "work" && id) {
+    if (!workOrders.some((workOrder) => workOrder.id === id)) {
+      const response = await loadWorkspaceResponse("Storage linked work order", fetchWorkOrderById(supabaseClient, activeCompanyId, id, WORK_ORDER_RELATION_SELECT), 12000);
+      if (!response.error && response.data) workOrders = [response.data, ...workOrders];
+    }
+    await Promise.all([
+      runWorkspaceLoader("Storage linked work photos", () => loadPhotosForWorkOrderIds([id])),
+      runWorkspaceLoader("Storage linked work history", () => loadWorkOrderEventsForWorkOrderIds([id])),
+      runWorkspaceLoader("Storage linked work comments", () => loadCommentsForWorkOrderIds([id])),
+      runWorkspaceLoader("Storage linked checklist results", () => loadStepResultsForWorkOrderIds([id])),
+      runWorkspaceLoader("Storage linked parts used", () => loadPartsUsedForWorkOrderIds([id])),
+    ]);
+    setActiveWorkOrderIdState(id);
+    setActiveSectionState("work");
+    renderWorkspace();
+    return;
+  }
+
+  if (section === "assets" && id) {
+    await Promise.all([
+      runWorkspaceLoader("Storage linked equipment files", loadAssetDocuments),
+      runWorkspaceLoader("Storage linked equipment history", () => loadAssetEventsForAssetIds([id])),
+      runWorkspaceLoader("Storage linked equipment work", () => loadAssetWorkOrderHistory(id)),
+    ]);
+    setActiveAssetIdState(id);
+    setActiveSectionState("assets");
+    renderWorkspace();
+    return;
+  }
+
+  if (section === "parts" && id) {
+    await runWorkspaceLoader("Storage linked part files", loadPartDocuments);
+    setActivePartIdState(id);
+    setActiveSectionState("parts");
+    renderWorkspace();
+    return;
+  }
+
+  if (section === "requests") {
+    workspaceUiState.setRequestViewFilter("all");
+    workspaceUiState.setSearchQuery(label || "");
+    resetRequestsPage();
+    setActiveSectionState("requests");
+    await reloadRequestQueue();
+    renderWorkspace();
+    return;
+  }
+
+  setActiveSectionState(section);
+  renderWorkspace();
+}
+
 function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
@@ -4676,6 +4769,24 @@ function bindWorkspaceEvents() {
     },
     renderWorkspace,
     showNotice,
+  });
+
+  document.querySelectorAll("[data-refresh-storage-dashboard]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      await loadStorageDashboard();
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-storage-record-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await openStorageLinkedRecord(
+        button.dataset.storageLinkSection,
+        button.dataset.storageLinkId,
+        button.dataset.storageLinkLabel || ""
+      );
+    });
   });
 
   bindWorkspaceMessageThreadEvents({
