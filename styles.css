@@ -7055,7 +7055,8 @@ textarea {
 
 .storage-metric,
 .storage-breakdown,
-.storage-largest-files {
+.storage-largest-files,
+.storage-rules {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -7080,6 +7081,45 @@ textarea {
   color: var(--ink);
   font-size: 1.3rem;
   line-height: 1;
+}
+
+.storage-rules {
+  display: grid;
+  gap: 8px;
+}
+
+.storage-rule-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.storage-rule-row {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  padding: 8px;
+}
+
+.storage-rule-row strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.15;
+}
+
+.storage-rule-row span,
+.storage-rule-row small {
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.25;
+}
+
+.storage-rule-row span {
+  color: color-mix(in srgb, var(--ink) 82%, var(--muted));
+  font-weight: 720;
 }
 
 .storage-dashboard-grid {
@@ -7417,6 +7457,7 @@ textarea {
 
   .storage-metric-grid,
   .storage-month-summary,
+  .storage-rule-list,
   .storage-dashboard-grid {
     grid-template-columns: 1fr;
   }

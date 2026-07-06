@@ -80,6 +80,60 @@
       `;
     }
 
+    function renderStorageRules() {
+      const rules = [
+        {
+          label: "Work Order Photos",
+          cap: "5 MB after optimization",
+          optimize: "Resize to 768px, target near 256 KB",
+        },
+        {
+          label: "Request Photos",
+          cap: "5 MB after optimization",
+          optimize: "Resize to 768px, target near 256 KB",
+        },
+        {
+          label: "Equipment Images",
+          cap: "Images are compressed before upload",
+          optimize: "Target near 1 MB, max dimension steps 2000/1800/1600px",
+        },
+        {
+          label: "Part Images",
+          cap: "Images are compressed before upload",
+          optimize: "Target near 1 MB, max dimension steps 2000/1800/1600px",
+        },
+        {
+          label: "Documents",
+          cap: "Non-image files over 25 MB are blocked",
+          optimize: "PDF, Word, Excel, CSV, and text files are stored as uploaded",
+        },
+        {
+          label: "Company Logos",
+          cap: "Images are compressed before upload",
+          optimize: "Resize to 1200px max dimension, stored as PNG",
+        },
+      ];
+      return `
+        <section class="storage-rules">
+          <div class="settings-section-heading">
+            <div>
+              <strong>Storage Rules</strong>
+              <span>Upload caps and optimization targets</span>
+            </div>
+          </div>
+          <div class="storage-rule-list">
+            ${rules.map((rule) => `
+              <article class="storage-rule-row">
+                <strong>${escapeHtml(rule.label)}</strong>
+                <span>${escapeHtml(rule.cap)}</span>
+                <small>${escapeHtml(rule.optimize)}</small>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }
+
     function renderBucketRow(bucket, totalBytes) {
       const sizeBytes = Number(bucket.size_bytes) || 0;
       const share = totalBytes ? (sizeBytes / totalBytes) * 100 : 0;
@@ -218,6 +272,7 @@
             ${renderStorageMetric("Remaining", byteText(remainingBytes), `${percentText((remainingBytes / allowanceBytes) * 100)} open`)}
             ${renderStorageMetric("Largest Files", `${topFiles.length}/10`, "Top linked storage objects")}
           </div>
+          ${renderStorageRules()}
           ${renderMonthlyUsageGraph(monthlyUsage)}
           <div class="storage-dashboard-grid">
             <section class="storage-breakdown">
