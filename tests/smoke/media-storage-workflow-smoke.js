@@ -273,6 +273,7 @@ function createWorkflow(options = {}) {
   assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "remove" && call[1] === "work-order-photos" && call[2][0] === "company-1/wo-1/before.jpg"), true);
   assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "delete" && call[1] === "work_order_photos"), true);
   assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "eq" && call[1] === "work_order_photos" && call[2] === "id" && call[3] === "photo-1"), true);
+  assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "event" && call[1] === "wo-1" && call[2] === "photo_deleted" && /before\.jpg/.test(call[3])), true);
   assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "notice" && call[1] === "Photo deleted."), true);
 
   const upload = createWorkflow();

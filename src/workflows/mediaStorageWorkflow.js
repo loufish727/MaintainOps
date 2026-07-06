@@ -255,6 +255,12 @@
         );
         if (error) throw error;
 
+        const fileName = storagePath.split("/").pop() || "photo";
+        await deps.withOperationTimeout(
+          deps.recordWorkOrderEvent(deps.getActiveWorkOrderId(), "photo_deleted", `Photo deleted: ${fileName}.`),
+          "Activity log timed out.",
+          8000
+        ).catch(() => null);
         deps.showNotice("Photo deleted.");
         await deps.render();
       } catch (error) {
