@@ -268,6 +268,13 @@ function createWorkflow(options = {}) {
   assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "eq" && call[1] === "asset_documents" && call[2] === "id" && call[3] === "asset-document-1"), true);
   assert.equal(deletedAssetDocument.calls.some((call) => call[0] === "notice" && call[1] === "Machine file deleted."), true);
 
+  const deletedWorkPhoto = createWorkflow();
+  await deletedWorkPhoto.workflow.deleteWorkOrderPhoto("photo-1", "company-1/wo-1/before.jpg");
+  assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "remove" && call[1] === "work-order-photos" && call[2][0] === "company-1/wo-1/before.jpg"), true);
+  assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "delete" && call[1] === "work_order_photos"), true);
+  assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "eq" && call[1] === "work_order_photos" && call[2] === "id" && call[3] === "photo-1"), true);
+  assert.equal(deletedWorkPhoto.calls.some((call) => call[0] === "notice" && call[1] === "Photo deleted."), true);
+
   const upload = createWorkflow();
   const uploadButton = { disabled: false, textContent: "Upload Photo" };
   await upload.workflow.uploadPhoto({

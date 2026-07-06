@@ -4849,6 +4849,18 @@ function bindWorkspaceEvents() {
     withOperationTimeout,
   }).bindWorkspaceWorkOrderDeleteEvents();
 
+  document.querySelectorAll("[data-delete-work-order-photo]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      if (!canEditOperationalRecords()) {
+        showNotice("You do not have permission to delete work order photos.", "warning");
+        return;
+      }
+      if (!confirm("Delete this work order photo?")) return;
+      await deleteWorkOrderPhoto(button.dataset.deleteWorkOrderPhoto, button.dataset.workOrderPhotoPath || "");
+    });
+  });
+
 
   bindWorkspaceAssetDeleteCancelEvents({
     requestDeleteAsset,
@@ -5153,6 +5165,7 @@ const {
   addPhotoToMaintenanceRequest,
   addPhotoToWorkOrder,
   deleteAssetDocument,
+  deleteWorkOrderPhoto,
   optimizePhoto,
   removeUploadedObject,
   uploadAssetDocument,

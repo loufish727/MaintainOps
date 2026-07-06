@@ -540,7 +540,7 @@ grant select, insert, update, delete on public.assets to authenticated;
 grant select, insert, update, delete on public.asset_financials to authenticated;
 grant select, insert, update, delete on public.work_orders to authenticated;
 grant select, insert on public.work_order_comments to authenticated;
-grant select, insert on public.work_order_photos to authenticated;
+grant select, insert, delete on public.work_order_photos to authenticated;
 grant select, insert, update on public.preventive_schedules to authenticated;
 grant select, insert, update, delete on public.parts to authenticated;
 grant select, insert on public.work_order_parts to authenticated;
@@ -969,6 +969,24 @@ with check (
     select 1 from public.work_orders wo
     where wo.id = work_order_id
       and wo.company_id = work_order_photos.company_id
+  )
+);
+
+drop policy if exists "Upload owners and managers can delete photo records" on public.work_order_photos;
+create policy "Upload owners and managers can delete photo records"
+on public.work_order_photos for delete
+to authenticated
+using (
+  private.is_company_member(company_id)
+  and (
+    uploaded_by = auth.uid()
+    or exists (
+      select 1
+      from public.company_members cm
+      where cm.company_id = work_order_photos.company_id
+        and cm.user_id = auth.uid()
+        and cm.role in ('admin', 'manager')
+    )
   )
 );
 

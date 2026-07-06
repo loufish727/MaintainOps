@@ -25,7 +25,7 @@ const workOrderDetailDeps = {
   getActiveWorkOrderId: () => "wo-1",
   getWorkOrders: () => [workOrder],
   getCommentsByWorkOrder: () => ({ "wo-1": [{ author_id: "user-1", body: "Checked pump", created_at: "2026-05-27T00:00:00Z" }] }),
-  getPhotosByWorkOrder: () => ({ "wo-1": [{ file_name: "before.jpg", signedUrl: "https://example.test/before.jpg", content_type: "image/jpeg" }] }),
+  getPhotosByWorkOrder: () => ({ "wo-1": [{ id: "photo-1", storage_path: "company-1/wo-1/before.jpg", file_name: "before.jpg", signedUrl: "https://example.test/before.jpg", content_type: "image/jpeg" }] }),
   getEventsByWorkOrder: () => ({ "wo-1": [{ event_type: "updated", summary: "Status changed" }] }),
   getPartsUsedByWorkOrder: () => ({ "wo-1": [{ quantity_used: 2, unit_cost: 5, created_by: "user-1", created_at: "2026-05-27T00:00:00Z", parts: { name: "Hose" } }] }),
   getProcedureTemplates: () => [{ id: "proc-1", name: "Lockout", procedure_steps: [{ id: "step-1", title: "Check guard" }] }],
@@ -79,6 +79,8 @@ assert.match(html, /id="parts-used-form"/);
 assert.match(html, /Hose/);
 assert.match(html, /QA User/);
 assert.match(html, /id="photo-form"/);
+assert.match(html, /data-delete-work-order-photo="photo-1"/);
+assert.match(html, /data-work-order-photo-path="company-1\/wo-1\/before\.jpg"/);
 assert.match(html, /id="comment-form"/);
 assert.match(html, /id="work-order-history-target"/);
 assert.match(html, /data-cancel-delete-work-order/);
@@ -102,6 +104,7 @@ assert.doesNotMatch(readOnlyHtml, /id="edit-work-order-form"/);
 assert.doesNotMatch(readOnlyHtml, /id="complete-work-order-form"/);
 assert.doesNotMatch(readOnlyHtml, /id="parts-used-form"/);
 assert.doesNotMatch(readOnlyHtml, /id="photo-form"/);
+assert.doesNotMatch(readOnlyHtml, /data-delete-work-order-photo="photo-1"/);
 assert.doesNotMatch(readOnlyHtml, /id="comment-form"/);
 assert.doesNotMatch(readOnlyHtml, /data-confirm-delete-work-order="wo-1"/);
 assert.doesNotMatch(readOnlyHtml, /data-step-result="step-1"/);

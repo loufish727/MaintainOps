@@ -226,6 +226,43 @@
       }
     }
 
+    async function deleteWorkOrderPhoto(photoId, storagePath) {
+      const errorElement = documentRef.querySelector("#photo-error");
+      if (errorElement) errorElement.textContent = "";
+      if (!photoId || !storagePath) {
+        const message = "Missing photo record. Refresh and try again.";
+        if (errorElement) errorElement.textContent = message;
+        else deps.showNotice(message, "warning");
+        return;
+      }
+
+      try {
+        const storageDelete = await deps.withOperationTimeout(
+          deps.supabaseClient().storage.from("work-order-photos").remove([storagePath]),
+          "Photo delete timed out. Check your connection and try again.",
+          15000
+        );
+        if (storageDelete.error) throw storageDelete.error;
+
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("work_order_photos")
+            .delete()
+            .eq("id", photoId)
+            .eq("company_id", deps.getActiveCompanyId()),
+          "Photo record delete timed out. Check your connection and try again.",
+          15000
+        );
+        if (error) throw error;
+
+        deps.showNotice("Photo deleted.");
+        await deps.render();
+      } catch (error) {
+        if (errorElement) errorElement.textContent = error.message || "Could not delete photo.";
+        else deps.showNotice(error.message || "Could not delete photo.", "warning");
+      }
+    }
+
     function normalizeAssetDocumentType(value) {
       const allowed = new Set(["machine_photo", "schematic", "settings", "manual", "nameplate", "inspection", "receipt", "other"]);
       return allowed.has(value) ? value : "other";
@@ -570,6 +607,7 @@
       removeUploadedObject,
       reportUploadFailure,
       deleteAssetDocument,
+      deleteWorkOrderPhoto,
       uploadAssetDocument,
       uploadPartDocument,
       uploadPhoto,

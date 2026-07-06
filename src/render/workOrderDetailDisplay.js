@@ -351,6 +351,7 @@
                 <strong>${escapeHtml(photo.file_name)}</strong>
                 <span>${photoMetaText(photo)}</span>
                 ${photo.signedUrl ? `<a href="${escapeHtml(photo.signedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : ""}
+                ${canEditOperational ? `<button class="text-button danger-link" data-delete-work-order-photo="${escapeHtml(photo.id || "")}" data-work-order-photo-path="${escapeHtml(photo.storage_path || "")}" type="button">Delete Photo</button>` : ""}
               </article>
             `).join("") || `<p class="muted">No photos uploaded yet.</p>`}
           </div>
