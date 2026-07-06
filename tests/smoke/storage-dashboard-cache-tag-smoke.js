@@ -6,8 +6,8 @@ const indexHtml = fs.readFileSync(path.join(__dirname, "..", "..", "index.html")
 
 assert.match(
   indexHtml,
-  /styles\.css\?v=mo-build-20260706-storage-dashboard-monthly-1/,
-  "styles.css must use the storage dashboard monthly cache tag"
+  /styles\.css\?v=mo-build-20260706-storage-dashboard-layout-1/,
+  "styles.css must use the storage dashboard layout cache tag"
 );
 assert.match(
   indexHtml,

@@ -7084,6 +7084,7 @@ textarea {
 
 .storage-dashboard-grid {
   display: grid;
+  align-items: start;
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
   gap: 12px;
 }
@@ -7188,6 +7189,7 @@ textarea {
 .storage-bucket-list,
 .storage-file-list {
   display: grid;
+  align-self: start;
   gap: 8px;
   min-width: 0;
 }
