@@ -1,4 +1,15 @@
 import { createCompanyLocationStateHelpers } from "./src/appShell/companyLocationState.js";
+import {
+  authParamsFromHref,
+  initializeStartupRoute,
+  isAuthCallbackParams as isAuthCallbackParamsFromRouting,
+  isPasswordRecoveryParams as isPasswordRecoveryParamsFromRouting,
+  passwordRecoveryParamsFromUrl as passwordRecoveryParamsFromRouting,
+  publicRequestQrTokenFromUrl as publicRequestQrTokenFromRouting,
+  publicRequestTokenFromUrl as publicRequestTokenFromRouting,
+} from "./src/appShell/startupRouting.js";
+import { createLazyResourceHelpers } from "./src/appShell/lazyResources.js";
+import { createWorkspaceStartupLoaders, loadWorkspaceCoreData } from "./src/appShell/workspaceStartupLoaders.js";
 
 const app = document.querySelector("#app");
 
@@ -315,10 +326,6 @@ const CONVERSION_RESOURCE_PATHS = [
   "src/data/shopReferenceCharts.js?v=conversion-lazy-load-1",
   "src/render/conversionDisplay.js?v=conversion-lazy-load-1",
 ];
-let conversionResourcesPromise = null;
-let conversionResourcesError = "";
-let conversionDisplayHelpers = null;
-let qrLibraryPromise = null;
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
 const {
@@ -347,6 +354,27 @@ const {
   passwordRecovery,
   passwordRecoveryParamsFromUrl,
 });
+const lazyResourceHelpers = createLazyResourceHelpers({
+  windowRef: window,
+  documentRef: document,
+  escapeHtml,
+  qrCodeResource: QR_CODE_RESOURCE,
+  conversionResourcePaths: CONVERSION_RESOURCE_PATHS,
+  getActiveSection: () => activeSection,
+  getPublicRequestLinks: () => publicRequestLinks,
+  canManageTeam,
+  requestWorkspaceRender: () => renderWorkspace(),
+});
+const {
+  clearConversionResourcesError,
+  ensureConversionResourcesLoaded,
+  ensureQrLibraryLoaded,
+  getConversionDisplayHelpers,
+  hasConversionDisplayHelpers,
+  renderConversionsLazyPanel,
+  scheduleConversionResourceLoad,
+  scheduleQrLibraryLoad,
+} = lazyResourceHelpers;
 let companies = [];
 let activeCompanyId = localStorage.getItem("maintainops.activeCompanyId");
 let locations = [];
@@ -1399,30 +1427,22 @@ async function init() {
   }
 
   try {
-    const recoveryParams = passwordRecoveryParamsFromHref(window.location.href);
-    supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-    capturePendingJoinTokenFromUrl();
-    if (isPasswordRecoveryParams(recoveryParams)) {
-      await startPasswordRecovery(recoveryParams);
-      return;
-    }
-    if (isAuthCallbackParams(recoveryParams)) {
-      await startAuthCallback(recoveryParams);
-      return;
-    }
-    const qrToken = publicRequestQrTokenFromUrl();
-    if (qrToken) {
-      await renderPublicRequestQrPage(qrToken);
-      return;
-    }
-    const requestToken = publicRequestTokenFromUrl();
-    if (requestToken) {
-      await renderPublicRequestIntake(requestToken);
-      return;
-    }
-    renderAuth("login");
-    const { data } = await supabaseClient.auth.getSession();
-    session = data.session;
+    const startup = await initializeStartupRoute({
+      windowRef: window,
+      authRedirects: window.MaintainOpsAuthRedirects,
+      supabaseGlobal: window.supabase,
+      supabaseUrl: window.SUPABASE_URL,
+      supabaseAnonKey: window.SUPABASE_ANON_KEY,
+      capturePendingJoinTokenFromUrl,
+      startPasswordRecovery,
+      startAuthCallback,
+      renderPublicRequestQrPage,
+      renderPublicRequestIntake,
+      renderAuth,
+      setSupabaseClient: (value) => { supabaseClient = value; },
+      setSession: (value) => { session = value; },
+    });
+    if (startup.routed) return;
   } catch (error) {
     renderAuth("login", `Supabase initialization failed: ${error.message}`);
     return;
@@ -1521,116 +1541,6 @@ function renderWorkspaceLoadError(message) {
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
 }
 
-function loadScriptResource(src, options = {}) {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-lazy-src="${src}"]`);
-    if (existing?.dataset.loaded === "true") {
-      resolve();
-      return;
-    }
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error(`Could not load ${src}`)), { once: true });
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = src;
-    script.dataset.lazySrc = src;
-    script.async = Boolean(options.async);
-    if (options.integrity) script.integrity = options.integrity;
-    if (options.crossOrigin) script.crossOrigin = options.crossOrigin;
-    script.onload = () => {
-      script.dataset.loaded = "true";
-      resolve();
-    };
-    script.onerror = () => reject(new Error(`Could not load ${src}`));
-    document.body.appendChild(script);
-  });
-}
-
-function ensureQrLibraryLoaded() {
-  if (window.qrcode) return Promise.resolve();
-  if (!qrLibraryPromise) {
-    qrLibraryPromise = loadScriptResource(QR_CODE_RESOURCE.src, {
-      async: true,
-      integrity: QR_CODE_RESOURCE.integrity,
-      crossOrigin: QR_CODE_RESOURCE.crossOrigin,
-    }).then(() => {
-      if (!window.qrcode) throw new Error("QR code generator did not initialize.");
-    }).catch((error) => {
-      qrLibraryPromise = null;
-      throw error;
-    });
-  }
-  return qrLibraryPromise;
-}
-
-async function ensureConversionResourcesLoaded() {
-  if (conversionDisplayHelpers) return conversionDisplayHelpers;
-  if (!conversionResourcesPromise) {
-    conversionResourcesError = "";
-    conversionResourcesPromise = (async () => {
-      for (const src of CONVERSION_RESOURCE_PATHS) {
-        await loadScriptResource(src);
-      }
-      const conversions = window.MaintainOpsConversions;
-      const display = window.MaintainOpsConversionDisplay;
-      if (!conversions || !display) throw new Error("Conversion tools did not initialize.");
-      conversionDisplayHelpers = display.createConversionDisplayHelpers({
-        escapeHtml,
-        conversionGroups: conversions.UNIT_GROUPS,
-        boltReference: conversions.BOLT_REFERENCE,
-        wrenchReference: conversions.WRENCH_REFERENCE,
-        conversionResultText: conversions.conversionResultText,
-      });
-      return conversionDisplayHelpers;
-    })().catch((error) => {
-      conversionResourcesError = error.message || "Could not load conversion tools.";
-      conversionResourcesPromise = null;
-      throw error;
-    });
-  }
-  return conversionResourcesPromise;
-}
-
-function renderConversionsLazyPanel() {
-  if (conversionDisplayHelpers) return conversionDisplayHelpers.renderConversionsPanel();
-  const status = conversionResourcesError || "Loading shop converters and reference charts...";
-  const toneClass = conversionResourcesError ? "status-blocked" : "status-in_progress";
-  return `
-    <section class="setup-card conversion-loading-card ${toneClass}">
-      <h3>Conversions</h3>
-      <p>${escapeHtml(status)}</p>
-      ${conversionResourcesError ? `<button class="secondary-button" data-retry-conversions type="button">Retry</button>` : ""}
-    </section>
-  `;
-}
-
-function scheduleQrLibraryLoad() {
-  if (window.qrcode || qrLibraryPromise) return;
-  const settingsNeedsQr = activeSection === "settings" &&
-    canManageTeam() &&
-    publicRequestLinks.some((link) => link && link.is_active !== false);
-  if (!settingsNeedsQr) return;
-
-  ensureQrLibraryLoaded()
-    .then(() => {
-      if (activeSection === "settings") renderWorkspace();
-    })
-    .catch(() => {});
-}
-
-function scheduleConversionResourceLoad() {
-  if (activeSection !== "conversions" || conversionDisplayHelpers || conversionResourcesPromise) return;
-  ensureConversionResourcesLoaded()
-    .then(() => {
-      if (activeSection === "conversions") renderWorkspace();
-    })
-    .catch(() => {
-      if (activeSection === "conversions") renderWorkspace();
-    });
-}
-
 function createShopReferenceFavoriteStore() {
   return {
     async load() {
@@ -1724,11 +1634,14 @@ function renderAuth(mode, initialError = "") {
 }
 
 function passwordRecoveryParamsFromUrl() {
-  return passwordRecoveryParamsFromHref(window.location.href);
+  return passwordRecoveryParamsFromRouting({
+    windowRef: window,
+    authRedirects: window.MaintainOpsAuthRedirects,
+  });
 }
 
 function passwordRecoveryParamsFromHref(href) {
-  return window.MaintainOpsAuthRedirects.authParamsFromHref(href);
+  return authParamsFromHref(window.MaintainOpsAuthRedirects, href);
 }
 
 function isPasswordRecoveryUrl() {
@@ -1736,11 +1649,11 @@ function isPasswordRecoveryUrl() {
 }
 
 function isPasswordRecoveryParams(params) {
-  return window.MaintainOpsAuthRedirects.isPasswordRecoveryParams(params);
+  return isPasswordRecoveryParamsFromRouting(window.MaintainOpsAuthRedirects, params);
 }
 
 function isAuthCallbackParams(params) {
-  return window.MaintainOpsAuthRedirects.isAuthCallbackParams(params);
+  return isAuthCallbackParamsFromRouting(window.MaintainOpsAuthRedirects, params);
 }
 
 async function signInWithPasswordWithFallback(email, password) {
@@ -1809,13 +1722,11 @@ async function resetLoginState() {
 }
 
 function publicRequestTokenFromUrl() {
-  const url = new URL(window.location.href);
-  return String(url.searchParams.get("request") || url.searchParams.get("public_request") || "").trim();
+  return publicRequestTokenFromRouting(window);
 }
 
 function publicRequestQrTokenFromUrl() {
-  const url = new URL(window.location.href);
-  return String(url.searchParams.get("qr") || "").trim();
+  return publicRequestQrTokenFromRouting(window);
 }
 
 async function loadCompanies() {
@@ -2195,25 +2106,44 @@ async function loadStorageDashboard() {
   storageDashboard = error ? null : (data || null);
 }
 
+const workspaceLoaderMap = {
+  addSignedRequestPhotoUrls,
+  loadAssetDocuments,
+  loadAssetEvents,
+  loadAssetParts,
+  loadComments,
+  loadMembers,
+  loadMessageCenter,
+  loadPartDocuments,
+  loadPartsUsed,
+  loadPhotos,
+  loadProfiles,
+  loadPublicRequestLinks,
+  loadStepResults,
+  loadStorageDashboard,
+  loadWorkOrderEvents,
+};
+
 async function loadCompanyData() {
   workspaceLoadWarnings = [];
   workspaceHydrationToken += 1;
-  let [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
-    loadWorkspaceResponse("Locations", listLocations(supabaseClient, activeCompanyId)),
-    loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
-    loadWorkspaceResponse("PM schedules", supabaseClient
-      .from("preventive_schedules")
-      .select("*, assets(name, location_id)")
-      .eq("company_id", activeCompanyId)
-      .order("next_due_at", { ascending: true })),
-    loadWorkspaceResponse("Parts", listParts(supabaseClient, activeCompanyId)),
-    loadWorkspaceResponse("Procedure checklists", supabaseClient
-      .from("procedure_templates")
-      .select("*, procedure_steps(*)")
-      .eq("company_id", activeCompanyId)
-      .order("name")),
-    loadWorkspaceResponse("App issue reports", listAppIssueReports(supabaseClient, activeCompanyId)),
-  ]);
+  const coreData = await loadWorkspaceCoreData({
+    activeCompanyId,
+    supabaseClient,
+    listLocations,
+    listAssets,
+    listParts,
+    listAppIssueReports,
+    loadWorkspaceResponse,
+  });
+  const {
+    locationResponse,
+    assetResponse,
+    scheduleResponse,
+    partsResponse,
+    procedureResponse,
+    issueReportResponse,
+  } = coreData;
 
   locationsReady = !locationResponse.error;
   locations = locationResponse.error ? [] : (locationResponse.data || []);
@@ -2246,57 +2176,27 @@ async function loadCompanyData() {
   outcomesReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "resolution_summary");
   safetyChecksReady = !workOrders.length || Object.prototype.hasOwnProperty.call(workOrders[0], "safety_devices_checked");
   proceduresReady = !procedureResponse.error;
+  const startupLoaders = createWorkspaceStartupLoaders({
+    activeSection,
+    activeWorkOrderId,
+    activeAssetId,
+  });
   await Promise.all([
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
     ...(canUseFinancialMenu() ? [runWorkspaceLoader("Asset financials", loadAssetFinancials)] : []),
-    ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
+    ...startupLoaders.immediateLoaders.map(([label, loader]) => runWorkspaceLoader(label, workspaceLoaderMap[loader])),
   ]);
   applyWorkspaceLoadWarnings();
-  scheduleWorkspaceHydration();
+  scheduleWorkspaceHydration(startupLoaders.hydrationLoaders);
 }
 
-function initialWorkspaceLoaders() {
-  const loaders = [];
-  if (activeSection === "messages") loaders.push(["Messages", loadMessageCenter]);
-  if (activeSection === "settings") loaders.push(["Public request links", loadPublicRequestLinks]);
-  if (activeSection === "setup") loaders.push(["Storage dashboard", loadStorageDashboard]);
-  if (activeSection === "requests") loaders.push(["Request photos", addSignedRequestPhotoUrls]);
-  if (activeWorkOrderId || activeAssetId || activeSection === "parts") {
-    loaders.push(
-      ["Comments", loadComments],
-      ["Work photos", loadPhotos],
-      ["Parts used", loadPartsUsed],
-      ["Equipment parts", loadAssetParts],
-      ["Equipment files", loadAssetDocuments],
-      ["Part files", loadPartDocuments],
-      ["Checklist results", loadStepResults],
-      ["Work history", loadWorkOrderEvents],
-      ["Equipment history", loadAssetEvents],
-    );
-  }
-  return loaders;
-}
-
-function scheduleWorkspaceHydration() {
+function scheduleWorkspaceHydration(hydrationLoaders = []) {
   const token = workspaceHydrationToken;
   const hydration = Promise.resolve()
     .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
     .then(async () => {
-      await Promise.all([
-        runWorkspaceLoader("Messages", loadMessageCenter),
-        runWorkspaceLoader("Public request links", loadPublicRequestLinks),
-        runWorkspaceLoader("Request photos", addSignedRequestPhotoUrls),
-        runWorkspaceLoader("Comments", loadComments),
-        runWorkspaceLoader("Work photos", loadPhotos),
-        runWorkspaceLoader("Parts used", loadPartsUsed),
-        runWorkspaceLoader("Equipment parts", loadAssetParts),
-        runWorkspaceLoader("Equipment files", loadAssetDocuments),
-        runWorkspaceLoader("Part files", loadPartDocuments),
-        runWorkspaceLoader("Checklist results", loadStepResults),
-        runWorkspaceLoader("Work history", loadWorkOrderEvents),
-        runWorkspaceLoader("Equipment history", loadAssetEvents),
-      ]);
+      await Promise.all(hydrationLoaders.map(([label, loader]) => runWorkspaceLoader(label, workspaceLoaderMap[loader])));
       if (token === workspaceHydrationToken && session && activeCompanyId) applyWorkspaceLoadWarnings();
     })
     .catch((error) => {
@@ -4652,11 +4552,11 @@ function bindWorkspaceEvents() {
     visibleNavItems,
   });
   if (activeSection === "conversions") {
-    if (conversionDisplayHelpers) {
+    if (hasConversionDisplayHelpers()) {
       window.MaintainOpsConversions.bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
     } else {
       document.querySelector("[data-retry-conversions]")?.addEventListener("click", () => {
-        conversionResourcesError = "";
+        clearConversionResourcesError();
         scheduleConversionResourceLoad();
         renderWorkspace();
       });

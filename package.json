@@ -9,6 +9,7 @@
     "storage:photos:resize": "node scripts/storage-photo-resize-existing.js --source=remote --execute",
     "build:runtime:bundles": "node scripts/build-runtime-bundles.js",
     "build:pilot:bundle": "npm run build:runtime:bundles",
+    "migration:apply": "node scripts/apply-dated-migration.js",
     "release:verify": "node scripts/release-verify.js",
     "test:security:static": "node scripts/sql-security-static-audit.js",
     "test:security:boundary": "node scripts/security-boundary-probe.js",

@@ -21,6 +21,7 @@ Live status:
 Repo source:
 
 - this file records known manual state when live access is not available.
+- `npm run migration:apply -- 202607061430_applied_migration_metadata.sql` is the helper entry point for dated migration review and linked-project execution.
 
 ## Known Recently Applied
 

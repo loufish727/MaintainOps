@@ -27,9 +27,10 @@ This plan is intentionally staged. It does not change runtime architecture until
 
 1. Keep existing `supabase/step-next-*.sql` files as historical checkpoints.
 2. Put new database changes in `supabase/migrations/YYYYMMDDHHMM_description.sql`.
-3. Record applied production migrations in `docs/APPLIED_MIGRATIONS.md`.
-4. Run `npm run test:migrations:static` before release to catch migration naming and tracking drift.
-5. Mark `step-next` as legacy once new dated migrations have been used successfully across several releases.
+3. Use `npm run migration:apply -- <file>` for review and linked-project execution of dated migrations.
+4. Record applied production migrations in `docs/APPLIED_MIGRATIONS.md`.
+5. Run `npm run test:migrations:static` before release to catch migration naming and tracking drift.
+6. Mark `step-next` as legacy once new dated migrations have been used successfully across several releases.
 
 ## Success Criteria
 

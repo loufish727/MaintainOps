@@ -36,9 +36,11 @@ Do not commit private service-role keys.
 Fresh setup should start with:
 
 1. Run `supabase/schema.sql`.
-2. Run the `supabase/step-next-*.sql` files that are not already included in the schema.
-3. For any new database change after this repo checkpoint, add a dated file in `supabase/migrations/YYYYMMDDHHMM_description.sql` and record live application in `docs/APPLIED_MIGRATIONS.md`.
-4. Refresh the browser after SQL changes.
+2. Run the dated files in `supabase/migrations/` for any newer database changes.
+3. Run only the legacy `supabase/step-next-*.sql` files that are still required for historical feature backfill and are not already represented in the schema.
+4. Use `npm run migration:apply -- <dated-file.sql>` when you want the linked-project helper path for a dated migration.
+5. Record live application and verification in `docs/APPLIED_MIGRATIONS.md`.
+6. Refresh the browser after SQL changes.
 
 The project has evolved quickly, so when in doubt, compare `schema.sql` and the step files before assuming a fresh deploy is complete.
 

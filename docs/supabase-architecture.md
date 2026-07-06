@@ -11,7 +11,7 @@
 
 ## Current SQL Setup Direction
 
-Run `supabase/schema.sql` first when creating or refreshing a Supabase project, then apply the current `supabase/step-next-*.sql` files that are not already represented in the schema. The canonical current file list and setup cautions live in `docs/SUPABASE_SETUP.md`.
+Run `supabase/schema.sql` first when creating or refreshing a Supabase project, then apply dated migrations from `supabase/migrations/` and only the still-needed legacy `supabase/step-next-*.sql` files that are not already represented in the schema. The canonical current file list and setup cautions live in `docs/SUPABASE_SETUP.md`.
 
 Some SQL files are audit or live-maintenance scripts, not baseline migrations. Do not run files named `audit-*` or `step-live-*` as part of a fresh baseline setup unless you are intentionally performing that specific audit or live data repair.
 
@@ -56,7 +56,7 @@ Some SQL files are audit or live-maintenance scripts, not baseline migrations. D
 - `messages`
 - `message_reads`
 
-Additional feature tables and columns are introduced through the current `step-next-*.sql` files listed in `SUPABASE_SETUP.md`.
+Additional feature tables and columns are introduced through dated migrations in `supabase/migrations/` plus any still-needed legacy `step-next-*.sql` files listed in `SUPABASE_SETUP.md`.
 
 ## Security Shape
 
