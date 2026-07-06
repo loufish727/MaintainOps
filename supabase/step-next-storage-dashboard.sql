@@ -149,26 +149,6 @@ begin
     from linked_objects
     group by bucket_id
   ),
-  type_totals as (
-    select
-      record_type,
-      case
-        when record_type = 'company' then 'logo'
-        when record_type in ('work_order', 'request') then 'photo'
-        when content_type ilike 'image/%' then 'photo'
-        else 'file'
-      end as file_kind,
-      count(*)::integer as file_count,
-      coalesce(sum(size_bytes), 0)::bigint as size_bytes
-    from linked_objects
-    group by record_type,
-      case
-        when record_type = 'company' then 'logo'
-        when record_type in ('work_order', 'request') then 'photo'
-        when content_type ilike 'image/%' then 'photo'
-        else 'file'
-      end
-  ),
   month_series as (
     select generate_series(
       date_trunc('month', now()) - interval '11 months',
@@ -213,18 +193,6 @@ begin
       order by size_bytes desc, bucket_id
     ), '[]'::jsonb) as rows
     from bucket_totals
-  ),
-  type_json as (
-    select coalesce(jsonb_agg(
-      jsonb_build_object(
-        'record_type', record_type,
-        'file_kind', file_kind,
-        'file_count', file_count,
-        'size_bytes', size_bytes
-      )
-      order by record_type, file_kind
-    ), '[]'::jsonb) as rows
-    from type_totals
   ),
   monthly_json as (
     select coalesce(jsonb_agg(
@@ -272,13 +240,12 @@ begin
     'file_count', totals.file_count,
     'photo_count', totals.photo_count,
     'bucket_totals', bucket_json.rows,
-    'type_totals', type_json.rows,
     'monthly_usage', monthly_json.rows,
     'top_files', top_json.rows,
     'generated_at', now()
   )
   into result
-  from totals, bucket_json, type_json, monthly_json, top_json;
+  from totals, bucket_json, monthly_json, top_json;
 
   return result;
 end;

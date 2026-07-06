@@ -70,12 +70,6 @@
       return typeLabels[recordType] || String(recordType || "Record");
     }
 
-    function fileKindLabel(fileKind) {
-      if (fileKind === "photo") return "Photos";
-      if (fileKind === "logo") return "Logo";
-      return "Files";
-    }
-
     function renderStorageMetric(label, value, detail) {
       return `
         <article class="storage-metric">
@@ -176,20 +170,6 @@
       `;
     }
 
-    function renderTypeCountRow(row) {
-      const count = Number(row.file_count) || 0;
-      return `
-        <article class="storage-type-row">
-          <div>
-            <strong>${escapeHtml(recordTypeLabel(row.record_type))}</strong>
-            <span>${escapeHtml(fileKindLabel(row.file_kind))}</span>
-          </div>
-          <strong>${count}</strong>
-          <small>${escapeHtml(byteText(row.size_bytes))}</small>
-        </article>
-      `;
-    }
-
     function renderMonthlyUsageSummary(rows) {
       const monthWindow = 12;
       const monthlyBytes = rows.slice(-monthWindow).map((row) => Number(row.size_bytes) || 0);
@@ -274,9 +254,9 @@
       const allowanceBytes = Number(data.allowance_bytes) || 107374182400;
       const remainingBytes = Math.max(Number(data.remaining_bytes) || (allowanceBytes - totalBytes), 0);
       const photoCount = Number(data.photo_count) || 0;
-      const fileCount = Number(data.file_count) || 0;
+      const totalFileCount = Number(data.file_count) || 0;
+      const nonPhotoFileCount = Math.max(totalFileCount - photoCount, 0);
       const bucketTotals = Array.isArray(data.bucket_totals) ? data.bucket_totals : [];
-      const typeTotals = Array.isArray(data.type_totals) ? data.type_totals : [];
       const monthlyUsage = Array.isArray(data.monthly_usage) ? data.monthly_usage : [];
       const topFiles = Array.isArray(data.top_files) ? data.top_files : [];
       return `
@@ -284,7 +264,7 @@
           <div class="panel-header compact">
             <div>
               <h3>Storage Usage</h3>
-              <span>${ready ? `${Number(data.file_count) || 0} linked files tracked` : "loading storage usage"}</span>
+              <span>${ready ? `${totalFileCount} linked files tracked` : "loading storage usage"}</span>
             </div>
             <button class="secondary-button small" data-refresh-storage-dashboard type="button">Refresh</button>
           </div>
@@ -293,7 +273,7 @@
             ${renderStorageMetric("Used", byteText(totalBytes), `${percentText(data.usage_percent)} of plan storage`)}
             ${renderStorageMetric("Remaining", byteText(remainingBytes), `${percentText((remainingBytes / allowanceBytes) * 100)} open`)}
             ${renderStorageMetric("Photos", `${photoCount}`, "Image records linked to work, requests, equipment, and parts")}
-            ${renderStorageMetric("Files", `${fileCount}`, "Total linked storage records")}
+            ${renderStorageMetric("Files", `${nonPhotoFileCount}`, "Non-photo files only")}
             ${renderStorageMetric("Available", byteText(allowanceBytes), "Supabase Pro file storage")}
             ${renderStorageMetric("Largest Files", `${topFiles.length}/10`, "Top linked storage objects")}
           </div>
@@ -309,17 +289,6 @@
               </div>
               <div class="storage-bucket-list">
                 ${bucketTotals.map((bucket) => renderBucketRow(bucket, totalBytes)).join("") || `<p class="muted">No linked files found for this company yet.</p>`}
-              </div>
-            </section>
-            <section class="storage-type-counts">
-              <div class="settings-section-heading">
-                <div>
-                  <strong>Counts By Type</strong>
-                  <span>${typeTotals.length} groups</span>
-                </div>
-              </div>
-              <div class="storage-type-list">
-                ${typeTotals.map(renderTypeCountRow).join("") || `<p class="muted">No file counts available yet.</p>`}
               </div>
             </section>
             <section class="storage-largest-files">

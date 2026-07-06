@@ -25,14 +25,10 @@ const html = helpers.renderStorageDashboardPanel({
     remaining_bytes: 107141398528,
     usage_percent: 0.217,
     file_count: 3,
-    photo_count: 3,
+    photo_count: 2,
     bucket_totals: [
       { bucket_id: "work-order-photos", file_count: 2, size_bytes: 232673872 },
       { bucket_id: "asset-documents", file_count: 1, size_bytes: 110000 },
-    ],
-    type_totals: [
-      { record_type: "equipment", file_kind: "photo", file_count: 1, size_bytes: 110000 },
-      { record_type: "work_order", file_kind: "photo", file_count: 2, size_bytes: 232673872 },
     ],
     monthly_usage: [
       { month: "2026-06", month_label: "Jun 2026", file_count: 1, size_bytes: 110000, cumulative_bytes: 110000, remaining_bytes: 107374072400 },
@@ -56,8 +52,10 @@ const html = helpers.renderStorageDashboardPanel({
 assert.match(html, /Storage Usage/);
 assert.match(html, /100 GB/);
 assert.match(html, /99\.8 GB/);
-assert.match(html, /Photos[\s\S]*3/);
-assert.match(html, /Files[\s\S]*3/);
+assert.match(html, /3 linked files tracked/);
+assert.match(html, /Photos[\s\S]*2/);
+assert.match(html, /Files[\s\S]*1/);
+assert.match(html, /Non-photo files only/);
 assert.match(html, /Work order photos/);
 assert.match(html, /Equipment files/);
 assert.match(html, /Storage Rules/);
@@ -75,10 +73,7 @@ assert.match(html, /Target near 1 MB/);
 assert.match(html, /Non-image files over 25 MB are blocked/);
 assert.match(html, /JPG, PNG, WebP, GIF, HEIC, and HEIF images are accepted/);
 assert.match(html, /Resize to 1200px PNG when possible; blocked only if still over 25 MB/);
-assert.match(html, /Counts By Type/);
-assert.match(html, /2 groups/);
-assert.match(html, /Work Order[\s\S]*Photos[\s\S]*2/);
-assert.match(html, /Equipment[\s\S]*Photos[\s\S]*1/);
+assert.doesNotMatch(html, /Counts By Type/);
 assert.match(html, /Month Over Month Usage/);
 assert.match(html, /Largest Month/);
 assert.match(html, /12 Month Median/);
