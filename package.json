@@ -7,7 +7,8 @@
     "backup:storage": "node scripts/storage-backup-mirror.js",
     "storage:photos:dry-run": "node scripts/storage-photo-resize-existing.js --source=local",
     "storage:photos:resize": "node scripts/storage-photo-resize-existing.js --source=remote --execute",
-    "build:pilot:bundle": "esbuild src/render/emptyStateText.js --bundle --format=iife --outfile=src/bundles/emptyStateText.bundle.js --log-level=warning",
+    "build:runtime:bundles": "node scripts/build-runtime-bundles.js",
+    "build:pilot:bundle": "npm run build:runtime:bundles",
     "test:security:static": "node scripts/sql-security-static-audit.js",
     "test:security:boundary": "node scripts/security-boundary-probe.js",
     "test:smoke:live-manager": "playwright test tests/smoke/manager-requests-equipment-live.spec.js",
@@ -16,7 +17,7 @@
     "test:smoke:github-actions": "node scripts/verify-github-actions-run.js",
     "test:scripts:inventory": "node scripts/script-load-inventory.js",
     "test:migrations:static": "node scripts/migration-static-check.js",
-    "test:bundle:pilot": "npm run build:pilot:bundle && node tests/smoke/bundle-pilot-smoke.js",
+    "test:bundle:pilot": "npm run build:runtime:bundles && node tests/smoke/bundle-pilot-smoke.js && node tests/smoke/render-leaf-bundle-smoke.js",
     "test:lfes:strict": "node scripts/lfes-strict-check.js",
     "test:lfes:hosted": "node scripts/lfes-hosted-check.js",
     "cache:bump": "node scripts/bump-cache-tags.js"
