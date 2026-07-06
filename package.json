@@ -13,6 +13,8 @@
     "test:smoke:work-attach": "node tests/smoke/option-display-selection-smoke.js && node tests/smoke/work-order-creation-workflow-smoke.js && node tests/smoke/quick-fix-workflow-smoke.js && playwright test tests/smoke/work-attach-selector-browser.spec.js",
     "test:smoke:resources": "playwright test tests/smoke/resource-load.spec.js",
     "test:smoke:github-actions": "node scripts/verify-github-actions-run.js",
+    "test:lfes:strict": "node scripts/lfes-strict-check.js",
+    "test:lfes:hosted": "node scripts/lfes-hosted-check.js",
     "cache:bump": "node scripts/bump-cache-tags.js"
   },
   "devDependencies": {

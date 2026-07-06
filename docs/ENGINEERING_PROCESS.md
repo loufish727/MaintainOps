@@ -40,6 +40,13 @@ Browser smoke fallback:
 - If in-app browser control is unavailable, use CLI Playwright smokes for the touched browser interaction before deploy.
 - For equipment attachment regressions, run `npm run test:smoke:work-attach`; this combines selector-source, mutation-payload, and browser DOM checks.
 
+Strict LFES command:
+
+- Before pushing meaningful app, security, storage, role, or workflow changes, run `npm run test:lfes:strict`.
+- The strict command runs security static checks, security boundary probes, the broad Node smoke sweep, work-attachment smokes, targeted browser regression smokes, and local resource-load verification against a local static server.
+- After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
+- A targeted smoke may still be required for a touched path that is not covered by the strict command.
+
 Unsaved form input must survive background system events:
 
 - Background auth/session events, cache refreshes, read-only reloads, and polling-style updates must not rebuild active create/edit forms unless the user explicitly navigated, submitted, or signed out.

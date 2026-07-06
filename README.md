@@ -21,6 +21,8 @@ MaintainOps is being built for small maintenance teams that need to:
 
 The current app is Supabase-backed. Before running it locally, execute [supabase/schema.sql](supabase/schema.sql), then the current `supabase/step-next-*.sql` files in order, and add your project credentials to [supabase-config.js](supabase-config.js). The current setup order is listed in [docs/supabase-architecture.md](docs/supabase-architecture.md).
 
+`supabase-config.js` contains the browser-safe Supabase URL and publishable anon key. It is not a service-role secret. Row level security, private buckets, scoped RPCs, and explicit database grants are the security boundary; never commit service-role keys.
+
 Open [index.html](index.html) in a browser or serve the repo with a local web server.
 
 ## Reviewer Starting Points
@@ -36,11 +38,24 @@ For a concise external review, start with:
 - [docs/BACKUP_RESTORE_VALIDATION.md](docs/BACKUP_RESTORE_VALIDATION.md)
 - [docs/PILOT_HARDENING_PLAN.md](docs/PILOT_HARDENING_PLAN.md)
 - [docs/ENGINEERING_PROCESS.md](docs/ENGINEERING_PROCESS.md)
+- [docs/BUNDLING_AND_MIGRATION_PLAN.md](docs/BUNDLING_AND_MIGRATION_PLAN.md)
 - [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 
 ## Engineering Notes
 
 MaintainOps is being hardened with scoped changes, smoke checks, live verification where needed, and documented public checkpoints. Detailed internal process notes are kept outside the public repository.
+
+Strict local LFES before push:
+
+```bash
+npm run test:lfes:strict
+```
+
+Hosted/deployment LFES after push:
+
+```bash
+npm run test:lfes:hosted
+```
 
 Original planning docs:
 

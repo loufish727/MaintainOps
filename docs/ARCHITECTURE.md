@@ -10,7 +10,7 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It is intenti
 
 - `app.js`
   - Owns the current app shell authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, module wiring, dependency injection, and event-module composition.
-  - Current line count is about 4,615 after ongoing modularization work.
+  - Current line count is about 5,500 after ongoing modularization work.
   - Remaining authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`; additional extraction should be based on ownership clarity and operational risk reduction, not line count alone.
 
 - `src/`
@@ -77,12 +77,14 @@ Known company roles:
 - `admin`
 - `manager`
 - `technician`
+- `accounting`
 
 Role behavior:
 
 - Admins have full company setup, team, settings, delete, and work access.
-- Managers can manage work, requests, company settings, parts/equipment deletes, location switching, and technician invites. Managers cannot grant manager/admin authority or change team roles.
+- Managers can manage work, requests, company settings, parts/equipment deletes, location switching, and technician invites. Managers can view Financial records but cannot edit financial fields. Managers cannot grant manager/admin authority or change team roles.
 - Technicians use My Work, Work Orders, Quick Fix, Requests, Equipment, PM, Procedure Checklist, Parts, Messages, comments, photos, and Team profile settings. Technicians can turn requests into work orders, create work, and claim unassigned work for themselves. They cannot assign work to other users, assign outside vendors, clear assignments, or steal work already assigned to someone else. Technicians do not see Admin Setup/Settings and can switch locations only when Mobile tech is enabled.
+- Accounting users have technician-level view/use access for operational screens plus Financial and Conversions access. They can edit financial fields only. They cannot create, edit, delete, assign, or otherwise mutate operational maintenance records.
 - Legacy `member` rows are treated as technicians and should be migrated to `technician` with `supabase/step-next-role-model-technician-manager-admin.sql`.
 
 ## Work Order Statuses

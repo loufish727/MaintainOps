@@ -4,6 +4,12 @@ MaintainOps uses Supabase Auth, Postgres RLS, scoped RPCs, and private storage b
 
 ## Current Verification Commands
 
+Strict local LFES command:
+
+```bash
+npm run test:lfes:strict
+```
+
 Static SQL/RPC audit:
 
 ```bash
@@ -27,7 +33,16 @@ npm run test:security:boundary
 
 ## Latest Local Results
 
-Last checked: 2026-05-28.
+Last checked: 2026-07-06.
+
+Strict LFES:
+
+- security static audit: PASS.
+- security boundary probe: PASS.
+- broad Node smoke sweep: PASS.
+- work attachment smoke suite: PASS.
+- equipment-history and date-field browser regression smokes: PASS.
+- local resource-load smoke: PASS.
 
 Static SQL audit:
 
