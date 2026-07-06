@@ -1,4 +1,6 @@
-﻿const app = document.querySelector("#app");
+import { createCompanyLocationStateHelpers } from "./src/appShell/companyLocationState.js";
+
+const app = document.querySelector("#app");
 
 const {
   STATUS_OPTIONS,
@@ -1356,61 +1358,22 @@ const {
 });
 
 // OBSERVABILITY: Active location is operational state; keep it scoped per user/company so reopen behavior stays explainable.
-function activeLocationStorageKey(companyId = activeCompanyId, userId = session?.user?.id) {
-  return companyId && userId
-    ? `${ACTIVE_LOCATION_STORAGE_KEY}:${userId}:${companyId}`
-    : ACTIVE_LOCATION_STORAGE_KEY;
-}
-
-function readStoredActiveLocationId(companyId = activeCompanyId, userId = session?.user?.id) {
-  const scopedKey = activeLocationStorageKey(companyId, userId);
-  if (scopedKey !== ACTIVE_LOCATION_STORAGE_KEY) {
-    const scopedValue = localStorage.getItem(scopedKey);
-    if (scopedValue) return scopedValue;
-  }
-  return localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
-}
-
-function persistActiveLocationId(locationId, companyId = activeCompanyId, userId = session?.user?.id) {
-  const value = locationId || "";
-  const scopedKey = activeLocationStorageKey(companyId, userId);
-  if (scopedKey !== ACTIVE_LOCATION_STORAGE_KEY) {
-    localStorage.setItem(scopedKey, value);
-    localStorage.removeItem(ACTIVE_LOCATION_STORAGE_KEY);
-    return;
-  }
-  localStorage.setItem(ACTIVE_LOCATION_STORAGE_KEY, value);
-}
-
-function activeCompanyMembership() {
-  return companies.find((company) => company.id === activeCompanyId) || null;
-}
-
-function companyOptionLabel(company) {
-  const name = company?.name || "Company";
-  const duplicateCount = companies.filter((item) => String(item.name || "").trim().toLowerCase() === String(name).trim().toLowerCase()).length;
-  return duplicateCount > 1 ? `${name} (${String(company.id || "").slice(0, 8)})` : name;
-}
-
-function storedLocationForLoadedCompany() {
-  const scopedKey = activeLocationStorageKey();
-  const scopedLocationId = scopedKey !== ACTIVE_LOCATION_STORAGE_KEY ? localStorage.getItem(scopedKey) : "";
-  if (scopedLocationId && locations.some((location) => location.id === scopedLocationId)) {
-    return scopedLocationId;
-  }
-  const storedLocationId = readStoredActiveLocationId();
-  if (storedLocationId && locations.some((location) => location.id === storedLocationId)) {
-    return storedLocationId;
-  }
-  if (activeLocationId && locations.some((location) => location.id === activeLocationId)) {
-    return activeLocationId;
-  }
-  const defaultLocationId = activeCompanyMembership()?.default_location_id || "";
-  if (defaultLocationId && locations.some((location) => location.id === defaultLocationId)) {
-    return defaultLocationId;
-  }
-  return locations[0]?.id || "";
-}
+const {
+  activeLocationStorageKey,
+  readStoredActiveLocationId,
+  persistActiveLocationId,
+  activeCompanyMembership,
+  companyOptionLabel,
+  storedLocationForLoadedCompany,
+} = createCompanyLocationStateHelpers({
+  activeLocationStorageKeyBase: ACTIVE_LOCATION_STORAGE_KEY,
+  storage: localStorage,
+  getActiveCompanyId: () => activeCompanyId,
+  getSessionUserId: () => session?.user?.id,
+  getCompanies: () => companies,
+  getLocations: () => locations,
+  getActiveLocationId: () => activeLocationId,
+});
 
 document.addEventListener("click", (event) => {
   const confirmPartDeleteButton = event.target.closest("[data-confirm-delete-part]");

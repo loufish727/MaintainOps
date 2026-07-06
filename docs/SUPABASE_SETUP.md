@@ -37,7 +37,8 @@ Fresh setup should start with:
 
 1. Run `supabase/schema.sql`.
 2. Run the `supabase/step-next-*.sql` files that are not already included in the schema.
-3. Refresh the browser after SQL changes.
+3. For any new database change after this repo checkpoint, add a dated file in `supabase/migrations/YYYYMMDDHHMM_description.sql` and record live application in `docs/APPLIED_MIGRATIONS.md`.
+4. Refresh the browser after SQL changes.
 
 The project has evolved quickly, so when in doubt, compare `schema.sql` and the step files before assuming a fresh deploy is complete.
 

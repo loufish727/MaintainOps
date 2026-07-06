@@ -16,6 +16,7 @@ Live status:
 
 - `supabase/step-next-applied-migrations.sql` was applied to project `lbphkzznvvumemdkqoay` on 2026-06-11 through `npx supabase db query --linked --file`.
 - Initial rows were backfilled for `step-next-applied-migrations.sql` and `step-next-invite-links.sql`.
+- The first dated migration file now exists in the repo at `supabase/migrations/202607061430_applied_migration_metadata.sql`; it is not listed as applied until live execution and verification are completed.
 
 Repo source:
 

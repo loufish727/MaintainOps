@@ -45,6 +45,7 @@ Strict LFES command:
 - Before pushing meaningful app, security, storage, role, or workflow changes, run `npm run test:lfes:strict`.
 - The strict command runs security static checks, security boundary probes, the broad Node smoke sweep, work-attachment smokes, targeted browser regression smokes, and local resource-load verification against a local static server.
 - After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
+- `npm run release:verify` now sequences hashed bundle generation, strict LFES, and hosted LFES in one command. Set `MAINTAINOPS_RELEASE_SKIP_HOSTED=1` when you need the local portion before push.
 - A targeted smoke may still be required for a touched path that is not covered by the strict command.
 
 Unsaved form input must survive background system events:

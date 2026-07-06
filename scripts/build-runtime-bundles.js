@@ -34,14 +34,13 @@ function removeOldBundleFiles(baseName) {
 function updateIndexHtml(manifest) {
   let html = fs.readFileSync(indexPath, "utf8");
   html = html.replace(
-    /<script defer src="src\/bundles\/runtime(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/,
+    /^[ \t]*<script defer src="src\/bundles\/runtime(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/m,
     `    <script defer src="src/bundles/${manifest.runtime}"></script>`
   );
   html = html.replace(
-    /<script defer src="src\/bundles\/appShell(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/,
+    /^[ \t]*<script defer src="src\/bundles\/appShell(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/m,
     `    <script defer src="src/bundles/${manifest.appShell}"></script>`
   );
-  html = html.replace(/\n {8}<script defer src="src\/bundles\//g, "\n    <script defer src=\"src/bundles/");
   fs.writeFileSync(indexPath, html);
 }
 
