@@ -92,7 +92,7 @@ const requiredResources = [
   "src/render/dashboardDisplay.js",
   "src/render/iconDisplay.js",
   "src/render/equipmentLabels.js",
-  "src/render/emptyStateText.js",
+  "src/bundles/emptyStateText.bundle.js",
   "src/render/requestDisplay.js",
   "src/render/globalSearchDisplay.js",
   "src/render/workQueueDisplay.js",

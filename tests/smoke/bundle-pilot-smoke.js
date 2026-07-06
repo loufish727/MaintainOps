@@ -4,7 +4,7 @@ const vm = require("node:vm");
 const esbuild = require("esbuild");
 
 const root = path.resolve(__dirname, "..", "..");
-const bundlePath = path.join(root, "dist", "pilot", "emptyStateText.bundle.js");
+const bundlePath = path.join(root, "src", "bundles", "emptyStateText.bundle.js");
 
 if (!fs.existsSync(bundlePath)) {
   esbuild.buildSync({

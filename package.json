@@ -7,7 +7,7 @@
     "backup:storage": "node scripts/storage-backup-mirror.js",
     "storage:photos:dry-run": "node scripts/storage-photo-resize-existing.js --source=local",
     "storage:photos:resize": "node scripts/storage-photo-resize-existing.js --source=remote --execute",
-    "build:pilot:bundle": "esbuild src/render/emptyStateText.js --bundle --format=iife --outfile=dist/pilot/emptyStateText.bundle.js --log-level=warning",
+    "build:pilot:bundle": "esbuild src/render/emptyStateText.js --bundle --format=iife --outfile=src/bundles/emptyStateText.bundle.js --log-level=warning",
     "test:security:static": "node scripts/sql-security-static-audit.js",
     "test:security:boundary": "node scripts/security-boundary-probe.js",
     "test:smoke:live-manager": "playwright test tests/smoke/manager-requests-equipment-live.spec.js",
