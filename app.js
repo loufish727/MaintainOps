@@ -2287,7 +2287,6 @@ async function loadCompanyData() {
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
     runWorkspaceLoader("Asset financials", loadAssetFinancials),
-    runWorkspaceLoader("Storage dashboard", loadStorageDashboard),
     ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
   ]);
   applyWorkspaceLoadWarnings();
@@ -2298,6 +2297,7 @@ function initialWorkspaceLoaders() {
   const loaders = [];
   if (activeSection === "messages") loaders.push(["Messages", loadMessageCenter]);
   if (activeSection === "settings") loaders.push(["Public request links", loadPublicRequestLinks]);
+  if (activeSection === "setup") loaders.push(["Storage dashboard", loadStorageDashboard]);
   if (activeSection === "requests") loaders.push(["Request photos", addSignedRequestPhotoUrls]);
   if (activeWorkOrderId || activeAssetId || activeSection === "parts") {
     loaders.push(
