@@ -120,19 +120,18 @@
       const monthWindow = 12;
       const monthlyBytes = rows.slice(-monthWindow).map((row) => Number(row.size_bytes) || 0);
       while (monthlyBytes.length < monthWindow) monthlyBytes.unshift(0);
-      const totalBytes = monthlyBytes.reduce((sum, value) => sum + value, 0);
-      const averageBytes = totalBytes / monthWindow;
+      const largestMonthBytes = monthlyBytes.reduce((max, value) => Math.max(max, value), 0);
       const median = medianBytes(monthlyBytes);
       const latestRemaining = Math.max(Number(rows[rows.length - 1]?.remaining_bytes) || 0, 0);
-      const monthsToCap = averageBytes > 0 ? latestRemaining / averageBytes : 0;
-      const capText = averageBytes > 0
-        ? `At the average rate of ${byteText(averageBytes)} per month, the storage cap is estimated in ${durationTextFromMonths(monthsToCap)}.`
-        : "At the current average rate, there is not enough usage history to estimate the storage cap.";
+      const monthsToCap = largestMonthBytes > 0 ? latestRemaining / largestMonthBytes : 0;
+      const capText = largestMonthBytes > 0
+        ? `At the largest monthly usage rate of ${byteText(largestMonthBytes)} per month, the storage cap is estimated in ${durationTextFromMonths(monthsToCap)}.`
+        : "At the current usage rate, there is not enough usage history to estimate the storage cap.";
       return `
         <div class="storage-month-summary" aria-label="Last 12 months storage trend">
           <article>
-            <span>12 Month Average</span>
-            <strong>${escapeHtml(byteText(averageBytes))}/mo</strong>
+            <span>Largest Month</span>
+            <strong>${escapeHtml(byteText(largestMonthBytes))}/mo</strong>
           </article>
           <article>
             <span>12 Month Median</span>
