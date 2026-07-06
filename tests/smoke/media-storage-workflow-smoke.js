@@ -126,9 +126,8 @@ function createWorkflow(options = {}) {
 
   const largeHeicPhoto = createWorkflow();
   const largeHeicError = await largeHeicPhoto.workflow.addPhotoToWorkOrder("wo-1", { name: "phone.heic", type: "image/heic", size: 8 * 1024 * 1024 });
-  assert.match(largeHeicError.message, /over 5 MB/);
-  assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "upload"), false);
-  assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "appIssue" && /Upload failed: work order photo/.test(call[1].title) && /phone.heic/.test(call[1].details)), true);
+  assert.equal(largeHeicError, null);
+  assert.equal(largeHeicPhoto.calls.some((call) => call[0] === "upload" && call[1] === "work-order-photos"), true);
 
   const requestPhoto = createWorkflow();
   const requestError = await requestPhoto.workflow.addPhotoToMaintenanceRequest("request-1", { name: "request.png", type: "image/png", size: 321 });
@@ -334,6 +333,16 @@ function createWorkflow(options = {}) {
   assert.equal(optimizedPhoto.blob.size <= 1.5 * 1024 * 1024, true);
   assert.deepEqual(optimizerCalls.slice(0, 2).map((call) => [call.width, call.quality]), [[2000, 0.82], [1800, 0.78]]);
   assert.equal(optimizerCalls.some((call) => call.closed), true);
+
+  optimizerCalls.length = 0;
+  const archivedPhoto = await optimizerWorkflow.optimizePhoto(
+    { name: "work-order.png", type: "image/png", size: 5 * 1024 * 1024 },
+    { targetBytes: 256 * 1024, passes: [{ maxDimension: 768, quality: 0.78 }] }
+  );
+  assert.equal(archivedPhoto.fileName, "work-order.jpg");
+  assert.equal(archivedPhoto.contentType, "image/jpeg");
+  assert.equal(optimizerCalls[0].width, 768);
+  assert.equal(optimizerCalls[0].quality, 0.78);
 
   optimizerCalls.length = 0;
   const optimizedInferredPhoto = await optimizerWorkflow.optimizePhoto({ name: "blank-type.jpg", type: "", size: 5 * 1024 * 1024 });

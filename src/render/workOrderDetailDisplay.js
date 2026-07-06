@@ -335,7 +335,7 @@
         <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
           <summary>Photos</summary>
         ${canEditOperational ? `<form class="form-grid relationship-detail photo" id="photo-form">
-          <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Images only. PDF quotes/documents are attached from equipment or parts. Photos are optimized near 1.5 MB.</small></label>
+          <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Images only. PDF quotes/documents are attached from equipment or parts. Photos are resized to 768px.</small></label>
           <p class="error-text" id="photo-error"></p>
           <button class="secondary-button" type="submit">Upload Photo</button>
         </form>` : ""}

@@ -239,7 +239,7 @@ Known storage usage:
 - Part documents/receipts/invoices.
 - Equipment photos, schematics, settings, manuals, and related machine files.
 
-Client-side image resizing is used for work order photos, maintenance request photos, part/equipment image files, and logos to avoid storing oversized uploads. Large HEIC/HEIF photos may need to be converted, screenshotted, or retaken as JPG/PNG if the browser cannot optimize them.
+Client-side image resizing is used for work order photos, maintenance request photos, part/equipment image files, and logos to avoid storing oversized uploads. Work order and maintenance request photos are capped at a 768px max dimension; equipment and part image files keep the larger operational-document optimization path. Large HEIC/HEIF photos may need to be converted, screenshotted, or retaken as JPG/PNG if the browser cannot optimize them.
 
 ## Common Recovery Snippets
 

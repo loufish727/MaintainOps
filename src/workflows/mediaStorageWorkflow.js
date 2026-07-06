@@ -300,7 +300,7 @@
         await reportUploadFailure("work order photo", file, validationError);
         return new Error(validationError);
       }
-      const optimized = await optimizePhoto(file);
+      const optimized = await optimizePhoto(file, workOrderPhotoOptimizationOptions());
       const optimizedError = validateOptimizedPhoto(optimized);
       if (optimizedError) {
         await reportUploadFailure("work order photo", file, optimizedError);
@@ -361,7 +361,7 @@
         await reportUploadFailure("request photo", file, validationError);
         return new Error(validationError);
       }
-      const optimized = await optimizePhoto(file);
+      const optimized = await optimizePhoto(file, workOrderPhotoOptimizationOptions());
       const optimizedError = validateOptimizedPhoto(optimized);
       if (optimizedError) {
         await reportUploadFailure("request photo", file, optimizedError);
@@ -441,9 +441,20 @@
       }
     }
 
-    async function optimizePhoto(file) {
-      if (typeof deps.optimizePhotoOverride === "function") return deps.optimizePhotoOverride(file);
-      const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+    function workOrderPhotoOptimizationOptions() {
+      return {
+        targetBytes: 256 * 1024,
+        passes: [
+          { maxDimension: 768, quality: 0.78 },
+          { maxDimension: 768, quality: 0.74 },
+          { maxDimension: 768, quality: 0.70 },
+        ],
+      };
+    }
+
+    async function optimizePhoto(file, options = {}) {
+      if (typeof deps.optimizePhotoOverride === "function") return deps.optimizePhotoOverride(file, options);
+      const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
       const contentType = contentTypeForFile(file);
       if (!imageTypes.includes(contentType)) {
         return {
@@ -456,8 +467,8 @@
       try {
         if (!createImageBitmapRef) throw new Error("Browser image optimization is unavailable.");
         const bitmap = await createImageBitmapRef(file);
-        const targetBytes = 1.5 * 1024 * 1024;
-        const optimizationPasses = [
+        const targetBytes = Number(options.targetBytes || 0) || 1.5 * 1024 * 1024;
+        const optimizationPasses = options.passes || [
           { maxDimension: 2000, quality: 0.82 },
           { maxDimension: 1800, quality: 0.78 },
           { maxDimension: 1600, quality: 0.74 },
@@ -523,9 +534,6 @@
       const contentType = contentTypeForFile(file);
       if (!photoMimeTypes.has(contentType)) {
         return "This upload box accepts photos only. PDF quotes and documents need to be attached in an equipment or part file area.";
-      }
-      if (!isOptimizableImage(file) && Number(file.size || 0) > photoUploadLimitBytes) {
-        return "This photo is over 5 MB and the browser cannot optimize that format. Try a JPG/PNG, screenshot it, or choose a smaller photo.";
       }
       return "";
     }

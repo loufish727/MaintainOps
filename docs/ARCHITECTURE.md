@@ -55,7 +55,7 @@ Important shared tables include:
 
 Every shared operational record should include `company_id`. Location-scoped operational records should include `location_id`.
 
-Request photo intake stores one optional optimized photo on `maintenance_requests` with `photo_*` metadata fields and the private `maintenance-request-photos` storage bucket. QR request photos use the same client-side optimization helper as work-order photos: image uploads are resized to a 2400px max dimension and encoded as JPEG at quality 0.88 when the browser supports it.
+Request photo intake stores one optional optimized photo on `maintenance_requests` with `photo_*` metadata fields and the private `maintenance-request-photos` storage bucket. QR request photos use the same client-side optimization helper as work-order photos: image uploads are resized to a 768px max dimension and encoded as JPEG when the browser supports it.
 
 ## Company And Location Model
 
