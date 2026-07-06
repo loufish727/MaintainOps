@@ -66,8 +66,8 @@ assert.match(html, /Resize to 768px, target near 256 KB; blocked only if still o
 assert.match(html, /Images are resized before upload/);
 assert.match(html, /Target near 1 MB/);
 assert.match(html, /Non-image files over 25 MB are blocked/);
-assert.match(html, /Image files are accepted, then resized before upload/);
-assert.match(html, /Resize to 1200px PNG; blocked only if the browser cannot resize it or it is still over 25 MB/);
+assert.match(html, /JPG, PNG, WebP, GIF, HEIC, and HEIF images are accepted/);
+assert.match(html, /Resize to 1200px PNG when possible; blocked only if still over 25 MB/);
 assert.match(html, /Month Over Month Usage/);
 assert.match(html, /Largest Month/);
 assert.match(html, /12 Month Median/);

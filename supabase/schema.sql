@@ -1278,7 +1278,12 @@ on conflict (id) do nothing;
 update storage.buckets
 set file_size_limit = 26214400,
     allowed_mime_types = array[
-      'image/png'
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif'
     ]
 where id = 'company-logos';
 

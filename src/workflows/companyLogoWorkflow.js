@@ -7,7 +7,7 @@
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
     const logoUploadLimitBytes = 25 * 1024 * 1024;
-    const logoStoredMimeTypes = new Set(["image/png"]);
+    const logoMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"]);
 
     async function uploadCompanyLogo(event) {
       event.preventDefault();
@@ -112,8 +112,12 @@
           contentType: "image/png",
         };
       } catch (error) {
-        consoleRef.warn("Logo optimization failed.", error);
-        throw new Error("This logo image could not be resized by the browser. Try saving it as JPG, PNG, or WebP first.");
+        consoleRef.warn("Logo optimization failed; uploading original.", error);
+        return {
+          blob: file,
+          fileName: deps.safeFileName(file.name || "logo"),
+          contentType,
+        };
       }
     }
 
@@ -135,18 +139,18 @@
 
     function validateLogoUpload(file) {
       const contentType = contentTypeForLogo(file);
-      if (!contentType.startsWith("image/")) {
-        return "Company logos must be image files.";
+      if (!logoMimeTypes.has(contentType)) {
+        return "Company logos must be JPG, PNG, WebP, GIF, HEIC, or HEIF images.";
       }
       return "";
     }
 
     function validateOptimizedLogo(optimized) {
-      if (!logoStoredMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
-        return "Company logos must be resized to PNG before upload.";
+      if (!logoMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
+        return "Company logos must be JPG, PNG, WebP, GIF, HEIC, or HEIF images.";
       }
       if (Number(optimized?.blob?.size || 0) > logoUploadLimitBytes) {
-        return "This logo is still over 25 MB after resizing. Try a smaller logo image.";
+        return "This logo is still over 25 MB after processing. Try a smaller logo image.";
       }
       return "";
     }

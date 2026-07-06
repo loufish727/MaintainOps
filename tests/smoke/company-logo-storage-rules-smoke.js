@@ -11,7 +11,12 @@ for (const sql of [stepSql, setupSql, schemaSql]) {
   assert.match(sql, /where id = 'company-logos'/);
   assert.match(sql, /file_size_limit = 26214400/);
   assert.match(sql, /allowed_mime_types = array\[/);
+  assert.match(sql, /'image\/jpeg'/);
   assert.match(sql, /'image\/png'/);
+  assert.match(sql, /'image\/webp'/);
+  assert.match(sql, /'image\/gif'/);
+  assert.match(sql, /'image\/heic'/);
+  assert.match(sql, /'image\/heif'/);
 }
 
 console.log("company logo storage rules smoke passed");

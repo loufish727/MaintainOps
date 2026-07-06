@@ -109,8 +109,8 @@
         },
         {
           label: "Company Logos",
-          cap: "Image files are accepted, then resized before upload",
-          optimize: "Resize to 1200px PNG; blocked only if the browser cannot resize it or it is still over 25 MB",
+          cap: "JPG, PNG, WebP, GIF, HEIC, and HEIF images are accepted",
+          optimize: "Resize to 1200px PNG when possible; blocked only if still over 25 MB",
         },
       ];
       return `

@@ -6,17 +6,17 @@ const indexHtml = fs.readFileSync(path.join(__dirname, "..", "..", "index.html")
 
 assert.match(
   indexHtml,
-  /styles\.css\?v=mo-build-20260706-storage-dashboard-rules-3/,
+  /styles\.css\?v=mo-build-20260706-storage-dashboard-rules-4/,
   "styles.css must use the storage dashboard rules cache tag"
 );
 assert.match(
   indexHtml,
-  /src\/render\/storageDashboardDisplay\.js\?v=mo-build-20260706-storage-dashboard-rules-3/,
+  /src\/render\/storageDashboardDisplay\.js\?v=mo-build-20260706-storage-dashboard-rules-4/,
   "storageDashboardDisplay must be loaded with the storage dashboard rules cache tag"
 );
 assert.match(
   indexHtml,
-  /src\/workflows\/companyLogoWorkflow\.js\?v=mo-build-20260706-logo-rules-2/,
+  /src\/workflows\/companyLogoWorkflow\.js\?v=mo-build-20260706-logo-rules-3/,
   "companyLogoWorkflow must be loaded with the logo rules cache tag"
 );
 assert.match(

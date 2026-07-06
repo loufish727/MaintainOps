@@ -91,7 +91,7 @@ class FakeFormData {
     },
   });
   assert.equal(calls.filter((call) => call[0] === "upload").length, uploadCount);
-  assert.equal(errorTarget.textContent, "Company logos must be image files.");
+  assert.equal(errorTarget.textContent, "Company logos must be JPG, PNG, WebP, GIF, HEIC, or HEIF images.");
 
   const oversizedWorkflow = createCompanyLogoWorkflow({
     documentRef: {
@@ -115,7 +115,7 @@ class FakeFormData {
       },
     },
   });
-  assert.equal(errorTarget.textContent, "This logo is still over 25 MB after resizing. Try a smaller logo image.");
+  assert.equal(errorTarget.textContent, "This logo is still over 25 MB after processing. Try a smaller logo image.");
 
   console.log("company logo workflow smoke passed");
 })().catch((error) => {
