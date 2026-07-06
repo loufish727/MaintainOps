@@ -11,8 +11,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/render\/storageDashboardDisplay\.js\?v=mo-build-20260706-storage-dashboard-remaining-1/,
-  "storageDashboardDisplay must be loaded with the storage dashboard remaining cache tag"
+  /src\/render\/storageDashboardDisplay\.js\?v=mo-build-20260706-storage-dashboard-precision-1/,
+  "storageDashboardDisplay must be loaded with the storage dashboard precision cache tag"
 );
 assert.match(
   indexHtml,

@@ -21,8 +21,14 @@
     function byteText(value) {
       const bytes = Number(value) || 0;
       if (!bytes) return "0 B";
-      if (bytes >= 1099511627776) return `${(bytes / 1099511627776).toFixed(bytes >= 10995116277760 ? 0 : 1)} TB`;
-      if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(bytes >= 10737418240 ? 0 : 1)} GB`;
+      if (bytes >= 1099511627776) {
+        const terabytes = bytes / 1099511627776;
+        return `${terabytes.toFixed(Number.isInteger(terabytes) ? 0 : 1)} TB`;
+      }
+      if (bytes >= 1073741824) {
+        const gigabytes = bytes / 1073741824;
+        return `${gigabytes.toFixed(Number.isInteger(gigabytes) ? 0 : 1)} GB`;
+      }
       return formatBytes(bytes) || "0 B";
     }
 

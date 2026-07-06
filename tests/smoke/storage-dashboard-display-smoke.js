@@ -14,25 +14,25 @@ const html = helpers.renderStorageDashboardPanel({
   ready: true,
   error: "",
   dashboard: {
-    total_bytes: 330000,
+    total_bytes: 232783872,
     allowance_bytes: 107374182400,
-    remaining_bytes: 107373852400,
-    usage_percent: 0.001,
+    remaining_bytes: 107141398528,
+    usage_percent: 0.217,
     file_count: 3,
     bucket_totals: [
-      { bucket_id: "work-order-photos", file_count: 2, size_bytes: 220000 },
+      { bucket_id: "work-order-photos", file_count: 2, size_bytes: 232673872 },
       { bucket_id: "asset-documents", file_count: 1, size_bytes: 110000 },
     ],
     monthly_usage: [
       { month: "2026-06", month_label: "Jun 2026", file_count: 1, size_bytes: 110000, cumulative_bytes: 110000, remaining_bytes: 107374072400 },
-      { month: "2026-07", month_label: "Jul 2026", file_count: 2, size_bytes: 220000, cumulative_bytes: 330000, remaining_bytes: 107373852400 },
+      { month: "2026-07", month_label: "Jul 2026", file_count: 2, size_bytes: 232673872, cumulative_bytes: 232783872, remaining_bytes: 107141398528 },
     ],
     top_files: [
       {
         bucket_id: "work-order-photos",
         object_path: "company/work/photo.jpg",
         file_name: "photo<script>.jpg",
-        size_bytes: 220000,
+        size_bytes: 232673872,
         record_type: "work_order",
         linked_record_id: "work-1",
         linked_record_label: "WO <danger>",
@@ -44,6 +44,7 @@ const html = helpers.renderStorageDashboardPanel({
 
 assert.match(html, /Storage Usage/);
 assert.match(html, /100 GB/);
+assert.match(html, /99\.8 GB/);
 assert.match(html, /Work order photos/);
 assert.match(html, /Equipment files/);
 assert.match(html, /Month Over Month Usage/);
