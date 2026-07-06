@@ -105,6 +105,12 @@
           .order("created_at", { ascending: false });
       }
 
+      if (state("workSort") === "assigned") {
+        return query
+          .order("assigned_to", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      }
+
       return query.order("created_at", { ascending: false });
     }
 

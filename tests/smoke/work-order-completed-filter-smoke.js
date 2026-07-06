@@ -43,6 +43,7 @@ function createQuery() {
 }
 
 let activeStatusFilter = "completed";
+let workSort = "newest";
 const queryHelpers = createWorkOrderQueryFilterHelpers({
   activeCompanyId: () => "company-1",
   activeLocationId: () => "loc-1",
@@ -55,7 +56,7 @@ const queryHelpers = createWorkOrderQueryFilterHelpers({
   session: () => ({ user: { id: "user-1" } }),
   searchQuery: () => "",
   workOrderRelatedSearch: () => ({ assetIds: [], procedureIds: [], workOrderIds: [] }),
-  workSort: () => "newest",
+  workSort: () => workSort,
   postgrestSearchTerm: () => "",
   isoDate: () => "2026-07-01",
   isoDateTime: (value) => value.toISOString(),
@@ -76,12 +77,22 @@ assert.deepEqual(sorted.calls, [
   ["order", "created_at", { ascending: false }],
 ]);
 
+activeStatusFilter = "active";
+workSort = "assigned";
+const assignedSorted = createQuery();
+queryHelpers.applyWorkOrderSort(assignedSorted);
+assert.deepEqual(assignedSorted.calls, [
+  ["order", "assigned_to", { ascending: true, nullsFirst: false }],
+  ["order", "created_at", { ascending: false }],
+]);
+
 const filterHelpers = createWorkOrderStatusFilterDisplayHelpers({
   getActiveStatusFilter: () => activeStatusFilter,
   getDueState: () => ({ className: "" }),
   isCompletedThisMonth: () => false,
   isCompletedThisWeek: () => false,
 });
+activeStatusFilter = "completed";
 assert.equal(filterHelpers.workOrderMatchesStatusFilter({ status: "completed" }), true);
 assert.equal(filterHelpers.workOrderMatchesStatusFilter({ status: "open" }), false);
 
@@ -94,6 +105,17 @@ const ordered = [
   { id: "new", status: "completed", completed_at: "2026-07-01T00:00:00Z", created_at: "2026-06-01T00:00:00Z" },
 ].sort(sortHelpers.compareWorkOrders);
 assert.equal(ordered[0].id, "new");
+
+const assignedSortHelpers = createWorkOrderSortDisplayHelpers({
+  getActiveStatusFilter: () => "active",
+  getWorkSort: () => "assigned",
+  assignmentLabel: (workOrder) => workOrder.label,
+});
+const assignedOrder = [
+  { id: "z", label: "Zoey", created_at: "2026-07-01T00:00:00Z" },
+  { id: "a", label: "Alex", created_at: "2026-06-01T00:00:00Z" },
+].sort(assignedSortHelpers.compareWorkOrders);
+assert.equal(assignedOrder[0].id, "a");
 
 const dashboard = createDashboardDisplayHelpers({
   getWorkOrderDashboardCounts: () => ({ activeWork: 1, newWork: 1, inProgress: 0, blocked: 0, overdue: 0, completedAll: 12, completedMonth: 4, completedWeek: 2 }),

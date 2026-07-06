@@ -555,6 +555,7 @@ const {
 } = createWorkOrderSortDisplayHelpers({
   getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
   getWorkSort: () => workspaceUiState.getWorkSort(),
+  assignmentLabel: (workOrder) => assignmentLabel(workOrder),
 });
 const {
   recordLocationId,
@@ -3363,6 +3364,7 @@ function renderWorkspace() {
                       ["newest", "Newest"],
                       ["due", "Due First"],
                       ["priority", "Priority"],
+                      ["assigned", "Assigned"],
                     ].map(([id, label]) => `
                       <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
                     `).join("")}
