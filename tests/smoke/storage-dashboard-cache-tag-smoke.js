@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const indexHtml = fs.readFileSync(path.join(__dirname, "..", "..", "index.html"), "utf8");
+const runtimeEntry = fs.readFileSync(path.join(__dirname, "..", "..", "src", "bundles", "runtime.entry.js"), "utf8");
 
 assert.match(
   indexHtml,
@@ -11,23 +12,23 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /src\/render\/storageDashboardDisplay\.js\?v=mo-build-20260706-storage-dashboard-largest-month-1/,
-  "storageDashboardDisplay must be loaded with the storage dashboard rules cache tag"
+  /src\/bundles\/runtime\.[a-f0-9]{10}\.js/,
+  "index.html must load the current hashed runtime bundle"
 );
 assert.match(
-  indexHtml,
-  /src\/workflows\/companyLogoWorkflow\.js\?v=mo-build-20260706-logo-rules-3/,
-  "companyLogoWorkflow must be loaded with the logo rules cache tag"
+  runtimeEntry,
+  /['"]\.\.\/render\/storageDashboardDisplay\.js['"]/,
+  "storageDashboardDisplay must remain part of the eager runtime bundle"
 );
 assert.match(
-  indexHtml,
-  /app\.js\?v=mo-build-20260706-accounting-boundaries-1/,
-  "app.js must use the accounting boundary cache tag"
+  runtimeEntry,
+  /['"]\.\.\/workflows\/companyLogoWorkflow\.js['"]/,
+  "companyLogoWorkflow must remain part of the eager runtime bundle"
 );
 assert.match(
-  indexHtml,
-  /src\/utils\/workspaceSectionNavigationEvents\.js\?v=mo-build-20260706-setup-storage-load-1/,
-  "workspaceSectionNavigationEvents must use the setup storage loader cache tag"
+  runtimeEntry,
+  /['"]\.\.\/utils\/workspaceSectionNavigationEvents\.js['"]/,
+  "workspaceSectionNavigationEvents must remain part of the eager runtime bundle"
 );
 
 console.log("storage dashboard cache tag smoke passed");

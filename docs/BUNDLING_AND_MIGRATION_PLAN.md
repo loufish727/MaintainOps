@@ -19,8 +19,8 @@ This plan is intentionally staged. It does not change runtime architecture until
 3. Add a build tool in compatibility mode that still outputs static files for GitHub Pages.
 4. Bundle low-risk extracted modules first while preserving the existing global API expected by `app.js`.
 5. Prove the first pilot bundle through `npm run test:bundle:pilot` without loading the generated bundle in production.
-6. Swap proven low-risk bundles into `index.html` in small batches, starting with `src/bundles/emptyStateText.bundle.js` and `src/bundles/renderLeaf.bundle.js`.
-7. Move toward generated hashed asset filenames so browser cache busting is automatic.
+6. Swap proven bundles into `index.html` in small batches, ending with the eager `runtime` plus `appShell` split once the smoke suite stays green.
+7. Use generated hashed bundle filenames so browser cache busting is automatic.
 8. Keep a rollback path to the current static script tags until strict LFES and hosted LFES pass on the bundled output.
 
 ## SQL Migration Phases

@@ -80,7 +80,7 @@ function classifySource(source, providedGlobals) {
       notes: "Provides browser-safe Supabase config globals.",
     };
   }
-  if (stripQuery(source) === "app.js") {
+  if (stripQuery(source) === "app.js" || /\/appShell(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js$/.test(stripQuery(source))) {
     return {
       layer: "app shell",
       notes: "Consumes most app globals and boots the workspace.",
@@ -121,7 +121,7 @@ function buildInventory() {
   const localRows = rows.filter((row) => isLocalSource(row.source));
   const totalProvided = uniqueSorted(localRows.flatMap((row) => row.providedGlobals));
   const totalConsumed = uniqueSorted(localRows.flatMap((row) => row.consumedGlobals));
-  const appShell = rows.find((row) => stripQuery(row.source) === "app.js");
+  const appShell = rows.find((row) => stripQuery(row.source) === "app.js" || /\/appShell(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js$/.test(stripQuery(row.source)));
   const providerOrder = new Map();
   for (const row of rows) {
     for (const providedGlobal of row.providedGlobals) {

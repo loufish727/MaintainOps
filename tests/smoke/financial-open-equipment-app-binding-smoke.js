@@ -18,8 +18,8 @@ assert.doesNotMatch(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260706-accounting-boundaries-1/,
-  "app.js cache tag must include the latest app hotfix"
+  /src\/bundles\/appShell\.[a-f0-9]{10}\.js/,
+  "index.html must load the current hashed app shell bundle"
 );
 
 console.log("financial open equipment app binding smoke passed");

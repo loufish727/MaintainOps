@@ -1,30 +1,70 @@
+const crypto = require("node:crypto");
+const fs = require("node:fs");
 const esbuild = require("esbuild");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
+const indexPath = path.join(root, "index.html");
+const bundlesDir = path.join(root, "src", "bundles");
+const manifestPath = path.join(bundlesDir, "manifest.json");
 
 const bundles = [
   {
-    entry: "src/render/emptyStateText.js",
-    outfile: "src/bundles/emptyStateText.bundle.js",
+    entry: "src/bundles/runtime.entry.js",
+    baseName: "runtime",
   },
   {
-    entry: "src/bundles/renderLeaf.entry.js",
-    outfile: "src/bundles/renderLeaf.bundle.js",
+    entry: "app.js",
+    baseName: "appShell",
   },
 ];
 
+function bundleHash(text) {
+  return crypto.createHash("sha256").update(text).digest("hex").slice(0, 10);
+}
+
+function removeOldBundleFiles(baseName) {
+  if (!fs.existsSync(bundlesDir)) return;
+  for (const fileName of fs.readdirSync(bundlesDir)) {
+    if (!new RegExp(`^${baseName}(?:\\.bundle)?(?:\\.[a-f0-9]{10})?\\.js$`).test(fileName)) continue;
+    fs.unlinkSync(path.join(bundlesDir, fileName));
+  }
+}
+
+function updateIndexHtml(manifest) {
+  let html = fs.readFileSync(indexPath, "utf8");
+  html = html.replace(
+    /<script defer src="src\/bundles\/runtime(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/,
+    `    <script defer src="src/bundles/${manifest.runtime}"></script>`
+  );
+  html = html.replace(
+    /<script defer src="src\/bundles\/appShell(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/,
+    `    <script defer src="src/bundles/${manifest.appShell}"></script>`
+  );
+  html = html.replace(/\n {8}<script defer src="src\/bundles\//g, "\n    <script defer src=\"src/bundles/");
+  fs.writeFileSync(indexPath, html);
+}
+
 async function main() {
+  const manifest = {};
   for (const bundle of bundles) {
-    await esbuild.build({
+    const result = await esbuild.build({
       entryPoints: [path.join(root, bundle.entry)],
       bundle: true,
       format: "iife",
-      outfile: path.join(root, bundle.outfile),
       logLevel: "warning",
+      write: false,
     });
-    console.log(`Built ${bundle.outfile}`);
+    const outputText = result.outputFiles[0].text;
+    const hash = bundleHash(outputText);
+    const fileName = `${bundle.baseName}.${hash}.js`;
+    removeOldBundleFiles(bundle.baseName);
+    fs.writeFileSync(path.join(bundlesDir, fileName), outputText);
+    manifest[bundle.baseName] = fileName;
+    console.log(`Built src/bundles/${fileName}`);
   }
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  updateIndexHtml(manifest);
 }
 
 main().catch((error) => {

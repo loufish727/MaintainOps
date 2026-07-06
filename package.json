@@ -17,7 +17,7 @@
     "test:smoke:github-actions": "node scripts/verify-github-actions-run.js",
     "test:scripts:inventory": "node scripts/script-load-inventory.js",
     "test:migrations:static": "node scripts/migration-static-check.js",
-    "test:bundle:pilot": "npm run build:runtime:bundles && node tests/smoke/bundle-pilot-smoke.js && node tests/smoke/render-leaf-bundle-smoke.js",
+    "test:bundle:pilot": "npm run build:runtime:bundles && node tests/smoke/runtime-bundle-smoke.js",
     "test:lfes:strict": "node scripts/lfes-strict-check.js",
     "test:lfes:hosted": "node scripts/lfes-hosted-check.js",
     "cache:bump": "node scripts/bump-cache-tags.js"
