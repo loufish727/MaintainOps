@@ -21,6 +21,7 @@ assert.match(lower, /107374182400/);
 assert.match(lower, /month_series as/);
 assert.match(lower, /monthly_usage as/);
 assert.match(lower, /'monthly_usage', monthly_json\.rows/);
+assert.match(lower, /'remaining_bytes', remaining_bytes/);
 assert.match(lower, /generate_series/);
 assert.match(lower, /limit 10/);
 assert.match(lower, /grant execute on function public\.get_storage_dashboard\(uuid\) to authenticated/);

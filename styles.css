@@ -7110,7 +7110,7 @@ textarea {
 
 .storage-month-column {
   display: grid;
-  grid-template-rows: 112px auto auto;
+  grid-template-rows: 112px auto auto auto;
   gap: 5px;
   min-width: 52px;
   text-align: center;
@@ -7151,10 +7151,16 @@ textarea {
 }
 
 .storage-month-column > span,
+.storage-month-column small,
 .storage-month-legend span {
   color: var(--muted);
   font-size: 0.68rem;
   line-height: 1.15;
+}
+
+.storage-month-column small {
+  color: color-mix(in srgb, var(--green) 76%, var(--ink));
+  font-weight: 760;
 }
 
 .storage-month-legend {
@@ -7182,6 +7188,10 @@ textarea {
 
 .storage-legend-cumulative {
   background: color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+.storage-legend-remaining {
+  background: color-mix(in srgb, var(--green) 70%, var(--surface));
 }
 
 .storage-breakdown,

@@ -165,7 +165,12 @@ begin
         select coalesce(sum(lo.size_bytes), 0)::bigint
         from linked_objects lo
         where lo.created_at < ms.month_start + interval '1 month'
-      ) as cumulative_bytes
+      ) as cumulative_bytes,
+      greatest(allowance_bytes - (
+        select coalesce(sum(lo.size_bytes), 0)::bigint
+        from linked_objects lo
+        where lo.created_at < ms.month_start + interval '1 month'
+      ), 0)::bigint as remaining_bytes
     from month_series ms
     left join monthly_totals mt on mt.month_start = ms.month_start
   ),
@@ -187,7 +192,8 @@ begin
         'month_label', to_char(month_start, 'Mon YYYY'),
         'file_count', file_count,
         'size_bytes', size_bytes,
-        'cumulative_bytes', cumulative_bytes
+        'cumulative_bytes', cumulative_bytes,
+        'remaining_bytes', remaining_bytes
       )
       order by month_start
     ), '[]'::jsonb) as rows

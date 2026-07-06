@@ -103,15 +103,17 @@
             ${rows.map((row) => {
               const monthBytes = Number(row.size_bytes) || 0;
               const cumulativeBytes = Number(row.cumulative_bytes) || 0;
+              const remainingBytes = Number(row.remaining_bytes) || 0;
               const barHeight = maxMonthBytes ? Math.max((monthBytes / maxMonthBytes) * 100, monthBytes ? 6 : 0) : 0;
               const cumulativeHeight = maxCumulativeBytes ? Math.max((cumulativeBytes / maxCumulativeBytes) * 100, cumulativeBytes ? 6 : 0) : 0;
               return `
-                <article class="storage-month-column" title="${escapeHtml(row.month_label || row.month || "")}: ${escapeHtml(byteText(monthBytes))} added, ${escapeHtml(byteText(cumulativeBytes))} total">
+                <article class="storage-month-column" title="${escapeHtml(row.month_label || row.month || "")}: ${escapeHtml(byteText(monthBytes))} added, ${escapeHtml(byteText(cumulativeBytes))} total, ${escapeHtml(byteText(remainingBytes))} remaining">
                   <div class="storage-month-bars">
                     <span class="storage-month-cumulative" style="height: ${cumulativeHeight.toFixed(2)}%"></span>
                     <span class="storage-month-added" style="height: ${barHeight.toFixed(2)}%"></span>
                   </div>
                   <strong>${escapeHtml(byteText(monthBytes))}</strong>
+                  <small>${escapeHtml(byteText(remainingBytes))} left</small>
                   <span>${escapeHtml(String(row.month_label || row.month || "").replace(" ", "\n"))}</span>
                 </article>
               `;
@@ -120,6 +122,7 @@
           <div class="storage-month-legend">
             <span><i class="storage-legend-added"></i>Added that month</span>
             <span><i class="storage-legend-cumulative"></i>Cumulative total</span>
+            <span><i class="storage-legend-remaining"></i>Remaining storage</span>
           </div>
         </section>
       `;
