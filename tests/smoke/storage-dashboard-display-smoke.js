@@ -31,8 +31,8 @@ const html = helpers.renderStorageDashboardPanel({
       { bucket_id: "asset-documents", file_count: 1, size_bytes: 110000 },
     ],
     monthly_usage: [
-      { month: "2026-06", month_label: "Jun 2026", file_count: 1, size_bytes: 110000, cumulative_bytes: 110000, remaining_bytes: 107374072400 },
-      { month: "2026-07", month_label: "Jul 2026", file_count: 2, size_bytes: 232673872, cumulative_bytes: 232783872, remaining_bytes: 107141398528 },
+      { month: "2026-06", month_label: "Jun 2026", file_count: 1, photo_count: 0, size_bytes: 110000, cumulative_bytes: 110000, remaining_bytes: 107374072400 },
+      { month: "2026-07", month_label: "Jul 2026", file_count: 15, photo_count: 13, size_bytes: 232673872, cumulative_bytes: 232783872, remaining_bytes: 107141398528 },
     ],
     top_files: [
       {
@@ -77,6 +77,8 @@ assert.doesNotMatch(html, /blocked only if/);
 assert.doesNotMatch(html, /Counts By Type/);
 assert.match(html, /Month Over Month Usage/);
 assert.match(html, /Largest Month/);
+assert.match(html, /222 MB\/mo/);
+assert.match(html, /13 photos, 2 files/);
 assert.match(html, /12 Month Median/);
 assert.match(html, /Cap Estimate/);
 assert.match(html, /At the largest monthly usage rate of/);

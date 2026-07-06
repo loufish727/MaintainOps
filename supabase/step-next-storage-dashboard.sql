@@ -160,6 +160,10 @@ begin
     select
       date_trunc('month', created_at) as month_start,
       count(*)::integer as file_count,
+      count(*) filter (
+        where record_type in ('work_order', 'request')
+           or (record_type in ('equipment', 'part') and content_type ilike 'image/%')
+      )::integer as photo_count,
       coalesce(sum(size_bytes), 0)::bigint as size_bytes
     from linked_objects
     where created_at >= date_trunc('month', now()) - interval '11 months'
@@ -169,6 +173,7 @@ begin
     select
       ms.month_start,
       coalesce(mt.file_count, 0)::integer as file_count,
+      coalesce(mt.photo_count, 0)::integer as photo_count,
       coalesce(mt.size_bytes, 0)::bigint as size_bytes,
       (
         select coalesce(sum(lo.size_bytes), 0)::bigint
@@ -200,6 +205,7 @@ begin
         'month', to_char(month_start, 'YYYY-MM'),
         'month_label', to_char(month_start, 'Mon YYYY'),
         'file_count', file_count,
+        'photo_count', photo_count,
         'size_bytes', size_bytes,
         'cumulative_bytes', cumulative_bytes,
         'remaining_bytes', remaining_bytes

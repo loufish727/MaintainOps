@@ -174,7 +174,15 @@
       const monthWindow = 12;
       const monthlyBytes = rows.slice(-monthWindow).map((row) => Number(row.size_bytes) || 0);
       while (monthlyBytes.length < monthWindow) monthlyBytes.unshift(0);
-      const largestMonthBytes = monthlyBytes.reduce((max, value) => Math.max(max, value), 0);
+      const visibleRows = rows.slice(-monthWindow);
+      const largestMonth = visibleRows.reduce((largest, row) => {
+        const currentBytes = Number(row.size_bytes) || 0;
+        const largestBytes = Number(largest?.size_bytes) || 0;
+        return currentBytes > largestBytes ? row : largest;
+      }, null);
+      const largestMonthBytes = Number(largestMonth?.size_bytes) || 0;
+      const largestMonthPhotoCount = Number(largestMonth?.photo_count) || 0;
+      const largestMonthFileCount = Math.max((Number(largestMonth?.file_count) || 0) - largestMonthPhotoCount, 0);
       const median = medianBytes(monthlyBytes);
       const latestRemaining = Math.max(Number(rows[rows.length - 1]?.remaining_bytes) || 0, 0);
       const monthsToCap = largestMonthBytes > 0 ? latestRemaining / largestMonthBytes : 0;
@@ -186,6 +194,7 @@
           <article>
             <span>Largest Month</span>
             <strong>${escapeHtml(byteText(largestMonthBytes))}/mo</strong>
+            <small>${largestMonthPhotoCount} photos, ${largestMonthFileCount} files</small>
           </article>
           <article>
             <span>12 Month Median</span>

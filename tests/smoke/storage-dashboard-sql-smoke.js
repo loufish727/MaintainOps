@@ -21,6 +21,7 @@ assert.match(lower, /107374182400/);
 assert.match(lower, /month_series as/);
 assert.match(lower, /monthly_usage as/);
 assert.match(lower, /'photo_count', totals\.photo_count/);
+assert.match(lower, /'photo_count', photo_count/);
 assert.match(lower, /content_type ilike 'image\/%'/);
 assert.doesNotMatch(lower, /'type_totals'/);
 assert.match(lower, /'monthly_usage', monthly_json\.rows/);
