@@ -136,6 +136,12 @@ async function main() {
   await run(npmCommand, ["run", "test:security:boundary"], {
     label: "security boundary probe",
   });
+  await run(npmCommand, ["run", "test:scripts:inventory"], {
+    label: "script load inventory check",
+  });
+  await run(npmCommand, ["run", "test:migrations:static"], {
+    label: "migration static check",
+  });
   await runNodeSmokeSweep();
   await run(npmCommand, ["run", "test:smoke:work-attach"], {
     label: "work attach smoke suite",

@@ -14,7 +14,7 @@ This plan is intentionally staged. It does not change runtime architecture until
 
 ## Bundling Phases
 
-1. Inventory current script tags, module globals, and load-order dependencies.
+1. Inventory current script tags, module globals, and load-order dependencies in `docs/SCRIPT_LOAD_INVENTORY.md`.
 2. Add a build tool in compatibility mode that still outputs static files for GitHub Pages.
 3. Bundle low-risk extracted modules first while preserving the existing global API expected by `app.js`.
 4. Move toward generated hashed asset filenames so browser cache busting is automatic.
@@ -25,7 +25,7 @@ This plan is intentionally staged. It does not change runtime architecture until
 1. Keep existing `supabase/step-next-*.sql` files as historical checkpoints.
 2. Put new database changes in `supabase/migrations/YYYYMMDDHHMM_description.sql`.
 3. Record applied production migrations in `docs/APPLIED_MIGRATIONS.md`.
-4. Add a repeatable migration verification query or script before relying on migration state for release decisions.
+4. Run `npm run test:migrations:static` before release to catch migration naming and tracking drift.
 5. Mark `step-next` as legacy once new dated migrations have been used successfully across several releases.
 
 ## Success Criteria

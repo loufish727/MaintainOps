@@ -32,6 +32,7 @@ For a concise external review, start with:
 - [docs/REVIEW_PACKET.md](docs/REVIEW_PACKET.md)
 - [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/SCRIPT_LOAD_INVENTORY.md](docs/SCRIPT_LOAD_INVENTORY.md)
 - [docs/APP_JS_AUTHORITY_MAP.md](docs/APP_JS_AUTHORITY_MAP.md)
 - [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md)
 - [docs/SECURITY_VERIFICATION.md](docs/SECURITY_VERIFICATION.md)
