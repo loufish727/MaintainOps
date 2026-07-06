@@ -6,7 +6,13 @@ const { createStorageDashboardDisplayHelpers } = require("../../src/render/stora
 
 const helpers = createStorageDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
-  formatBytes: (bytes) => `${bytes} B`,
+  formatBytes: (bytes) => {
+    const value = Number(bytes) || 0;
+    if (!value) return "";
+    if (value < 1024) return `${value} B`;
+    if (value < 1048576) return `${Math.round(value / 1024)} KB`;
+    return `${(value / 1048576).toFixed(value >= 10485760 ? 0 : 1)} MB`;
+  },
 });
 
 const html = helpers.renderStorageDashboardPanel({
@@ -48,6 +54,11 @@ assert.match(html, /99\.8 GB/);
 assert.match(html, /Work order photos/);
 assert.match(html, /Equipment files/);
 assert.match(html, /Month Over Month Usage/);
+assert.match(html, /12 Month Average/);
+assert.match(html, /12 Month Median/);
+assert.match(html, /Cap Estimate/);
+assert.match(html, /At the average rate of/);
+assert.match(html, /estimated in/);
 assert.match(html, /Jun 2026/);
 assert.match(html, /Remaining storage/);
 assert.match(html, /left/);

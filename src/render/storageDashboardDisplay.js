@@ -39,6 +39,29 @@
       return `${number.toFixed(number >= 10 ? 1 : 2)}%`;
     }
 
+    function medianBytes(values) {
+      const sorted = values
+        .map((value) => Number(value) || 0)
+        .sort((left, right) => left - right);
+      if (!sorted.length) return 0;
+      const middle = Math.floor(sorted.length / 2);
+      if (sorted.length % 2) return sorted[middle];
+      return (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+
+    function durationTextFromMonths(value) {
+      const totalMonths = Number(value) || 0;
+      if (totalMonths <= 0) return "not enough usage history";
+      const years = Math.floor(totalMonths / 12);
+      const months = Math.floor(totalMonths % 12);
+      const days = Math.max(Math.round((totalMonths - Math.floor(totalMonths)) * 30.4375), 0);
+      const parts = [];
+      if (years) parts.push(`${years} ${years === 1 ? "year" : "years"}`);
+      if (months) parts.push(`${months} ${months === 1 ? "month" : "months"}`);
+      if (days || !parts.length) parts.push(`${days} ${days === 1 ? "day" : "days"}`);
+      return parts.join(", ");
+    }
+
     function bucketLabel(bucketId) {
       return bucketLabels[bucketId] || String(bucketId || "Storage");
     }
@@ -93,6 +116,37 @@
       `;
     }
 
+    function renderMonthlyUsageSummary(rows) {
+      const monthWindow = 12;
+      const monthlyBytes = rows.slice(-monthWindow).map((row) => Number(row.size_bytes) || 0);
+      while (monthlyBytes.length < monthWindow) monthlyBytes.unshift(0);
+      const totalBytes = monthlyBytes.reduce((sum, value) => sum + value, 0);
+      const averageBytes = totalBytes / monthWindow;
+      const median = medianBytes(monthlyBytes);
+      const latestRemaining = Math.max(Number(rows[rows.length - 1]?.remaining_bytes) || 0, 0);
+      const monthsToCap = averageBytes > 0 ? latestRemaining / averageBytes : 0;
+      const capText = averageBytes > 0
+        ? `At the average rate of ${byteText(averageBytes)} per month, the storage cap is estimated in ${durationTextFromMonths(monthsToCap)}.`
+        : "At the current average rate, there is not enough usage history to estimate the storage cap.";
+      return `
+        <div class="storage-month-summary" aria-label="Last 12 months storage trend">
+          <article>
+            <span>12 Month Average</span>
+            <strong>${escapeHtml(byteText(averageBytes))}/mo</strong>
+          </article>
+          <article>
+            <span>12 Month Median</span>
+            <strong>${escapeHtml(byteText(median))}/mo</strong>
+          </article>
+          <article class="storage-month-projection">
+            <span>Cap Estimate</span>
+            <strong>${escapeHtml(durationTextFromMonths(monthsToCap))}</strong>
+            <small>${escapeHtml(capText)}</small>
+          </article>
+        </div>
+      `;
+    }
+
     function renderMonthlyUsageGraph(monthlyUsage) {
       const rows = Array.isArray(monthlyUsage) ? monthlyUsage : [];
       const maxMonthBytes = rows.reduce((max, row) => Math.max(max, Number(row.size_bytes) || 0), 0);
@@ -105,6 +159,7 @@
               <span>Last ${rows.length || 12} months</span>
             </div>
           </div>
+          ${renderMonthlyUsageSummary(rows)}
           <div class="storage-month-chart" role="img" aria-label="Month over month storage usage">
             ${rows.map((row) => {
               const monthBytes = Number(row.size_bytes) || 0;

@@ -7108,6 +7108,39 @@ textarea {
   padding-bottom: 2px;
 }
 
+.storage-month-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 0.42fr)) minmax(220px, 1.16fr);
+  gap: 8px;
+}
+
+.storage-month-summary article {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  padding: 8px;
+}
+
+.storage-month-summary span,
+.storage-month-summary small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.storage-month-summary strong {
+  color: var(--ink);
+  font-size: 0.94rem;
+  line-height: 1.15;
+}
+
+.storage-month-projection small {
+  max-width: 54rem;
+}
+
 .storage-month-column {
   display: grid;
   grid-template-rows: 112px auto auto auto;
@@ -7383,6 +7416,7 @@ textarea {
   .tech-focus { align-items: stretch; flex-direction: column; }
 
   .storage-metric-grid,
+  .storage-month-summary,
   .storage-dashboard-grid {
     grid-template-columns: 1fr;
   }
