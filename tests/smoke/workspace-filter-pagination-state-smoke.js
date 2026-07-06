@@ -61,6 +61,7 @@ const statusRequests = createButton({ statusFilter: "requests" });
 const myWorkCreated = createButton({ myWorkFilter: "created" });
 const workFilterVendor = createButton({ workOrderFilter: "vendor" });
 const workSortDue = createButton({ workSort: "due" });
+const workAssigneeSortFilter = createField({}, "user-2");
 const requestConverted = createButton({ requestFilter: "converted" });
 const workNext = createButton({ workPage: "next" });
 const assetNext = createButton({ assetsPage: "next" });
@@ -81,6 +82,7 @@ const doc = {
     if (selector === "[data-work-order-filter]") return [workFilterVendor];
     if (selector === "[data-clear-assignee-filter]") return [clearAssignee];
     if (selector === "[data-work-sort]") return [workSortDue];
+    if (selector === "[data-work-assignee-sort-filter]") return [workAssigneeSortFilter];
     if (selector === "[data-request-filter]") return [requestConverted];
     if (selector === "[data-work-page]") return [workNext];
     if (selector === "[data-parts-page]") return [];
@@ -143,6 +145,13 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(invalidateCount, 1);
   assert.equal(workReloadCount, 4);
 
+  await workAssigneeSortFilter.dispatch("change");
+  assert.equal(state.getWorkOrderAssigneeFilter(), "user-2");
+  assert.equal(state.getWorkOrderPage(), 1);
+  assert.equal(storage.values["maintainops.workOrderAssigneeFilter"], "user-2");
+  assert.equal(invalidateCount, 2);
+  assert.equal(workReloadCount, 5);
+
   await requestConverted.dispatch("click");
   assert.equal(state.getRequestViewFilter(), "converted");
   assert.equal(state.getRequestsPage(), 1);
@@ -152,7 +161,7 @@ bindWorkspaceFilterPaginationEvents({
   await workNext.dispatch("click");
   assert.equal(state.getWorkOrderPage(), 2);
   assert.equal(storage.values["maintainops.workOrderPage"], "2");
-  assert.equal(workReloadCount, 5);
+  assert.equal(workReloadCount, 6);
 
   await assetNext.dispatch("click");
   assert.equal(state.getAssetsPage(), 2);

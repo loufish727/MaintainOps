@@ -86,6 +86,17 @@
       });
     });
 
+    doc.querySelectorAll("[data-work-assignee-sort-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setWorkOrderAssigneeFilter(field.value || "");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
     doc.querySelectorAll("[data-request-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
         if (button.disabled) return;

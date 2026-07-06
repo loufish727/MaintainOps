@@ -3199,6 +3199,10 @@ function renderWorkspace() {
     </section>
   `;
   const visibleMembers = filteredMembers();
+  const workAssigneeSortMembers = Object.entries(profilesByUserId)
+    .map(([userId, profile]) => ({ userId, name: profile?.full_name || teamMemberName(userId) }))
+    .filter((member) => member.userId && member.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
   const totalRequestPages = Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE));
   if (workspaceUiState.getRequestsPage() > totalRequestPages) workspaceUiState.setRequestsPage(totalRequestPages);
   if (workspaceUiState.getRequestsPage() < 1) workspaceUiState.setRequestsPage(1);
@@ -3351,7 +3355,7 @@ function renderWorkspace() {
                     <button class="segment ${workOrderFilter === "vendor" ? "active" : ""}" data-work-order-filter="vendor" type="button">${segmentIcon("vendor")}Vendor</button>
                     <button class="segment ${workOrderFilter === "unassigned" ? "active" : ""}" data-work-order-filter="unassigned" type="button">${segmentIcon("unassigned")}Unassigned</button>
                   </div>
-                  ${workOrderAssigneeFilter ? `
+                  ${workOrderAssigneeFilter && workSort !== "assigned" ? `
                     <div class="active-team-filter">
                       <span>Assigned to ${escapeHtml(teamMemberName(workOrderAssigneeFilter))}</span>
                       <button class="text-button" data-clear-assignee-filter type="button">Clear</button>
@@ -3369,6 +3373,18 @@ function renderWorkspace() {
                       <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
                     `).join("")}
                   </div>
+                  ${activeSection === "work" && workSort === "assigned" ? `
+                    <div class="active-team-filter assigned-sort-filter">
+                      <label>Assigned person
+                        <select data-work-assignee-sort-filter aria-label="Sort assigned work by person">
+                          <option value="" ${workOrderAssigneeFilter ? "" : "selected"}>All assigned people</option>
+                          ${workAssigneeSortMembers.map((member) => `
+                            <option value="${escapeHtml(member.userId)}" ${workOrderAssigneeFilter === member.userId ? "selected" : ""}>${escapeHtml(member.name)}</option>
+                          `).join("")}
+                        </select>
+                      </label>
+                    </div>
+                  ` : ""}
                 `}
                 ${!showingRequestsInWorkQueue && ["completed", "completed_month", "completed_week"].includes(activeStatusFilter) ? `
                   <p class="completion-note completed-history-note">Completed history is paged ${WORK_ORDERS_PER_PAGE} at a time and sorted by most recently completed.</p>

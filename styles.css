@@ -4227,6 +4227,25 @@ textarea {
   color: var(--ink);
 }
 
+.assigned-sort-filter {
+  justify-content: flex-start;
+}
+
+.assigned-sort-filter label {
+  display: grid;
+  gap: 6px;
+  width: min(100%, 360px);
+  font-weight: 700;
+}
+
+.assigned-sort-filter select {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
 .message-center {
   min-height: 620px;
 }
