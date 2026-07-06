@@ -1275,6 +1275,15 @@ insert into storage.buckets (id, name, public)
 values ('company-logos', 'company-logos', false)
 on conflict (id) do nothing;
 
+update storage.buckets
+set file_size_limit = 26214400,
+    allowed_mime_types = array[
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ]
+where id = 'company-logos';
+
 drop policy if exists "Members can upload work order photos" on storage.objects;
 create policy "Members can upload work order photos"
 on storage.objects for insert

@@ -84,23 +84,23 @@
       const rules = [
         {
           label: "Work Order Photos",
-          cap: "5 MB after optimization",
-          optimize: "Resize to 768px, target near 256 KB",
+          cap: "Photos are accepted, then resized before upload",
+          optimize: "Resize to 768px, target near 256 KB; blocked only if still over 5 MB",
         },
         {
           label: "Request Photos",
-          cap: "5 MB after optimization",
-          optimize: "Resize to 768px, target near 256 KB",
+          cap: "Photos are accepted, then resized before upload",
+          optimize: "Resize to 768px, target near 256 KB; blocked only if still over 5 MB",
         },
         {
           label: "Equipment Images",
-          cap: "Images are compressed before upload",
-          optimize: "Target near 1 MB, max dimension steps 2000/1800/1600px",
+          cap: "Images are resized before upload",
+          optimize: "Target near 1 MB; non-image equipment files over 25 MB are blocked",
         },
         {
           label: "Part Images",
-          cap: "Images are compressed before upload",
-          optimize: "Target near 1 MB, max dimension steps 2000/1800/1600px",
+          cap: "Images are resized before upload",
+          optimize: "Target near 1 MB; non-image part files over 25 MB are blocked",
         },
         {
           label: "Documents",
@@ -109,8 +109,8 @@
         },
         {
           label: "Company Logos",
-          cap: "Images are compressed before upload",
-          optimize: "Resize to 1200px max dimension, stored as PNG",
+          cap: "JPG, PNG, or WebP only",
+          optimize: "Resize to 1200px PNG; blocked only if still over 25 MB",
         },
       ];
       return `

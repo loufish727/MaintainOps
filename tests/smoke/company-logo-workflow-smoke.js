@@ -80,6 +80,43 @@ class FakeFormData {
   assert.equal(company.logoUrl, "blob://logo");
   assert.equal(button.disabled, false);
 
+  const uploadCount = calls.filter((call) => call[0] === "upload").length;
+  await uploadCompanyLogo({
+    preventDefault() {},
+    currentTarget: {
+      formValues: { logo: { name: "logo.pdf", type: "application/pdf" } },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(calls.filter((call) => call[0] === "upload").length, uploadCount);
+  assert.equal(errorTarget.textContent, "Company logos must be JPG, PNG, or WebP images.");
+
+  const oversizedWorkflow = createCompanyLogoWorkflow({
+    documentRef: {
+      querySelector(selector) {
+        return selector === "#company-logo-error" ? errorTarget : null;
+      },
+    },
+    FormDataCtor: FakeFormData,
+    optimizeLogoOverride: async () => ({
+      blob: { name: "oversized-logo", size: 26 * 1024 * 1024 },
+      fileName: "logo.png",
+      contentType: "image/png",
+    }),
+  });
+  await oversizedWorkflow.uploadCompanyLogo({
+    preventDefault() {},
+    currentTarget: {
+      formValues: { logo: { name: "logo.png", type: "image/png" } },
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? button : null;
+      },
+    },
+  });
+  assert.equal(errorTarget.textContent, "This logo is still over 25 MB after resizing. Try a smaller logo image.");
+
   console.log("company logo workflow smoke passed");
 })().catch((error) => {
   console.error(error);

@@ -6,6 +6,8 @@
     const URLRef = deps.URLRef || URL;
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
+    const logoUploadLimitBytes = 25 * 1024 * 1024;
+    const logoMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
     async function uploadCompanyLogo(event) {
       event.preventDefault();
@@ -25,7 +27,11 @@
       }
 
       try {
+        const validationError = validateLogoUpload(file);
+        if (validationError) throw new Error(validationError);
         const optimized = await optimizeLogo(file);
+        const optimizedError = validateOptimizedLogo(optimized);
+        if (optimizedError) throw new Error(optimizedError);
         const path = `${deps.getActiveCompanyId()}/logo-${cryptoRef.randomUUID()}-${optimized.fileName}`;
         const upload = await deps.withOperationTimeout(
           deps.supabaseClient().storage.from("company-logos").upload(path, optimized.blob, {
@@ -80,12 +86,12 @@
 
     async function optimizeLogo(file) {
       if (typeof deps.optimizeLogoOverride === "function") return deps.optimizeLogoOverride(file);
-      const imageTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!imageTypes.includes(file.type)) {
+      const contentType = contentTypeForLogo(file);
+      if (!logoMimeTypes.has(contentType)) {
         return {
           blob: file,
           fileName: deps.safeFileName(file.name || "logo"),
-          contentType: file.type || "application/octet-stream",
+          contentType,
         };
       }
 
@@ -117,9 +123,36 @@
         return {
           blob: file,
           fileName: deps.safeFileName(file.name || "logo"),
-          contentType: file.type || "application/octet-stream",
+          contentType,
         };
       }
+    }
+
+    function contentTypeForLogo(file) {
+      const explicitType = String(file?.type || "").trim().toLowerCase();
+      if (explicitType) return explicitType;
+      const name = String(file?.name || "").toLowerCase();
+      if (/\.(jpe?g)$/.test(name)) return "image/jpeg";
+      if (/\.png$/.test(name)) return "image/png";
+      if (/\.webp$/.test(name)) return "image/webp";
+      return "application/octet-stream";
+    }
+
+    function validateLogoUpload(file) {
+      if (!logoMimeTypes.has(contentTypeForLogo(file))) {
+        return "Company logos must be JPG, PNG, or WebP images.";
+      }
+      return "";
+    }
+
+    function validateOptimizedLogo(optimized) {
+      if (!logoMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
+        return "Company logos must be JPG, PNG, or WebP images.";
+      }
+      if (Number(optimized?.blob?.size || 0) > logoUploadLimitBytes) {
+        return "This logo is still over 25 MB after resizing. Try a smaller logo image.";
+      }
+      return "";
     }
 
     return {
