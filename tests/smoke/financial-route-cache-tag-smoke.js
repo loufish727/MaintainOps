@@ -38,8 +38,13 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /app\.js\?v=mo-build-20260706-storage-dashboard-1/,
-  "app.js must use the latest storage dashboard cache tag"
+  /app\.js\?v=mo-build-20260706-accounting-boundaries-1/,
+  "app.js must use the accounting boundary cache tag"
+);
+assert.match(
+  indexHtml,
+  /src\/utils\/workspaceSectionNavigationEvents\.js\?v=mo-build-20260706-setup-storage-load-1/,
+  "workspaceSectionNavigationEvents must use the setup storage loader cache tag"
 );
 assert.match(
   indexHtml,

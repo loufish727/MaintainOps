@@ -2286,7 +2286,7 @@ async function loadCompanyData() {
   await Promise.all([
     runWorkspaceLoader("Profiles", loadProfiles),
     runWorkspaceLoader("Team members", loadMembers),
-    runWorkspaceLoader("Asset financials", loadAssetFinancials),
+    ...(canUseFinancialMenu() ? [runWorkspaceLoader("Asset financials", loadAssetFinancials)] : []),
     ...initialWorkspaceLoaders().map(([label, loader]) => runWorkspaceLoader(label, loader)),
   ]);
   applyWorkspaceLoadWarnings();
@@ -2879,7 +2879,7 @@ async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
 }
 
 async function loadAssetFinancials() {
-  if (!activeCompanyId) {
+  if (!activeCompanyId || !canUseFinancialMenu()) {
     assetFinancials = [];
     assetFinancialsByAssetId = {};
     assetFinancialsReady = true;
@@ -4677,6 +4677,9 @@ function bindWorkspaceEvents() {
       setShowPartSourceManager: (value) => { showPartSourceManager = value; },
     },
     reloadRequestQueue,
+    loadSetupStorageDashboard: async () => {
+      await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
+    },
     loadManagerDashboardCompletedWork,
     reloadWorkOrderQueue,
     renderWorkspace,

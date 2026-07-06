@@ -42,6 +42,22 @@ alter table public.procedure_templates enable row level security;
 alter table public.procedure_steps enable row level security;
 alter table public.work_order_step_results enable row level security;
 
+create or replace function private.is_company_operational_editor(target_company_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = target_company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'technician', 'member')
+  );
+$$;
+
 drop policy if exists "Members can read procedure templates" on public.procedure_templates;
 create policy "Members can read procedure templates"
 on public.procedure_templates for select
@@ -52,14 +68,14 @@ drop policy if exists "Members can create procedure templates" on public.procedu
 create policy "Members can create procedure templates"
 on public.procedure_templates for insert
 to authenticated
-with check (private.is_company_member(company_id) and created_by = auth.uid());
+with check (private.is_company_operational_editor(company_id) and created_by = auth.uid());
 
 drop policy if exists "Members can update procedure templates" on public.procedure_templates;
 create policy "Members can update procedure templates"
 on public.procedure_templates for update
 to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.is_company_operational_editor(company_id))
+with check (private.is_company_operational_editor(company_id));
 
 drop policy if exists "Members can read procedure steps" on public.procedure_steps;
 create policy "Members can read procedure steps"
@@ -72,7 +88,7 @@ create policy "Members can create procedure steps"
 on public.procedure_steps for insert
 to authenticated
 with check (
-  private.is_company_member(company_id)
+  private.is_company_operational_editor(company_id)
   and exists (
     select 1
     from public.procedure_templates template
@@ -85,8 +101,8 @@ drop policy if exists "Members can update procedure steps" on public.procedure_s
 create policy "Members can update procedure steps"
 on public.procedure_steps for update
 to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.is_company_operational_editor(company_id))
+with check (private.is_company_operational_editor(company_id));
 
 drop policy if exists "Members can read work order step results" on public.work_order_step_results;
 create policy "Members can read work order step results"
@@ -99,7 +115,7 @@ create policy "Members can create work order step results"
 on public.work_order_step_results for insert
 to authenticated
 with check (
-  private.is_company_member(company_id)
+  private.is_company_operational_editor(company_id)
   and exists (
     select 1
     from public.work_orders work_order
@@ -118,8 +134,8 @@ drop policy if exists "Members can update work order step results" on public.wor
 create policy "Members can update work order step results"
 on public.work_order_step_results for update
 to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.is_company_operational_editor(company_id))
+with check (private.is_company_operational_editor(company_id));
 
 create index if not exists procedure_templates_company_id_idx on public.procedure_templates(company_id);
 create index if not exists procedure_steps_company_template_idx on public.procedure_steps(company_id, procedure_template_id);

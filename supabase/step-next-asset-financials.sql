@@ -79,7 +79,8 @@ for each row
 execute function private.archive_asset_financial_before_delete();
 
 drop policy if exists "Company members can read asset financials" on public.asset_financials;
-create policy "Company members can read asset financials"
+drop policy if exists "Financial roles can read asset financials" on public.asset_financials;
+create policy "Financial roles can read asset financials"
 on public.asset_financials for select
 to authenticated
 using (
@@ -88,6 +89,7 @@ using (
     from public.company_members cm
     where cm.company_id = asset_financials.company_id
       and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'accounting')
   )
 );
 

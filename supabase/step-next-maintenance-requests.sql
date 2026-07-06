@@ -16,6 +16,22 @@ create table if not exists public.maintenance_requests (
 
 alter table public.maintenance_requests enable row level security;
 
+create or replace function private.is_company_operational_editor(target_company_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = target_company_id
+      and cm.user_id = auth.uid()
+      and cm.role in ('admin', 'manager', 'technician', 'member')
+  );
+$$;
+
 drop policy if exists "Members can read maintenance requests" on public.maintenance_requests;
 create policy "Members can read maintenance requests"
 on public.maintenance_requests for select
@@ -27,7 +43,7 @@ create policy "Members can create maintenance requests"
 on public.maintenance_requests for insert
 to authenticated
 with check (
-  private.is_company_member(company_id)
+  private.is_company_operational_editor(company_id)
   and requested_by = auth.uid()
 );
 
@@ -35,8 +51,8 @@ drop policy if exists "Members can update maintenance requests" on public.mainte
 create policy "Members can update maintenance requests"
 on public.maintenance_requests for update
 to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.is_company_operational_editor(company_id))
+with check (private.is_company_operational_editor(company_id));
 
 create index if not exists maintenance_requests_company_status_idx on public.maintenance_requests(company_id, status);
 create index if not exists maintenance_requests_company_asset_idx on public.maintenance_requests(company_id, asset_id);

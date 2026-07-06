@@ -34,6 +34,7 @@ const myWorkButton = createButton("mywork");
 const requestsButton = createButton("requests");
 const equipmentButton = createButton("equipment");
 const managerButton = createButton("manager");
+const setupButton = createButton("setup");
 const blockedButton = createButton("blocked");
 const storage = {
   values: {},
@@ -60,10 +61,11 @@ let scrollCount = 0;
 let workReloadCount = 0;
 let requestReloadCount = 0;
 let managerLoadCount = 0;
+let setupStorageLoadCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
-    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, blockedButton]),
+    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, blockedButton]),
     storage,
     state: {
       setActiveAssetId: (value) => { stateValues.activeAssetId = value; },
@@ -77,7 +79,7 @@ let managerLoadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"]],
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
@@ -85,6 +87,7 @@ let managerLoadCount = 0;
     reloadWorkOrderQueue: async () => { workReloadCount += 1; },
     reloadRequestQueue: async () => { requestReloadCount += 1; },
     loadManagerDashboardCompletedWork: async () => { managerLoadCount += 1; },
+    loadSetupStorageDashboard: async () => { setupStorageLoadCount += 1; },
   });
 
   await workButton.dispatch("click");
@@ -134,20 +137,28 @@ let managerLoadCount = 0;
   assert.equal(resetCount, 4);
   assert.equal(managerLoadCount, 1);
 
+  await setupButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "setup");
+  assert.equal(storage.values["maintainops.activeSection"], "setup");
+  assert.equal(renderCount, 7);
+  assert.equal(scrollCount, 5);
+  assert.equal(resetCount, 5);
+  assert.equal(setupStorageLoadCount, 1);
+
   await equipmentButton.dispatch("click");
   assert.equal(stateValues.activeSection, "equipment");
-  assert.deepEqual(workSearchModeCalls, [false, false, false, false]);
+  assert.deepEqual(workSearchModeCalls, [false, false, false, false, false]);
   assert.equal(storage.values["maintainops.activeSection"], "equipment");
-  assert.equal(resetCount, 5);
-  assert.equal(renderCount, 6);
-  assert.equal(scrollCount, 5);
+  assert.equal(resetCount, 6);
+  assert.equal(renderCount, 8);
+  assert.equal(scrollCount, 6);
   assert.equal(workReloadCount, 2);
   assert.equal(requestReloadCount, 1);
 
   await blockedButton.dispatch("click");
   assert.equal(stateValues.activeSection, "equipment");
-  assert.equal(renderCount, 6);
-  assert.equal(scrollCount, 5);
+  assert.equal(renderCount, 8);
+  assert.equal(scrollCount, 6);
   assert.equal(workReloadCount, 2);
 
   bindWorkspaceSectionNavigationEvents({

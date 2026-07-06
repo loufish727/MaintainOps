@@ -1,6 +1,6 @@
 -- Make managers read-only in the Financial tab.
 --
--- Managers keep select access through "Company members can read asset financials",
+-- Managers keep select access through "Financial roles can read asset financials",
 -- but finance field writes are limited to admins and accounting.
 
 drop policy if exists "Finance roles can insert asset financials" on public.asset_financials;
