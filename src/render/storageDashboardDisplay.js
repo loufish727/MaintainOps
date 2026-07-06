@@ -87,6 +87,44 @@
       `;
     }
 
+    function renderMonthlyUsageGraph(monthlyUsage) {
+      const rows = Array.isArray(monthlyUsage) ? monthlyUsage : [];
+      const maxMonthBytes = rows.reduce((max, row) => Math.max(max, Number(row.size_bytes) || 0), 0);
+      const maxCumulativeBytes = rows.reduce((max, row) => Math.max(max, Number(row.cumulative_bytes) || 0), 0);
+      return `
+        <section class="storage-monthly-usage">
+          <div class="settings-section-heading">
+            <div>
+              <strong>Month Over Month Usage</strong>
+              <span>Last ${rows.length || 12} months</span>
+            </div>
+          </div>
+          <div class="storage-month-chart" role="img" aria-label="Month over month storage usage">
+            ${rows.map((row) => {
+              const monthBytes = Number(row.size_bytes) || 0;
+              const cumulativeBytes = Number(row.cumulative_bytes) || 0;
+              const barHeight = maxMonthBytes ? Math.max((monthBytes / maxMonthBytes) * 100, monthBytes ? 6 : 0) : 0;
+              const cumulativeHeight = maxCumulativeBytes ? Math.max((cumulativeBytes / maxCumulativeBytes) * 100, cumulativeBytes ? 6 : 0) : 0;
+              return `
+                <article class="storage-month-column" title="${escapeHtml(row.month_label || row.month || "")}: ${escapeHtml(byteText(monthBytes))} added, ${escapeHtml(byteText(cumulativeBytes))} total">
+                  <div class="storage-month-bars">
+                    <span class="storage-month-cumulative" style="height: ${cumulativeHeight.toFixed(2)}%"></span>
+                    <span class="storage-month-added" style="height: ${barHeight.toFixed(2)}%"></span>
+                  </div>
+                  <strong>${escapeHtml(byteText(monthBytes))}</strong>
+                  <span>${escapeHtml(String(row.month_label || row.month || "").replace(" ", "\n"))}</span>
+                </article>
+              `;
+            }).join("") || `<p class="muted">No monthly storage history available yet.</p>`}
+          </div>
+          <div class="storage-month-legend">
+            <span><i class="storage-legend-added"></i>Added that month</span>
+            <span><i class="storage-legend-cumulative"></i>Cumulative total</span>
+          </div>
+        </section>
+      `;
+    }
+
     function renderStorageDashboardPanel({
       canView,
       dashboard,
@@ -99,6 +137,7 @@
       const allowanceBytes = Number(data.allowance_bytes) || 107374182400;
       const remainingBytes = Math.max(Number(data.remaining_bytes) || (allowanceBytes - totalBytes), 0);
       const bucketTotals = Array.isArray(data.bucket_totals) ? data.bucket_totals : [];
+      const monthlyUsage = Array.isArray(data.monthly_usage) ? data.monthly_usage : [];
       const topFiles = Array.isArray(data.top_files) ? data.top_files : [];
       return `
         <section class="storage-dashboard relationship-detail asset">
@@ -116,6 +155,7 @@
             ${renderStorageMetric("Remaining", byteText(remainingBytes), `${percentText((remainingBytes / allowanceBytes) * 100)} open`)}
             ${renderStorageMetric("Largest Files", `${topFiles.length}/10`, "Top linked storage objects")}
           </div>
+          ${renderMonthlyUsageGraph(monthlyUsage)}
           <div class="storage-dashboard-grid">
             <section class="storage-breakdown">
               <div class="settings-section-heading">

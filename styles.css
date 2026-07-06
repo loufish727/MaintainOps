@@ -7088,6 +7088,101 @@ textarea {
   gap: 12px;
 }
 
+.storage-monthly-usage {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px;
+}
+
+.storage-month-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(52px, 1fr));
+  gap: 8px;
+  min-height: 178px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.storage-month-column {
+  display: grid;
+  grid-template-rows: 112px auto auto;
+  gap: 5px;
+  min-width: 52px;
+  text-align: center;
+}
+
+.storage-month-bars {
+  position: relative;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+}
+
+.storage-month-bars span {
+  position: absolute;
+  bottom: 0;
+  border-radius: 7px 7px 0 0;
+}
+
+.storage-month-cumulative {
+  width: 82%;
+  background: color-mix(in srgb, var(--green) 20%, transparent);
+}
+
+.storage-month-added {
+  width: 44%;
+  background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 62%, var(--green)));
+  box-shadow: 0 -4px 12px color-mix(in srgb, var(--blue) 20%, transparent);
+}
+
+.storage-month-column strong {
+  color: var(--ink);
+  font-size: 0.74rem;
+  line-height: 1.1;
+}
+
+.storage-month-column > span,
+.storage-month-legend span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+.storage-month-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.storage-month-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.storage-month-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.storage-legend-added {
+  background: var(--blue);
+}
+
+.storage-legend-cumulative {
+  background: color-mix(in srgb, var(--green) 35%, transparent);
+}
+
 .storage-breakdown,
 .storage-largest-files,
 .storage-bucket-list,

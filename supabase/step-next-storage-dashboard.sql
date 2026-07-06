@@ -140,6 +140,35 @@ begin
     from linked_objects
     group by bucket_id
   ),
+  month_series as (
+    select generate_series(
+      date_trunc('month', now()) - interval '11 months',
+      date_trunc('month', now()),
+      interval '1 month'
+    ) as month_start
+  ),
+  monthly_totals as (
+    select
+      date_trunc('month', created_at) as month_start,
+      count(*)::integer as file_count,
+      coalesce(sum(size_bytes), 0)::bigint as size_bytes
+    from linked_objects
+    where created_at >= date_trunc('month', now()) - interval '11 months'
+    group by date_trunc('month', created_at)
+  ),
+  monthly_usage as (
+    select
+      ms.month_start,
+      coalesce(mt.file_count, 0)::integer as file_count,
+      coalesce(mt.size_bytes, 0)::bigint as size_bytes,
+      (
+        select coalesce(sum(lo.size_bytes), 0)::bigint
+        from linked_objects lo
+        where lo.created_at < ms.month_start + interval '1 month'
+      ) as cumulative_bytes
+    from month_series ms
+    left join monthly_totals mt on mt.month_start = ms.month_start
+  ),
   bucket_json as (
     select coalesce(jsonb_agg(
       jsonb_build_object(
@@ -150,6 +179,19 @@ begin
       order by size_bytes desc, bucket_id
     ), '[]'::jsonb) as rows
     from bucket_totals
+  ),
+  monthly_json as (
+    select coalesce(jsonb_agg(
+      jsonb_build_object(
+        'month', to_char(month_start, 'YYYY-MM'),
+        'month_label', to_char(month_start, 'Mon YYYY'),
+        'file_count', file_count,
+        'size_bytes', size_bytes,
+        'cumulative_bytes', cumulative_bytes
+      )
+      order by month_start
+    ), '[]'::jsonb) as rows
+    from monthly_usage
   ),
   top_json as (
     select coalesce(jsonb_agg(
@@ -181,11 +223,12 @@ begin
     'usage_percent', case when allowance_bytes > 0 then round((totals.total_bytes::numeric / allowance_bytes::numeric) * 100, 3) else 0 end,
     'file_count', totals.file_count,
     'bucket_totals', bucket_json.rows,
+    'monthly_usage', monthly_json.rows,
     'top_files', top_json.rows,
     'generated_at', now()
   )
   into result
-  from totals, bucket_json, top_json;
+  from totals, bucket_json, monthly_json, top_json;
 
   return result;
 end;

@@ -23,6 +23,10 @@ const html = helpers.renderStorageDashboardPanel({
       { bucket_id: "work-order-photos", file_count: 2, size_bytes: 220000 },
       { bucket_id: "asset-documents", file_count: 1, size_bytes: 110000 },
     ],
+    monthly_usage: [
+      { month: "2026-06", month_label: "Jun 2026", file_count: 1, size_bytes: 110000, cumulative_bytes: 110000 },
+      { month: "2026-07", month_label: "Jul 2026", file_count: 2, size_bytes: 220000, cumulative_bytes: 330000 },
+    ],
     top_files: [
       {
         bucket_id: "work-order-photos",
@@ -42,6 +46,10 @@ assert.match(html, /Storage Usage/);
 assert.match(html, /100 GB/);
 assert.match(html, /Work order photos/);
 assert.match(html, /Equipment files/);
+assert.match(html, /Month Over Month Usage/);
+assert.match(html, /Jun 2026/);
+assert.match(html, /storage-month-added/);
+assert.match(html, /storage-month-cumulative/);
 assert.match(html, /Top 10 Largest Files/);
 assert.match(html, /data-storage-record-link/);
 assert.match(html, /data-storage-link-section="work"/);
