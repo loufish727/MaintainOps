@@ -5,6 +5,8 @@
   "scripts": {
     "serve:local": "node scripts/local-static-server.js 4195",
     "backup:storage": "node scripts/storage-backup-mirror.js",
+    "storage:photos:dry-run": "node scripts/storage-photo-resize-existing.js --source=local",
+    "storage:photos:resize": "node scripts/storage-photo-resize-existing.js --source=remote --execute",
     "test:security:static": "node scripts/sql-security-static-audit.js",
     "test:security:boundary": "node scripts/security-boundary-probe.js",
     "test:smoke:live-manager": "playwright test tests/smoke/manager-requests-equipment-live.spec.js",
