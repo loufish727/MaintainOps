@@ -29,6 +29,7 @@ begin
       o.name as object_path,
       coalesce(nullif(wop.file_name, ''), nullif(wop.original_file_name, ''), o.name) as file_name,
       coalesce(wop.file_size_bytes, nullif(o.metadata->>'size', '')::bigint, 0) as size_bytes,
+      coalesce(nullif(wop.content_type, ''), nullif(o.metadata->>'mimetype', ''), 'image/jpeg') as content_type,
       o.created_at,
       'work_order'::text as record_type,
       wop.id as file_record_id,
@@ -51,6 +52,7 @@ begin
       o.name as object_path,
       coalesce(nullif(mr.photo_file_name, ''), nullif(mr.photo_original_file_name, ''), o.name) as file_name,
       coalesce(mr.photo_file_size_bytes, nullif(o.metadata->>'size', '')::bigint, 0) as size_bytes,
+      coalesce(nullif(mr.photo_content_type, ''), nullif(o.metadata->>'mimetype', ''), 'image/jpeg') as content_type,
       o.created_at,
       'request'::text as record_type,
       mr.id as file_record_id,
@@ -70,6 +72,7 @@ begin
       o.name as object_path,
       coalesce(nullif(ad.file_name, ''), nullif(ad.original_file_name, ''), o.name) as file_name,
       coalesce(ad.file_size_bytes, nullif(o.metadata->>'size', '')::bigint, 0) as size_bytes,
+      coalesce(nullif(ad.content_type, ''), nullif(o.metadata->>'mimetype', ''), 'application/octet-stream') as content_type,
       o.created_at,
       'equipment'::text as record_type,
       ad.id as file_record_id,
@@ -92,6 +95,7 @@ begin
       o.name as object_path,
       coalesce(nullif(pd.file_name, ''), nullif(pd.original_file_name, ''), o.name) as file_name,
       coalesce(pd.file_size_bytes, nullif(o.metadata->>'size', '')::bigint, 0) as size_bytes,
+      coalesce(nullif(pd.content_type, ''), nullif(o.metadata->>'mimetype', ''), 'application/octet-stream') as content_type,
       o.created_at,
       'part'::text as record_type,
       pd.id as file_record_id,
@@ -114,6 +118,7 @@ begin
       o.name as object_path,
       o.name as file_name,
       coalesce(nullif(o.metadata->>'size', '')::bigint, 0) as size_bytes,
+      coalesce(nullif(o.metadata->>'mimetype', ''), 'image/png') as content_type,
       o.created_at,
       'company'::text as record_type,
       c.id as file_record_id,
@@ -129,7 +134,11 @@ begin
   totals as (
     select
       coalesce(sum(size_bytes), 0)::bigint as total_bytes,
-      count(*)::integer as file_count
+      count(*)::integer as file_count,
+      count(*) filter (
+        where record_type in ('work_order', 'request')
+           or (record_type in ('equipment', 'part') and content_type ilike 'image/%')
+      )::integer as photo_count
     from linked_objects
   ),
   bucket_totals as (
@@ -139,6 +148,26 @@ begin
       coalesce(sum(size_bytes), 0)::bigint as size_bytes
     from linked_objects
     group by bucket_id
+  ),
+  type_totals as (
+    select
+      record_type,
+      case
+        when record_type = 'company' then 'logo'
+        when record_type in ('work_order', 'request') then 'photo'
+        when content_type ilike 'image/%' then 'photo'
+        else 'file'
+      end as file_kind,
+      count(*)::integer as file_count,
+      coalesce(sum(size_bytes), 0)::bigint as size_bytes
+    from linked_objects
+    group by record_type,
+      case
+        when record_type = 'company' then 'logo'
+        when record_type in ('work_order', 'request') then 'photo'
+        when content_type ilike 'image/%' then 'photo'
+        else 'file'
+      end
   ),
   month_series as (
     select generate_series(
@@ -185,6 +214,18 @@ begin
     ), '[]'::jsonb) as rows
     from bucket_totals
   ),
+  type_json as (
+    select coalesce(jsonb_agg(
+      jsonb_build_object(
+        'record_type', record_type,
+        'file_kind', file_kind,
+        'file_count', file_count,
+        'size_bytes', size_bytes
+      )
+      order by record_type, file_kind
+    ), '[]'::jsonb) as rows
+    from type_totals
+  ),
   monthly_json as (
     select coalesce(jsonb_agg(
       jsonb_build_object(
@@ -207,6 +248,7 @@ begin
         'file_name', file_name,
         'size_bytes', size_bytes,
         'created_at', created_at,
+        'content_type', content_type,
         'record_type', record_type,
         'file_record_id', file_record_id,
         'linked_record_id', linked_record_id,
@@ -228,13 +270,15 @@ begin
     'remaining_bytes', greatest(allowance_bytes - totals.total_bytes, 0),
     'usage_percent', case when allowance_bytes > 0 then round((totals.total_bytes::numeric / allowance_bytes::numeric) * 100, 3) else 0 end,
     'file_count', totals.file_count,
+    'photo_count', totals.photo_count,
     'bucket_totals', bucket_json.rows,
+    'type_totals', type_json.rows,
     'monthly_usage', monthly_json.rows,
     'top_files', top_json.rows,
     'generated_at', now()
   )
   into result
-  from totals, bucket_json, monthly_json, top_json;
+  from totals, bucket_json, type_json, monthly_json, top_json;
 
   return result;
 end;
