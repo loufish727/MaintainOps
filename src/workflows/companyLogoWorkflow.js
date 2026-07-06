@@ -7,7 +7,7 @@
     const consoleRef = deps.consoleRef || console;
     const createImageBitmapRef = deps.createImageBitmapRef || (typeof createImageBitmap !== "undefined" ? createImageBitmap : null);
     const logoUploadLimitBytes = 25 * 1024 * 1024;
-    const logoMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    const logoStoredMimeTypes = new Set(["image/png"]);
 
     async function uploadCompanyLogo(event) {
       event.preventDefault();
@@ -87,13 +87,6 @@
     async function optimizeLogo(file) {
       if (typeof deps.optimizeLogoOverride === "function") return deps.optimizeLogoOverride(file);
       const contentType = contentTypeForLogo(file);
-      if (!logoMimeTypes.has(contentType)) {
-        return {
-          blob: file,
-          fileName: deps.safeFileName(file.name || "logo"),
-          contentType,
-        };
-      }
 
       try {
         if (!createImageBitmapRef) throw new Error("Browser logo optimization is unavailable.");
@@ -119,12 +112,8 @@
           contentType: "image/png",
         };
       } catch (error) {
-        consoleRef.warn("Logo optimization failed; uploading original.", error);
-        return {
-          blob: file,
-          fileName: deps.safeFileName(file.name || "logo"),
-          contentType,
-        };
+        consoleRef.warn("Logo optimization failed.", error);
+        throw new Error("This logo image could not be resized by the browser. Try saving it as JPG, PNG, or WebP first.");
       }
     }
 
@@ -135,19 +124,26 @@
       if (/\.(jpe?g)$/.test(name)) return "image/jpeg";
       if (/\.png$/.test(name)) return "image/png";
       if (/\.webp$/.test(name)) return "image/webp";
+      if (/\.gif$/.test(name)) return "image/gif";
+      if (/\.heic$/.test(name)) return "image/heic";
+      if (/\.heif$/.test(name)) return "image/heif";
+      if (/\.avif$/.test(name)) return "image/avif";
+      if (/\.bmp$/.test(name)) return "image/bmp";
+      if (/\.tiff?$/.test(name)) return "image/tiff";
       return "application/octet-stream";
     }
 
     function validateLogoUpload(file) {
-      if (!logoMimeTypes.has(contentTypeForLogo(file))) {
-        return "Company logos must be JPG, PNG, or WebP images.";
+      const contentType = contentTypeForLogo(file);
+      if (!contentType.startsWith("image/")) {
+        return "Company logos must be image files.";
       }
       return "";
     }
 
     function validateOptimizedLogo(optimized) {
-      if (!logoMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
-        return "Company logos must be JPG, PNG, or WebP images.";
+      if (!logoStoredMimeTypes.has(String(optimized?.contentType || "").toLowerCase())) {
+        return "Company logos must be resized to PNG before upload.";
       }
       if (Number(optimized?.blob?.size || 0) > logoUploadLimitBytes) {
         return "This logo is still over 25 MB after resizing. Try a smaller logo image.";

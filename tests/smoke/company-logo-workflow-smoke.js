@@ -67,7 +67,7 @@ class FakeFormData {
   await uploadCompanyLogo({
     preventDefault() {},
     currentTarget: {
-      formValues: { logo: { name: "logo source.png", type: "image/png" } },
+      formValues: { logo: { name: "logo source.gif", type: "image/gif" } },
       querySelector(selector) {
         return selector === "button[type='submit']" ? button : null;
       },
@@ -91,7 +91,7 @@ class FakeFormData {
     },
   });
   assert.equal(calls.filter((call) => call[0] === "upload").length, uploadCount);
-  assert.equal(errorTarget.textContent, "Company logos must be JPG, PNG, or WebP images.");
+  assert.equal(errorTarget.textContent, "Company logos must be image files.");
 
   const oversizedWorkflow = createCompanyLogoWorkflow({
     documentRef: {
