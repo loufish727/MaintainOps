@@ -142,6 +142,9 @@ async function main() {
   await run(npmCommand, ["run", "test:migrations:static"], {
     label: "migration static check",
   });
+  await run(npmCommand, ["run", "test:bundle:pilot"], {
+    label: "bundle pilot smoke",
+  });
   await runNodeSmokeSweep();
   await run(npmCommand, ["run", "test:smoke:work-attach"], {
     label: "work attach smoke suite",

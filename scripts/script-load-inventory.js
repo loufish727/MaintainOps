@@ -42,8 +42,8 @@ function uniqueSorted(values) {
 function findProvidedGlobals(text) {
   const globals = [];
   const patterns = [
-    /\bwindow\.(MaintainOps[A-Za-z0-9_]+)\s*=/g,
-    /\bwindow\["(MaintainOps[A-Za-z0-9_]+)"\]\s*=/g,
+    /\b(?:window|global)\.(MaintainOps[A-Za-z0-9_]+)\s*=/g,
+    /\b(?:window|global)\["(MaintainOps[A-Za-z0-9_]+)"\]\s*=/g,
   ];
   for (const pattern of patterns) {
     let match;
@@ -122,6 +122,22 @@ function buildInventory() {
   const totalProvided = uniqueSorted(localRows.flatMap((row) => row.providedGlobals));
   const totalConsumed = uniqueSorted(localRows.flatMap((row) => row.consumedGlobals));
   const appShell = rows.find((row) => stripQuery(row.source) === "app.js");
+  const providerOrder = new Map();
+  for (const row of rows) {
+    for (const providedGlobal of row.providedGlobals) {
+      providerOrder.set(providedGlobal, row.order);
+    }
+  }
+  const loadOrderViolations = rows.flatMap((row) => row.consumedGlobals
+    .filter((consumedGlobal) => providerOrder.has(consumedGlobal))
+    .filter((consumedGlobal) => providerOrder.get(consumedGlobal) >= row.order)
+    .map((consumedGlobal) => ({
+      source: row.source,
+      order: row.order,
+      consumedGlobal,
+      providerOrder: providerOrder.get(consumedGlobal),
+    })));
+  const missingMainIndexGlobals = uniqueSorted(totalConsumed.filter((consumedGlobal) => !providerOrder.has(consumedGlobal)));
 
   const lines = [];
   lines.push("# Script Load Inventory");
@@ -135,7 +151,17 @@ function buildInventory() {
   lines.push(`- Local scripts: ${localRows.length}`);
   lines.push(`- Local ` + "`window.MaintainOps...` globals provided: " + `${totalProvided.length}`);
   lines.push(`- Local ` + "`window.MaintainOps...` globals consumed: " + `${totalConsumed.length}`);
+  lines.push(`- Main-index load-order violations: ${loadOrderViolations.length}`);
+  lines.push(`- Consumed globals not provided by main index: ${missingMainIndexGlobals.length}`);
   lines.push(`- App shell source: ${appShell ? "`" + appShell.source + "`" : "not found"}`);
+  if (missingMainIndexGlobals.length) {
+    lines.push("");
+    lines.push("Main-index missing globals are allowed only when intentionally lazy-loaded or provided by non-index bootstrapping.");
+    lines.push("");
+    for (const missingGlobal of missingMainIndexGlobals) {
+      lines.push(`- \`${missingGlobal}\``);
+    }
+  }
   lines.push("");
   lines.push("## Bundling Notes");
   lines.push("");
@@ -170,6 +196,11 @@ function main() {
   const currentContent = fs.existsSync(outputPath) ? readText(outputPath).replace(/\r\n/g, "\n") : "";
   if (currentContent.trim() !== nextContent.trim()) {
     console.error("Script load inventory is out of date. Run `node scripts/script-load-inventory.js --write`.");
+    process.exit(1);
+  }
+  const loadOrderMatch = nextContent.match(/Main-index load-order violations: (\d+)/);
+  if (loadOrderMatch && Number(loadOrderMatch[1]) > 0) {
+    console.error(`Script load inventory has ${loadOrderMatch[1]} load-order violation(s).`);
     process.exit(1);
   }
   console.log("script load inventory is current");

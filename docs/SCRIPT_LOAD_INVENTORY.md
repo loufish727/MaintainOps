@@ -7,9 +7,16 @@ Run `npm run test:scripts:inventory` to verify this document stays in sync with 
 
 - Total deferred scripts: 176
 - Local scripts: 175
-- Local `window.MaintainOps...` globals provided: 172
+- Local `window.MaintainOps...` globals provided: 173
 - Local `window.MaintainOps...` globals consumed: 175
+- Main-index load-order violations: 0
+- Consumed globals not provided by main index: 2
 - App shell source: `app.js?v=mo-build-20260706-accounting-boundaries-1`
+
+Main-index missing globals are allowed only when intentionally lazy-loaded or provided by non-index bootstrapping.
+
+- `MaintainOpsConversionDisplay`
+- `MaintainOpsConversions`
 
 ## Bundling Notes
 
@@ -24,7 +31,7 @@ Run `npm run test:scripts:inventory` to verify this document stays in sync with 
 |---:|---|---|---|---|---|
 | 1 | vendor | `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4` |  |  | Provides `window.supabase` from jsDelivr. |
 | 2 | config | `supabase-config.js?v=mo-build-20260603-2` |  |  | Provides browser-safe Supabase config globals. |
-| 3 | utility | `src/utils/authRedirects.js?v=mo-build-20260603-3` |  |  |  |
+| 3 | utility | `src/utils/authRedirects.js?v=mo-build-20260603-3` | `MaintainOpsAuthRedirects` |  |  |
 | 4 | utility | `src/utils/constants.js?v=mo-build-20260603-4` | `MaintainOpsConstants` |  |  |
 | 5 | utility | `src/utils/dom.js?v=mo-build-20260603-5` | `MaintainOpsDom` |  |  |
 | 6 | utility | `src/utils/formatting.js?v=mo-build-20260701-all-completed-filter-1` | `MaintainOpsFormatting` | `MaintainOpsConstants` |  |

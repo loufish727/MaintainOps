@@ -15,10 +15,12 @@ This plan is intentionally staged. It does not change runtime architecture until
 ## Bundling Phases
 
 1. Inventory current script tags, module globals, and load-order dependencies in `docs/SCRIPT_LOAD_INVENTORY.md`.
-2. Add a build tool in compatibility mode that still outputs static files for GitHub Pages.
-3. Bundle low-risk extracted modules first while preserving the existing global API expected by `app.js`.
-4. Move toward generated hashed asset filenames so browser cache busting is automatic.
-5. Keep a rollback path to the current static script tags until strict LFES and hosted LFES pass on the bundled output.
+2. Enforce that main-index globals are provided before they are consumed.
+3. Add a build tool in compatibility mode that still outputs static files for GitHub Pages.
+4. Bundle low-risk extracted modules first while preserving the existing global API expected by `app.js`.
+5. Prove the first pilot bundle through `npm run test:bundle:pilot` without loading the generated bundle in production.
+6. Move toward generated hashed asset filenames so browser cache busting is automatic.
+7. Keep a rollback path to the current static script tags until strict LFES and hosted LFES pass on the bundled output.
 
 ## SQL Migration Phases
 
