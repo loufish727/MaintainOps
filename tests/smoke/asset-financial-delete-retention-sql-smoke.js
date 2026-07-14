@@ -14,6 +14,9 @@ for (const sql of [migration, schema]) {
   assert.match(sql, /archive_asset_financial_before_delete/i);
   assert.match(sql, /set asset_id = null/i);
   assert.match(sql, /archived_asset_name = old\.name/i);
+  assert.match(sql, /if not found then/i);
+  assert.match(sql, /insert into public\.asset_financials/i);
+  assert.match(sql, /archived_asset_id,\s*archived_asset_name,\s*archived_asset_type/i);
   assert.match(sql, /Finance roles can delete archived asset financials/i);
   assert.match(sql, /asset_financials\.asset_id is null/i);
 }

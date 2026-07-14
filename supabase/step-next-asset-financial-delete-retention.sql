@@ -53,6 +53,39 @@ begin
   where af.asset_id = old.id
     and af.company_id = old.company_id;
 
+  if not found then
+    insert into public.asset_financials (
+      company_id,
+      asset_id,
+      archived_asset_id,
+      archived_asset_name,
+      archived_asset_type,
+      archived_asset_code,
+      archived_manufacturer,
+      archived_model,
+      archived_location_id,
+      archived_location,
+      operational_deleted_at,
+      operational_deleted_by,
+      needs_review
+    )
+    values (
+      old.company_id,
+      null,
+      old.id,
+      old.name,
+      old.asset_type,
+      old.asset_code,
+      old.manufacturer,
+      old.model,
+      old.location_id,
+      old.location,
+      now(),
+      auth.uid(),
+      true
+    );
+  end if;
+
   return old;
 end;
 $$;
