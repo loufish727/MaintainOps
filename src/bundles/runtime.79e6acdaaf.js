@@ -753,6 +753,76 @@
     }
   });
 
+  // src/utils/workspaceEquipmentChoiceEvents.js
+  var require_workspaceEquipmentChoiceEvents = __commonJS({
+    "src/utils/workspaceEquipmentChoiceEvents.js"(exports, module) {
+      (function() {
+        const boundDocuments = /* @__PURE__ */ new WeakSet();
+        function setEquipmentChoiceMode(group, mode, updateAssetLocationWarning) {
+          if (!group) return;
+          const existingField = group.querySelector("[data-equipment-choice-existing]");
+          const newField = group.querySelector("[data-equipment-choice-new]");
+          const useNew = mode === "new";
+          group.querySelectorAll("[data-equipment-choice-mode]").forEach((control) => {
+            const active = control.value === (useNew ? "new" : "existing");
+            control.checked = active;
+            control.closest("label")?.classList.toggle("active", active);
+          });
+          group.querySelectorAll("[data-equipment-choice-panel]").forEach((panel) => {
+            panel.hidden = panel.dataset.equipmentChoicePanel !== (useNew ? "new" : "existing");
+          });
+          if (existingField) {
+            existingField.disabled = useNew;
+            existingField.required = !useNew && existingField.dataset.equipmentChoiceRequired === "true";
+            if (useNew) existingField.value = "";
+            if (typeof updateAssetLocationWarning === "function") updateAssetLocationWarning(existingField);
+          }
+          if (newField) {
+            newField.disabled = !useNew;
+            newField.required = useNew && newField.dataset.equipmentChoiceRequired === "true";
+            if (!useNew) newField.value = "";
+          }
+        }
+        function initializeEquipmentChoices(doc, updateAssetLocationWarning) {
+          doc.querySelectorAll("[data-equipment-choice]").forEach((group) => {
+            const selectedMode = group.querySelector("[data-equipment-choice-mode]:checked")?.value || "existing";
+            setEquipmentChoiceMode(group, selectedMode, updateAssetLocationWarning);
+          });
+        }
+        function bindWorkspaceEquipmentChoiceEvents(options = {}) {
+          const doc = options.documentRef || document;
+          const updateAssetLocationWarning = options.updateAssetLocationWarning;
+          initializeEquipmentChoices(doc, updateAssetLocationWarning);
+          if (boundDocuments.has(doc)) return;
+          boundDocuments.add(doc);
+          doc.addEventListener("change", (event) => {
+            const modeControl = event.target.closest?.("[data-equipment-choice-mode]");
+            if (modeControl) {
+              setEquipmentChoiceMode(modeControl.closest("[data-equipment-choice]"), modeControl.value, updateAssetLocationWarning);
+              return;
+            }
+            const existingField = event.target.closest?.("[data-equipment-choice-existing]");
+            if (existingField && typeof updateAssetLocationWarning === "function") {
+              updateAssetLocationWarning(existingField);
+            }
+          });
+        }
+        window.MaintainOpsWorkspaceEquipmentChoiceEvents = {
+          bindWorkspaceEquipmentChoiceEvents,
+          initializeEquipmentChoices,
+          setEquipmentChoiceMode
+        };
+        if (typeof module !== "undefined") {
+          module.exports = {
+            bindWorkspaceEquipmentChoiceEvents,
+            initializeEquipmentChoices,
+            setEquipmentChoiceMode
+          };
+        }
+      })();
+    }
+  });
+
   // src/workflows/quickFixWorkflow.js
   var require_quickFixWorkflow = __commonJS({
     "src/workflows/quickFixWorkflow.js"(exports, module) {
@@ -824,6 +894,9 @@
               let assetId = form.get("asset_id") || null;
               const sourceRequest = currentQuickFixRequestId ? getMaintenanceRequests().find((request) => request.id === currentQuickFixRequestId) : null;
               const newAssetName = String(form.get("new_asset_name") || "").trim();
+              if (assetId && newAssetName) {
+                throw new Error("Choose existing equipment or create new equipment, not both.");
+              }
               if (newAssetName) {
                 const { data: newAsset, error: assetError } = await withOperationTimeout(
                   createQuickFixAsset(newAssetName, machineDown ? "offline" : "running"),
@@ -2832,6 +2905,9 @@
             try {
               let assetId = form.get("asset_id") || null;
               const newAssetName = String(form.get("new_asset_name") || "").trim();
+              if (assetId && newAssetName) {
+                throw new Error("Choose existing equipment or create new equipment, not both.");
+              }
               if (newAssetName) {
                 const { data: newAsset, error: assetError } = await deps.createQuickFixAsset(newAssetName, "running");
                 if (assetError) {
@@ -3366,15 +3442,22 @@
             try {
               const form = new FormDataCtor(formElement);
               const assetId = form.get("asset_id") || null;
+              const equipmentNote = String(form.get("equipment_note") || "").trim();
+              if (assetId && equipmentNote) {
+                throw new Error("Choose saved equipment or enter equipment not listed / a general area, not both.");
+              }
+              if (!assetId && !equipmentNote) {
+                throw new Error("Choose saved equipment or enter equipment not listed / a general area.");
+              }
               if (!deps.confirmAssetLocationRouting(assetId, "submitting this request", errorElement)) return;
-              const equipmentNote = deps.requiredText(form.get("equipment_note"), "Machine / area");
+              const equipmentLabel = equipmentNote || deps.assetNameFor?.(assetId) || "Saved equipment";
               const requestDescription = deps.requiredText(form.get("description"), "Request details");
               const requesterName = deps.requiredText(form.get("requester_name"), "Your name");
               const requestPayload = {
                 company_id: deps.getActiveCompanyId(),
                 location_id: deps.locationIdForAsset(assetId),
                 title: deps.requiredText(form.get("title"), "Request title"),
-                description: `Machine / area: ${equipmentNote}
+                description: `Machine / area: ${equipmentLabel}
 
 ${requestDescription}`,
                 asset_id: assetId,
@@ -3583,6 +3666,9 @@ ${requestDescription}`,
               const status = form.get("status") || "open";
               let assetId = form.get("asset_id") || null;
               const newAssetName = String(form.get("new_asset_name") || "").trim();
+              if (assetId && newAssetName) {
+                throw new Error("Choose existing equipment or create new equipment, not both.");
+              }
               if (newAssetName) {
                 const { data: newAsset, error: assetError } = await deps.createQuickFixAsset(newAssetName, "running");
                 if (assetError) {
@@ -5818,15 +5904,26 @@ ${requestDescription}`,
         <form class="form-grid" id="request-form">
           <label>Request title<input name="title" required placeholder="Cold room door not sealing"></label>
           <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
-          <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+          <fieldset class="equipment-choice request-equipment-choice" data-equipment-choice>
+            <legend>Machine / area</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose saved equipment or an unlisted area">
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode> Saved equipment</label>
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode checked> Equipment not listed / general area</label>
+            </div>
+            <div data-equipment-choice-panel="existing" hidden>
+              <label>Saved equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing data-equipment-choice-required="true" disabled>
+                  <option value="">Choose saved equipment</option>
+                  ${renderAssetOptions()}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new">
+              <label>Equipment name or general area<input name="equipment_note" data-equipment-choice-new data-equipment-choice-required="true" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+            </div>
+          </fieldset>
           <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
           <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
-          <label>Link to saved equipment
-            <select name="asset_id" data-location-sensitive-asset>
-              <option value="">No saved equipment link</option>
-              ${renderAssetOptions()}
-            </select>
-          </label>
           <p class="error-text" data-asset-location-warning></p>
           <label>Priority
             <select name="priority">
@@ -7758,16 +7855,24 @@ ${requestDescription}`,
           <summary>Quick Update</summary>
           <form class="form-grid" id="quick-update-work-order-form">
             <label id="quick-update-issue-field">Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
-            <div class="equipment-choice" id="quick-update-equipment-field">
-              <label>Machine / equipment
-                <select name="asset_id" data-location-sensitive-asset>
-                  <option value="">No machine / equipment - general item or area</option>
-                  ${renderAssetOptions(workOrder.asset_id || "")}
-                </select>
-              </label>
-              <span>or</span>
-              <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
-            </div>
+            <fieldset class="equipment-choice" id="quick-update-equipment-field" data-equipment-choice>
+              <legend>Machine / equipment</legend>
+              <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+                <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+                <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+              </div>
+              <div data-equipment-choice-panel="existing">
+                <label>Existing machine / equipment
+                  <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                    <option value="">No machine / equipment - general item or area</option>
+                    ${renderAssetOptions(workOrder.asset_id || "")}
+                  </select>
+                </label>
+              </div>
+              <div data-equipment-choice-panel="new" hidden>
+                <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Roll Former 3" disabled></label>
+              </div>
+            </fieldset>
             <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(workOrder.asset_id || ""))}</p>
             <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
             <label id="quick-update-due-field">Expected back up / due date
@@ -8745,16 +8850,24 @@ ${requestDescription}`,
           <div class="form-section-title">1. What needs attention?</div>
           <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
           <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
-          <div class="equipment-choice">
-            <label>Machine / equipment
-              <select name="asset_id" data-location-sensitive-asset>
-                <option value="">No machine / equipment - general item or area</option>
-                ${renderAssetOptions()}
-              </select>
-            </label>
-            <span>or</span>
-            <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
-          </div>
+          <fieldset class="equipment-choice" data-equipment-choice>
+            <legend>Machine / equipment</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+            </div>
+            <div data-equipment-choice-panel="existing">
+              <label>Existing machine / equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                  <option value="">No machine / equipment - general item or area</option>
+                  ${renderAssetOptions()}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new" hidden>
+              <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Roll Former 3" disabled></label>
+            </div>
+          </fieldset>
           <p class="error-text" data-asset-location-warning></p>
     
           <details class="quick-fix-more" open>
@@ -8891,15 +9004,25 @@ ${requestDescription}`,
             </span>
             <small>Defaults to today. Use the calendar to choose a different deadline.</small>
           </label>
-          <label>Machine / equipment
-            <select name="asset_id" data-location-sensitive-asset>
-              <option value="">No machine / equipment - general item or area</option>
-              ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
-            </select>
-            <small>Machine or equipment not listed? Add it below.</small>
-          </label>
+          <fieldset class="equipment-choice" data-equipment-choice>
+            <legend>Machine / equipment</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+            </div>
+            <div data-equipment-choice-panel="existing">
+              <label>Existing machine / equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                  <option value="">No machine / equipment - general item or area</option>
+                  ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new" hidden>
+              <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Packaging Line 2" disabled></label>
+            </div>
+          </fieldset>
           <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(selectedAssetId || sourceRequest?.asset_id || ""))}</p>
-          <label>New machine / equipment name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
           <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are attached from equipment or parts. Photos are resized to 768px.</small></label>
           <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
           <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>
@@ -11690,6 +11813,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
   })();
 
   // src/bundles/runtime.entry.js
+  var import_workspaceEquipmentChoiceEvents = __toESM(require_workspaceEquipmentChoiceEvents());
   var import_quickFixWorkflow = __toESM(require_quickFixWorkflow());
   var import_messageWorkflow = __toESM(require_messageWorkflow());
   var import_preventiveMaintenanceWorkflow = __toESM(require_preventiveMaintenanceWorkflow());

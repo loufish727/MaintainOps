@@ -27,15 +27,22 @@
       try {
         const form = new FormDataCtor(formElement);
         const assetId = form.get("asset_id") || null;
+        const equipmentNote = String(form.get("equipment_note") || "").trim();
+        if (assetId && equipmentNote) {
+          throw new Error("Choose saved equipment or enter equipment not listed / a general area, not both.");
+        }
+        if (!assetId && !equipmentNote) {
+          throw new Error("Choose saved equipment or enter equipment not listed / a general area.");
+        }
         if (!deps.confirmAssetLocationRouting(assetId, "submitting this request", errorElement)) return;
-        const equipmentNote = deps.requiredText(form.get("equipment_note"), "Machine / area");
+        const equipmentLabel = equipmentNote || deps.assetNameFor?.(assetId) || "Saved equipment";
         const requestDescription = deps.requiredText(form.get("description"), "Request details");
         const requesterName = deps.requiredText(form.get("requester_name"), "Your name");
         const requestPayload = {
           company_id: deps.getActiveCompanyId(),
           location_id: deps.locationIdForAsset(assetId),
           title: deps.requiredText(form.get("title"), "Request title"),
-          description: `Machine / area: ${equipmentNote}\n\n${requestDescription}`,
+          description: `Machine / area: ${equipmentLabel}\n\n${requestDescription}`,
           asset_id: assetId,
           priority: form.get("priority"),
           status: "submitted",

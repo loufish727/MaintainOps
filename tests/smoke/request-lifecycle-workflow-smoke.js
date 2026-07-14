@@ -127,6 +127,7 @@ function createWorkflow(options = {}) {
     renderRequestFormContent: () => "<form>request</form>",
     confirmAssetLocationRouting: () => true,
     locationIdForAsset: (assetId) => assetId ? "location-1" : null,
+    assetNameFor: (assetId) => assetId === "asset-1" ? "Saved Press" : "",
     requiredText: (value, label) => {
       const text = String(value || "").trim();
       if (!text) throw new Error(`${label} is required.`);
@@ -179,7 +180,7 @@ function createWorkflow(options = {}) {
       requester_name: "Lee Requester",
       equipment_note: "Thalmann line",
       description: "Request description",
-      asset_id: "asset-1",
+      asset_id: "",
       priority: "medium",
       photo: { name: "request.jpg" },
     },
@@ -192,6 +193,37 @@ function createWorkflow(options = {}) {
   assert.equal(created.calls.some((call) => call[0] === "notifyRequestEmailer" && call[1] === "request-new"), true);
   assert.equal(created.calls.some((call) => call[0] === "activeSection" && call[1] === "requests"), true);
   assert.equal(requestForm.button.disabled, false);
+
+  const savedEquipment = createWorkflow();
+  const savedEquipmentForm = createElement({
+    buttonText: "Submit Request",
+    formValues: {
+      title: "Saved equipment request",
+      requester_name: "Lee Requester",
+      equipment_note: "",
+      description: "Request description",
+      asset_id: "asset-1",
+      priority: "medium",
+    },
+  });
+  await savedEquipment.workflow.createRequest({ preventDefault() {}, target: savedEquipmentForm });
+  assert.equal(savedEquipment.calls.some((call) => call[0] === "insert" && call[1] === "maintenance_requests" && /Machine \/ area: Saved Press/.test(call[2].description)), true);
+
+  const conflictingEquipment = createWorkflow();
+  const conflictingForm = createElement({
+    buttonText: "Submit Request",
+    formValues: {
+      title: "Conflicting request",
+      requester_name: "Lee Requester",
+      equipment_note: "Other press",
+      description: "Request description",
+      asset_id: "asset-1",
+      priority: "medium",
+    },
+  });
+  await conflictingEquipment.workflow.createRequest({ preventDefault() {}, target: conflictingForm });
+  assert.match(conflictingEquipment.elements["#request-error"].textContent, /Choose saved equipment or enter equipment not listed/);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "insert"), false);
 
   const converted = createWorkflow();
   await converted.workflow.convertRequestToWorkOrder("request-1");

@@ -88,15 +88,26 @@
         <form class="form-grid" id="request-form">
           <label>Request title<input name="title" required placeholder="Cold room door not sealing"></label>
           <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
-          <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+          <fieldset class="equipment-choice request-equipment-choice" data-equipment-choice>
+            <legend>Machine / area</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose saved equipment or an unlisted area">
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode> Saved equipment</label>
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode checked> Equipment not listed / general area</label>
+            </div>
+            <div data-equipment-choice-panel="existing" hidden>
+              <label>Saved equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing data-equipment-choice-required="true" disabled>
+                  <option value="">Choose saved equipment</option>
+                  ${renderAssetOptions()}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new">
+              <label>Equipment name or general area<input name="equipment_note" data-equipment-choice-new data-equipment-choice-required="true" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
+            </div>
+          </fieldset>
           <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
           <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
-          <label>Link to saved equipment
-            <select name="asset_id" data-location-sensitive-asset>
-              <option value="">No saved equipment link</option>
-              ${renderAssetOptions()}
-            </select>
-          </label>
           <p class="error-text" data-asset-location-warning></p>
           <label>Priority
             <select name="priority">

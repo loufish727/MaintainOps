@@ -1668,19 +1668,60 @@ h3 { margin-bottom: 8px; font-size: 1rem; font-weight: 560; }
   grid-template-columns: 1fr;
   gap: 7px;
   border: 1px solid color-mix(in srgb, var(--rel-asset-ink) 42%, var(--line));
-  border-radius: 10px;
+  border-radius: 8px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--rel-asset-ink) 12%, transparent), rgba(0,0,0,0.06)),
     color-mix(in srgb, var(--rel-asset-bg) 42%, var(--surface-2));
   padding: 10px;
 }
 
-.equipment-choice > span {
-  justify-self: center;
+.equipment-choice legend {
+  padding: 0 5px;
   color: var(--rel-asset-ink);
-  font-size: 0.72rem;
-  font-weight: 520;
-  text-transform: none;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.equipment-choice-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.equipment-choice .equipment-choice-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 7px 9px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.equipment-choice .equipment-choice-mode.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--ink);
+}
+
+.equipment-choice .equipment-choice-mode input {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.equipment-choice [data-equipment-choice-panel] > label {
+  display: grid;
 }
 
 .compact-check,
@@ -8679,6 +8720,10 @@ textarea:focus {
     padding: 8px;
   }
 
+  .equipment-choice-modes {
+    grid-template-columns: 1fr;
+  }
+
   .relationship-detail,
   .completion-box {
     padding: 10px;
@@ -9841,6 +9886,44 @@ textarea:focus {
 }
 
 /* Final field contrast guard: Quick Fix runs on phones in mixed theme states. */
+.form-grid .equipment-choice label.equipment-choice-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 7px 9px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-grid .equipment-choice label.equipment-choice-mode.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--ink);
+}
+
+.form-grid .equipment-choice label.equipment-choice-mode input[type="radio"] {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.quick-fix-form .equipment-choice-mode input[type="radio"] {
+  appearance: auto;
+  background: transparent !important;
+  -webkit-text-fill-color: currentColor;
+}
+
 .quick-fix-form input:not([type="checkbox"]):not([type="file"]),
 .quick-fix-form textarea {
   background: #0f1714 !important;

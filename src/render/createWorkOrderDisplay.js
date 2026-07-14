@@ -34,16 +34,24 @@
           <div class="form-section-title">1. What needs attention?</div>
           <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
           <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
-          <div class="equipment-choice">
-            <label>Machine / equipment
-              <select name="asset_id" data-location-sensitive-asset>
-                <option value="">No machine / equipment - general item or area</option>
-                ${renderAssetOptions()}
-              </select>
-            </label>
-            <span>or</span>
-            <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
-          </div>
+          <fieldset class="equipment-choice" data-equipment-choice>
+            <legend>Machine / equipment</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+            </div>
+            <div data-equipment-choice-panel="existing">
+              <label>Existing machine / equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                  <option value="">No machine / equipment - general item or area</option>
+                  ${renderAssetOptions()}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new" hidden>
+              <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Roll Former 3" disabled></label>
+            </div>
+          </fieldset>
           <p class="error-text" data-asset-location-warning></p>
     
           <details class="quick-fix-more" open>

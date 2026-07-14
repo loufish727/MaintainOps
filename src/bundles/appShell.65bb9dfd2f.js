@@ -459,6 +459,7 @@
   var { bindWorkspaceWorkOrderEditEvents } = window.MaintainOpsWorkspaceWorkOrderEditEvents;
   var { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
   var { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
+  var { bindWorkspaceEquipmentChoiceEvents } = window.MaintainOpsWorkspaceEquipmentChoiceEvents;
   var { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
   var { generatePublicRequestToken } = window.MaintainOpsPublicRequestTokens;
   var { createCsvExportHelpers } = window.MaintainOpsCsvExport;
@@ -4478,6 +4479,9 @@ Continue ${actionLabel}?`);
     bindWorkspaceAssetLocationWarningEvents({
       updateAssetLocationWarning
     });
+    bindWorkspaceEquipmentChoiceEvents({
+      updateAssetLocationWarning
+    });
     document.querySelectorAll("[data-sign-out]").forEach((button) => {
       button.addEventListener("click", () => supabaseClient.auth.signOut());
     });
@@ -5326,6 +5330,7 @@ Continue ${actionLabel}?`);
     renderRequestFormContent,
     confirmAssetLocationRouting,
     locationIdForAsset,
+    assetNameFor: (assetId) => assets.find((asset) => asset.id === assetId)?.name || "",
     requiredText,
     isMissingColumnError,
     databaseSetupRequiredMessage,

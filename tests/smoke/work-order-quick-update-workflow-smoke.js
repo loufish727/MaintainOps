@@ -164,6 +164,18 @@ function createWorkflow(overrides = {}) {
   assert.equal(down.calls.some((call) => call[0] === "assetStatus" && call[2] === "offline"), true);
   assert.equal(down.calls.some((call) => call[0] === "event" && call[3] === "Equipment marked offline/down."), true);
 
+  const newEquipment = createWorkflow({ values: { asset_id: "", new_asset_name: "New Brake" } });
+  await newEquipment.run();
+  assert.equal(newEquipment.calls.some((call) => call[0] === "createAsset" && call[1] === "New Brake"), true);
+  assert.equal(newEquipment.calls.find((call) => call[0] === "update")[2].asset_id, "asset-new");
+
+  const conflictingEquipment = createWorkflow({ values: { asset_id: "asset-1", new_asset_name: "New Brake" } });
+  const conflictingButton = await conflictingEquipment.run();
+  assert.match(conflictingEquipment.errorTarget.textContent, /Choose existing equipment or create new equipment, not both/);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "createAsset"), false);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "update"), false);
+  assert.equal(conflictingButton.disabled, false);
+
   console.log("work order quick update workflow smoke passed");
 })().catch((error) => {
   console.error(error);

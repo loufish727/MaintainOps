@@ -46,15 +46,25 @@
             </span>
             <small>Defaults to today. Use the calendar to choose a different deadline.</small>
           </label>
-          <label>Machine / equipment
-            <select name="asset_id" data-location-sensitive-asset>
-              <option value="">No machine / equipment - general item or area</option>
-              ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
-            </select>
-            <small>Machine or equipment not listed? Add it below.</small>
-          </label>
+          <fieldset class="equipment-choice" data-equipment-choice>
+            <legend>Machine / equipment</legend>
+            <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+              <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+              <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+            </div>
+            <div data-equipment-choice-panel="existing">
+              <label>Existing machine / equipment
+                <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                  <option value="">No machine / equipment - general item or area</option>
+                  ${renderAssetOptions(selectedAssetId || sourceRequest?.asset_id || "")}
+                </select>
+              </label>
+            </div>
+            <div data-equipment-choice-panel="new" hidden>
+              <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Packaging Line 2" disabled></label>
+            </div>
+          </fieldset>
           <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(selectedAssetId || sourceRequest?.asset_id || ""))}</p>
-          <label>New machine / equipment name<input name="new_asset_name" placeholder="Packaging Line 2"></label>
           <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are attached from equipment or parts. Photos are resized to 768px.</small></label>
           <label class="check-row"><input name="machine_down" type="checkbox"> Machine is down</label>
           <label class="check-row"><input name="mark_completed" type="checkbox"> Already fixed - mark complete now</label>

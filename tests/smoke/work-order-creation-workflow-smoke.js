@@ -136,6 +136,7 @@ function createWorkflow(overrides = {}) {
 
   const withExtras = createWorkflow({
     values: {
+      asset_id: "",
       new_asset_name: "New pump",
       part_id: "part-1",
       quantity_used: "2",
@@ -148,6 +149,14 @@ function createWorkflow(overrides = {}) {
   assert.equal(withExtras.calls.some((call) => call[0] === "part" && call[3] === 2), true);
   assert.equal(withExtras.calls.some((call) => call[0] === "photo" && call[2] === "photo.jpg"), true);
   assert.equal(withExtras.calls.some((call) => call[0] === "comment" && call[2] === "Initial note"), true);
+
+  const conflictingEquipment = createWorkflow({
+    values: { asset_id: "asset-1", new_asset_name: "Duplicate pump" },
+  });
+  await conflictingEquipment.run();
+  assert.match(conflictingEquipment.errorTarget.textContent, /Choose existing equipment or create new equipment, not both/);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "createAsset"), false);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "insert"), false);
 
   const safetyBlocked = createWorkflow({
     assetRequiresSafety: true,

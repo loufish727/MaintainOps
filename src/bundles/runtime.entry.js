@@ -60,6 +60,7 @@ import "../utils/workspaceQuickUpdateEvents.js";
 import "../utils/workspaceWorkOrderEditEvents.js";
 import "../utils/workspaceRequestQuickFixEvents.js";
 import "../utils/workspaceAssetLocationWarningEvents.js";
+import "../utils/workspaceEquipmentChoiceEvents.js";
 import "../workflows/quickFixWorkflow.js";
 import "../workflows/messageWorkflow.js";
 import "../workflows/preventiveMaintenanceWorkflow.js";

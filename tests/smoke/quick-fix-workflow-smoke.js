@@ -129,6 +129,29 @@ function createWorkflow(formValues = {}) {
   assert.equal(assetInsert[2].asset_id, "asset-1");
   assert.equal(assetInsert[2].location_id, "location-asset-1");
 
+  const newAssetRun = createWorkflow({ asset_id: "", new_asset_name: "New Press" });
+  await newAssetRun.createQuickFix({
+    preventDefault: () => newAssetRun.calls.push(["preventDefault"]),
+    currentTarget: {
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? newAssetRun.submitButton : null;
+      },
+    },
+  });
+  assert.equal(newAssetRun.calls.find((call) => call[0] === "insert")[2].asset_id, "asset-new");
+
+  const conflictingEquipment = createWorkflow({ asset_id: "asset-1", new_asset_name: "New Press" });
+  await conflictingEquipment.createQuickFix({
+    preventDefault: () => conflictingEquipment.calls.push(["preventDefault"]),
+    currentTarget: {
+      querySelector(selector) {
+        return selector === "button[type='submit']" ? conflictingEquipment.submitButton : null;
+      },
+    },
+  });
+  assert.match(conflictingEquipment.errorTarget.textContent, /Choose existing equipment or create new equipment, not both/);
+  assert.equal(conflictingEquipment.calls.some((call) => call[0] === "insert"), false);
+
   const deadlineRun = createWorkflow({ due_at: "2026-06-14" });
   await deadlineRun.createQuickFix({
     preventDefault: () => deadlineRun.calls.push(["preventDefault"]),

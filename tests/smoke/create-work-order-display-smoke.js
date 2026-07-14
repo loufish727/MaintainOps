@@ -19,7 +19,12 @@ const html = renderCreateWorkOrder();
 
 assert.match(html, /id="create-work-order-form"/);
 assert.match(html, /data-location-sensitive-asset/);
+assert.match(html, /data-equipment-choice/);
+assert.match(html, /value="existing" data-equipment-choice-mode checked/);
+assert.match(html, /value="new" data-equipment-choice-mode/);
+assert.match(html, /Create new equipment/);
 assert.match(html, /name="new_asset_name"/);
+assert.match(html, /name="new_asset_name"[^>]*disabled/);
 assert.match(html, /name="due_at"/);
 assert.match(html, /Complete by \/ due date/);
 assert.match(html, /name="due_at" type="date" value="\d{4}-\d{2}-\d{2}"/);

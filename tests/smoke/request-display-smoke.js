@@ -89,11 +89,14 @@ const form = helpers.renderRequestFormContent();
 assert.match(form, /id="request-form"/);
 assert.match(form, /name="title"/);
 assert.match(form, /name="requester_name" required/);
-assert.match(form, /name="equipment_note" required/);
+assert.match(form, /name="equipment_note"[^>]*required/);
+assert.match(form, /data-equipment-choice/);
+assert.match(form, /Saved equipment/);
+assert.match(form, /Equipment not listed \/ general area/);
 assert.match(form, /name="description" rows="4" required/);
 assert.match(form, /name="photo"/);
 assert.match(form, /data-location-sensitive-asset/);
-assert.match(form, /Link to saved equipment/);
+assert.match(form, /name="asset_id"[^>]*disabled/);
 assert.match(form, /id="request-error"/);
 assert.match(form, /Submit Request/);
 

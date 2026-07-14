@@ -73,6 +73,9 @@
         let assetId = form.get("asset_id") || null;
         const sourceRequest = currentQuickFixRequestId ? getMaintenanceRequests().find((request) => request.id === currentQuickFixRequestId) : null;
         const newAssetName = String(form.get("new_asset_name") || "").trim();
+        if (assetId && newAssetName) {
+          throw new Error("Choose existing equipment or create new equipment, not both.");
+        }
         if (newAssetName) {
           const { data: newAsset, error: assetError } = await withOperationTimeout(
             createQuickFixAsset(newAssetName, machineDown ? "offline" : "running"),

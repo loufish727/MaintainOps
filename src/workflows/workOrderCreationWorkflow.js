@@ -18,6 +18,9 @@
         const status = form.get("status") || "open";
         let assetId = form.get("asset_id") || null;
         const newAssetName = String(form.get("new_asset_name") || "").trim();
+        if (assetId && newAssetName) {
+          throw new Error("Choose existing equipment or create new equipment, not both.");
+        }
         if (newAssetName) {
           const { data: newAsset, error: assetError } = await deps.createQuickFixAsset(newAssetName, "running");
           if (assetError) {

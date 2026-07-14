@@ -137,6 +137,7 @@ const { bindWorkspaceQuickUpdateEvents } = window.MaintainOpsWorkspaceQuickUpdat
 const { bindWorkspaceWorkOrderEditEvents } = window.MaintainOpsWorkspaceWorkOrderEditEvents;
 const { bindWorkspaceRequestQuickFixEvents } = window.MaintainOpsWorkspaceRequestQuickFixEvents;
 const { bindWorkspaceAssetLocationWarningEvents } = window.MaintainOpsWorkspaceAssetLocationWarningEvents;
+const { bindWorkspaceEquipmentChoiceEvents } = window.MaintainOpsWorkspaceEquipmentChoiceEvents;
 const { bindPublicQrPrintEvents } = window.MaintainOpsPublicQrPrintEvents;
 const { generatePublicRequestToken } = window.MaintainOpsPublicRequestTokens;
 const { createCsvExportHelpers } = window.MaintainOpsCsvExport;
@@ -4542,6 +4543,9 @@ function bindWorkspaceEvents() {
   bindWorkspaceAssetLocationWarningEvents({
     updateAssetLocationWarning,
   });
+  bindWorkspaceEquipmentChoiceEvents({
+    updateAssetLocationWarning,
+  });
 
   document.querySelectorAll("[data-sign-out]").forEach((button) => {
     button.addEventListener("click", () => supabaseClient.auth.signOut());
@@ -5355,6 +5359,7 @@ const {
   renderRequestFormContent,
   confirmAssetLocationRouting,
   locationIdForAsset,
+  assetNameFor: (assetId) => assets.find((asset) => asset.id === assetId)?.name || "",
   requiredText,
   isMissingColumnError,
   databaseSetupRequiredMessage,

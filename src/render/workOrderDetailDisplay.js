@@ -165,16 +165,24 @@
           <summary>Quick Update</summary>
           <form class="form-grid" id="quick-update-work-order-form">
             <label id="quick-update-issue-field">Issue<input name="title" required value="${escapeHtml(workOrder.title)}"></label>
-            <div class="equipment-choice" id="quick-update-equipment-field">
-              <label>Machine / equipment
-                <select name="asset_id" data-location-sensitive-asset>
-                  <option value="">No machine / equipment - general item or area</option>
-                  ${renderAssetOptions(workOrder.asset_id || "")}
-                </select>
-              </label>
-              <span>or</span>
-              <label>New machine / equipment name<input name="new_asset_name" placeholder="Roll Former 3"></label>
-            </div>
+            <fieldset class="equipment-choice" id="quick-update-equipment-field" data-equipment-choice>
+              <legend>Machine / equipment</legend>
+              <div class="equipment-choice-modes" role="radiogroup" aria-label="Choose existing or new equipment">
+                <label class="equipment-choice-mode active"><input name="equipment_choice_mode" type="radio" value="existing" data-equipment-choice-mode checked> Existing equipment</label>
+                <label class="equipment-choice-mode"><input name="equipment_choice_mode" type="radio" value="new" data-equipment-choice-mode> Create new equipment</label>
+              </div>
+              <div data-equipment-choice-panel="existing">
+                <label>Existing machine / equipment
+                  <select name="asset_id" data-location-sensitive-asset data-equipment-choice-existing>
+                    <option value="">No machine / equipment - general item or area</option>
+                    ${renderAssetOptions(workOrder.asset_id || "")}
+                  </select>
+                </label>
+              </div>
+              <div data-equipment-choice-panel="new" hidden>
+                <label>New machine / equipment name<input name="new_asset_name" data-equipment-choice-new data-equipment-choice-required="true" placeholder="Roll Former 3" disabled></label>
+              </div>
+            </fieldset>
             <p class="error-text" data-asset-location-warning>${escapeHtml(assetLocationRoutingMessage(workOrder.asset_id || ""))}</p>
             <label id="quick-update-resolution-field">Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
             <label id="quick-update-due-field">Expected back up / due date
