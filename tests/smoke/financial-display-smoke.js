@@ -204,9 +204,17 @@ assert.match(archivedDetailHtml, /Shop Manager/);
 assert.match(archivedDetailHtml, /retained after the shop equipment record was deleted/);
 assert.match(archivedDetailHtml, /Delete From Financials/);
 assert.match(archivedDetailHtml, /data-delete-financial-record="finance-archived"/);
+assert.match(archivedDetailHtml, /data-financial-asset="financial:finance-archived"/);
+assert.match(archivedDetailHtml, /data-financial-record="finance-archived"/);
+assert.match(archivedDetailHtml, /data-financial-archived="true"/);
+assert.match(archivedDetailHtml, /Save Financial Info/);
 assert.match(archivedDetailHtml, /FA-SOLD/);
 assert.match(archivedDetailHtml, /Sold at auction/);
 assert.doesNotMatch(archivedDetailHtml, /Open Equipment Page/);
-assert.doesNotMatch(archivedDetailHtml, /data-financial-asset=/);
+
+const archivedReadOnlyDetailHtml = readOnlyHelpers.renderFinancialDetail("financial:finance-archived");
+assert.match(archivedReadOnlyDetailHtml, /FA-SOLD/);
+assert.doesNotMatch(archivedReadOnlyDetailHtml, /data-financial-asset=/);
+assert.doesNotMatch(archivedReadOnlyDetailHtml, /Save Financial Info/);
 
 console.log("financial display smoke passed");

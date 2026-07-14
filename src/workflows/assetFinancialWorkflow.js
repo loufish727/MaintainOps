@@ -24,6 +24,8 @@
       event.preventDefault();
       const formElement = event.currentTarget;
       const assetId = formElement.dataset.financialAsset || "";
+      const financialRecordId = formElement.dataset.financialRecord || "";
+      const archived = formElement.dataset.financialArchived === "true";
       const errorElement = documentRef.querySelector(`[data-financial-error="${CSSRef.escape(assetId)}"]`);
       const submitButton = formElement.querySelector("button[type='submit']");
       const originalButtonText = submitButton?.textContent || "Save Financial Info";
@@ -40,11 +42,10 @@
       }
       try {
         if (!assetId) throw new Error("Choose equipment before saving financial info.");
+        if (archived && !financialRecordId) throw new Error("The archived financial record could not be identified.");
         const form = new FormDataCtor(formElement);
         const needsReview = form.get("needs_review") === "on";
         const payload = {
-          company_id: deps.getActiveCompanyId(),
-          asset_id: assetId,
           asset_tag: emptyToNull(form.get("asset_tag")),
           acquisition_date: dateOrNull(form.get("acquisition_date")),
           acquisition_cost: numberOrNull(form.get("acquisition_cost")),
@@ -67,12 +68,28 @@
           payload.last_reviewed_at = new Date().toISOString();
           payload.reviewed_by = deps.getSession?.()?.user?.id || null;
         }
-        const { error } = await deps.withOperationTimeout(
-          deps.supabaseClient()
+        let saveQuery;
+        if (archived) {
+          saveQuery = deps.supabaseClient()
             .from("asset_financials")
-            .upsert(payload, { onConflict: "asset_id" })
+            .update(payload)
+            .eq("id", financialRecordId)
+            .is("asset_id", null)
             .select("id")
-            .single(),
+            .single();
+        } else {
+          saveQuery = deps.supabaseClient()
+            .from("asset_financials")
+            .upsert({
+              ...payload,
+              company_id: deps.getActiveCompanyId(),
+              asset_id: assetId,
+            }, { onConflict: "asset_id" })
+            .select("id")
+            .single();
+        }
+        const { error } = await deps.withOperationTimeout(
+          saveQuery,
           "Financial info save timed out. Check your connection and try again.",
           15000
         );

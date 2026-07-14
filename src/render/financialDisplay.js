@@ -131,9 +131,10 @@
 
     function renderFinancialForm(asset) {
       const finance = financeForAsset(asset);
+      const archived = isArchivedFinancialAsset(asset);
       return `
-        <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}">
-          <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
+        <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}"${archived ? ` data-financial-record="${escapeHtml(finance.id)}" data-financial-archived="true"` : ""}>
+          ${archived ? "" : `<input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">`}
           <label>Asset tag / fixed asset number<input name="asset_tag" value="${escapeHtml(fieldValue(finance, "asset_tag"))}"></label>
           <label>Acquisition date<input name="acquisition_date" type="date" value="${escapeHtml(dateValue(finance.acquisition_date))}"></label>
           <label>Acquisition cost<input name="acquisition_cost" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "acquisition_cost"))}"></label>
@@ -319,7 +320,7 @@
         </section>
         <section class="relationship-detail asset">
           <h3>Financial Details</h3>
-          ${canEditFinancial() && !archived ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
+          ${canEditFinancial() ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
         </section>
       `;
     }

@@ -4595,6 +4595,8 @@ ${requestDescription}`,
             event.preventDefault();
             const formElement = event.currentTarget;
             const assetId = formElement.dataset.financialAsset || "";
+            const financialRecordId = formElement.dataset.financialRecord || "";
+            const archived = formElement.dataset.financialArchived === "true";
             const errorElement = documentRef.querySelector(`[data-financial-error="${CSSRef.escape(assetId)}"]`);
             const submitButton = formElement.querySelector("button[type='submit']");
             const originalButtonText = submitButton?.textContent || "Save Financial Info";
@@ -4611,11 +4613,10 @@ ${requestDescription}`,
             }
             try {
               if (!assetId) throw new Error("Choose equipment before saving financial info.");
+              if (archived && !financialRecordId) throw new Error("The archived financial record could not be identified.");
               const form = new FormDataCtor(formElement);
               const needsReview = form.get("needs_review") === "on";
               const payload = {
-                company_id: deps.getActiveCompanyId(),
-                asset_id: assetId,
                 asset_tag: emptyToNull(form.get("asset_tag")),
                 acquisition_date: dateOrNull(form.get("acquisition_date")),
                 acquisition_cost: numberOrNull(form.get("acquisition_cost")),
@@ -4638,8 +4639,18 @@ ${requestDescription}`,
                 payload.last_reviewed_at = (/* @__PURE__ */ new Date()).toISOString();
                 payload.reviewed_by = deps.getSession?.()?.user?.id || null;
               }
+              let saveQuery;
+              if (archived) {
+                saveQuery = deps.supabaseClient().from("asset_financials").update(payload).eq("id", financialRecordId).is("asset_id", null).select("id").single();
+              } else {
+                saveQuery = deps.supabaseClient().from("asset_financials").upsert({
+                  ...payload,
+                  company_id: deps.getActiveCompanyId(),
+                  asset_id: assetId
+                }, { onConflict: "asset_id" }).select("id").single();
+              }
               const { error } = await deps.withOperationTimeout(
-                deps.supabaseClient().from("asset_financials").upsert(payload, { onConflict: "asset_id" }).select("id").single(),
+                saveQuery,
                 "Financial info save timed out. Check your connection and try again.",
                 15e3
               );
@@ -6800,9 +6811,10 @@ ${requestDescription}`,
           }
           function renderFinancialForm(asset) {
             const finance = financeForAsset(asset);
+            const archived = isArchivedFinancialAsset(asset);
             return `
-        <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}">
-          <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
+        <form class="form-grid financial-asset-form" data-financial-asset="${escapeHtml(asset.id)}"${archived ? ` data-financial-record="${escapeHtml(finance.id)}" data-financial-archived="true"` : ""}>
+          ${archived ? "" : `<input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">`}
           <label>Asset tag / fixed asset number<input name="asset_tag" value="${escapeHtml(fieldValue(finance, "asset_tag"))}"></label>
           <label>Acquisition date<input name="acquisition_date" type="date" value="${escapeHtml(dateValue(finance.acquisition_date))}"></label>
           <label>Acquisition cost<input name="acquisition_cost" type="number" min="0" step="0.01" value="${escapeHtml(fieldValue(finance, "acquisition_cost"))}"></label>
@@ -6980,7 +6992,7 @@ ${requestDescription}`,
         </section>
         <section class="relationship-detail asset">
           <h3>Financial Details</h3>
-          ${canEditFinancial() && !archived ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
+          ${canEditFinancial() ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
         </section>
       `;
           }

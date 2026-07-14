@@ -56,6 +56,24 @@ const workflow = createAssetFinancialWorkflow({
     from(table) {
       calls.push(["from", table]);
       return {
+        update(payload) {
+          calls.push(["update", payload]);
+          return {
+            eq(column, value) {
+              calls.push(["update-eq", column, value]);
+              return this;
+            },
+            is(column, value) {
+              calls.push(["update-is", column, value]);
+              return this;
+            },
+            select() {
+              return {
+                single: async () => ({ data: { id: "finance-archived" }, error: null }),
+              };
+            },
+          };
+        },
         upsert(payload, options) {
           calls.push(["upsert", payload, options]);
           return {
@@ -106,6 +124,23 @@ const workflow = createAssetFinancialWorkflow({
   assert.ok(calls.some((call) => call[0] === "loadAssetFinancials"));
   assert.ok(calls.some((call) => call[0] === "renderWorkspace"));
   assert.ok(calls.some((call) => call[0] === "notice" && call[1] === "Financial info saved."));
+
+  const archivedForm = {
+    dataset: {
+      financialAsset: "financial:finance-archived",
+      financialRecord: "finance-archived",
+      financialArchived: "true",
+    },
+    querySelector: form.querySelector,
+  };
+  await workflow.saveAssetFinancial({ preventDefault() {}, currentTarget: archivedForm });
+  const update = calls.find((call) => call[0] === "update");
+  assert.ok(update, "archived financial records should be updated");
+  assert.equal(update[1].asset_tag, "FA-100");
+  assert.equal(Object.hasOwn(update[1], "asset_id"), false);
+  assert.equal(Object.hasOwn(update[1], "company_id"), false);
+  assert.equal(calls.some((call) => call[0] === "update-eq" && call[1] === "id" && call[2] === "finance-archived"), true);
+  assert.equal(calls.some((call) => call[0] === "update-is" && call[1] === "asset_id" && call[2] === null), true);
 
   await workflow.deleteFinancialRecord("finance-archived");
   assert.equal(calls.some((call) => call[0] === "delete" && call[1] === "asset_financials"), true);
