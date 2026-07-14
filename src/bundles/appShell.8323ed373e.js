@@ -1785,11 +1785,7 @@
     }
     try {
       renderWorkspaceLoading("Checking team access...");
-      const inviteError = await withOperationTimeout(
-        Promise.all([acceptTeamInvites(), acceptPendingTeamJoinLink()]),
-        "Team invite check timed out.",
-        5e3
-      ).then(() => null).catch((error) => error);
+      const inviteError = await runStartupInviteChecks();
       if (inviteError) {
         appNotice = `Team invite check skipped: ${inviteError.message || inviteError}`;
         appNoticeTone = "warning";
@@ -1990,6 +1986,26 @@
     appError = "";
     if (statusTarget) statusTarget.textContent = "Login reset. Try signing in again.";
     renderAuth("login", "Login reset. Try signing in again.");
+  }
+  async function runStartupInviteChecks() {
+    const joinToken = pendingJoinToken();
+    const shouldCheckPendingJoinLink = Boolean(joinToken && teamInviteLinksReady);
+    if (teamInvitesReady) {
+      withOperationTimeout(
+        acceptTeamInvites(),
+        "Team invite refresh timed out.",
+        4e3
+      ).catch(() => {
+      });
+    }
+    if (!shouldCheckPendingJoinLink) {
+      return null;
+    }
+    return withOperationTimeout(
+      acceptPendingTeamJoinLink(),
+      "Team invite join link timed out.",
+      5e3
+    ).then(() => null).catch((error) => error);
   }
   async function loadCompanies() {
     appError = "";

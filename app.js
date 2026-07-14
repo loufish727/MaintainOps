@@ -1472,11 +1472,7 @@ async function render() {
 
   try {
     renderWorkspaceLoading("Checking team access...");
-    const inviteError = await withOperationTimeout(
-      Promise.all([acceptTeamInvites(), acceptPendingTeamJoinLink()]),
-      "Team invite check timed out.",
-      5000
-    ).then(() => null).catch((error) => error);
+    const inviteError = await runStartupInviteChecks();
     if (inviteError) {
       appNotice = `Team invite check skipped: ${inviteError.message || inviteError}`;
       appNoticeTone = "warning";
@@ -1719,6 +1715,31 @@ async function resetLoginState() {
   appError = "";
   if (statusTarget) statusTarget.textContent = "Login reset. Try signing in again.";
   renderAuth("login", "Login reset. Try signing in again.");
+}
+
+async function runStartupInviteChecks() {
+  const joinToken = pendingJoinToken();
+  const shouldCheckPendingJoinLink = Boolean(joinToken && teamInviteLinksReady);
+
+  // Invite acceptance should not block normal workspace boot when there is no
+  // explicit join-link token to process.
+  if (teamInvitesReady) {
+    withOperationTimeout(
+      acceptTeamInvites(),
+      "Team invite refresh timed out.",
+      4000
+    ).catch(() => {});
+  }
+
+  if (!shouldCheckPendingJoinLink) {
+    return null;
+  }
+
+  return withOperationTimeout(
+    acceptPendingTeamJoinLink(),
+    "Team invite join link timed out.",
+    5000
+  ).then(() => null).catch((error) => error);
 }
 
 function publicRequestTokenFromUrl() {
