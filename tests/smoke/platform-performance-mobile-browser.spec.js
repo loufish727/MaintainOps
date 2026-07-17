@@ -75,8 +75,10 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
       pointerId: 41,
       pointerType: "touch",
     };
-    canvas.dispatchEvent(new PointerEvent("pointerdown", init));
-    canvas.dispatchEvent(new PointerEvent("pointercancel", init));
+    const pointerDown = new PointerEvent("pointerdown", init);
+    const pointerCancel = new PointerEvent("pointercancel", init);
+    canvas.dispatchEvent(pointerDown);
+    canvas.dispatchEvent(pointerCancel);
   }, cancelTarget);
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerGesture)).toBe("tap");
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("bucket");

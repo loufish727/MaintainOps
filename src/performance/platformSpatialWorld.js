@@ -2457,7 +2457,7 @@ export function createStorageWorld(options) {
     drag.moved = false;
     drag.pointerId = Number.isInteger(event.pointerId) ? event.pointerId : null;
     drag.pointerType = event.pointerType || "mouse";
-    drag.startedAt = Date.now();
+    drag.startedAt = event.timeStamp;
     drag.lastGesture = "pending";
     drag.x = event.clientX;
     drag.y = event.clientY;
@@ -2491,7 +2491,7 @@ export function createStorageWorld(options) {
     if (!drag.active || (drag.pointerId !== null && event.pointerId !== drag.pointerId)) return;
     const completeTouchTap = drag.pointerType === "touch"
       && !drag.moved
-      && Date.now() - drag.startedAt <= 750;
+      && event.timeStamp - drag.startedAt <= 750;
     const clientX = drag.x;
     const clientY = drag.y;
     resetPointerGesture(completeTouchTap ? "tap" : "cancel");
