@@ -6,7 +6,7 @@ test.use({
   viewport: { width: 390, height: 844 },
 });
 
-test("mobile Performance accepts real off-center touch taps and keeps Back inside the header", async ({ page, baseURL, context }) => {
+test("mobile Performance accepts real off-center touch taps and keeps Back inside the header", async ({ page, baseURL }) => {
   test.setTimeout(180000);
 
   await page.goto(`${baseURL}performance-spatial.html?qa_bust=mobile-controls-${Date.now()}`, {
@@ -25,17 +25,7 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
   });
   expect(bucketTarget).toBeTruthy();
 
-  const cdp = await context.newCDPSession(page);
-  const touchPoint = (x, y) => [{ x, y, radiusX: 5, radiusY: 5, force: 1, id: 1 }];
-  await cdp.send("Input.dispatchTouchEvent", {
-    type: "touchStart",
-    touchPoints: touchPoint(bucketTarget.x - 4, bucketTarget.y - 56),
-  });
-  await cdp.send("Input.dispatchTouchEvent", {
-    type: "touchMove",
-    touchPoints: touchPoint(bucketTarget.x + 4, bucketTarget.y - 42),
-  });
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await page.touchscreen.tap(bucketTarget.x, bucketTarget.y - 42);
 
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerGesture)).toBe("tap");
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("bucket");
