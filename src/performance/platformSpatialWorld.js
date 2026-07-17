@@ -2552,6 +2552,10 @@ export function createStorageWorld(options) {
     if (!completeTouchTap) return;
     const hit = pickInteractive(clientX, clientY, true);
     if (hit) focusObject(hit);
+    else {
+      clearSelection();
+      travelToZone("overview");
+    }
   });
 
   window.addEventListener("resize", () => {

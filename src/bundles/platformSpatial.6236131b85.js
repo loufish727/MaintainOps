@@ -29985,6 +29985,10 @@ void main() {
       if (!completeTouchTap) return;
       const hit = pickInteractive(clientX, clientY, true);
       if (hit) focusObject(hit);
+      else {
+        clearSelection();
+        travelToZone("overview");
+      }
     });
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;

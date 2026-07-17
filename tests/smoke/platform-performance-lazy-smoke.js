@@ -155,6 +155,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);
   assert.match(worldSource, /completeTouchTap = drag\.pointerType === "touch" && !drag\.moved/);
+  assert.match(worldSource, /const hit = pickInteractive\(clientX, clientY, true\);\s*if \(hit\) focusObject\(hit\);\s*else \{\s*clearSelection\(\);\s*travelToZone\("overview"\);/);
   assert.match(worldSource, /lastPickMode = "touch-dom"/);
   assert.match(worldSource, /function updateTouchTargets\(\)/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
