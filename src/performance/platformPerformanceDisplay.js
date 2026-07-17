@@ -41,7 +41,6 @@
 
       return `
         <section class="platform-performance platform-performance-spatial" aria-label="App Performance">
-          <button class="platform-spatial-exit" data-exit-performance type="button">Back to My Work</button>
           <iframe
             class="platform-spatial-frame"
             data-platform-spatial-frame

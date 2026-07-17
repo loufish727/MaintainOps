@@ -292,6 +292,7 @@ function getElements() {
     dialogDetails: document.querySelector("#dialog-details"),
     canvas: document.querySelector("#storage-world"),
     tooltip: document.querySelector("#world-tooltip"),
+    exit: document.querySelector("[data-performance-exit]"),
   };
 }
 
@@ -606,6 +607,14 @@ function requestRefresh() {
 }
 
 function bindInteractions() {
+  els.exit?.addEventListener("click", (event) => {
+    if (window.self === window.top) {
+      localStorage.setItem("maintainops.activeSection", "mywork");
+      return;
+    }
+    event.preventDefault();
+    window.parent.postMessage({ type: "maintainops-platform-spatial-exit" }, parentOrigin);
+  });
   document.querySelectorAll("[data-bucket-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       activeBucketFilter = button.dataset.bucketFilter;

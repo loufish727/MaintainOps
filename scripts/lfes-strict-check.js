@@ -168,6 +168,16 @@ async function main() {
         MAINTAINOPS_BASE_URL: server.baseUrl,
       },
     });
+    await run(npxCommand, [
+      "playwright",
+      "test",
+      "tests/smoke/platform-performance-mobile-browser.spec.js",
+    ], {
+      label: "mobile Performance controls smoke",
+      env: {
+        MAINTAINOPS_BASE_URL: server.baseUrl,
+      },
+    });
   } finally {
     if (server.child && !server.child.killed) {
       server.child.kill();

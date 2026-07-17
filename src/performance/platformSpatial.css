@@ -73,40 +73,37 @@ body {
   cursor: grabbing;
 }
 
-.direct-performance-exit {
-  position: fixed;
-  right: max(24px, env(safe-area-inset-right));
-  bottom: max(22px, env(safe-area-inset-bottom));
-  z-index: 8;
+.performance-header-exit {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 13px;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 11px;
   border: 1px solid rgba(110, 220, 255, 0.44);
   clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
   color: #eaf9ff;
   background: rgba(2, 11, 18, 0.9);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.06em;
-  opacity: 0;
-  pointer-events: none;
   text-decoration: none;
   text-transform: uppercase;
-  transition: border-color 160ms ease, background 160ms ease, opacity 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
 }
 
-.direct-performance-exit:hover,
-.direct-performance-exit:focus-visible {
+.performance-header-exit > span:first-child {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.performance-header-exit:hover,
+.performance-header-exit:focus-visible {
   border-color: var(--hud-line-bright);
   background: rgba(5, 25, 36, 0.96);
   outline: none;
-}
-
-.platform-spatial-standalone .direct-performance-exit {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 html.platform-spatial-standalone,
@@ -2319,13 +2316,9 @@ h2 span {
     align-items: flex-start;
   }
 
-  .direct-performance-exit {
-    top: max(128px, calc(env(safe-area-inset-top) + 118px));
-    left: max(12px, env(safe-area-inset-left));
-    right: auto;
-    bottom: auto;
-    min-height: 32px;
-    padding: 0 10px;
+  .performance-header-exit {
+    min-height: 38px;
+    padding: 0 8px;
     font-size: 10px;
   }
 
@@ -2369,7 +2362,7 @@ h2 span {
   .page-header {
     position: relative;
     top: 0;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     min-height: auto;
     gap: 8px 12px;
     padding: 10px;
