@@ -29818,7 +29818,6 @@ void main() {
       moved: false,
       pointerId: null,
       pointerType: "mouse",
-      startedAt: 0,
       lastGesture: "idle",
       x: 0,
       y: 0,
@@ -29842,7 +29841,6 @@ void main() {
       drag.active = false;
       drag.moved = false;
       drag.pointerId = null;
-      drag.startedAt = 0;
       drag.lastGesture = gesture;
     }
     function pickInteractive(clientX, clientY, allowTouchTolerance = false) {
@@ -29905,7 +29903,6 @@ void main() {
       drag.moved = false;
       drag.pointerId = Number.isInteger(event.pointerId) ? event.pointerId : null;
       drag.pointerType = event.pointerType || "mouse";
-      drag.startedAt = event.timeStamp;
       drag.lastGesture = "pending";
       drag.x = event.clientX;
       drag.y = event.clientY;
@@ -29933,7 +29930,7 @@ void main() {
     });
     window.addEventListener("pointercancel", (event) => {
       if (!drag.active || drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
-      const completeTouchTap = drag.pointerType === "touch" && !drag.moved && event.timeStamp - drag.startedAt <= 750;
+      const completeTouchTap = drag.pointerType === "touch" && !drag.moved;
       const clientX = drag.x;
       const clientY = drag.y;
       resetPointerGesture(completeTouchTap ? "tap" : "cancel");
