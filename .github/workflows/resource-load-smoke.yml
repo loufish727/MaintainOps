@@ -13,7 +13,7 @@ on:
       - completed
 
 jobs:
-  checkout-resource-load-smoke:
+  checkout_resource_load_smoke:
     if: github.event_name != 'workflow_run'
     name: Checkout resource-load smoke
     runs-on: ubuntu-latest
@@ -40,9 +40,15 @@ jobs:
           MAINTAINOPS_BASE_URL="http://127.0.0.1:4195/" npx playwright test tests/smoke/resource-load.spec.js
 
   hosted-resource-load-smoke:
+    needs: checkout_resource_load_smoke
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      always() &&
+      (
+        ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          needs.checkout_resource_load_smoke.result == 'success') ||
+        (github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success')
+      )
     name: Hosted resource-load smoke
     runs-on: ubuntu-latest
 
