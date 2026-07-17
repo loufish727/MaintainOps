@@ -291,6 +291,7 @@ function getElements() {
     dialogTitle: document.querySelector("#dialog-title"),
     dialogDetails: document.querySelector("#dialog-details"),
     canvas: document.querySelector("#storage-world"),
+    touchTargets: document.querySelector("[data-spatial-touch-targets]"),
     tooltip: document.querySelector("#world-tooltip"),
     exit: document.querySelector("[data-performance-exit]"),
   };
@@ -565,6 +566,7 @@ function renderFrame(snapshot) {
   if (!world) {
     world = createStorageWorld({
       canvas: els.canvas,
+      touchTargets: els.touchTargets,
       tooltip: els.tooltip,
       buckets: frameState.buckets,
       months: frameState.months,
