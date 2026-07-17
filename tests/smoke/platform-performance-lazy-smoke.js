@@ -154,6 +154,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /TOUCH_PICK_RADIUS/);
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);
+  assert.match(worldSource, /completeTouchTap = drag\.pointerType === "touch" && !drag\.moved/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 

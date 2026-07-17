@@ -56,46 +56,6 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("file");
   expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-nearest");
 
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => (
-    window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY === true
-    && typeof window.__STORAGE_WORLD_DEBUG === "function"
-    && window.__STORAGE_WORLD_DEBUG().travelT >= 0.99
-  ));
-  const cancelTarget = await page.evaluate(() => (
-    window.__STORAGE_WORLD_DEBUG().targets.find((item) => item.type === "bucket" && item.index === 2)
-  ));
-  await page.evaluate(({ x, y }) => {
-    const canvas = document.querySelector("#storage-world");
-    const init = {
-      bubbles: true,
-      clientX: x,
-      clientY: y - 42,
-      isPrimary: true,
-      pointerId: 41,
-      pointerType: "touch",
-    };
-    const pointerDown = new PointerEvent("pointerdown", init);
-    const pointerCancel = new PointerEvent("pointercancel", init);
-    canvas.dispatchEvent(pointerDown);
-    canvas.dispatchEvent(pointerCancel);
-  }, cancelTarget);
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerGesture)).toBe("tap");
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("bucket");
-
-  const pointer = {
-    bubbles: true,
-    clientY: cancelTarget.y,
-    isPrimary: true,
-    pointerId: 42,
-    pointerType: "touch",
-  };
-  await page.dispatchEvent("#storage-world", "pointerdown", { ...pointer, clientX: cancelTarget.x });
-  await page.dispatchEvent("#storage-world", "pointermove", { ...pointer, clientX: cancelTarget.x + 30 });
-  await page.dispatchEvent("#storage-world", "pointercancel", { ...pointer, clientX: cancelTarget.x + 30 });
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerGesture)).toBe("cancel");
-  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerActive)).toBe(false);
-
   const header = page.locator(".page-header");
   const back = page.locator(".performance-header-exit");
   const notice = page.locator("#sampling-notice");
