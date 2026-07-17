@@ -29812,6 +29812,7 @@ void main() {
       travelToZone(id);
     }
     const POINTER_MOVE_THRESHOLD = Object.freeze({ mouse: 6, pen: 10, touch: 18 });
+    const TOUCH_PICK_RADIUS = Object.freeze({ bucket: 58, file: 40, month: 42, vault: 72 });
     const drag = {
       active: false,
       moved: false,
@@ -29823,6 +29824,8 @@ void main() {
       startX: 0,
       startY: 0
     };
+    const touchProjection = new Vector3();
+    let lastPickMode = "none";
     function pointerMoveThreshold(pointerType) {
       return POINTER_MOVE_THRESHOLD[pointerType] || POINTER_MOVE_THRESHOLD.mouse;
     }
@@ -29839,6 +29842,36 @@ void main() {
       drag.moved = false;
       drag.pointerId = null;
       drag.lastGesture = gesture;
+    }
+    function pickInteractive(clientX, clientY, allowTouchTolerance = false) {
+      pointerNdc.x = clientX / window.innerWidth * 2 - 1;
+      pointerNdc.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointerNdc, camera);
+      const directHit = raycaster.intersectObjects(interactive, false)[0]?.object ?? null;
+      if (directHit) {
+        lastPickMode = "raycast";
+        return directHit;
+      }
+      if (!allowTouchTolerance) {
+        lastPickMode = "miss";
+        return null;
+      }
+      let nearest = null;
+      let nearestDistance = Infinity;
+      interactive.forEach((object) => {
+        object.getWorldPosition(touchProjection);
+        touchProjection.project(camera);
+        if (touchProjection.z < -1 || touchProjection.z > 1) return;
+        const x = (touchProjection.x + 1) * 0.5 * window.innerWidth;
+        const y = (1 - touchProjection.y) * 0.5 * window.innerHeight;
+        const radius = TOUCH_PICK_RADIUS[object.userData.payload?.type] ?? 36;
+        const distance = Math.hypot(clientX - x, clientY - y);
+        if (distance > radius || distance >= nearestDistance) return;
+        nearest = object;
+        nearestDistance = distance;
+      });
+      lastPickMode = nearest ? "touch-nearest" : "miss";
+      return nearest;
     }
     function updateTooltip() {
       if (!tooltip) return;
@@ -29885,12 +29918,10 @@ void main() {
     window.addEventListener("pointerup", (event) => {
       if (!drag.active || drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
       const wasDrag = drag.moved;
+      const pointerType = drag.pointerType;
       resetPointerGesture(wasDrag ? "drag" : "tap");
       if (wasDrag) return;
-      pointerNdc.x = event.clientX / window.innerWidth * 2 - 1;
-      pointerNdc.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointerNdc, camera);
-      const hit = raycaster.intersectObjects(interactive, false)[0]?.object ?? null;
+      const hit = pickInteractive(event.clientX, event.clientY, pointerType === "touch");
       if (hit) focusObject(hit);
       else {
         clearSelection();
@@ -29919,6 +29950,7 @@ void main() {
       selected: selected?.userData?.payload ? { type: selected.userData.payload.type, index: selected.userData.payload.index ?? null } : null,
       pointerActive: drag.active,
       pointerGesture: drag.lastGesture,
+      lastPickMode,
       targets: interactive.map((object) => {
         const position = new Vector3();
         object.getWorldPosition(position);
