@@ -150,10 +150,11 @@ function createQueryResponse(table, companyRows, calls) {
 
   const worldSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatialWorld.js"), "utf8");
   assert.doesNotMatch(worldSource, /["']\/assets\/performance-spatial\//, "spatial assets must remain project-relative");
-  assert.match(worldSource, /touch: 18/);
+  assert.match(worldSource, /touch: 44/);
   assert.match(worldSource, /TOUCH_PICK_RADIUS/);
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);
+  assert.match(worldSource, /completeTouchTap = drag\.pointerType === "touch" && !drag\.moved/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 
