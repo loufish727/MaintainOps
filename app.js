@@ -2247,6 +2247,13 @@ function armPlatformSpatialFrameWatchdog() {
   }, 10000);
 }
 
+function exitPlatformPerformance() {
+  setActiveSectionState("mywork");
+  localStorage.setItem("maintainops.activeSection", "mywork");
+  renderWorkspace();
+  scrollWorkspaceTopIntoView();
+}
+
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin || activeSection !== "performance") return;
   const frame = document.querySelector("[data-platform-spatial-frame]");
@@ -2257,6 +2264,10 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "maintainops-platform-spatial-rendered") {
     platformSpatialFrameRendered = true;
     clearPlatformSpatialFrameWatchdog();
+  }
+  if (event.data?.type === "maintainops-platform-spatial-exit") {
+    exitPlatformPerformance();
+    return;
   }
   if (event.data?.type === "maintainops-platform-spatial-refresh") {
     platformSpatialFrameRendered = false;
@@ -4764,10 +4775,7 @@ function bindWorkspaceEvents() {
     if (platformPerformanceError) clearPlatformSpatialFrameWatchdog();
     else armPlatformSpatialFrameWatchdog();
     document.querySelector("[data-exit-performance]")?.addEventListener("click", () => {
-      setActiveSectionState("mywork");
-      localStorage.setItem("maintainops.activeSection", "mywork");
-      renderWorkspace();
-      scrollWorkspaceTopIntoView();
+      exitPlatformPerformance();
     });
     document.querySelector("[data-retry-platform-performance]")?.addEventListener("click", () => {
       clearPlatformPerformanceResourcesError();

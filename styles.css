@@ -10046,47 +10046,6 @@ body.spatial-performance-active {
 
 .platform-performance-timeout-card .text-button { min-height: 38px; }
 
-.platform-spatial-exit {
-  position: absolute;
-  z-index: 4;
-  top: max(1rem, env(safe-area-inset-top));
-  left: 50%;
-  min-height: 36px;
-  padding: 0.5rem 0.8rem;
-  transform: translateX(-50%);
-  border: 1px solid rgba(103, 221, 255, 0.46);
-  border-radius: 5px;
-  background: rgba(3, 13, 21, 0.91);
-  color: #f4fbff;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.42),
-    0 8px 20px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.platform-spatial-exit:hover,
-.platform-spatial-exit:focus-visible {
-  border-color: #b9f4ff;
-  background: #08202d;
-  color: #ffffff;
-  outline: none;
-}
-
-@media (max-width: 720px) {
-  .platform-spatial-exit {
-    top: max(0.75rem, env(safe-area-inset-top));
-    right: max(0.75rem, env(safe-area-inset-right));
-    left: auto;
-    min-height: 32px;
-    padding: 0.42rem 0.56rem;
-    transform: none;
-    font-size: 0.68rem;
-  }
-}
-
 .quick-fix-form input:not([type="checkbox"]):not([type="file"])::placeholder,
 .quick-fix-form textarea::placeholder {
   color: #c7d4ce !important;

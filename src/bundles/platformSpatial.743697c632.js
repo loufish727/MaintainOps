@@ -28921,10 +28921,9 @@ void main() {
         const capCenterY = topCollarY + 0.08 + 0.065;
         const closedTopCap = addMesh(columnGroup, new CylinderGeometry(0.86, 0.9, 0.13, 40), metal(462872, { roughness: 0.42, metalness: 0.82, emissive: 400162, emissiveIntensity: 0.22 }), [0, capCenterY, 0], { shadow: false });
         closedTopCap.userData.kind = "closedSiloSkin";
-        const capFace = texturedPanel(
+        const capFace = addMesh(
           columnGroup,
-          [1.42, 1.42],
-          [0, capCenterY + 0.071, 0.02],
+          new CircleGeometry(0.76, 56),
           skinMaterial(index % 2 ? closedSiloRects.capRing : closedSiloRects.capTop, {
             atlas: siloClosedAtlas,
             emissive: color,
@@ -28933,8 +28932,10 @@ void main() {
             roughness: 0.36,
             side: DoubleSide
           }),
-          [-Math.PI / 2, 0, 0]
+          [0, capCenterY + 0.071, 0],
+          { shadow: false }
         );
+        capFace.rotation.x = -Math.PI / 2;
         capFace.userData.kind = "closedSiloSkin";
         const lowerCap = texturedPanel(
           columnGroup,
@@ -29810,7 +29811,35 @@ void main() {
       if (!ZONES[id]) id = "overview";
       travelToZone(id);
     }
-    const drag = { active: false, moved: false, x: 0, y: 0 };
+    const POINTER_MOVE_THRESHOLD = Object.freeze({ mouse: 6, pen: 10, touch: 18 });
+    const drag = {
+      active: false,
+      moved: false,
+      pointerId: null,
+      pointerType: "mouse",
+      lastGesture: "idle",
+      x: 0,
+      y: 0,
+      startX: 0,
+      startY: 0
+    };
+    function pointerMoveThreshold(pointerType) {
+      return POINTER_MOVE_THRESHOLD[pointerType] || POINTER_MOVE_THRESHOLD.mouse;
+    }
+    function releasePointerCapture(pointerId) {
+      if (!Number.isInteger(pointerId)) return;
+      try {
+        if (canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+      } catch (_error) {
+      }
+    }
+    function resetPointerGesture(gesture) {
+      releasePointerCapture(drag.pointerId);
+      drag.active = false;
+      drag.moved = false;
+      drag.pointerId = null;
+      drag.lastGesture = gesture;
+    }
     function updateTooltip() {
       if (!tooltip) return;
       tooltip.hidden = true;
@@ -29821,29 +29850,42 @@ void main() {
       pointerClient.x = event.clientX;
       pointerClient.y = event.clientY;
       pointerClient.overCanvas = event.target === canvas;
-      if (drag.active) {
+      const isActivePointer = drag.active && (drag.pointerId === null || event.pointerId === drag.pointerId);
+      if (isActivePointer) {
         const dx = event.clientX - drag.x;
         const dy = event.clientY - drag.y;
-        if (Math.abs(event.clientX - drag.startX) + Math.abs(event.clientY - drag.startY) > 6) drag.moved = true;
-        rig.yaw = MathUtils.clamp(rig.yaw - dx * 17e-4, -0.16, 0.16);
-        rig.pitch = MathUtils.clamp(rig.pitch + dy * 12e-4, -0.08, 0.1);
+        const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+        if (distance > pointerMoveThreshold(drag.pointerType)) drag.moved = true;
+        if (drag.moved) {
+          rig.yaw = MathUtils.clamp(rig.yaw - dx * 17e-4, -0.16, 0.16);
+          rig.pitch = MathUtils.clamp(rig.pitch + dy * 12e-4, -0.08, 0.1);
+        }
         drag.x = event.clientX;
         drag.y = event.clientY;
       }
     });
     window.addEventListener("pointerdown", (event) => {
-      if (event.target !== canvas) return;
+      if (event.target !== canvas || event.isPrimary === false) return;
       drag.active = true;
       drag.moved = false;
+      drag.pointerId = Number.isInteger(event.pointerId) ? event.pointerId : null;
+      drag.pointerType = event.pointerType || "mouse";
+      drag.lastGesture = "pending";
       drag.x = event.clientX;
       drag.y = event.clientY;
       drag.startX = event.clientX;
       drag.startY = event.clientY;
+      if (drag.pointerId !== null) {
+        try {
+          canvas.setPointerCapture(drag.pointerId);
+        } catch (_error) {
+        }
+      }
     });
     window.addEventListener("pointerup", (event) => {
-      if (!drag.active) return;
+      if (!drag.active || drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
       const wasDrag = drag.moved;
-      drag.active = false;
+      resetPointerGesture(wasDrag ? "drag" : "tap");
       if (wasDrag) return;
       pointerNdc.x = event.clientX / window.innerWidth * 2 - 1;
       pointerNdc.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -29854,6 +29896,10 @@ void main() {
         clearSelection();
         travelToZone("overview");
       }
+    });
+    window.addEventListener("pointercancel", (event) => {
+      if (!drag.active || drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
+      resetPointerGesture("cancel");
     });
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -29870,6 +29916,20 @@ void main() {
     travelToZone("overview", 0.01);
     window.__STORAGE_WORLD_DEBUG = () => ({
       zone: currentZone,
+      selected: selected?.userData?.payload ? { type: selected.userData.payload.type, index: selected.userData.payload.index ?? null } : null,
+      pointerActive: drag.active,
+      pointerGesture: drag.lastGesture,
+      targets: interactive.map((object) => {
+        const position = new Vector3();
+        object.getWorldPosition(position);
+        position.project(camera);
+        return {
+          type: object.userData.payload?.type || "",
+          index: object.userData.payload?.index ?? null,
+          x: Math.round((position.x + 1) * 0.5 * window.innerWidth),
+          y: Math.round((1 - position.y) * 0.5 * window.innerHeight)
+        };
+      }),
       cameraPos: camera.position.toArray().map((v) => Number(v.toFixed(2))),
       baseLook: rig.baseLook.toArray().map((v) => Number(v.toFixed(2))),
       travelT: Number(rig.t.toFixed(2))
@@ -30336,7 +30396,8 @@ void main() {
       dialogTitle: document.querySelector("#dialog-title"),
       dialogDetails: document.querySelector("#dialog-details"),
       canvas: document.querySelector("#storage-world"),
-      tooltip: document.querySelector("#world-tooltip")
+      tooltip: document.querySelector("#world-tooltip"),
+      exit: document.querySelector("[data-performance-exit]")
     };
   }
   var els = null;
@@ -30634,6 +30695,14 @@ void main() {
     window.parent.postMessage({ type: "maintainops-platform-spatial-refresh" }, parentOrigin);
   }
   function bindInteractions() {
+    els.exit?.addEventListener("click", (event) => {
+      if (window.self === window.top) {
+        localStorage.setItem("maintainops.activeSection", "mywork");
+        return;
+      }
+      event.preventDefault();
+      window.parent.postMessage({ type: "maintainops-platform-spatial-exit" }, parentOrigin);
+    });
     document.querySelectorAll("[data-bucket-filter]").forEach((button) => {
       button.addEventListener("click", () => {
         activeBucketFilter = button.dataset.bucketFilter;

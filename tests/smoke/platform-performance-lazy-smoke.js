@@ -127,8 +127,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(html, /App Performance/);
   assert.match(html, /performance-spatial\.html/);
   assert.match(html, /data-platform-spatial-frame/);
-  assert.match(html, /data-exit-performance/);
-  assert.match(html, /Back to My Work/);
+  assert.doesNotMatch(html, /platform-spatial-exit/);
 
   const timeoutHtml = renderer.renderPlatformPerformancePanel({ snapshot, ready: true, error: "", timedOut: true });
   assert.match(timeoutHtml, /Performance view timed out/);
@@ -141,6 +140,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameSource, /createStorageWorld/);
   assert.match(frameSource, /maintainops-platform-spatial-snapshot/);
   assert.match(frameSource, /maintainops-platform-spatial-rendered/);
+  assert.match(frameSource, /maintainops-platform-spatial-exit/);
+  assert.match(frameSource, /localStorage\.setItem\("maintainops\.activeSection", "mywork"\)/);
   assert.match(frameSource, /platform-spatial-standalone/);
   assert.match(frameSource, /Platform Pulse/);
   assert.match(frameSource, /platform-spatial-degraded/);
@@ -149,6 +150,10 @@ function createQueryResponse(table, companyRows, calls) {
 
   const worldSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatialWorld.js"), "utf8");
   assert.doesNotMatch(worldSource, /["']\/assets\/performance-spatial\//, "spatial assets must remain project-relative");
+  assert.match(worldSource, /touch: 18/);
+  assert.match(worldSource, /pointercancel/);
+  assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
+  assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 
   function createFailingQuery(table) {
     const response = { data: null, count: null, error: { message: `${table} unavailable` } };
@@ -188,10 +193,17 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(appSource, /function reloadPlatformSpatialFrame\(\)/);
   assert.match(appSource, /performance-spatial\.html\?sample=\$\{Date\.now\(\)\}/);
   assert.match(appSource, /loadPlatformPerformance\(\{ force: true \}\)\.then\(reloadPlatformSpatialFrame\)/);
+  assert.match(appSource, /function exitPlatformPerformance\(\)/);
+  assert.match(appSource, /maintainops-platform-spatial-exit/);
 
   const frameHtml = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../performance-spatial.html"), "utf8");
-  assert.match(frameHtml, /direct-performance-exit/);
-  assert.match(frameHtml, /Back to My Work/);
+  assert.match(frameHtml, /performance-header-exit/);
+  assert.match(frameHtml, /data-performance-exit/);
+  assert.match(frameHtml, /aria-label="Back to My Work"/);
+
+  const spatialStyles = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatial.css"), "utf8");
+  assert.doesNotMatch(spatialStyles, /direct-performance-exit/);
+  assert.doesNotMatch(spatialStyles, /\.performance-header-exit\s*\{[^}]*position:\s*(?:fixed|absolute)/s);
 
   console.log("platform performance lazy smoke passed");
 })();
