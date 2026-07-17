@@ -150,7 +150,7 @@ function createQueryResponse(table, companyRows, calls) {
 
   const worldSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatialWorld.js"), "utf8");
   assert.doesNotMatch(worldSource, /["']\/assets\/performance-spatial\//, "spatial assets must remain project-relative");
-  assert.match(worldSource, /touch: 18/);
+  assert.match(worldSource, /touch: 44/);
   assert.match(worldSource, /TOUCH_PICK_RADIUS/);
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);

@@ -2354,7 +2354,7 @@ export function createStorageWorld(options) {
   // ---------------------------------------------------------------------------
   // Pointer interaction: hover tooltips, click to travel, drag to orbit
   // ---------------------------------------------------------------------------
-  const POINTER_MOVE_THRESHOLD = Object.freeze({ mouse: 6, pen: 10, touch: 18 });
+  const POINTER_MOVE_THRESHOLD = Object.freeze({ mouse: 6, pen: 10, touch: 44 });
   const TOUCH_PICK_RADIUS = Object.freeze({ bucket: 58, file: 40, month: 42, vault: 72 });
   const drag = {
     active: false,
