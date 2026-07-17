@@ -329,7 +329,7 @@ const CONVERSION_RESOURCE_PATHS = [
 ];
 const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
   "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
-  "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-1",
+  "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-2",
 ];
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;

@@ -713,7 +713,7 @@
   ];
   var PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
     "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
-    "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-1"
+    "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-2"
   ];
   var workspaceHydrationToken = 0;
   var workspaceHydrationPromise = null;

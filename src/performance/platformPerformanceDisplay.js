@@ -39,12 +39,14 @@
         `;
       }
 
+      const frameSource = `performance-spatial.html?sample=${Date.now()}`;
+
       return `
         <section class="platform-performance platform-performance-spatial" aria-label="App Performance">
           <iframe
             class="platform-spatial-frame"
             data-platform-spatial-frame
-            src="performance-spatial.html"
+            src="${frameSource}"
             title="Maintain Ops app performance command room"
             loading="eager"
           ></iframe>

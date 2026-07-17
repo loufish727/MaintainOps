@@ -65,8 +65,8 @@ body {
   display: block;
   z-index: 0;
   cursor: grab;
-  /* Horizontal drags orbit the model; vertical swipes still scroll the page */
-  touch-action: pan-y;
+  /* The room is full-screen; keep phone browsers from cancelling object taps as scroll gestures. */
+  touch-action: none;
 }
 
 #storage-world:active {
