@@ -73,6 +73,38 @@ body {
   cursor: grabbing;
 }
 
+.spatial-touch-targets {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.spatial-touch-target {
+  position: absolute;
+  display: none;
+  width: var(--spatial-touch-width, 80px);
+  height: var(--spatial-touch-height, 80px);
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  touch-action: manipulation;
+}
+
+.spatial-touch-target[hidden] {
+  display: none !important;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .spatial-touch-target {
+    display: block;
+    pointer-events: auto;
+  }
+}
+
 .performance-header-exit {
   flex: 0 0 auto;
   display: inline-flex;

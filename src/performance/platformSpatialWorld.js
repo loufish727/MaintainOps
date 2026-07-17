@@ -35,6 +35,7 @@ function easeInOutCubic(t) {
 export function createStorageWorld(options) {
   const {
     canvas,
+    touchTargets,
     tooltip,
     buckets,
     months,
@@ -2370,6 +2371,64 @@ export function createStorageWorld(options) {
   const touchProjection = new THREE.Vector3();
   let lastPickMode = "none";
 
+  const touchTargetSizes = Object.freeze({
+    bucket: [56, 116],
+    file: [52, 88],
+    month: [52, 92],
+    vault: [120, 144],
+  });
+  const touchTargetMedia = window.matchMedia("(pointer: coarse), (hover: none)");
+
+  function touchTargetLabel(payload) {
+    const tooltipLines = Array.isArray(payload.tooltip) ? payload.tooltip : [];
+    const label = tooltipLines.find((line) => typeof line === "string" && line.trim());
+    if (label) return `Open ${label}`;
+    return `Open ${payload.type || "performance object"}`;
+  }
+
+  const touchTargetEntries = touchTargets
+    ? interactive.map((object) => {
+      const payload = object.userData.payload || {};
+      const [width, height] = touchTargetSizes[payload.type] || [80, 80];
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "spatial-touch-target";
+      button.dataset.spatialType = payload.type || "object";
+      if (payload.index !== undefined) button.dataset.spatialIndex = String(payload.index);
+      button.setAttribute("aria-label", touchTargetLabel(payload));
+      button.style.setProperty("--spatial-touch-width", `${width}px`);
+      button.style.setProperty("--spatial-touch-height", `${height}px`);
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        drag.lastGesture = "tap";
+        lastPickMode = "touch-dom";
+        focusObject(object);
+      });
+      touchTargets.append(button);
+      return { button, object, projection: new THREE.Vector3() };
+    })
+    : [];
+
+  function updateTouchTargets() {
+    if (!touchTargetMedia.matches) return;
+    touchTargetEntries.forEach(({ button, object, projection }) => {
+      object.getWorldPosition(projection);
+      projection.project(camera);
+      const visible = projection.z >= -1
+        && projection.z <= 1
+        && projection.x >= -1.08
+        && projection.x <= 1.08
+        && projection.y >= -1.08
+        && projection.y <= 1.08;
+      button.hidden = !visible;
+      if (!visible) return;
+      button.style.left = `${(projection.x + 1) * 50}%`;
+      button.style.top = `${(1 - projection.y) * 50}%`;
+      button.style.zIndex = String(Math.round((1 - projection.z) * 1000));
+    });
+  }
+
   function pointerMoveThreshold(pointerType) {
     return POINTER_MOVE_THRESHOLD[pointerType] || POINTER_MOVE_THRESHOLD.mouse;
   }
@@ -2521,6 +2580,7 @@ export function createStorageWorld(options) {
     pointerActive: drag.active,
     pointerGesture: drag.lastGesture,
     lastPickMode,
+    touchTargetCount: touchTargetEntries.length,
     targets: interactive.map((object) => {
       const position = new THREE.Vector3();
       object.getWorldPosition(position);
@@ -2714,6 +2774,7 @@ export function createStorageWorld(options) {
     tmpOffset.setFromSpherical(tmpSpherical);
     camera.position.copy(rig.baseLook).add(tmpOffset);
     camera.lookAt(rig.baseLook);
+    updateTouchTargets();
 
     composer.render();
     requestAnimationFrame(animate);

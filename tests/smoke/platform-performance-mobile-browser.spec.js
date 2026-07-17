@@ -19,17 +19,37 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
     && window.__STORAGE_WORLD_DEBUG().travelT >= 0.99
   ));
 
+  const visibleObjectHits = await page.evaluate(() => (
+    window.__STORAGE_WORLD_DEBUG().targets
+      .filter((target) => ["bucket", "file"].includes(target.type))
+      .filter((target) => target.x >= 0 && target.x < window.innerWidth && target.y >= 0 && target.y < window.innerHeight)
+      .map((target) => {
+        const element = document.elementFromPoint(target.x, target.y);
+        return {
+          expected: `${target.type}:${target.index}`,
+          actual: `${element?.dataset?.spatialType || "none"}:${element?.dataset?.spatialIndex || "none"}`,
+        };
+      })
+  ));
+  expect(visibleObjectHits.length).toBeGreaterThan(8);
+  expect(visibleObjectHits.every(({ expected, actual }) => expected === actual)).toBe(true);
+
   const bucketTarget = await page.evaluate(() => {
     const debug = window.__STORAGE_WORLD_DEBUG();
     return debug.targets.find((item) => item.type === "bucket" && item.index === 2);
   });
   expect(bucketTarget).toBeTruthy();
 
+  await page.waitForFunction(({ x, y }) => {
+    const element = document.elementFromPoint(x, y - 42);
+    return element?.matches('[data-spatial-type="bucket"][data-spatial-index="2"]');
+  }, bucketTarget);
+
   await page.touchscreen.tap(bucketTarget.x, bucketTarget.y - 42);
 
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().pointerGesture)).toBe("tap");
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("bucket");
-  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-nearest");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-dom");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => (
@@ -42,9 +62,13 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
     window.__STORAGE_WORLD_DEBUG().targets.find((item) => item.type === "file" && item.index === 5)
   ));
   expect(fileTarget).toBeTruthy();
+  await page.waitForFunction(({ x, y }) => {
+    const element = document.elementFromPoint(x + 22, y - 17);
+    return element?.matches('[data-spatial-type="file"][data-spatial-index="5"]');
+  }, fileTarget);
   await page.touchscreen.tap(fileTarget.x + 22, fileTarget.y - 17);
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("file");
-  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-nearest");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-dom");
 
   const header = page.locator(".page-header");
   const back = page.locator(".performance-header-exit");

@@ -155,6 +155,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);
   assert.match(worldSource, /completeTouchTap = drag\.pointerType === "touch" && !drag\.moved/);
+  assert.match(worldSource, /lastPickMode = "touch-dom"/);
+  assert.match(worldSource, /function updateTouchTargets\(\)/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 
@@ -204,12 +206,15 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameHtml, /performance-header-exit/);
   assert.match(frameHtml, /data-performance-exit/);
   assert.match(frameHtml, /aria-label="Back to My Work"/);
+  assert.match(frameHtml, /data-spatial-touch-targets/);
 
   const spatialStyles = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatial.css"), "utf8");
   assert.doesNotMatch(spatialStyles, /direct-performance-exit/);
   assert.doesNotMatch(spatialStyles, /\.performance-header-exit\s*\{[^}]*position:\s*(?:fixed|absolute)/s);
   assert.match(spatialStyles, /#storage-world\s*\{[^}]*touch-action:\s*none/s);
   assert.doesNotMatch(spatialStyles, /#storage-world\s*\{[^}]*touch-action:\s*pan-y/s);
+  assert.match(spatialStyles, /\.spatial-touch-targets\s*\{[^}]*pointer-events:\s*none/s);
+  assert.match(spatialStyles, /@media \(pointer: coarse\), \(hover: none\)/);
 
   console.log("platform performance lazy smoke passed");
 })();
