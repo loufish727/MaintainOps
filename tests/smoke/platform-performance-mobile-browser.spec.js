@@ -6,7 +6,23 @@ test.use({
   viewport: { width: 390, height: 844 },
 });
 
-test("mobile Performance accepts real off-center touch taps and keeps Back inside the header", async ({ page, baseURL }) => {
+async function findBlankCanvasPoint(page) {
+  return page.evaluate(() => {
+    const canvas = document.querySelector("#storage-world");
+    const targets = window.__STORAGE_WORLD_DEBUG().targets;
+    let best = null;
+    for (let y = 190; y <= window.innerHeight - 190; y += 24) {
+      for (let x = 18; x <= window.innerWidth - 18; x += 24) {
+        if (document.elementFromPoint(x, y) !== canvas) continue;
+        const clearance = Math.min(...targets.map((target) => Math.hypot(x - target.x, y - target.y)));
+        if (!best || clearance > best.clearance) best = { x, y, clearance };
+      }
+    }
+    return best;
+  });
+}
+
+test("mobile Performance supports object and empty-space taps and keeps Back inside the header", async ({ page, baseURL }) => {
   test.setTimeout(180000);
 
   await page.goto(`${baseURL}performance-spatial.html?qa_bust=mobile-controls-${Date.now()}`, {
@@ -51,6 +67,14 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("bucket");
   expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-dom");
 
+  const blankPoint = await findBlankCanvasPoint(page);
+  expect(blankPoint).toBeTruthy();
+  expect(blankPoint.clearance).toBeGreaterThan(72);
+  await page.touchscreen.tap(blankPoint.x, blankPoint.y);
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("");
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().zone)).toBe("overview");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().travelT)).toBeLessThan(0.99);
+
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => (
     window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY === true
@@ -69,6 +93,28 @@ test("mobile Performance accepts real off-center touch taps and keeps Back insid
   await page.touchscreen.tap(fileTarget.x + 22, fileTarget.y - 17);
   await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("file");
   expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("touch-dom");
+
+  const cancelledTapPoint = await findBlankCanvasPoint(page);
+  expect(cancelledTapPoint).toBeTruthy();
+  expect(cancelledTapPoint.clearance).toBeGreaterThan(72);
+  await page.evaluate(({ x, y }) => {
+    const canvas = document.querySelector("#storage-world");
+    const pointer = {
+      bubbles: true,
+      cancelable: true,
+      clientX: x,
+      clientY: y,
+      isPrimary: true,
+      pointerId: 71,
+      pointerType: "touch",
+    };
+    canvas.dispatchEvent(new PointerEvent("pointerdown", { ...pointer, buttons: 1 }));
+    canvas.dispatchEvent(new PointerEvent("pointercancel", pointer));
+  }, cancelledTapPoint);
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().selected?.type || "")).toBe("");
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().zone)).toBe("overview");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().lastPickMode)).toBe("miss");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().travelT)).toBeLessThan(0.99);
 
   const header = page.locator(".page-header");
   const back = page.locator(".performance-header-exit");
