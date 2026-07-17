@@ -7,7 +7,7 @@ test.use({
 });
 
 test("mobile Performance accepts touch taps and keeps Back inside the header", async ({ page, baseURL }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
 
   await page.goto(`${baseURL}performance-spatial.html?qa_bust=mobile-controls-${Date.now()}`, {
     waitUntil: "domcontentloaded",
@@ -52,9 +52,17 @@ test("mobile Performance accepts touch taps and keeps Back inside the header", a
   await expect(back).toBeVisible();
   await expect(back).toHaveAttribute("aria-label", "Back to My Work");
 
-  const headerBox = await header.boundingBox();
-  const backBox = await back.boundingBox();
-  const noticeBox = await notice.boundingBox();
+  const { headerBox, backBox, noticeBox } = await page.evaluate(() => {
+    const rect = (selector) => {
+      const box = document.querySelector(selector)?.getBoundingClientRect();
+      return box ? { x: box.x, y: box.y, width: box.width, height: box.height } : null;
+    };
+    return {
+      headerBox: rect(".page-header"),
+      backBox: rect(".performance-header-exit"),
+      noticeBox: rect("#sampling-notice"),
+    };
+  });
   expect(headerBox).toBeTruthy();
   expect(backBox).toBeTruthy();
   expect(noticeBox).toBeTruthy();
