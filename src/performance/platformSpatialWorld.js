@@ -71,13 +71,13 @@ export function createStorageWorld(options) {
 
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 300);
 
-    new RGBELoader().load("/assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
+    new RGBELoader().load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
   });
 
   const textureLoader = new THREE.TextureLoader();
-  const fileSkinAtlas = textureLoader.load("/assets/performance-spatial/textures/file-cube-skins.png", (texture) => {
+  const fileSkinAtlas = textureLoader.load("assets/performance-spatial/textures/file-cube-skins.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -85,7 +85,7 @@ export function createStorageWorld(options) {
   fileSkinAtlas.colorSpace = THREE.SRGBColorSpace;
   fileSkinAtlas.wrapS = THREE.ClampToEdgeWrapping;
   fileSkinAtlas.wrapT = THREE.ClampToEdgeWrapping;
-  const siloSkinAtlas = textureLoader.load("/assets/performance-spatial/textures/silo-open-panels.png", (texture) => {
+  const siloSkinAtlas = textureLoader.load("assets/performance-spatial/textures/silo-open-panels.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -93,7 +93,7 @@ export function createStorageWorld(options) {
   siloSkinAtlas.colorSpace = THREE.SRGBColorSpace;
   siloSkinAtlas.wrapS = THREE.ClampToEdgeWrapping;
   siloSkinAtlas.wrapT = THREE.ClampToEdgeWrapping;
-  const siloClosedAtlas = textureLoader.load("/assets/performance-spatial/textures/silo-closed-panels.png", (texture) => {
+  const siloClosedAtlas = textureLoader.load("assets/performance-spatial/textures/silo-closed-panels.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -101,7 +101,7 @@ export function createStorageWorld(options) {
   siloClosedAtlas.colorSpace = THREE.SRGBColorSpace;
   siloClosedAtlas.wrapS = THREE.ClampToEdgeWrapping;
   siloClosedAtlas.wrapT = THREE.ClampToEdgeWrapping;
-  const capacityCoreAtlas = textureLoader.load("/assets/performance-spatial/textures/capacity-core-kit.png", (texture) => {
+  const capacityCoreAtlas = textureLoader.load("assets/performance-spatial/textures/capacity-core-kit.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -109,7 +109,7 @@ export function createStorageWorld(options) {
   capacityCoreAtlas.colorSpace = THREE.SRGBColorSpace;
   capacityCoreAtlas.wrapS = THREE.ClampToEdgeWrapping;
   capacityCoreAtlas.wrapT = THREE.ClampToEdgeWrapping;
-  const floorDeckAtlas = textureLoader.load("/assets/performance-spatial/textures/floor-deck.png", (texture) => {
+  const floorDeckAtlas = textureLoader.load("assets/performance-spatial/textures/floor-deck.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -117,7 +117,7 @@ export function createStorageWorld(options) {
   floorDeckAtlas.colorSpace = THREE.SRGBColorSpace;
   floorDeckAtlas.wrapS = THREE.ClampToEdgeWrapping;
   floorDeckAtlas.wrapT = THREE.ClampToEdgeWrapping;
-  const outerWallAtlas = textureLoader.load("/assets/performance-spatial/textures/outer-walls.png", (texture) => {
+  const outerWallAtlas = textureLoader.load("assets/performance-spatial/textures/outer-walls.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
@@ -611,7 +611,7 @@ export function createStorageWorld(options) {
   root.add(worldHudGroup);
 
   new GLTFLoader().load(
-    "/assets/performance-spatial/models/maintain_ops_concept_kit.glb",
+    "assets/performance-spatial/models/maintain_ops_concept_kit.glb",
     (gltf) => {
       const kit = gltf.scene;
       kit.name = "Blender concept architecture kit";

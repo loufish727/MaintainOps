@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maintain Ops App Performance</title>
     <link rel="stylesheet" href="src/performance/platformSpatial.css" />
-    <script defer src="src/bundles/platformSpatial.ffdb3ca0be.js"></script>
+    <script defer src="src/bundles/platformSpatial.f62fe658d8.js"></script>
   </head>
   <body>
     <canvas id="storage-world" aria-label="Interactive 3D Maintain Ops app performance model"></canvas>
@@ -25,7 +25,7 @@
         <div class="header-actions">
           <label class="search-box">
             <span>Search</span>
-            <input id="file-search" type="search" placeholder="Search platform signals and systems..." autocomplete="off" />
+            <input id="file-search" type="search" placeholder="Search systems..." autocomplete="off" />
           </label>
           <button id="refresh-button" class="button primary refresh-command" type="button">
             <span class="refresh-glyph" aria-hidden="true">&#8635;</span>
@@ -33,6 +33,10 @@
           </button>
         </div>
       </header>
+      <div class="sampling-notice" id="sampling-notice" role="status" hidden>
+        <strong>Partial data</strong>
+        <span>One or more company data sources could not be sampled.</span>
+      </div>
 
       <section class="spatial-stage" aria-label="Interactive app performance model">
         <aside class="stage-telemetry" aria-label="Platform telemetry">

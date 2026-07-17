@@ -115,6 +115,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(snapshot.summary.storage.totalBytesText, "1.0 MB");
   assert.equal(snapshot.timeline.length, 14);
   assert.equal(snapshot.plants[0].name, "Salem");
+  assert.equal(snapshot.sampling.status, "current");
   assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
     operator === "eq" && column === "company_id" && value === companyId
   ))), "every performance query must be scoped to the active company");
@@ -142,11 +143,51 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameSource, /maintainops-platform-spatial-rendered/);
   assert.match(frameSource, /platform-spatial-standalone/);
   assert.match(frameSource, /Platform Pulse/);
+  assert.match(frameSource, /platform-spatial-degraded/);
+  assert.match(frameSource, /Unavailable/);
+  assert.match(frameSource, /refresh\.classList\.remove\("refreshing"\)/);
+
+  const worldSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatialWorld.js"), "utf8");
+  assert.doesNotMatch(worldSource, /["']\/assets\/performance-spatial\//, "spatial assets must remain project-relative");
+
+  function createFailingQuery(table) {
+    const response = { data: null, count: null, error: { message: `${table} unavailable` } };
+    const api = {
+      select() { return api; },
+      eq() { return api; },
+      gte() { return api; },
+      order() { return api; },
+      range() { return Promise.resolve(response); },
+      then(resolve, reject) { return Promise.resolve(response).then(resolve, reject); },
+    };
+    return api;
+  }
+
+  const degradedSnapshot = await service.loadPlatformPerformanceSnapshot({
+    from(table) { return createFailingQuery(table); },
+  }, {
+    companyId,
+    now: "2026-07-14T16:00:00.000Z",
+    canViewStorage: false,
+  });
+  assert.equal(degradedSnapshot.sampling.status, "degraded");
+  assert.equal(degradedSnapshot.summary.publicIntakeTotal, null);
+  assert.equal(degradedSnapshot.summary.ordersReceivedTotal, null);
+  assert.equal(degradedSnapshot.summary.requestsToday, null);
+  assert.equal(degradedSnapshot.summary.totalRecords, null);
+  assert.match(degradedSnapshot.sampling.message, /Unavailable values are not reported as zero/);
+  assert.equal(degradedSnapshot.signals[0].title, "Partial data sample");
 
   const appSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../app.js"), "utf8");
   assert.match(appSource, /function armPlatformSpatialFrameWatchdog\(\)/);
   assert.match(appSource, /\}, 10000\);/);
   assert.match(appSource, /platformPerformanceTimedOut = true/);
+  assert.match(appSource, /spatialFrame\?\.addEventListener\("load", postPlatformPerformanceSnapshotToSpatialFrame/);
+  assert.doesNotMatch(appSource, /if \(spatialFrame\) armPlatformSpatialFrameWatchdog\(\)/);
+  assert.match(appSource, /if \(platformPerformanceError\) clearPlatformSpatialFrameWatchdog\(\)/);
+  assert.match(appSource, /function reloadPlatformSpatialFrame\(\)/);
+  assert.match(appSource, /performance-spatial\.html\?sample=\$\{Date\.now\(\)\}/);
+  assert.match(appSource, /loadPlatformPerformance\(\{ force: true \}\)\.then\(reloadPlatformSpatialFrame\)/);
 
   const frameHtml = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../performance-spatial.html"), "utf8");
   assert.match(frameHtml, /direct-performance-exit/);

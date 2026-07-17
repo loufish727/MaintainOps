@@ -234,6 +234,57 @@ input:focus-visible {
   background: linear-gradient(90deg, transparent, rgba(232, 173, 98, 0.72));
 }
 
+.sampling-notice {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(760px, calc(100vw - 32px));
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(232, 173, 98, 0.5);
+  background: rgba(25, 15, 7, 0.94);
+  color: rgba(248, 226, 194, 0.94);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+  transform: translateX(-50%);
+}
+
+.sampling-notice[hidden] {
+  display: none;
+}
+
+.sampling-notice strong {
+  flex: 0 0 auto;
+  color: var(--hud-amber);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.sampling-notice span {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+html.platform-spatial-degraded .header-system-state strong,
+html.platform-spatial-degraded .activity-head b {
+  color: var(--hud-amber);
+}
+
+html.platform-spatial-degraded .header-system-state i,
+html.platform-spatial-degraded .activity-head b i {
+  background: var(--hud-amber);
+  box-shadow: 0 0 9px rgba(232, 173, 98, 0.7);
+}
+
+html.platform-spatial-pending .header-system-state strong,
+html.platform-spatial-pending .activity-head b {
+  color: var(--cyan);
+}
+
 .header-brand {
   position: relative;
   display: grid;
@@ -2263,6 +2314,11 @@ h2 span {
 }
 
 @media (max-width: 760px) {
+  .sampling-notice {
+    top: 128px;
+    align-items: flex-start;
+  }
+
   .direct-performance-exit {
     top: max(128px, calc(env(safe-area-inset-top) + 118px));
     left: max(12px, env(safe-area-inset-left));

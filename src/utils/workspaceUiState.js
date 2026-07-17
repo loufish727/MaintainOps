@@ -122,6 +122,13 @@
       writeStorage(storage, STORAGE_KEYS.sectionSplitDone, "true");
     }
 
+    // The spatial view is intentionally large; a fresh app boot should return
+    // to operational work instead of reloading the 3D room from saved state.
+    if (state.activeSection === "performance") {
+      state.activeSection = "mywork";
+      writeStorage(storage, STORAGE_KEYS.activeSection, state.activeSection);
+    }
+
     const setValue = (name, value, storageKey) => {
       state[name] = value;
       if (storageKey) writeStorage(storage, storageKey, value);

@@ -167,6 +167,10 @@
             writeStorage(storage, STORAGE_KEYS.activeSection, state.activeSection);
             writeStorage(storage, STORAGE_KEYS.sectionSplitDone, "true");
           }
+          if (state.activeSection === "performance") {
+            state.activeSection = "mywork";
+            writeStorage(storage, STORAGE_KEYS.activeSection, state.activeSection);
+          }
           const setValue = (name, value, storageKey) => {
             state[name] = value;
             if (storageKey) writeStorage(storage, storageKey, value);
@@ -7824,10 +7828,10 @@ ${requestDescription}`,
           ${workOrder.asset_id && hasCompletedSafetyDeviceCheck(workOrder) ? `<p class="completion-note">Safety devices identified before completion.</p>` : ""}
           ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
         </div>
-  
+
         ${renderWorkOrderCommandSummary(workOrder)}
         ${renderWorkOrderRecommendation(workOrder)}
-  
+
         ${workOrder.completed_at && (workOrder.failure_cause || workOrder.resolution_summary || workOrder.follow_up_needed) ? `
           <div class="outcome-summary">
             <h3>Work Outcome</h3>
@@ -7836,13 +7840,13 @@ ${requestDescription}`,
             ${workOrder.follow_up_needed ? `<article class="follow-up"><span>Follow-up</span><strong>Needed</strong></article>` : ""}
           </div>
         ` : ""}
-  
+
         ${canEditOperational ? `<label>Status
           <select id="status-select">
             ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
           </select>
         </label>` : ""}
-  
+
         ${canEditOperational ? `<div class="quick-actions detail-quick-actions">
           ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
           ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).map((status) => `
@@ -7850,7 +7854,7 @@ ${requestDescription}`,
           `).join("")}
         </div>` : ""}
         ${workOrderActionWarningId === workOrder.id && workOrderActionWarning ? `<p class="error-text action-warning">${escapeHtml(workOrderActionWarning)}</p>` : ""}
-  
+
         ${canEditOperational ? `<details class="quick-update-panel relationship-detail comment work-detail-section" open>
           <summary>Quick Update</summary>
           <form class="form-grid" id="quick-update-work-order-form">
@@ -7903,7 +7907,7 @@ ${requestDescription}`,
             <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
           </form>
         </details>` : ""}
-  
+
         <div class="downtime-copy relationship-detail asset" id="work-order-email-helper-target">
           <div>
             <h3>Email Helper</h3>
@@ -7914,9 +7918,9 @@ ${requestDescription}`,
             <button class="secondary-button" data-copy-downtime="body" data-id="${workOrder.id}" type="button">Copy Email Body</button>
           </div>
         </div>
-  
+
         ${renderWorkOrderMessages(workOrder)}
-  
+
         ${canEditOperational ? `<details class="work-detail-section relationship-detail asset">
           <summary>Full Work Order Details</summary>
         <form class="form-grid" id="edit-work-order-form">
@@ -7959,7 +7963,7 @@ ${requestDescription}`,
           <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
         </form>
         </details>` : ""}
-  
+
         ${procedure ? `
           <details class="work-detail-section relationship-detail procedure" open>
             <summary>Procedure Checklist</summary>
@@ -7977,7 +7981,7 @@ ${requestDescription}`,
             </div>
           </details>
         ` : ""}
-  
+
         ${canEditOperational && workOrder.status !== "completed" ? `
           <details class="work-detail-section completion-section" id="work-order-complete-target">
             <summary>Complete Work</summary>
@@ -8000,7 +8004,7 @@ ${requestDescription}`,
           </form>
           </details>
         ` : ""}
-  
+
         <details class="work-detail-section relationship-detail parts" id="work-order-parts-target">
           <summary>Parts Used</summary>
         ${canEditOperational ? `<form class="form-grid relationship-detail parts" id="parts-used-form">
@@ -8015,7 +8019,7 @@ ${requestDescription}`,
           <p class="error-text" id="parts-used-error"></p>
           <button class="secondary-button" type="submit">Record Part Used</button>
         </form>` : ""}
-  
+
         <div class="parts-used-list">
           ${usedParts.length ? `<article class="parts-used-summary"><strong>Parts estimate</strong><span>${money(partsCost)}</span></article>` : ""}
           ${usedParts.map((row) => `
@@ -8027,7 +8031,7 @@ ${requestDescription}`,
           `).join("") || `<p class="muted">No parts used yet.</p>`}
         </div>
         </details>
-  
+
         <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
           <summary>Photos</summary>
         ${canEditOperational ? `<form class="form-grid relationship-detail photo" id="photo-form">
@@ -8035,7 +8039,7 @@ ${requestDescription}`,
           <p class="error-text" id="photo-error"></p>
           <button class="secondary-button" type="submit">Upload Photo</button>
         </form>` : ""}
-  
+
         <div>
           <h3>Photos</h3>
           <div class="photo-list">
@@ -8051,7 +8055,7 @@ ${requestDescription}`,
           </div>
         </div>
         </details>
-  
+
         <details class="work-detail-section relationship-detail comment" id="work-order-comments-target">
           <summary>Comments</summary>
         ${canEditOperational ? `<form class="form-grid relationship-detail comment" id="comment-form">
@@ -8069,7 +8073,7 @@ ${requestDescription}`,
           `).join("") || `<p class="muted">No comments yet.</p>`}
         </div>
         </details>
-  
+
         <details class="work-detail-section" id="work-order-history-target">
           <summary>History</summary>
         <div class="timeline">
@@ -8077,7 +8081,7 @@ ${requestDescription}`,
           ${activity.map(renderActivityItem).join("") || `<p class="muted">No activity yet.</p>`}
         </div>
         </details>
-  
+
         ${canEditOperational && canDeleteWorkOrders() ? renderWorkOrderDangerZone(workOrder) : ""}
       </div>
     `;
@@ -8846,7 +8850,7 @@ ${requestDescription}`,
             <h3>Create Work Order</h3>
             <p class="muted">Build a complete work order step by step.</p>
           </div>
-    
+
           <div class="form-section-title">1. What needs attention?</div>
           <label>Title<input name="title" required placeholder="Inspect packaging line sensor"></label>
           <label>Description<textarea name="description" rows="2" placeholder="What is happening, where, and what should be checked?"></textarea></label>
@@ -8869,7 +8873,7 @@ ${requestDescription}`,
             </div>
           </fieldset>
           <p class="error-text" data-asset-location-warning></p>
-    
+
           <details class="quick-fix-more" open>
             <summary>2. Priority and timing</summary>
             <div class="form-grid">
@@ -8900,7 +8904,7 @@ ${requestDescription}`,
               </label>
             </div>
           </details>
-    
+
           <details class="quick-fix-more">
             <summary>3. People and procedure</summary>
             <div class="form-grid">
@@ -8916,7 +8920,7 @@ ${requestDescription}`,
               </label>
             </div>
           </details>
-    
+
           <details class="quick-fix-more">
             <summary>4. Internal notes and completion</summary>
             <div class="form-grid">
@@ -8928,7 +8932,7 @@ ${requestDescription}`,
               <label>Completion notes<textarea name="completion_notes" rows="2" placeholder="Final notes if this is already complete."></textarea></label>
             </div>
           </details>
-    
+
           <details class="quick-fix-more">
             <summary>5. Parts, photo, and first comment</summary>
             <div class="form-grid">
@@ -8943,7 +8947,7 @@ ${requestDescription}`,
               <label>First comment<textarea name="initial_comment" rows="2" placeholder="Add the first update or note for the record."></textarea></label>
             </div>
           </details>
-    
+
           <p class="error-text" id="create-work-order-error"></p>
           <button class="primary-button work-action-button quick-fix-submit" type="submit">Create Work Order</button>
         </form>

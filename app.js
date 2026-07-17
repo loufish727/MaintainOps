@@ -2220,6 +2220,18 @@ function postPlatformPerformanceSnapshotToSpatialFrame() {
   );
 }
 
+function reloadPlatformSpatialFrame() {
+  if (activeSection !== "performance" || !platformPerformance) return;
+  const frame = document.querySelector("[data-platform-spatial-frame]");
+  if (!frame) return;
+  platformSpatialFrameRendered = false;
+  platformPerformanceTimedOut = false;
+  clearPlatformSpatialFrameWatchdog();
+  frame.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
+  frame.src = `performance-spatial.html?sample=${Date.now()}`;
+  armPlatformSpatialFrameWatchdog();
+}
+
 function clearPlatformSpatialFrameWatchdog() {
   if (platformSpatialFrameWatchdog) window.clearTimeout(platformSpatialFrameWatchdog);
   platformSpatialFrameWatchdog = null;
@@ -2247,7 +2259,11 @@ window.addEventListener("message", (event) => {
     clearPlatformSpatialFrameWatchdog();
   }
   if (event.data?.type === "maintainops-platform-spatial-refresh") {
-    void loadPlatformPerformance({ force: true });
+    platformSpatialFrameRendered = false;
+    platformPerformanceTimedOut = false;
+    clearPlatformSpatialFrameWatchdog();
+    armPlatformSpatialFrameWatchdog();
+    void loadPlatformPerformance({ force: true }).then(reloadPlatformSpatialFrame);
   }
 });
 
@@ -4745,7 +4761,8 @@ function bindWorkspaceEvents() {
   if (activeSection === "performance") {
     const spatialFrame = document.querySelector("[data-platform-spatial-frame]");
     spatialFrame?.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
-    if (spatialFrame) armPlatformSpatialFrameWatchdog();
+    if (platformPerformanceError) clearPlatformSpatialFrameWatchdog();
+    else armPlatformSpatialFrameWatchdog();
     document.querySelector("[data-exit-performance]")?.addEventListener("click", () => {
       setActiveSectionState("mywork");
       localStorage.setItem("maintainops.activeSection", "mywork");

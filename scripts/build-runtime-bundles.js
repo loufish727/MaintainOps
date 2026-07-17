@@ -68,7 +68,7 @@ async function main() {
       logLevel: "warning",
       write: false,
     });
-    const outputText = result.outputFiles[0].text;
+    const outputText = result.outputFiles[0].text.replace(/^[\t ]+$/gm, "");
     const hash = bundleHash(outputText);
     const fileName = `${bundle.baseName}.${hash}.js`;
     removeOldBundleFiles(bundle.baseName);

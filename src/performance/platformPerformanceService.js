@@ -37,6 +37,10 @@
     return Number(value) || 0;
   }
 
+  function countText(value, suffix = "") {
+    return value === null ? "Unavailable" : `${number(value)}${suffix}`;
+  }
+
   async function fetchCompanyRows(supabaseClient, options) {
     const {
       table,
@@ -139,33 +143,33 @@
       .sort((left, right) => right.total - left.total || left.name.localeCompare(right.name));
   }
 
-  function buildSignals({ summary, storage }) {
+  function buildSignals({ summary, storage, sampling }) {
     const signals = [
       {
         kind: "active",
         title: "Public intake total",
-        value: `${summary.publicIntakeTotal} total`,
-        detail: `${summary.requestsToday} received today`,
+        value: countText(summary.publicIntakeTotal, " total"),
+        detail: summary.requestsToday === null ? "Today's intake sample is unavailable" : `${summary.requestsToday} received today`,
         system: "Public Intake",
       },
       {
         kind: "active",
         title: "Orders through system",
-        value: `${summary.ordersReceivedTotal} total`,
-        detail: `${summary.ordersReceivedToday} received today`,
+        value: countText(summary.ordersReceivedTotal, " total"),
+        detail: summary.ordersReceivedToday === null ? "Today's order sample is unavailable" : `${summary.ordersReceivedToday} received today`,
         system: "Order Throughput",
       },
       {
         kind: "active",
         title: "Process data flow",
-        value: `${summary.processEventsToday} events today`,
+        value: countText(summary.processEventsToday, " events today"),
         detail: "Public intake and order throughput activity",
         system: "Today's Process Flow",
       },
       {
         kind: "stable",
         title: "Platform footprint",
-        value: `${summary.totalRecords} records`,
+        value: countText(summary.totalRecords, " records"),
         detail: `${summary.locations} plants across the active company`,
         system: "Platform Footprint",
       },
@@ -177,6 +181,15 @@
         value: storage.totalBytesText,
         detail: `${storage.fileCount} linked files stored`,
         system: "Data Vault",
+      });
+    }
+    if (sampling?.status === "degraded") {
+      signals.unshift({
+        kind: "attention",
+        title: "Partial data sample",
+        value: "Review",
+        detail: sampling.message,
+        system: "Sampling Status",
       });
     }
     return signals;
@@ -243,24 +256,41 @@
       fileCount: number(storageDashboard.file_count),
       note: storageResult.error || "",
     };
-    const ordersReceivedTotal = number(ordersReceivedResult.data);
-    const publicIntakeTotal = number(publicIntakeResult.data);
+    const ordersReceivedTotal = ordersReceivedResult.error ? null : number(ordersReceivedResult.data);
+    const publicIntakeTotal = publicIntakeResult.error ? null : number(publicIntakeResult.data);
     const members = Array.isArray(options.companyMembers) ? options.companyMembers : [];
     const assets = Array.isArray(options.assets) ? options.assets : [];
     const parts = Array.isArray(options.parts) ? options.parts : [];
     const locations = Array.isArray(options.locations) ? options.locations : [];
     const todayKey = dayKey(today);
-    const requestsToday = requests.filter((row) => dayKey(row.created_at) === todayKey).length;
-    const ordersReceivedToday = workOrders.filter((row) => dayKey(row.created_at) === todayKey).length;
-    const processEventsToday = requestsToday + ordersReceivedToday;
+    const requestsToday = requestsResult.error
+      ? null
+      : requests.filter((row) => dayKey(row.created_at) === todayKey).length;
+    const ordersReceivedToday = workOrdersResult.error
+      ? null
+      : workOrders.filter((row) => dayKey(row.created_at) === todayKey).length;
+    const processEventsToday = requestsToday === null || ordersReceivedToday === null
+      ? null
+      : requestsToday + ordersReceivedToday;
     const recentErrors = [workOrdersResult, requestsResult, ordersReceivedResult, publicIntakeResult]
       .filter((result) => result.error)
       .map((result) => result.label);
-    const totalRecords = assets.length + parts.length + ordersReceivedTotal + publicIntakeTotal;
+    const samplingNotices = recentErrors.map((label) => `${label} could not be sampled.`);
+    const sampling = {
+      status: samplingNotices.length ? "degraded" : "current",
+      message: samplingNotices.length
+        ? `${samplingNotices.join(" ")} Unavailable values are not reported as zero.`
+        : "All requested company data sources were sampled.",
+      notices: samplingNotices,
+    };
+    const totalRecords = ordersReceivedTotal === null || publicIntakeTotal === null
+      ? null
+      : assets.length + parts.length + ordersReceivedTotal + publicIntakeTotal;
 
     return {
       sampledAt: now.toISOString(),
       historyDays,
+      sampling,
       telemetry: {
         status: "pending",
         message: "Platform instrumentation is not connected yet. Uptime, API latency, sync jobs, and active-login telemetry will appear here once collected.",
@@ -282,35 +312,35 @@
         {
           id: "intake",
           label: "Public Intake",
-          value: `${publicIntakeTotal} total`,
-          detail: `${requestsToday} received today`,
-          tone: "cyan",
+          value: countText(publicIntakeTotal, " total"),
+          detail: requestsToday === null ? "Today's sample is unavailable" : `${requestsToday} received today`,
+          tone: publicIntakeTotal === null || requestsToday === null ? "amber" : "cyan",
         },
         {
           id: "orders",
           label: "Order Throughput",
-          value: `${ordersReceivedTotal} total`,
-          detail: `${ordersReceivedToday} received today`,
-          tone: "cyan",
+          value: countText(ordersReceivedTotal, " total"),
+          detail: ordersReceivedToday === null ? "Today's sample is unavailable" : `${ordersReceivedToday} received today`,
+          tone: ordersReceivedTotal === null || ordersReceivedToday === null ? "amber" : "cyan",
         },
         {
           id: "flow",
           label: "Today's Process Flow",
-          value: `${processEventsToday} events`,
+          value: countText(processEventsToday, " events"),
           detail: "Today across public intake and order throughput",
-          tone: "cyan",
+          tone: processEventsToday === null ? "amber" : "cyan",
         },
         {
           id: "vault",
           label: "Data Vault",
-          value: storage.available ? storage.totalBytesText : `${totalRecords} records`,
+          value: storage.available ? storage.totalBytesText : countText(totalRecords, " records"),
           detail: storage.available ? `${storage.fileCount} linked files` : "Storage detail needs manager access",
           tone: "cyan",
         },
         {
           id: "footprint",
           label: "Platform Footprint",
-          value: `${totalRecords} records`,
+          value: countText(totalRecords, " records"),
           detail: `${locations.length} active plant${locations.length === 1 ? "" : "s"} / ${members.length} team members`,
           tone: "cyan",
         },
@@ -326,11 +356,12 @@
           locations: locations.length,
         },
         storage,
+        sampling,
       }),
       timeline: buildTimeline({ now, days: timelineDays, workOrders, requests }),
       plants: buildPlantFootprint({ locations, workOrders, requests }),
       notices: [
-        ...recentErrors.map((label) => `${label} could not be sampled.`),
+        ...samplingNotices,
         ...(storage.note ? [storage.note] : []),
       ],
     };

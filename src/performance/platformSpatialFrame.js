@@ -9,6 +9,11 @@ let worldRenderAnnounced = false;
 
 const fallbackSnapshot = {
   sampledAt: new Date().toISOString(),
+  sampling: {
+    status: "pending",
+    message: "Waiting for the host application to provide company data.",
+    notices: [],
+  },
   telemetry: { message: "Platform instrumentation is not connected yet." },
   summary: {
     teamSeats: 0,
@@ -50,7 +55,20 @@ function number(value) {
 }
 
 function numberText(value) {
-  return new Intl.NumberFormat("en-US").format(number(value));
+  if (value === null || value === undefined || value === "") return "Unavailable";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "Unavailable";
+  return new Intl.NumberFormat("en-US").format(numeric);
+}
+
+function samplingLabel(sampling) {
+  if (sampling?.status === "degraded") return "Partial data";
+  if (sampling?.status === "pending") return "Pending";
+  return "Current";
+}
+
+function countWithSuffix(value, suffix) {
+  return value === null || value === undefined ? "Unavailable" : `${numberText(value)} ${suffix}`;
 }
 
 function compactLabel(value, fallback) {
@@ -125,6 +143,8 @@ function buildSignals(snapshot) {
 
 function buildFrameData(snapshot) {
   const summary = snapshot.summary || fallbackSnapshot.summary;
+  const sampling = snapshot.sampling || { status: "current", message: "Company data sampled.", notices: [] };
+  const statusLabel = samplingLabel(sampling);
   const systems = (snapshot.systems || fallbackSnapshot.systems).slice(0, 5);
   const signals = buildSignals(snapshot);
   const timeline = (snapshot.timeline || []).slice(-12);
@@ -145,7 +165,7 @@ function buildFrameData(snapshot) {
       ["Telemetry", "Company sampled"],
     ],
     footer: "Maintain Ops performance index",
-    status: "Current",
+    status: statusLabel,
   }));
   const files = signals.map((signal, index) => ({
     name: signal.title,
@@ -205,17 +225,17 @@ function buildFrameData(snapshot) {
     recentActivity: [
       {
         label: "Public intake",
-        value: `${numberText(summary.requestsToday)} today`,
-        detail: `${numberText(summary.publicIntakeTotal)} total received`,
+        value: countWithSuffix(summary.requestsToday, "today"),
+        detail: summary.publicIntakeTotal === null ? "Company total unavailable" : `${numberText(summary.publicIntakeTotal)} total received`,
       },
       {
         label: "Orders received",
-        value: `${numberText(summary.ordersReceivedToday)} today`,
-        detail: `${numberText(summary.ordersReceivedTotal)} total recorded`,
+        value: countWithSuffix(summary.ordersReceivedToday, "today"),
+        detail: summary.ordersReceivedTotal === null ? "Company total unavailable" : `${numberText(summary.ordersReceivedTotal)} total recorded`,
       },
       {
         label: "Process data flow",
-        value: `${numberText(summary.processEventsToday)} events`,
+        value: countWithSuffix(summary.processEventsToday, "events"),
         detail: "Today across public intake and orders received",
       },
     ],
@@ -223,8 +243,8 @@ function buildFrameData(snapshot) {
       eyebrow: "Maintain Ops / Platform Pulse",
       title: "Platform Pulse",
       subtitle: "Company platform scale and data footprint",
-      badge: "Current",
-      tooltip: `${numberText(summary.totalRecords)} company records monitored`,
+      badge: statusLabel,
+      tooltip: summary.totalRecords === null ? "Company record count unavailable" : `${numberText(summary.totalRecords)} company records monitored`,
       rows: [
         ["Orders through system", numberText(summary.ordersReceivedTotal)],
         ["Public intake", numberText(summary.publicIntakeTotal)],
@@ -232,8 +252,9 @@ function buildFrameData(snapshot) {
         ["Records monitored", numberText(summary.totalRecords)],
       ],
       footer: "Company platform command core",
-      status: "Current",
+      status: statusLabel,
     },
+    sampling,
   };
 }
 
@@ -243,6 +264,7 @@ function getElements() {
     headerSubtitle: document.querySelector(".subtitle.subtle"),
     headerStateLabel: document.querySelector(".header-system-state small"),
     headerState: document.querySelector(".header-system-state strong"),
+    samplingNotice: document.querySelector("#sampling-notice"),
     stageReadoutStatus: document.querySelector(".readout-status"),
     stageReadoutMetrics: [...document.querySelectorAll(".readout-metrics > span")],
     search: document.querySelector("#file-search"),
@@ -277,19 +299,30 @@ let els = null;
 let activeBucketFilter = "all";
 
 function updateStaticCopy(data) {
-  const { summary, systems, months } = data;
+  const { summary, systems, months, sampling } = data;
+  const statusLabel = samplingLabel(sampling);
+  const isCurrent = sampling.status === "current";
   document.title = "Maintain Ops App Performance";
+  document.documentElement.classList.toggle("platform-spatial-degraded", sampling.status === "degraded");
+  document.documentElement.classList.toggle("platform-spatial-pending", sampling.status === "pending");
   els.headerKicker.textContent = "App Performance";
-  els.headerSubtitle.innerHTML = `<span id="linked-files-count">${escapeHtml(numberText(summary.totalRecords))}</span> company records monitored`;
+  els.headerSubtitle.innerHTML = summary.totalRecords === null
+    ? "Company record count unavailable"
+    : `<span id="linked-files-count">${escapeHtml(numberText(summary.totalRecords))}</span> company records monitored`;
   els.headerStateLabel.textContent = "Platform status";
-  els.headerState.innerHTML = "<i aria-hidden=\"true\"></i>Current";
+  els.headerState.innerHTML = `<i aria-hidden="true"></i>${escapeHtml(statusLabel)}`;
+  els.samplingNotice.hidden = isCurrent;
+  if (!isCurrent) {
+    els.samplingNotice.querySelector("strong").textContent = statusLabel;
+    els.samplingNotice.querySelector("span").textContent = sampling.message;
+  }
   const stageMetrics = [
     ["Orders Through System", numberText(summary.ordersReceivedTotal), "all company history"],
     ["Public Intake Total", numberText(summary.publicIntakeTotal), "all company history"],
     ["Data Stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited", ""],
     ["Records Monitored", numberText(summary.totalRecords), ""],
   ];
-  els.stageReadoutStatus.innerHTML = "System Status <b>Current</b>";
+  els.stageReadoutStatus.innerHTML = `System Status <b>${escapeHtml(statusLabel)}</b>`;
   els.stageReadoutMetrics.forEach((metric, index) => {
     const [label, value, detail] = stageMetrics[index] || ["Platform signal", "Current", ""];
     metric.querySelector("small").textContent = label;
@@ -297,9 +330,9 @@ function updateStaticCopy(data) {
     const detailNode = metric.querySelector("em");
     if (detailNode) detailNode.textContent = detail;
   });
-  els.search.placeholder = "Search platform signals and systems...";
+  els.search.placeholder = "Search systems...";
   const telemetry = [
-    ["Platform pulse", "Current"],
+    ["Platform pulse", statusLabel],
     ["Public intake total", numberText(summary.publicIntakeTotal)],
     ["Orders through system", numberText(summary.ordersReceivedTotal)],
     ["Records monitored", numberText(summary.totalRecords)],
@@ -318,7 +351,7 @@ function updateStaticCopy(data) {
   const activityHead = document.querySelector(".activity-head");
   activityHead.querySelector("small").textContent = "Process data stream";
   activityHead.querySelector("strong").textContent = "Today at a glance";
-  activityHead.querySelector("b").innerHTML = "<i aria-hidden=\"true\"></i>Current";
+  activityHead.querySelector("b").innerHTML = `<i aria-hidden="true"></i>${escapeHtml(statusLabel)}`;
   document.querySelector(".source-lattice-head p").textContent = "Performance sources";
   document.querySelector(".source-lattice-head h2").textContent = "Maintain Ops Platform Archive";
   document.querySelector(".source-lattice-head > span").innerHTML = `<i aria-hidden="true"></i>${systems.length} systems sampled`;
@@ -518,6 +551,9 @@ function renderFrame(snapshot) {
   renderBuckets(frameState);
   renderFiles(frameState);
   renderOperations(frameState);
+  els.refresh.classList.remove("refreshing");
+  const refreshLabel = els.refresh.querySelector("span:last-child");
+  if (refreshLabel) refreshLabel.textContent = "Refresh";
   els.updated.textContent = `Sampled ${new Date(snapshot?.sampledAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
   els.timelineMonths.forEach((button, index) => {
     const month = frameState.months[index];

@@ -21,6 +21,11 @@ for (const key of ["runtime", "appShell", "platformSpatial"]) {
     fs.existsSync(path.join(bundlesDir, manifest[key])),
     `Manifest ${key} bundle must exist on disk`
   );
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(bundlesDir, manifest[key]), "utf8"),
+    /^[\t ]+$/m,
+    `Manifest ${key} bundle must not contain whitespace-only lines`
+  );
   assert.match(
     key === "platformSpatial" ? spatialHtml : indexHtml,
     new RegExp(`src/bundles/${manifest[key].replace(/\./g, "\\.")}`),

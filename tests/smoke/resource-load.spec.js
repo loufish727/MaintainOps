@@ -86,6 +86,11 @@ test.describe("MaintainOps hosted resource smoke", () => {
         expect(spatialBundle, "spatial performance page should reference its lazy bundle").not.toBeNull();
         const spatialBundleResponse = await request.get(`${baseURL}${spatialBundle[0]}?qa_bust=spatial-${attempt}`);
         expect(spatialBundleResponse.status(), "spatial performance bundle should load").toBe(200);
+        const spatialBundleText = await spatialBundleResponse.text();
+        expect(
+          spatialBundleText,
+          "spatial assets must stay relative to the GitHub Pages project path"
+        ).not.toContain('"/assets/performance-spatial/');
 
         for (const resource of lazyResources) {
           expect(indexHtml, `index.html should not eagerly load lazy resource ${resource}`).not.toContain(resource);
