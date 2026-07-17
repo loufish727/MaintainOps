@@ -125,7 +125,7 @@ function createQueryResponse(table, companyRows, calls) {
   });
   const html = renderer.renderPlatformPerformancePanel({ snapshot, ready: true, error: "" });
   assert.match(html, /App Performance/);
-  assert.match(html, /performance-spatial\.html/);
+  assert.match(html, /performance-spatial\.html\?sample=\d+/);
   assert.match(html, /data-platform-spatial-frame/);
   assert.doesNotMatch(html, /platform-spatial-exit/);
 
@@ -186,6 +186,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(degradedSnapshot.signals[0].title, "Partial data sample");
 
   const appSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../app.js"), "utf8");
+  assert.match(appSource, /platformPerformanceDisplay\.js\?v=platform-performance-lazy-2/);
   assert.match(appSource, /function armPlatformSpatialFrameWatchdog\(\)/);
   assert.match(appSource, /\}, 10000\);/);
   assert.match(appSource, /platformPerformanceTimedOut = true/);
@@ -206,6 +207,8 @@ function createQueryResponse(table, companyRows, calls) {
   const spatialStyles = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatial.css"), "utf8");
   assert.doesNotMatch(spatialStyles, /direct-performance-exit/);
   assert.doesNotMatch(spatialStyles, /\.performance-header-exit\s*\{[^}]*position:\s*(?:fixed|absolute)/s);
+  assert.match(spatialStyles, /#storage-world\s*\{[^}]*touch-action:\s*none/s);
+  assert.doesNotMatch(spatialStyles, /#storage-world\s*\{[^}]*touch-action:\s*pan-y/s);
 
   console.log("platform performance lazy smoke passed");
 })();
