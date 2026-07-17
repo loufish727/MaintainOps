@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maintain Ops App Performance</title>
+    <link rel="stylesheet" href="src/performance/platformSpatial.css" />
+    <script defer src="src/bundles/platformSpatial.ffdb3ca0be.js"></script>
+  </head>
+  <body>
+    <canvas id="storage-world" aria-label="Interactive 3D Maintain Ops app performance model"></canvas>
+    <a class="direct-performance-exit" href="./" aria-label="Return to My Work">Back to My Work</a>
+    <main class="storage-page" aria-label="Maintain Ops app performance command room">
+      <header class="page-header">
+        <div class="header-brand">
+          <p class="eyebrow">Maintain Ops</p>
+          <p class="header-kicker">App Performance</p>
+          <h1 class="visually-hidden">App Performance</h1>
+          <p class="subtitle subtle"><span id="linked-files-count">0</span> company records monitored</p>
+        </div>
+        <div class="header-system-state" aria-label="Platform system status">
+          <small>Platform status</small>
+          <strong><i aria-hidden="true"></i>Healthy</strong>
+        </div>
+        <div class="header-actions">
+          <label class="search-box">
+            <span>Search</span>
+            <input id="file-search" type="search" placeholder="Search platform signals and systems..." autocomplete="off" />
+          </label>
+          <button id="refresh-button" class="button primary refresh-command" type="button">
+            <span class="refresh-glyph" aria-hidden="true">&#8635;</span>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="spatial-stage" aria-label="Interactive app performance model">
+        <aside class="stage-telemetry" aria-label="Platform telemetry">
+          <div class="telemetry-head">
+            <strong><i aria-hidden="true"></i>System Overview</strong>
+            <small id="zone-indicator">Viewing: Overview</small>
+          </div>
+          <span class="telemetry-row" data-tone="cyan"><small>Platform pulse</small><strong>Current</strong></span>
+          <span class="telemetry-row" data-tone="blue"><small>Public intake</small><strong>0</strong></span>
+          <span class="telemetry-row" data-tone="mint"><small>Orders through system</small><strong>0</strong></span>
+          <span class="telemetry-row" data-tone="amber"><small>Records monitored</small><strong>0</strong></span>
+          <span class="telemetry-row status-row" data-tone="mint"><small>Data vault</small><strong>Pending</strong></span>
+        </aside>
+        <div class="stage-readout">
+          <div class="readout-head">
+            <span class="readout-mark" aria-hidden="true">◇</span>
+            <strong>Maintain Ops</strong>
+            <span class="readout-status">System Status <b>Current</b></span>
+          </div>
+          <div class="readout-metrics" aria-label="Platform status metrics">
+            <span><small>Orders Through System</small><b>0</b><em>all company history</em></span>
+            <span><small>Public Intake Total</small><b>0</b></span>
+            <span><small>Data Stored</small><b>Pending</b></span>
+            <span><small>Records Monitored</small><b>0</b></span>
+          </div>
+          <small class="zone-indicator">Viewing: Overview</small>
+        </div>
+        <aside class="stage-activity" aria-label="Recent platform activity">
+          <div class="activity-head">
+            <span><small>Process data stream</small><strong>Today at a glance</strong></span>
+            <b><i aria-hidden="true"></i>Current</b>
+          </div>
+          <span class="activity-event" data-tone="cyan">
+            <small>Today</small>
+            <strong>Public intake<em>Awaiting company sample</em></strong>
+          </span>
+          <span class="activity-event" data-tone="blue">
+            <small>Today</small>
+            <strong>Orders received<em>Awaiting company sample</em></strong>
+          </span>
+          <span class="activity-event" data-tone="mint">
+            <small>Today</small>
+            <strong>Process data flow<em>Awaiting company sample</em></strong>
+          </span>
+        </aside>
+        <aside class="stage-timeline-console" aria-label="Timeline summary">
+          <div class="timeline-console-head">
+            <div>
+              <strong>Timeline</strong>
+              <small>12 months view</small>
+            </div>
+            <span>12 Months</span>
+          </div>
+          <div class="timeline-console-track" aria-hidden="true">
+            <i style="left:8%"></i>
+            <i style="left:18%"></i>
+            <i style="left:28%"><b style="height:18px"></b><b style="height:10px"></b></i>
+            <i style="left:38%"><b style="height:20px"></b><b style="height:12px"></b></i>
+            <i style="left:48%"></i>
+            <i class="active" style="left:58%"></i>
+            <i style="left:68%"><b style="height:42px"></b><b style="height:26px"></b></i>
+            <i style="left:78%"></i>
+            <i style="left:88%"></i>
+          </div>
+          <div class="timeline-console-labels" aria-label="Select a month in the usage timeline">
+            <button data-timeline-month="0" type="button">Aug</button><button data-timeline-month="1" type="button">Sep</button><button data-timeline-month="2" type="button">Oct</button><button data-timeline-month="3" type="button">Nov</button><button data-timeline-month="4" type="button">Dec</button><button data-timeline-month="5" type="button">Jan</button><button data-timeline-month="6" type="button">Feb</button><button data-timeline-month="7" type="button">Mar</button><button data-timeline-month="8" type="button">Apr</button><button data-timeline-month="9" type="button">May</button><button data-timeline-month="10" type="button">Jun</button><button data-timeline-month="11" type="button">Jul</button>
+          </div>
+        </aside>
+        <div class="stage-actions" aria-label="Spatial model views">
+          <button class="stage-action active" data-world-target="overview" type="button" aria-pressed="true">Overview</button>
+          <button class="stage-action" data-world-target="buckets" type="button" aria-pressed="false">Buckets</button>
+          <button class="stage-action" data-world-target="timeline" type="button" aria-pressed="false">Timeline</button>
+          <button class="stage-action" data-world-target="files" type="button" aria-pressed="false">Files</button>
+          <button class="stage-action" data-world-target="vault" type="button" aria-pressed="false">Core</button>
+        </div>
+      </section>
+
+      <aside class="source-lattice" aria-label="Expandable platform sources">
+      <div class="source-lattice-head">
+        <div>
+          <p>Performance sources</p>
+          <h2>Maintain Ops Platform Archive</h2>
+        </div>
+        <span><i aria-hidden="true"></i>5 systems sampled</span>
+      </div>
+      <details class="source-panel summary-source">
+        <summary class="source-summary"><span>Platform Pulse</span><strong>4 metrics</strong></summary>
+      <section class="summary-grid" aria-label="Platform summary">
+        <article class="metric-card accent-cyan">
+          <span>Orders Through System</span>
+          <strong>0</strong>
+          <small>All company history</small>
+          <div class="metric-meter"><i style="width:72%"></i></div>
+        </article>
+        <article class="metric-card">
+          <span>Data Stored</span>
+          <strong>Pending</strong>
+          <small>Role-aware storage footprint</small>
+          <div class="metric-meter"><i style="width:58%"></i></div>
+        </article>
+        <article class="metric-card accent-mint">
+          <span>Public Intake Total</span>
+          <strong>0</strong>
+          <small>Received across all plants</small>
+          <div class="metric-meter"><i style="width:72%"></i></div>
+        </article>
+        <article class="metric-card accent-blue">
+          <span>Records Monitored</span>
+          <strong>0</strong>
+          <small>Company platform footprint</small>
+          <div class="metric-meter"><i style="width:72%"></i></div>
+        </article>
+      </section>
+      </details>
+
+      <details class="source-panel panel rules-panel">
+        <summary class="source-summary"><span>Major App Systems</span><strong>5 systems</strong></summary>
+        <div class="section-heading">
+          <h2 id="rules-title">Major App Systems <span>Current company-scoped operating signals</span></h2>
+          <p>Each tower represents a major Maintain Ops system, using company-level process and data signals.</p>
+        </div>
+        <div class="rules-grid" id="rules-grid"></div>
+      </details>
+
+      <details class="source-panel panel chart-panel" id="timeline-source">
+        <summary class="source-summary"><span>Activity Runway</span><strong>Recent activity</strong></summary>
+        <div class="section-heading split">
+          <div>
+            <h2 id="month-title">Activity Runway <span>Recent company activity</span></h2>
+            <p>Public intake and order throughput across the selected window.</p>
+          </div>
+          <div class="chart-stats">
+            <span><small>Process Events</small><strong>0</strong></span>
+            <span><small>Intake Received</small><strong>0</strong></span>
+            <span><small>Orders Received</small><strong>0</strong></span>
+          </div>
+        </div>
+        <div class="usage-chart" id="usage-chart" aria-label="Recent platform activity chart"></div>
+        <div class="legend">
+          <span><i class="legend-added"></i> Public intake</span>
+          <span><i class="legend-total"></i> Orders received</span>
+          <span><i class="legend-left"></i> Process data flow</span>
+        </div>
+      </details>
+
+        <details class="source-panel panel buckets-panel">
+          <summary class="source-summary"><span>Platform Systems</span><strong>5 systems</strong></summary>
+          <div class="section-heading split compact">
+            <div>
+              <h2 id="space-title">Platform Systems <span>Major capabilities</span></h2>
+              <p>The spatial towers map directly to the major platform systems.</p>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Bucket view">
+              <button class="segment active" data-bucket-filter="all" type="button">All</button>
+              <button class="segment" data-bucket-filter="systems" type="button">Systems</button>
+              <button class="segment" data-bucket-filter="signals" type="button">Signals</button>
+            </div>
+          </div>
+          <div class="bucket-list" id="bucket-list"></div>
+        </details>
+
+        <details class="source-panel panel files-panel">
+          <summary class="source-summary"><span>Notable Signals</span><strong id="files-count">10 shown</strong></summary>
+          <div class="section-heading split compact">
+            <div>
+              <h2 id="files-title">Current Notable Signals <span>Live platform index</span></h2>
+              <p>The front physical cubes represent the platform signals that need attention or mark momentum.</p>
+          </div>
+          <button class="button ghost" id="clear-search" type="button">Clear</button>
+        </div>
+          <p class="empty-state" id="file-empty" hidden>No matching storage objects.</p>
+          <div class="file-list" id="file-list"></div>
+        </details>
+
+      <details class="source-panel panel operations-panel">
+        <summary class="source-summary"><span>Instrumentation Queue</span><strong>5 signals</strong></summary>
+        <div class="section-heading split">
+          <div>
+            <h2 id="ops-title">Instrumentation Queue <span>Observed platform conditions</span></h2>
+            <p>Only signals Maintain Ops can observe are presented as current. Missing platform telemetry stays marked as pending.</p>
+          </div>
+          <span class="updated-pill" id="updated-pill">Updated just now</span>
+        </div>
+        <div class="ops-grid" id="ops-grid"></div>
+      </details>
+      </aside>
+    </main>
+
+    <div id="world-tooltip" class="world-tooltip" hidden></div>
+
+    <dialog id="file-dialog" class="file-dialog">
+      <form method="dialog">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow">Platform signal</p>
+            <h2 id="dialog-title">Signal details</h2>
+          </div>
+          <button class="icon-button" value="close" aria-label="Close signal details">x</button>
+        </div>
+        <dl id="dialog-details"></dl>
+      </form>
+    </dialog>
+  </body>
+</html>

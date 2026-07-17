@@ -32,6 +32,7 @@ export function createLazyResourceHelpers({
   escapeHtml,
   qrCodeResource,
   conversionResourcePaths,
+  platformPerformanceResourcePaths,
   loadScriptResource = defaultLoadScriptResource,
   getActiveSection,
   getPublicRequestLinks,
@@ -41,6 +42,9 @@ export function createLazyResourceHelpers({
   let conversionResourcesPromise = null;
   let conversionResourcesError = "";
   let conversionDisplayHelpers = null;
+  let platformPerformanceResourcesPromise = null;
+  let platformPerformanceResourcesError = "";
+  let platformPerformanceDisplayHelpers = null;
   let qrLibraryPromise = null;
 
   function hasConversionDisplayHelpers() {
@@ -53,6 +57,18 @@ export function createLazyResourceHelpers({
 
   function getConversionDisplayHelpers() {
     return conversionDisplayHelpers;
+  }
+
+  function hasPlatformPerformanceDisplayHelpers() {
+    return Boolean(platformPerformanceDisplayHelpers);
+  }
+
+  function clearPlatformPerformanceResourcesError() {
+    platformPerformanceResourcesError = "";
+  }
+
+  function getPlatformPerformanceDisplayHelpers() {
+    return platformPerformanceDisplayHelpers;
   }
 
   function ensureQrLibraryLoaded() {
@@ -100,6 +116,28 @@ export function createLazyResourceHelpers({
     return conversionResourcesPromise;
   }
 
+  async function ensurePlatformPerformanceResourcesLoaded() {
+    if (platformPerformanceDisplayHelpers) return platformPerformanceDisplayHelpers;
+    if (!platformPerformanceResourcesPromise) {
+      platformPerformanceResourcesError = "";
+      platformPerformanceResourcesPromise = (async () => {
+        for (const src of platformPerformanceResourcePaths || []) {
+          await loadScriptResource(documentRef, src);
+        }
+        const service = windowRef.MaintainOpsPlatformPerformanceService;
+        const display = windowRef.MaintainOpsPlatformPerformanceDisplay;
+        if (!service || !display) throw new Error("Platform Performance resources did not initialize.");
+        platformPerformanceDisplayHelpers = display.createPlatformPerformanceDisplayHelpers({ escapeHtml });
+        return platformPerformanceDisplayHelpers;
+      })().catch((error) => {
+        platformPerformanceResourcesError = error.message || "Could not load Platform Performance.";
+        platformPerformanceResourcesPromise = null;
+        throw error;
+      });
+    }
+    return platformPerformanceResourcesPromise;
+  }
+
   function renderConversionsLazyPanel() {
     if (conversionDisplayHelpers) return conversionDisplayHelpers.renderConversionsPanel();
     const status = conversionResourcesError || "Loading shop converters and reference charts...";
@@ -111,6 +149,21 @@ export function createLazyResourceHelpers({
       ${conversionResourcesError ? `<button class="secondary-button" data-retry-conversions type="button">Retry</button>` : ""}
     </section>
   `;
+  }
+
+  function renderPlatformPerformanceLazyPanel(state = {}) {
+    if (platformPerformanceDisplayHelpers) {
+      return platformPerformanceDisplayHelpers.renderPlatformPerformancePanel(state);
+    }
+    const status = platformPerformanceResourcesError || "Loading the platform command surface...";
+    const toneClass = platformPerformanceResourcesError ? "status-blocked" : "status-in_progress";
+    return `
+      <section class="setup-card performance-resource-loading ${toneClass}" aria-live="polite">
+        <h3>Platform Performance</h3>
+        <p>${escapeHtml(status)}</p>
+        ${platformPerformanceResourcesError ? `<button class="secondary-button" data-retry-platform-performance type="button">Retry</button>` : ""}
+      </section>
+    `;
   }
 
   function scheduleQrLibraryLoad() {
@@ -138,14 +191,35 @@ export function createLazyResourceHelpers({
       });
   }
 
+  function schedulePlatformPerformanceResourceLoad() {
+    if (
+      getActiveSection() !== "performance" ||
+      platformPerformanceDisplayHelpers ||
+      platformPerformanceResourcesPromise
+    ) return;
+    ensurePlatformPerformanceResourcesLoaded()
+      .then(() => {
+        if (getActiveSection() === "performance") requestWorkspaceRender();
+      })
+      .catch(() => {
+        if (getActiveSection() === "performance") requestWorkspaceRender();
+      });
+  }
+
   return {
     clearConversionResourcesError,
+    clearPlatformPerformanceResourcesError,
     ensureConversionResourcesLoaded,
+    ensurePlatformPerformanceResourcesLoaded,
     ensureQrLibraryLoaded,
     getConversionDisplayHelpers,
+    getPlatformPerformanceDisplayHelpers,
     hasConversionDisplayHelpers,
+    hasPlatformPerformanceDisplayHelpers,
     renderConversionsLazyPanel,
+    renderPlatformPerformanceLazyPanel,
     scheduleConversionResourceLoad,
+    schedulePlatformPerformanceResourceLoad,
     scheduleQrLibraryLoad,
   };
 }

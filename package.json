@@ -29,5 +29,8 @@
     "@playwright/test": "1.60.0",
     "esbuild": "^0.28.1",
     "supabase": "^2.104.0"
+  },
+  "dependencies": {
+    "three": "0.166.1"
   }
 }

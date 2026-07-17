@@ -1,0 +1,156 @@
+const assert = require("node:assert/strict");
+
+const service = require("../../src/performance/platformPerformanceService.js");
+const display = require("../../src/performance/platformPerformanceDisplay.js");
+
+function createQueryResponse(table, companyRows, calls) {
+  const state = { filters: [], head: false };
+  const api = {
+    select(_columns, options = {}) {
+      state.head = Boolean(options.head);
+      return api;
+    },
+    eq(column, value) {
+      state.filters.push(["eq", column, value]);
+      return api;
+    },
+    neq(column, value) {
+      state.filters.push(["neq", column, value]);
+      return api;
+    },
+    in(column, values) {
+      state.filters.push(["in", column, values]);
+      return api;
+    },
+    lt(column, value) {
+      state.filters.push(["lt", column, value]);
+      return api;
+    },
+    gte(column, value) {
+      state.filters.push(["gte", column, value]);
+      return api;
+    },
+    order() { return api; },
+    range() {
+      return Promise.resolve(response());
+    },
+    then(resolve, reject) {
+      return Promise.resolve(response()).then(resolve, reject);
+    },
+  };
+
+  function response() {
+    const rows = companyRows[table] || [];
+    calls.push({ table, filters: state.filters.slice(), head: state.head });
+    if (!state.head) return { data: rows, error: null };
+    const filtered = rows.filter((row) => state.filters.every(([operator, column, value]) => {
+      if (operator === "eq") return row[column] === value;
+      if (operator === "neq") return row[column] !== value;
+      if (operator === "in") return value.includes(row[column]);
+      if (operator === "lt") return !row[column] || String(row[column]) < String(value);
+      return true;
+    }));
+    return { count: filtered.length, error: null };
+  }
+
+  return api;
+}
+
+(async () => {
+  const calls = [];
+  const companyId = "company-1";
+  const rows = {
+    work_orders: [
+      {
+        id: "work-open",
+        company_id: companyId,
+        location_id: "plant-1",
+        created_at: "2026-07-13T11:00:00.000Z",
+      },
+      {
+        id: "work-done",
+        company_id: companyId,
+        location_id: "plant-2",
+        created_at: "2026-07-14T10:00:00.000Z",
+      },
+    ],
+    maintenance_requests: [
+      {
+        id: "request-1",
+        company_id: companyId,
+        location_id: "plant-1",
+        converted_work_order_id: "work-done",
+        created_at: "2026-07-14T09:00:00.000Z",
+        updated_at: "2026-07-14T10:00:00.000Z",
+      },
+    ],
+  };
+  const supabaseClient = {
+    from(table) {
+      return createQueryResponse(table, rows, calls);
+    },
+    rpc(name, args) {
+      assert.equal(name, "get_storage_dashboard");
+      assert.equal(args.target_company_id, companyId);
+      return Promise.resolve({ data: { total_bytes: 1048576, file_count: 4 }, error: null });
+    },
+  };
+
+  const snapshot = await service.loadPlatformPerformanceSnapshot(supabaseClient, {
+    companyId,
+    now: "2026-07-14T16:00:00.000Z",
+    locations: [{ id: "plant-1", name: "Salem" }, { id: "plant-2", name: "Auburn" }],
+    assets: [{ id: "asset-1" }],
+    parts: [{ id: "part-1" }, { id: "part-2" }],
+    companyMembers: [{ user_id: "user-1" }, { user_id: "user-2" }],
+    canViewStorage: true,
+  });
+
+  assert.equal(snapshot.summary.teamSeats, 2);
+  assert.equal(snapshot.summary.requestsToday, 1);
+  assert.equal(snapshot.summary.ordersReceivedToday, 1);
+  assert.equal(snapshot.summary.publicIntakeTotal, 1);
+  assert.equal(snapshot.summary.ordersReceivedTotal, 2);
+  assert.equal(snapshot.summary.processEventsToday, 2);
+  assert.equal(snapshot.summary.storage.totalBytesText, "1.0 MB");
+  assert.equal(snapshot.timeline.length, 14);
+  assert.equal(snapshot.plants[0].name, "Salem");
+  assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
+    operator === "eq" && column === "company_id" && value === companyId
+  ))), "every performance query must be scoped to the active company");
+
+  const renderer = display.createPlatformPerformanceDisplayHelpers({
+    escapeHtml: (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;"),
+  });
+  const html = renderer.renderPlatformPerformancePanel({ snapshot, ready: true, error: "" });
+  assert.match(html, /App Performance/);
+  assert.match(html, /performance-spatial\.html/);
+  assert.match(html, /data-platform-spatial-frame/);
+  assert.match(html, /data-exit-performance/);
+  assert.match(html, /Back to My Work/);
+
+  const timeoutHtml = renderer.renderPlatformPerformancePanel({ snapshot, ready: true, error: "", timedOut: true });
+  assert.match(timeoutHtml, /Performance view timed out/);
+  assert.match(timeoutHtml, /data-retry-spatial-performance/);
+
+  const updatingHtml = renderer.renderPlatformPerformancePanel({ snapshot, ready: false, error: "" });
+  assert.match(updatingHtml, /performance-spatial\.html/);
+
+  const frameSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatialFrame.js"), "utf8");
+  assert.match(frameSource, /createStorageWorld/);
+  assert.match(frameSource, /maintainops-platform-spatial-snapshot/);
+  assert.match(frameSource, /maintainops-platform-spatial-rendered/);
+  assert.match(frameSource, /platform-spatial-standalone/);
+  assert.match(frameSource, /Platform Pulse/);
+
+  const appSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../app.js"), "utf8");
+  assert.match(appSource, /function armPlatformSpatialFrameWatchdog\(\)/);
+  assert.match(appSource, /\}, 10000\);/);
+  assert.match(appSource, /platformPerformanceTimedOut = true/);
+
+  const frameHtml = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../performance-spatial.html"), "utf8");
+  assert.match(frameHtml, /direct-performance-exit/);
+  assert.match(frameHtml, /Back to My Work/);
+
+  console.log("platform performance lazy smoke passed");
+})();

@@ -327,6 +327,10 @@ const CONVERSION_RESOURCE_PATHS = [
   "src/data/shopReferenceCharts.js?v=conversion-lazy-load-1",
   "src/render/conversionDisplay.js?v=conversion-lazy-load-1",
 ];
+const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
+  "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
+  "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-1",
+];
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
 const {
@@ -361,6 +365,7 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   escapeHtml,
   qrCodeResource: QR_CODE_RESOURCE,
   conversionResourcePaths: CONVERSION_RESOURCE_PATHS,
+  platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
   getActiveSection: () => activeSection,
   getPublicRequestLinks: () => publicRequestLinks,
   canManageTeam,
@@ -368,12 +373,18 @@ const lazyResourceHelpers = createLazyResourceHelpers({
 });
 const {
   clearConversionResourcesError,
+  clearPlatformPerformanceResourcesError,
   ensureConversionResourcesLoaded,
+  ensurePlatformPerformanceResourcesLoaded,
   ensureQrLibraryLoaded,
   getConversionDisplayHelpers,
+  getPlatformPerformanceDisplayHelpers,
   hasConversionDisplayHelpers,
+  hasPlatformPerformanceDisplayHelpers,
   renderConversionsLazyPanel,
+  renderPlatformPerformanceLazyPanel,
   scheduleConversionResourceLoad,
+  schedulePlatformPerformanceResourceLoad,
   scheduleQrLibraryLoad,
 } = lazyResourceHelpers;
 let companies = [];
@@ -422,6 +433,15 @@ let appIssueReportsReady = true;
 let storageDashboard = null;
 let storageDashboardReady = true;
 let storageDashboardError = "";
+let platformPerformance = null;
+let platformPerformanceReady = true;
+let platformPerformanceError = "";
+let platformPerformanceCompanyId = "";
+let platformPerformanceLoadedAt = 0;
+let platformPerformanceLoadPromise = null;
+let platformSpatialFrameRendered = false;
+let platformPerformanceTimedOut = false;
+let platformSpatialFrameWatchdog = null;
 let reportIssueMode = false;
 let activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
 function setActiveMessageThreadIdState(value) {
@@ -1527,12 +1547,12 @@ async function render() {
 }
 
 function renderWorkspaceLoading(message) {
-  document.body.classList.remove("public-qr-mode");
+  document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoading(message);
 }
 
 function renderWorkspaceLoadError(message) {
-  document.body.classList.remove("public-qr-mode");
+  document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoadError(message);
   document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
   document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
@@ -1556,7 +1576,7 @@ function createShopReferenceFavoriteStore() {
 }
 
 function renderAuth(mode, initialError = "") {
-  document.body.classList.remove("public-qr-mode");
+  document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   const isSignup = mode === "signup";
   app.innerHTML = authForm(mode, initialError);
 
@@ -2127,6 +2147,109 @@ async function loadStorageDashboard() {
   storageDashboardError = error ? (error.message || "Could not load storage usage.") : "";
   storageDashboard = error ? null : (data || null);
 }
+
+async function loadPlatformPerformance(options = {}) {
+  if (!activeCompanyId) {
+    platformPerformance = null;
+    platformPerformanceReady = true;
+    platformPerformanceError = "";
+    platformPerformanceCompanyId = "";
+    return;
+  }
+
+  const companyId = activeCompanyId;
+  const isCurrentCompany = platformPerformanceCompanyId === companyId;
+  const isFresh = isCurrentCompany && (Date.now() - platformPerformanceLoadedAt) < 60000;
+  if (!options.force && platformPerformance && isFresh) return;
+  if (platformPerformanceLoadPromise) return platformPerformanceLoadPromise;
+
+  platformPerformanceReady = false;
+  platformPerformanceError = "";
+
+  platformPerformanceLoadPromise = (async () => {
+    try {
+      await ensurePlatformPerformanceResourcesLoaded();
+      const service = window.MaintainOpsPlatformPerformanceService;
+      if (!service?.loadPlatformPerformanceSnapshot) {
+        throw new Error("App Performance data service did not initialize.");
+      }
+      const snapshot = await withOperationTimeout(
+        service.loadPlatformPerformanceSnapshot(supabaseClient, {
+          companyId,
+          locations,
+          assets,
+          parts,
+          companyMembers,
+          canViewStorage: canManageTeam(),
+        }),
+        "App Performance load timed out. Check your connection and try again.",
+        18000
+      );
+      if (activeCompanyId !== companyId) return;
+      platformPerformance = snapshot;
+      platformPerformanceCompanyId = activeCompanyId;
+      platformPerformanceLoadedAt = Date.now();
+    } catch (error) {
+      platformPerformance = null;
+      platformPerformanceCompanyId = "";
+      platformPerformanceLoadedAt = 0;
+      platformPerformanceError = error?.message || "Could not load App Performance.";
+    } finally {
+      platformPerformanceReady = true;
+      platformPerformanceLoadPromise = null;
+      if (activeSection === "performance") {
+        const spatialFrame = document.querySelector("[data-platform-spatial-frame]");
+        if (spatialFrame && platformPerformance) postPlatformPerformanceSnapshotToSpatialFrame();
+        else renderWorkspace();
+      }
+    }
+  })();
+
+  return platformPerformanceLoadPromise;
+}
+
+function postPlatformPerformanceSnapshotToSpatialFrame() {
+  const frame = document.querySelector("[data-platform-spatial-frame]");
+  if (!frame?.contentWindow || !platformPerformance) return;
+  frame.contentWindow.postMessage(
+    {
+      type: "maintainops-platform-spatial-snapshot",
+      snapshot: platformPerformance,
+    },
+    window.location.origin,
+  );
+}
+
+function clearPlatformSpatialFrameWatchdog() {
+  if (platformSpatialFrameWatchdog) window.clearTimeout(platformSpatialFrameWatchdog);
+  platformSpatialFrameWatchdog = null;
+}
+
+function armPlatformSpatialFrameWatchdog() {
+  if (platformSpatialFrameRendered || platformPerformanceTimedOut || platformSpatialFrameWatchdog) return;
+  platformSpatialFrameWatchdog = window.setTimeout(() => {
+    platformSpatialFrameWatchdog = null;
+    if (activeSection !== "performance" || platformSpatialFrameRendered) return;
+    platformPerformanceTimedOut = true;
+    renderWorkspace();
+  }, 10000);
+}
+
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin || activeSection !== "performance") return;
+  const frame = document.querySelector("[data-platform-spatial-frame]");
+  if (!frame || event.source !== frame.contentWindow) return;
+  if (event.data?.type === "maintainops-platform-spatial-ready") {
+    postPlatformPerformanceSnapshotToSpatialFrame();
+  }
+  if (event.data?.type === "maintainops-platform-spatial-rendered") {
+    platformSpatialFrameRendered = true;
+    clearPlatformSpatialFrameWatchdog();
+  }
+  if (event.data?.type === "maintainops-platform-spatial-refresh") {
+    void loadPlatformPerformance({ force: true });
+  }
+});
 
 const workspaceLoaderMap = {
   addSignedRequestPhotoUrls,
@@ -2915,11 +3038,27 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 });
 
 function renderWorkspace() {
-  const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const navItems = visibleNavItems();
   if (!navItems.some(([id]) => id === activeSection)) {
     setActiveSectionState(navItems[0]?.[0] || "mywork");
   }
+  document.body.classList.toggle("spatial-performance-active", activeSection === "performance");
+  if (activeSection !== "performance") {
+    platformSpatialFrameRendered = false;
+    platformPerformanceTimedOut = false;
+    clearPlatformSpatialFrameWatchdog();
+  }
+  // The spatial room owns a live WebGL context. While it is the current view,
+  // background workspace updates only refresh its data instead of rebuilding
+  // the app shell and restarting the iframe.
+  const existingPerformanceFrame = activeSection === "performance"
+    ? document.querySelector("[data-platform-spatial-frame]")
+    : null;
+  if (existingPerformanceFrame && platformPerformance) {
+    postPlatformPerformanceSnapshotToSpatialFrame();
+    return;
+  }
+  const activeCompany = companies.find((company) => company.id === activeCompanyId);
   const isWorkArea = activeSection === "mywork" || activeSection === "work";
   const canEditOperations = canEditOperationalRecords();
   const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed", "completed_month", "completed_week"];
@@ -3501,6 +3640,15 @@ function renderWorkspace() {
               <span>${escapeHtml(activeLocationName())}</span>
             </div>
             ${canManageTeam() ? renderManagerDashboard() : `<p class="muted">Manager dashboard is available to managers and admins.</p>`}
+          </section>
+
+          <section class="panel full-width performance-workspace-panel ${activeSection === "performance" ? "" : "hidden-section"}">
+            ${activeSection === "performance" ? renderPlatformPerformanceLazyPanel({
+              snapshot: platformPerformance,
+              ready: platformPerformanceReady,
+              error: platformPerformanceError,
+              timedOut: platformPerformanceTimedOut,
+            }) : ""}
           </section>
 
           <section class="panel full-width ${activeSection === "parts" ? "" : "hidden-section"}">
@@ -4504,6 +4652,11 @@ function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
     activeLocationId = "";
+    platformPerformance = null;
+    platformPerformanceReady = true;
+    platformPerformanceError = "";
+    platformPerformanceCompanyId = "";
+    platformPerformanceLoadedAt = 0;
     setActiveWorkOrderIdState(null);
     createWorkOrderMode = false;
     reportIssueMode = false;
@@ -4568,6 +4721,7 @@ function bindWorkspaceEvents() {
     loadSetupStorageDashboard: async () => {
       await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
     },
+    loadPlatformPerformance,
     loadManagerDashboardCompletedWork,
     reloadWorkOrderQueue,
     renderWorkspace,
@@ -4586,6 +4740,32 @@ function bindWorkspaceEvents() {
         renderWorkspace();
       });
       scheduleConversionResourceLoad();
+    }
+  }
+  if (activeSection === "performance") {
+    const spatialFrame = document.querySelector("[data-platform-spatial-frame]");
+    spatialFrame?.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
+    if (spatialFrame) armPlatformSpatialFrameWatchdog();
+    document.querySelector("[data-exit-performance]")?.addEventListener("click", () => {
+      setActiveSectionState("mywork");
+      localStorage.setItem("maintainops.activeSection", "mywork");
+      renderWorkspace();
+      scrollWorkspaceTopIntoView();
+    });
+    document.querySelector("[data-retry-platform-performance]")?.addEventListener("click", () => {
+      clearPlatformPerformanceResourcesError();
+      schedulePlatformPerformanceResourceLoad();
+      void loadPlatformPerformance({ force: true });
+    });
+    document.querySelector("[data-retry-spatial-performance]")?.addEventListener("click", () => {
+      platformPerformanceTimedOut = false;
+      platformSpatialFrameRendered = false;
+      clearPlatformSpatialFrameWatchdog();
+      renderWorkspace();
+    });
+    schedulePlatformPerformanceResourceLoad();
+    if (!platformPerformance && !platformPerformanceLoadPromise) {
+      void loadPlatformPerformance();
     }
   }
   bindWorkspaceQuickFixCommandEvents({
@@ -4666,6 +4846,14 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", async () => {
       button.disabled = true;
       await loadStorageDashboard();
+      renderWorkspace();
+    });
+  });
+
+  document.querySelectorAll("[data-refresh-platform-performance]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      await loadPlatformPerformance({ force: true });
       renderWorkspace();
     });
   });
@@ -5711,6 +5899,9 @@ function visibleNavItems() {
   if (canManageTeam()) {
     items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
   }
+  // Performance remains read-only for every role, directly below Settings
+  // when that management tab is available.
+  items.push(["performance", "App Performance"]);
   return items;
 }
 
