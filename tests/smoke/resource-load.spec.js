@@ -50,8 +50,9 @@ test.describe("MaintainOps hosted resource smoke", () => {
     test.setTimeout(180000);
 
     let lastError;
+    const maxAttempts = new URL(baseURL).hostname.endsWith("github.io") ? 36 : 1;
 
-    for (let attempt = 1; attempt <= 36; attempt += 1) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         const indexResponse = await request.get(`${baseURL}index.html?qa_bust=resource-smoke-${attempt}`);
         expect(indexResponse.status(), "index.html should load").toBe(200);
@@ -102,7 +103,9 @@ test.describe("MaintainOps hosted resource smoke", () => {
         return;
       } catch (error) {
         lastError = error;
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
       }
     }
 
