@@ -167,6 +167,7 @@
     escapeHtml: escapeHtml2,
     qrCodeResource,
     conversionResourcePaths,
+    platformPerformanceResourcePaths,
     loadScriptResource = defaultLoadScriptResource,
     getActiveSection,
     getPublicRequestLinks,
@@ -176,6 +177,9 @@
     let conversionResourcesPromise = null;
     let conversionResourcesError = "";
     let conversionDisplayHelpers = null;
+    let platformPerformanceResourcesPromise = null;
+    let platformPerformanceResourcesError = "";
+    let platformPerformanceDisplayHelpers = null;
     let qrLibraryPromise = null;
     function hasConversionDisplayHelpers2() {
       return Boolean(conversionDisplayHelpers);
@@ -185,6 +189,15 @@
     }
     function getConversionDisplayHelpers2() {
       return conversionDisplayHelpers;
+    }
+    function hasPlatformPerformanceDisplayHelpers2() {
+      return Boolean(platformPerformanceDisplayHelpers);
+    }
+    function clearPlatformPerformanceResourcesError2() {
+      platformPerformanceResourcesError = "";
+    }
+    function getPlatformPerformanceDisplayHelpers2() {
+      return platformPerformanceDisplayHelpers;
     }
     function ensureQrLibraryLoaded2() {
       if (windowRef.qrcode) return Promise.resolve();
@@ -229,6 +242,27 @@
       }
       return conversionResourcesPromise;
     }
+    async function ensurePlatformPerformanceResourcesLoaded2() {
+      if (platformPerformanceDisplayHelpers) return platformPerformanceDisplayHelpers;
+      if (!platformPerformanceResourcesPromise) {
+        platformPerformanceResourcesError = "";
+        platformPerformanceResourcesPromise = (async () => {
+          for (const src of platformPerformanceResourcePaths || []) {
+            await loadScriptResource(documentRef, src);
+          }
+          const service = windowRef.MaintainOpsPlatformPerformanceService;
+          const display = windowRef.MaintainOpsPlatformPerformanceDisplay;
+          if (!service || !display) throw new Error("Platform Performance resources did not initialize.");
+          platformPerformanceDisplayHelpers = display.createPlatformPerformanceDisplayHelpers({ escapeHtml: escapeHtml2 });
+          return platformPerformanceDisplayHelpers;
+        })().catch((error) => {
+          platformPerformanceResourcesError = error.message || "Could not load Platform Performance.";
+          platformPerformanceResourcesPromise = null;
+          throw error;
+        });
+      }
+      return platformPerformanceResourcesPromise;
+    }
     function renderConversionsLazyPanel2() {
       if (conversionDisplayHelpers) return conversionDisplayHelpers.renderConversionsPanel();
       const status = conversionResourcesError || "Loading shop converters and reference charts...";
@@ -240,6 +274,20 @@
       ${conversionResourcesError ? `<button class="secondary-button" data-retry-conversions type="button">Retry</button>` : ""}
     </section>
   `;
+    }
+    function renderPlatformPerformanceLazyPanel2(state = {}) {
+      if (platformPerformanceDisplayHelpers) {
+        return platformPerformanceDisplayHelpers.renderPlatformPerformancePanel(state);
+      }
+      const status = platformPerformanceResourcesError || "Loading the platform command surface...";
+      const toneClass = platformPerformanceResourcesError ? "status-blocked" : "status-in_progress";
+      return `
+      <section class="setup-card performance-resource-loading ${toneClass}" aria-live="polite">
+        <h3>Platform Performance</h3>
+        <p>${escapeHtml2(status)}</p>
+        ${platformPerformanceResourcesError ? `<button class="secondary-button" data-retry-platform-performance type="button">Retry</button>` : ""}
+      </section>
+    `;
     }
     function scheduleQrLibraryLoad2() {
       if (windowRef.qrcode || qrLibraryPromise) return;
@@ -258,14 +306,28 @@
         if (getActiveSection() === "conversions") requestWorkspaceRender();
       });
     }
+    function schedulePlatformPerformanceResourceLoad2() {
+      if (getActiveSection() !== "performance" || platformPerformanceDisplayHelpers || platformPerformanceResourcesPromise) return;
+      ensurePlatformPerformanceResourcesLoaded2().then(() => {
+        if (getActiveSection() === "performance") requestWorkspaceRender();
+      }).catch(() => {
+        if (getActiveSection() === "performance") requestWorkspaceRender();
+      });
+    }
     return {
       clearConversionResourcesError: clearConversionResourcesError2,
+      clearPlatformPerformanceResourcesError: clearPlatformPerformanceResourcesError2,
       ensureConversionResourcesLoaded: ensureConversionResourcesLoaded2,
+      ensurePlatformPerformanceResourcesLoaded: ensurePlatformPerformanceResourcesLoaded2,
       ensureQrLibraryLoaded: ensureQrLibraryLoaded2,
       getConversionDisplayHelpers: getConversionDisplayHelpers2,
+      getPlatformPerformanceDisplayHelpers: getPlatformPerformanceDisplayHelpers2,
       hasConversionDisplayHelpers: hasConversionDisplayHelpers2,
+      hasPlatformPerformanceDisplayHelpers: hasPlatformPerformanceDisplayHelpers2,
       renderConversionsLazyPanel: renderConversionsLazyPanel2,
+      renderPlatformPerformanceLazyPanel: renderPlatformPerformanceLazyPanel2,
       scheduleConversionResourceLoad: scheduleConversionResourceLoad2,
+      schedulePlatformPerformanceResourceLoad: schedulePlatformPerformanceResourceLoad2,
       scheduleQrLibraryLoad: scheduleQrLibraryLoad2
     };
   }
@@ -649,6 +711,10 @@
     "src/data/shopReferenceCharts.js?v=conversion-lazy-load-1",
     "src/render/conversionDisplay.js?v=conversion-lazy-load-1"
   ];
+  var PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
+    "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
+    "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-1"
+  ];
   var workspaceHydrationToken = 0;
   var workspaceHydrationPromise = null;
   var {
@@ -687,6 +753,7 @@
     escapeHtml,
     qrCodeResource: QR_CODE_RESOURCE,
     conversionResourcePaths: CONVERSION_RESOURCE_PATHS,
+    platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
     getActiveSection: () => activeSection,
     getPublicRequestLinks: () => publicRequestLinks,
     canManageTeam,
@@ -694,12 +761,18 @@
   });
   var {
     clearConversionResourcesError,
+    clearPlatformPerformanceResourcesError,
     ensureConversionResourcesLoaded,
+    ensurePlatformPerformanceResourcesLoaded,
     ensureQrLibraryLoaded,
     getConversionDisplayHelpers,
+    getPlatformPerformanceDisplayHelpers,
     hasConversionDisplayHelpers,
+    hasPlatformPerformanceDisplayHelpers,
     renderConversionsLazyPanel,
+    renderPlatformPerformanceLazyPanel,
     scheduleConversionResourceLoad,
+    schedulePlatformPerformanceResourceLoad,
     scheduleQrLibraryLoad
   } = lazyResourceHelpers;
   var companies = [];
@@ -748,6 +821,15 @@
   var storageDashboard = null;
   var storageDashboardReady = true;
   var storageDashboardError = "";
+  var platformPerformance = null;
+  var platformPerformanceReady = true;
+  var platformPerformanceError = "";
+  var platformPerformanceCompanyId = "";
+  var platformPerformanceLoadedAt = 0;
+  var platformPerformanceLoadPromise = null;
+  var platformSpatialFrameRendered = false;
+  var platformPerformanceTimedOut = false;
+  var platformSpatialFrameWatchdog = null;
   var reportIssueMode = false;
   var activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
   function setActiveMessageThreadIdState(value) {
@@ -1834,11 +1916,11 @@
     }
   }
   function renderWorkspaceLoading(message) {
-    document.body.classList.remove("public-qr-mode");
+    document.body.classList.remove("public-qr-mode", "spatial-performance-active");
     app.innerHTML = workspaceLoading(message);
   }
   function renderWorkspaceLoadError(message) {
-    document.body.classList.remove("public-qr-mode");
+    document.body.classList.remove("public-qr-mode", "spatial-performance-active");
     app.innerHTML = workspaceLoadError(message);
     document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
     document.querySelector("#auth-reset").addEventListener("click", resetLoginState);
@@ -1860,7 +1942,7 @@
     };
   }
   function renderAuth(mode, initialError = "") {
-    document.body.classList.remove("public-qr-mode");
+    document.body.classList.remove("public-qr-mode", "spatial-performance-active");
     const isSignup = mode === "signup";
     app.innerHTML = authForm(mode, initialError);
     document.querySelector("#auth-mode").addEventListener("click", () => renderAuth(isSignup ? "login" : "signup"));
@@ -2321,6 +2403,115 @@
     storageDashboardError = error ? error.message || "Could not load storage usage." : "";
     storageDashboard = error ? null : data || null;
   }
+  async function loadPlatformPerformance(options = {}) {
+    if (!activeCompanyId) {
+      platformPerformance = null;
+      platformPerformanceReady = true;
+      platformPerformanceError = "";
+      platformPerformanceCompanyId = "";
+      return;
+    }
+    const companyId = activeCompanyId;
+    const isCurrentCompany = platformPerformanceCompanyId === companyId;
+    const isFresh = isCurrentCompany && Date.now() - platformPerformanceLoadedAt < 6e4;
+    if (!options.force && platformPerformance && isFresh) return;
+    if (platformPerformanceLoadPromise) return platformPerformanceLoadPromise;
+    platformPerformanceReady = false;
+    platformPerformanceError = "";
+    platformPerformanceLoadPromise = (async () => {
+      try {
+        await ensurePlatformPerformanceResourcesLoaded();
+        const service = window.MaintainOpsPlatformPerformanceService;
+        if (!service?.loadPlatformPerformanceSnapshot) {
+          throw new Error("App Performance data service did not initialize.");
+        }
+        const snapshot = await withOperationTimeout(
+          service.loadPlatformPerformanceSnapshot(supabaseClient, {
+            companyId,
+            locations,
+            assets,
+            parts,
+            companyMembers,
+            canViewStorage: canManageTeam()
+          }),
+          "App Performance load timed out. Check your connection and try again.",
+          18e3
+        );
+        if (activeCompanyId !== companyId) return;
+        platformPerformance = snapshot;
+        platformPerformanceCompanyId = activeCompanyId;
+        platformPerformanceLoadedAt = Date.now();
+      } catch (error) {
+        platformPerformance = null;
+        platformPerformanceCompanyId = "";
+        platformPerformanceLoadedAt = 0;
+        platformPerformanceError = error?.message || "Could not load App Performance.";
+      } finally {
+        platformPerformanceReady = true;
+        platformPerformanceLoadPromise = null;
+        if (activeSection === "performance") {
+          const spatialFrame = document.querySelector("[data-platform-spatial-frame]");
+          if (spatialFrame && platformPerformance) postPlatformPerformanceSnapshotToSpatialFrame();
+          else renderWorkspace();
+        }
+      }
+    })();
+    return platformPerformanceLoadPromise;
+  }
+  function postPlatformPerformanceSnapshotToSpatialFrame() {
+    const frame = document.querySelector("[data-platform-spatial-frame]");
+    if (!frame?.contentWindow || !platformPerformance) return;
+    frame.contentWindow.postMessage(
+      {
+        type: "maintainops-platform-spatial-snapshot",
+        snapshot: platformPerformance
+      },
+      window.location.origin
+    );
+  }
+  function reloadPlatformSpatialFrame() {
+    if (activeSection !== "performance" || !platformPerformance) return;
+    const frame = document.querySelector("[data-platform-spatial-frame]");
+    if (!frame) return;
+    platformSpatialFrameRendered = false;
+    platformPerformanceTimedOut = false;
+    clearPlatformSpatialFrameWatchdog();
+    frame.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
+    frame.src = `performance-spatial.html?sample=${Date.now()}`;
+    armPlatformSpatialFrameWatchdog();
+  }
+  function clearPlatformSpatialFrameWatchdog() {
+    if (platformSpatialFrameWatchdog) window.clearTimeout(platformSpatialFrameWatchdog);
+    platformSpatialFrameWatchdog = null;
+  }
+  function armPlatformSpatialFrameWatchdog() {
+    if (platformSpatialFrameRendered || platformPerformanceTimedOut || platformSpatialFrameWatchdog) return;
+    platformSpatialFrameWatchdog = window.setTimeout(() => {
+      platformSpatialFrameWatchdog = null;
+      if (activeSection !== "performance" || platformSpatialFrameRendered) return;
+      platformPerformanceTimedOut = true;
+      renderWorkspace();
+    }, 1e4);
+  }
+  window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || activeSection !== "performance") return;
+    const frame = document.querySelector("[data-platform-spatial-frame]");
+    if (!frame || event.source !== frame.contentWindow) return;
+    if (event.data?.type === "maintainops-platform-spatial-ready") {
+      postPlatformPerformanceSnapshotToSpatialFrame();
+    }
+    if (event.data?.type === "maintainops-platform-spatial-rendered") {
+      platformSpatialFrameRendered = true;
+      clearPlatformSpatialFrameWatchdog();
+    }
+    if (event.data?.type === "maintainops-platform-spatial-refresh") {
+      platformSpatialFrameRendered = false;
+      platformPerformanceTimedOut = false;
+      clearPlatformSpatialFrameWatchdog();
+      armPlatformSpatialFrameWatchdog();
+      void loadPlatformPerformance({ force: true }).then(reloadPlatformSpatialFrame);
+    }
+  });
   var workspaceLoaderMap = {
     addSignedRequestPhotoUrls,
     loadAssetDocuments,
@@ -2893,11 +3084,22 @@
     withOperationTimeout
   });
   function renderWorkspace() {
-    const activeCompany = companies.find((company) => company.id === activeCompanyId);
     const navItems = visibleNavItems();
     if (!navItems.some(([id]) => id === activeSection)) {
       setActiveSectionState(navItems[0]?.[0] || "mywork");
     }
+    document.body.classList.toggle("spatial-performance-active", activeSection === "performance");
+    if (activeSection !== "performance") {
+      platformSpatialFrameRendered = false;
+      platformPerformanceTimedOut = false;
+      clearPlatformSpatialFrameWatchdog();
+    }
+    const existingPerformanceFrame = activeSection === "performance" ? document.querySelector("[data-platform-spatial-frame]") : null;
+    if (existingPerformanceFrame && platformPerformance) {
+      postPlatformPerformanceSnapshotToSpatialFrame();
+      return;
+    }
+    const activeCompany = companies.find((company) => company.id === activeCompanyId);
     const isWorkArea = activeSection === "mywork" || activeSection === "work";
     const canEditOperations = canEditOperationalRecords();
     const myWorkGaugeFilters = ["active", "open", "in_progress", "blocked", "overdue", "completed", "completed_month", "completed_week"];
@@ -3471,6 +3673,15 @@
               <span>${escapeHtml(activeLocationName())}</span>
             </div>
             ${canManageTeam() ? renderManagerDashboard() : `<p class="muted">Manager dashboard is available to managers and admins.</p>`}
+          </section>
+
+          <section class="panel full-width performance-workspace-panel ${activeSection === "performance" ? "" : "hidden-section"}">
+            ${activeSection === "performance" ? renderPlatformPerformanceLazyPanel({
+      snapshot: platformPerformance,
+      ready: platformPerformanceReady,
+      error: platformPerformanceError,
+      timedOut: platformPerformanceTimedOut
+    }) : ""}
           </section>
 
           <section class="panel full-width ${activeSection === "parts" ? "" : "hidden-section"}">
@@ -4444,6 +4655,11 @@ Continue ${actionLabel}?`);
     document.querySelector("#company-select").addEventListener("change", async (event) => {
       activeCompanyId = event.target.value;
       activeLocationId = "";
+      platformPerformance = null;
+      platformPerformanceReady = true;
+      platformPerformanceError = "";
+      platformPerformanceCompanyId = "";
+      platformPerformanceLoadedAt = 0;
       setActiveWorkOrderIdState(null);
       createWorkOrderMode = false;
       reportIssueMode = false;
@@ -4515,6 +4731,7 @@ Continue ${actionLabel}?`);
       loadSetupStorageDashboard: async () => {
         await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
       },
+      loadPlatformPerformance,
       loadManagerDashboardCompletedWork,
       reloadWorkOrderQueue,
       renderWorkspace,
@@ -4533,6 +4750,33 @@ Continue ${actionLabel}?`);
           renderWorkspace();
         });
         scheduleConversionResourceLoad();
+      }
+    }
+    if (activeSection === "performance") {
+      const spatialFrame = document.querySelector("[data-platform-spatial-frame]");
+      spatialFrame?.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
+      if (platformPerformanceError) clearPlatformSpatialFrameWatchdog();
+      else armPlatformSpatialFrameWatchdog();
+      document.querySelector("[data-exit-performance]")?.addEventListener("click", () => {
+        setActiveSectionState("mywork");
+        localStorage.setItem("maintainops.activeSection", "mywork");
+        renderWorkspace();
+        scrollWorkspaceTopIntoView();
+      });
+      document.querySelector("[data-retry-platform-performance]")?.addEventListener("click", () => {
+        clearPlatformPerformanceResourcesError();
+        schedulePlatformPerformanceResourceLoad();
+        void loadPlatformPerformance({ force: true });
+      });
+      document.querySelector("[data-retry-spatial-performance]")?.addEventListener("click", () => {
+        platformPerformanceTimedOut = false;
+        platformSpatialFrameRendered = false;
+        clearPlatformSpatialFrameWatchdog();
+        renderWorkspace();
+      });
+      schedulePlatformPerformanceResourceLoad();
+      if (!platformPerformance && !platformPerformanceLoadPromise) {
+        void loadPlatformPerformance();
       }
     }
     bindWorkspaceQuickFixCommandEvents({
@@ -4646,6 +4890,13 @@ Continue ${actionLabel}?`);
       button.addEventListener("click", async () => {
         button.disabled = true;
         await loadStorageDashboard();
+        renderWorkspace();
+      });
+    });
+    document.querySelectorAll("[data-refresh-platform-performance]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        await loadPlatformPerformance({ force: true });
         renderWorkspace();
       });
     });
@@ -5647,6 +5898,7 @@ Continue ${actionLabel}?`);
     if (canManageTeam()) {
       items.push(["setup", "Admin Setup"], ["settings", "Settings"]);
     }
+    items.push(["performance", "App Performance"]);
     return items;
   }
   function assignedUserFromForm(form, defaultUserId = null) {

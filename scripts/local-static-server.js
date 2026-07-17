@@ -13,6 +13,8 @@ const types = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
+  ".hdr": "application/octet-stream",
+  ".glb": "model/gltf-binary",
 };
 
 const server = http.createServer((request, response) => {

@@ -35,6 +35,7 @@ const requestsButton = createButton("requests");
 const equipmentButton = createButton("equipment");
 const managerButton = createButton("manager");
 const setupButton = createButton("setup");
+const performanceButton = createButton("performance");
 const blockedButton = createButton("blocked");
 const storage = {
   values: {},
@@ -62,10 +63,11 @@ let workReloadCount = 0;
 let requestReloadCount = 0;
 let managerLoadCount = 0;
 let setupStorageLoadCount = 0;
+let performanceLoadCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
-    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, blockedButton]),
+    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, performanceButton, blockedButton]),
     storage,
     state: {
       setActiveAssetId: (value) => { stateValues.activeAssetId = value; },
@@ -79,7 +81,7 @@ let setupStorageLoadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"]],
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
@@ -88,6 +90,7 @@ let setupStorageLoadCount = 0;
     reloadRequestQueue: async () => { requestReloadCount += 1; },
     loadManagerDashboardCompletedWork: async () => { managerLoadCount += 1; },
     loadSetupStorageDashboard: async () => { setupStorageLoadCount += 1; },
+    loadPlatformPerformance: async () => { performanceLoadCount += 1; },
   });
 
   await workButton.dispatch("click");
@@ -160,6 +163,14 @@ let setupStorageLoadCount = 0;
   assert.equal(renderCount, 8);
   assert.equal(scrollCount, 6);
   assert.equal(workReloadCount, 2);
+
+  await performanceButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "performance");
+  assert.equal(storage.values["maintainops.activeSection"], "performance");
+  assert.equal(resetCount, 7);
+  assert.equal(renderCount, 9);
+  assert.equal(scrollCount, 7);
+  assert.equal(performanceLoadCount, 1);
 
   bindWorkspaceSectionNavigationEvents({
     documentRef: createDocument([workButton]),

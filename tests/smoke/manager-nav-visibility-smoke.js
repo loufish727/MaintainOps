@@ -10,6 +10,8 @@ const managerIndex = visibleNavSource.indexOf('["manager", "Manager"]');
 const adminGateIndex = visibleNavSource.indexOf("if (canAdministerTeamRoles())");
 const managerGateIndex = visibleNavSource.indexOf("if (canManageTeam())");
 const financialIndex = visibleNavSource.indexOf('["financial", "Financial"]');
+const settingsIndex = visibleNavSource.indexOf('["settings", "Settings"]');
+const performanceIndex = visibleNavSource.lastIndexOf('["performance", "App Performance"]');
 assert.ok(managerIndex > adminGateIndex, "Manager nav item should stay inside admin role gate");
 assert.ok(financialIndex >= 0, "Financial nav item should exist");
 assert.doesNotMatch(visibleNavSource, /activeCompanyRole\(\) === "accounting"[\s\S]*\[\["assets", "Equipment"\], \["financial", "Financial"\]\]/);
@@ -24,6 +26,7 @@ assert.ok(
   managerGateIndex < 0 || managerGateIndex > managerIndex,
   "Manager nav item must not be introduced by the manager/admin team gate"
 );
+assert.ok(performanceIndex > settingsIndex, "Performance should follow Settings in the section menu");
 
 const iconSource = readFileSync("src/render/iconDisplay.js", "utf8");
 assert.match(iconSource, /manager:/);

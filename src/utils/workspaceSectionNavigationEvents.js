@@ -47,6 +47,9 @@
           await options.loadManagerDashboardCompletedWork();
           options.renderWorkspace();
         }
+        if (nextSection === "performance" && typeof options.loadPlatformPerformance === "function") {
+          await options.loadPlatformPerformance();
+        }
       });
     });
   }

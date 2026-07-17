@@ -103,3 +103,11 @@ assert.equal(snapshot.activeSection, "parts");
 assert.equal(snapshot.searchQuery, "motor");
 assert.equal(snapshot.partSearchQuery, "belt");
 assert.equal(snapshot.managerDashboardUserId, "tech-2");
+
+const performanceStorage = createStorage({
+  "maintainops.activeSection": "performance",
+  "maintainops.sectionSplitDone": "true",
+});
+const performanceState = createWorkspaceUiState({ storage: performanceStorage });
+assert.equal(performanceState.getActiveSection(), "mywork");
+assert.equal(performanceStorage.values["maintainops.activeSection"], "mywork");

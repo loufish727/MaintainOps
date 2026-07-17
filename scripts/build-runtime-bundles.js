@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const indexPath = path.join(root, "index.html");
+const spatialPagePath = path.join(root, "performance-spatial.html");
 const bundlesDir = path.join(root, "src", "bundles");
 const manifestPath = path.join(bundlesDir, "manifest.json");
 
@@ -16,6 +17,10 @@ const bundles = [
   {
     entry: "app.js",
     baseName: "appShell",
+  },
+  {
+    entry: "src/performance/platformSpatialFrame.js",
+    baseName: "platformSpatial",
   },
 ];
 
@@ -44,6 +49,15 @@ function updateIndexHtml(manifest) {
   fs.writeFileSync(indexPath, html);
 }
 
+function updateSpatialPageHtml(manifest) {
+  let html = fs.readFileSync(spatialPagePath, "utf8");
+  html = html.replace(
+    /^[ \t]*<script defer src="src\/bundles\/platformSpatial(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/m,
+    `    <script defer src="src/bundles/${manifest.platformSpatial}"></script>`
+  );
+  fs.writeFileSync(spatialPagePath, html);
+}
+
 async function main() {
   const manifest = {};
   for (const bundle of bundles) {
@@ -54,7 +68,7 @@ async function main() {
       logLevel: "warning",
       write: false,
     });
-    const outputText = result.outputFiles[0].text;
+    const outputText = result.outputFiles[0].text.replace(/^[\t ]+$/gm, "");
     const hash = bundleHash(outputText);
     const fileName = `${bundle.baseName}.${hash}.js`;
     removeOldBundleFiles(bundle.baseName);
@@ -64,6 +78,7 @@ async function main() {
   }
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   updateIndexHtml(manifest);
+  updateSpatialPageHtml(manifest);
 }
 
 main().catch((error) => {

@@ -6,11 +6,12 @@ const root = path.resolve(__dirname, "..", "..");
 const bundlesDir = path.join(root, "src", "bundles");
 const manifestPath = path.join(bundlesDir, "manifest.json");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const spatialHtml = fs.readFileSync(path.join(root, "performance-spatial.html"), "utf8");
 
 assert.ok(fs.existsSync(manifestPath), "Bundle manifest must exist.");
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-for (const key of ["runtime", "appShell"]) {
+for (const key of ["runtime", "appShell", "platformSpatial"]) {
   assert.match(
     String(manifest[key] || ""),
     new RegExp(`^${key}\\.[a-f0-9]{10}\\.js$`),
@@ -20,21 +21,26 @@ for (const key of ["runtime", "appShell"]) {
     fs.existsSync(path.join(bundlesDir, manifest[key])),
     `Manifest ${key} bundle must exist on disk`
   );
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(bundlesDir, manifest[key]), "utf8"),
+    /^[\t ]+$/m,
+    `Manifest ${key} bundle must not contain whitespace-only lines`
+  );
   assert.match(
-    indexHtml,
+    key === "platformSpatial" ? spatialHtml : indexHtml,
     new RegExp(`src/bundles/${manifest[key].replace(/\./g, "\\.")}`),
-    `index.html must reference manifest ${key} bundle`
+    `${key === "platformSpatial" ? "performance-spatial.html" : "index.html"} must reference manifest ${key} bundle`
   );
 }
 
-for (const legacyName of ["runtime.bundle.js", "appShell.bundle.js"]) {
+for (const legacyName of ["runtime.bundle.js", "appShell.bundle.js", "platformSpatial.bundle.js"]) {
   assert.ok(
     !fs.existsSync(path.join(bundlesDir, legacyName)),
     `${legacyName} must be removed after hashed bundle generation`
   );
 }
 
-for (const baseName of ["runtime", "appShell"]) {
+for (const baseName of ["runtime", "appShell", "platformSpatial"]) {
   const hashedFiles = fs.readdirSync(bundlesDir)
     .filter((name) => new RegExp(`^${baseName}\\.[a-f0-9]{10}\\.js$`).test(name));
   assert.equal(hashedFiles.length, 1, `${baseName} must have exactly one current hashed bundle file`);
