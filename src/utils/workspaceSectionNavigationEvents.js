@@ -38,6 +38,9 @@
         options.renderWorkspace();
         scrollToSectionTop();
         if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
+        if (nextSection === "planning" && typeof options.reloadPlanningWorkOrderQueue === "function") {
+          await options.reloadPlanningWorkOrderQueue();
+        }
         if (nextSection === "requests") await options.reloadRequestQueue();
         if (nextSection === "team" && typeof options.reloadTeamWorkloads === "function") {
           await options.reloadTeamWorkloads();

@@ -65,6 +65,65 @@
       });
     });
 
+    doc.querySelectorAll("[data-work-status-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setActiveStatusFilter(field.value || "active");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-assignment-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          const assignment = field.value || "all";
+          state.setWorkOrderFilter(assignment);
+          if (assignment !== "assigned") state.setWorkOrderAssigneeFilter("");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-assignee-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          const assigneeId = field.value || "";
+          state.setWorkOrderAssigneeFilter(assigneeId);
+          if (assigneeId) state.setWorkOrderFilter("assigned");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-type-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setWorkOrderTypeFilter(field.value || "all");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-priority-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setWorkOrderPriorityFilter(field.value || "all");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
     doc.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
         await preserveScroll(async () => {
@@ -79,6 +138,43 @@
       button.addEventListener("click", async () => {
         await preserveScroll(async () => {
           state.setWorkSort(button.dataset.workSort);
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-sort-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setWorkSort(field.value || "newest");
+          options.invalidateExactWorkOrderSearchCache();
+          options.resetWorkOrderPage();
+          await options.reloadWorkOrderQueue();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-work-group-filter]").forEach((field) => {
+      field.addEventListener("change", async () => {
+        await preserveScroll(async () => {
+          state.setWorkGroup(field.value || "none");
+          options.renderWorkspace();
+        });
+      });
+    });
+
+    doc.querySelectorAll("[data-clear-work-filters]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await preserveScroll(async () => {
+          state.setActiveStatusFilter("active");
+          state.setWorkOrderFilter("all");
+          state.setWorkOrderAssigneeFilter("");
+          state.setWorkOrderTypeFilter("all");
+          state.setWorkOrderPriorityFilter("all");
+          state.setWorkSort("newest");
+          state.setWorkGroup("none");
           options.invalidateExactWorkOrderSearchCache();
           options.resetWorkOrderPage();
           await options.reloadWorkOrderQueue();
@@ -184,6 +280,13 @@
           }
           options.renderWorkspace();
         });
+      });
+    });
+
+    doc.querySelectorAll("[data-planning-group]").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        if (typeof state.setPlanningGroupOpen !== "function") return;
+        state.setPlanningGroupOpen(details.dataset.planningGroup, Boolean(details.open));
       });
     });
   }

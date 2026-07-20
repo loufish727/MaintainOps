@@ -102,7 +102,7 @@ const loaders = createWorkspaceQueueLoaders({
     };
   },
   applyWorkOrderFilters(query, options) {
-    calls.push(["workOrderCount", options.statusFilter, options.section || "workspace"]);
+    calls.push(["workOrderCount", options.statusFilter, options.section || "workspace", options.includeAttributeFilters]);
     return Promise.resolve(workOrderCountResponses.shift());
   },
   selectWorkOrders(_client, selectClause, options) {
@@ -151,12 +151,14 @@ const loaders = createWorkspaceQueueLoaders({
   assert.equal(dashboardCounts.completedAll, 5);
   assert.equal(dashboardCounts.completedWeek, 7);
   assert(calls.some((call) => call[0] === "workOrderCount" && call[1] === "completed" && call[2] === "workspace"));
+  assert(calls.filter((call) => call[0] === "workOrderCount" && call[2] === "workspace").every((call) => call[3] === false));
 
   const myCounts = await loaders.loadMyWorkDashboardCounts();
   assert.equal(myCounts.activeWork, 8);
   assert.equal(myCounts.completedAll, 13);
   assert.equal(myCounts.completedWeek, 15);
   assert(calls.some((call) => call[0] === "workOrderCount" && call[1] === "completed" && call[2] === "mywork"));
+  assert(calls.filter((call) => call[0] === "workOrderCount" && call[2] === "mywork").every((call) => call[3] === false));
 
   workOrderSearchMode = true;
   searchQuery = "pump";

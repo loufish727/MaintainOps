@@ -35,6 +35,11 @@ const storage = createStorage({
   "maintainops.partSearchQuery": "hose",
   "maintainops.managerDashboardUserId": "tech-1",
   "maintainops.managerDashboardMetric": "blocked",
+  "maintainops.workOrderTypeFilter": "preventive",
+  "maintainops.workOrderPriorityFilter": "high",
+  "maintainops.workGroup": "assignee",
+  "maintainops.planningNoDuePage": "2",
+  "maintainops.planningGroupOpen": "{\"no-due\":false,\"soon\":true}",
 });
 
 const state = createWorkspaceUiState({ storage });
@@ -55,6 +60,13 @@ assert.equal(state.getPartInventoryFilter(), "low");
 assert.equal(state.getPartSearchQuery(), "hose");
 assert.equal(state.getManagerDashboardUserId(), "tech-1");
 assert.equal(state.getManagerDashboardMetric(), "blocked");
+assert.equal(state.getWorkOrderTypeFilter(), "preventive");
+assert.equal(state.getWorkOrderPriorityFilter(), "high");
+assert.equal(state.getWorkGroup(), "assignee");
+assert.equal(state.getPlanningPage("no-due"), 2);
+assert.equal(state.getPlanningGroupOpen("no-due", true), false);
+assert.equal(state.getPlanningGroupOpen("soon", false), true);
+assert.equal(state.getPlanningGroupOpen("today", true), true);
 
 state.setActiveSection("parts");
 state.setSearchQuery("motor");
@@ -70,6 +82,11 @@ state.setPartSearchQuery("belt");
 state.setWorkOrderAssigneeFilter("");
 state.setManagerDashboardUserId("tech-2");
 state.setManagerDashboardMetric("overdue");
+state.setWorkOrderTypeFilter("fabrication");
+state.setWorkOrderPriorityFilter("critical");
+state.setWorkGroup("status");
+state.setPlanningPage("no-due", 1);
+state.setPlanningGroupOpen("no-due", true);
 
 assert.equal(state.getActiveSection(), "parts");
 assert.equal(storage.values["maintainops.activeSection"], "parts");
@@ -97,12 +114,25 @@ assert.equal(state.getManagerDashboardUserId(), "tech-2");
 assert.equal(storage.values["maintainops.managerDashboardUserId"], "tech-2");
 assert.equal(state.getManagerDashboardMetric(), "overdue");
 assert.equal(storage.values["maintainops.managerDashboardMetric"], "overdue");
+assert.equal(state.getWorkOrderTypeFilter(), "fabrication");
+assert.equal(storage.values["maintainops.workOrderTypeFilter"], "fabrication");
+assert.equal(state.getWorkOrderPriorityFilter(), "critical");
+assert.equal(storage.values["maintainops.workOrderPriorityFilter"], "critical");
+assert.equal(state.getWorkGroup(), "status");
+assert.equal(storage.values["maintainops.workGroup"], "status");
+assert.equal(state.getPlanningPage("no-due"), 1);
+assert.equal(storage.values["maintainops.planningNoDuePage"], "1");
+assert.equal(state.getPlanningGroupOpen("no-due", false), true);
+assert.match(storage.values["maintainops.planningGroupOpen"], /"no-due":true/);
 
 const snapshot = state.snapshot();
 assert.equal(snapshot.activeSection, "parts");
 assert.equal(snapshot.searchQuery, "motor");
 assert.equal(snapshot.partSearchQuery, "belt");
 assert.equal(snapshot.managerDashboardUserId, "tech-2");
+assert.equal(snapshot.workOrderTypeFilter, "fabrication");
+assert.equal(snapshot.workOrderPriorityFilter, "critical");
+assert.equal(snapshot.workGroup, "status");
 
 const performanceStorage = createStorage({
   "maintainops.activeSection": "performance",

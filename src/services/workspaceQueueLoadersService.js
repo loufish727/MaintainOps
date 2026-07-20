@@ -115,28 +115,28 @@
 
     async function loadWorkOrderDashboardCounts() {
       const [activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek] = await Promise.all([
-        countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "completed", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false }),
-        countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false }),
+        countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
       ]);
       return { activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek };
     }
 
     async function loadMyWorkDashboardCounts() {
       const [activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek] = await Promise.all([
-        countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "completed", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true }),
-        countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true }),
+        countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+        countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
       ]);
       return { activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek };
     }

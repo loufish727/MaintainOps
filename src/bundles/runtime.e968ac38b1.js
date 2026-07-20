@@ -68,7 +68,10 @@
           myWorkFilter: "maintainops.myWorkFilter",
           workOrderFilter: "maintainops.workOrderFilter",
           workOrderAssigneeFilter: "maintainops.workOrderAssigneeFilter",
+          workOrderTypeFilter: "maintainops.workOrderTypeFilter",
+          workOrderPriorityFilter: "maintainops.workOrderPriorityFilter",
           workSort: "maintainops.workSort",
+          workGroup: "maintainops.workGroup",
           workOrderPage: "maintainops.workOrderPage",
           partsPage: "maintainops.partsPage",
           assetsPage: "maintainops.assetsPage",
@@ -82,8 +85,10 @@
           planningOverduePage: "maintainops.planningOverduePage",
           planningTodayPage: "maintainops.planningTodayPage",
           planningSoonPage: "maintainops.planningSoonPage",
+          planningNoDuePage: "maintainops.planningNoDuePage",
           planningFollowUpPage: "maintainops.planningFollowUpPage",
           planningPmPage: "maintainops.planningPmPage",
+          planningGroupOpen: "maintainops.planningGroupOpen",
           schedulesPage: "maintainops.schedulesPage",
           proceduresPage: "maintainops.proceduresPage",
           membersPage: "maintainops.membersPage",
@@ -111,6 +116,14 @@
           if (!storage || !storage.setItem) return;
           storage.setItem(key, String(value));
         }
+        function readObject(storage, key) {
+          try {
+            const value = JSON.parse(readStorage(storage, key, "{}"));
+            return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+          } catch {
+            return {};
+          }
+        }
         function removeStorage(storage, key) {
           if (!storage || !storage.removeItem) return;
           storage.removeItem(key);
@@ -136,7 +149,10 @@
             myWorkFilter: readStorage(storage, STORAGE_KEYS.myWorkFilter, "assigned"),
             workOrderFilter: readStorage(storage, STORAGE_KEYS.workOrderFilter, "all"),
             workOrderAssigneeFilter: readStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter, ""),
+            workOrderTypeFilter: readStorage(storage, STORAGE_KEYS.workOrderTypeFilter, "all"),
+            workOrderPriorityFilter: readStorage(storage, STORAGE_KEYS.workOrderPriorityFilter, "all"),
             workSort: readStorage(storage, STORAGE_KEYS.workSort, "newest"),
+            workGroup: readStorage(storage, STORAGE_KEYS.workGroup, "none"),
             requestViewFilter: readStorage(storage, STORAGE_KEYS.requestViewFilter, "active"),
             workOrderPage: readPage(storage, STORAGE_KEYS.workOrderPage),
             partsPage: readPage(storage, STORAGE_KEYS.partsPage),
@@ -150,8 +166,10 @@
             planningOverduePage: readPage(storage, STORAGE_KEYS.planningOverduePage),
             planningTodayPage: readPage(storage, STORAGE_KEYS.planningTodayPage),
             planningSoonPage: readPage(storage, STORAGE_KEYS.planningSoonPage),
+            planningNoDuePage: readPage(storage, STORAGE_KEYS.planningNoDuePage),
             planningFollowUpPage: readPage(storage, STORAGE_KEYS.planningFollowUpPage),
             planningPmPage: readPage(storage, STORAGE_KEYS.planningPmPage),
+            planningGroupOpen: readObject(storage, STORAGE_KEYS.planningGroupOpen),
             schedulesPage: readPage(storage, STORAGE_KEYS.schedulesPage),
             proceduresPage: readPage(storage, STORAGE_KEYS.proceduresPage),
             membersPage: readPage(storage, STORAGE_KEYS.membersPage),
@@ -220,8 +238,14 @@
               if (value) writeStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter, value);
               else removeStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter);
             },
+            getWorkOrderTypeFilter: () => state.workOrderTypeFilter,
+            setWorkOrderTypeFilter: (value) => setValue("workOrderTypeFilter", value || "all", STORAGE_KEYS.workOrderTypeFilter),
+            getWorkOrderPriorityFilter: () => state.workOrderPriorityFilter,
+            setWorkOrderPriorityFilter: (value) => setValue("workOrderPriorityFilter", value || "all", STORAGE_KEYS.workOrderPriorityFilter),
             getWorkSort: () => state.workSort,
             setWorkSort: (value) => setValue("workSort", value, STORAGE_KEYS.workSort),
+            getWorkGroup: () => state.workGroup,
+            setWorkGroup: (value) => setValue("workGroup", value || "none", STORAGE_KEYS.workGroup),
             getRequestViewFilter: () => state.requestViewFilter,
             setRequestViewFilter: (value) => setValue("requestViewFilter", value, STORAGE_KEYS.requestViewFilter),
             getWorkOrderPage: () => state.workOrderPage,
@@ -251,6 +275,7 @@
               if (kind === "overdue") return state.planningOverduePage;
               if (kind === "today") return state.planningTodayPage;
               if (kind === "soon") return state.planningSoonPage;
+              if (kind === "no-due") return state.planningNoDuePage;
               if (kind === "follow-up") return state.planningFollowUpPage;
               if (kind === "pm") return state.planningPmPage;
               return 1;
@@ -259,8 +284,14 @@
               if (kind === "overdue") setValue("planningOverduePage", value, STORAGE_KEYS.planningOverduePage);
               if (kind === "today") setValue("planningTodayPage", value, STORAGE_KEYS.planningTodayPage);
               if (kind === "soon") setValue("planningSoonPage", value, STORAGE_KEYS.planningSoonPage);
+              if (kind === "no-due") setValue("planningNoDuePage", value, STORAGE_KEYS.planningNoDuePage);
               if (kind === "follow-up") setValue("planningFollowUpPage", value, STORAGE_KEYS.planningFollowUpPage);
               if (kind === "pm") setValue("planningPmPage", value, STORAGE_KEYS.planningPmPage);
+            },
+            getPlanningGroupOpen: (kind, fallback = false) => Object.prototype.hasOwnProperty.call(state.planningGroupOpen, kind) ? Boolean(state.planningGroupOpen[kind]) : Boolean(fallback),
+            setPlanningGroupOpen: (kind, value) => {
+              state.planningGroupOpen = { ...state.planningGroupOpen, [kind]: Boolean(value) };
+              writeStorage(storage, STORAGE_KEYS.planningGroupOpen, JSON.stringify(state.planningGroupOpen));
             },
             getSchedulesPage: () => state.schedulesPage,
             setSchedulesPage: (value) => setValue("schedulesPage", value, STORAGE_KEYS.schedulesPage),
@@ -753,6 +784,40 @@
         };
         if (typeof module !== "undefined") {
           module.exports = { bindWorkspacePublicRequestLinkAdminEvents };
+        }
+      })();
+    }
+  });
+
+  // src/utils/workspacePlanningDueDateEvents.js
+  var require_workspacePlanningDueDateEvents = __commonJS({
+    "src/utils/workspacePlanningDueDateEvents.js"(exports, module) {
+      (function() {
+        function bindWorkspacePlanningDueDateEvents(options = {}) {
+          const doc = options.documentRef || document;
+          const savePlanningDueDate = options.savePlanningDueDate;
+          if (typeof savePlanningDueDate !== "function") return;
+          doc.querySelectorAll("[data-planning-due-form]").forEach((form) => {
+            form.addEventListener("submit", async (event) => {
+              event.preventDefault();
+              event.stopPropagation?.();
+              const submitButton = form.querySelector?.("button[type='submit']");
+              if (submitButton?.disabled) return;
+              if (submitButton) submitButton.disabled = true;
+              try {
+                const dateInput = form.querySelector?.("[name='planning_due_at']");
+                await savePlanningDueDate(form.dataset.planningDueForm, dateInput?.value);
+              } finally {
+                if (submitButton?.isConnected) submitButton.disabled = false;
+              }
+            });
+          });
+        }
+        window.MaintainOpsWorkspacePlanningDueDateEvents = {
+          bindWorkspacePlanningDueDateEvents
+        };
+        if (typeof module !== "undefined") {
+          module.exports = { bindWorkspacePlanningDueDateEvents };
         }
       })();
     }
@@ -5275,6 +5340,53 @@ ${requestDescription}`,
     }
   });
 
+  // src/workflows/planningDueDateWorkflow.js
+  var require_planningDueDateWorkflow = __commonJS({
+    "src/workflows/planningDueDateWorkflow.js"(exports, module) {
+      (function() {
+        function createPlanningDueDateWorkflow(deps) {
+          async function savePlanningDueDate(workOrderId, value) {
+            if (!deps.canEditOperationalRecords()) {
+              deps.showNotice("This account can view Planning but cannot change work orders.", "warning");
+              return { saved: false, reason: "read_only" };
+            }
+            const workOrder = deps.getPlanningWorkOrders().find((item) => item.id === workOrderId);
+            if (!workOrder || workOrder.status === "completed") {
+              deps.showNotice("That work order is no longer available in the no-due-date queue.", "warning");
+              return { saved: false, reason: "not_available" };
+            }
+            try {
+              const dueAt = deps.workOrderDateValue(value);
+              if (!dueAt) throw new Error("Choose a due date.");
+              const response = await deps.withOperationTimeout(
+                deps.updateWorkOrderSafely({ due_at: dueAt }, workOrderId),
+                "Due date save timed out. Check your connection and try again."
+              );
+              if (response.error) throw response.error;
+              deps.setPlanningWorkOrders(deps.getPlanningWorkOrders().map((item) => item.id === workOrderId ? { ...item, due_at: dueAt } : item));
+              deps.setWorkOrders(deps.getWorkOrders().map((item) => item.id === workOrderId ? { ...item, due_at: dueAt } : item));
+              deps.resetNoDuePage();
+              await deps.recordWorkOrderEvent(workOrderId, "updated", `Due date set to ${dueAt} from Planning.`);
+              deps.showNotice("Due date set. The order moved out of No Due Date.");
+              deps.renderWorkspace();
+              return { saved: true, dueAt };
+            } catch (error) {
+              deps.showNotice(`Could not set due date: ${error.message || error}`, "warning");
+              return { saved: false, reason: "save_failed", error };
+            }
+          }
+          return { savePlanningDueDate };
+        }
+        window.MaintainOpsPlanningDueDateWorkflow = {
+          createPlanningDueDateWorkflow
+        };
+        if (typeof module !== "undefined") {
+          module.exports = { createPlanningDueDateWorkflow };
+        }
+      })();
+    }
+  });
+
   // src/services/requestEmailNotificationService.js
   var require_requestEmailNotificationService = __commonJS({
     "src/services/requestEmailNotificationService.js"(exports, module) {
@@ -5452,27 +5564,27 @@ ${requestDescription}`,
           }
           async function loadWorkOrderDashboardCounts() {
             const [activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek] = await Promise.all([
-              countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "completed", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false }),
-              countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false })
+              countWorkOrders({ statusFilter: "active", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "open", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "in_progress", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "blocked", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "overdue", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed_month", includeQueue: false, includeSearch: false, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed_week", includeQueue: false, includeSearch: false, includeAttributeFilters: false })
             ]);
             return { activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek };
           }
           async function loadMyWorkDashboardCounts() {
             const [activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek] = await Promise.all([
-              countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "completed", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true }),
-              countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true })
+              countWorkOrders({ statusFilter: "active", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "open", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "in_progress", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "blocked", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "overdue", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed_month", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false }),
+              countWorkOrders({ statusFilter: "completed_week", section: "mywork", includeQueue: true, includeSearch: true, includeAttributeFilters: false })
             ]);
             return { activeWork, newWork, inProgress, blocked, overdue, completedAll, completedMonth, completedWeek };
           }
@@ -5973,6 +6085,10 @@ ${requestDescription}`,
           teamMemberName,
           getWorkOrderAssigneeFilter,
           getWorkOrderFilter,
+          getWorkOrderTypeFilter = () => "all",
+          getWorkOrderPriorityFilter = () => "all",
+          getWorkSort = () => "newest",
+          getWorkGroup = () => "none",
           getActiveStatusFilter,
           getMyWorkFilter,
           getActiveSection,
@@ -5982,6 +6098,7 @@ ${requestDescription}`,
           getProfilesByUserId,
           getSession,
           STATUS_OPTIONS,
+          TYPE_OPTIONS = [],
           OUTSIDE_VENDOR_VALUE,
           escapeHtml,
           cleanWorkOrderDescription,
@@ -5997,8 +6114,10 @@ ${requestDescription}`,
             const workOrderAssigneeFilter = getWorkOrderAssigneeFilter();
             const workOrderFilter = getWorkOrderFilter();
             const activeStatusFilter = getActiveStatusFilter();
-            const baseTitle = workOrderAssigneeFilter ? `${teamMemberName(workOrderAssigneeFilter)} Work` : workOrderFilter === "unassigned" ? "Unassigned Work Orders" : workOrderFilter === "vendor" ? "Outside Vendor Work" : workOrderFilter === "assigned" ? "Assigned Work Orders" : "All Work Orders";
-            if (activeStatusFilter === "active" || activeStatusFilter === "all") return baseTitle;
+            const baseTitle = workOrderAssigneeFilter ? `${teamMemberName(workOrderAssigneeFilter)} Work` : workOrderFilter === "unassigned" ? "Unassigned Work Orders" : workOrderFilter === "vendor" ? "Outside Vendor Work" : workOrderFilter === "assigned" ? "Assigned Work Orders" : "Work Orders";
+            if (activeStatusFilter === "active" || activeStatusFilter === "all") {
+              return baseTitle === "Work Orders" ? "Active Work Orders" : `Active - ${baseTitle}`;
+            }
             return `${statusLabel(activeStatusFilter)} - ${baseTitle}`;
           }
           function myWorkPanelTitle() {
@@ -6014,6 +6133,185 @@ ${requestDescription}`,
             const myWorkFilter = getMyWorkFilter();
             const context = activeSection === "mywork" ? myWorkFilter === "created" ? "Created By Me" : "Assigned To Me" : "shown";
             return activeSection === "mywork" ? `${count} shown - ${context}` : `${count} shown`;
+          }
+          function optionMarkup(value, label, selectedValue) {
+            return `<option value="${escapeHtml(value)}" ${value === selectedValue ? "selected" : ""}>${escapeHtml(label)}</option>`;
+          }
+          function assignmentFilterLabel(value) {
+            return {
+              all: "Any assignment",
+              assigned: "Team member",
+              vendor: "Outside vendor",
+              unassigned: "Unassigned"
+            }[value] || "Any assignment";
+          }
+          function priorityLabel(value) {
+            return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+          }
+          function renderWorkOrderFilterToolbar(members = []) {
+            const activeStatusFilter = getActiveStatusFilter();
+            const displayedStatusFilter = activeStatusFilter === "all" ? "active" : activeStatusFilter;
+            const workOrderFilter = getWorkOrderFilter();
+            const workOrderAssigneeFilter = getWorkOrderAssigneeFilter();
+            const workOrderTypeFilter = getWorkOrderTypeFilter();
+            const workOrderPriorityFilter = getWorkOrderPriorityFilter();
+            const workSort = getWorkSort();
+            const workGroup = getWorkGroup();
+            const completedView = ["completed", "completed_month", "completed_week"].includes(activeStatusFilter);
+            const filtersAreDefault = displayedStatusFilter === "active" && workOrderFilter === "all" && !workOrderAssigneeFilter && workOrderTypeFilter === "all" && workOrderPriorityFilter === "all" && workSort === "newest" && workGroup === "none";
+            const currentAssignee = members.find((member) => member.userId === workOrderAssigneeFilter);
+            const trail = [
+              `Status: ${statusLabel(displayedStatusFilter)}`,
+              `Assignment: ${assignmentFilterLabel(workOrderFilter)}`,
+              ...currentAssignee ? [`Person: ${currentAssignee.name}`] : [],
+              ...workOrderTypeFilter !== "all" ? [`Type: ${workOrderTypeLabel(workOrderTypeFilter)}`] : [],
+              ...workOrderPriorityFilter !== "all" ? [`Priority: ${priorityLabel(workOrderPriorityFilter)}`] : []
+            ];
+            const statusOptions = [
+              ["active", "Active work"],
+              ["open", "New"],
+              ["in_progress", "In progress"],
+              ["blocked", "Blocked"],
+              ["overdue", "Overdue"],
+              ["completed", "All completed"],
+              ["completed_month", "Completed this month"],
+              ["completed_week", "Completed this week"]
+            ];
+            const assignmentOptions = [
+              ["all", "Any assignment"],
+              ["assigned", "Team member"],
+              ["vendor", "Outside vendor"],
+              ["unassigned", "Unassigned"]
+            ];
+            const sortOptions = [
+              ["newest", "Recently created"],
+              ["due", "Due date soonest"],
+              ["priority", "Highest priority"],
+              ["type", "Work type A-Z"],
+              ["assigned", "Assigned person A-Z"]
+            ];
+            const groupOptions = [
+              ["none", "No grouping"],
+              ["assignee", "Assigned person"],
+              ["status", "Status"],
+              ["priority", "Priority"],
+              ["type", "Work type"]
+            ];
+            return `
+        <div class="work-order-controls" aria-label="Work order list controls">
+          <div class="work-filter-trail-row">
+            <div class="work-filter-trail">
+              <span class="work-control-kicker">Current view</span>
+              <ol aria-label="Current work order filters">
+                <li><span>Work Orders</span></li>
+                ${trail.map((item) => `<li><span>${escapeHtml(item)}</span></li>`).join("")}
+              </ol>
+            </div>
+            <button class="text-button work-filter-clear" data-clear-work-filters type="button" ${filtersAreDefault ? "disabled" : ""}>Clear filters</button>
+          </div>
+          <div class="work-control-section">
+            <span class="work-control-section-title">Filter by</span>
+            <div class="work-control-fields work-filter-fields">
+              <label class="work-control-field ${displayedStatusFilter !== "active" ? "is-active" : ""}">
+                <span>Status</span>
+                <select data-work-status-filter aria-label="Filter work orders by status">
+                  ${statusOptions.map(([value, label]) => optionMarkup(value, label, displayedStatusFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderFilter !== "all" ? "is-active" : ""}">
+                <span>Assignment</span>
+                <select data-work-assignment-filter aria-label="Filter work orders by assignment">
+                  ${assignmentOptions.map(([value, label]) => optionMarkup(value, label, workOrderFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderAssigneeFilter ? "is-active" : ""}">
+                <span>Assigned person</span>
+                <select data-work-assignee-filter aria-label="Filter work orders by assigned person">
+                  ${optionMarkup("", "Any team member", workOrderAssigneeFilter)}
+                  ${members.map((member) => optionMarkup(member.userId, member.name, workOrderAssigneeFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderTypeFilter !== "all" ? "is-active" : ""}">
+                <span>Work type</span>
+                <select data-work-type-filter aria-label="Filter work orders by work type">
+                  ${optionMarkup("all", "Any type", workOrderTypeFilter)}
+                  ${TYPE_OPTIONS.map((type) => optionMarkup(type, workOrderTypeLabel(type), workOrderTypeFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderPriorityFilter !== "all" ? "is-active" : ""}">
+                <span>Priority</span>
+                <select data-work-priority-filter aria-label="Filter work orders by priority">
+                  ${optionMarkup("all", "Any priority", workOrderPriorityFilter)}
+                  ${["critical", "high", "medium", "low"].map((priority) => optionMarkup(priority, priorityLabel(priority), workOrderPriorityFilter)).join("")}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="work-control-section arrange-controls">
+            <span class="work-control-section-title">Arrange by</span>
+            <div class="work-control-fields">
+              <label class="work-control-field">
+                <span>Sort</span>
+                <select data-work-sort-filter aria-label="Sort work orders" ${completedView ? "disabled" : ""}>
+                  ${completedView ? optionMarkup("completed", "Recently completed", "completed") : sortOptions.map(([value, label]) => optionMarkup(value, label, workSort)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workGroup !== "none" ? "is-active" : ""}">
+                <span>Group</span>
+                <select data-work-group-filter aria-label="Group work orders">
+                  ${groupOptions.map(([value, label]) => optionMarkup(value, label, workGroup)).join("")}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      `;
+          }
+          function workOrderGroupDescriptor(workOrder, groupBy) {
+            if (groupBy === "assignee") {
+              if (isVendorAssigned(workOrder)) return { key: "vendor", label: "Outside vendor", order: 900 };
+              if (!workOrder.assigned_to) return { key: "unassigned", label: "Unassigned", order: 901 };
+              const label = assignmentLabel(workOrder);
+              return { key: `assignee:${workOrder.assigned_to}`, label, order: 100 };
+            }
+            if (groupBy === "status") {
+              const order2 = ["open", "in_progress", "blocked", "completed"].indexOf(workOrder.status);
+              return { key: `status:${workOrder.status}`, label: statusLabel(workOrder.status), order: order2 < 0 ? 99 : order2 };
+            }
+            if (groupBy === "priority") {
+              const order2 = ["critical", "high", "medium", "low"].indexOf(workOrder.priority);
+              return { key: `priority:${workOrder.priority}`, label: priorityLabel(workOrder.priority || "Unspecified"), order: order2 < 0 ? 99 : order2 };
+            }
+            const type = workOrder.type || "corrective";
+            const order = TYPE_OPTIONS.indexOf(type);
+            return { key: `type:${type}`, label: workOrderTypeLabel(type), order: order < 0 ? 99 : order };
+          }
+          function renderWorkOrderCollection(workOrders, options = {}) {
+            if (!workOrders.length) return `<p class="muted">No work orders match these filters.</p>`;
+            const groupBy = options.groupBy || "none";
+            if (groupBy === "none") {
+              return `<div class="work-list" id="work-order-list">${workOrders.map(renderWorkOrderCard).join("")}</div>`;
+            }
+            const groups = /* @__PURE__ */ new Map();
+            workOrders.forEach((workOrder) => {
+              const descriptor = workOrderGroupDescriptor(workOrder, groupBy);
+              if (!groups.has(descriptor.key)) groups.set(descriptor.key, { ...descriptor, workOrders: [] });
+              groups.get(descriptor.key).workOrders.push(workOrder);
+            });
+            const orderedGroups = [...groups.values()].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+            return `
+        <div class="work-order-groups" id="work-order-list">
+          ${orderedGroups.map((group) => `
+            <section class="work-order-group">
+              <div class="work-order-group-heading">
+                <h3>${escapeHtml(group.label)}</h3>
+                <span>${group.workOrders.length}</span>
+              </div>
+              <div class="work-list">${group.workOrders.map(renderWorkOrderCard).join("")}</div>
+            </section>
+          `).join("")}
+        </div>
+      `;
           }
           function renderWorkOrderCard(workOrder) {
             const dueState = getDueState(workOrder);
@@ -6126,6 +6424,8 @@ ${requestDescription}`,
             myWorkPanelTitle,
             workQueuePanelTitle,
             workQueuePanelSubtitle,
+            renderWorkOrderFilterToolbar,
+            renderWorkOrderCollection,
             renderWorkOrderCard,
             renderCardAssignmentControl,
             renderAssignmentSelect,
@@ -9970,6 +10270,9 @@ ${requestDescription}`,
       function state(name) {
         return deps[name]();
       }
+      function optionalState(name, fallback) {
+        return typeof deps[name] === "function" ? deps[name]() : fallback;
+      }
       function applyWorkOrderListFilters(query) {
         const searchQuery = state("searchQuery");
         const activeSection = state("activeSection");
@@ -9984,12 +10287,19 @@ ${requestDescription}`,
         }));
       }
       function applyWorkOrderFilters(query, options = {}) {
+        const section = options.section || state("activeSection");
         let nextQuery = query.eq("company_id", state("activeCompanyId"));
         if (state("locationsReady") && state("activeLocationId")) {
           nextQuery = nextQuery.eq("location_id", state("activeLocationId"));
         }
         if (options.includeQueue !== false) {
-          nextQuery = applyWorkOrderQueueFilters(nextQuery, options.section || state("activeSection"));
+          nextQuery = applyWorkOrderQueueFilters(nextQuery, section);
+        }
+        if (options.includeAttributeFilters !== false && section === "work") {
+          const typeFilter = optionalState("workOrderTypeFilter", "all");
+          const priorityFilter = optionalState("workOrderPriorityFilter", "all");
+          if (typeFilter !== "all") nextQuery = nextQuery.eq("type", typeFilter);
+          if (priorityFilter !== "all") nextQuery = nextQuery.eq("priority", priorityFilter);
         }
         nextQuery = applyWorkOrderStatusFilter(nextQuery, options.statusFilter || state("activeStatusFilter"));
         if (options.includeSearch !== false) {
@@ -10042,7 +10352,10 @@ ${requestDescription}`,
           return query.order("due_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
         }
         if (state("workSort") === "priority") {
-          return query.order("priority", { ascending: true }).order("due_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
+          return query.order("priority_rank", { ascending: false }).order("due_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
+        }
+        if (state("workSort") === "type") {
+          return query.order("type", { ascending: true }).order("created_at", { ascending: false });
         }
         if (state("workSort") === "assigned") {
           return query.order("assigned_to", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
@@ -10273,6 +10586,60 @@ ${requestDescription}`,
           });
         });
       });
+      doc.querySelectorAll("[data-work-status-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            state.setActiveStatusFilter(field.value || "active");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-assignment-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            const assignment = field.value || "all";
+            state.setWorkOrderFilter(assignment);
+            if (assignment !== "assigned") state.setWorkOrderAssigneeFilter("");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-assignee-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            const assigneeId = field.value || "";
+            state.setWorkOrderAssigneeFilter(assigneeId);
+            if (assigneeId) state.setWorkOrderFilter("assigned");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-type-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            state.setWorkOrderTypeFilter(field.value || "all");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-priority-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            state.setWorkOrderPriorityFilter(field.value || "all");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
       doc.querySelectorAll("[data-clear-assignee-filter]").forEach((button) => {
         button.addEventListener("click", async () => {
           await preserveScroll(async () => {
@@ -10286,6 +10653,40 @@ ${requestDescription}`,
         button.addEventListener("click", async () => {
           await preserveScroll(async () => {
             state.setWorkSort(button.dataset.workSort);
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-sort-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            state.setWorkSort(field.value || "newest");
+            options.invalidateExactWorkOrderSearchCache();
+            options.resetWorkOrderPage();
+            await options.reloadWorkOrderQueue();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-work-group-filter]").forEach((field) => {
+        field.addEventListener("change", async () => {
+          await preserveScroll(async () => {
+            state.setWorkGroup(field.value || "none");
+            options.renderWorkspace();
+          });
+        });
+      });
+      doc.querySelectorAll("[data-clear-work-filters]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          await preserveScroll(async () => {
+            state.setActiveStatusFilter("active");
+            state.setWorkOrderFilter("all");
+            state.setWorkOrderAssigneeFilter("");
+            state.setWorkOrderTypeFilter("all");
+            state.setWorkOrderPriorityFilter("all");
+            state.setWorkSort("newest");
+            state.setWorkGroup("none");
             options.invalidateExactWorkOrderSearchCache();
             options.resetWorkOrderPage();
             await options.reloadWorkOrderQueue();
@@ -10383,6 +10784,12 @@ ${requestDescription}`,
             }
             options.renderWorkspace();
           });
+        });
+      });
+      doc.querySelectorAll("[data-planning-group]").forEach((details) => {
+        details.addEventListener("toggle", () => {
+          if (typeof state.setPlanningGroupOpen !== "function") return;
+          state.setPlanningGroupOpen(details.dataset.planningGroup, Boolean(details.open));
         });
       });
     }
@@ -11193,6 +11600,9 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
           options.renderWorkspace();
           scrollToSectionTop();
           if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
+          if (nextSection === "planning" && typeof options.reloadPlanningWorkOrderQueue === "function") {
+            await options.reloadPlanningWorkOrderQueue();
+          }
           if (nextSection === "requests") await options.reloadRequestQueue();
           if (nextSection === "team" && typeof options.reloadTeamWorkloads === "function") {
             await options.reloadTeamWorkloads();
@@ -11787,6 +12197,9 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
     };
   })();
 
+  // src/bundles/runtime.entry.js
+  var import_workspacePlanningDueDateEvents = __toESM(require_workspacePlanningDueDateEvents());
+
   // src/utils/workspaceCommentEvents.js
   (function() {
     function bindWorkspaceCommentEvents(options = {}) {
@@ -11885,6 +12298,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
   var import_publicRequestIntakeWorkflow = __toESM(require_publicRequestIntakeWorkflow());
   var import_companySetupWorkflow = __toESM(require_companySetupWorkflow());
   var import_workOrderStatusWorkflow = __toESM(require_workOrderStatusWorkflow());
+  var import_planningDueDateWorkflow = __toESM(require_planningDueDateWorkflow());
 
   // src/utils/requestQueryFilters.js
   (function() {
@@ -12197,17 +12611,17 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
         const today = deps.startOfToday();
         const soon = new Date(today);
         soon.setDate(soon.getDate() + 7);
-        return state("planningWorkOrders").filter(deps.matchesActiveLocation).filter((workOrder) => workOrder.status !== "completed" && workOrder.due_at).filter((workOrder) => deps.matchesSearch([
+        return state("planningWorkOrders").filter(deps.matchesActiveLocation).filter((workOrder) => workOrder.status !== "completed").filter((workOrder) => deps.matchesSearch([
           workOrder.title,
           workOrder.description,
           workOrder.priority,
           workOrder.status,
           workOrder.assets?.name,
           deps.assignmentLabel(workOrder)
-        ])).map((workOrder) => {
-          const due = /* @__PURE__ */ new Date(`${workOrder.due_at}T00:00:00`);
+        ])).filter((workOrder) => bucket === "no_due" ? !workOrder.due_at : Boolean(workOrder.due_at)).map((workOrder) => {
+          const due = workOrder.due_at ? /* @__PURE__ */ new Date(`${workOrder.due_at}T00:00:00`) : null;
           return {
-            kind: "work",
+            kind: bucket === "no_due" ? "no_due" : "work",
             id: workOrder.id,
             title: workOrder.title,
             priority: workOrder.priority,
@@ -12215,14 +12629,23 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
             assetName: workOrder.assets?.name || "No equipment",
             dueAt: workOrder.due_at,
             due,
+            createdAt: workOrder.created_at || "",
+            assignedTo: deps.assignmentLabel(workOrder),
             workOrder
           };
         }).filter((item) => {
+          if (bucket === "no_due") return true;
           if (bucket === "overdue") return item.due < today;
           if (bucket === "today") return item.due.getTime() === today.getTime();
           if (bucket === "soon") return item.due > today && item.due <= soon;
           return true;
-        }).sort((a, b) => a.due - b.due);
+        }).sort((a, b) => {
+          if (bucket === "no_due") {
+            const priorityRank = { critical: 4, high: 3, medium: 2, low: 1 };
+            return (priorityRank[b.priority] || 0) - (priorityRank[a.priority] || 0) || new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+          }
+          return a.due - b.due;
+        });
       }
       function planningPmItems() {
         const today = deps.startOfToday();
@@ -12913,27 +13336,69 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
       escapeHtml,
       LIST_ITEMS_PER_PAGE,
       getPlanningPage,
+      getPlanningGroupOpen = (_kind, fallback) => fallback,
       renderListPagination,
       statusLabel,
-      renderRelationshipChips
+      renderRelationshipChips,
+      canEditOperationalRecords = () => true
     }) {
-      function renderPlanningGroup(title, items, chipClass, pageKind) {
+      function renderPlanningGroup(title, items, chipClass, pageKind, options = {}) {
         const pageSize = LIST_ITEMS_PER_PAGE || 12;
         const currentPage = typeof getPlanningPage === "function" ? getPlanningPage(pageKind) : 1;
         const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
         const safePage = Math.min(Math.max(currentPage, 1), totalPages);
         const pagedItems = items.slice((safePage - 1) * pageSize, safePage * pageSize);
+        const isOpen = getPlanningGroupOpen(pageKind, Boolean(options.defaultOpen && items.length));
         return `
-        <section class="planning-group">
-          <div class="panel-header compact-header">
-            <h3>${escapeHtml(title)}</h3>
+        <details class="planning-group" data-planning-group="${escapeHtml(pageKind)}" ${isOpen ? "open" : ""}>
+          <summary class="planning-group-summary">
+            <span>
+              <strong>${escapeHtml(title)}</strong>
+              ${options.description ? `<small>${escapeHtml(options.description)}</small>` : ""}
+            </span>
             <span class="chip ${chipClass}">${items.length}</span>
+          </summary>
+          <div class="planning-group-body">
+            <div class="planning-list">
+              ${pagedItems.map(renderPlanningItem).join("") || `<p class="muted">Nothing here.</p>`}
+            </div>
+            ${typeof renderListPagination === "function" ? renderListPagination(`planning-${pageKind}`, items.length, safePage, totalPages) : ""}
           </div>
-          <div class="planning-list">
-            ${pagedItems.map(renderPlanningItem).join("") || `<p class="muted">Nothing here.</p>`}
-          </div>
-          ${typeof renderListPagination === "function" ? renderListPagination(`planning-${pageKind}`, items.length, safePage, totalPages) : ""}
+        </details>
+      `;
+      }
+      function renderPlanningLane(title, description, content, className = "") {
+        return `
+        <section class="planning-lane ${className}">
+          <header class="planning-lane-header">
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(description)}</p>
+          </header>
+          ${content}
         </section>
+      `;
+      }
+      function renderPlanningBoard(groups) {
+        return `
+        <div class="planning-grid">
+          ${renderPlanningLane("Needs action", "Unscheduled work and completed items that still need follow-up.", `
+            ${renderPlanningGroup("No Due Date", groups.noDue, "blocked", "no-due", {
+          defaultOpen: true,
+          description: "Set a date here to move work into the schedule."
+        })}
+            ${renderPlanningGroup("Follow-up Needed", groups.followUp, "blocked", "follow-up", {
+          description: "Close the loop or create the next order."
+        })}
+          `, "planning-lane-action")}
+          ${renderPlanningLane("Current schedule", "Work requiring attention now.", `
+            ${renderPlanningGroup("Overdue", groups.overdue, "overdue", "overdue", { defaultOpen: true })}
+            ${renderPlanningGroup("Due Today", groups.today, "due_today", "today", { defaultOpen: true })}
+          `)}
+          ${renderPlanningLane("Upcoming", "Near-term maintenance and preventive work.", `
+            ${renderPlanningGroup("Next 7 Days", groups.soon, "in_progress", "soon")}
+            ${renderPlanningGroup("PM Due Soon", groups.pm, "open", "pm")}
+          `)}
+        </div>
       `;
       }
       function renderPlanningItem(item) {
@@ -12966,6 +13431,29 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
           </article>
         `;
         }
+        if (item.kind === "no_due") {
+          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+          const createdLabel = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleDateString() : "Unknown";
+          return `
+          <article class="planning-item planning-no-due-item">
+            <div>
+              <span class="eyebrow">${escapeHtml(item.priority)} ${escapeHtml(statusLabel(item.status))}</span>
+              <strong>${escapeHtml(item.title)}</strong>
+              <p>${escapeHtml(item.assetName)} - ${escapeHtml(item.assignedTo || "Unassigned")}</p>
+              <p>Created ${escapeHtml(createdLabel)}</p>
+            </div>
+            <div class="planning-item-actions">
+              <button class="secondary-button" data-mini-work-order="${escapeHtml(item.id)}" type="button">Open Work Order</button>
+              ${canEditOperationalRecords() ? `
+                <form class="planning-due-form" data-planning-due-form="${escapeHtml(item.id)}">
+                  <label>Due date<input name="planning_due_at" type="date" required></label>
+                  <button class="primary-button" type="submit">Set Due Date</button>
+                </form>
+              ` : `<span class="muted planning-view-only">View only</span>`}
+            </div>
+          </article>
+        `;
+        }
         return `
         <article class="planning-item mini-work-order" data-mini-work-order="${item.id}">
           <div>
@@ -12979,6 +13467,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
       }
       return {
         renderPlanningGroup,
+        renderPlanningBoard,
         renderPlanningItem
       };
     }
@@ -14158,6 +14647,9 @@ ${note}` : note;
         }
         if (deps.getWorkSort() === "priority") {
           return prioritySortValue(b.priority) - prioritySortValue(a.priority) || dueSortValue(a) - dueSortValue(b);
+        }
+        if (deps.getWorkSort() === "type") {
+          return String(a.type || "").localeCompare(String(b.type || "")) || new Date(b.created_at) - new Date(a.created_at);
         }
         if (deps.getWorkSort() === "assigned") {
           return assigneeSortLabel(a).localeCompare(assigneeSortLabel(b)) || new Date(b.created_at) - new Date(a.created_at);

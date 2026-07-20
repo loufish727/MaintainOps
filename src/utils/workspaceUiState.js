@@ -16,7 +16,10 @@
     myWorkFilter: "maintainops.myWorkFilter",
     workOrderFilter: "maintainops.workOrderFilter",
     workOrderAssigneeFilter: "maintainops.workOrderAssigneeFilter",
+    workOrderTypeFilter: "maintainops.workOrderTypeFilter",
+    workOrderPriorityFilter: "maintainops.workOrderPriorityFilter",
     workSort: "maintainops.workSort",
+    workGroup: "maintainops.workGroup",
     workOrderPage: "maintainops.workOrderPage",
     partsPage: "maintainops.partsPage",
     assetsPage: "maintainops.assetsPage",
@@ -30,8 +33,10 @@
     planningOverduePage: "maintainops.planningOverduePage",
     planningTodayPage: "maintainops.planningTodayPage",
     planningSoonPage: "maintainops.planningSoonPage",
+    planningNoDuePage: "maintainops.planningNoDuePage",
     planningFollowUpPage: "maintainops.planningFollowUpPage",
     planningPmPage: "maintainops.planningPmPage",
+    planningGroupOpen: "maintainops.planningGroupOpen",
     schedulesPage: "maintainops.schedulesPage",
     proceduresPage: "maintainops.proceduresPage",
     membersPage: "maintainops.membersPage",
@@ -63,6 +68,15 @@
     storage.setItem(key, String(value));
   }
 
+  function readObject(storage, key) {
+    try {
+      const value = JSON.parse(readStorage(storage, key, "{}"));
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch {
+      return {};
+    }
+  }
+
   function removeStorage(storage, key) {
     if (!storage || !storage.removeItem) return;
     storage.removeItem(key);
@@ -89,7 +103,10 @@
       myWorkFilter: readStorage(storage, STORAGE_KEYS.myWorkFilter, "assigned"),
       workOrderFilter: readStorage(storage, STORAGE_KEYS.workOrderFilter, "all"),
       workOrderAssigneeFilter: readStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter, ""),
+      workOrderTypeFilter: readStorage(storage, STORAGE_KEYS.workOrderTypeFilter, "all"),
+      workOrderPriorityFilter: readStorage(storage, STORAGE_KEYS.workOrderPriorityFilter, "all"),
       workSort: readStorage(storage, STORAGE_KEYS.workSort, "newest"),
+      workGroup: readStorage(storage, STORAGE_KEYS.workGroup, "none"),
       requestViewFilter: readStorage(storage, STORAGE_KEYS.requestViewFilter, "active"),
       workOrderPage: readPage(storage, STORAGE_KEYS.workOrderPage),
       partsPage: readPage(storage, STORAGE_KEYS.partsPage),
@@ -103,8 +120,10 @@
       planningOverduePage: readPage(storage, STORAGE_KEYS.planningOverduePage),
       planningTodayPage: readPage(storage, STORAGE_KEYS.planningTodayPage),
       planningSoonPage: readPage(storage, STORAGE_KEYS.planningSoonPage),
+      planningNoDuePage: readPage(storage, STORAGE_KEYS.planningNoDuePage),
       planningFollowUpPage: readPage(storage, STORAGE_KEYS.planningFollowUpPage),
       planningPmPage: readPage(storage, STORAGE_KEYS.planningPmPage),
+      planningGroupOpen: readObject(storage, STORAGE_KEYS.planningGroupOpen),
       schedulesPage: readPage(storage, STORAGE_KEYS.schedulesPage),
       proceduresPage: readPage(storage, STORAGE_KEYS.proceduresPage),
       membersPage: readPage(storage, STORAGE_KEYS.membersPage),
@@ -180,8 +199,14 @@
         if (value) writeStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter, value);
         else removeStorage(storage, STORAGE_KEYS.workOrderAssigneeFilter);
       },
+      getWorkOrderTypeFilter: () => state.workOrderTypeFilter,
+      setWorkOrderTypeFilter: (value) => setValue("workOrderTypeFilter", value || "all", STORAGE_KEYS.workOrderTypeFilter),
+      getWorkOrderPriorityFilter: () => state.workOrderPriorityFilter,
+      setWorkOrderPriorityFilter: (value) => setValue("workOrderPriorityFilter", value || "all", STORAGE_KEYS.workOrderPriorityFilter),
       getWorkSort: () => state.workSort,
       setWorkSort: (value) => setValue("workSort", value, STORAGE_KEYS.workSort),
+      getWorkGroup: () => state.workGroup,
+      setWorkGroup: (value) => setValue("workGroup", value || "none", STORAGE_KEYS.workGroup),
       getRequestViewFilter: () => state.requestViewFilter,
       setRequestViewFilter: (value) => setValue("requestViewFilter", value, STORAGE_KEYS.requestViewFilter),
       getWorkOrderPage: () => state.workOrderPage,
@@ -211,6 +236,7 @@
         if (kind === "overdue") return state.planningOverduePage;
         if (kind === "today") return state.planningTodayPage;
         if (kind === "soon") return state.planningSoonPage;
+        if (kind === "no-due") return state.planningNoDuePage;
         if (kind === "follow-up") return state.planningFollowUpPage;
         if (kind === "pm") return state.planningPmPage;
         return 1;
@@ -219,8 +245,18 @@
         if (kind === "overdue") setValue("planningOverduePage", value, STORAGE_KEYS.planningOverduePage);
         if (kind === "today") setValue("planningTodayPage", value, STORAGE_KEYS.planningTodayPage);
         if (kind === "soon") setValue("planningSoonPage", value, STORAGE_KEYS.planningSoonPage);
+        if (kind === "no-due") setValue("planningNoDuePage", value, STORAGE_KEYS.planningNoDuePage);
         if (kind === "follow-up") setValue("planningFollowUpPage", value, STORAGE_KEYS.planningFollowUpPage);
         if (kind === "pm") setValue("planningPmPage", value, STORAGE_KEYS.planningPmPage);
+      },
+      getPlanningGroupOpen: (kind, fallback = false) => (
+        Object.prototype.hasOwnProperty.call(state.planningGroupOpen, kind)
+          ? Boolean(state.planningGroupOpen[kind])
+          : Boolean(fallback)
+      ),
+      setPlanningGroupOpen: (kind, value) => {
+        state.planningGroupOpen = { ...state.planningGroupOpen, [kind]: Boolean(value) };
+        writeStorage(storage, STORAGE_KEYS.planningGroupOpen, JSON.stringify(state.planningGroupOpen));
       },
       getSchedulesPage: () => state.schedulesPage,
       setSchedulesPage: (value) => setValue("schedulesPage", value, STORAGE_KEYS.schedulesPage),

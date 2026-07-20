@@ -474,6 +474,7 @@
   var { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
   var { createCompanySetupWorkflow } = window.MaintainOpsCompanySetupWorkflow;
   var { createWorkOrderStatusWorkflow } = window.MaintainOpsWorkOrderStatusWorkflow;
+  var { createPlanningDueDateWorkflow } = window.MaintainOpsPlanningDueDateWorkflow;
   var { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
   var { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
   var { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
@@ -519,6 +520,7 @@
   var { bindWorkspaceRequestConversionEvents } = window.MaintainOpsWorkspaceRequestConversionEvents;
   var { bindWorkspacePmGenerationEvents } = window.MaintainOpsWorkspacePmGenerationEvents;
   var { bindWorkspaceFollowUpWorkEvents } = window.MaintainOpsWorkspaceFollowUpWorkEvents;
+  var { bindWorkspacePlanningDueDateEvents } = window.MaintainOpsWorkspacePlanningDueDateEvents;
   var { bindWorkspaceCommentEvents } = window.MaintainOpsWorkspaceCommentEvents;
   var { bindWorkspaceQuickUpdateEvents } = window.MaintainOpsWorkspaceQuickUpdateEvents;
   var { bindWorkspaceWorkOrderEditEvents } = window.MaintainOpsWorkspaceWorkOrderEditEvents;
@@ -681,6 +683,8 @@
     startOfToday,
     workOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
     workOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
+    workOrderTypeFilter: () => workspaceUiState.getWorkOrderTypeFilter(),
+    workOrderPriorityFilter: () => workspaceUiState.getWorkOrderPriorityFilter(),
     workOrderRelatedSearch: () => workOrderRelatedSearch,
     workSort: () => workspaceUiState.getWorkSort()
   });
@@ -788,6 +792,10 @@
   var workOrders = [];
   var teamWorkOrders = [];
   var planningWorkOrders = [];
+  var planningWorkOrdersReady = false;
+  var planningWorkOrdersError = "";
+  var planningWorkOrdersLoadPromise = null;
+  var planningWorkOrdersLoadToken = 0;
   var workOrderServerTotal = 0;
   var workOrderDashboardCounts = null;
   var myWorkDashboardCounts = null;
@@ -1398,6 +1406,8 @@
     myWorkPanelTitle,
     workQueuePanelTitle,
     workQueuePanelSubtitle,
+    renderWorkOrderFilterToolbar,
+    renderWorkOrderCollection,
     renderWorkOrderCard,
     renderCardAssignmentControl,
     renderAssignmentSelect,
@@ -1408,6 +1418,10 @@
     teamMemberName,
     getWorkOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
     getWorkOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
+    getWorkOrderTypeFilter: () => workspaceUiState.getWorkOrderTypeFilter(),
+    getWorkOrderPriorityFilter: () => workspaceUiState.getWorkOrderPriorityFilter(),
+    getWorkSort: () => workspaceUiState.getWorkSort(),
+    getWorkGroup: () => workspaceUiState.getWorkGroup(),
     getActiveStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
     getMyWorkFilter: () => workspaceUiState.getMyWorkFilter(),
     getActiveSection: () => activeSection,
@@ -1417,6 +1431,7 @@
     getProfilesByUserId: () => profilesByUserId,
     getSession: () => session,
     STATUS_OPTIONS,
+    TYPE_OPTIONS,
     OUTSIDE_VENDOR_VALUE,
     escapeHtml,
     cleanWorkOrderDescription,
@@ -1444,14 +1459,17 @@
   });
   var {
     renderPlanningGroup,
+    renderPlanningBoard,
     renderPlanningItem
   } = createPlanningDisplayHelpers({
     escapeHtml,
     LIST_ITEMS_PER_PAGE,
     getPlanningPage: (kind) => workspaceUiState.getPlanningPage(kind),
+    getPlanningGroupOpen: (kind, fallback) => workspaceUiState.getPlanningGroupOpen(kind, fallback),
     renderListPagination,
     statusLabel,
-    renderRelationshipChips
+    renderRelationshipChips,
+    canEditOperationalRecords
   });
   var {
     renderMiniWorkOrder,
@@ -2380,22 +2398,53 @@
       if (locationsReady && activeLocationId) nextQuery = nextQuery.eq("location_id", activeLocationId);
       return nextQuery;
     };
-    const [dueResponse, followUpResponse] = await Promise.all([
+    const [dueResponse, noDueResponse, followUpResponse] = await Promise.all([
       applyScope(supabaseClient.from("work_orders").select(selectClause)).neq("status", "completed").not("due_at", "is", null).order("due_at", { ascending: true }),
+      applyScope(supabaseClient.from("work_orders").select(selectClause)).neq("status", "completed").is("due_at", null).order("created_at", { ascending: true }),
       applyScope(supabaseClient.from("work_orders").select(selectClause)).eq("follow_up_needed", true).order("completed_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false })
     ]);
-    if (options.includeLocationRelation !== false && (dueResponse.error && isColumnSchemaError(dueResponse.error, ["location_id", "locations"]) || followUpResponse.error && isColumnSchemaError(followUpResponse.error, ["location_id", "locations"]))) {
+    if (options.includeLocationRelation !== false && (dueResponse.error && isColumnSchemaError(dueResponse.error, ["location_id", "locations"]) || noDueResponse.error && isColumnSchemaError(noDueResponse.error, ["location_id", "locations"]) || followUpResponse.error && isColumnSchemaError(followUpResponse.error, ["location_id", "locations"]))) {
       return loadPlanningWorkOrders({ includeLocationRelation: false });
     }
-    if (dueResponse.error || followUpResponse.error) {
-      return { error: dueResponse.error || followUpResponse.error, data: [] };
+    if (dueResponse.error || noDueResponse.error || followUpResponse.error) {
+      return { error: dueResponse.error || noDueResponse.error || followUpResponse.error, data: [] };
     }
     const byId = /* @__PURE__ */ new Map();
-    [...dueResponse.data || [], ...followUpResponse.data || []].forEach((workOrder) => {
+    [...dueResponse.data || [], ...noDueResponse.data || [], ...followUpResponse.data || []].forEach((workOrder) => {
       byId.set(workOrder.id, workOrder);
     });
-    planningWorkOrders = [...byId.values()];
-    return { data: planningWorkOrders, error: null };
+    return { data: [...byId.values()], error: null };
+  }
+  function invalidatePlanningWorkOrders() {
+    planningWorkOrdersLoadToken += 1;
+    planningWorkOrdersLoadPromise = null;
+    planningWorkOrders = [];
+    planningWorkOrdersReady = false;
+    planningWorkOrdersError = "";
+  }
+  async function ensurePlanningWorkOrdersLoaded(options = {}) {
+    if (planningWorkOrdersReady && !options.force) {
+      return { data: planningWorkOrders, error: planningWorkOrdersError ? new Error(planningWorkOrdersError) : null };
+    }
+    if (planningWorkOrdersLoadPromise) return planningWorkOrdersLoadPromise;
+    const loadToken = planningWorkOrdersLoadToken;
+    planningWorkOrdersReady = false;
+    planningWorkOrdersError = "";
+    const loadPromise = loadWorkspaceResponse("Planning work orders", loadPlanningWorkOrders(), 16e3).then((response) => {
+      if (loadToken !== planningWorkOrdersLoadToken) return response;
+      planningWorkOrdersReady = true;
+      if (response.error) {
+        planningWorkOrders = [];
+        planningWorkOrdersError = response.error.message || String(response.error);
+      } else {
+        planningWorkOrders = response.data || [];
+      }
+      return response;
+    }).finally(() => {
+      if (planningWorkOrdersLoadPromise === loadPromise) planningWorkOrdersLoadPromise = null;
+    });
+    planningWorkOrdersLoadPromise = loadPromise;
+    return loadPromise;
   }
   async function loadStorageDashboard() {
     if (!activeCompanyId || !canManageTeam()) {
@@ -2551,6 +2600,7 @@
   async function loadCompanyData() {
     workspaceLoadWarnings = [];
     workspaceHydrationToken += 1;
+    invalidatePlanningWorkOrders();
     const coreData = await loadWorkspaceCoreData({
       activeCompanyId,
       supabaseClient,
@@ -2582,7 +2632,7 @@
       procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position))
     }));
     const workOrderResponse = await loadWorkspaceResponse("Work orders", loadServerWorkOrderSlice(), 16e3);
-    const planningWorkOrderResponse = await loadWorkspaceResponse("Planning work orders", loadPlanningWorkOrders(), 16e3);
+    if (activeSection === "planning") await ensurePlanningWorkOrdersLoaded();
     const requestResponse = await loadWorkspaceResponse("Requests", loadServerRequestSlice(), 14e3);
     if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
       const activeResponse = await loadWorkspaceResponse("Selected work order", fetchWorkOrderById(supabaseClient, activeCompanyId, activeWorkOrderId, WORK_ORDER_RELATION_SELECT));
@@ -2591,7 +2641,6 @@
       }
     }
     requestsReady = !requestResponse.error;
-    if (planningWorkOrderResponse.error) planningWorkOrders = [];
     partCostsReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "unit_cost");
     partSuppliersReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "supplier_name");
     partMachineNotesReady = !parts.length || Object.prototype.hasOwnProperty.call(parts[0], "machine_note");
@@ -2653,15 +2702,31 @@
   }
   async function reloadWorkOrderQueue() {
     try {
+      invalidatePlanningWorkOrders();
       const response = await loadServerWorkOrderSlice();
       if (response.error) {
         showNotice(`Could not load work orders: ${response.error.message}`, "warning");
         return;
       }
-      await Promise.all([loadPlanningWorkOrders(), loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
+      await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
       renderWorkspace();
     } catch (error) {
       showNotice(`Could not load work orders: ${error.message || error}`, "warning");
+    }
+  }
+  async function reloadPlanningWorkOrderQueue(options = {}) {
+    try {
+      const response = await ensurePlanningWorkOrdersLoaded(options);
+      if (response.error) {
+        showNotice(`Could not load Planning: ${response.error.message || response.error}`, "warning");
+      }
+      renderWorkspace();
+    } catch (error) {
+      planningWorkOrdersReady = true;
+      planningWorkOrdersError = error.message || String(error);
+      planningWorkOrders = [];
+      showNotice(`Could not load Planning: ${planningWorkOrdersError}`, "warning");
+      renderWorkspace();
     }
   }
   async function reloadRequestQueue() {
@@ -3152,9 +3217,8 @@
     }
     const activeStatusFilter = workspaceUiState.getActiveStatusFilter();
     const myWorkFilter = workspaceUiState.getMyWorkFilter();
-    const workOrderFilter = workspaceUiState.getWorkOrderFilter();
-    const workOrderAssigneeFilter = workspaceUiState.getWorkOrderAssigneeFilter();
     const workSort = workspaceUiState.getWorkSort();
+    const workGroup = workspaceUiState.getWorkGroup();
     const requestViewFilter = workspaceUiState.getRequestViewFilter();
     const searchQuery = workspaceUiState.getSearchQuery();
     const workOrderSearchMode = workspaceUiState.getWorkOrderSearchMode();
@@ -3479,20 +3543,9 @@
                     <button class="text-button" data-close-work-search type="button">Back to search preview</button>
                   </div>
                 ` : `
-                  <div class="segmented-control" aria-label="Work order filter">
-                    <button class="segment ${workOrderFilter === "all" ? "active" : ""}" data-work-order-filter="all" type="button">${segmentIcon("all")}All Work Orders</button>
-                    <button class="segment ${workOrderFilter === "assigned" ? "active" : ""}" data-work-order-filter="assigned" type="button">${segmentIcon("mine")}Assigned</button>
-                    <button class="segment ${workOrderFilter === "vendor" ? "active" : ""}" data-work-order-filter="vendor" type="button">${segmentIcon("vendor")}Vendor</button>
-                    <button class="segment ${workOrderFilter === "unassigned" ? "active" : ""}" data-work-order-filter="unassigned" type="button">${segmentIcon("unassigned")}Unassigned</button>
-                  </div>
-                  ${workOrderAssigneeFilter && workSort !== "assigned" ? `
-                    <div class="active-team-filter">
-                      <span>Assigned to ${escapeHtml(teamMemberName(workOrderAssigneeFilter))}</span>
-                      <button class="text-button" data-clear-assignee-filter type="button">Clear</button>
-                    </div>
-                  ` : ""}
+                  ${renderWorkOrderFilterToolbar(workAssigneeSortMembers)}
                 `}
-                ${showingRequestsInWorkQueue ? "" : `
+                ${showingRequestsInWorkQueue || activeSection === "work" && !isViewingWorkOrderSearch ? "" : `
                   <div class="segmented-control" aria-label="Work order sort">
                     ${[
       ["newest", "Newest"],
@@ -3503,18 +3556,6 @@
                       <button class="segment ${workSort === id ? "active" : ""}" data-work-sort="${id}" type="button">${segmentIcon(id)}${label}</button>
                     `).join("")}
                   </div>
-                  ${activeSection === "work" && workSort === "assigned" ? `
-                    <div class="active-team-filter assigned-sort-filter">
-                      <label>Assigned person
-                        <select data-work-assignee-sort-filter aria-label="Sort assigned work by person">
-                          <option value="" ${workOrderAssigneeFilter ? "" : "selected"}>All assigned people</option>
-                          ${workAssigneeSortMembers.map((member) => `
-                            <option value="${escapeHtml(member.userId)}" ${workOrderAssigneeFilter === member.userId ? "selected" : ""}>${escapeHtml(member.name)}</option>
-                          `).join("")}
-                        </select>
-                      </label>
-                    </div>
-                  ` : ""}
                 `}
                 ${!showingRequestsInWorkQueue && ["completed", "completed_month", "completed_week"].includes(activeStatusFilter) ? `
                   <p class="completion-note completed-history-note">Completed history is paged ${WORK_ORDERS_PER_PAGE} at a time and sorted by most recently completed.</p>
@@ -3525,9 +3566,9 @@
                   </div>
                   ${renderListPagination("requests", visibleRequestCount, requestsPage, totalRequestPages)}
                 ` : `
-                  <div class="work-list" id="work-order-list">
-                    ${pagedWorkOrders.map(renderWorkOrderCard).join("") || `<p class="muted">No work orders match this filter.</p>`}
-                  </div>
+                  ${renderWorkOrderCollection(pagedWorkOrders, {
+      groupBy: activeSection === "work" && !isViewingWorkOrderSearch ? workGroup : "none"
+    })}
                   ${renderWorkPagination(visibleWorkOrderCount, totalWorkOrderPages)}
                 `}
               </section>
@@ -3537,15 +3578,22 @@
           <section class="panel full-width ${activeSection === "planning" ? "" : "hidden-section"}">
             <div class="panel-header">
               <h2>Planning</h2>
-              <span>${planningItems().length + followUpItems().length} items</span>
+              <span>${planningWorkOrdersReady ? planningWorkOrdersError ? "Unavailable" : `${planningItems().length + planningItems("no_due").length + followUpItems().length + planningPmItems().length} queue items` : "Loading queue"}</span>
             </div>
-            <div class="planning-grid">
-              ${renderPlanningGroup("Overdue", planningItems("overdue"), "overdue", "overdue")}
-              ${renderPlanningGroup("Due Today", planningItems("today"), "due_today", "today")}
-              ${renderPlanningGroup("Next 7 Days", planningItems("soon"), "in_progress", "soon")}
-              ${renderPlanningGroup("Follow-up Needed", followUpItems(), "blocked", "follow-up")}
-              ${renderPlanningGroup("PM Due Soon", planningPmItems(), "open", "pm")}
-            </div>
+            ${planningWorkOrdersReady && !planningWorkOrdersError ? renderPlanningBoard({
+      noDue: planningItems("no_due"),
+      followUp: followUpItems(),
+      overdue: planningItems("overdue"),
+      today: planningItems("today"),
+      soon: planningItems("soon"),
+      pm: planningPmItems()
+    }) : `
+              <div class="empty-state planning-load-state" aria-live="polite">
+                <strong>${planningWorkOrdersError ? "Planning could not be loaded" : "Loading Planning"}</strong>
+                <p>${escapeHtml(planningWorkOrdersError || "Gathering unscheduled, current, and upcoming work.")}</p>
+                ${planningWorkOrdersError ? `<button class="secondary-button" data-retry-planning type="button">Retry</button>` : ""}
+              </div>
+            `}
           </section>
 
           <section class="panel full-width ${activeSection === "requests" ? "" : "hidden-section"}">
@@ -4222,6 +4270,24 @@ Continue ${actionLabel}?`);
     }
     return response;
   }
+  var { savePlanningDueDate } = createPlanningDueDateWorkflow({
+    canEditOperationalRecords,
+    getPlanningWorkOrders: () => planningWorkOrders,
+    setPlanningWorkOrders: (value) => {
+      planningWorkOrders = value;
+    },
+    getWorkOrders: () => workOrders,
+    setWorkOrders: (value) => {
+      workOrders = value;
+    },
+    workOrderDateValue,
+    withOperationTimeout,
+    updateWorkOrderSafely,
+    resetNoDuePage: () => workspaceUiState.setPlanningPage("no-due", 1),
+    recordWorkOrderEvent,
+    showNotice,
+    renderWorkspace
+  });
   function checklistProgress(workOrder, procedure) {
     const steps = procedure.procedure_steps || [];
     const results = stepResultsByWorkOrder[workOrder.id] || {};
@@ -4772,6 +4838,7 @@ Continue ${actionLabel}?`);
       persistActiveLocationId(activeLocationId);
       await reloadWorkOrderQueue();
       await reloadRequestQueue();
+      if (activeSection === "planning") await reloadPlanningWorkOrderQueue();
       if (activeSection === "team") await reloadTeamWorkloads();
     };
     const locationSelect = document.querySelector("#location-select");
@@ -4827,6 +4894,7 @@ Continue ${actionLabel}?`);
       },
       loadPlatformPerformance,
       loadManagerDashboardCompletedWork,
+      reloadPlanningWorkOrderQueue,
       reloadWorkOrderQueue,
       renderWorkspace,
       resetWorkOrderPage,
@@ -4834,6 +4902,13 @@ Continue ${actionLabel}?`);
       setWorkOrderSearchMode,
       visibleNavItems
     });
+    if (activeSection === "planning") {
+      document.querySelector("[data-retry-planning]")?.addEventListener("click", () => {
+        invalidatePlanningWorkOrders();
+        renderWorkspace();
+        void reloadPlanningWorkOrderQueue({ force: true });
+      });
+    }
     if (activeSection === "conversions") {
       if (hasConversionDisplayHelpers()) {
         window.MaintainOpsConversions.bindConversionEvents({ favoriteStore: createShopReferenceFavoriteStore() });
@@ -5316,6 +5391,9 @@ Continue ${actionLabel}?`);
     });
     bindWorkspaceFollowUpWorkEvents({
       createFollowUpWorkOrder
+    });
+    bindWorkspacePlanningDueDateEvents({
+      savePlanningDueDate
     });
     bindProcedureWorkflowEvents();
     bindWorkspaceProcedureDeleteCancelEvents({

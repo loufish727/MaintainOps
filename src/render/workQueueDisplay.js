@@ -5,6 +5,10 @@
     teamMemberName,
     getWorkOrderAssigneeFilter,
     getWorkOrderFilter,
+    getWorkOrderTypeFilter = () => "all",
+    getWorkOrderPriorityFilter = () => "all",
+    getWorkSort = () => "newest",
+    getWorkGroup = () => "none",
     getActiveStatusFilter,
     getMyWorkFilter,
     getActiveSection,
@@ -14,6 +18,7 @@
     getProfilesByUserId,
     getSession,
     STATUS_OPTIONS,
+    TYPE_OPTIONS = [],
     OUTSIDE_VENDOR_VALUE,
     escapeHtml,
     cleanWorkOrderDescription,
@@ -37,8 +42,10 @@
             ? "Outside Vendor Work"
             : workOrderFilter === "assigned"
               ? "Assigned Work Orders"
-              : "All Work Orders";
-      if (activeStatusFilter === "active" || activeStatusFilter === "all") return baseTitle;
+              : "Work Orders";
+      if (activeStatusFilter === "active" || activeStatusFilter === "all") {
+        return baseTitle === "Work Orders" ? "Active Work Orders" : `Active - ${baseTitle}`;
+      }
       return `${statusLabel(activeStatusFilter)} - ${baseTitle}`;
     }
 
@@ -59,6 +66,201 @@
         ? (myWorkFilter === "created" ? "Created By Me" : "Assigned To Me")
         : "shown";
       return activeSection === "mywork" ? `${count} shown - ${context}` : `${count} shown`;
+    }
+
+    function optionMarkup(value, label, selectedValue) {
+      return `<option value="${escapeHtml(value)}" ${value === selectedValue ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    }
+
+    function assignmentFilterLabel(value) {
+      return {
+        all: "Any assignment",
+        assigned: "Team member",
+        vendor: "Outside vendor",
+        unassigned: "Unassigned",
+      }[value] || "Any assignment";
+    }
+
+    function priorityLabel(value) {
+      return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+    }
+
+    function renderWorkOrderFilterToolbar(members = []) {
+      const activeStatusFilter = getActiveStatusFilter();
+      const displayedStatusFilter = activeStatusFilter === "all" ? "active" : activeStatusFilter;
+      const workOrderFilter = getWorkOrderFilter();
+      const workOrderAssigneeFilter = getWorkOrderAssigneeFilter();
+      const workOrderTypeFilter = getWorkOrderTypeFilter();
+      const workOrderPriorityFilter = getWorkOrderPriorityFilter();
+      const workSort = getWorkSort();
+      const workGroup = getWorkGroup();
+      const completedView = ["completed", "completed_month", "completed_week"].includes(activeStatusFilter);
+      const filtersAreDefault = displayedStatusFilter === "active"
+        && workOrderFilter === "all"
+        && !workOrderAssigneeFilter
+        && workOrderTypeFilter === "all"
+        && workOrderPriorityFilter === "all"
+        && workSort === "newest"
+        && workGroup === "none";
+      const currentAssignee = members.find((member) => member.userId === workOrderAssigneeFilter);
+      const trail = [
+        `Status: ${statusLabel(displayedStatusFilter)}`,
+        `Assignment: ${assignmentFilterLabel(workOrderFilter)}`,
+        ...(currentAssignee ? [`Person: ${currentAssignee.name}`] : []),
+        ...(workOrderTypeFilter !== "all" ? [`Type: ${workOrderTypeLabel(workOrderTypeFilter)}`] : []),
+        ...(workOrderPriorityFilter !== "all" ? [`Priority: ${priorityLabel(workOrderPriorityFilter)}`] : []),
+      ];
+      const statusOptions = [
+        ["active", "Active work"],
+        ["open", "New"],
+        ["in_progress", "In progress"],
+        ["blocked", "Blocked"],
+        ["overdue", "Overdue"],
+        ["completed", "All completed"],
+        ["completed_month", "Completed this month"],
+        ["completed_week", "Completed this week"],
+      ];
+      const assignmentOptions = [
+        ["all", "Any assignment"],
+        ["assigned", "Team member"],
+        ["vendor", "Outside vendor"],
+        ["unassigned", "Unassigned"],
+      ];
+      const sortOptions = [
+        ["newest", "Recently created"],
+        ["due", "Due date soonest"],
+        ["priority", "Highest priority"],
+        ["type", "Work type A-Z"],
+        ["assigned", "Assigned person A-Z"],
+      ];
+      const groupOptions = [
+        ["none", "No grouping"],
+        ["assignee", "Assigned person"],
+        ["status", "Status"],
+        ["priority", "Priority"],
+        ["type", "Work type"],
+      ];
+
+      return `
+        <div class="work-order-controls" aria-label="Work order list controls">
+          <div class="work-filter-trail-row">
+            <div class="work-filter-trail">
+              <span class="work-control-kicker">Current view</span>
+              <ol aria-label="Current work order filters">
+                <li><span>Work Orders</span></li>
+                ${trail.map((item) => `<li><span>${escapeHtml(item)}</span></li>`).join("")}
+              </ol>
+            </div>
+            <button class="text-button work-filter-clear" data-clear-work-filters type="button" ${filtersAreDefault ? "disabled" : ""}>Clear filters</button>
+          </div>
+          <div class="work-control-section">
+            <span class="work-control-section-title">Filter by</span>
+            <div class="work-control-fields work-filter-fields">
+              <label class="work-control-field ${displayedStatusFilter !== "active" ? "is-active" : ""}">
+                <span>Status</span>
+                <select data-work-status-filter aria-label="Filter work orders by status">
+                  ${statusOptions.map(([value, label]) => optionMarkup(value, label, displayedStatusFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderFilter !== "all" ? "is-active" : ""}">
+                <span>Assignment</span>
+                <select data-work-assignment-filter aria-label="Filter work orders by assignment">
+                  ${assignmentOptions.map(([value, label]) => optionMarkup(value, label, workOrderFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderAssigneeFilter ? "is-active" : ""}">
+                <span>Assigned person</span>
+                <select data-work-assignee-filter aria-label="Filter work orders by assigned person">
+                  ${optionMarkup("", "Any team member", workOrderAssigneeFilter)}
+                  ${members.map((member) => optionMarkup(member.userId, member.name, workOrderAssigneeFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderTypeFilter !== "all" ? "is-active" : ""}">
+                <span>Work type</span>
+                <select data-work-type-filter aria-label="Filter work orders by work type">
+                  ${optionMarkup("all", "Any type", workOrderTypeFilter)}
+                  ${TYPE_OPTIONS.map((type) => optionMarkup(type, workOrderTypeLabel(type), workOrderTypeFilter)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workOrderPriorityFilter !== "all" ? "is-active" : ""}">
+                <span>Priority</span>
+                <select data-work-priority-filter aria-label="Filter work orders by priority">
+                  ${optionMarkup("all", "Any priority", workOrderPriorityFilter)}
+                  ${["critical", "high", "medium", "low"].map((priority) => optionMarkup(priority, priorityLabel(priority), workOrderPriorityFilter)).join("")}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="work-control-section arrange-controls">
+            <span class="work-control-section-title">Arrange by</span>
+            <div class="work-control-fields">
+              <label class="work-control-field">
+                <span>Sort</span>
+                <select data-work-sort-filter aria-label="Sort work orders" ${completedView ? "disabled" : ""}>
+                  ${completedView
+                    ? optionMarkup("completed", "Recently completed", "completed")
+                    : sortOptions.map(([value, label]) => optionMarkup(value, label, workSort)).join("")}
+                </select>
+              </label>
+              <label class="work-control-field ${workGroup !== "none" ? "is-active" : ""}">
+                <span>Group</span>
+                <select data-work-group-filter aria-label="Group work orders">
+                  ${groupOptions.map(([value, label]) => optionMarkup(value, label, workGroup)).join("")}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function workOrderGroupDescriptor(workOrder, groupBy) {
+      if (groupBy === "assignee") {
+        if (isVendorAssigned(workOrder)) return { key: "vendor", label: "Outside vendor", order: 900 };
+        if (!workOrder.assigned_to) return { key: "unassigned", label: "Unassigned", order: 901 };
+        const label = assignmentLabel(workOrder);
+        return { key: `assignee:${workOrder.assigned_to}`, label, order: 100 };
+      }
+      if (groupBy === "status") {
+        const order = ["open", "in_progress", "blocked", "completed"].indexOf(workOrder.status);
+        return { key: `status:${workOrder.status}`, label: statusLabel(workOrder.status), order: order < 0 ? 99 : order };
+      }
+      if (groupBy === "priority") {
+        const order = ["critical", "high", "medium", "low"].indexOf(workOrder.priority);
+        return { key: `priority:${workOrder.priority}`, label: priorityLabel(workOrder.priority || "Unspecified"), order: order < 0 ? 99 : order };
+      }
+      const type = workOrder.type || "corrective";
+      const order = TYPE_OPTIONS.indexOf(type);
+      return { key: `type:${type}`, label: workOrderTypeLabel(type), order: order < 0 ? 99 : order };
+    }
+
+    function renderWorkOrderCollection(workOrders, options = {}) {
+      if (!workOrders.length) return `<p class="muted">No work orders match these filters.</p>`;
+      const groupBy = options.groupBy || "none";
+      if (groupBy === "none") {
+        return `<div class="work-list" id="work-order-list">${workOrders.map(renderWorkOrderCard).join("")}</div>`;
+      }
+
+      const groups = new Map();
+      workOrders.forEach((workOrder) => {
+        const descriptor = workOrderGroupDescriptor(workOrder, groupBy);
+        if (!groups.has(descriptor.key)) groups.set(descriptor.key, { ...descriptor, workOrders: [] });
+        groups.get(descriptor.key).workOrders.push(workOrder);
+      });
+      const orderedGroups = [...groups.values()].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+      return `
+        <div class="work-order-groups" id="work-order-list">
+          ${orderedGroups.map((group) => `
+            <section class="work-order-group">
+              <div class="work-order-group-heading">
+                <h3>${escapeHtml(group.label)}</h3>
+                <span>${group.workOrders.length}</span>
+              </div>
+              <div class="work-list">${group.workOrders.map(renderWorkOrderCard).join("")}</div>
+            </section>
+          `).join("")}
+        </div>
+      `;
     }
 
     function renderWorkOrderCard(workOrder) {
@@ -179,6 +381,8 @@
       myWorkPanelTitle,
       workQueuePanelTitle,
       workQueuePanelSubtitle,
+      renderWorkOrderFilterToolbar,
+      renderWorkOrderCollection,
       renderWorkOrderCard,
       renderCardAssignmentControl,
       renderAssignmentSelect,

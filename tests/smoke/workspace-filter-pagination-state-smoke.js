@@ -46,6 +46,12 @@ function createField(dataset, value) {
   return field;
 }
 
+function createDetails(dataset, open) {
+  const details = createButton(dataset);
+  details.open = open;
+  return details;
+}
+
 const storage = createStorage({
   "maintainops.workOrderPage": "4",
   "maintainops.financialPage": "2",
@@ -62,6 +68,14 @@ const myWorkCreated = createButton({ myWorkFilter: "created" });
 const workFilterVendor = createButton({ workOrderFilter: "vendor" });
 const workSortDue = createButton({ workSort: "due" });
 const workAssigneeSortFilter = createField({}, "user-2");
+const guidedStatus = createField({}, "blocked");
+const guidedAssignment = createField({}, "unassigned");
+const guidedAssignee = createField({}, "user-3");
+const guidedType = createField({}, "preventive");
+const guidedPriority = createField({}, "critical");
+const guidedSort = createField({}, "assigned");
+const guidedGroup = createField({}, "assignee");
+const clearWorkFilters = createButton({});
 const requestConverted = createButton({ requestFilter: "converted" });
 const workNext = createButton({ workPage: "next" });
 const assetNext = createButton({ assetsPage: "next" });
@@ -73,6 +87,7 @@ const procedureNext = createButton({ listPage: "procedures", pageDirection: "nex
 const memberNext = createButton({ listPage: "members", pageDirection: "next" });
 const messageNext = createButton({ listPage: "messages", pageDirection: "next" });
 const planningFollowUpNext = createButton({ listPage: "planning-follow-up", pageDirection: "next" });
+const planningNoDueGroup = createDetails({ planningGroup: "no-due" }, false);
 const clearAssignee = createButton({});
 
 const doc = {
@@ -80,8 +95,16 @@ const doc = {
     if (selector === "[data-status-filter]") return [statusRequests];
     if (selector === "[data-my-work-filter]") return [myWorkCreated];
     if (selector === "[data-work-order-filter]") return [workFilterVendor];
+    if (selector === "[data-work-status-filter]") return [guidedStatus];
+    if (selector === "[data-work-assignment-filter]") return [guidedAssignment];
+    if (selector === "[data-work-assignee-filter]") return [guidedAssignee];
+    if (selector === "[data-work-type-filter]") return [guidedType];
+    if (selector === "[data-work-priority-filter]") return [guidedPriority];
     if (selector === "[data-clear-assignee-filter]") return [clearAssignee];
     if (selector === "[data-work-sort]") return [workSortDue];
+    if (selector === "[data-work-sort-filter]") return [guidedSort];
+    if (selector === "[data-work-group-filter]") return [guidedGroup];
+    if (selector === "[data-clear-work-filters]") return [clearWorkFilters];
     if (selector === "[data-work-assignee-sort-filter]") return [workAssigneeSortFilter];
     if (selector === "[data-request-filter]") return [requestConverted];
     if (selector === "[data-work-page]") return [workNext];
@@ -90,6 +113,7 @@ const doc = {
     if (selector === "[data-financial-page]") return [financialNext];
     if (selector === "[data-financial-filter]") return [financialArea];
     if (selector === "[data-list-page]") return [requestNext, scheduleNext, procedureNext, memberNext, messageNext, planningFollowUpNext];
+    if (selector === "[data-planning-group]") return [planningNoDueGroup];
     return [];
   },
 };
@@ -152,6 +176,57 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(invalidateCount, 2);
   assert.equal(workReloadCount, 5);
 
+  await guidedStatus.dispatch("change");
+  assert.equal(state.getActiveStatusFilter(), "blocked");
+  assert.equal(invalidateCount, 3);
+  assert.equal(workReloadCount, 6);
+
+  await guidedAssignment.dispatch("change");
+  assert.equal(state.getWorkOrderFilter(), "unassigned");
+  assert.equal(state.getWorkOrderAssigneeFilter(), "");
+  assert.equal(invalidateCount, 4);
+  assert.equal(workReloadCount, 7);
+
+  await guidedAssignee.dispatch("change");
+  assert.equal(state.getWorkOrderAssigneeFilter(), "user-3");
+  assert.equal(state.getWorkOrderFilter(), "assigned");
+  assert.equal(invalidateCount, 5);
+  assert.equal(workReloadCount, 8);
+
+  await guidedType.dispatch("change");
+  assert.equal(state.getWorkOrderTypeFilter(), "preventive");
+  assert.equal(storage.values["maintainops.workOrderTypeFilter"], "preventive");
+  assert.equal(invalidateCount, 6);
+  assert.equal(workReloadCount, 9);
+
+  await guidedPriority.dispatch("change");
+  assert.equal(state.getWorkOrderPriorityFilter(), "critical");
+  assert.equal(storage.values["maintainops.workOrderPriorityFilter"], "critical");
+  assert.equal(invalidateCount, 7);
+  assert.equal(workReloadCount, 10);
+
+  await guidedSort.dispatch("change");
+  assert.equal(state.getWorkSort(), "assigned");
+  assert.equal(invalidateCount, 8);
+  assert.equal(workReloadCount, 11);
+
+  await guidedGroup.dispatch("change");
+  assert.equal(state.getWorkGroup(), "assignee");
+  assert.equal(storage.values["maintainops.workGroup"], "assignee");
+  assert.equal(renderCount, 1);
+  assert.equal(workReloadCount, 11);
+
+  await clearWorkFilters.dispatch("click");
+  assert.equal(state.getActiveStatusFilter(), "active");
+  assert.equal(state.getWorkOrderFilter(), "all");
+  assert.equal(state.getWorkOrderAssigneeFilter(), "");
+  assert.equal(state.getWorkOrderTypeFilter(), "all");
+  assert.equal(state.getWorkOrderPriorityFilter(), "all");
+  assert.equal(state.getWorkSort(), "newest");
+  assert.equal(state.getWorkGroup(), "none");
+  assert.equal(invalidateCount, 9);
+  assert.equal(workReloadCount, 12);
+
   await requestConverted.dispatch("click");
   assert.equal(state.getRequestViewFilter(), "converted");
   assert.equal(state.getRequestsPage(), 1);
@@ -161,26 +236,26 @@ bindWorkspaceFilterPaginationEvents({
   await workNext.dispatch("click");
   assert.equal(state.getWorkOrderPage(), 2);
   assert.equal(storage.values["maintainops.workOrderPage"], "2");
-  assert.equal(workReloadCount, 6);
+  assert.equal(workReloadCount, 13);
 
   await assetNext.dispatch("click");
   assert.equal(state.getAssetsPage(), 2);
   assert.equal(storage.values["maintainops.assetsPage"], "2");
-  assert.equal(renderCount, 1);
+  assert.equal(renderCount, 2);
 
   await financialNext.dispatch("click");
   assert.equal(state.getFinancialPage(), 3);
   assert.equal(storage.values["maintainops.financialPage"], "3");
   assert.equal(state.getAssetsPage(), 2);
   assert.equal(storage.values["maintainops.assetsPage"], "2");
-  assert.equal(renderCount, 2);
+  assert.equal(renderCount, 3);
 
   await financialArea.dispatch("change");
   assert.equal(state.getFinancialAreaFilter(), "Bay 3");
   assert.equal(storage.values["maintainops.financialAreaFilter"], "Bay 3");
   assert.equal(state.getFinancialPage(), 1);
   assert.equal(storage.values["maintainops.financialPage"], "1");
-  assert.equal(renderCount, 3);
+  assert.equal(renderCount, 4);
 
   await requestNext.dispatch("click");
   assert.equal(state.getRequestsPage(), 2);
@@ -199,7 +274,12 @@ bindWorkspaceFilterPaginationEvents({
   assert.equal(state.getPlanningPage("follow-up"), 3);
   assert.equal(storage.values["maintainops.messageThreadsPage"], "3");
   assert.equal(storage.values["maintainops.planningFollowUpPage"], "3");
-  assert.equal(renderCount, 8);
+  assert.equal(renderCount, 9);
+
+  planningNoDueGroup.open = true;
+  await planningNoDueGroup.dispatch("toggle");
+  assert.equal(state.getPlanningGroupOpen("no-due", false), true);
+  assert.match(storage.values["maintainops.planningGroupOpen"], /"no-due":true/);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

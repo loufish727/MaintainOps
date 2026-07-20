@@ -5,11 +5,15 @@ global.window = {};
 const { createWorkQueueDisplayHelpers } = require("../../src/render/workQueueDisplay.js");
 
 const helpers = createWorkQueueDisplayHelpers({
-  statusLabel: (status) => status.replaceAll("_", " "),
+  statusLabel: (status) => status === "active" ? "Active" : status.replaceAll("_", " "),
   workOrderTypeLabel: (type) => type === "reactive" ? "Corrective" : type,
   teamMemberName: (userId) => userId === "user-2" ? "Morgan Manager" : userId,
   getWorkOrderAssigneeFilter: () => "",
   getWorkOrderFilter: () => "all",
+  getWorkOrderTypeFilter: () => "all",
+  getWorkOrderPriorityFilter: () => "all",
+  getWorkSort: () => "newest",
+  getWorkGroup: () => "none",
   getActiveStatusFilter: () => "active",
   getMyWorkFilter: () => "assigned",
   getActiveSection: () => "work",
@@ -22,6 +26,7 @@ const helpers = createWorkQueueDisplayHelpers({
   }),
   getSession: () => ({ user: { id: "user-1" } }),
   STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
+  TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
   OUTSIDE_VENDOR_VALUE: "__outside_vendor__",
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
   cleanWorkOrderDescription: (value) => String(value || "").replace("Generated from public request:", "").trim(),
@@ -34,8 +39,28 @@ const helpers = createWorkQueueDisplayHelpers({
   canManageTeam: () => true,
 });
 
-assert.equal(helpers.workQueuePanelTitle(), "All Work Orders");
+assert.equal(helpers.workQueuePanelTitle(), "Active Work Orders");
 assert.equal(helpers.workQueuePanelSubtitle(4), "4 shown");
+
+const toolbar = helpers.renderWorkOrderFilterToolbar([
+  { userId: "user-1", name: "Taylor Tech" },
+  { userId: "user-2", name: "Morgan Manager" },
+]);
+assert.match(toolbar, /Current view/);
+assert.match(toolbar, /Status: Active/);
+assert.match(toolbar, /Assignment: Any assignment/);
+assert.match(toolbar, /data-work-status-filter/);
+assert.match(toolbar, /data-work-assignment-filter/);
+assert.match(toolbar, /data-work-assignee-filter/);
+assert.match(toolbar, /data-work-type-filter/);
+assert.match(toolbar, /data-work-priority-filter/);
+assert.match(toolbar, /data-work-sort-filter/);
+assert.match(toolbar, /data-work-group-filter/);
+assert.match(toolbar, /Morgan Manager/);
+assert.match(toolbar, /Highest priority/);
+assert.match(toolbar, /Work type A-Z/);
+assert.match(toolbar, /data-clear-work-filters type="button" disabled/);
+assert.doesNotMatch(toolbar, /data-work-assignee-sort-filter/);
 
 const workOrder = {
   id: "wo-1",
@@ -66,6 +91,18 @@ assert.match(card, /data-card-assign="wo-1"/);
 assert.match(card, /data-quick-status="in_progress"/);
 assert.match(card, /data-quick-status="blocked"/);
 assert.doesNotMatch(card, /data-quick-status="open"/);
+
+const grouped = helpers.renderWorkOrderCollection([
+  workOrder,
+  { ...workOrder, id: "wo-2", title: "Unassigned press", assigned_to: null },
+], { groupBy: "assignee" });
+assert.match(grouped, /work-order-groups/);
+assert.match(grouped, /Morgan Manager/);
+assert.match(grouped, /Unassigned/);
+
+const ungrouped = helpers.renderWorkOrderCollection([workOrder], { groupBy: "none" });
+assert.match(ungrouped, /class="work-list" id="work-order-list"/);
+assert.doesNotMatch(ungrouped, /work-order-group-heading/);
 
 const assignmentField = helpers.renderWorkOrderAssignmentField(workOrder, "assign-target");
 assert.match(assignmentField, /id="assign-target"/);

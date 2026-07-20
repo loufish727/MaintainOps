@@ -44,6 +44,8 @@ function createQuery() {
 
 let activeStatusFilter = "completed";
 let workSort = "newest";
+let workOrderTypeFilter = "all";
+let workOrderPriorityFilter = "all";
 const queryHelpers = createWorkOrderQueryFilterHelpers({
   activeCompanyId: () => "company-1",
   activeLocationId: () => "loc-1",
@@ -52,6 +54,8 @@ const queryHelpers = createWorkOrderQueryFilterHelpers({
   activeStatusFilter: () => activeStatusFilter,
   workOrderAssigneeFilter: () => "",
   workOrderFilter: () => "all",
+  workOrderTypeFilter: () => workOrderTypeFilter,
+  workOrderPriorityFilter: () => workOrderPriorityFilter,
   myWorkFilter: () => "assigned",
   session: () => ({ user: { id: "user-1" } }),
   searchQuery: () => "",
@@ -70,6 +74,40 @@ const query = createQuery();
 queryHelpers.applyWorkOrderStatusFilter(query, "completed");
 assert.deepEqual(query.calls, [["eq", "status", "completed"]]);
 
+workOrderTypeFilter = "preventive";
+workOrderPriorityFilter = "critical";
+const attributeFiltered = createQuery();
+queryHelpers.applyWorkOrderFilters(attributeFiltered, {
+  statusFilter: "active",
+  includeQueue: false,
+  includeSearch: false,
+});
+assert.deepEqual(attributeFiltered.calls, [
+  ["eq", "company_id", "company-1"],
+  ["eq", "location_id", "loc-1"],
+  ["eq", "type", "preventive"],
+  ["eq", "priority", "critical"],
+  ["neq", "status", "completed"],
+]);
+
+const attributesExcluded = createQuery();
+queryHelpers.applyWorkOrderFilters(attributesExcluded, {
+  statusFilter: "active",
+  includeQueue: false,
+  includeSearch: false,
+  includeAttributeFilters: false,
+});
+assert.doesNotMatch(JSON.stringify(attributesExcluded.calls), /preventive|critical/);
+
+const myWorkAttributesExcluded = createQuery();
+queryHelpers.applyWorkOrderFilters(myWorkAttributesExcluded, {
+  statusFilter: "active",
+  section: "mywork",
+  includeQueue: false,
+  includeSearch: false,
+});
+assert.doesNotMatch(JSON.stringify(myWorkAttributesExcluded.calls), /preventive|critical/);
+
 const sorted = createQuery();
 queryHelpers.applyWorkOrderSort(sorted);
 assert.deepEqual(sorted.calls, [
@@ -78,6 +116,23 @@ assert.deepEqual(sorted.calls, [
 ]);
 
 activeStatusFilter = "active";
+workSort = "priority";
+const prioritySorted = createQuery();
+queryHelpers.applyWorkOrderSort(prioritySorted);
+assert.deepEqual(prioritySorted.calls, [
+  ["order", "priority_rank", { ascending: false }],
+  ["order", "due_at", { ascending: true, nullsFirst: false }],
+  ["order", "created_at", { ascending: false }],
+]);
+
+workSort = "type";
+const typeSorted = createQuery();
+queryHelpers.applyWorkOrderSort(typeSorted);
+assert.deepEqual(typeSorted.calls, [
+  ["order", "type", { ascending: true }],
+  ["order", "created_at", { ascending: false }],
+]);
+
 workSort = "assigned";
 const assignedSorted = createQuery();
 queryHelpers.applyWorkOrderSort(assignedSorted);
@@ -116,6 +171,17 @@ const assignedOrder = [
   { id: "a", label: "Alex", created_at: "2026-06-01T00:00:00Z" },
 ].sort(assignedSortHelpers.compareWorkOrders);
 assert.equal(assignedOrder[0].id, "a");
+
+const typeSortHelpers = createWorkOrderSortDisplayHelpers({
+  getActiveStatusFilter: () => "active",
+  getWorkSort: () => "type",
+});
+const typeOrder = [
+  { id: "preventive", type: "preventive", created_at: "2026-07-01T00:00:00Z" },
+  { id: "fabrication", type: "fabrication", created_at: "2026-07-02T00:00:00Z" },
+  { id: "corrective", type: "corrective", created_at: "2026-07-03T00:00:00Z" },
+].sort(typeSortHelpers.compareWorkOrders);
+assert.deepEqual(typeOrder.map((workOrder) => workOrder.id), ["corrective", "fabrication", "preventive"]);
 
 const dashboard = createDashboardDisplayHelpers({
   getWorkOrderDashboardCounts: () => ({ activeWork: 1, newWork: 1, inProgress: 0, blocked: 0, overdue: 0, completedAll: 12, completedMonth: 4, completedWeek: 2 }),

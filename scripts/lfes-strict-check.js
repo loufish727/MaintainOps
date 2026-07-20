@@ -220,8 +220,10 @@ async function main() {
     "tests/smoke/equipment-choice-browser.spec.js",
     "tests/smoke/equipment-history-scroll-browser.spec.js",
     "tests/smoke/financial-archived-edit-browser.spec.js",
+    "tests/smoke/planning-layout-browser.spec.js",
     "tests/smoke/quick-fix-date-field-browser.spec.js",
     "tests/smoke/team-sections-browser.spec.js",
+    "tests/smoke/work-order-filter-toolbar-browser.spec.js",
   ], {
     label: "targeted browser regression smokes",
   }));
