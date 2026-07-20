@@ -20,6 +20,7 @@ create table if not exists public.company_members (
   company_id uuid not null references public.companies(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   role text not null default 'member' check (role in ('admin', 'manager', 'accounting', 'technician', 'member')),
+  default_location_id uuid,
   created_at timestamptz not null default now(),
   unique (company_id, user_id)
 );
@@ -32,6 +33,23 @@ create table if not exists public.locations (
   unique (company_id, id),
   unique (company_id, name)
 );
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'company_members_default_location_id_fkey'
+      and conrelid = 'public.company_members'::regclass
+  ) then
+    alter table public.company_members
+      add constraint company_members_default_location_id_fkey
+      foreign key (default_location_id)
+      references public.locations(id)
+      on delete set null;
+  end if;
+end;
+$$;
 
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
@@ -225,6 +243,18 @@ create table if not exists public.asset_events (
   actor_id uuid not null references auth.users(id) on delete restrict,
   event_type text not null,
   summary text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.applied_migrations (
+  id uuid primary key default gen_random_uuid(),
+  filename text not null unique,
+  applied_at timestamptz not null default now(),
+  project_ref text,
+  applied_by uuid references auth.users(id) on delete set null,
+  applied_by_note text,
+  verification text,
+  rollback_note text,
   created_at timestamptz not null default now()
 );
 
@@ -547,8 +577,7 @@ grant select, insert on public.work_order_parts to authenticated;
 grant select, insert on public.part_documents to authenticated;
 grant select, insert on public.work_order_events to authenticated;
 grant select, insert on public.asset_events to authenticated;
-grant execute on function public.create_company(text) to authenticated;
-grant execute on function public.ensure_company_profile(uuid) to authenticated;
+grant select on public.applied_migrations to authenticated;
 
 create or replace function private.is_company_member(target_company_id uuid)
 returns boolean
@@ -707,6 +736,69 @@ begin
 end;
 $$;
 
+grant execute on function public.create_company(text) to authenticated;
+grant execute on function public.ensure_company_profile(uuid) to authenticated;
+
+create or replace function public.record_applied_migration(
+  migration_filename text,
+  migration_project_ref text default null,
+  migration_verification text default null,
+  migration_rollback_note text default null,
+  migration_applied_by_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  actor_role text;
+  migration_id uuid;
+begin
+  select cm.role
+  into actor_role
+  from public.company_members cm
+  where cm.user_id = auth.uid()
+    and cm.role = 'admin'
+  limit 1;
+
+  if actor_role is distinct from 'admin' then
+    raise exception 'Only admins can record applied migrations.';
+  end if;
+
+  insert into public.applied_migrations (
+    filename,
+    project_ref,
+    applied_by,
+    applied_by_note,
+    verification,
+    rollback_note
+  )
+  values (
+    migration_filename,
+    migration_project_ref,
+    auth.uid(),
+    migration_applied_by_note,
+    migration_verification,
+    migration_rollback_note
+  )
+  on conflict (filename) do update
+  set
+    applied_at = now(),
+    project_ref = excluded.project_ref,
+    applied_by = excluded.applied_by,
+    applied_by_note = excluded.applied_by_note,
+    verification = excluded.verification,
+    rollback_note = excluded.rollback_note
+  returning id into migration_id;
+
+  return migration_id;
+end;
+$$;
+
+revoke all on function public.record_applied_migration(text, text, text, text, text) from public, anon;
+grant execute on function public.record_applied_migration(text, text, text, text, text) to authenticated;
+
 alter table public.companies enable row level security;
 alter table public.company_members enable row level security;
 alter table public.locations enable row level security;
@@ -723,6 +815,22 @@ alter table public.work_order_parts enable row level security;
 alter table public.part_documents enable row level security;
 alter table public.work_order_events enable row level security;
 alter table public.asset_events enable row level security;
+alter table public.applied_migrations enable row level security;
+
+drop policy if exists "Admins can read applied migrations" on public.applied_migrations;
+create policy "Admins can read applied migrations"
+on public.applied_migrations for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.company_members cm
+    where cm.user_id = auth.uid()
+      and cm.role = 'admin'
+  )
+);
+
+revoke all on public.applied_migrations from public, anon;
 
 drop policy if exists "Members can read companies" on public.companies;
 create policy "Members can read companies"

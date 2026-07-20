@@ -1,0 +1,55 @@
+name: Authenticated LFES Proof
+
+on:
+  workflow_dispatch:
+
+jobs:
+  authenticated_lfes:
+    name: Authenticated LFES
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: lfes-qa
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated LFES proof
+        run: npm run test:lfes:authenticated
+        env:
+          MAINTAINOPS_BASE_URL: https://loufish727.github.io/MaintainOps/
+          LFES_ADMIN_EMAIL: ${{ secrets.LFES_ADMIN_EMAIL }}
+          LFES_ADMIN_PASSWORD: ${{ secrets.LFES_ADMIN_PASSWORD }}
+          LFES_MANAGER_EMAIL: ${{ secrets.LFES_MANAGER_EMAIL }}
+          LFES_MANAGER_PASSWORD: ${{ secrets.LFES_MANAGER_PASSWORD }}
+          LFES_ACCOUNTING_EMAIL: ${{ secrets.LFES_ACCOUNTING_EMAIL }}
+          LFES_ACCOUNTING_PASSWORD: ${{ secrets.LFES_ACCOUNTING_PASSWORD }}
+          LFES_TECHNICIAN_EMAIL: ${{ secrets.LFES_TECHNICIAN_EMAIL }}
+          LFES_TECHNICIAN_PASSWORD: ${{ secrets.LFES_TECHNICIAN_PASSWORD }}
+          LFES_QA_COMPANY_ID: ${{ secrets.LFES_QA_COMPANY_ID }}
+          LFES_FORBIDDEN_COMPANY_ID: ${{ secrets.LFES_FORBIDDEN_COMPANY_ID }}
+          LFES_TECH_DELETE_REQUEST_ID: ${{ secrets.LFES_TECH_DELETE_REQUEST_ID }}
+
+      - name: Upload LFES evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: authenticated-lfes-evidence
+          path: lfes-evidence/
+          if-no-files-found: error
+          retention-days: 30

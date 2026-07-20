@@ -16,11 +16,25 @@ Static SQL/RPC audit:
 npm run test:security:static
 ```
 
+Isolated PostgreSQL schema, migration, catalog, and seeded RLS verification:
+
+```bash
+npm run test:schema:isolated
+```
+
 Live anonymous and optional authenticated boundary probe:
 
 ```bash
 npm run test:security:boundary
 ```
+
+The full hosted role proof is deliberately fail-closed and requires four dedicated QA roles plus disposable fixture identifiers:
+
+```bash
+npm run test:lfes:authenticated
+```
+
+The manual GitHub workflow `Authenticated LFES Proof` supplies these through the protected `lfes-qa` environment. A missing credential is a failure, never an informational pass. See `docs/LFES/PROOF_MODEL.md` for the complete secret list and proof boundaries.
 
 Authenticated cross-company probing requires environment variables. Do not commit credentials.
 
@@ -33,16 +47,19 @@ npm run test:security:boundary
 
 ## Latest Local Results
 
-Last checked: 2026-07-06.
+Last checked: 2026-07-20.
 
 Strict LFES:
 
-- security static audit: PASS.
-- security boundary probe: PASS.
+- recursive security static audit: PASS; 97 SQL files and all dated migrations inspected.
+- live anonymous security boundary probe: PASS.
+- isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.
+- generated bundle cleanliness: PASS.
 - broad Node smoke sweep: PASS.
 - work attachment smoke suite: PASS.
 - equipment-history and date-field browser regression smokes: PASS.
 - local resource-load smoke: PASS.
+- authenticated hosted proof: NOT RUN; the `lfes-qa` GitHub environment exists, but its dedicated QA credentials and fixture identifiers are not configured.
 
 Static SQL audit:
 
@@ -56,7 +73,7 @@ Live anonymous boundary probe:
 - public request intake invalid-token probe: PASS.
 - public request submission invalid-token probe: PASS.
 
-Live authenticated cross-company probe:
+Last recorded live authenticated cross-company probe:
 
 - a signed-in QA user was tested against a separate forbidden QA company id.
 - `work_orders`: PASS; zero forbidden-company rows visible.

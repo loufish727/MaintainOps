@@ -4,6 +4,7 @@ verify-*.png
 node_modules/
 test-results/
 playwright-report/
+lfes-evidence/
 dist/
 MaintainOps-github-clean-*/
 MaintainOps-github-clean-*.zip

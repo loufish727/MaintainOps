@@ -1,0 +1,53 @@
+# LFES Proof Model
+
+LFES separates evidence by what actually ran. A green check must not imply that a skipped or unavailable layer passed.
+
+## Required Release Gate
+
+`npm run test:lfes:strict` is the required GitHub branch-protection check. It proves that the tested commit passed:
+
+- recursive static inspection of every repository SQL file, including dated migrations
+- live anonymous Data API, RPC, and storage boundary probes
+- a clean in-memory PostgreSQL build of `supabase/schema.sql` and every dated migration
+- PostgreSQL catalog checks for RLS and security-definer `search_path`
+- seeded cross-company, manager read-only, and accounting write RLS checks
+- runtime bundle generation, manifest validation, and committed-output cleanliness
+- the broad Node smoke suite and targeted browser regressions
+- local application resource loading and mobile Performance interaction
+
+The command writes machine-readable evidence to `lfes-evidence/`. GitHub retains that directory as the `strict-lfes-evidence` artifact for 30 days.
+
+This gate does not claim that authenticated checks against the hosted Supabase project ran. Those require dedicated QA users and are a separate proof layer.
+
+## Authenticated Hosted Proof
+
+`npm run test:lfes:authenticated` is fail-closed. It refuses to run without all required QA credentials and fixture identifiers. When configured, it proves:
+
+- a technician cannot see another QA company's rows
+- technician manager/admin RPC attempts are rejected
+- forbidden-company storage upload is rejected
+- technician request deletion and internal-request photo attachment are rejected
+- admin, manager, accounting, and technician can sign in to the hosted app
+- each role receives the expected navigation, Team workload counts, Financial access, and operational read/edit presentation
+
+The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes-qa` environment with these names:
+
+- `LFES_ADMIN_EMAIL` and `LFES_ADMIN_PASSWORD`
+- `LFES_MANAGER_EMAIL` and `LFES_MANAGER_PASSWORD`
+- `LFES_ACCOUNTING_EMAIL` and `LFES_ACCOUNTING_PASSWORD`
+- `LFES_TECHNICIAN_EMAIL` and `LFES_TECHNICIAN_PASSWORD`
+- `LFES_QA_COMPANY_ID`
+- `LFES_FORBIDDEN_COMPANY_ID`
+- `LFES_TECH_DELETE_REQUEST_ID`
+
+Use dedicated disposable QA companies and users. Do not store personal or production-company credentials in GitHub.
+
+## LFES Gold
+
+LFES Gold remains the human, risk-scoped engineering audit. It uses the automated evidence but also covers scope, architecture, live behavior, rollback, operational impact, and findings that cannot be established by one command.
+
+The three results must be reported separately:
+
+1. Required Release Gate: `PASS` or `FAIL`.
+2. Authenticated Hosted Proof: `PASS`, `FAIL`, or `NOT RUN`.
+3. LFES Gold review: completed findings and residual risk.

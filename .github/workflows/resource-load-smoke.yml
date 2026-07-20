@@ -51,6 +51,15 @@ jobs:
             exit 1
           fi
 
+      - name: Upload deterministic LFES evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: strict-lfes-evidence
+          path: lfes-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
   hosted-resource-load-smoke:
     needs: strict_lfes
     if: >-
