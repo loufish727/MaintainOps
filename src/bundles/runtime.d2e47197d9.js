@@ -11156,6 +11156,9 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
           scrollToSectionTop();
           if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
           if (nextSection === "requests") await options.reloadRequestQueue();
+          if (nextSection === "team" && typeof options.reloadTeamWorkloads === "function") {
+            await options.reloadTeamWorkloads();
+          }
           if (nextSection === "setup" && typeof options.loadSetupStorageDashboard === "function") {
             await options.loadSetupStorageDashboard();
             options.renderWorkspace();
@@ -12334,6 +12337,12 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
       if (locationsReady && locationId) query = query.eq("location_id", locationId);
       return query;
     }
+    function scopedTeamWorkloadQuery(supabaseClient, params) {
+      const { companyId, locationId, locationsReady } = params;
+      let query = supabaseClient.from("work_orders").select("id, assigned_to, status, due_at, location_id").eq("company_id", companyId).in("status", ["open", "in_progress", "blocked"]).not("assigned_to", "is", null);
+      if (locationsReady && locationId) query = query.eq("location_id", locationId);
+      return query.order("id", { ascending: true });
+    }
     async function fetchPagedSearchRows(buildQuery, onRows, maxRows = Infinity, pageSizeLimit = 1e3) {
       let from = 0;
       let fetched = 0;
@@ -12355,6 +12364,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
       fetchWorkOrdersByAsset,
       fetchWorkOrdersByIds,
       scopedWorkOrderSearchQuery,
+      scopedTeamWorkloadQuery,
       fetchPagedSearchRows
     };
   })();

@@ -57,6 +57,18 @@
     return query;
   }
 
+  function scopedTeamWorkloadQuery(supabaseClient, params) {
+    const { companyId, locationId, locationsReady } = params;
+    let query = supabaseClient
+      .from("work_orders")
+      .select("id, assigned_to, status, due_at, location_id")
+      .eq("company_id", companyId)
+      .in("status", ["open", "in_progress", "blocked"])
+      .not("assigned_to", "is", null);
+    if (locationsReady && locationId) query = query.eq("location_id", locationId);
+    return query.order("id", { ascending: true });
+  }
+
   async function fetchPagedSearchRows(buildQuery, onRows, maxRows = Infinity, pageSizeLimit = 1000) {
     let from = 0;
     let fetched = 0;
@@ -79,6 +91,7 @@
     fetchWorkOrdersByAsset,
     fetchWorkOrdersByIds,
     scopedWorkOrderSearchQuery,
+    scopedTeamWorkloadQuery,
     fetchPagedSearchRows,
   };
 })();

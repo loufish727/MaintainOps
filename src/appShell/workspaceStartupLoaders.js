@@ -56,6 +56,7 @@ export function createWorkspaceStartupLoaders({
   if (activeSection === "settings") immediateLoaders.push(["Public request links", "loadPublicRequestLinks"]);
   if (activeSection === "setup") immediateLoaders.push(["Storage dashboard", "loadStorageDashboard"]);
   if (activeSection === "requests") immediateLoaders.push(["Request photos", "addSignedRequestPhotoUrls"]);
+  if (activeSection === "team") immediateLoaders.push(["Team workloads", "loadTeamWorkOrders"]);
   if (activeWorkOrderId || activeAssetId || activeSection === "parts") {
     immediateLoaders.push(...relatedLoaders);
   }
