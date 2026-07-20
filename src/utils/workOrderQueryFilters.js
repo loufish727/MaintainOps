@@ -4,6 +4,10 @@
       return deps[name]();
     }
 
+    function optionalState(name, fallback) {
+      return typeof deps[name] === "function" ? deps[name]() : fallback;
+    }
+
     function applyWorkOrderListFilters(query) {
       const searchQuery = state("searchQuery");
       const activeSection = state("activeSection");
@@ -23,13 +27,21 @@
     }
 
     function applyWorkOrderFilters(query, options = {}) {
+      const section = options.section || state("activeSection");
       let nextQuery = query.eq("company_id", state("activeCompanyId"));
       if (state("locationsReady") && state("activeLocationId")) {
         nextQuery = nextQuery.eq("location_id", state("activeLocationId"));
       }
 
       if (options.includeQueue !== false) {
-        nextQuery = applyWorkOrderQueueFilters(nextQuery, options.section || state("activeSection"));
+        nextQuery = applyWorkOrderQueueFilters(nextQuery, section);
+      }
+
+      if (options.includeAttributeFilters !== false && section === "work") {
+        const typeFilter = optionalState("workOrderTypeFilter", "all");
+        const priorityFilter = optionalState("workOrderPriorityFilter", "all");
+        if (typeFilter !== "all") nextQuery = nextQuery.eq("type", typeFilter);
+        if (priorityFilter !== "all") nextQuery = nextQuery.eq("priority", priorityFilter);
       }
 
       nextQuery = applyWorkOrderStatusFilter(nextQuery, options.statusFilter || state("activeStatusFilter"));
@@ -100,8 +112,14 @@
 
       if (state("workSort") === "priority") {
         return query
-          .order("priority", { ascending: true })
+          .order("priority_rank", { ascending: false })
           .order("due_at", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: false });
+      }
+
+      if (state("workSort") === "type") {
+        return query
+          .order("type", { ascending: true })
           .order("created_at", { ascending: false });
       }
 

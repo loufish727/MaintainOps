@@ -37,6 +37,7 @@ const managerButton = createButton("manager");
 const setupButton = createButton("setup");
 const performanceButton = createButton("performance");
 const teamButton = createButton("team");
+const planningButton = createButton("planning");
 const blockedButton = createButton("blocked");
 const storage = {
   values: {},
@@ -66,10 +67,11 @@ let managerLoadCount = 0;
 let setupStorageLoadCount = 0;
 let performanceLoadCount = 0;
 let teamWorkloadReloadCount = 0;
+let planningReloadCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
-    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, performanceButton, teamButton, blockedButton]),
+    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, performanceButton, teamButton, planningButton, blockedButton]),
     storage,
     state: {
       setActiveAssetId: (value) => { stateValues.activeAssetId = value; },
@@ -83,12 +85,13 @@ let teamWorkloadReloadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"], ["team"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"], ["team"], ["planning"]],
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
     scrollToSectionTop: () => { scrollCount += 1; },
     reloadWorkOrderQueue: async () => { workReloadCount += 1; },
+    reloadPlanningWorkOrderQueue: async () => { planningReloadCount += 1; renderCount += 1; },
     reloadRequestQueue: async () => { requestReloadCount += 1; },
     reloadTeamWorkloads: async () => { teamWorkloadReloadCount += 1; renderCount += 1; },
     loadManagerDashboardCompletedWork: async () => { managerLoadCount += 1; },
@@ -175,12 +178,20 @@ let teamWorkloadReloadCount = 0;
   assert.equal(scrollCount, 7);
   assert.equal(teamWorkloadReloadCount, 1);
 
+  await planningButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "planning");
+  assert.equal(storage.values["maintainops.activeSection"], "planning");
+  assert.equal(resetCount, 8);
+  assert.equal(renderCount, 12);
+  assert.equal(scrollCount, 8);
+  assert.equal(planningReloadCount, 1);
+
   await performanceButton.dispatch("click");
   assert.equal(stateValues.activeSection, "performance");
   assert.equal(storage.values["maintainops.activeSection"], "performance");
-  assert.equal(resetCount, 8);
-  assert.equal(renderCount, 11);
-  assert.equal(scrollCount, 8);
+  assert.equal(resetCount, 9);
+  assert.equal(renderCount, 13);
+  assert.equal(scrollCount, 9);
   assert.equal(performanceLoadCount, 1);
 
   bindWorkspaceSectionNavigationEvents({

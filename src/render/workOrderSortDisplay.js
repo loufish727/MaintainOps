@@ -33,6 +33,10 @@
         return prioritySortValue(b.priority) - prioritySortValue(a.priority) || dueSortValue(a) - dueSortValue(b);
       }
 
+      if (deps.getWorkSort() === "type") {
+        return String(a.type || "").localeCompare(String(b.type || "")) || new Date(b.created_at) - new Date(a.created_at);
+      }
+
       if (deps.getWorkSort() === "assigned") {
         return assigneeSortLabel(a).localeCompare(assigneeSortLabel(b)) || new Date(b.created_at) - new Date(a.created_at);
       }

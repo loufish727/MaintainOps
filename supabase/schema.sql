@@ -138,6 +138,15 @@ create table if not exists public.work_orders (
   type text not null default 'corrective' check (type in ('corrective', 'preventive', 'fabrication')),
   status text not null default 'open' check (status in ('open', 'in_progress', 'blocked', 'completed')),
   priority text not null default 'medium' check (priority in ('low', 'medium', 'high', 'critical')),
+  priority_rank smallint generated always as (
+    case priority
+      when 'critical' then 4
+      when 'high' then 3
+      when 'medium' then 2
+      when 'low' then 1
+      else 0
+    end
+  ) stored,
   due_at date,
   created_by uuid not null references auth.users(id) on delete restrict,
   actual_minutes integer not null default 0,
@@ -538,6 +547,7 @@ create index if not exists work_orders_company_id_idx on public.work_orders(comp
 create index if not exists work_orders_location_id_idx on public.work_orders(location_id);
 create index if not exists work_orders_assigned_to_idx on public.work_orders(assigned_to);
 create index if not exists work_orders_safety_check_required_idx on public.work_orders(company_id, safety_check_required);
+create index if not exists work_orders_company_location_priority_idx on public.work_orders(company_id, location_id, priority_rank desc, created_at desc);
 create index if not exists work_order_comments_company_id_idx on public.work_order_comments(company_id);
 create index if not exists work_order_photos_company_id_idx on public.work_order_photos(company_id);
 create index if not exists preventive_schedules_company_id_idx on public.preventive_schedules(company_id);

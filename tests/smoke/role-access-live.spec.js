@@ -47,6 +47,15 @@ test.describe("MaintainOps authenticated role proof", () => {
         await expect(page.locator(`[data-section="${section}"]`)).toBeVisible();
       }
 
+      await page.locator('[data-section="planning"]').click();
+      await expect(page.getByRole("heading", { name: "Planning", exact: true })).toBeVisible();
+      await expect(page.getByText("No Due Date", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Current schedule", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
+      if (role.operational === "read") {
+        await expect(page.locator("[data-planning-due-form]")).toHaveCount(0);
+      }
+
       const financialNav = page.locator('[data-section="financial"]');
       if (role.financial === "none") {
         await expect(financialNav).toHaveCount(0);

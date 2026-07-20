@@ -35,17 +35,28 @@ const followUpOnlyWorkOrder = {
   completed_at: "2026-06-28T12:00:00Z",
   assets: { name: "Follow Asset" },
 };
+const noDueWorkOrder = {
+  id: "no-due",
+  title: "Unscheduled repair",
+  status: "open",
+  priority: "high",
+  due_at: null,
+  created_at: "2026-06-01T12:00:00Z",
+  assigned_to: "user-2",
+  location_id: "loc-1",
+  assets: { name: "Unscheduled Asset" },
+};
 
 const helpers = createWorkspaceListBuilders({
   assets: () => [],
-  assignmentLabel: () => "",
+  assignmentLabel: (workOrder) => workOrder.assigned_to === "user-2" ? "Morgan Manager" : "",
   compareWorkOrders: () => 0,
   maintenanceRequests: () => [],
   matchesActiveLocation: (row) => row.location_id === "loc-1",
   matchesQuery: () => true,
   matchesSearch: () => true,
   parts: () => [],
-  planningWorkOrders: () => [planningOnlyWorkOrder, followUpOnlyWorkOrder],
+  planningWorkOrders: () => [planningOnlyWorkOrder, followUpOnlyWorkOrder, noDueWorkOrder],
   preventiveSchedules: () => [],
   procedureTemplates: () => [],
   profilesByUserId: () => ({}),
@@ -56,6 +67,8 @@ const helpers = createWorkspaceListBuilders({
 });
 
 assert.deepEqual(helpers.planningItems().map((item) => item.id), ["planning-only"]);
+assert.deepEqual(helpers.planningItems("no_due").map((item) => item.id), ["no-due"]);
+assert.equal(helpers.planningItems("no_due")[0].assignedTo, "Morgan Manager");
 assert.deepEqual(helpers.followUpItems().map((item) => item.id), ["follow-up-only"]);
 assert.deepEqual(helpers.globalSearchResults().work.map((item) => item.id), ["visible-queue"]);
 

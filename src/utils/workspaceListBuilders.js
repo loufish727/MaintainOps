@@ -61,7 +61,7 @@
 
       return state("planningWorkOrders")
         .filter(deps.matchesActiveLocation)
-        .filter((workOrder) => workOrder.status !== "completed" && workOrder.due_at)
+        .filter((workOrder) => workOrder.status !== "completed")
         .filter((workOrder) => deps.matchesSearch([
           workOrder.title,
           workOrder.description,
@@ -70,10 +70,11 @@
           workOrder.assets?.name,
           deps.assignmentLabel(workOrder),
         ]))
+        .filter((workOrder) => bucket === "no_due" ? !workOrder.due_at : Boolean(workOrder.due_at))
         .map((workOrder) => {
-          const due = new Date(`${workOrder.due_at}T00:00:00`);
+          const due = workOrder.due_at ? new Date(`${workOrder.due_at}T00:00:00`) : null;
           return {
-            kind: "work",
+            kind: bucket === "no_due" ? "no_due" : "work",
             id: workOrder.id,
             title: workOrder.title,
             priority: workOrder.priority,
@@ -81,16 +82,26 @@
             assetName: workOrder.assets?.name || "No equipment",
             dueAt: workOrder.due_at,
             due,
+            createdAt: workOrder.created_at || "",
+            assignedTo: deps.assignmentLabel(workOrder),
             workOrder,
           };
         })
         .filter((item) => {
+          if (bucket === "no_due") return true;
           if (bucket === "overdue") return item.due < today;
           if (bucket === "today") return item.due.getTime() === today.getTime();
           if (bucket === "soon") return item.due > today && item.due <= soon;
           return true;
         })
-        .sort((a, b) => a.due - b.due);
+        .sort((a, b) => {
+          if (bucket === "no_due") {
+            const priorityRank = { critical: 4, high: 3, medium: 2, low: 1 };
+            return (priorityRank[b.priority] || 0) - (priorityRank[a.priority] || 0)
+              || new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+          }
+          return a.due - b.due;
+        });
     }
 
     function planningPmItems() {
