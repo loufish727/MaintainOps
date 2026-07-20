@@ -21,6 +21,10 @@ assert.match(securitySource, /entry\.isDirectory\(\).*listSqlFiles/);
 assert.match(requiredWorkflow, /uses:\s*actions\/upload-artifact@v6/);
 assert.match(requiredWorkflow, /path:\s*lfes-evidence\//);
 assert.match(authenticatedWorkflow, /environment:\s*lfes-qa/);
+assert.match(authenticatedWorkflow, /LFES_SUPABASE_URL:\s*\$\{\{ secrets\.LFES_SUPABASE_URL \}\}/);
+assert.match(authenticatedWorkflow, /LFES_SUPABASE_ANON_KEY:\s*\$\{\{ secrets\.LFES_SUPABASE_ANON_KEY \}\}/);
+assert.match(authenticatedWorkflow, /MAINTAINOPS_BASE_URL:\s*http:\/\/127\.0\.0\.1:4195\//);
+assert.match(authenticatedWorkflow, /node scripts\/local-static-server\.js 4195/);
 assert.match(authenticatedWorkflow, /npm run test:lfes:authenticated/);
 assert.match(authenticatedWorkflow, /path:\s*lfes-evidence\//);
 

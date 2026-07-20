@@ -29,10 +29,39 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run authenticated LFES proof
-        run: npm run test:lfes:authenticated
+      - name: Configure isolated testing backend
+        shell: bash
         env:
-          MAINTAINOPS_BASE_URL: https://loufish727.github.io/MaintainOps/
+          LFES_SUPABASE_URL: ${{ secrets.LFES_SUPABASE_URL }}
+          LFES_SUPABASE_ANON_KEY: ${{ secrets.LFES_SUPABASE_ANON_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const url = process.env.LFES_SUPABASE_URL;
+          const key = process.env.LFES_SUPABASE_ANON_KEY;
+          if (!url || !key) throw new Error("Missing isolated LFES Supabase configuration.");
+          fs.writeFileSync(
+            "supabase-config.js",
+            `window.SUPABASE_URL = ${JSON.stringify(url)};\nwindow.SUPABASE_ANON_KEY = ${JSON.stringify(key)};\n`,
+          );
+          NODE
+
+      - name: Run authenticated LFES proof
+        shell: bash
+        run: |
+          node scripts/local-static-server.js 4195 > /tmp/maintainops-lfes-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:4195/ > /dev/null && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4195/ > /dev/null
+          npm run test:lfes:authenticated
+        env:
+          MAINTAINOPS_BASE_URL: http://127.0.0.1:4195/
+          LFES_SUPABASE_URL: ${{ secrets.LFES_SUPABASE_URL }}
+          LFES_SUPABASE_ANON_KEY: ${{ secrets.LFES_SUPABASE_ANON_KEY }}
           LFES_ADMIN_EMAIL: ${{ secrets.LFES_ADMIN_EMAIL }}
           LFES_ADMIN_PASSWORD: ${{ secrets.LFES_ADMIN_PASSWORD }}
           LFES_MANAGER_EMAIL: ${{ secrets.LFES_MANAGER_EMAIL }}

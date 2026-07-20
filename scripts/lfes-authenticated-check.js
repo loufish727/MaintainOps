@@ -10,6 +10,8 @@ const startedAt = new Date().toISOString();
 const stages = [];
 
 const requiredEnvironment = [
+  "LFES_SUPABASE_URL",
+  "LFES_SUPABASE_ANON_KEY",
   "LFES_ADMIN_EMAIL",
   "LFES_ADMIN_PASSWORD",
   "LFES_MANAGER_EMAIL",
@@ -51,12 +53,14 @@ async function runStage(name, callback) {
 }
 
 function writeSummary(status, error = null) {
+  const testingBackend = new URL(process.env.LFES_SUPABASE_URL || "https://missing.invalid");
   writeEvidence("lfes-authenticated-summary.json", {
     status,
     scope: "Hosted sign-in for four roles plus required live tenant, role, RPC, request, and storage boundary probes",
     startedAt,
     completedAt: new Date().toISOString(),
     baseUrl: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
+    testingBackendHost: testingBackend.hostname,
     stages,
     ...(error ? { error: error.message } : {}),
   });

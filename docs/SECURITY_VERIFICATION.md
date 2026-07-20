@@ -28,13 +28,13 @@ Live anonymous and optional authenticated boundary probe:
 npm run test:security:boundary
 ```
 
-The full hosted role proof is deliberately fail-closed and requires four dedicated QA roles plus disposable fixture identifiers:
+The full testing-platform role proof is deliberately fail-closed and requires an isolated Supabase configuration, four dedicated QA roles, and disposable fixture identifiers:
 
 ```bash
 npm run test:lfes:authenticated
 ```
 
-The manual GitHub workflow `Authenticated LFES Proof` supplies these through the protected `lfes-qa` environment. A missing credential is a failure, never an informational pass. See `docs/LFES/PROOF_MODEL.md` for the complete secret list and proof boundaries.
+The manual GitHub workflow `Authenticated LFES Proof` supplies these through the protected `lfes-qa` environment. It serves the exact candidate checkout locally against the isolated testing backend instead of signing test users into Taylor production. A missing credential is a failure, never an informational pass. See `docs/LFES/PROOF_MODEL.md` for the complete secret list and proof boundaries.
 
 Authenticated cross-company probing requires environment variables. Do not commit credentials.
 

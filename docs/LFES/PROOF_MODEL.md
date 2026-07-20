@@ -17,21 +17,22 @@ LFES separates evidence by what actually ran. A green check must not imply that 
 
 The command writes machine-readable evidence to `lfes-evidence/`. GitHub retains that directory as the `strict-lfes-evidence` artifact for 30 days.
 
-This gate does not claim that authenticated checks against the hosted Supabase project ran. Those require dedicated QA users and are a separate proof layer.
+This gate does not claim that authenticated checks against the isolated testing Supabase project ran. Those require dedicated QA users and are a separate proof layer.
 
-## Authenticated Hosted Proof
+## Authenticated Testing-Platform Proof
 
-`npm run test:lfes:authenticated` is fail-closed. It refuses to run without all required QA credentials and fixture identifiers. When configured, it proves:
+`npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the exact candidate commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. When configured, it proves:
 
 - a technician cannot see another QA company's rows
 - technician manager/admin RPC attempts are rejected
 - forbidden-company storage upload is rejected
 - technician request deletion and internal-request photo attachment are rejected
-- admin, manager, accounting, and technician can sign in to the hosted app
+- admin, manager, accounting, and technician can sign in to the candidate app against the testing platform
 - each role receives the expected navigation, Team workload counts, Financial access, and operational read/edit presentation
 
 The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes-qa` environment with these names:
 
+- `LFES_SUPABASE_URL` and `LFES_SUPABASE_ANON_KEY`
 - `LFES_ADMIN_EMAIL` and `LFES_ADMIN_PASSWORD`
 - `LFES_MANAGER_EMAIL` and `LFES_MANAGER_PASSWORD`
 - `LFES_ACCOUNTING_EMAIL` and `LFES_ACCOUNTING_PASSWORD`
