@@ -104,7 +104,7 @@
           description: deps.descriptionWithRequestPhotoNote(request.description, request),
           asset_id: request.asset_id || null,
           priority: request.priority || "medium",
-          type: "reactive",
+          type: "corrective",
           status: "open",
           created_by: deps.getSession().user.id,
         };

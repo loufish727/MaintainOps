@@ -52,6 +52,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
     title: "Pump, leaking",
     status: "open",
     priority: "high",
+    type: "reactive",
     assets: { name: "Pump 1" },
   }],
   getAssets: () => [{
@@ -148,6 +149,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
     secondary_machine: "Sub Equipment",
     component: "Component",
   }[type] || type),
+  workOrderTypeLabel: (type) => type === "reactive" ? "Corrective" : type,
   assignmentLabel: () => "Louie",
   csvCell: (value) => `"${String(value ?? "").replaceAll('"', '""')}"`,
 });
@@ -157,6 +159,8 @@ assert.equal(link.download, "work-orders.csv");
 assert.equal(clicks.some((call) => call[0] === "click" && call[1] === "work-orders.csv"), true);
 assert.equal(urls[0].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[0].parts[0], /"Pump, leaking"/);
+assert.match(urls[0].parts[0], /"Corrective"/);
+assert.doesNotMatch(urls[0].parts[0], /"reactive"/);
 
 activeSection = "assets";
 exportActiveSectionCsv();

@@ -34,7 +34,7 @@ function createWorkflow(overrides = {}) {
     safety_devices_checked: "",
     procedure_template_id: "",
     priority: "medium",
-    type: "reactive",
+    type: "corrective",
     due_at: "",
     actual_minutes: "",
     failure_cause: "",
@@ -130,6 +130,7 @@ function createWorkflow(overrides = {}) {
   assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].title === "Create work order"), true);
   assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].asset_id === "asset-1"), true);
   assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].location_id === "location-asset-1"), true);
+  assert.equal(normal.calls.some((call) => call[0] === "insert" && call[2].type === "corrective"), true);
   assert.equal(normal.calls.some((call) => call[0] === "event" && call[2] === "created"), true);
   assert.deepEqual(normal.calls.filter((call) => call[0] === "activeWorkOrderId"), [["activeWorkOrderId", "wo-1"]]);
   assert.equal(normalButton.disabled, false);

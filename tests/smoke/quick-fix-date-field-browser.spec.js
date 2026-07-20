@@ -6,7 +6,7 @@ const { createCreateWorkOrderDisplayHelpers } = require("../../src/render/create
 
 test("Quick Fix complete-by date is browser editable", async ({ page }) => {
   const { renderQuickFixForm } = createQuickFixDisplayHelpers({
-    TYPE_OPTIONS: ["corrective", "preventive", "request"],
+    TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
     getQuickFixAssetId: () => "",
     getQuickFixRequestId: () => "",
     getMaintenanceRequests: () => [],
@@ -35,7 +35,7 @@ test("Quick Fix complete-by date is browser editable", async ({ page }) => {
 test("Create Work Order due date is browser editable", async ({ page }) => {
   const { renderCreateWorkOrder } = createCreateWorkOrderDisplayHelpers({
     STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
-    TYPE_OPTIONS: ["corrective", "preventive", "request"],
+    TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
     getParts: () => [],
     renderAssetOptions: () => '<option value="asset-1">Press 1</option>',
     statusLabel: (status) => status,

@@ -135,7 +135,7 @@ create table if not exists public.work_orders (
   assigned_to uuid references auth.users(id) on delete set null,
   title text not null,
   description text,
-  type text not null default 'reactive' check (type in ('request', 'reactive', 'preventive', 'inspection', 'corrective')),
+  type text not null default 'corrective' check (type in ('corrective', 'preventive', 'fabrication')),
   status text not null default 'open' check (status in ('open', 'in_progress', 'blocked', 'completed')),
   priority text not null default 'medium' check (priority in ('low', 'medium', 'high', 'critical')),
   due_at date,
@@ -380,8 +380,8 @@ end;
 $$;
 
 alter table public.work_orders
-add column if not exists type text not null default 'reactive'
-check (type in ('request', 'reactive', 'preventive', 'inspection', 'corrective'));
+add column if not exists type text not null default 'corrective'
+check (type in ('corrective', 'preventive', 'fabrication'));
 
 alter table public.work_orders
 add column if not exists actual_minutes integer not null default 0;

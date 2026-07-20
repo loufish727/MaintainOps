@@ -5,7 +5,7 @@ global.window = {};
 const { createQuickFixDisplayHelpers } = require("../../src/render/quickFixDisplay.js");
 
 const { renderQuickFixForm } = createQuickFixDisplayHelpers({
-  TYPE_OPTIONS: ["corrective", "preventive", "request"],
+  TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
   getQuickFixAssetId: () => "asset-1",
   getQuickFixRequestId: () => "req-1",
   getMaintenanceRequests: () => [{ id: "req-1", title: "Guard loose", description: "Operator reported a loose guard.", asset_id: "asset-1" }],
@@ -17,6 +17,7 @@ const { renderQuickFixForm } = createQuickFixDisplayHelpers({
   renderAssignmentSelect: () => '<option value="user-1">Assign to me</option>',
   renderProcedureOptions: () => '<option value="proc-1">Lockout</option>',
   assetStatusLabel: (status) => status,
+  workOrderTypeLabel: (type) => type[0].toUpperCase() + type.slice(1),
 });
 
 const html = renderQuickFixForm();
@@ -55,6 +56,9 @@ assert.match(html, /Guard Bolt \(6 on hand\)/);
 assert.match(html, /name="follow_up_needed"/);
 assert.equal((html.match(/name="due_at"/g) || []).length, 1);
 assert.match(html, /id="quick-fix-error"/);
-assert.doesNotMatch(html, /<option value="request" selected>request<\/option>/);
+assert.match(html, /<option value="corrective" selected>Corrective<\/option>/);
+assert.match(html, /<option value="preventive"\s*>Preventive<\/option>/);
+assert.match(html, /<option value="fabrication"\s*>Fabrication<\/option>/);
+assert.doesNotMatch(html, /reactive|inspection|value="request"/i);
 
 console.log("quick fix display smoke passed");

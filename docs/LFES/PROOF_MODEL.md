@@ -21,7 +21,7 @@ This gate does not claim that authenticated checks against the isolated testing 
 
 ## Authenticated Testing-Platform Proof
 
-`npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the exact candidate commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. When configured, it proves:
+`npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the selected protected-branch commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. The current workflow is manually dispatched and is not a required pre-merge check; the protected `lfes-qa` environment currently limits it to protected branches. When configured, it proves:
 
 - a technician cannot see another QA company's rows
 - technician manager/admin RPC attempts are rejected
@@ -42,6 +42,8 @@ The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes
 - `LFES_TECH_DELETE_REQUEST_ID`
 
 Use dedicated disposable QA companies and users. Do not store personal or production-company credentials in GitHub.
+
+Latest verified proof: GitHub run `29772114849` passed on commit `dfcae0176820276592064f6220a8be9a5443a947` on 2026-07-20.
 
 ## LFES Gold
 

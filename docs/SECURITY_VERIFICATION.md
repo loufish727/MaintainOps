@@ -34,7 +34,7 @@ The full testing-platform role proof is deliberately fail-closed and requires an
 npm run test:lfes:authenticated
 ```
 
-The manual GitHub workflow `Authenticated LFES Proof` supplies these through the protected `lfes-qa` environment. It serves the exact candidate checkout locally against the isolated testing backend instead of signing test users into Taylor production. A missing credential is a failure, never an informational pass. See `docs/LFES/PROOF_MODEL.md` for the complete secret list and proof boundaries.
+The manual GitHub workflow `Authenticated LFES Proof` supplies these through the protected `lfes-qa` environment. It serves the selected protected-branch commit locally against the isolated testing backend instead of signing test users into Taylor production. Under the current environment policy, this proof runs from `main` after merge. A missing credential is a failure, never an informational pass. See `docs/LFES/PROOF_MODEL.md` for the complete secret list and proof boundaries.
 
 Authenticated cross-company probing requires environment variables. Do not commit credentials.
 
@@ -45,12 +45,13 @@ MAINTAINOPS_FORBIDDEN_COMPANY_ID="00000000-0000-0000-0000-000000000000" \
 npm run test:security:boundary
 ```
 
-## Latest Local Results
+## Latest Verified Results
 
 Last checked: 2026-07-20.
 
 Strict LFES:
 
+- required GitHub branch-protection check: PASS on commit `dfcae0176820276592064f6220a8be9a5443a947`; administrators are included in enforcement and force pushes are disabled.
 - recursive security static audit: PASS; 97 SQL files and all dated migrations inspected.
 - live anonymous security boundary probe: PASS.
 - isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.
@@ -59,7 +60,16 @@ Strict LFES:
 - work attachment smoke suite: PASS.
 - equipment-history and date-field browser regression smokes: PASS.
 - local resource-load smoke: PASS.
-- authenticated hosted proof: NOT RUN; the `lfes-qa` GitHub environment exists, but its dedicated QA credentials and fixture identifiers are not configured.
+- mobile Performance interaction smoke: PASS.
+
+Authenticated testing-platform proof:
+
+- GitHub run `29772114849`: PASS on the same commit.
+- all 13 required values are configured as protected `lfes-qa` environment secrets.
+- authenticated database and storage boundaries: PASS.
+- admin, manager, accounting, and technician sign-in/browser contracts: PASS.
+- result inventory: 41 PASS, 5 INFO, 0 REVIEW, and 0 FAIL. The INFO results identify the technician probe identity and empty anonymous storage listings; they are not skipped controls.
+- no Taylor production credentials or company data were used.
 
 Static SQL audit:
 
@@ -139,20 +149,20 @@ Latest technician probe result:
 
 ## What This Does And Does Not Prove
 
-These checks prove the current public Data API surface rejects anonymous table reads and that the tested authenticated user could not read rows for the tested forbidden company across the selected high-value tables.
+These checks prove the current public Data API surface rejects anonymous table reads, that the tested technician could not read rows for the tested forbidden company across selected high-value tables, and that the four QA roles received their expected signed-in application surfaces.
 
 These checks do not replace:
 
-- a full Supabase dashboard RLS policy review
-- role-by-role destructive mutation attempts
-- storage object path abuse tests
-- broad end-to-end browser tests
-- service-role backup/restore verification
+- a full remote-schema drift comparison or Supabase dashboard RLS policy review
+- exhaustive live role-by-role destructive mutation attempts
+- exhaustive signed-URL, storage-delete, and storage-restore tests
+- broad cross-browser end-to-end coverage of every workflow
+- scheduled storage backup execution and a stored-object restore drill
 
 ## Review Focus Still Recommended
 
 - Verify every destructive RPC/action has explicit database-side membership or role enforcement.
 - Keep anonymous grants limited to intended public request RPCs and storage intake paths.
-- Expand authenticated probes to include technician-vs-manager/admin mutation attempts.
-- Add storage policy probes for signed URL and delete behavior.
+- Expand live probes to cover manager financial-write denial, accounting financial saves, and accounting operational-write denial with disposable records.
+- Add storage policy probes for signed URL, delete, and restore behavior.
 - Repeat this verification after new tables, RPCs, storage buckets, or public intake changes.

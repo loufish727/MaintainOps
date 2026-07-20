@@ -19,6 +19,7 @@ const helpers = createRequestDisplayHelpers({
   getPendingDeleteRequestId: () => state.pendingDeleteRequestId,
   getProfilesByUserId: () => ({
     "user-1": { full_name: "QA Requester" },
+    "user-2": { full_name: "QA Converter" },
   }),
 });
 
@@ -33,6 +34,7 @@ const readOnlyHelpers = createRequestDisplayHelpers({
   getPendingDeleteRequestId: () => "req-1",
   getProfilesByUserId: () => ({
     "user-1": { full_name: "QA Requester" },
+    "user-2": { full_name: "QA Converter" },
   }),
 });
 
@@ -74,9 +76,15 @@ const confirmingCard = helpers.renderMaintenanceRequest(request);
 assert.match(confirmingCard, /data-cancel-delete-request/);
 assert.match(confirmingCard, /data-confirm-delete-request="req-1"/);
 
-const converted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1" });
+const converted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1", reviewed_by: "user-2" });
 assert.match(converted, /request-card converted-request/);
-assert.match(converted, /Converted to work order/);
+assert.match(converted, /Converted to work order by QA Converter/);
+
+const legacyConverted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1" });
+assert.match(legacyConverted, /Converted to work order; converter not recorded/);
+
+const missingProfileConverted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1", reviewed_by: "missing-user" });
+assert.match(missingProfileConverted, /Converted to work order; converter name unavailable/);
 
 const readOnlyCard = readOnlyHelpers.renderMaintenanceRequest(request);
 assert.match(readOnlyCard, /Door &lt;jam&gt;/);
@@ -84,6 +92,9 @@ assert.doesNotMatch(readOnlyCard, /data-quick-fix-request="req-1"/);
 assert.doesNotMatch(readOnlyCard, /data-convert-request="req-1"/);
 assert.doesNotMatch(readOnlyCard, /data-delete-request="req-1"/);
 assert.doesNotMatch(readOnlyCard, /Converted to work order/);
+
+const readOnlyConverted = readOnlyHelpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1", reviewed_by: "user-2" });
+assert.match(readOnlyConverted, /Converted to work order by QA Converter/);
 
 const form = helpers.renderRequestFormContent();
 assert.match(form, /id="request-form"/);

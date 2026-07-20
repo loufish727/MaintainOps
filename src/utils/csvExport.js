@@ -6,6 +6,7 @@
     const alertRef = deps.alertRef || alert;
     const matchesActiveLocation = typeof deps.matchesActiveLocation === "function" ? deps.matchesActiveLocation : () => true;
     const assetTypeLabel = typeof deps.assetTypeLabel === "function" ? deps.assetTypeLabel : (type) => String(type || "machine").replaceAll("_", " ");
+    const workOrderTypeLabel = typeof deps.workOrderTypeLabel === "function" ? deps.workOrderTypeLabel : (type) => String(type || "corrective").replaceAll("_", " ");
     const assetTypeOrder = {
       machine: 10,
       forklift: 20,
@@ -146,7 +147,7 @@
             title: workOrder.title,
             status: workOrder.status,
             priority: workOrder.priority,
-            type: workOrder.type || "reactive",
+            type: workOrderTypeLabel(workOrder.type),
             equipment: workOrder.assets?.name || "",
             assigned_to: deps.assignmentLabel(workOrder),
             due_at: workOrder.due_at || "",

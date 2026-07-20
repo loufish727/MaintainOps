@@ -41,6 +41,8 @@ const {
   fileBaseName,
   safeFileName,
   statusLabel,
+  normalizeWorkOrderType,
+  workOrderTypeLabel,
   normalizeRole,
   roleLabel,
   roleDescription,
@@ -637,6 +639,7 @@ const { applyRequestQueryFilters } = createRequestQueryFilterHelpers({
 const {
   teamMemberName,
   filteredMembers,
+  renderTeamSection,
   renderMember,
   renderMyProfileForm,
   renderPasswordChangeForm,
@@ -990,6 +993,7 @@ const {
   getProfilesByUserId: () => profilesByUserId,
   matchesActiveLocation,
   assetTypeLabel,
+  workOrderTypeLabel,
   assignmentLabel,
   csvCell,
 });
@@ -1013,6 +1017,7 @@ const {
   renderWorkOrderAssignmentField,
 } = createWorkQueueDisplayHelpers({
   statusLabel,
+  workOrderTypeLabel,
   teamMemberName,
   getWorkOrderAssigneeFilter: () => workspaceUiState.getWorkOrderAssigneeFilter(),
   getWorkOrderFilter: () => workspaceUiState.getWorkOrderFilter(),
@@ -3332,6 +3337,13 @@ function renderWorkspace() {
   if (workspaceUiState.getMembersPage() < 1) workspaceUiState.setMembersPage(1);
   const membersPage = workspaceUiState.getMembersPage();
   const pagedMembers = visibleMembers.slice((membersPage - 1) * LIST_ITEMS_PER_PAGE, membersPage * LIST_ITEMS_PER_PAGE);
+  const existingTeamSections = [...document.querySelectorAll("[data-team-section]")];
+  const openTeamSectionIds = new Set(existingTeamSections
+    .filter((section) => section.open)
+    .map((section) => section.dataset.teamSection));
+  const teamSectionIsOpen = (sectionId) => existingTeamSections.length
+    ? openTeamSectionIds.has(sectionId)
+    : sectionId === "members";
   const renderCommandStack = (variant = "desktop") => {
     const isMobile = variant === "mobile";
     const suffix = isMobile ? "-mobile" : "";
@@ -3668,29 +3680,70 @@ function renderWorkspace() {
               <h2>Team</h2>
               <span>${visibleMembers.length} shown</span>
             </div>
-            ${canEditOperations ? renderMyProfileForm() : ""}
-            ${renderPasswordChangeForm()}
-            ${renderRoleGuide()}
+            ${renderTeamSection({
+              id: "members",
+              label: "Team Members",
+              meta: `${visibleMembers.length} shown`,
+              open: teamSectionIsOpen("members"),
+              content: `
+                <div class="member-list">
+                  ${pagedMembers.map(renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
+                </div>
+                ${renderListPagination("members", visibleMembers.length, membersPage, totalMemberPages)}
+              `,
+            })}
+            ${canEditOperations ? renderTeamSection({
+              id: "profile",
+              label: "My Profile",
+              open: teamSectionIsOpen("profile"),
+              content: renderMyProfileForm(),
+            }) : ""}
+            ${renderTeamSection({
+              id: "security",
+              label: "Account Security",
+              open: teamSectionIsOpen("security"),
+              content: renderPasswordChangeForm(),
+            })}
+            ${renderTeamSection({
+              id: "roles",
+              label: "Roles and Permissions",
+              open: teamSectionIsOpen("roles"),
+              content: renderRoleGuide(),
+            })}
             ${canManageTeam() ? `
-              ${renderRequestNotificationRecipients(activeLocationId)}
-              ${renderTeamInviteLinks(activeLocationId)}
-              ${renderTeamInviteForm(activeLocationId)}
-              ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
-              <details class="developer-details">
-                <summary>Developer add by User UUID</summary>
-                <form class="inline-form team-form" id="add-member-form">
-                  <input name="user_id" required placeholder="User UUID">
-                  <select name="role">
-                    ${teamRoleOptionsForActor().map((role) => `<option value="${role}">${escapeHtml(roleLabel(role))}</option>`).join("")}
-                  </select>
-                  <button class="secondary-button" type="submit">Add Member</button>
-                </form>
-              </details>
+              ${renderTeamSection({
+                id: "notifications",
+                label: "Request Email Recipients",
+                meta: `${requestNotificationRecipients.length} configured`,
+                open: teamSectionIsOpen("notifications"),
+                content: renderRequestNotificationRecipients(activeLocationId),
+              })}
+              ${renderTeamSection({
+                id: "invitations",
+                label: "Invitations",
+                meta: `${teamInvites.filter((invite) => !invite.accepted_at).length} pending`,
+                open: teamSectionIsOpen("invitations"),
+                content: `
+                  ${renderTeamInviteLinks(activeLocationId)}
+                  ${renderTeamInviteForm(activeLocationId)}
+                  ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
+                `,
+              })}
+              ${renderTeamSection({
+                id: "advanced",
+                label: "Advanced Member Tools",
+                open: teamSectionIsOpen("advanced"),
+                content: `
+                  <form class="inline-form team-form" id="add-member-form">
+                    <input name="user_id" required placeholder="User UUID">
+                    <select name="role">
+                      ${teamRoleOptionsForActor().map((role) => `<option value="${role}">${escapeHtml(roleLabel(role))}</option>`).join("")}
+                    </select>
+                    <button class="secondary-button" type="submit">Add Member</button>
+                  </form>
+                `,
+              })}
             ` : `<p class="muted team-permission-note">Admins can grant roles. Managers can invite technicians.</p>`}
-            <div class="member-list">
-              ${pagedMembers.map(renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
-            </div>
-            ${renderListPagination("members", visibleMembers.length, membersPage, totalMemberPages)}
           </section>
 
           <section class="panel full-width ${activeSection === "manager" ? "" : "hidden-section"}">
@@ -4496,6 +4549,7 @@ const { renderCreateWorkOrder } = createCreateWorkOrderDisplayHelpers({
   getParts: () => parts,
   renderAssetOptions,
   statusLabel,
+  workOrderTypeLabel,
   renderAssignmentSelect,
   renderProcedureOptions,
   escapeHtml,
@@ -4514,6 +4568,7 @@ const { renderQuickFixForm } = createQuickFixDisplayHelpers({
   renderAssignmentSelect,
   renderProcedureOptions,
   assetStatusLabel,
+  workOrderTypeLabel,
 });
 
 const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
@@ -4544,6 +4599,8 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   renderWorkOrderCommandSummary,
   renderWorkOrderRecommendation,
   statusLabel,
+  normalizeWorkOrderType,
+  workOrderTypeLabel,
   hasCompletedSafetyDeviceCheck,
   canAssignWorkOrderToMe,
   renderAssetOptions,
@@ -6075,4 +6132,3 @@ async function recordAssetEvent(assetId, eventType, summary) {
 }
 
 init();
-

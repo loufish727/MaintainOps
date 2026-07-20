@@ -59,6 +59,18 @@
       ]));
     }
 
+    function renderTeamSection({ id, label, content, meta = "", open = false }) {
+      return `
+        <details class="team-section-details" data-team-section="${escapeHtml(id)}" ${open ? "open" : ""}>
+          <summary>
+            <span>${escapeHtml(label)}</span>
+            ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+          </summary>
+          <div class="team-section-body">${content}</div>
+        </details>
+      `;
+    }
+
     function renderMember(member) {
       const profile = getProfilesByUserId()[member.user_id];
       const currentUser = getSession().user;
@@ -329,6 +341,7 @@
     return {
       teamMemberName,
       filteredMembers,
+      renderTeamSection,
       renderMember,
       renderMyProfileForm,
       renderPasswordChangeForm,

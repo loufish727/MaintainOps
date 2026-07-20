@@ -4147,6 +4147,75 @@ textarea {
   margin-top: 14px;
 }
 
+.team-section-details {
+  border-top: 1px solid var(--line);
+}
+
+.team-section-details:last-of-type {
+  border-bottom: 1px solid var(--line);
+}
+
+.team-section-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 2px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--text);
+  font-weight: 750;
+}
+
+.team-section-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.team-section-details > summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.team-section-details > summary > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.team-section-details > summary::after {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.team-section-details[open] > summary::after {
+  content: "-";
+}
+
+.team-section-body {
+  display: grid;
+  gap: 12px;
+  padding: 0 0 14px;
+}
+
+.team-section-body > .member-list {
+  margin-top: 0;
+}
+
+.team-section-body > .team-profile-form > div:first-child > h3,
+.team-section-body > .team-notification-panel > div:first-child > h3 {
+  display: none;
+}
+
 .team-profile-form,
 .team-invite-form,
 .team-invites {

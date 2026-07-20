@@ -39,10 +39,13 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Team invites and single-use join links.
 - Team-managed request email recipient routing.
 - Team role updates.
+- Team navigation groups members, profile, security, roles, notifications, invitations, and advanced tools into expandable sections; Team Members opens by default and open sections survive workspace rerenders.
 - Company logo upload.
 - Public request QR/link intake per location.
 - Location-scoped search.
 - Work order cards show due date and created date at a glance.
+- Work order types use one operational taxonomy everywhere: Corrective, Preventive, and Fabrication. Legacy Reactive and Request values map to Corrective; Inspection maps to Preventive; Fabrication is selected manually.
+- Converted request cards identify the team member who converted the request using the recorded reviewer/converter profile, with explicit legacy-data fallbacks.
 - Mobile shell and desktop layout.
 - Shop reference chart cards in the Conversions tab with desktop table layout, mobile stacked-row layout, 12-per-page pagination, signed-in user favorites with browser fallback/cache, and search across chart names, common IDs, sizes, row values, and notes.
 
@@ -91,9 +94,9 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Authenticated upload failures now create internal app issue reports with upload context, file name, MIME/type inference, size, and error details so unsupported-file reports are visible to managers/admins.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 4,615 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 6,100 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
-- Backup/restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams.
+- Storage restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams. The database restore drill has passed.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.
 - Work-card warning badges made darker.
 - Work-card badge row changed to prevent desktop clipping.
@@ -124,12 +127,12 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - Custom-domain routing, final public-facing copy, and production support process still need a final rollout pass.
 
 - Automated test coverage.
-  - Current coverage includes targeted smoke tests under `tests/smoke`, hosted resource checks, signed-in live lifecycle smokes for selected high-risk paths, and GitHub Actions Resource Load Smoke.
-  - A comprehensive unit/integration/end-to-end suite does not exist yet.
+  - Current coverage includes the required Strict LFES GitHub gate, recursive SQL inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, and four-role authenticated testing-platform proof.
+  - Numeric line/branch coverage and an exhaustive live mutation/cross-browser matrix do not exist yet.
 
 - Operational readiness.
-  - Backup/restore validation is a known production-readiness item.
-  - Supabase Pro is active, but a restore drill has not been completed yet; see `BACKUP_RESTORE_VALIDATION.md`.
+  - The database Restore to a New Project drill passed on 2026-06-11; see `BACKUP_RESTORE_VALIDATION.md`.
+  - The storage mirror completed an initial full backup, but automated scheduling and a stored-object restore drill remain open.
   - Pilot hardening gates for support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `PILOT_HARDENING_PLAN.md`.
   - Public exposure review is ongoing as the app remains publicly hosted and publicly reviewable.
 

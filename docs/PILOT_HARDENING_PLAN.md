@@ -1,6 +1,6 @@
 # Pilot Hardening Plan
 
-Last updated: 2026-06-02.
+Last updated: 2026-07-20.
 
 MaintainOps is suitable for controlled pilot and internal operational review. This plan defines what still needs to be proven before treating it as production-hardened external SaaS.
 
@@ -8,7 +8,7 @@ MaintainOps is suitable for controlled pilot and internal operational review. Th
 
 Status: controlled pilot / internal operational review ready.
 
-Do not describe MaintainOps as fully production disaster-recovery ready until backup and restore validation is complete. Do not expand public intake beyond controlled review until support ownership, routing, and abuse handling are confirmed.
+The database Restore to a New Project drill passed on 2026-06-11. Do not describe MaintainOps as fully production disaster-recovery ready until the storage mirror is scheduled and stored-object recovery is restore-tested. Do not expand public intake beyond controlled review until support ownership, routing, and abuse handling are confirmed.
 
 ## Hardening Gates
 
@@ -25,7 +25,7 @@ Required before broader production dependence:
 - Verify sign-in or reinvite flow, company selection, workspace load, storage signed URLs, and representative work-order records.
 - Record restore duration, manual steps, missing objects, and any accepted limitations.
 
-Current status: operator action required. See `docs/BACKUP_RESTORE_VALIDATION.md`.
+Current status: database restore PASS; stored-object recovery remains operator action required. See `docs/BACKUP_RESTORE_VALIDATION.md`.
 
 ### 2. Incident And Support Process
 
@@ -86,7 +86,7 @@ For each pilot user:
 - Confirm how the user should request support.
 - Remove or archive any setup/test records created during onboarding if they could confuse live queues.
 
-Current status: team invites and role management exist; default location on invite is deferred.
+Current status: team invites, role management, and invite default-location enforcement exist. User self-service default-location management remains deferred.
 
 ## Verification Language
 

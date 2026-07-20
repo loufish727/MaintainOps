@@ -6,10 +6,11 @@ const { createCreateWorkOrderDisplayHelpers } = require("../../src/render/create
 
 const { renderCreateWorkOrder } = createCreateWorkOrderDisplayHelpers({
   STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
-  TYPE_OPTIONS: ["reactive", "preventive", "request"],
+  TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
   getParts: () => [{ id: "part-1", name: "Hydraulic Hose", quantity_on_hand: 4 }],
   renderAssetOptions: () => '<option value="asset-1">Press 1</option>',
   statusLabel: (status) => status,
+  workOrderTypeLabel: (type) => type[0].toUpperCase() + type.slice(1),
   renderAssignmentSelect: () => '<option value="user-1">Assign to me</option>',
   renderProcedureOptions: () => '<option value="proc-1">Lockout</option>',
   escapeHtml: (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"),
@@ -45,6 +46,9 @@ assert.doesNotMatch(html, /capture="environment"/);
 assert.match(html, /name="initial_comment"/);
 assert.match(html, /id="create-work-order-error"/);
 assert.match(html, /Create Work Order/);
-assert.doesNotMatch(html, /<option value="request">request<\/option>/);
+assert.match(html, /<option value="corrective">Corrective<\/option>/);
+assert.match(html, /<option value="preventive">Preventive<\/option>/);
+assert.match(html, /<option value="fabrication">Fabrication<\/option>/);
+assert.doesNotMatch(html, /reactive|inspection|value="request"/i);
 
 console.log("create work order display smoke passed");

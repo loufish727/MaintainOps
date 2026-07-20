@@ -58,6 +58,22 @@
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
+  function normalizeWorkOrderType(type) {
+    const normalized = String(type || "corrective").trim().toLowerCase();
+    if (normalized === "inspection") return "preventive";
+    if (normalized === "reactive" || normalized === "request") return "corrective";
+    return ["corrective", "preventive", "fabrication"].includes(normalized) ? normalized : "corrective";
+  }
+
+  function workOrderTypeLabel(type) {
+    const labels = {
+      corrective: "Corrective",
+      preventive: "Preventive",
+      fabrication: "Fabrication",
+    };
+    return labels[normalizeWorkOrderType(type)];
+  }
+
   function normalizeRole(role) {
     const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "accounting", "manager", "admin"];
     const normalized = String(role || "technician").trim().toLowerCase();
@@ -162,6 +178,8 @@
     fileBaseName,
     safeFileName,
     statusLabel,
+    normalizeWorkOrderType,
+    workOrderTypeLabel,
     normalizeRole,
     roleLabel,
     roleDescription,

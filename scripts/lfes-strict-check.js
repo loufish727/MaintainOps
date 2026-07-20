@@ -221,6 +221,7 @@ async function main() {
     "tests/smoke/equipment-history-scroll-browser.spec.js",
     "tests/smoke/financial-archived-edit-browser.spec.js",
     "tests/smoke/quick-fix-date-field-browser.spec.js",
+    "tests/smoke/team-sections-browser.spec.js",
   ], {
     label: "targeted browser regression smokes",
   }));

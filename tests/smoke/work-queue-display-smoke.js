@@ -6,6 +6,7 @@ const { createWorkQueueDisplayHelpers } = require("../../src/render/workQueueDis
 
 const helpers = createWorkQueueDisplayHelpers({
   statusLabel: (status) => status.replaceAll("_", " "),
+  workOrderTypeLabel: (type) => type === "reactive" ? "Corrective" : type,
   teamMemberName: (userId) => userId === "user-2" ? "Morgan Manager" : userId,
   getWorkOrderAssigneeFilter: () => "",
   getWorkOrderFilter: () => "all",
@@ -57,6 +58,8 @@ assert.match(card, /Pump &lt;jam&gt;/);
 assert.match(card, /Seal leak/);
 assert.match(card, /Daily Check/);
 assert.match(card, /Created/);
+assert.match(card, /Corrective/);
+assert.doesNotMatch(card, />reactive</i);
 assert.match(card, /data-id="wo-1"/);
 assert.match(card, /data-assign-me="wo-1"/);
 assert.match(card, /data-card-assign="wo-1"/);

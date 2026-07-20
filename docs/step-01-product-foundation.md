@@ -103,7 +103,7 @@ Maintenance teams need a fast, practical system for turning requests, inspection
 - organizationId
 - title
 - description
-- type: reactive, preventive, inspection, corrective
+- type: corrective, preventive, fabrication
 - status: requested, open, in_progress, blocked, completed, canceled
 - priority: low, medium, high, critical
 - assetId

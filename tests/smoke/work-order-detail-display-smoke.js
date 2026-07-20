@@ -21,7 +21,7 @@ const workOrder = {
 
 const workOrderDetailDeps = {
   STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
-  TYPE_OPTIONS: ["reactive", "preventive"],
+  TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
   getActiveWorkOrderId: () => "wo-1",
   getWorkOrders: () => [workOrder],
   getCommentsByWorkOrder: () => ({ "wo-1": [{ author_id: "user-1", body: "Checked pump", created_at: "2026-05-27T00:00:00Z" }] }),
@@ -47,6 +47,8 @@ const workOrderDetailDeps = {
   renderWorkOrderCommandSummary: () => "<section data-test-command-summary></section>",
   renderWorkOrderRecommendation: () => "<section data-test-recommendation></section>",
   statusLabel: (status) => status,
+  normalizeWorkOrderType: (type) => type === "reactive" ? "corrective" : type,
+  workOrderTypeLabel: (type) => type === "reactive" ? "Corrective" : type[0].toUpperCase() + type.slice(1),
   hasCompletedSafetyDeviceCheck: () => true,
   canAssignWorkOrderToMe: () => true,
   renderAssetOptions: () => '<option value="asset-1" selected>Press</option>',
@@ -66,6 +68,9 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers(workOrderD
 const html = renderWorkOrderDetail();
 
 assert.match(html, /Hydraulic Leak/);
+assert.match(html, /Corrective/);
+assert.match(html, /<option value="fabrication"\s*>Fabrication<\/option>/);
+assert.doesNotMatch(html, />reactive</i);
 assert.match(html, /id="status-select"/);
 assert.match(html, /id="quick-update-work-order-form"/);
 assert.match(html, /id="quick-update-equipment-field" data-equipment-choice/);

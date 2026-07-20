@@ -17,6 +17,7 @@ Live status:
 - `supabase/step-next-applied-migrations.sql` was applied to project `lbphkzznvvumemdkqoay` on 2026-06-11 through `npx supabase db query --linked --file`.
 - Initial rows were backfilled for `step-next-applied-migrations.sql` and `step-next-invite-links.sql`.
 - The first dated migration file now exists in the repo at `supabase/migrations/202607061430_applied_migration_metadata.sql`; it is not listed as applied until live execution and verification are completed.
+- `supabase/migrations/202607201200_work_order_type_taxonomy.sql` maps legacy work-order types to the Corrective/Preventive/Fabrication taxonomy; live status is recorded below after execution and verification.
 
 Repo source:
 
@@ -27,6 +28,7 @@ Repo source:
 
 | SQL file | Live status | Evidence |
 |---|---|---|
+| `supabase/migrations/202607201200_work_order_type_taxonomy.sql` | Applied | Applied to production project `lbphkzznvvumemdkqoay` with the corrected Windows migration helper on 2026-07-20. Read-only preflight counted 31 Corrective, 59 Reactive, and 3 Preventive work orders. Postflight counted 90 Corrective and 3 Preventive, verified the Corrective default, verified the exact Corrective/Preventive/Fabrication constraint, and verified the assignment guard trigger was enabled again. The same migration was then applied to testing project `fsxqrngpaseqdxijggcm`; its postflight counted 4 Corrective and 4 Preventive and verified the same default, constraint, and restored trigger. No rows were deleted and no records were auto-classified as Fabrication. |
 | `supabase/step-next-accounting-role.sql` | Applied | Applied to project `lbphkzznvvumemdkqoay` with Supabase CLI on 2026-07-01; verified `company_members`/`company_invites` role constraints include `accounting`, verified `update_company_member_role` and `create_company_invite` include `accounting`, and recorded in `public.applied_migrations`. |
 | `supabase/step-next-asset-financial-manager-readonly.sql` | Applied | Applied to project `lbphkzznvvumemdkqoay` with Supabase CLI on 2026-07-01; verified live `asset_financials` SELECT remains available to company members while INSERT/UPDATE policies allow only `admin` and `accounting`. |
 | `supabase/step-next-asset-financials.sql` | Applied | Applied to project `lbphkzznvvumemdkqoay` with Supabase CLI on 2026-07-01; verified `asset_financials` columns, grants, RLS policies, and recorded in `public.applied_migrations`. |
