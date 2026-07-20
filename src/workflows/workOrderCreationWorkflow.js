@@ -49,7 +49,7 @@
           description: deps.descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
           asset_id: assetId,
           priority: form.get("priority"),
-          type: form.get("type") || "reactive",
+          type: form.get("type") || "corrective",
           due_at: deps.workOrderDateValue(form.get("due_at")),
           assigned_to: deps.assignedUserFromForm(form),
           ...deps.procedureColumn(form.get("procedure_template_id")),

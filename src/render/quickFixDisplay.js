@@ -14,6 +14,7 @@
       renderAssignmentSelect,
       renderProcedureOptions,
       assetStatusLabel,
+      workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     } = deps;
 
     function todayDateValue() {
@@ -78,9 +79,9 @@
                   ${["medium", "high", "critical", "low"].map((priority) => `<option value="${priority}">${priority}</option>`).join("")}
                 </select>
               </label>
-              <label>Type
+              <label>Work type
                 <select name="type">
-                  ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}" ${type === "corrective" ? "selected" : ""}>${type}</option>`).join("")}
+                  ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === "corrective" ? "selected" : ""}>${workOrderTypeLabel(type)}</option>`).join("")}
                 </select>
               </label>
               <label>Assign to
@@ -129,4 +130,3 @@
     module.exports = { createQuickFixDisplayHelpers };
   }
 })();
-

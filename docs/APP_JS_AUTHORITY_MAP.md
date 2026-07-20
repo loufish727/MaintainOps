@@ -4,7 +4,7 @@ This document defines the intended role of `app.js` after the modularization pas
 
 ## Current Position
 
-`app.js` is currently about 4,615 lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
+`app.js` is currently about 6,100 lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
 
 At this stage, additional movement should be based on ownership clarity and operational risk reduction, not line count alone.
 
@@ -59,20 +59,23 @@ These responsibilities are operational authority. They should live in workflow, 
 - workspace state setter wrappers
 - notice and top-level warning helpers
 
-### Workflow / Move When Safe
+### Workflow / Still In app.js
 
-- `deletePart`
-- `requestDeletePart`
 - `createFollowUpWorkOrder`
-- `updateWorkOrderStatus`
-- `setWorkOrderStatus`
 - `assignWorkOrderToMe`
 - `assignWorkOrderFromCard`
 - `createComment`
 - `addCommentToWorkOrder`
-- `saveStepResult`
-- `submitPublicRequest`
-- `createCompany`
+
+### Workflow / Module-Owned
+
+- part deletion: `deletePart` and `requestDeletePart`
+- procedure checklist saving: `saveStepResult`
+- work-order status changes: `setWorkOrderStatus` and `updateWorkOrderStatus`
+- public request intake and submission
+- company creation and setup
+
+The module-owned functions remain wired through `app.js`, but their workflow authority lives in dedicated files under `src/workflows/`.
 
 ### Service / Possible Future Service Boundary
 
@@ -107,11 +110,9 @@ These responsibilities are operational authority. They should live in workflow, 
 
 1. Comment workflow: bounded mutation path with visible smoke coverage potential.
 2. Follow-up work order workflow: coherent work-order creation derivative with known rollback pattern.
-3. Work order status and assignment operations: operationally important, but shared mutation authority needs careful dependency injection.
-4. Procedure step result saving: bounded procedure mutation, but tied to completion rules.
-5. Part delete workflow: meaningful authority reduction, but high-risk because it includes destructive behavior, document cleanup, and traceability checks.
-6. Public request intake: important security boundary, but should be handled only as a dedicated public-path hardening phase.
-7. Company creation/bootstrap: should stay until auth/company startup has its own deliberate boundary plan.
+3. Work-order assignment operations: operationally important, but shared mutation authority needs careful dependency injection.
+4. Company and location data-loading lifecycle: move only as a dedicated state-consistency and performance phase.
+5. Shared mutation helpers such as `updateWorkOrderSafely` and `recordWorkOrderEvent`: move only after their callers have stable workflow boundaries.
 
 ## Decision Rule
 

@@ -228,7 +228,9 @@ function createWorkflow(options = {}) {
   const converted = createWorkflow();
   await converted.workflow.convertRequestToWorkOrder("request-1");
   assert.equal(converted.calls.some((call) => call[0] === "insertWorkOrder" && call[2].title === "Pump leaking"), true);
+  assert.equal(converted.calls.some((call) => call[0] === "insertWorkOrder" && call[2].type === "corrective"), true);
   assert.equal(converted.calls.some((call) => call[0] === "update" && call[1] === "maintenance_requests"), true);
+  assert.equal(converted.calls.some((call) => call[0] === "update" && call[1] === "maintenance_requests" && call[2].reviewed_by === "user-1"), true);
   assert.equal(converted.calls.some((call) => call[0] === "activeWorkOrderId" && call[1] === "wo-1"), true);
 
   const quickFix = createWorkflow();

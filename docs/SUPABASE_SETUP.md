@@ -167,6 +167,10 @@ User preference sync:
 
 Run `supabase/step-next-user-preferences.sql` before expecting shop reference favorites to follow a user across browsers/devices. The app keeps a browser `localStorage` fallback/cache if the table is not available.
 
+Work-order type taxonomy:
+
+Run `supabase/migrations/202607201200_work_order_type_taxonomy.sql` before deploying the matching frontend. It consolidates Reactive and Request into Corrective, consolidates Inspection into Preventive, adds Fabrication, and leaves existing Corrective and Preventive records unchanged. Run `supabase/audit-work-order-types-2026-07-20.sql` before and after to verify row counts, the Corrective default, and the final three-value constraint.
+
 Invite role preservation:
 
 Run `supabase/step-next-invite-role-preservation.sql` if an existing teammate accepts a pending invite after their role has already been set. This prevents invite acceptance from downgrading an existing higher role such as admin or manager.

@@ -1,6 +1,7 @@
 (function () {
   function createWorkQueueDisplayHelpers({
     statusLabel,
+    workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     teamMemberName,
     getWorkOrderAssigneeFilter,
     getWorkOrderFilter,
@@ -71,7 +72,7 @@
           <div class="work-card-header">
             <div class="chip-row">
               <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
-              <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
+              <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
               <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
               ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
             </div>

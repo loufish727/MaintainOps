@@ -18,6 +18,8 @@
       renderWorkOrderCommandSummary,
       renderWorkOrderRecommendation,
       statusLabel,
+      normalizeWorkOrderType = (type) => String(type || "corrective"),
+      workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
       hasCompletedSafetyDeviceCheck,
       canAssignWorkOrderToMe,
       renderAssetOptions,
@@ -124,7 +126,7 @@
         <div>
           <div class="chip-row">
             <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
-            <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
+            <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
             <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
           </div>
           <h2>${escapeHtml(workOrder.title)}</h2>
@@ -245,9 +247,9 @@
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
             </select>
           </label>
-          <label>Type
+          <label>Work type
             <select name="type">
-              ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (workOrder.type || "reactive") ? "selected" : ""}>${type}</option>`).join("")}
+              ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === normalizeWorkOrderType(workOrder.type) ? "selected" : ""}>${workOrderTypeLabel(type)}</option>`).join("")}
             </select>
           </label>
           ${renderWorkOrderAssignmentField(workOrder)}
@@ -409,4 +411,3 @@
     module.exports = { createWorkOrderDetailDisplayHelpers };
   }
 })();
-

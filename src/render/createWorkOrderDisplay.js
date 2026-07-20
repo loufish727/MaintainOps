@@ -11,6 +11,7 @@
       TYPE_OPTIONS = [],
       renderAssetOptions,
       statusLabel,
+      workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
       renderAssignmentSelect,
       renderProcedureOptions,
       escapeHtml,
@@ -70,9 +71,9 @@
                   <option>low</option>
                 </select>
               </label>
-              <label>Type
+              <label>Work type
                 <select name="type">
-                  ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
+                  ${TYPE_OPTIONS.map((type) => `<option value="${type}">${workOrderTypeLabel(type)}</option>`).join("")}
                 </select>
               </label>
               <label>Complete by / due date
@@ -145,4 +146,3 @@
     module.exports = { createCreateWorkOrderDisplayHelpers };
   }
 })();
-

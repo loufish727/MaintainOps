@@ -1,5 +1,4 @@
-alter table public.work_orders
-add column if not exists type text not null default 'corrective';
+begin;
 
 alter table public.work_orders
 drop constraint if exists work_orders_type_check;
@@ -49,4 +48,4 @@ alter table public.work_orders
 add constraint work_orders_type_check
 check (type in ('corrective', 'preventive', 'fabrication'));
 
-notify pgrst, 'reload schema';
+commit;

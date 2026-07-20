@@ -1,7 +1,7 @@
 (function () {
   window.MaintainOpsConstants = Object.freeze({
     STATUS_OPTIONS: Object.freeze(["open", "in_progress", "blocked", "completed"]),
-    TYPE_OPTIONS: Object.freeze(["request", "reactive", "preventive", "inspection", "corrective"]),
+    TYPE_OPTIONS: Object.freeze(["corrective", "preventive", "fabrication"]),
     ASSET_TYPE_OPTIONS: Object.freeze(["machine", "forklift", "secondary_machine", "tooling", "component", "shop_item"]),
     WORK_ORDERS_PER_PAGE: 12,
     PARTS_PER_PAGE: 12,

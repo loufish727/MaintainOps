@@ -32,7 +32,7 @@ test("work order and quick fix equipment selectors ignore equipment board filter
 
     const createDisplay = window.MaintainOpsCreateWorkOrderDisplay.createCreateWorkOrderDisplayHelpers({
       STATUS_OPTIONS: ["open", "completed"],
-      TYPE_OPTIONS: ["reactive", "request"],
+      TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
       getParts: () => [],
       renderAssetOptions,
       statusLabel: (status) => status,
@@ -41,7 +41,7 @@ test("work order and quick fix equipment selectors ignore equipment board filter
       escapeHtml,
     });
     const quickFixDisplay = window.MaintainOpsQuickFixDisplay.createQuickFixDisplayHelpers({
-      TYPE_OPTIONS: ["corrective", "request"],
+      TYPE_OPTIONS: ["corrective", "preventive", "fabrication"],
       getQuickFixAssetId: () => "",
       getQuickFixRequestId: () => "",
       getMaintenanceRequests: () => [],

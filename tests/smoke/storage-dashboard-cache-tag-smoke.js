@@ -7,8 +7,8 @@ const runtimeEntry = fs.readFileSync(path.join(__dirname, "..", "..", "src", "bu
 
 assert.match(
   indexHtml,
-  /styles\.css\?v=mo-build-20260706-storage-dashboard-largest-month-1/,
-  "styles.css must use the storage dashboard rules cache tag"
+  /styles\.css\?v=mo-build-20260720-team-sections-1/,
+  "styles.css must use the current Team sections cache tag"
 );
 assert.match(
   indexHtml,

@@ -421,6 +421,7 @@
           const alertRef = deps.alertRef || alert;
           const matchesActiveLocation = typeof deps.matchesActiveLocation === "function" ? deps.matchesActiveLocation : () => true;
           const assetTypeLabel = typeof deps.assetTypeLabel === "function" ? deps.assetTypeLabel : (type) => String(type || "machine").replaceAll("_", " ");
+          const workOrderTypeLabel = typeof deps.workOrderTypeLabel === "function" ? deps.workOrderTypeLabel : (type) => String(type || "corrective").replaceAll("_", " ");
           const assetTypeOrder = {
             machine: 10,
             forklift: 20,
@@ -539,7 +540,7 @@
                   title: workOrder.title,
                   status: workOrder.status,
                   priority: workOrder.priority,
-                  type: workOrder.type || "reactive",
+                  type: workOrderTypeLabel(workOrder.type),
                   equipment: workOrder.assets?.name || "",
                   assigned_to: deps.assignmentLabel(workOrder),
                   due_at: workOrder.due_at || "",
@@ -3522,7 +3523,7 @@ ${requestDescription}`,
                 description: deps.descriptionWithRequestPhotoNote(request.description, request),
                 asset_id: request.asset_id || null,
                 priority: request.priority || "medium",
-                type: "reactive",
+                type: "corrective",
                 status: "open",
                 created_by: deps.getSession().user.id
               };
@@ -3699,7 +3700,7 @@ ${requestDescription}`,
                 description: deps.descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
                 asset_id: assetId,
                 priority: form.get("priority"),
-                type: form.get("type") || "reactive",
+                type: form.get("type") || "corrective",
                 due_at: deps.workOrderDateValue(form.get("due_at")),
                 assigned_to: deps.assignedUserFromForm(form),
                 ...deps.procedureColumn(form.get("procedure_template_id")),
@@ -5863,6 +5864,9 @@ ${requestDescription}`,
             const requestedAtLabel = requestedAt && !Number.isNaN(requestedAt.getTime()) ? requestedAt.toLocaleString() : "date unavailable";
             const equipmentLabel = request.assets?.name || request.locations?.name || "No equipment";
             const requesterLabel = request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester";
+            const converterId = request.converted_by || request.reviewed_by || "";
+            const converterLabel = profilesByUserId[converterId]?.full_name || "";
+            const conversionLabel = converterLabel ? `Converted to work order by ${converterLabel}` : converterId ? "Converted to work order; converter name unavailable" : "Converted to work order; converter not recorded";
             const deleteControls = canEditOperational && canDeleteOperationalRecords() ? confirming ? `
         <button class="secondary-button" data-cancel-delete-request type="button">Cancel</button>
         <button class="danger-action-button confirm-delete-button" data-confirm-delete-request="${escapeHtml(request.id)}" type="button">Permanently Delete</button>
@@ -5896,7 +5900,7 @@ ${requestDescription}`,
             </div>
           ` : converted ? `
             <div class="request-actions request-converted-note">
-              <span>Converted to work order</span>
+              <span>${escapeHtml(conversionLabel)}</span>
               ${deleteControls}
             </div>
           ` : ""}
@@ -5965,6 +5969,7 @@ ${requestDescription}`,
       (function() {
         function createWorkQueueDisplayHelpers({
           statusLabel,
+          workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
           teamMemberName,
           getWorkOrderAssigneeFilter,
           getWorkOrderFilter,
@@ -6021,7 +6026,7 @@ ${requestDescription}`,
           <div class="work-card-header">
             <div class="chip-row">
               <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
-              <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
+              <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
               <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
               ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
             </div>
@@ -7286,6 +7291,17 @@ ${requestDescription}`,
               getProfilesByUserId()[member.user_id]?.full_name
             ]));
           }
+          function renderTeamSection({ id, label, content, meta = "", open = false }) {
+            return `
+        <details class="team-section-details" data-team-section="${escapeHtml(id)}" ${open ? "open" : ""}>
+          <summary>
+            <span>${escapeHtml(label)}</span>
+            ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+          </summary>
+          <div class="team-section-body">${content}</div>
+        </details>
+      `;
+          }
           function renderMember(member) {
             const profile = getProfilesByUserId()[member.user_id];
             const currentUser = getSession().user;
@@ -7548,6 +7564,7 @@ ${requestDescription}`,
           return {
             teamMemberName,
             filteredMembers,
+            renderTeamSection,
             renderMember,
             renderMyProfileForm,
             renderPasswordChangeForm,
@@ -7721,6 +7738,8 @@ ${requestDescription}`,
             renderWorkOrderCommandSummary,
             renderWorkOrderRecommendation,
             statusLabel,
+            normalizeWorkOrderType = (type) => String(type || "corrective"),
+            workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
             hasCompletedSafetyDeviceCheck,
             canAssignWorkOrderToMe,
             renderAssetOptions,
@@ -7819,7 +7838,7 @@ ${requestDescription}`,
         <div>
           <div class="chip-row">
             <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
-            <span class="chip">${escapeHtml(workOrder.type || "reactive")}</span>
+            <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
             <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
           </div>
           <h2>${escapeHtml(workOrder.title)}</h2>
@@ -7938,9 +7957,9 @@ ${requestDescription}`,
               ${["low", "medium", "high", "critical"].map((priority) => `<option value="${priority}" ${priority === workOrder.priority ? "selected" : ""}>${priority}</option>`).join("")}
             </select>
           </label>
-          <label>Type
+          <label>Work type
             <select name="type">
-              ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (workOrder.type || "reactive") ? "selected" : ""}>${type}</option>`).join("")}
+              ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === normalizeWorkOrderType(workOrder.type) ? "selected" : ""}>${workOrderTypeLabel(type)}</option>`).join("")}
             </select>
           </label>
           ${renderWorkOrderAssignmentField(workOrder)}
@@ -8834,6 +8853,7 @@ ${requestDescription}`,
             TYPE_OPTIONS = [],
             renderAssetOptions,
             statusLabel,
+            workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase()),
             renderAssignmentSelect,
             renderProcedureOptions,
             escapeHtml
@@ -8891,9 +8911,9 @@ ${requestDescription}`,
                   <option>low</option>
                 </select>
               </label>
-              <label>Type
+              <label>Work type
                 <select name="type">
-                  ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}">${type}</option>`).join("")}
+                  ${TYPE_OPTIONS.map((type) => `<option value="${type}">${workOrderTypeLabel(type)}</option>`).join("")}
                 </select>
               </label>
               <label>Complete by / due date
@@ -8978,7 +8998,8 @@ ${requestDescription}`,
             escapeHtml,
             renderAssignmentSelect,
             renderProcedureOptions,
-            assetStatusLabel
+            assetStatusLabel,
+            workOrderTypeLabel = (type) => String(type || "corrective").replace(/\b\w/g, (letter) => letter.toUpperCase())
           } = deps;
           function todayDateValue() {
             const now = /* @__PURE__ */ new Date();
@@ -9041,9 +9062,9 @@ ${requestDescription}`,
                   ${["medium", "high", "critical", "low"].map((priority) => `<option value="${priority}">${priority}</option>`).join("")}
                 </select>
               </label>
-              <label>Type
+              <label>Work type
                 <select name="type">
-                  ${TYPE_OPTIONS.filter((type) => type !== "request").map((type) => `<option value="${type}" ${type === "corrective" ? "selected" : ""}>${type}</option>`).join("")}
+                  ${TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === "corrective" ? "selected" : ""}>${workOrderTypeLabel(type)}</option>`).join("")}
                 </select>
               </label>
               <label>Assign to
@@ -9583,7 +9604,7 @@ ${requestDescription}`,
   (function() {
     window.MaintainOpsConstants = Object.freeze({
       STATUS_OPTIONS: Object.freeze(["open", "in_progress", "blocked", "completed"]),
-      TYPE_OPTIONS: Object.freeze(["request", "reactive", "preventive", "inspection", "corrective"]),
+      TYPE_OPTIONS: Object.freeze(["corrective", "preventive", "fabrication"]),
       ASSET_TYPE_OPTIONS: Object.freeze(["machine", "forklift", "secondary_machine", "tooling", "component", "shop_item"]),
       WORK_ORDERS_PER_PAGE: 12,
       PARTS_PER_PAGE: 12,
@@ -9650,6 +9671,20 @@ ${requestDescription}`,
       if (status === "completed_week") return "Done This Week";
       if (status === "open") return "New";
       return String(status || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+    }
+    function normalizeWorkOrderType(type) {
+      const normalized = String(type || "corrective").trim().toLowerCase();
+      if (normalized === "inspection") return "preventive";
+      if (normalized === "reactive" || normalized === "request") return "corrective";
+      return ["corrective", "preventive", "fabrication"].includes(normalized) ? normalized : "corrective";
+    }
+    function workOrderTypeLabel(type) {
+      const labels = {
+        corrective: "Corrective",
+        preventive: "Preventive",
+        fabrication: "Fabrication"
+      };
+      return labels[normalizeWorkOrderType(type)];
     }
     function normalizeRole(role) {
       const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "accounting", "manager", "admin"];
@@ -9743,6 +9778,8 @@ ${requestDescription}`,
       fileBaseName,
       safeFileName,
       statusLabel,
+      normalizeWorkOrderType,
+      workOrderTypeLabel,
       normalizeRole,
       roleLabel,
       roleDescription,
@@ -13841,7 +13878,7 @@ ${note}` : note;
         if ((previous.description || "") !== (next.description || "")) changes.push("description");
         if ((previous.due_at || "") !== (next.due_at || "")) changes.push("due date");
         if (previous.priority !== next.priority) changes.push("priority");
-        if ((previous.type || "reactive") !== next.type) changes.push("type");
+        if ((previous.type || "corrective") !== next.type) changes.push("type");
         if ((previous.assigned_to || "") !== (next.assigned_to || "")) changes.push("assignment");
         if ((previous.procedure_template_id || "") !== (next.procedure_template_id || "")) changes.push("procedure");
         if (String(previous.actual_minutes || 0) !== String(next.actual_minutes || 0)) changes.push("actual minutes");

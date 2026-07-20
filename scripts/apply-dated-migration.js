@@ -5,7 +5,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const migrationsDir = path.join(root, "supabase", "migrations");
 const projectRefPath = path.join(root, "supabase", ".temp", "project-ref");
-const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+const supabaseCliPath = require.resolve("supabase/dist/supabase.js");
 const datedMigrationPattern = /^\d{12}_[a-z0-9][a-z0-9_]*\.sql$/;
 
 function fail(message) {
@@ -61,7 +61,7 @@ function printPlan({ fileName, filePath }, execute) {
 }
 
 function executeMigration(filePath) {
-  execFileSync(npxCommand, ["supabase", "db", "query", "--linked", "--file", path.relative(root, filePath)], {
+  execFileSync(process.execPath, [supabaseCliPath, "db", "query", "--linked", "--file", path.relative(root, filePath)], {
     cwd: root,
     stdio: "inherit",
   });

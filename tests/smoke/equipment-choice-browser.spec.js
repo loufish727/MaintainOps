@@ -19,7 +19,7 @@ test("equipment choice modes prevent existing and new equipment from being submi
       .replaceAll('"', "&quot;");
     const workOrderDisplay = window.MaintainOpsCreateWorkOrderDisplay.createCreateWorkOrderDisplayHelpers({
       STATUS_OPTIONS: ["open"],
-      TYPE_OPTIONS: ["reactive"],
+      TYPE_OPTIONS: ["corrective"],
       getParts: () => [],
       renderAssetOptions,
       statusLabel: (status) => status,

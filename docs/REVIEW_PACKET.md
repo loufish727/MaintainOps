@@ -19,14 +19,14 @@ Strong areas:
 - RLS-first security posture for shared operational data.
 - Public QR request intake through scoped RPC paths rather than direct anonymous table access.
 - Significant modularization work underway from a large legacy `app.js`.
-- Targeted smoke coverage and GitHub Actions resource-load checks.
+- A required Strict LFES GitHub gate, targeted browser/smoke coverage, and a protected four-role authenticated testing-platform proof.
 
 Areas still maturing:
 
 - `app.js` remains the main orchestration file.
-- Automated integration/end-to-end coverage is still limited.
-- Backup, restore, support, and incident procedures need final production rollout polish.
-- Backup/restore validation is no longer plan-blocked because Supabase Pro is active, but no restore drill has been completed yet; see `docs/BACKUP_RESTORE_VALIDATION.md`.
+- Automated integration/end-to-end coverage is meaningful but still selective rather than exhaustive.
+- Storage restore, support, and incident procedures need final production rollout polish.
+- The database restore drill passed; storage mirroring exists but is not yet scheduled or restore-tested. See `docs/BACKUP_RESTORE_VALIDATION.md`.
 - Pilot hardening gates for backup/restore, support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `docs/PILOT_HARDENING_PLAN.md`.
 - Public request intake needs final production copy, routing, and support hardening.
 - The current hosted app contains QA and pilot-style data.
@@ -37,7 +37,7 @@ Areas still maturing:
 - Hosting: GitHub Pages.
 - Backend: Supabase Auth, Postgres, RLS policies, RPCs, and private storage buckets.
 - Main app entry: `index.html`.
-- Main orchestration: `app.js` at roughly 4,615 lines.
+- Main orchestration: `app.js` at roughly 6,100 lines.
 - Extracted modules: `src/`.
 - SQL source: `supabase/`.
 
@@ -65,7 +65,7 @@ Reviewers should inspect:
 
 ## Testing And Verification
 
-Current verification uses targeted smoke tests, resource-load checks, and selected live browser checks for high-risk flows.
+Current verification uses the required Strict LFES release gate, recursive SQL and isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, and protected four-role authenticated browser/security proof.
 
 Useful entry points:
 
@@ -76,7 +76,7 @@ Useful entry points:
 - `docs/SECURITY_VERIFICATION.md`
 - `docs/BACKUP_RESTORE_VALIDATION.md`
 
-This is not yet a full automated test suite. A broader integration/e2e suite remains a recommended next maturity step.
+This is not exhaustive verification. Numeric line/branch coverage, a complete live mutation matrix, remote schema-drift comparison, and broad cross-browser coverage remain recommended maturity steps.
 
 ## Review Focus
 

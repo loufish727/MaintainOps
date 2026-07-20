@@ -42,6 +42,13 @@
       const requestedAtLabel = requestedAt && !Number.isNaN(requestedAt.getTime()) ? requestedAt.toLocaleString() : "date unavailable";
       const equipmentLabel = request.assets?.name || request.locations?.name || "No equipment";
       const requesterLabel = request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester";
+      const converterId = request.converted_by || request.reviewed_by || "";
+      const converterLabel = profilesByUserId[converterId]?.full_name || "";
+      const conversionLabel = converterLabel
+        ? `Converted to work order by ${converterLabel}`
+        : converterId
+          ? "Converted to work order; converter name unavailable"
+          : "Converted to work order; converter not recorded";
       const deleteControls = canEditOperational && canDeleteOperationalRecords() ? confirming ? `
         <button class="secondary-button" data-cancel-delete-request type="button">Cancel</button>
         <button class="danger-action-button confirm-delete-button" data-confirm-delete-request="${escapeHtml(request.id)}" type="button">Permanently Delete</button>
@@ -75,7 +82,7 @@
             </div>
           ` : converted ? `
             <div class="request-actions request-converted-note">
-              <span>Converted to work order</span>
+              <span>${escapeHtml(conversionLabel)}</span>
               ${deleteControls}
             </div>
           ` : ""}

@@ -46,6 +46,18 @@ const helpers = createTeamMemberDisplayHelpers(baseDeps);
 assert.equal(helpers.teamMemberName("user-1"), "Louie");
 assert.equal(helpers.filteredMembers().length, 2);
 
+const teamSection = helpers.renderTeamSection({
+  id: "members",
+  label: "Team <Members>",
+  meta: "2 shown",
+  open: true,
+  content: '<article class="member-card">Member content</article>',
+});
+assert.match(teamSection, /data-team-section="members" open/);
+assert.match(teamSection, /Team &lt;Members&gt;/);
+assert.match(teamSection, /2 shown/);
+assert.match(teamSection, /Member content/);
+
 const member = helpers.renderMember({ user_id: "user-2", role: "technician" });
 assert.match(member, /Taylor Tech/);
 assert.match(member, /technician role/);
