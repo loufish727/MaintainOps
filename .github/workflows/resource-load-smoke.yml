@@ -1,4 +1,4 @@
-name: Resource Load Smoke
+name: MaintainOps CI Gate
 
 on:
   push:
@@ -13,17 +13,21 @@ on:
       - completed
 
 jobs:
-  checkout_resource_load_smoke:
+  strict_lfes:
     if: github.event_name != 'workflow_run'
-    name: Checkout resource-load smoke
+    name: Strict LFES
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -34,31 +38,43 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run checkout resource-load smoke
+      - name: Run strict LFES
+        run: npm run test:lfes:strict
+
+      - name: Verify generated bundles are committed
+        shell: bash
         run: |
-          node scripts/local-static-server.js 4195 &
-          MAINTAINOPS_BASE_URL="http://127.0.0.1:4195/" npx playwright test tests/smoke/resource-load.spec.js --workers=1
-          MAINTAINOPS_BASE_URL="http://127.0.0.1:4195/" npx playwright test tests/smoke/platform-performance-mobile-browser.spec.js --workers=1
+          generated_changes="$(git status --porcelain --untracked-files=all -- index.html performance-spatial.html src/bundles)"
+          if [[ -n "$generated_changes" ]]; then
+            echo "::error::Strict LFES rebuilt browser bundles that are not committed. Run npm run build:runtime:bundles and commit the generated files."
+            printf '%s\n' "$generated_changes"
+            exit 1
+          fi
 
   hosted-resource-load-smoke:
-    needs: checkout_resource_load_smoke
+    needs: strict_lfes
     if: >-
       always() &&
       (
-        ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-          needs.checkout_resource_load_smoke.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' &&
+          needs.strict_lfes.result == 'success') ||
         (github.event_name == 'workflow_run' &&
-          github.event.workflow_run.conclusion == 'success')
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main')
       )
-    name: Hosted resource-load smoke
+    name: Hosted App Smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -70,4 +86,6 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run hosted resource-load smoke
-        run: npx playwright test tests/smoke/resource-load.spec.js
+        run: npx playwright test tests/smoke/resource-load.spec.js --workers=1
+        env:
+          MAINTAINOPS_BASE_URL: https://loufish727.github.io/MaintainOps/
