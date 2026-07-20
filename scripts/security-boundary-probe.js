@@ -420,7 +420,7 @@ async function run() {
       config,
       authToken,
       "maintenance_requests",
-      "external_source=neq.public_location_qr&select=id"
+      "or=(external_source.is.null,external_source.neq.public_location_qr)&select=id"
     );
     if (internalRequest?.id) {
       const result = await requestJson({
