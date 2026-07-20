@@ -63,7 +63,7 @@
       .from("work_orders")
       .select("id, assigned_to, status, due_at, location_id")
       .eq("company_id", companyId)
-      .in("status", ["open", "in_progress", "blocked"])
+      .in("status", ["open", "in_progress", "blocked", "completed"])
       .not("assigned_to", "is", null);
     if (locationsReady && locationId) query = query.eq("location_id", locationId);
     return query.order("id", { ascending: true });

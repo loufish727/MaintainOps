@@ -36,7 +36,7 @@ assert.deepEqual(query.calls.slice(0, 5), [
   ["from", "work_orders"],
   ["select", "id, assigned_to, status, due_at, location_id"],
   ["eq", "company_id", "company-1"],
-  ["in", "status", ["open", "in_progress", "blocked"]],
+  ["in", "status", ["open", "in_progress", "blocked", "completed"]],
   ["not", "assigned_to", "is", null],
 ]);
 assert.ok(query.calls.some((call) => call[0] === "eq" && call[1] === "location_id" && call[2] === "location-1"));

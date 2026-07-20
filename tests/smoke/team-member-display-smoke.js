@@ -30,7 +30,7 @@ const baseDeps = {
   roleDescription: (role) => `${role} role`,
   roleLabel: (role) => role.toUpperCase(),
   normalizeRole: (role) => role,
-  teamMemberWorkload: () => ({ newWork: 1, inProgress: 2, blocked: 3, overdue: 4 }),
+  teamMemberWorkload: () => ({ newWork: 1, inProgress: 2, blocked: 3, completed: 5, overdue: 4 }),
   canManageTeam: () => true,
   canAdministerTeamRoles: () => true,
   teamRoleOptionsForActor: () => ["technician", "accounting", "manager", "admin"],
@@ -51,6 +51,7 @@ assert.match(member, /Taylor Tech/);
 assert.match(member, /technician role/);
 assert.match(member, /data-view-member-work="user-2"/);
 assert.match(member, /data-member-role="user-2"/);
+assert.match(member, /5 Completed/);
 assert.match(member, /4 Overdue/);
 
 const profile = helpers.renderMyProfileForm();
