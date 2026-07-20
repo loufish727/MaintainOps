@@ -36,6 +36,7 @@ const equipmentButton = createButton("equipment");
 const managerButton = createButton("manager");
 const setupButton = createButton("setup");
 const performanceButton = createButton("performance");
+const teamButton = createButton("team");
 const blockedButton = createButton("blocked");
 const storage = {
   values: {},
@@ -64,10 +65,11 @@ let requestReloadCount = 0;
 let managerLoadCount = 0;
 let setupStorageLoadCount = 0;
 let performanceLoadCount = 0;
+let teamWorkloadReloadCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
-    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, performanceButton, blockedButton]),
+    documentRef: createDocument([workButton, myWorkButton, requestsButton, equipmentButton, managerButton, setupButton, performanceButton, teamButton, blockedButton]),
     storage,
     state: {
       setActiveAssetId: (value) => { stateValues.activeAssetId = value; },
@@ -81,13 +83,14 @@ let performanceLoadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"], ["team"]],
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
     scrollToSectionTop: () => { scrollCount += 1; },
     reloadWorkOrderQueue: async () => { workReloadCount += 1; },
     reloadRequestQueue: async () => { requestReloadCount += 1; },
+    reloadTeamWorkloads: async () => { teamWorkloadReloadCount += 1; renderCount += 1; },
     loadManagerDashboardCompletedWork: async () => { managerLoadCount += 1; },
     loadSetupStorageDashboard: async () => { setupStorageLoadCount += 1; },
     loadPlatformPerformance: async () => { performanceLoadCount += 1; },
@@ -164,12 +167,20 @@ let performanceLoadCount = 0;
   assert.equal(scrollCount, 6);
   assert.equal(workReloadCount, 2);
 
+  await teamButton.dispatch("click");
+  assert.equal(stateValues.activeSection, "team");
+  assert.equal(storage.values["maintainops.activeSection"], "team");
+  assert.equal(resetCount, 7);
+  assert.equal(renderCount, 10);
+  assert.equal(scrollCount, 7);
+  assert.equal(teamWorkloadReloadCount, 1);
+
   await performanceButton.dispatch("click");
   assert.equal(stateValues.activeSection, "performance");
   assert.equal(storage.values["maintainops.activeSection"], "performance");
-  assert.equal(resetCount, 7);
-  assert.equal(renderCount, 9);
-  assert.equal(scrollCount, 7);
+  assert.equal(resetCount, 8);
+  assert.equal(renderCount, 11);
+  assert.equal(scrollCount, 8);
   assert.equal(performanceLoadCount, 1);
 
   bindWorkspaceSectionNavigationEvents({

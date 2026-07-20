@@ -162,6 +162,7 @@ const {
   fetchWorkOrdersByAsset,
   fetchWorkOrdersByIds,
   scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
+  scopedTeamWorkloadQuery: buildScopedTeamWorkloadQuery,
   fetchPagedSearchRows,
 } = window.MaintainOpsWorkOrdersService;
 const { fetchRecentCompletedWorkOrders } = window.MaintainOpsManagerDashboardService;
@@ -394,6 +395,7 @@ let locationsReady = true;
 let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
+let teamWorkOrders = [];
 let planningWorkOrders = [];
 let workOrderServerTotal = 0;
 let workOrderDashboardCounts = null;
@@ -678,7 +680,7 @@ const {
 const {
   teamMemberWorkload,
 } = createTeamWorkloadDisplayHelpers({
-  getWorkOrders: () => workOrders,
+  getWorkOrders: () => teamWorkOrders,
   matchesActiveLocation,
   getDueState,
 });
@@ -2293,6 +2295,7 @@ const workspaceLoaderMap = {
   loadPublicRequestLinks,
   loadStepResults,
   loadStorageDashboard,
+  loadTeamWorkOrders,
   loadWorkOrderEvents,
 };
 
@@ -2437,6 +2440,35 @@ async function reloadRequestQueue() {
   } catch (error) {
     requestsReady = false;
     showNotice(`Could not load requests: ${error.message || error}`, "warning");
+  }
+}
+
+async function loadTeamWorkOrders() {
+  const companyId = activeCompanyId;
+  const locationId = activeLocationId;
+  const rows = [];
+  teamWorkOrders = [];
+
+  await fetchPagedSearchRows(
+    () => buildScopedTeamWorkloadQuery(supabaseClient, {
+      companyId,
+      locationId,
+      locationsReady,
+    }),
+    (pageRows) => rows.push(...pageRows)
+  );
+
+  if (companyId === activeCompanyId && locationId === activeLocationId) {
+    teamWorkOrders = rows;
+  }
+}
+
+async function reloadTeamWorkloads() {
+  try {
+    await loadTeamWorkOrders();
+    if (activeSection === "team") renderWorkspace();
+  } catch (error) {
+    showNotice(`Could not load team workloads: ${error.message || error}`, "warning");
   }
 }
 
@@ -4705,6 +4737,7 @@ function bindWorkspaceEvents() {
       persistActiveLocationId(activeLocationId);
       await reloadWorkOrderQueue();
       await reloadRequestQueue();
+      if (activeSection === "team") await reloadTeamWorkloads();
   };
 
   const locationSelect = document.querySelector("#location-select");
@@ -4745,6 +4778,7 @@ function bindWorkspaceEvents() {
       setShowPartSourceManager: (value) => { showPartSourceManager = value; },
     },
     reloadRequestQueue,
+    reloadTeamWorkloads,
     loadSetupStorageDashboard: async () => {
       await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
     },

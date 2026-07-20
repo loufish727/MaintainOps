@@ -380,6 +380,7 @@
     if (activeSection2 === "settings") immediateLoaders.push(["Public request links", "loadPublicRequestLinks"]);
     if (activeSection2 === "setup") immediateLoaders.push(["Storage dashboard", "loadStorageDashboard"]);
     if (activeSection2 === "requests") immediateLoaders.push(["Request photos", "addSignedRequestPhotoUrls"]);
+    if (activeSection2 === "team") immediateLoaders.push(["Team workloads", "loadTeamWorkOrders"]);
     if (activeWorkOrderId2 || activeAssetId2 || activeSection2 === "parts") {
       immediateLoaders.push(...relatedLoaders);
     }
@@ -546,6 +547,7 @@
     fetchWorkOrdersByAsset,
     fetchWorkOrdersByIds,
     scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
+    scopedTeamWorkloadQuery: buildScopedTeamWorkloadQuery,
     fetchPagedSearchRows
   } = window.MaintainOpsWorkOrdersService;
   var { fetchRecentCompletedWorkOrders } = window.MaintainOpsManagerDashboardService;
@@ -782,6 +784,7 @@
   var activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
   var assets = [];
   var workOrders = [];
+  var teamWorkOrders = [];
   var planningWorkOrders = [];
   var workOrderServerTotal = 0;
   var workOrderDashboardCounts = null;
@@ -1068,7 +1071,7 @@
   var {
     teamMemberWorkload
   } = createTeamWorkloadDisplayHelpers({
-    getWorkOrders: () => workOrders,
+    getWorkOrders: () => teamWorkOrders,
     matchesActiveLocation,
     getDueState
   });
@@ -2537,6 +2540,7 @@
     loadPublicRequestLinks,
     loadStepResults,
     loadStorageDashboard,
+    loadTeamWorkOrders,
     loadWorkOrderEvents
   };
   async function loadCompanyData() {
@@ -2668,6 +2672,31 @@
     } catch (error) {
       requestsReady = false;
       showNotice(`Could not load requests: ${error.message || error}`, "warning");
+    }
+  }
+  async function loadTeamWorkOrders() {
+    const companyId = activeCompanyId;
+    const locationId = activeLocationId;
+    const rows = [];
+    teamWorkOrders = [];
+    await fetchPagedSearchRows(
+      () => buildScopedTeamWorkloadQuery(supabaseClient, {
+        companyId,
+        locationId,
+        locationsReady
+      }),
+      (pageRows) => rows.push(...pageRows)
+    );
+    if (companyId === activeCompanyId && locationId === activeLocationId) {
+      teamWorkOrders = rows;
+    }
+  }
+  async function reloadTeamWorkloads() {
+    try {
+      await loadTeamWorkOrders();
+      if (activeSection === "team") renderWorkspace();
+    } catch (error) {
+      showNotice(`Could not load team workloads: ${error.message || error}`, "warning");
     }
   }
   async function loadProfiles() {
@@ -4690,6 +4719,7 @@ Continue ${actionLabel}?`);
       persistActiveLocationId(activeLocationId);
       await reloadWorkOrderQueue();
       await reloadRequestQueue();
+      if (activeSection === "team") await reloadTeamWorkloads();
     };
     const locationSelect = document.querySelector("#location-select");
     if (locationSelect) {
@@ -4738,6 +4768,7 @@ Continue ${actionLabel}?`);
         }
       },
       reloadRequestQueue,
+      reloadTeamWorkloads,
       loadSetupStorageDashboard: async () => {
         await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
       },
