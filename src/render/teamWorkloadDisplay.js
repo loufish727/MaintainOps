@@ -7,6 +7,7 @@
         newWork: assigned.filter((workOrder) => workOrder.status === "open").length,
         inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,
         blocked: assigned.filter((workOrder) => workOrder.status === "blocked").length,
+        completed: assigned.filter((workOrder) => workOrder.status === "completed").length,
         overdue: assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length,
       };
     }

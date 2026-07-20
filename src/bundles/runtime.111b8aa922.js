@@ -7303,6 +7303,7 @@ ${requestDescription}`,
               <span class="chip open">${workload.newWork} New</span>
               <span class="chip in_progress">${workload.inProgress} In Progress</span>
               <span class="chip blocked">${workload.blocked} Blocked</span>
+              <span class="chip completed">${workload.completed} Completed</span>
               ${workload.overdue ? `<span class="chip overdue">${workload.overdue} Overdue</span>` : ""}
             </div>
           </div>
@@ -12339,7 +12340,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
     }
     function scopedTeamWorkloadQuery(supabaseClient, params) {
       const { companyId, locationId, locationsReady } = params;
-      let query = supabaseClient.from("work_orders").select("id, assigned_to, status, due_at, location_id").eq("company_id", companyId).in("status", ["open", "in_progress", "blocked"]).not("assigned_to", "is", null);
+      let query = supabaseClient.from("work_orders").select("id, assigned_to, status, due_at, location_id").eq("company_id", companyId).in("status", ["open", "in_progress", "blocked", "completed"]).not("assigned_to", "is", null);
       if (locationsReady && locationId) query = query.eq("location_id", locationId);
       return query.order("id", { ascending: true });
     }
@@ -13673,6 +13674,7 @@ ${button.dataset.quickReply}` : button.dataset.quickReply;
           newWork: assigned.filter((workOrder) => workOrder.status === "open").length,
           inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,
           blocked: assigned.filter((workOrder) => workOrder.status === "blocked").length,
+          completed: assigned.filter((workOrder) => workOrder.status === "completed").length,
           overdue: assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length
         };
       }

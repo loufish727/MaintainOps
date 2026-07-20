@@ -76,6 +76,7 @@
               <span class="chip open">${workload.newWork} New</span>
               <span class="chip in_progress">${workload.inProgress} In Progress</span>
               <span class="chip blocked">${workload.blocked} Blocked</span>
+              <span class="chip completed">${workload.completed} Completed</span>
               ${workload.overdue ? `<span class="chip overdue">${workload.overdue} Overdue</span>` : ""}
             </div>
           </div>
