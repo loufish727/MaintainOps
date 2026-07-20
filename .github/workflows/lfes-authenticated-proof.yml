@@ -40,10 +40,29 @@ jobs:
           const url = process.env.LFES_SUPABASE_URL;
           const key = process.env.LFES_SUPABASE_ANON_KEY;
           if (!url || !key) throw new Error("Missing isolated LFES Supabase configuration.");
+          const testingBackend = new URL(url);
+          const expectedTestingHost = "fsxqrngpaseqdxijggcm.supabase.co";
+          if (testingBackend.protocol !== "https:" || testingBackend.hostname !== expectedTestingHost) {
+            throw new Error(`LFES backend must be the isolated testing project (${expectedTestingHost}).`);
+          }
           fs.writeFileSync(
             "supabase-config.js",
             `window.SUPABASE_URL = ${JSON.stringify(url)};\nwindow.SUPABASE_ANON_KEY = ${JSON.stringify(key)};\n`,
           );
+
+          const indexPath = "index.html";
+          let indexSource = fs.readFileSync(indexPath, "utf8");
+          function allowOriginInDirective(source, directive, origins) {
+            const pattern = new RegExp(`(${directive}[^;\"]*)`);
+            if (!pattern.test(source)) throw new Error(`Missing ${directive} in Content Security Policy.`);
+            return source.replace(pattern, (value) => `${value} ${origins.join(" ")}`);
+          }
+          indexSource = allowOriginInDirective(indexSource, "connect-src", [
+            testingBackend.origin,
+            `wss://${testingBackend.host}`,
+          ]);
+          indexSource = allowOriginInDirective(indexSource, "img-src", [testingBackend.origin]);
+          fs.writeFileSync(indexPath, indexSource);
           NODE
 
       - name: Run authenticated LFES proof
