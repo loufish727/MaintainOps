@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { writeEvidence } = require("./lfes-evidence");
 
 const rootDir = path.resolve(__dirname, "..");
 const configPath = path.join(rootDir, "supabase-config.js");
@@ -122,6 +123,7 @@ function fail(name, detail) {
 
 async function run() {
   const config = readBrowserConfig();
+  const requireAuthenticatedProof = process.env.MAINTAINOPS_REQUIRE_AUTH_PROOF === "1";
   const appTables = [
     "companies",
     "company_members",
@@ -152,6 +154,7 @@ async function run() {
   const results = [];
   const randomUuid = "00000000-0000-4000-8000-000000000001";
   const randomUuidTwo = "00000000-0000-4000-8000-000000000002";
+  const probePng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
 
   for (const table of appTables) {
     const result = await requestJson({
@@ -288,18 +291,32 @@ async function run() {
 
     const maintenanceRequestDeleteId = process.env.MAINTAINOPS_TECH_DELETE_REQUEST_ID;
     if (maintenanceRequestDeleteId) {
-      const result = await requestJson({
-        ...config,
-        token: authToken,
-        path: `/rest/v1/maintenance_requests?id=eq.${encodeURIComponent(maintenanceRequestDeleteId)}`,
-        method: "DELETE",
-      });
-      if (isDenied(result)) {
-        results.push(pass("technician_denied:maintenance_requests_delete", `HTTP ${result.status}`));
-      } else if (result.ok && Array.isArray(result.payload) && result.payload.length === 0) {
-        results.push(review("technician_delete_request_inconclusive", "DELETE returned no rows. Use a disposable visible request id to confirm role enforcement."));
+      const requestBeforeDelete = await firstRow(
+        config,
+        authToken,
+        "maintenance_requests",
+        `id=eq.${encodeURIComponent(maintenanceRequestDeleteId)}&select=id`
+      );
+      if (!requestBeforeDelete) {
+        results.push(review("technician_delete_request_fixture_missing", "The configured request was not visible before the DELETE probe."));
       } else {
-        results.push(fail("technician_allowed:maintenance_requests_delete", `HTTP ${result.status}; technician maintenance request delete probe was not rejected.`));
+        const result = await requestJson({
+          ...config,
+          token: authToken,
+          path: `/rest/v1/maintenance_requests?id=eq.${encodeURIComponent(maintenanceRequestDeleteId)}`,
+          method: "DELETE",
+        });
+        const requestAfterDelete = await firstRow(
+          config,
+          authToken,
+          "maintenance_requests",
+          `id=eq.${encodeURIComponent(maintenanceRequestDeleteId)}&select=id`
+        );
+        if ((isDenied(result) || isSuccessfulNoRows(result)) && requestAfterDelete?.id === maintenanceRequestDeleteId) {
+          results.push(pass("technician_denied:maintenance_requests_delete", `HTTP ${result.status}; known-visible QA request remained present.`));
+        } else {
+          results.push(fail("technician_allowed:maintenance_requests_delete", `HTTP ${result.status}; known-visible QA request did not survive the DELETE probe.`));
+        }
       }
     } else {
       results.push(info("technician_delete_request_probe_not_run", "Set MAINTAINOPS_TECH_DELETE_REQUEST_ID to a disposable visible maintenance request id to verify technician delete denial."));
@@ -325,13 +342,13 @@ async function run() {
     }
   }
 
-  const anonUploadPath = `${randomUuid}/security-probe-${Date.now()}.txt`;
+  const anonUploadPath = `${randomUuid}/security-probe-${Date.now()}.png`;
   const anonUpload = await requestStorage({
     ...config,
     path: `/storage/v1/object/maintenance-request-photos/${anonUploadPath}`,
     method: "POST",
-    contentType: "text/plain",
-    body: "security probe",
+    contentType: "image/png",
+    body: probePng,
   });
   if (isDenied(anonUpload)) {
     results.push(pass("anon_storage_upload_invalid_request_denied:maintenance-request-photos", `HTTP ${anonUpload.status}`));
@@ -343,10 +360,10 @@ async function run() {
     const forbiddenLogoUpload = await requestStorage({
       ...config,
       token: authToken,
-      path: `/storage/v1/object/company-logos/${forbiddenCompanyId}/security-probe-${Date.now()}.txt`,
+      path: `/storage/v1/object/company-logos/${forbiddenCompanyId}/security-probe-${Date.now()}.png`,
       method: "POST",
-      contentType: "text/plain",
-      body: "security probe",
+      contentType: "image/png",
+      body: probePng,
     });
     if (isDenied(forbiddenLogoUpload)) {
       results.push(pass("auth_storage_upload_forbidden_company_denied:company-logos", `HTTP ${forbiddenLogoUpload.status}`));
@@ -430,10 +447,43 @@ async function run() {
     }
   }
 
+  if (requireAuthenticatedProof) {
+    const requiredPasses = [
+      ...["work_orders", "assets", "parts", "maintenance_requests", "public_request_links"]
+        .map((table) => `cross_tenant_filtered:${table}`),
+      "technician_denied:update_company_member_role",
+      "technician_denied:create_company_invite",
+      "technician_denied:set_company_logo",
+      "technician_denied:ensure_location_request_link",
+      "technician_denied:maintenance_requests_delete",
+      "auth_storage_upload_forbidden_company_denied:company-logos",
+      "anon_attach_photo_internal_request_denied",
+    ];
+    const passedNames = new Set(results.filter((result) => result.verdict === "PASS").map((result) => result.name));
+    for (const requiredName of requiredPasses) {
+      if (!passedNames.has(requiredName)) {
+        results.push(fail(
+          `required_authenticated_proof_missing:${requiredName}`,
+          "Authenticated LFES was required, but this proof did not produce a PASS result."
+        ));
+      }
+    }
+  }
+
   const failures = results.filter((result) => result.verdict === "FAIL");
   const reviews = results.filter((result) => result.verdict === "REVIEW");
+  const report = {
+    status: failures.length ? "FAIL" : reviews.length ? "REVIEW" : "PASS",
+    scope: requireAuthenticatedProof
+      ? "Live anonymous and required authenticated tenant, role, RPC, and storage boundary probes"
+      : "Live anonymous and optional authenticated tenant, role, RPC, and storage boundary probes",
+    authenticatedProofRequired: requireAuthenticatedProof,
+    generatedAt: new Date().toISOString(),
+    results,
+  };
 
-  console.log(JSON.stringify({ generatedAt: new Date().toISOString(), results }, null, 2));
+  writeEvidence("security-boundary.json", report);
+  console.log(JSON.stringify(report, null, 2));
 
   if (failures.length > 0) {
     process.exitCode = 1;
@@ -443,6 +493,14 @@ async function run() {
 }
 
 run().catch((error) => {
-  console.error(error);
+  const report = {
+    status: "FAIL",
+    scope: "Live security boundary probes",
+    authenticatedProofRequired: process.env.MAINTAINOPS_REQUIRE_AUTH_PROOF === "1",
+    generatedAt: new Date().toISOString(),
+    error: error.message,
+  };
+  writeEvidence("security-boundary.json", report);
+  console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 });

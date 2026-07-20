@@ -1,0 +1,84 @@
+name: Authenticated LFES Proof
+
+on:
+  workflow_dispatch:
+
+jobs:
+  authenticated_lfes:
+    name: Authenticated LFES
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: lfes-qa
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Configure isolated testing backend
+        shell: bash
+        env:
+          LFES_SUPABASE_URL: ${{ secrets.LFES_SUPABASE_URL }}
+          LFES_SUPABASE_ANON_KEY: ${{ secrets.LFES_SUPABASE_ANON_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const url = process.env.LFES_SUPABASE_URL;
+          const key = process.env.LFES_SUPABASE_ANON_KEY;
+          if (!url || !key) throw new Error("Missing isolated LFES Supabase configuration.");
+          fs.writeFileSync(
+            "supabase-config.js",
+            `window.SUPABASE_URL = ${JSON.stringify(url)};\nwindow.SUPABASE_ANON_KEY = ${JSON.stringify(key)};\n`,
+          );
+          NODE
+
+      - name: Run authenticated LFES proof
+        shell: bash
+        run: |
+          node scripts/local-static-server.js 4195 > /tmp/maintainops-lfes-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:4195/ > /dev/null && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4195/ > /dev/null
+          npm run test:lfes:authenticated
+        env:
+          MAINTAINOPS_BASE_URL: http://127.0.0.1:4195/
+          LFES_SUPABASE_URL: ${{ secrets.LFES_SUPABASE_URL }}
+          LFES_SUPABASE_ANON_KEY: ${{ secrets.LFES_SUPABASE_ANON_KEY }}
+          LFES_ADMIN_EMAIL: ${{ secrets.LFES_ADMIN_EMAIL }}
+          LFES_ADMIN_PASSWORD: ${{ secrets.LFES_ADMIN_PASSWORD }}
+          LFES_MANAGER_EMAIL: ${{ secrets.LFES_MANAGER_EMAIL }}
+          LFES_MANAGER_PASSWORD: ${{ secrets.LFES_MANAGER_PASSWORD }}
+          LFES_ACCOUNTING_EMAIL: ${{ secrets.LFES_ACCOUNTING_EMAIL }}
+          LFES_ACCOUNTING_PASSWORD: ${{ secrets.LFES_ACCOUNTING_PASSWORD }}
+          LFES_TECHNICIAN_EMAIL: ${{ secrets.LFES_TECHNICIAN_EMAIL }}
+          LFES_TECHNICIAN_PASSWORD: ${{ secrets.LFES_TECHNICIAN_PASSWORD }}
+          LFES_QA_COMPANY_ID: ${{ secrets.LFES_QA_COMPANY_ID }}
+          LFES_FORBIDDEN_COMPANY_ID: ${{ secrets.LFES_FORBIDDEN_COMPANY_ID }}
+          LFES_TECH_DELETE_REQUEST_ID: ${{ secrets.LFES_TECH_DELETE_REQUEST_ID }}
+
+      - name: Upload LFES evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: authenticated-lfes-evidence
+          path: lfes-evidence/
+          if-no-files-found: error
+          retention-days: 30

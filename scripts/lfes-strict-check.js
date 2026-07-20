@@ -1,13 +1,73 @@
 const { spawn } = require("node:child_process");
+const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
+const { evidenceDirectory, writeEvidence } = require("./lfes-evidence");
 
 const root = path.resolve(__dirname, "..");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
 const preferredPort = Number(process.env.MAINTAINOPS_LFES_PORT || 4195);
 const candidatePorts = [preferredPort, preferredPort + 1, preferredPort + 2];
+const startedAt = new Date().toISOString();
+const stages = [];
+
+async function runStage(name, callback) {
+  const started = Date.now();
+  try {
+    await callback();
+    stages.push({ name, status: "PASS", durationMs: Date.now() - started });
+  } catch (error) {
+    stages.push({ name, status: "FAIL", durationMs: Date.now() - started, error: error.message });
+    throw error;
+  }
+}
+
+function gitCommit() {
+  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+}
+
+function gitWorktreeChanges() {
+  const output = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim();
+  return output ? output.split(/\r?\n/) : [];
+}
+
+function verifyGeneratedBundlesClean() {
+  const output = execFileSync("git", [
+    "status",
+    "--porcelain",
+    "--untracked-files=all",
+    "--",
+    "index.html",
+    "performance-spatial.html",
+    "src/bundles",
+  ], { cwd: root, encoding: "utf8" }).trim();
+  if (output) {
+    throw new Error(`Generated browser bundles differ from the committed source:\n${output}\nRun npm run build:runtime:bundles and commit the generated files.`);
+  }
+}
+
+function writeSummary(status, error = null) {
+  const worktreeChanges = gitWorktreeChanges();
+  return writeEvidence("lfes-strict-summary.json", {
+    status,
+    scope: "Required release gate: recursive/static security, live anonymous boundaries, isolated PostgreSQL/RLS, bundles, Node/browser regressions, and local resource loading",
+    startedAt,
+    completedAt: new Date().toISOString(),
+    commit: gitCommit(),
+    worktreeDirty: worktreeChanges.length > 0,
+    worktreeChanges,
+    node: process.version,
+    platform: `${process.platform}-${process.arch}`,
+    authenticatedLiveProof: "NOT_RUN_BY_STRICT_GATE",
+    stages,
+    ...(error ? { error: error.message } : {}),
+  });
+}
 
 function run(command, args, options = {}) {
   const label = options.label || [command].concat(args).join(" ");
@@ -130,26 +190,31 @@ async function runNodeSmokeSweep() {
 }
 
 async function main() {
-  await run(npmCommand, ["run", "test:security:static"], {
+  fs.rmSync(evidenceDirectory(), { recursive: true, force: true });
+  await runStage("security static audit", () => run(npmCommand, ["run", "test:security:static"], {
     label: "security static audit",
-  });
-  await run(npmCommand, ["run", "test:security:boundary"], {
+  }));
+  await runStage("anonymous security boundary probe", () => run(npmCommand, ["run", "test:security:boundary"], {
     label: "security boundary probe",
-  });
-  await run(npmCommand, ["run", "test:scripts:inventory"], {
+  }));
+  await runStage("script load inventory", () => run(npmCommand, ["run", "test:scripts:inventory"], {
     label: "script load inventory check",
-  });
-  await run(npmCommand, ["run", "test:migrations:static"], {
+  }));
+  await runStage("migration static evidence", () => run(npmCommand, ["run", "test:migrations:static"], {
     label: "migration static check",
-  });
-  await run(npmCommand, ["run", "test:bundle:pilot"], {
+  }));
+  await runStage("isolated PostgreSQL schema and RLS", () => run(npmCommand, ["run", "test:schema:isolated"], {
+    label: "isolated PostgreSQL schema and RLS check",
+  }));
+  await runStage("runtime bundle build and manifest", () => run(npmCommand, ["run", "test:bundle:pilot"], {
     label: "bundle pilot smoke",
-  });
-  await runNodeSmokeSweep();
-  await run(npmCommand, ["run", "test:smoke:work-attach"], {
+  }));
+  await runStage("generated bundle cleanliness", async () => verifyGeneratedBundlesClean());
+  await runStage("broad Node smoke sweep", () => runNodeSmokeSweep());
+  await runStage("work attachment smoke suite", () => run(npmCommand, ["run", "test:smoke:work-attach"], {
     label: "work attach smoke suite",
-  });
-  await run(npxCommand, [
+  }));
+  await runStage("targeted browser regressions", () => run(npxCommand, [
     "playwright",
     "test",
     "tests/smoke/equipment-choice-browser.spec.js",
@@ -158,17 +223,17 @@ async function main() {
     "tests/smoke/quick-fix-date-field-browser.spec.js",
   ], {
     label: "targeted browser regression smokes",
-  });
+  }));
 
   const server = await startLocalServer();
   try {
-    await run(npmCommand, ["run", "test:smoke:resources"], {
+    await runStage("local application resource load", () => run(npmCommand, ["run", "test:smoke:resources"], {
       label: "local resource load smoke",
       env: {
         MAINTAINOPS_BASE_URL: server.baseUrl,
       },
-    });
-    await run(npxCommand, [
+    }));
+    await runStage("mobile Performance interaction", () => run(npxCommand, [
       "playwright",
       "test",
       "tests/smoke/platform-performance-mobile-browser.spec.js",
@@ -177,15 +242,17 @@ async function main() {
       env: {
         MAINTAINOPS_BASE_URL: server.baseUrl,
       },
-    });
+    }));
   } finally {
     if (server.child && !server.child.killed) {
       server.child.kill();
     }
   }
+  writeSummary("PASS");
 }
 
 main().catch((error) => {
+  writeSummary("FAIL", error);
   console.error(`\nLFES strict check failed: ${error.message}`);
   process.exit(1);
 });

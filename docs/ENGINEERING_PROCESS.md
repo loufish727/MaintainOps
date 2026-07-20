@@ -43,10 +43,13 @@ Browser smoke fallback:
 Strict LFES command:
 
 - Before pushing meaningful app, security, storage, role, or workflow changes, run `npm run test:lfes:strict`.
-- The strict command runs security static checks, security boundary probes, the broad Node smoke sweep, work-attachment smokes, targeted browser regression smokes, and local resource-load verification against a local static server.
+- The strict command recursively inspects SQL, probes live anonymous boundaries, compiles the baseline and dated migrations in isolated PostgreSQL, verifies seeded RLS role boundaries, checks generated bundles are committed, runs the broad Node smoke sweep and targeted browser regressions, and verifies local resources.
+- Machine-readable evidence is written to `lfes-evidence/` and retained by GitHub for 30 days.
+- Run `npm run test:lfes:authenticated` through the manual `Authenticated LFES Proof` workflow when hosted authentication, company isolation, role permissions, or storage paths are in scope. This command fails when any required QA credential or fixture is absent.
 - After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
 - `npm run release:verify` now sequences hashed bundle generation, strict LFES, and hosted LFES in one command. Set `MAINTAINOPS_RELEASE_SKIP_HOSTED=1` when you need the local portion before push.
 - A targeted smoke may still be required for a touched path that is not covered by the strict command.
+- See `docs/LFES/PROOF_MODEL.md` for the boundary between the required release gate, authenticated hosted proof, and the human LFES Gold audit.
 
 Unsaved form input must survive background system events:
 
