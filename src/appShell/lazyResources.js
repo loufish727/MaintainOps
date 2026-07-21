@@ -126,7 +126,8 @@ export function createLazyResourceHelpers({
         }
         const service = windowRef.MaintainOpsPlatformPerformanceService;
         const display = windowRef.MaintainOpsPlatformPerformanceDisplay;
-        if (!service || !display) throw new Error("Platform Performance resources did not initialize.");
+        const thresholds = windowRef.MaintainOpsPlatformPerformanceThresholds;
+        if (!service || !display || !thresholds) throw new Error("Platform Performance resources did not initialize.");
         platformPerformanceDisplayHelpers = display.createPlatformPerformanceDisplayHelpers({ escapeHtml });
         return platformPerformanceDisplayHelpers;
       })().catch((error) => {

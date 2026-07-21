@@ -27,8 +27,10 @@ This gate does not claim that authenticated checks against the isolated testing 
 - technician manager/admin RPC attempts are rejected
 - forbidden-company storage upload is rejected
 - technician request deletion and internal-request photo attachment are rejected
+- raw performance samples are not directly readable, malformed samples are rejected, own-company aggregate access works, and cross-company telemetry RPC access is denied
 - admin, manager, accounting, and technician can sign in to the candidate app against the testing platform
 - each role receives the expected navigation, Team workload counts, Financial access, and operational read/edit presentation
+- a signed-in browser opens App Performance and renders measured gauges through the lazy 3D frame
 
 The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes-qa` environment with these names:
 

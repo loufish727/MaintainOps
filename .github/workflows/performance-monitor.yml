@@ -1,0 +1,42 @@
+name: Hosted Performance Monitor
+
+on:
+  schedule:
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hosted-performance-monitor
+  cancel-in-progress: false
+
+jobs:
+  hosted_performance:
+    name: Hosted availability and response
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Probe hosted app
+        run: npm run test:performance:hosted
+        env:
+          MAINTAINOPS_BASE_URL: https://loufish727.github.io/MaintainOps/
+
+      - name: Upload performance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: hosted-performance-evidence
+          path: lfes-evidence/hosted-performance-probe.json
+          if-no-files-found: error
+          retention-days: 90

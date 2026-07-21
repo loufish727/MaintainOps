@@ -165,6 +165,72 @@ async function main() {
     if (!crossCompanyInsertDenied) throw new Error("Technician cross-company asset insert was allowed.");
     checks.push({ name: "technician_cross_company_asset_insert_denied", verdict: "PASS" });
 
+    let rawTelemetryReadDenied = false;
+    try {
+      await database.query("select * from public.app_performance_samples");
+    } catch {
+      rawTelemetryReadDenied = true;
+    }
+    if (!rawTelemetryReadDenied) throw new Error("Authenticated users can read raw performance telemetry.");
+    checks.push({ name: "performance_raw_samples_not_client_readable", verdict: "PASS" });
+
+    const telemetryInsert = await database.query(
+      "select public.record_app_performance_samples($1::uuid, $2::jsonb) as inserted",
+      [ids.companyA, JSON.stringify([
+        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes" } },
+        { metric: "lcp_ms", value: 2200, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop" } },
+      ])]
+    );
+    if (Number(telemetryInsert.rows[0]?.inserted) !== 2) throw new Error("Technician could not submit allowed company telemetry.");
+    checks.push({ name: "company_member_performance_sample_insert", verdict: "PASS" });
+
+    let crossCompanyTelemetryDenied = false;
+    try {
+      await database.query(
+        "select public.record_app_performance_samples($1::uuid, $2::jsonb)",
+        [ids.companyB, JSON.stringify([{ metric: "lcp_ms", value: 2000, unit: "ms" }])]
+      );
+    } catch {
+      crossCompanyTelemetryDenied = true;
+    }
+    if (!crossCompanyTelemetryDenied) throw new Error("Technician submitted telemetry to another company.");
+
+    let crossCompanyDashboardDenied = false;
+    try {
+      await database.query("select public.get_app_performance_dashboard($1::uuid, 30)", [ids.companyB]);
+    } catch {
+      crossCompanyDashboardDenied = true;
+    }
+    if (!crossCompanyDashboardDenied) throw new Error("Technician read another company's performance dashboard.");
+    checks.push({ name: "performance_cross_company_rpc_denied", verdict: "PASS" });
+
+    let mismatchedTelemetryUnitDenied = false;
+    try {
+      await database.query(
+        "select public.record_app_performance_samples($1::uuid, $2::jsonb)",
+        [ids.companyA, JSON.stringify([{ metric: "lcp_ms", value: 2000, unit: "fps" }])]
+      );
+    } catch {
+      mismatchedTelemetryUnitDenied = true;
+    }
+    if (!mismatchedTelemetryUnitDenied) throw new Error("Telemetry accepted a mismatched metric unit.");
+    checks.push({ name: "performance_metric_shape_enforced", verdict: "PASS" });
+
+    const dashboardResult = await database.query(
+      "select public.get_app_performance_dashboard($1::uuid, 30) as dashboard",
+      [ids.companyA]
+    );
+    const dashboard = typeof dashboardResult.rows[0]?.dashboard === "string"
+      ? JSON.parse(dashboardResult.rows[0].dashboard)
+      : dashboardResult.rows[0]?.dashboard;
+    if (Number(dashboard?.sample_count) !== 2 || Number(dashboard?.metrics?.lcp_ms?.p75) !== 2200) {
+      throw new Error("Performance dashboard did not return the expected company aggregate.");
+    }
+    if (JSON.stringify(dashboard).includes(ids.technician) || Object.hasOwn(dashboard || {}, "recorded_by")) {
+      throw new Error("Performance dashboard exposed a contributor identity.");
+    }
+    checks.push({ name: "performance_dashboard_is_aggregate_without_identity", verdict: "PASS" });
+
     await setAuthenticatedUser(database, ids.manager);
     const managerFinancialRead = await database.query("select id from public.asset_financials");
     if (managerFinancialRead.rows.length !== 1) throw new Error("Manager could not read company financial records.");

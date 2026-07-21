@@ -314,6 +314,26 @@ html.platform-spatial-pending .activity-head b {
   color: var(--cyan);
 }
 
+html[data-health="watch"] .header-system-state strong,
+html[data-health="watch"] .activity-head b {
+  color: var(--warn);
+}
+
+html[data-health="poor"] .header-system-state strong,
+html[data-health="poor"] .activity-head b {
+  color: var(--danger);
+}
+
+html[data-health="watch"] .header-system-state i,
+html[data-health="watch"] .activity-head b i {
+  background: var(--warn);
+}
+
+html[data-health="poor"] .header-system-state i,
+html[data-health="poor"] .activity-head b i {
+  background: var(--danger);
+}
+
 .header-brand {
   position: relative;
   display: grid;
@@ -1179,6 +1199,45 @@ h2 span {
   margin-left: auto;
 }
 
+.quality-control {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  align-items: center;
+  min-height: 40px;
+  border: 1px solid rgba(110, 220, 255, 0.16);
+  background: rgba(2, 7, 12, 0.86);
+}
+
+.quality-control > span {
+  grid-column: 1 / -1;
+  padding: 4px 8px 1px;
+  color: rgba(120, 161, 174, 0.72);
+  font-size: 8px;
+  font-weight: 580;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.quality-control button {
+  min-height: 25px;
+  padding: 0 7px;
+  border: 0;
+  border-right: 1px solid rgba(110, 220, 255, 0.12);
+  color: rgba(174, 191, 196, 0.8);
+  background: transparent;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.quality-control button:last-child {
+  border-right: 0;
+}
+
+.quality-control button.active {
+  color: #071012;
+  background: var(--cyan);
+}
+
 .search-box {
   position: relative;
   display: block;
@@ -1544,6 +1603,111 @@ h2 span {
   overflow: hidden;
   min-height: 146px;
   padding: 22px 20px;
+}
+
+.health-metric-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 210px;
+  padding: 18px;
+}
+
+.health-metric-card::before {
+  opacity: 1;
+}
+
+.health-metric-card.status-good::before {
+  background: var(--mint);
+}
+
+.health-metric-card.status-watch::before {
+  background: var(--warn);
+}
+
+.health-metric-card.status-poor::before {
+  background: var(--danger);
+}
+
+.health-metric-card.status-collecting::before {
+  background: var(--muted);
+}
+
+.health-metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metric-card .health-metric-head span {
+  margin: 0;
+  color: var(--soft);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.health-metric-head b {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.status-good .health-metric-head b { color: var(--mint); }
+.status-watch .health-metric-head b { color: var(--warn); }
+.status-poor .health-metric-head b { color: var(--danger); }
+
+.health-metric-card strong {
+  margin: 0;
+  font-size: 30px;
+}
+
+.health-metric-card small {
+  font-size: 12px;
+}
+
+.health-metric-card p {
+  margin: 0;
+  color: rgba(156, 173, 179, 0.72);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.metric-scale {
+  position: relative;
+  height: 9px;
+  margin: 3px 0 1px;
+  background: linear-gradient(90deg,
+    var(--mint) 0 var(--good-position),
+    var(--warn) var(--good-position) var(--watch-position),
+    var(--danger) var(--watch-position) 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.metric-scale.direction-higher {
+  background: linear-gradient(90deg,
+    var(--danger) 0 var(--watch-position),
+    var(--warn) var(--watch-position) var(--good-position),
+    var(--mint) var(--good-position) 100%);
+}
+
+.metric-scale i {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 17px;
+  background: #fff;
+  box-shadow: 0 0 7px rgba(255, 255, 255, 0.8);
+  transform: translateX(-1px);
+}
+
+.metric-scale.is-collecting {
+  opacity: 0.24;
+  background: rgba(133, 151, 158, 0.68);
+}
+
+.metric-scale.is-collecting i {
+  display: none;
 }
 
 .metric-card::after {
@@ -2343,8 +2507,12 @@ h2 span {
 }
 
 @media (max-width: 760px) {
+  .health-metric-card strong {
+    font-size: 26px;
+  }
+
   .sampling-notice {
-    top: 128px;
+    top: 170px;
     align-items: flex-start;
   }
 
@@ -2417,6 +2585,11 @@ h2 span {
     grid-template-columns: minmax(0, 1fr) auto;
     width: 100%;
     gap: 8px;
+  }
+
+  .quality-control {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .button.primary {

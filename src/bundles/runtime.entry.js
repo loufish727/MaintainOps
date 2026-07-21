@@ -5,6 +5,7 @@ import "../utils/formatting.js";
 import "../utils/schemaErrors.js";
 import "../utils/operationResults.js";
 import "../utils/operationTimeout.js";
+import "../performance/appTelemetry.js";
 import "../utils/authRenderPolicy.js";
 import "../utils/publicUrlQr.js";
 import "../utils/publicQrPrintEvents.js";

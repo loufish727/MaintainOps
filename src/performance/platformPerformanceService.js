@@ -9,6 +9,14 @@
   const DEFAULT_TIMELINE_DAYS = 14;
   const PAGE_SIZE = 1000;
 
+  function thresholds() {
+    if (typeof window !== "undefined" && window.MaintainOpsPlatformPerformanceThresholds) {
+      return window.MaintainOpsPlatformPerformanceThresholds;
+    }
+    if (typeof require === "function") return require("./platformPerformanceThresholds.js");
+    throw new Error("Platform performance thresholds are unavailable.");
+  }
+
   function startOfLocalDay(date = new Date()) {
     const next = new Date(date);
     next.setHours(0, 0, 0, 0);
@@ -195,6 +203,100 @@
     return signals;
   }
 
+  function telemetryMetricValue(telemetry, localTelemetry, metric, percentile = "p75") {
+    const aggregate = telemetry?.metrics?.[metric];
+    const aggregateValue = Number(aggregate?.[percentile]);
+    if (Number.isFinite(aggregateValue)) {
+      return { value: aggregateValue, sampleCount: Number(aggregate.count) || 0 };
+    }
+    const localValue = Number(localTelemetry?.latest?.[metric]?.value);
+    if (Number.isFinite(localValue)) return { value: localValue, sampleCount: 1 };
+    return { value: null, sampleCount: 0 };
+  }
+
+  function buildHealth({ telemetry, localTelemetry, storage }) {
+    const grade = thresholds().gradeMetric;
+    const connection = localTelemetry?.connection || {};
+    const viewportClass = connection.viewport_class || "desktop";
+    const connectionType = connection.connection_type || "unknown";
+    const definitions = [
+      ["lcp_ms", "p75"],
+      ["inp_ms", "p75"],
+      ["cls", "p75"],
+      ["workspace_ready_ms", "p75"],
+      ["section_navigation_ms", "p75"],
+      ["query_latency_ms", "p75"],
+      ["spatial_ready_ms", "p75"],
+      ["spatial_fps", "p50"],
+      ["connection_downlink_mbps", "p50"],
+    ];
+    const metrics = definitions.map(([metric, percentile]) => {
+      const sampled = telemetryMetricValue(telemetry, localTelemetry, metric, percentile);
+      return grade(metric, sampled.value, {
+        sampleCount: sampled.sampleCount,
+        viewportClass,
+        connectionType,
+      });
+    });
+
+    const sessions = Number(telemetry?.session_count) || 0;
+    const errors = telemetry?.metrics?.client_error;
+    const errorTotal = Number(errors?.average) * Number(errors?.count);
+    const errorRate = sessions > 0 && Number.isFinite(errorTotal) ? (errorTotal / sessions) * 100 : null;
+    metrics.push(grade("client_error_rate", errorRate, { sampleCount: Number(errors?.count) || 0 }));
+    metrics.push(grade("storage_usage_percent", storage.available ? storage.usagePercent : null, {
+      sampleCount: storage.available ? 1 : 0,
+    }));
+
+    const measuredCount = metrics.filter((metric) => metric.status !== "collecting").length;
+    const scored = thresholds().overallHealth(metrics);
+    const overall = measuredCount >= 3
+      ? scored
+      : { score: null, status: "collecting", label: "Collecting" };
+    return {
+      ...overall,
+      metrics,
+      measuredCount,
+      totalCount: metrics.length,
+      viewportClass,
+      connectionType,
+    };
+  }
+
+  function buildHealthSystems(health) {
+    const preferred = ["lcp_ms", "inp_ms", "query_latency_ms", "client_error_rate", "spatial_fps"];
+    return preferred.map((metricName) => {
+      const metric = health.metrics.find((entry) => entry.metric === metricName);
+      return {
+        id: metricName,
+        label: metric?.shortLabel || metricName,
+        value: metric?.valueText || "Collecting",
+        detail: metric ? `${metric.statusLabel} - ${metric.target}` : "Collecting browser samples",
+        tone: metric?.status === "poor" ? "amber" : metric?.status === "watch" ? "amber" : "cyan",
+        grade: metric?.status || "collecting",
+        basis: metric?.basis || "MaintainOps instrumentation",
+      };
+    });
+  }
+
+  function buildHealthSignals(health) {
+    return health.metrics
+      .filter((metric) => metric.status !== "collecting")
+      .sort((left, right) => (
+        ({ poor: 0, watch: 1, good: 2 }[left.status] ?? 3)
+        - ({ poor: 0, watch: 1, good: 2 }[right.status] ?? 3)
+      ))
+      .slice(0, 6)
+      .map((metric) => ({
+        kind: metric.status === "poor" ? "attention" : metric.status === "watch" ? "active" : "stable",
+        title: metric.shortLabel,
+        value: metric.valueText,
+        detail: `${metric.statusLabel} - ${metric.target}`,
+        system: metric.label,
+        basis: metric.basis,
+      }));
+  }
+
   async function loadPlatformPerformanceSnapshot(supabaseClient, options = {}) {
     const companyId = options.companyId;
     if (!companyId) throw new Error("Choose a company before loading platform performance.");
@@ -206,7 +308,7 @@
     const today = startOfLocalDay(now);
     const canViewStorage = Boolean(options.canViewStorage);
 
-    const [workOrdersResult, requestsResult, ordersReceivedResult, publicIntakeResult, storageResult] = await Promise.all([
+    const [workOrdersResult, requestsResult, ordersReceivedResult, publicIntakeResult, storageResult, telemetryResult] = await Promise.all([
       readOptional("work orders", () => fetchCompanyRows(supabaseClient, {
         table: "work_orders",
         select: "id, created_at, location_id",
@@ -243,6 +345,14 @@
           return data || {};
         })
         : Promise.resolve({ label: "storage dashboard", data: null, error: "Storage detail is available to managers and admins." }),
+      readOptional("app telemetry", async () => {
+        const { data, error } = await supabaseClient.rpc("get_app_performance_dashboard", {
+          target_company_id: companyId,
+          window_days: Math.max(1, Math.min(number(options.telemetryDays) || 30, 90)),
+        });
+        if (error) throw error;
+        return data || {};
+      }),
     ]);
 
     const workOrders = workOrdersResult.data || [];
@@ -254,8 +364,17 @@
       totalBytes,
       totalBytesText: totalBytes ? formatByteText(totalBytes) : "0 B",
       fileCount: number(storageDashboard.file_count),
+      allowanceBytes: number(storageDashboard.allowance_bytes),
+      remainingBytes: number(storageDashboard.remaining_bytes),
+      usagePercent: number(storageDashboard.usage_percent),
       note: storageResult.error || "",
     };
+    const telemetryDashboard = telemetryResult.data || {};
+    const health = buildHealth({
+      telemetry: telemetryDashboard,
+      localTelemetry: options.localTelemetry || null,
+      storage,
+    });
     const ordersReceivedTotal = ordersReceivedResult.error ? null : number(ordersReceivedResult.data);
     const publicIntakeTotal = publicIntakeResult.error ? null : number(publicIntakeResult.data);
     const members = Array.isArray(options.companyMembers) ? options.companyMembers : [];
@@ -292,9 +411,16 @@
       historyDays,
       sampling,
       telemetry: {
-        status: "pending",
-        message: "Platform instrumentation is not connected yet. Uptime, API latency, sync jobs, and active-login telemetry will appear here once collected.",
+        ...telemetryDashboard,
+        status: telemetryResult.error ? "unavailable" : (telemetryDashboard.status || "collecting"),
+        message: telemetryResult.error
+          ? "App telemetry is unavailable until the performance migration is applied. Operational counts remain current."
+          : Number(telemetryDashboard.sample_count) > 0
+            ? `${number(telemetryDashboard.sample_count)} privacy-limited browser samples across ${number(telemetryDashboard.session_count)} sessions.`
+            : "Instrumentation is connected and collecting its first browser sessions.",
+        error: telemetryResult.error || "",
       },
+      health,
       summary: {
         teamSeats: members.length,
         requestsToday,
@@ -308,7 +434,7 @@
         locations: locations.length,
         storage,
       },
-      systems: [
+      operationalSystems: [
         {
           id: "intake",
           label: "Public Intake",
@@ -345,7 +471,10 @@
           tone: "cyan",
         },
       ],
-      signals: buildSignals({
+      systems: buildHealthSystems(health),
+      signals: [
+        ...buildHealthSignals(health),
+        ...buildSignals({
         summary: {
           requestsToday,
           ordersReceivedToday,
@@ -357,8 +486,10 @@
         },
         storage,
         sampling,
-      }),
+        }),
+      ].slice(0, 10),
       timeline: buildTimeline({ now, days: timelineDays, workOrders, requests }),
+      performanceTimeline: Array.isArray(telemetryDashboard.daily) ? telemetryDashboard.daily : [],
       plants: buildPlantFootprint({ locations, workOrders, requests }),
       notices: [
         ...samplingNotices,

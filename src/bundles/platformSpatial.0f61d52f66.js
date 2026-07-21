@@ -27699,7 +27699,7 @@ void main() {
     buckets: { id: "buckets", label: "Platform Systems", pos: [0.6, 6.2, 14.8], look: [0.8, 2.05, -7.7] },
     timeline: { id: "timeline", label: "Activity Runway", pos: [5.6, 5.4, 12.4], look: [4.5, 1.25, 1.1] },
     files: { id: "files", label: "Notable Signals", pos: [0, 4, 15.6], look: [0, 1.65, 6.05] },
-    vault: { id: "vault", label: "Platform Pulse", pos: [-15, 6.8, 5.8], look: [-8.25, 3.95, -7] }
+    vault: { id: "vault", label: "App Health", pos: [-15, 6.8, 5.8], look: [-8.25, 3.95, -7] }
   };
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -27724,12 +27724,41 @@ void main() {
       onFileSelected = () => {
       },
       onVaultSelected = () => {
+      },
+      qualityPreference: initialQualityPreference = "auto",
+      onPerformanceSample = () => {
+      },
+      onQualityChange = () => {
+      },
+      onFirstRender = () => {
       }
     } = options;
     const coreRows = Array.isArray(core.rows) ? core.rows : [];
-    const storedDataRow = coreRows.find(([label]) => label === "Data stored");
-    const renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-    const renderPixelRatio = () => Math.min(Math.max(window.devicePixelRatio, 1.5), 2);
+    const healthScoreRow = coreRows.find(([label]) => label === "Health score");
+    const QUALITY_SETTINGS = Object.freeze({
+      performance: { pixelRatioMin: 1, pixelRatioMax: 1, samples: 0, bloom: 0.55, shadowSize: 1024, targetFps: 45 },
+      balanced: { pixelRatioMin: 1, pixelRatioMax: 1.4, samples: 2, bloom: 0.85, shadowSize: 1024, targetFps: 60 },
+      cinematic: { pixelRatioMin: 1.35, pixelRatioMax: 2, samples: 4, bloom: 1, shadowSize: 2048, targetFps: 60 }
+    });
+    function automaticQuality() {
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const coarse = window.matchMedia("(pointer: coarse), (hover: none)").matches;
+      const constrainedConnection = Boolean(connection?.saveData) || /(^|-)2g|3g/.test(String(connection?.effectiveType || ""));
+      const constrainedHardware = Number(navigator.deviceMemory) > 0 && Number(navigator.deviceMemory) <= 4 || Number(navigator.hardwareConcurrency) > 0 && Number(navigator.hardwareConcurrency) <= 4;
+      return coarse || constrainedConnection || constrainedHardware ? "performance" : "balanced";
+    }
+    function resolveQuality(preference) {
+      if (preference === "performance" || preference === "cinematic") return preference;
+      return automaticQuality();
+    }
+    let qualityState = {
+      preference: ["auto", "performance", "cinematic"].includes(initialQualityPreference) ? initialQualityPreference : "auto",
+      effective: resolveQuality(initialQualityPreference)
+    };
+    let qualitySettings = QUALITY_SETTINGS[qualityState.effective];
+    let keyLight = null;
+    const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+    const renderPixelRatio = () => Math.min(Math.max(window.devicePixelRatio || 1, qualitySettings.pixelRatioMin), qualitySettings.pixelRatioMax);
     renderer.setPixelRatio(renderPixelRatio());
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = SRGBColorSpace;
@@ -27737,17 +27766,23 @@ void main() {
     renderer.toneMappingExposure = 1.24;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFSoftShadowMap;
+    renderer.info.autoReset = false;
     const scene = new Scene();
     scene.background = new Color(860722);
     scene.backgroundIntensity = 1.28;
     scene.fog = new FogExp2(860722, 285e-5);
     scene.environmentIntensity = 0.84;
     const camera = new PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 300);
-    new RGBELoader().load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
+    let assetsReady = false;
+    const loadingManager = new LoadingManager();
+    loadingManager.onLoad = () => {
+      assetsReady = true;
+    };
+    new RGBELoader(loadingManager).load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
       texture.mapping = EquirectangularReflectionMapping;
       scene.environment = texture;
     });
-    const textureLoader = new TextureLoader();
+    const textureLoader = new TextureLoader(loadingManager);
     const fileSkinAtlas = textureLoader.load("assets/performance-spatial/textures/file-cube-skins.png", (texture) => {
       texture.colorSpace = SRGBColorSpace;
       texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -27799,9 +27834,10 @@ void main() {
     outerWallAtlas.wrapS = ClampToEdgeWrapping;
     outerWallAtlas.wrapT = ClampToEdgeWrapping;
     const composer = new EffectComposer(renderer);
+    let composerPixelRatio = renderer.getPixelRatio();
     if (renderer.capabilities.isWebGL2) {
-      composer.renderTarget1.samples = 4;
-      composer.renderTarget2.samples = 4;
+      composer.renderTarget1.samples = qualitySettings.samples;
+      composer.renderTarget2.samples = qualitySettings.samples;
     }
     composer.addPass(new RenderPass(scene, camera));
     const bloomPass = new UnrealBloomPass(new Vector2(window.innerWidth, window.innerHeight), 0.28, 0.24, 0.95);
@@ -27810,13 +27846,39 @@ void main() {
     function applyViewportTuning() {
       const compact = camera.aspect < 0.75;
       renderer.toneMappingExposure = compact ? 1.28 : 1.24;
-      bloomPass.strength = compact ? 0.26 : 0.22;
+      bloomPass.strength = (compact ? 0.26 : 0.22) * qualitySettings.bloom;
       bloomPass.radius = compact ? 0.24 : 0.2;
       if (scene.background?.isColor) scene.background.setHex(compact ? 1059648 : 860722);
       scene.backgroundIntensity = compact ? 1.42 : 1.34;
       scene.fog.color.setHex(compact ? 1059648 : 860722);
       scene.fog.density = compact ? 235e-5 : 285e-5;
       scene.environmentIntensity = compact ? 0.92 : 0.84;
+    }
+    function applyQuality(preference = "auto") {
+      qualityState = {
+        preference: ["auto", "performance", "cinematic"].includes(preference) ? preference : "auto",
+        effective: resolveQuality(preference)
+      };
+      qualitySettings = QUALITY_SETTINGS[qualityState.effective];
+      if (renderer.capabilities.isWebGL2) {
+        composer.renderTarget1.samples = qualitySettings.samples;
+        composer.renderTarget2.samples = qualitySettings.samples;
+      }
+      const nextPixelRatio = renderPixelRatio();
+      if (renderer.getPixelRatio() !== nextPixelRatio) renderer.setPixelRatio(nextPixelRatio);
+      if (composerPixelRatio !== nextPixelRatio) {
+        composer.setPixelRatio(nextPixelRatio);
+        composerPixelRatio = nextPixelRatio;
+      }
+      if (keyLight) {
+        keyLight.shadow.mapSize.set(qualitySettings.shadowSize, qualitySettings.shadowSize);
+        keyLight.shadow.map?.dispose();
+        keyLight.shadow.map = null;
+        keyLight.shadow.needsUpdate = true;
+      }
+      applyViewportTuning();
+      onQualityChange({ ...qualityState });
+      return { ...qualityState };
     }
     const interactive = [];
     const animated = [];
@@ -28222,7 +28284,7 @@ void main() {
     const worldHudGroup = new Group();
     worldHudGroup.visible = false;
     root.add(worldHudGroup);
-    new GLTFLoader().load(
+    new GLTFLoader(loadingManager).load(
       "assets/performance-spatial/models/maintain_ops_concept_kit.glb",
       (gltf) => {
         const kit = gltf.scene;
@@ -28562,7 +28624,7 @@ void main() {
     dialRing.userData.phase = 2.4;
     animated.push(dialRing);
     addMesh(usageDialGroup, new CircleGeometry(0.84, 48), new MeshBasicMaterial({ color: 529956, transparent: true, opacity: 0.88 }), [0, 0, 0], { shadow: false });
-    const dialLabel = makeLabel([storedDataRow?.[1] || "DATA", "STORED"], { accent: "#dff4ff", scale: 0.52 });
+    const dialLabel = makeLabel([healthScoreRow?.[1] || "APP", "HEALTH"], { accent: "#dff4ff", scale: 0.52 });
     dialLabel.position.set(0, 0, 0.02);
     usageDialGroup.add(dialLabel);
     const vaultGroup = new Group();
@@ -28697,8 +28759,8 @@ void main() {
         type: "vault",
         focusRadius: 3.6,
         ringY: 0.34,
-        tooltip: ["Capacity Core", "222 MB of 100 GB used \xB7 0.2%"],
-        platformTooltip: [core.title || "Platform Pulse", core.tooltip || core.badge || "Live company snapshot"]
+        tooltip: ["App Health", "Measured browser experience and app reliability"],
+        platformTooltip: [core.title || "App Health", core.tooltip || core.badge || "Measured company app health"]
       });
       const cage = new Mesh(
         new IcosahedronGeometry(2.62, 1),
@@ -29302,16 +29364,16 @@ void main() {
     const fill = new DirectionalLight(11850980, 0.34);
     fill.position.set(4, 7, 22);
     scene.add(fill);
-    const key = new DirectionalLight(13756664, 1.35);
-    key.position.set(-10, 18, 12);
-    key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
-    key.shadow.camera.left = -26;
-    key.shadow.camera.right = 26;
-    key.shadow.camera.top = 26;
-    key.shadow.camera.bottom = -26;
-    key.shadow.bias = -4e-4;
-    scene.add(key);
+    keyLight = new DirectionalLight(13756664, 1.35);
+    keyLight.position.set(-10, 18, 12);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(qualitySettings.shadowSize, qualitySettings.shadowSize);
+    keyLight.shadow.camera.left = -26;
+    keyLight.shadow.camera.right = 26;
+    keyLight.shadow.camera.top = 26;
+    keyLight.shadow.camera.bottom = -26;
+    keyLight.shadow.bias = -4e-4;
+    scene.add(keyLight);
     const rim = new DirectionalLight(8220927, 0.72);
     rim.position.set(14, 9, -14);
     scene.add(rim);
@@ -29753,11 +29815,11 @@ void main() {
     }
     function showVaultReveal(mesh) {
       showPanelReveal(mesh, {
-        eyebrow: core.eyebrow || "Maintain Ops / Platform Pulse",
-        title: core.title || "Platform Pulse",
-        subtitle: core.subtitle || "Live company operating snapshot",
+        eyebrow: core.eyebrow || "Maintain Ops / App Health",
+        title: core.title || "App Health",
+        subtitle: core.subtitle || "Measured company app health",
         badge: core.badge || "Current",
-        rows: core.rows || [["Orders through system", "0"], ["Public intake", "0"], ["Data stored", "Pending"], ["Records monitored", "0"]],
+        rows: core.rows || [["Health score", "Collecting"], ["Signals measured", "0/0"], ["Page load", "Collecting"], ["Responsiveness", "Collecting"]],
         footer: core.footer || "Maintain Ops command core",
         status: core.status || "Current",
         color: COLORS.cyan,
@@ -29861,8 +29923,12 @@ void main() {
       touchTargets.append(button);
       return { button, object, projection: new Vector3() };
     }) : [];
-    function updateTouchTargets() {
+    let lastTouchTargetUpdate = 0;
+    function updateTouchTargets(force = false) {
       if (!touchTargetMedia.matches) return;
+      const now2 = performance.now();
+      if (!force && rig.t >= 1 && !drag.active && now2 - lastTouchTargetUpdate < 250) return;
+      lastTouchTargetUpdate = now2;
       touchTargetEntries.forEach(({ button, object, projection }) => {
         object.getWorldPosition(projection);
         projection.project(camera);
@@ -29890,6 +29956,11 @@ void main() {
       drag.moved = false;
       drag.pointerId = null;
       drag.lastGesture = gesture;
+    }
+    function clearToOverview() {
+      lastPickMode = "miss";
+      clearSelection();
+      travelToZone("overview");
     }
     function pickInteractive(clientX, clientY, allowTouchTolerance = false) {
       pointerNdc.x = clientX / window.innerWidth * 2 - 1;
@@ -29969,12 +30040,13 @@ void main() {
       const pointerType = drag.pointerType;
       resetPointerGesture(wasDrag ? "drag" : "tap");
       if (wasDrag) return;
+      if (pointerType === "touch" && touchTargetEntries.length) {
+        clearToOverview();
+        return;
+      }
       const hit = pickInteractive(event.clientX, event.clientY, pointerType === "touch");
       if (hit) focusObject(hit);
-      else {
-        clearSelection();
-        travelToZone("overview");
-      }
+      else clearToOverview();
     });
     window.addEventListener("pointercancel", (event) => {
       if (!drag.active || drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
@@ -29983,12 +30055,13 @@ void main() {
       const clientY = drag.y;
       resetPointerGesture(completeTouchTap ? "tap" : "cancel");
       if (!completeTouchTap) return;
+      if (touchTargetEntries.length) {
+        clearToOverview();
+        return;
+      }
       const hit = pickInteractive(clientX, clientY, true);
       if (hit) focusObject(hit);
-      else {
-        clearSelection();
-        travelToZone("overview");
-      }
+      else clearToOverview();
     });
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -29997,12 +30070,52 @@ void main() {
       renderer.setPixelRatio(renderPixelRatio());
       renderer.setSize(window.innerWidth, window.innerHeight);
       composer.setSize(window.innerWidth, window.innerHeight);
+      updateTouchTargets(true);
       if (!selected) travelToZone(currentZone, 0.8);
+    });
+    let contextLosses = 0;
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      contextLosses += 1;
+      onPerformanceSample({ contextLosses, qualityTier: qualityState.effective });
     });
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    applyViewportTuning();
+    applyQuality(qualityState.preference);
     travelToZone("overview", 0.01);
+    let latestPixelSample = { sampled: 0, nonBlack: 0, range: 0 };
+    let pixelSampleReported = false;
+    const pixelProbeEnabled = new URLSearchParams(window.location.search).has("qa_bust") || new URLSearchParams(window.location.search).has("lfes_canvas_probe");
+    function samplePresentedPixels() {
+      const gl = renderer.getContext();
+      const width = Math.min(32, gl.drawingBufferWidth);
+      const height = Math.min(32, gl.drawingBufferHeight);
+      const pixels = new Uint8Array(width * height * 4);
+      try {
+        gl.readPixels(
+          Math.max(0, Math.floor((gl.drawingBufferWidth - width) / 2)),
+          Math.max(0, Math.floor((gl.drawingBufferHeight - height) / 2)),
+          width,
+          height,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          pixels
+        );
+      } catch (_error) {
+        return latestPixelSample;
+      }
+      let nonBlack = 0;
+      let minimum = 255;
+      let maximum = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const light = Math.round((pixels[index] + pixels[index + 1] + pixels[index + 2]) / 3);
+        if (light > 4) nonBlack += 1;
+        minimum = Math.min(minimum, light);
+        maximum = Math.max(maximum, light);
+      }
+      latestPixelSample = { sampled: width * height, nonBlack, range: maximum - minimum };
+      return latestPixelSample;
+    }
     window.__STORAGE_WORLD_DEBUG = () => ({
       zone: currentZone,
       selected: selected?.userData?.payload ? { type: selected.userData.payload.type, index: selected.userData.payload.index ?? null } : null,
@@ -30023,9 +30136,32 @@ void main() {
       }),
       cameraPos: camera.position.toArray().map((v) => Number(v.toFixed(2))),
       baseLook: rig.baseLook.toArray().map((v) => Number(v.toFixed(2))),
-      travelT: Number(rig.t.toFixed(2))
+      travelT: Number(rig.t.toFixed(2)),
+      quality: { ...qualityState },
+      renderer: {
+        drawCalls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures,
+        drawingWidth: renderer.domElement.width,
+        drawingHeight: renderer.domElement.height,
+        pixels: latestPixelSample
+      }
     });
-    function animate() {
+    let lastRenderAt = 0;
+    let sampleStartedAt = performance.now();
+    let sampledFrames = 0;
+    let sampledFrameTime = 0;
+    let sampledSlowFrames = 0;
+    let firstRenderReported = false;
+    let performanceSampleReported = false;
+    function animate(timestamp = performance.now()) {
+      requestAnimationFrame(animate);
+      const targetFps = document.hidden ? 4 : qualitySettings.targetFps;
+      const targetInterval = 1e3 / targetFps;
+      if (lastRenderAt && timestamp - lastRenderAt < targetInterval - 1) return;
+      const observedFrameTime = lastRenderAt ? timestamp - lastRenderAt : targetInterval;
+      lastRenderAt = timestamp;
       const dt = Math.min(clock.getDelta(), 0.12);
       const elapsed = clock.elapsedTime;
       let hit = null;
@@ -30196,11 +30332,49 @@ void main() {
       camera.position.copy(rig.baseLook).add(tmpOffset);
       camera.lookAt(rig.baseLook);
       updateTouchTargets();
+      renderer.info.reset();
       composer.render();
-      requestAnimationFrame(animate);
+      if (pixelProbeEnabled && assetsReady && !pixelSampleReported) {
+        samplePresentedPixels();
+        pixelSampleReported = true;
+      }
+      if (assetsReady && !firstRenderReported) {
+        firstRenderReported = true;
+        onFirstRender({ qualityTier: qualityState.effective });
+      }
+      if (!document.hidden) {
+        sampledFrames += 1;
+        sampledFrameTime += observedFrameTime;
+        if (observedFrameTime > targetInterval * 1.5) sampledSlowFrames += 1;
+        const sampleDuration = timestamp - sampleStartedAt;
+        if (sampleDuration >= (performanceSampleReported ? 6e4 : 6e3)) {
+          onPerformanceSample({
+            fps: sampledFrames / (sampleDuration / 1e3),
+            frameMs: sampledFrames ? sampledFrameTime / sampledFrames : 0,
+            slowFramePercent: sampledFrames ? sampledSlowFrames / sampledFrames * 100 : 0,
+            drawCalls: renderer.info.render.calls,
+            triangles: renderer.info.render.triangles,
+            geometries: renderer.info.memory.geometries,
+            textures: renderer.info.memory.textures,
+            contextLosses,
+            qualityTier: qualityState.effective
+          });
+          sampleStartedAt = timestamp;
+          sampledFrames = 0;
+          sampledFrameTime = 0;
+          sampledSlowFrames = 0;
+          performanceSampleReported = true;
+        }
+      }
     }
     animate();
     return {
+      quality() {
+        return { ...qualityState };
+      },
+      setQuality(preference) {
+        return applyQuality(preference);
+      },
       setView,
       focusBucket(index) {
         if (bucketAnchors[index]) focusObject(bucketAnchors[index], { silent: true });
@@ -30221,6 +30395,7 @@ void main() {
   var hasSnapshot = false;
   var frameState = null;
   var worldRenderAnnounced = false;
+  var frameStartedAt = performance.now();
   var fallbackSnapshot = {
     sampledAt: (/* @__PURE__ */ new Date()).toISOString(),
     sampling: {
@@ -30229,6 +30404,19 @@ void main() {
       notices: []
     },
     telemetry: { message: "Platform instrumentation is not connected yet." },
+    health: {
+      score: null,
+      status: "collecting",
+      label: "Collecting",
+      measuredCount: 0,
+      totalCount: 4,
+      metrics: [
+        { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page load", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "2.5 s or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+        { metric: "inp_ms", label: "Interaction to Next Paint", shortLabel: "Responsiveness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "200 ms or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+        { metric: "query_latency_ms", label: "Data Query Latency", shortLabel: "Data response", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
+        { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", target: "50 FPS desktop / 40 FPS mobile", basis: "Device-aware MaintainOps target", sampleCount: 0 }
+      ]
+    },
     summary: {
       teamSeats: 0,
       requestsToday: 0,
@@ -30341,6 +30529,7 @@ void main() {
   }
   function buildFrameData(snapshot) {
     const summary = snapshot.summary || fallbackSnapshot.summary;
+    const health = snapshot.health || fallbackSnapshot.health;
     const sampling = snapshot.sampling || { status: "current", message: "Company data sampled.", notices: [] };
     const statusLabel = samplingLabel(sampling);
     const systems = (snapshot.systems || fallbackSnapshot.systems).slice(0, 5);
@@ -30404,6 +30593,8 @@ void main() {
       };
     });
     return {
+      health,
+      telemetry: snapshot.telemetry || fallbackSnapshot.telemetry,
       summary,
       systems,
       signals,
@@ -30438,19 +30629,19 @@ void main() {
         }
       ],
       core: {
-        eyebrow: "Maintain Ops / Platform Pulse",
-        title: "Platform Pulse",
-        subtitle: "Company platform scale and data footprint",
-        badge: statusLabel,
-        tooltip: summary.totalRecords === null ? "Company record count unavailable" : `${numberText(summary.totalRecords)} company records monitored`,
+        eyebrow: "Maintain Ops / App Health",
+        title: "App Health",
+        subtitle: "Measured browser and platform responsiveness",
+        badge: health.label,
+        tooltip: health.score === null ? "Collecting performance samples" : `${health.score} of 100 across measured signals`,
         rows: [
-          ["Orders through system", numberText(summary.ordersReceivedTotal)],
-          ["Public intake", numberText(summary.publicIntakeTotal)],
-          ["Data stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited"],
-          ["Records monitored", numberText(summary.totalRecords)]
+          ["Health score", health.score === null ? "Collecting" : `${health.score}/100`],
+          ["Signals measured", `${health.measuredCount || 0}/${health.totalCount || 0}`],
+          [health.metrics?.[0]?.shortLabel || "Page load", health.metrics?.[0]?.valueText || "Collecting"],
+          [health.metrics?.[1]?.shortLabel || "Responsiveness", health.metrics?.[1]?.valueText || "Collecting"]
         ],
-        footer: "Company platform command core",
-        status: statusLabel
+        footer: "Company app health command core",
+        status: health.label
       },
       sampling
     };
@@ -30490,26 +30681,31 @@ void main() {
       canvas: document.querySelector("#storage-world"),
       touchTargets: document.querySelector("[data-spatial-touch-targets]"),
       tooltip: document.querySelector("#world-tooltip"),
-      exit: document.querySelector("[data-performance-exit]")
+      exit: document.querySelector("[data-performance-exit]"),
+      qualityButtons: [...document.querySelectorAll("[data-quality-tier]")],
+      timelineConsoleDetail: document.querySelector(".timeline-console-head small"),
+      timelineConsoleWindow: document.querySelector(".timeline-console-head > span")
     };
   }
   var els = null;
   var activeBucketFilter = "all";
   function updateStaticCopy(data) {
-    const { summary, systems, months, sampling } = data;
-    const statusLabel = samplingLabel(sampling);
+    const { summary, systems, months, sampling, health } = data;
+    const statusLabel = health?.label || samplingLabel(sampling);
     const isCurrent = sampling.status === "current";
+    const telemetryUnavailable = data.telemetry?.status === "unavailable";
     document.title = "Maintain Ops App Performance";
     document.documentElement.classList.toggle("platform-spatial-degraded", sampling.status === "degraded");
     document.documentElement.classList.toggle("platform-spatial-pending", sampling.status === "pending");
+    document.documentElement.dataset.health = health?.status || "collecting";
     els.headerKicker.textContent = "App Performance";
     els.headerSubtitle.innerHTML = summary.totalRecords === null ? "Company record count unavailable" : `<span id="linked-files-count">${escapeHtml(numberText(summary.totalRecords))}</span> company records monitored`;
-    els.headerStateLabel.textContent = "Platform status";
+    els.headerStateLabel.textContent = "App experience";
     els.headerState.innerHTML = `<i aria-hidden="true"></i>${escapeHtml(statusLabel)}`;
-    els.samplingNotice.hidden = isCurrent;
-    if (!isCurrent) {
-      els.samplingNotice.querySelector("strong").textContent = statusLabel;
-      els.samplingNotice.querySelector("span").textContent = sampling.message;
+    els.samplingNotice.hidden = isCurrent && !telemetryUnavailable;
+    if (!els.samplingNotice.hidden) {
+      els.samplingNotice.querySelector("strong").textContent = telemetryUnavailable ? "Telemetry unavailable" : statusLabel;
+      els.samplingNotice.querySelector("span").textContent = telemetryUnavailable ? data.telemetry.message : sampling.message;
     }
     const stageMetrics = [
       ["Orders Through System", numberText(summary.ordersReceivedTotal), "all company history"],
@@ -30517,7 +30713,7 @@ void main() {
       ["Data Stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited", ""],
       ["Records Monitored", numberText(summary.totalRecords), ""]
     ];
-    els.stageReadoutStatus.innerHTML = `System Status <b>${escapeHtml(statusLabel)}</b>`;
+    els.stageReadoutStatus.innerHTML = `App Experience <b>${escapeHtml(statusLabel)}</b>`;
     els.stageReadoutMetrics.forEach((metric, index) => {
       const [label, value, detail] = stageMetrics[index] || ["Platform signal", "Current", ""];
       metric.querySelector("small").textContent = label;
@@ -30527,11 +30723,8 @@ void main() {
     });
     els.search.placeholder = "Search systems...";
     const telemetry = [
-      ["Platform pulse", statusLabel],
-      ["Public intake total", numberText(summary.publicIntakeTotal)],
-      ["Orders through system", numberText(summary.ordersReceivedTotal)],
-      ["Records monitored", numberText(summary.totalRecords)],
-      ["Data vault", summary.storage?.available ? summary.storage.totalBytesText : "Role limited"]
+      ["App health", health?.score === null ? "Collecting" : `${health.score}/100`],
+      ...(health?.metrics || []).slice(0, 4).map((metric) => [metric.shortLabel, metric.valueText])
     ];
     els.telemetryRows.forEach((row, index) => {
       const entry = telemetry[index] || ["Platform signal", "Current"];
@@ -30552,7 +30745,7 @@ void main() {
     document.querySelector(".source-lattice-head > span").innerHTML = `<i aria-hidden="true"></i>${systems.length} systems sampled`;
     const sourceSummaries = [...document.querySelectorAll(".source-summary")];
     const labels = [
-      ["Platform Pulse", "4 metrics"],
+      ["App Health", `${health?.measuredCount || 0}/${health?.totalCount || 0} measured`],
       ["App Systems", `${systems.length} systems`],
       ["Activity Runway", `${months.length} days`],
       ["Platform Systems", `${systems.length} systems`],
@@ -30584,6 +30777,8 @@ void main() {
       stat.querySelector("small").textContent = label;
       stat.querySelector("strong").textContent = value;
     });
+    els.timelineConsoleDetail.textContent = `${months.length} day activity view`;
+    els.timelineConsoleWindow.textContent = `${months.length} Days`;
     const segments = [...document.querySelectorAll("[data-bucket-filter]")];
     ["All", "Systems", "Signals"].forEach((label, index) => {
       if (segments[index]) {
@@ -30593,20 +30788,17 @@ void main() {
     });
   }
   function renderSummary(data) {
-    const { summary } = data;
-    const metrics = [
-      ["Orders Through System", numberText(summary.ordersReceivedTotal), "All company history", "cyan"],
-      ["Data Stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited", summary.storage?.available ? `${numberText(summary.storage?.fileCount)} stored objects` : "Storage access follows role", "blue"],
-      ["Public Intake Total", numberText(summary.publicIntakeTotal), `${numberText(summary.requestsToday)} received today`, "mint"],
-      ["Records Monitored", numberText(summary.totalRecords), `${numberText(summary.locations)} plants`, "blue"]
-    ];
+    const metrics = data.health?.metrics || [];
     const container = els.summarySource.querySelector(".summary-grid");
-    container.innerHTML = metrics.map(([label, value, detail, tone]) => `
-    <article class="metric-card accent-${tone}">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <small>${escapeHtml(detail)}</small>
-      <div class="metric-meter"><i style="width:${label === "Data Stored" ? 58 : 72}%"></i></div>
+    container.innerHTML = metrics.map((metric) => `
+    <article class="metric-card health-metric-card status-${escapeHtml(metric.status)}">
+      <div class="health-metric-head"><span>${escapeHtml(metric.shortLabel)}</span><b>${escapeHtml(metric.statusLabel)}</b></div>
+      <strong>${escapeHtml(metric.valueText)}</strong>
+      <div class="metric-scale direction-${escapeHtml(metric.direction)} ${metric.status === "collecting" ? "is-collecting" : ""}" style="--good-position:${Math.round(metric.goodPosition || 0)}%;--watch-position:${Math.round(metric.watchPosition || 0)}%" role="meter" aria-label="${escapeHtml(metric.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(metric.gaugePosition || 0)}" aria-valuetext="${escapeHtml(`${metric.valueText}, ${metric.statusLabel}`)}">
+        <i style="left:${Math.max(0, Math.min(100, metric.gaugePosition || 0))}%"></i>
+      </div>
+      <small>${escapeHtml(metric.target)}</small>
+      <p>${escapeHtml(metric.basis)}${metric.sampleCount ? ` / ${numberText(metric.sampleCount)} samples` : ""}</p>
     </article>
   `).join("");
   }
@@ -30770,17 +30962,34 @@ void main() {
         },
         onVaultSelected: () => {
           els.summarySource.open = true;
+        },
+        qualityPreference: localStorage.getItem("maintainops.performanceQuality") || "auto",
+        onPerformanceSample: (sample) => {
+          window.parent.postMessage({ type: "maintainops-platform-spatial-telemetry", sample }, parentOrigin);
+        },
+        onQualityChange: (quality) => updateQualityButtons(quality.preference, quality.effective),
+        onFirstRender: (sample) => {
+          if (worldRenderAnnounced) return;
+          worldRenderAnnounced = true;
+          document.documentElement.classList.add("platform-spatial-ready");
+          window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY = true;
+          window.parent.postMessage({ type: "maintainops-platform-spatial-rendered" }, parentOrigin);
+          window.parent.postMessage({
+            type: "maintainops-platform-spatial-telemetry",
+            sample: { ...sample, readyMs: performance.now() - frameStartedAt }
+          }, parentOrigin);
         }
       });
     }
-    document.documentElement.classList.add("platform-spatial-ready");
-    window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY = true;
-    if (!worldRenderAnnounced) {
-      window.requestAnimationFrame(() => {
-        worldRenderAnnounced = true;
-        window.parent.postMessage({ type: "maintainops-platform-spatial-rendered" }, parentOrigin);
-      });
-    }
+  }
+  function updateQualityButtons(preference, effective) {
+    els.qualityButtons.forEach((button) => {
+      const active = button.dataset.qualityTier === preference;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+      const base = button.dataset.qualityTier === "performance" ? "Efficient" : button.dataset.qualityTier === "cinematic" ? "Ultra" : "Auto";
+      button.textContent = button.dataset.qualityTier === "auto" && effective ? `${base}: ${effective === "performance" ? "Efficient" : effective === "cinematic" ? "Ultra" : "Balanced"}` : base;
+    });
   }
   function requestRefresh() {
     const label = els.refresh.querySelector("span:last-child");
@@ -30817,6 +31026,12 @@ void main() {
       renderFiles(frameState);
     });
     els.refresh.addEventListener("click", requestRefresh);
+    els.qualityButtons.forEach((button) => button.addEventListener("click", () => {
+      const preference = button.dataset.qualityTier || "auto";
+      localStorage.setItem("maintainops.performanceQuality", preference);
+      const quality = world?.setQuality(preference);
+      updateQualityButtons(preference, quality?.effective || "");
+    }));
     els.stageActions.forEach((button) => button.addEventListener("click", () => {
       const target = button.dataset.worldTarget;
       if (target === "timeline") openTimelineSource();

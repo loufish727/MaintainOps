@@ -24,6 +24,11 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It is intenti
 - `assets/gauges/gauge-status-sprite.png`
   - Current approved gauge artwork sheet used for status dashboard buttons.
 
+- `src/performance/`
+  - Owns the lazy Performance workspace, privacy-limited browser telemetry, objective grade thresholds, and adaptive 3D quality behavior.
+  - The normal app shell imports only the small telemetry collector and threshold logic. Three.js, the spatial scene, and its visual assets remain behind the existing lazy Performance iframe.
+  - See `docs/PERFORMANCE_TELEMETRY.md` for metric definitions, grade boundaries, privacy limits, and hosted-monitor scope.
+
 ## Supabase Architecture
 
 The app is multi-tenant by `company_id`.
@@ -52,6 +57,7 @@ Important shared tables include:
 - `message_reads`
 - `messages`
 - `public_request_links`
+- `app_performance_samples`
 
 Every shared operational record should include `company_id`. Location-scoped operational records should include `location_id`.
 

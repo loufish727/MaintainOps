@@ -25,7 +25,7 @@ const ZONES = {
   buckets: { id: "buckets", label: "Platform Systems", pos: [0.6, 6.2, 14.8], look: [0.8, 2.05, -7.7] },
   timeline: { id: "timeline", label: "Activity Runway", pos: [5.6, 5.4, 12.4], look: [4.5, 1.25, 1.1] },
   files: { id: "files", label: "Notable Signals", pos: [0, 4.0, 15.6], look: [0, 1.65, 6.05] },
-  vault: { id: "vault", label: "Platform Pulse", pos: [-15.0, 6.8, 5.8], look: [-8.25, 3.95, -7.0] },
+  vault: { id: "vault", label: "App Health", pos: [-15.0, 6.8, 5.8], look: [-8.25, 3.95, -7.0] },
 };
 
 function easeInOutCubic(t) {
@@ -48,14 +48,42 @@ export function createStorageWorld(options) {
     onMonthSelected = () => {},
     onFileSelected = () => {},
     onVaultSelected = () => {},
+    qualityPreference: initialQualityPreference = "auto",
+    onPerformanceSample = () => {},
+    onQualityChange = () => {},
+    onFirstRender = () => {},
   } = options;
   const coreRows = Array.isArray(core.rows) ? core.rows : [];
-  const storedDataRow = coreRows.find(([label]) => label === "Data stored");
+  const healthScoreRow = coreRows.find(([label]) => label === "Health score");
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-  // The room is deliberately material-heavy. Keep a little supersampling even
-  // on standard-density displays so the hard-surface panel edges stay clean.
-  const renderPixelRatio = () => Math.min(Math.max(window.devicePixelRatio, 1.5), 2);
+  const QUALITY_SETTINGS = Object.freeze({
+    performance: { pixelRatioMin: 1, pixelRatioMax: 1, samples: 0, bloom: 0.55, shadowSize: 1024, targetFps: 45 },
+    balanced: { pixelRatioMin: 1, pixelRatioMax: 1.4, samples: 2, bloom: 0.85, shadowSize: 1024, targetFps: 60 },
+    cinematic: { pixelRatioMin: 1.35, pixelRatioMax: 2, samples: 4, bloom: 1, shadowSize: 2048, targetFps: 60 },
+  });
+
+  function automaticQuality() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const coarse = window.matchMedia("(pointer: coarse), (hover: none)").matches;
+    const constrainedConnection = Boolean(connection?.saveData) || /(^|-)2g|3g/.test(String(connection?.effectiveType || ""));
+    const constrainedHardware = Number(navigator.deviceMemory) > 0 && Number(navigator.deviceMemory) <= 4
+      || Number(navigator.hardwareConcurrency) > 0 && Number(navigator.hardwareConcurrency) <= 4;
+    return coarse || constrainedConnection || constrainedHardware ? "performance" : "balanced";
+  }
+
+  function resolveQuality(preference) {
+    if (preference === "performance" || preference === "cinematic") return preference;
+    return automaticQuality();
+  }
+
+  let qualityState = {
+    preference: ["auto", "performance", "cinematic"].includes(initialQualityPreference) ? initialQualityPreference : "auto",
+    effective: resolveQuality(initialQualityPreference),
+  };
+  let qualitySettings = QUALITY_SETTINGS[qualityState.effective];
+  let keyLight = null;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+  const renderPixelRatio = () => Math.min(Math.max(window.devicePixelRatio || 1, qualitySettings.pixelRatioMin), qualitySettings.pixelRatioMax);
   renderer.setPixelRatio(renderPixelRatio());
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -63,6 +91,7 @@ export function createStorageWorld(options) {
   renderer.toneMappingExposure = 1.24;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.info.autoReset = false;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0d2232);
@@ -72,12 +101,15 @@ export function createStorageWorld(options) {
 
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 300);
 
-    new RGBELoader().load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
+  let assetsReady = false;
+  const loadingManager = new THREE.LoadingManager();
+  loadingManager.onLoad = () => { assetsReady = true; };
+  new RGBELoader(loadingManager).load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
   });
 
-  const textureLoader = new THREE.TextureLoader();
+  const textureLoader = new THREE.TextureLoader(loadingManager);
   const fileSkinAtlas = textureLoader.load("assets/performance-spatial/textures/file-cube-skins.png", (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -129,9 +161,10 @@ export function createStorageWorld(options) {
   outerWallAtlas.wrapS = THREE.ClampToEdgeWrapping;
   outerWallAtlas.wrapT = THREE.ClampToEdgeWrapping;
   const composer = new EffectComposer(renderer);
+  let composerPixelRatio = renderer.getPixelRatio();
   if (renderer.capabilities.isWebGL2) {
-    composer.renderTarget1.samples = 4;
-    composer.renderTarget2.samples = 4;
+    composer.renderTarget1.samples = qualitySettings.samples;
+    composer.renderTarget2.samples = qualitySettings.samples;
   }
   composer.addPass(new RenderPass(scene, camera));
   const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.28, 0.24, 0.95);
@@ -141,13 +174,40 @@ export function createStorageWorld(options) {
   function applyViewportTuning() {
     const compact = camera.aspect < 0.75;
     renderer.toneMappingExposure = compact ? 1.28 : 1.24;
-    bloomPass.strength = compact ? 0.26 : 0.22;
+    bloomPass.strength = (compact ? 0.26 : 0.22) * qualitySettings.bloom;
     bloomPass.radius = compact ? 0.24 : 0.2;
     if (scene.background?.isColor) scene.background.setHex(compact ? 0x102b40 : 0x0d2232);
     scene.backgroundIntensity = compact ? 1.42 : 1.34;
     scene.fog.color.setHex(compact ? 0x102b40 : 0x0d2232);
     scene.fog.density = compact ? 0.00235 : 0.00285;
     scene.environmentIntensity = compact ? 0.92 : 0.84;
+  }
+
+  function applyQuality(preference = "auto") {
+    qualityState = {
+      preference: ["auto", "performance", "cinematic"].includes(preference) ? preference : "auto",
+      effective: resolveQuality(preference),
+    };
+    qualitySettings = QUALITY_SETTINGS[qualityState.effective];
+    if (renderer.capabilities.isWebGL2) {
+      composer.renderTarget1.samples = qualitySettings.samples;
+      composer.renderTarget2.samples = qualitySettings.samples;
+    }
+    const nextPixelRatio = renderPixelRatio();
+    if (renderer.getPixelRatio() !== nextPixelRatio) renderer.setPixelRatio(nextPixelRatio);
+    if (composerPixelRatio !== nextPixelRatio) {
+      composer.setPixelRatio(nextPixelRatio);
+      composerPixelRatio = nextPixelRatio;
+    }
+    if (keyLight) {
+      keyLight.shadow.mapSize.set(qualitySettings.shadowSize, qualitySettings.shadowSize);
+      keyLight.shadow.map?.dispose();
+      keyLight.shadow.map = null;
+      keyLight.shadow.needsUpdate = true;
+    }
+    applyViewportTuning();
+    onQualityChange({ ...qualityState });
+    return { ...qualityState };
   }
 
   const interactive = [];
@@ -611,7 +671,7 @@ export function createStorageWorld(options) {
   worldHudGroup.visible = false;
   root.add(worldHudGroup);
 
-  new GLTFLoader().load(
+  new GLTFLoader(loadingManager).load(
     "assets/performance-spatial/models/maintain_ops_concept_kit.glb",
     (gltf) => {
       const kit = gltf.scene;
@@ -986,12 +1046,12 @@ export function createStorageWorld(options) {
   dialRing.userData.phase = 2.4;
   animated.push(dialRing);
   addMesh(usageDialGroup, new THREE.CircleGeometry(0.84, 48), new THREE.MeshBasicMaterial({ color: 0x081624, transparent: true, opacity: 0.88 }), [0, 0, 0], { shadow: false });
-  const dialLabel = makeLabel([storedDataRow?.[1] || "DATA", "STORED"], { accent: "#dff4ff", scale: 0.52 });
+  const dialLabel = makeLabel([healthScoreRow?.[1] || "APP", "HEALTH"], { accent: "#dff4ff", scale: 0.52 });
   dialLabel.position.set(0, 0, 0.02);
   usageDialGroup.add(dialLabel);
 
   // ---------------------------------------------------------------------------
-  // Capacity core: 100 GB reactor sphere where the 222 MB core is visibly tiny
+  // App-health core: the central focus for measured browser and platform signals.
   // ---------------------------------------------------------------------------
   const vaultGroup = new THREE.Group();
   vaultGroup.position.set(-8.3, 0, -7.1);
@@ -1102,7 +1162,7 @@ export function createStorageWorld(options) {
       animated.push(railGlow);
     });
 
-    // Containment shell: the full 100 GB envelope
+    // Containment shell for the aggregate health score.
     const shell = addMesh(
       vaultGroup,
       new THREE.SphereGeometry(2.55, 48, 32),
@@ -1131,8 +1191,8 @@ export function createStorageWorld(options) {
       type: "vault",
       focusRadius: 3.6,
       ringY: 0.34,
-      tooltip: ["Capacity Core", "222 MB of 100 GB used · 0.2%"],
-      platformTooltip: [core.title || "Platform Pulse", core.tooltip || core.badge || "Live company snapshot"],
+      tooltip: ["App Health", "Measured browser experience and app reliability"],
+      platformTooltip: [core.title || "App Health", core.tooltip || core.badge || "Measured company app health"],
     });
     const cage = new THREE.Mesh(
       new THREE.IcosahedronGeometry(2.62, 1),
@@ -1144,7 +1204,7 @@ export function createStorageWorld(options) {
     vaultGroup.add(cage);
     animated.push(cage);
 
-    // The actual usage: a tiny bright core inside the huge envelope
+    // The bright core carries the aggregate health state.
     const coreOrb = addMesh(vaultGroup, new THREE.SphereGeometry(0.42, 24, 16), glow(COLORS.cyan, 1.9), [0, 3.4, 0], { shadow: false });
     coreOrb.userData.kind = "corePulse";
     coreOrb.userData.phase = 0;
@@ -1798,16 +1858,16 @@ export function createStorageWorld(options) {
   const fill = new THREE.DirectionalLight(0xb4d4e4, 0.34);
   fill.position.set(4, 7, 22);
   scene.add(fill);
-  const key = new THREE.DirectionalLight(0xd1e8f8, 1.35);
-  key.position.set(-10, 18, 12);
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.left = -26;
-  key.shadow.camera.right = 26;
-  key.shadow.camera.top = 26;
-  key.shadow.camera.bottom = -26;
-  key.shadow.bias = -0.0004;
-  scene.add(key);
+  keyLight = new THREE.DirectionalLight(0xd1e8f8, 1.35);
+  keyLight.position.set(-10, 18, 12);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(qualitySettings.shadowSize, qualitySettings.shadowSize);
+  keyLight.shadow.camera.left = -26;
+  keyLight.shadow.camera.right = 26;
+  keyLight.shadow.camera.top = 26;
+  keyLight.shadow.camera.bottom = -26;
+  keyLight.shadow.bias = -0.0004;
+  scene.add(keyLight);
   const rim = new THREE.DirectionalLight(0x7d70ff, 0.72);
   rim.position.set(14, 9, -14);
   scene.add(rim);
@@ -2286,11 +2346,11 @@ export function createStorageWorld(options) {
 
   function showVaultReveal(mesh) {
     showPanelReveal(mesh, {
-      eyebrow: core.eyebrow || "Maintain Ops / Platform Pulse",
-      title: core.title || "Platform Pulse",
-      subtitle: core.subtitle || "Live company operating snapshot",
+      eyebrow: core.eyebrow || "Maintain Ops / App Health",
+      title: core.title || "App Health",
+      subtitle: core.subtitle || "Measured company app health",
       badge: core.badge || "Current",
-      rows: core.rows || [["Orders through system", "0"], ["Public intake", "0"], ["Data stored", "Pending"], ["Records monitored", "0"]],
+      rows: core.rows || [["Health score", "Collecting"], ["Signals measured", "0/0"], ["Page load", "Collecting"], ["Responsiveness", "Collecting"]],
       footer: core.footer || "Maintain Ops command core",
       status: core.status || "Current",
       color: COLORS.cyan,
@@ -2410,8 +2470,12 @@ export function createStorageWorld(options) {
     })
     : [];
 
-  function updateTouchTargets() {
+  let lastTouchTargetUpdate = 0;
+  function updateTouchTargets(force = false) {
     if (!touchTargetMedia.matches) return;
+    const now = performance.now();
+    if (!force && rig.t >= 1 && !drag.active && now - lastTouchTargetUpdate < 250) return;
+    lastTouchTargetUpdate = now;
     touchTargetEntries.forEach(({ button, object, projection }) => {
       object.getWorldPosition(projection);
       projection.project(camera);
@@ -2448,6 +2512,12 @@ export function createStorageWorld(options) {
     drag.moved = false;
     drag.pointerId = null;
     drag.lastGesture = gesture;
+  }
+
+  function clearToOverview() {
+    lastPickMode = "miss";
+    clearSelection();
+    travelToZone("overview");
   }
 
   function pickInteractive(clientX, clientY, allowTouchTolerance = false) {
@@ -2534,13 +2604,16 @@ export function createStorageWorld(options) {
     const pointerType = drag.pointerType;
     resetPointerGesture(wasDrag ? "drag" : "tap");
     if (wasDrag) return;
-    // Raycast from the release point itself — the pointer may never have moved
+    // DOM touch targets own object selection on coarse-pointer devices. A touch
+    // that reaches bare canvas is therefore an intentional empty-space tap.
+    if (pointerType === "touch" && touchTargetEntries.length) {
+      clearToOverview();
+      return;
+    }
+    // Raycast from the release point itself; the pointer may never have moved.
     const hit = pickInteractive(event.clientX, event.clientY, pointerType === "touch");
     if (hit) focusObject(hit);
-    else {
-      clearSelection();
-      travelToZone("overview");
-    }
+    else clearToOverview();
   });
 
   window.addEventListener("pointercancel", (event) => {
@@ -2550,12 +2623,13 @@ export function createStorageWorld(options) {
     const clientY = drag.y;
     resetPointerGesture(completeTouchTap ? "tap" : "cancel");
     if (!completeTouchTap) return;
+    if (touchTargetEntries.length) {
+      clearToOverview();
+      return;
+    }
     const hit = pickInteractive(clientX, clientY, true);
     if (hit) focusObject(hit);
-    else {
-      clearSelection();
-      travelToZone("overview");
-    }
+    else clearToOverview();
   });
 
   window.addEventListener("resize", () => {
@@ -2565,7 +2639,15 @@ export function createStorageWorld(options) {
     renderer.setPixelRatio(renderPixelRatio());
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
+    updateTouchTargets(true);
     if (!selected) travelToZone(currentZone, 0.8);
+  });
+
+  let contextLosses = 0;
+  canvas.addEventListener("webglcontextlost", (event) => {
+    event.preventDefault();
+    contextLosses += 1;
+    onPerformanceSample({ contextLosses, qualityTier: qualityState.effective });
   });
 
   // ---------------------------------------------------------------------------
@@ -2573,8 +2655,43 @@ export function createStorageWorld(options) {
   // ---------------------------------------------------------------------------
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  applyViewportTuning();
+  applyQuality(qualityState.preference);
   travelToZone("overview", 0.01);
+
+  let latestPixelSample = { sampled: 0, nonBlack: 0, range: 0 };
+  let pixelSampleReported = false;
+  const pixelProbeEnabled = new URLSearchParams(window.location.search).has("qa_bust")
+    || new URLSearchParams(window.location.search).has("lfes_canvas_probe");
+  function samplePresentedPixels() {
+    const gl = renderer.getContext();
+    const width = Math.min(32, gl.drawingBufferWidth);
+    const height = Math.min(32, gl.drawingBufferHeight);
+    const pixels = new Uint8Array(width * height * 4);
+    try {
+      gl.readPixels(
+        Math.max(0, Math.floor((gl.drawingBufferWidth - width) / 2)),
+        Math.max(0, Math.floor((gl.drawingBufferHeight - height) / 2)),
+        width,
+        height,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels,
+      );
+    } catch (_error) {
+      return latestPixelSample;
+    }
+    let nonBlack = 0;
+    let minimum = 255;
+    let maximum = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const light = Math.round((pixels[index] + pixels[index + 1] + pixels[index + 2]) / 3);
+      if (light > 4) nonBlack += 1;
+      minimum = Math.min(minimum, light);
+      maximum = Math.max(maximum, light);
+    }
+    latestPixelSample = { sampled: width * height, nonBlack, range: maximum - minimum };
+    return latestPixelSample;
+  }
 
   window.__STORAGE_WORLD_DEBUG = () => ({
     zone: currentZone,
@@ -2599,9 +2716,33 @@ export function createStorageWorld(options) {
     cameraPos: camera.position.toArray().map((v) => Number(v.toFixed(2))),
     baseLook: rig.baseLook.toArray().map((v) => Number(v.toFixed(2))),
     travelT: Number(rig.t.toFixed(2)),
+    quality: { ...qualityState },
+    renderer: {
+      drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      drawingWidth: renderer.domElement.width,
+      drawingHeight: renderer.domElement.height,
+      pixels: latestPixelSample,
+    },
   });
 
-  function animate() {
+  let lastRenderAt = 0;
+  let sampleStartedAt = performance.now();
+  let sampledFrames = 0;
+  let sampledFrameTime = 0;
+  let sampledSlowFrames = 0;
+  let firstRenderReported = false;
+  let performanceSampleReported = false;
+
+  function animate(timestamp = performance.now()) {
+    requestAnimationFrame(animate);
+    const targetFps = document.hidden ? 4 : qualitySettings.targetFps;
+    const targetInterval = 1000 / targetFps;
+    if (lastRenderAt && timestamp - lastRenderAt < targetInterval - 1) return;
+    const observedFrameTime = lastRenderAt ? timestamp - lastRenderAt : targetInterval;
+    lastRenderAt = timestamp;
     const dt = Math.min(clock.getDelta(), 0.12);
     const elapsed = clock.elapsedTime;
 
@@ -2780,12 +2921,50 @@ export function createStorageWorld(options) {
     camera.lookAt(rig.baseLook);
     updateTouchTargets();
 
+    renderer.info.reset();
     composer.render();
-    requestAnimationFrame(animate);
+    if (pixelProbeEnabled && assetsReady && !pixelSampleReported) {
+      samplePresentedPixels();
+      pixelSampleReported = true;
+    }
+    if (assetsReady && !firstRenderReported) {
+      firstRenderReported = true;
+      onFirstRender({ qualityTier: qualityState.effective });
+    }
+    if (!document.hidden) {
+      sampledFrames += 1;
+      sampledFrameTime += observedFrameTime;
+      if (observedFrameTime > targetInterval * 1.5) sampledSlowFrames += 1;
+      const sampleDuration = timestamp - sampleStartedAt;
+      if (sampleDuration >= (performanceSampleReported ? 60000 : 6000)) {
+        onPerformanceSample({
+          fps: sampledFrames / (sampleDuration / 1000),
+          frameMs: sampledFrames ? sampledFrameTime / sampledFrames : 0,
+          slowFramePercent: sampledFrames ? (sampledSlowFrames / sampledFrames) * 100 : 0,
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+          geometries: renderer.info.memory.geometries,
+          textures: renderer.info.memory.textures,
+          contextLosses,
+          qualityTier: qualityState.effective,
+        });
+        sampleStartedAt = timestamp;
+        sampledFrames = 0;
+        sampledFrameTime = 0;
+        sampledSlowFrames = 0;
+        performanceSampleReported = true;
+      }
+    }
   }
   animate();
 
   return {
+    quality() {
+      return { ...qualityState };
+    },
+    setQuality(preference) {
+      return applyQuality(preference);
+    },
     setView,
     focusBucket(index) {
       if (bucketAnchors[index]) focusObject(bucketAnchors[index], { silent: true });

@@ -90,9 +90,26 @@ function createQueryResponse(table, companyRows, calls) {
       return createQueryResponse(table, rows, calls);
     },
     rpc(name, args) {
-      assert.equal(name, "get_storage_dashboard");
       assert.equal(args.target_company_id, companyId);
-      return Promise.resolve({ data: { total_bytes: 1048576, file_count: 4 }, error: null });
+      if (name === "get_storage_dashboard") {
+        return Promise.resolve({ data: { total_bytes: 1048576, file_count: 4, usage_percent: 0.001 }, error: null });
+      }
+      assert.equal(name, "get_app_performance_dashboard");
+      return Promise.resolve({
+        data: {
+          status: "current",
+          sample_count: 20,
+          session_count: 4,
+          metrics: {
+            lcp_ms: { count: 4, p75: 2100 },
+            inp_ms: { count: 4, p75: 180 },
+            query_latency_ms: { count: 8, p75: 620 },
+            client_error: { count: 1, average: 1 },
+          },
+          daily: [],
+        },
+        error: null,
+      });
     },
   };
 
@@ -116,6 +133,10 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(snapshot.timeline.length, 14);
   assert.equal(snapshot.plants[0].name, "Salem");
   assert.equal(snapshot.sampling.status, "current");
+  assert.equal(snapshot.telemetry.status, "current");
+  assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "lcp_ms").status, "good");
+  assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "query_latency_ms").status, "watch");
+  assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "client_error_rate").status, "poor");
   assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
     operator === "eq" && column === "company_id" && value === companyId
   ))), "every performance query must be scoped to the active company");
@@ -143,7 +164,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameSource, /maintainops-platform-spatial-exit/);
   assert.match(frameSource, /localStorage\.setItem\("maintainops\.activeSection", "mywork"\)/);
   assert.match(frameSource, /platform-spatial-standalone/);
-  assert.match(frameSource, /Platform Pulse/);
+  assert.match(frameSource, /App Health/);
   assert.match(frameSource, /platform-spatial-degraded/);
   assert.match(frameSource, /Unavailable/);
   assert.match(frameSource, /refresh\.classList\.remove\("refreshing"\)/);
@@ -155,9 +176,13 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /touch-nearest/);
   assert.match(worldSource, /pointercancel/);
   assert.match(worldSource, /completeTouchTap = drag\.pointerType === "touch" && !drag\.moved/);
-  assert.match(worldSource, /const hit = pickInteractive\(clientX, clientY, true\);\s*if \(hit\) focusObject\(hit\);\s*else \{\s*clearSelection\(\);\s*travelToZone\("overview"\);/);
+  assert.match(worldSource, /function clearToOverview\(\) \{\s*lastPickMode = "miss";\s*clearSelection\(\);\s*travelToZone\("overview"\);/);
+  assert.match(worldSource, /if \(pointerType === "touch" && touchTargetEntries\.length\) \{\s*clearToOverview\(\);\s*return;/);
+  assert.match(worldSource, /if \(touchTargetEntries\.length\) \{\s*clearToOverview\(\);\s*return;/);
   assert.match(worldSource, /lastPickMode = "touch-dom"/);
-  assert.match(worldSource, /function updateTouchTargets\(\)/);
+  assert.match(worldSource, /function updateTouchTargets\(force = false\)/);
+  assert.match(worldSource, /QUALITY_SETTINGS/);
+  assert.match(worldSource, /onPerformanceSample/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 
@@ -190,7 +215,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(degradedSnapshot.signals[0].title, "Partial data sample");
 
   const appSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../app.js"), "utf8");
-  assert.match(appSource, /platformPerformanceDisplay\.js\?v=platform-performance-lazy-2/);
+  assert.match(appSource, /platformPerformanceThresholds\.js\?v=platform-performance-health-1/);
   assert.match(appSource, /function armPlatformSpatialFrameWatchdog\(\)/);
   assert.match(appSource, /\}, 10000\);/);
   assert.match(appSource, /platformPerformanceTimedOut = true/);
@@ -208,6 +233,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameHtml, /data-performance-exit/);
   assert.match(frameHtml, /aria-label="Back to My Work"/);
   assert.match(frameHtml, /data-spatial-touch-targets/);
+  assert.match(frameHtml, /data-quality-tier="auto"/);
+  assert.doesNotMatch(frameHtml, /12 months/i);
 
   const spatialStyles = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatial.css"), "utf8");
   assert.doesNotMatch(spatialStyles, /direct-performance-exit/);
@@ -216,6 +243,7 @@ function createQueryResponse(table, companyRows, calls) {
   assert.doesNotMatch(spatialStyles, /#storage-world\s*\{[^}]*touch-action:\s*pan-y/s);
   assert.match(spatialStyles, /\.spatial-touch-targets\s*\{[^}]*pointer-events:\s*none/s);
   assert.match(spatialStyles, /@media \(pointer: coarse\), \(hover: none\)/);
+  assert.match(spatialStyles, /\.metric-scale/);
 
   console.log("platform performance lazy smoke passed");
 })();

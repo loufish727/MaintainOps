@@ -245,6 +245,123 @@ async function run() {
     results.push(info("cross_tenant_probe_not_run", "Set MAINTAINOPS_PROBE_EMAIL, MAINTAINOPS_PROBE_PASSWORD, and MAINTAINOPS_FORBIDDEN_COMPANY_ID to run authenticated cross-company probes."));
   }
 
+  if (authToken && authProfile?.company_id) {
+    const companyId = authProfile.company_id;
+    const rawRead = await requestJson({
+      ...config,
+      token: authToken,
+      path: `/rest/v1/app_performance_samples?company_id=eq.${encodeURIComponent(companyId)}&select=*&limit=1`,
+    });
+    if (rawRead.status === 401 || rawRead.status === 403) {
+      results.push(pass("performance_raw_samples_client_read_denied", `HTTP ${rawRead.status}`));
+    } else {
+      results.push((requireAuthenticatedProof ? fail : info)(
+        "performance_raw_samples_client_read_not_proven",
+        `HTTP ${rawRead.status}; expected an explicit API permission denial.`
+      ));
+    }
+
+    const writeSample = await requestJson({
+      ...config,
+      token: authToken,
+      path: "/rest/v1/rpc/record_app_performance_samples",
+      method: "POST",
+      body: {
+        target_company_id: companyId,
+        samples: [{
+          metric: "session_start",
+          value: 1,
+          unit: "count",
+          context: { source: "lfes-auth-probe", ignored_field: "must-not-be-stored" },
+        }],
+      },
+    });
+    if (writeSample.ok && Number(writeSample.payload) === 1) {
+      results.push(pass("performance_company_member_sample_write", "The signed-in company member recorded one allowlisted QA sample."));
+    } else {
+      results.push((requireAuthenticatedProof ? fail : info)(
+        "performance_company_member_sample_write_not_proven",
+        `HTTP ${writeSample.status}; expected one inserted sample.`
+      ));
+    }
+
+    const dashboard = await requestJson({
+      ...config,
+      token: authToken,
+      path: "/rest/v1/rpc/get_app_performance_dashboard",
+      method: "POST",
+      body: { target_company_id: companyId, window_days: 1 },
+    });
+    const dashboardText = JSON.stringify(dashboard.payload || {});
+    if (
+      dashboard.ok
+      && dashboard.payload
+      && typeof dashboard.payload === "object"
+      && Number(dashboard.payload.sample_count) >= 1
+      && !dashboardText.includes("recorded_by")
+      && !dashboardText.includes(authUserId)
+    ) {
+      results.push(pass("performance_company_dashboard_aggregate_only", "The company dashboard returned aggregates without contributor identity fields."));
+    } else {
+      results.push((requireAuthenticatedProof ? fail : info)(
+        "performance_company_dashboard_not_proven",
+        `HTTP ${dashboard.status}; expected non-identifying company aggregates.`
+      ));
+    }
+
+    const mismatchedUnit = await requestJson({
+      ...config,
+      token: authToken,
+      path: "/rest/v1/rpc/record_app_performance_samples",
+      method: "POST",
+      body: {
+        target_company_id: companyId,
+        samples: [{ metric: "lcp_ms", value: 1200, unit: "count", context: { source: "lfes-auth-probe" } }],
+      },
+    });
+    if (isDenied(mismatchedUnit)) {
+      results.push(pass("performance_mismatched_metric_unit_denied", `HTTP ${mismatchedUnit.status}`));
+    } else {
+      results.push((requireAuthenticatedProof ? fail : info)(
+        "performance_mismatched_metric_unit_not_denied",
+        `HTTP ${mismatchedUnit.status}; malformed telemetry was not explicitly rejected.`
+      ));
+    }
+
+    if (forbiddenCompanyId) {
+      const forbiddenWrite = await requestJson({
+        ...config,
+        token: authToken,
+        path: "/rest/v1/rpc/record_app_performance_samples",
+        method: "POST",
+        body: {
+          target_company_id: forbiddenCompanyId,
+          samples: [{ metric: "session_start", value: 1, unit: "count", context: { source: "lfes-auth-probe" } }],
+        },
+      });
+      const forbiddenDashboard = await requestJson({
+        ...config,
+        token: authToken,
+        path: "/rest/v1/rpc/get_app_performance_dashboard",
+        method: "POST",
+        body: { target_company_id: forbiddenCompanyId, window_days: 1 },
+      });
+      if (isDenied(forbiddenWrite) && isDenied(forbiddenDashboard)) {
+        results.push(pass(
+          "performance_cross_company_rpcs_denied",
+          `write HTTP ${forbiddenWrite.status}; dashboard HTTP ${forbiddenDashboard.status}`
+        ));
+      } else {
+        results.push(fail(
+          "performance_cross_company_rpcs_allowed",
+          `write HTTP ${forbiddenWrite.status}; dashboard HTTP ${forbiddenDashboard.status}`
+        ));
+      }
+    }
+  } else {
+    results.push(info("performance_authenticated_probes_not_run", "Authenticated company membership is required to prove telemetry RPC boundaries."));
+  }
+
   if (authToken && authProfile?.role === "technician") {
     const companyId = authProfile.company_id;
     const userId = authProfile.user_id;
@@ -458,6 +575,11 @@ async function run() {
       "technician_denied:maintenance_requests_delete",
       "auth_storage_upload_forbidden_company_denied:company-logos",
       "anon_attach_photo_internal_request_denied",
+      "performance_raw_samples_client_read_denied",
+      "performance_company_member_sample_write",
+      "performance_company_dashboard_aggregate_only",
+      "performance_mismatched_metric_unit_denied",
+      "performance_cross_company_rpcs_denied",
     ];
     const passedNames = new Set(results.filter((result) => result.verdict === "PASS").map((result) => result.name));
     for (const requiredName of requiredPasses) {
