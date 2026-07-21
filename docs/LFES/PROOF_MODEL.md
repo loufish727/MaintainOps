@@ -4,7 +4,7 @@ LFES separates evidence by what actually ran. A green check must not imply that 
 
 ## Required Release Gate
 
-`npm run test:lfes:strict` is the required GitHub branch-protection check. It proves that the tested commit passed:
+`npm run test:release:gate` is the fast GitHub branch-protection check. It proves that the tested commit passed:
 
 - recursive static inspection of every repository SQL file, including dated migrations
 - live anonymous Data API, RPC, and storage boundary probes
@@ -13,15 +13,21 @@ LFES separates evidence by what actually ran. A green check must not imply that 
 - seeded cross-company, manager read-only, and accounting write RLS checks
 - runtime bundle generation, manifest validation, and committed-output cleanliness
 - the broad Node smoke suite and targeted browser regressions
-- local application resource loading and mobile Performance interaction
+- local application resource loading
 
-The command writes machine-readable evidence to `lfes-evidence/`. GitHub retains that directory as the `strict-lfes-evidence` artifact for 30 days.
+The command writes machine-readable evidence to `lfes-evidence/release-gate-summary.json`. GitHub retains the `release-gate-evidence` artifact for 30 days. Pull requests that change only Markdown files still report a successful required check but skip executable app tests because no executable input changed.
 
-This gate does not claim that authenticated checks against the isolated testing Supabase project ran. Those require dedicated QA users and are a separate proof layer.
+This gate does not claim that the expensive desktop/mobile 3D Performance interaction or authenticated checks against the isolated testing Supabase project ran. Those are Full Strict LFES layers.
+
+## Full Strict LFES
+
+`npm run test:lfes:strict` runs every Release Gate stage plus the serial desktop/mobile Performance interaction. The manually dispatched `Full Strict LFES` workflow then runs the authenticated testing-platform proof after the local suite passes. It is used before major releases or new work cycles and after security, database, authentication, permissions, storage, or Performance/3D changes.
+
+Full Strict is intentionally not a required check on every pull request. Its evidence is stronger and slower; a passing Release Gate must not be reported as a Full Strict pass.
 
 ## Authenticated Testing-Platform Proof
 
-`npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the selected protected-branch commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. The current workflow is manually dispatched and is not a required pre-merge check; the protected `lfes-qa` environment currently limits it to protected branches. When configured, it proves:
+`npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the selected protected-branch commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. The proof can be dispatched directly or called by `Full Strict LFES`; the protected `lfes-qa` environment limits it to approved refs. When configured, it proves:
 
 - a technician cannot see another QA company's rows
 - technician manager/admin RPC attempts are rejected
@@ -51,8 +57,9 @@ Latest verified proof: GitHub run `29871957982` passed on commit `457ed4fe7e0879
 
 LFES Gold remains the human, risk-scoped engineering audit. It uses the automated evidence but also covers scope, architecture, live behavior, rollback, operational impact, and findings that cannot be established by one command.
 
-The three results must be reported separately:
+The four results must be reported separately:
 
 1. Required Release Gate: `PASS` or `FAIL`.
-2. Authenticated Hosted Proof: `PASS`, `FAIL`, or `NOT RUN`.
-3. LFES Gold review: completed findings and residual risk.
+2. Full Strict local proof: `PASS`, `FAIL`, or `NOT RUN`.
+3. Authenticated Testing-Platform Proof: `PASS`, `FAIL`, or `NOT RUN`.
+4. LFES Gold review: completed findings and residual risk.

@@ -1,0 +1,74 @@
+name: MaintainOps Release Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: release-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release_gate:
+    name: Release Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect documentation-only pull request
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          app_changed=true
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+            non_docs="$(printf '%s\n' "$changed_files" | grep -Ev '(^docs/|\.md$)' || true)"
+            if [[ -n "$changed_files" && -z "$non_docs" ]]; then
+              app_changed=false
+            fi
+          fi
+          echo "app_changed=$app_changed" >> "$GITHUB_OUTPUT"
+
+      - name: Record documentation-only scope
+        if: steps.scope.outputs.app_changed != 'true'
+        run: echo "Documentation-only pull request; executable release checks are not applicable."
+
+      - name: Set up Node
+        if: steps.scope.outputs.app_changed == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.scope.outputs.app_changed == 'true'
+        run: npm ci
+
+      - name: Install Playwright browser
+        if: steps.scope.outputs.app_changed == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release gate
+        if: steps.scope.outputs.app_changed == 'true'
+        run: npm run test:release:gate
+
+      - name: Upload release-gate evidence
+        if: always() && steps.scope.outputs.app_changed == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-gate-evidence
+          path: lfes-evidence/
+          if-no-files-found: error
+          retention-days: 30

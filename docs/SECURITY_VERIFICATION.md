@@ -4,7 +4,13 @@ MaintainOps uses Supabase Auth, Postgres RLS, scoped RPCs, and private storage b
 
 ## Current Verification Commands
 
-Strict local LFES command:
+Fast Release Gate command:
+
+```bash
+npm run test:release:gate
+```
+
+Full Strict LFES command:
 
 ```bash
 npm run test:lfes:strict
@@ -49,9 +55,9 @@ npm run test:security:boundary
 
 Last checked: 2026-07-20.
 
-Strict LFES:
+Release Gate and Full Strict LFES:
 
-- required GitHub branch-protection check: PASS on commit `dfcae0176820276592064f6220a8be9a5443a947`; administrators are included in enforcement and force pushes are disabled.
+- required GitHub branch-protection check: PASS on commit `dfcae0176820276592064f6220a8be9a5443a947`; administrators are included in enforcement and force pushes are disabled. The required context is being transitioned from the full suite to the faster Release Gate without reducing the listed security, RLS, bundle, Node, ordinary browser, or resource-load coverage.
 - recursive security static audit: PASS; 97 SQL files and all dated migrations inspected.
 - live anonymous security boundary probe: PASS.
 - isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.

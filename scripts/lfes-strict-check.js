@@ -10,6 +10,7 @@ const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
 const preferredPort = Number(process.env.MAINTAINOPS_LFES_PORT || 4195);
 const candidatePorts = [preferredPort, preferredPort + 1, preferredPort + 2];
+const releaseGateMode = process.argv.includes("--release-gate");
 const startedAt = new Date().toISOString();
 const stages = [];
 
@@ -53,9 +54,14 @@ function verifyGeneratedBundlesClean() {
 
 function writeSummary(status, error = null) {
   const worktreeChanges = gitWorktreeChanges();
-  return writeEvidence("lfes-strict-summary.json", {
+  const summaryFile = releaseGateMode ? "release-gate-summary.json" : "lfes-strict-summary.json";
+  const scope = releaseGateMode
+    ? "Fast release gate: recursive/static security, live anonymous boundaries, isolated PostgreSQL/RLS, bundles, Node/browser regressions, and local resource loading"
+    : "Full Strict LFES: release-gate coverage plus serial desktop/mobile Performance interaction";
+  return writeEvidence(summaryFile, {
     status,
-    scope: "Required release gate: recursive/static security, live anonymous boundaries, isolated PostgreSQL/RLS, bundles, Node/browser regressions, and local resource loading",
+    mode: releaseGateMode ? "RELEASE_GATE" : "FULL_STRICT_LFES",
+    scope,
     startedAt,
     completedAt: new Date().toISOString(),
     commit: gitCommit(),
@@ -63,7 +69,9 @@ function writeSummary(status, error = null) {
     worktreeChanges,
     node: process.version,
     platform: `${process.platform}-${process.arch}`,
-    authenticatedLiveProof: "NOT_RUN_BY_STRICT_GATE",
+    authenticatedLiveProof: releaseGateMode
+      ? "NOT_RUN_BY_RELEASE_GATE"
+      : "RUN_SEPARATELY_BY_FULL_STRICT_WORKFLOW",
     stages,
     ...(error ? { error: error.message } : {}),
   });
@@ -236,18 +244,20 @@ async function main() {
         MAINTAINOPS_BASE_URL: server.baseUrl,
       },
     }));
-    await runStage("mobile Performance interaction", () => run(npxCommand, [
-      "playwright",
-      "test",
-      "tests/smoke/platform-performance-mobile-browser.spec.js",
-      "tests/smoke/platform-performance-desktop-browser.spec.js",
-      "--workers=1",
-    ], {
-      label: "mobile Performance controls smoke",
-      env: {
-        MAINTAINOPS_BASE_URL: server.baseUrl,
-      },
-    }));
+    if (!releaseGateMode) {
+      await runStage("desktop and mobile Performance interaction", () => run(npxCommand, [
+        "playwright",
+        "test",
+        "tests/smoke/platform-performance-mobile-browser.spec.js",
+        "tests/smoke/platform-performance-desktop-browser.spec.js",
+        "--workers=1",
+      ], {
+        label: "desktop and mobile Performance controls smoke",
+        env: {
+          MAINTAINOPS_BASE_URL: server.baseUrl,
+        },
+      }));
+    }
   } finally {
     if (server.child && !server.child.killed) {
       server.child.kill();

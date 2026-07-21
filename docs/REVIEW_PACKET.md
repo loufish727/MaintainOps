@@ -19,7 +19,7 @@ Strong areas:
 - RLS-first security posture for shared operational data.
 - Public QR request intake through scoped RPC paths rather than direct anonymous table access.
 - Significant modularization work underway from a large legacy `app.js`.
-- A required Strict LFES GitHub gate, targeted browser/smoke coverage, and a protected four-role authenticated testing-platform proof.
+- A required fast Release Gate, manual Full Strict LFES, targeted browser/smoke coverage, and a protected four-role authenticated testing-platform proof.
 
 Areas still maturing:
 
@@ -65,12 +65,13 @@ Reviewers should inspect:
 
 ## Testing And Verification
 
-Current verification uses the required Strict LFES release gate, recursive SQL and isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, and protected four-role authenticated browser/security proof.
+Current verification uses a required fast Release Gate, manual Full Strict LFES, recursive SQL and isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, and protected four-role authenticated browser/security proof.
 
 Useful entry points:
 
 - `tests/smoke/`
-- `.github/workflows/resource-load-smoke.yml`
+- `.github/workflows/release-gate.yml`
+- `.github/workflows/full-strict-lfes.yml`
 - `package.json` scripts
 - `docs/APP_JS_AUTHORITY_MAP.md`
 - `docs/SECURITY_VERIFICATION.md`
