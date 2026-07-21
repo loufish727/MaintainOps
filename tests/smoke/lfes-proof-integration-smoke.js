@@ -12,6 +12,7 @@ const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const releaseWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "release-gate.yml"), "utf8");
 const fullStrictWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "full-strict-lfes.yml"), "utf8");
 const authenticatedWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "lfes-authenticated-proof.yml"), "utf8");
+const hostedWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "hosted-resource-smoke.yml"), "utf8");
 
 assert.equal(packageJson.scripts["test:schema:isolated"], "node scripts/isolated-schema-check.js");
 assert.equal(packageJson.scripts["test:lfes:authenticated"], "node scripts/lfes-authenticated-check.js");
@@ -45,5 +46,10 @@ assert.match(authenticatedWorkflow, /MAINTAINOPS_BASE_URL:\s*http:\/\/127\.0\.0\
 assert.match(authenticatedWorkflow, /node scripts\/local-static-server\.js 4195/);
 assert.match(authenticatedWorkflow, /npm run test:lfes:authenticated/);
 assert.match(authenticatedWorkflow, /path:\s*lfes-evidence\//);
+assert.equal(fs.existsSync(path.join(root, ".github", "workflows", "resource-load-smoke.yml")), false);
+assert.match(hostedWorkflow, /workflow_run:/);
+assert.match(hostedWorkflow, /pages-build-deployment/);
+assert.match(hostedWorkflow, /tests\/smoke\/resource-load\.spec\.js/);
+assert.doesNotMatch(hostedWorkflow, /test:lfes:strict/);
 
 console.log("LFES proof integration smoke passed");
