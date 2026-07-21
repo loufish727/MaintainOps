@@ -94,8 +94,11 @@ test.describe("MaintainOps authenticated role proof", () => {
         await page.locator('[data-section="performance"]').click();
         const performanceFrame = page.frameLocator('iframe[data-platform-spatial-frame]');
         await expect(performanceFrame.locator(".quality-control")).toBeVisible({ timeout: 120000 });
-        await expect(performanceFrame.locator(".health-metric-card").first()).toBeVisible();
-        await expect(performanceFrame.locator(".metric-scale[role='meter']").first()).toBeVisible();
+        const healthSummary = performanceFrame.locator(".summary-source > summary");
+        await expect(healthSummary).toBeVisible();
+        await healthSummary.click();
+        await expect(performanceFrame.locator(".health-metric-card").first()).toBeVisible({ timeout: 30000 });
+        await expect(performanceFrame.locator(".metric-scale[role='meter']").first()).toBeVisible({ timeout: 30000 });
         await expect(performanceFrame.locator(".header-system-state strong")).not.toHaveText("Healthy");
       }
 
