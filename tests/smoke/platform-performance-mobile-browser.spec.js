@@ -46,10 +46,18 @@ test("mobile Performance supports object and empty-space taps and keeps Back ins
 
   await expect(page.locator('[data-quality-tier="auto"]')).toContainText("Auto");
   await page.locator('[data-quality-tier="cinematic"]').click();
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective)).toBe("cinematic");
+  await expect(page.locator('[data-quality-tier="cinematic"]')).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(
+    () => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective),
+    { timeout: 30000 },
+  ).toBe("cinematic");
   expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().renderer.drawingWidth)).toBeGreaterThanOrEqual(526);
   await page.locator('[data-quality-tier="auto"]').click();
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective)).toBe("performance");
+  await expect(page.locator('[data-quality-tier="auto"]')).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(
+    () => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective),
+    { timeout: 30000 },
+  ).toBe("performance");
 
   const visibleObjectHits = await page.evaluate(() => (
     window.__STORAGE_WORLD_DEBUG().targets

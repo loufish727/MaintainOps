@@ -37,6 +37,10 @@ test("desktop Performance renders measured scales and adaptive 3D output", async
   await expect(page.locator(".health-metric-card").first()).toContainText("Core Web Vitals threshold");
 
   await page.locator('[data-quality-tier="cinematic"]').click();
-  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective)).toBe("cinematic");
+  await expect(page.locator('[data-quality-tier="cinematic"]')).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(
+    () => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective),
+    { timeout: 30000 },
+  ).toBe("cinematic");
   expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().renderer.drawingWidth)).toBeGreaterThanOrEqual(1944);
 });

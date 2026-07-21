@@ -27834,6 +27834,7 @@ void main() {
     outerWallAtlas.wrapS = ClampToEdgeWrapping;
     outerWallAtlas.wrapT = ClampToEdgeWrapping;
     const composer = new EffectComposer(renderer);
+    let composerPixelRatio = renderer.getPixelRatio();
     if (renderer.capabilities.isWebGL2) {
       composer.renderTarget1.samples = qualitySettings.samples;
       composer.renderTarget2.samples = qualitySettings.samples;
@@ -27863,10 +27864,12 @@ void main() {
         composer.renderTarget1.samples = qualitySettings.samples;
         composer.renderTarget2.samples = qualitySettings.samples;
       }
-      renderer.setPixelRatio(renderPixelRatio());
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      composer.setPixelRatio(renderPixelRatio());
-      composer.setSize(window.innerWidth, window.innerHeight);
+      const nextPixelRatio = renderPixelRatio();
+      if (renderer.getPixelRatio() !== nextPixelRatio) renderer.setPixelRatio(nextPixelRatio);
+      if (composerPixelRatio !== nextPixelRatio) {
+        composer.setPixelRatio(nextPixelRatio);
+        composerPixelRatio = nextPixelRatio;
+      }
       if (keyLight) {
         keyLight.shadow.mapSize.set(qualitySettings.shadowSize, qualitySettings.shadowSize);
         keyLight.shadow.map?.dispose();
