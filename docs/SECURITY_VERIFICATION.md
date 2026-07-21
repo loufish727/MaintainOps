@@ -53,11 +53,14 @@ npm run test:security:boundary
 
 ## Latest Verified Results
 
-Last checked: 2026-07-20.
+Last checked: 2026-07-21.
 
 Release Gate and Full Strict LFES:
 
-- required GitHub branch-protection check: PASS on commit `dfcae0176820276592064f6220a8be9a5443a947`; administrators are included in enforcement and force pushes are disabled. The required context is being transitioned from the full suite to the faster Release Gate without reducing the listed security, RLS, bundle, Node, ordinary browser, or resource-load coverage.
+- required GitHub branch-protection context: `Release Gate`; strict up-to-date enforcement and administrator enforcement are enabled, and force pushes remain disabled.
+- comparison PR `#22` Release Gate run `29876913705`: PASS in 1m18s.
+- same-commit legacy Strict LFES run `29876913680`: PASS in 5m10s.
+- local Release Gate: PASS in 34.6s; local Full Strict LFES: PASS in 128.8s, including 92.8s of serial desktop/mobile Performance interaction.
 - recursive security static audit: PASS; 97 SQL files and all dated migrations inspected.
 - live anonymous security boundary probe: PASS.
 - isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.

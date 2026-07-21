@@ -25,6 +25,8 @@ This gate does not claim that the expensive desktop/mobile 3D Performance intera
 
 Full Strict is intentionally not a required check on every pull request. Its evidence is stronger and slower; a passing Release Gate must not be reported as a Full Strict pass.
 
+The separate `Hosted App Smoke` workflow runs the resource-load browser smoke after a successful `main` Pages deployment. It verifies the deployed shell and required resources without rerunning either local LFES tier.
+
 ## Authenticated Testing-Platform Proof
 
 `npm run test:lfes:authenticated` is fail-closed. It refuses to run without the isolated backend configuration, all required QA credentials, and fixture identifiers. GitHub serves the selected protected-branch commit locally and rewrites only that disposable checkout's `supabase-config.js` to target the testing platform. It never points the proof at Taylor production. The proof can be dispatched directly or called by `Full Strict LFES`; the protected `lfes-qa` environment limits it to approved refs. When configured, it proves:

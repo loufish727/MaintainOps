@@ -72,6 +72,7 @@ Useful entry points:
 - `tests/smoke/`
 - `.github/workflows/release-gate.yml`
 - `.github/workflows/full-strict-lfes.yml`
+- `.github/workflows/hosted-resource-smoke.yml`
 - `package.json` scripts
 - `docs/APP_JS_AUTHORITY_MAP.md`
 - `docs/SECURITY_VERIFICATION.md`
