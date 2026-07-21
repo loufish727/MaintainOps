@@ -23,6 +23,7 @@
     "test:migrations:static": "node scripts/migration-static-check.js",
     "test:bundle:manifest": "node tests/smoke/bundle-manifest-smoke.js",
     "test:bundle:pilot": "npm run build:runtime:bundles && npm run test:bundle:manifest && node tests/smoke/runtime-bundle-smoke.js",
+    "test:release:gate": "node scripts/lfes-strict-check.js --release-gate",
     "test:lfes:strict": "node scripts/lfes-strict-check.js",
     "test:lfes:hosted": "node scripts/lfes-hosted-check.js",
     "test:performance:hosted": "node scripts/hosted-performance-probe.js",

@@ -1,0 +1,52 @@
+name: Full Strict LFES
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why the full proof is being run
+        required: false
+        type: string
+
+jobs:
+  full_strict_lfes:
+    name: Full Strict LFES
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Full Strict LFES
+        run: npm run test:lfes:strict
+
+      - name: Upload Full Strict LFES evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: full-strict-lfes-evidence
+          path: lfes-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  authenticated_testing_platform:
+    name: Authenticated Testing-Platform Proof
+    needs: full_strict_lfes
+    uses: ./.github/workflows/lfes-authenticated-proof.yml
+    secrets: inherit

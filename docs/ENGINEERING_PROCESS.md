@@ -40,17 +40,17 @@ Browser smoke fallback:
 - If in-app browser control is unavailable, use CLI Playwright smokes for the touched browser interaction before deploy.
 - For equipment attachment regressions, run `npm run test:smoke:work-attach`; this combines selector-source, mutation-payload, and browser DOM checks.
 
-Strict LFES command:
+LFES verification tiers:
 
-- Before pushing meaningful app, security, storage, role, or workflow changes, run `npm run test:lfes:strict`.
-- The strict command recursively inspects SQL, probes live anonymous boundaries, compiles the baseline and dated migrations in isolated PostgreSQL, verifies seeded RLS role boundaries, checks generated bundles are committed, runs the broad Node smoke sweep and targeted browser regressions, and verifies local resources.
+- Every executable pull request must pass `npm run test:release:gate`. This fast required check recursively inspects SQL, probes live anonymous boundaries, compiles the baseline and dated migrations in isolated PostgreSQL, verifies seeded RLS role boundaries, checks generated bundles are committed, runs the broad Node smoke sweep and targeted browser regressions, and verifies local resources.
+- Run `npm run test:lfes:strict` before major releases or new work cycles and after security, database, authentication, permissions, storage, or Performance/3D changes. It adds the serial desktop/mobile Performance interaction to all Release Gate coverage.
 - Machine-readable evidence is written to `lfes-evidence/` and retained by GitHub for 30 days.
-- Run `npm run test:lfes:authenticated` through the manual `Authenticated LFES Proof` workflow when hosted authentication, company isolation, role permissions, or storage paths are in scope. This command fails when any required QA credential or fixture is absent.
+- The manual `Full Strict LFES` workflow runs the full local proof and then the protected authenticated testing-platform proof. `Authenticated LFES Proof` can also be dispatched independently. Both authenticated paths fail when any required QA credential or fixture is absent.
 - After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
 - The scheduled `Performance Monitor` workflow adds a separate read-only synthetic check for deployed response time, payload size, and resource availability. It supports release evidence but does not replace authenticated testing, browser telemetry, or an uptime service.
 - `npm run release:verify` now sequences hashed bundle generation, strict LFES, and hosted LFES in one command. Set `MAINTAINOPS_RELEASE_SKIP_HOSTED=1` when you need the local portion before push.
 - A targeted smoke may still be required for a touched path that is not covered by the strict command.
-- See `docs/LFES/PROOF_MODEL.md` for the boundary between the required release gate, authenticated hosted proof, and the human LFES Gold audit.
+- See `docs/LFES/PROOF_MODEL.md` for the boundary between the required Release Gate, Full Strict LFES, authenticated testing-platform proof, and the human LFES Gold audit.
 
 Unsaved form input must survive background system events:
 

@@ -46,7 +46,13 @@ For a concise external review, start with:
 
 MaintainOps is being hardened with scoped changes, smoke checks, live verification where needed, and documented public checkpoints. Detailed internal process notes are kept outside the public repository.
 
-Strict local LFES before push:
+Fast local Release Gate:
+
+```bash
+npm run test:release:gate
+```
+
+Full Strict LFES before major releases and high-risk changes:
 
 ```bash
 npm run test:lfes:strict

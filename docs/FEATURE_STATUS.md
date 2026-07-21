@@ -128,7 +128,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - Custom-domain routing, final public-facing copy, and production support process still need a final rollout pass.
 
 - Automated test coverage.
-  - Current coverage includes the required Strict LFES GitHub gate, recursive SQL inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, and four-role authenticated testing-platform proof.
+  - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, and four-role authenticated testing-platform proof.
   - Numeric line/branch coverage and an exhaustive live mutation/cross-browser matrix do not exist yet.
 
 - Operational readiness.

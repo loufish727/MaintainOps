@@ -34,7 +34,8 @@ This plan is intentionally staged. It does not change runtime architecture until
 
 ## Success Criteria
 
-- `npm run test:lfes:strict` passes before push.
+- `npm run test:release:gate` passes before push.
+- `npm run test:lfes:strict` passes before major bundled releases.
 - `npm run test:lfes:hosted` passes after deploy.
 - No service-role secrets are introduced into frontend code, logs, docs, or GitHub Actions output.
 - Browser startup, QR/request intake, work-order flows, equipment detail, accounting/financial views, and storage dashboard still load with the same public URLs.
