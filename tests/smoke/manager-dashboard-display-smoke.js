@@ -5,6 +5,15 @@ require("../../src/render/managerDashboardDisplay.js");
 
 const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashboardDisplay;
 
+function sundayWeekRange(referenceDate = new Date()) {
+  const start = new Date(referenceDate);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
 const helpers = createManagerDashboardDisplayHelpers({
   escapeHtml: (value) => String(value ?? "").replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char])),
   getAssets: () => [
@@ -44,6 +53,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   roleLabel: (role) => role === "manager" ? "Manager" : "Technician",
   normalizeRole: (role) => role,
   statusLabel: (status) => status === "in_progress" ? "In Progress" : status,
+  sundayWeekRange,
 });
 
 const cards = helpers.managerSummaryCards();
@@ -51,7 +61,7 @@ assert.equal(cards.find(([label]) => label === "Open Work")[1], 3);
 assert.equal(cards.find(([label]) => label === "New Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Converted Requests")[1], 1);
 assert.equal(cards.find(([label]) => label === "Stale Requests")[1], 1);
-assert.match(String(cards.find(([label]) => label === "7d Completion Rate")[1]), /%/);
+assert.match(String(cards.find(([label]) => label === "Weekly Completion Rate")[1]), /%/);
 assert.equal(cards.find(([label]) => label === "Completed Week")[1], 1);
 assert.equal(cards.find(([label]) => label === "Completed Month")[1], 1);
 assert.equal(cards.find(([label]) => label === "Critical Open")[1], 1);
@@ -132,6 +142,7 @@ const summaryHelpers = createManagerDashboardDisplayHelpers({
   roleLabel: (role) => role,
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
+  sundayWeekRange,
 });
 
 const summaryHtml = summaryHelpers.renderManagerDashboard();
@@ -164,6 +175,7 @@ const completedHelpers = createManagerDashboardDisplayHelpers({
   roleLabel: (role) => role,
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
+  sundayWeekRange,
 });
 
 const completedHtml = completedHelpers.renderManagerDashboard();
@@ -192,6 +204,7 @@ const convertedDrillHelpers = createManagerDashboardDisplayHelpers({
   roleLabel: (role) => role,
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
+  sundayWeekRange,
 });
 
 const convertedDrillHtml = convertedDrillHelpers.renderManagerDashboard();

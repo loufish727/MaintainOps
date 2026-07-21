@@ -35,8 +35,8 @@ const {
   postgrestSearchTerm,
   isoDate,
   isoDateTime,
-  daysAgoDate,
   monthStartDate,
+  sundayWeekRange,
   chunkArray,
   fileBaseName,
   safeFileName,
@@ -285,11 +285,11 @@ const {
   activeLocationId: () => activeLocationId,
   activeSection: () => activeSection,
   activeStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
-  daysAgoDate,
   isoDate,
   isoDateTime,
   locationsReady: () => locationsReady,
   monthStartDate,
+  sundayWeekRange,
   myWorkFilter: () => workspaceUiState.getMyWorkFilter(),
   OUTSIDE_VENDOR_NOTE,
   postgrestSearchTerm,
@@ -928,6 +928,7 @@ const dashboardDisplayHelpers = createDashboardDisplayHelpers({
   getRequestsReady: () => requestsReady,
   openMaintenanceRequests,
   matchesActiveLocation,
+  sundayWeekRange,
 });
 const {
   renderGaugeReadout,
@@ -963,6 +964,7 @@ const {
   normalizeRole,
   statusLabel,
   escapeHtml,
+  sundayWeekRange,
 });
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
   getSearchQuery: () => workspaceUiState.getSearchQuery(),

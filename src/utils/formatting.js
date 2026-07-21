@@ -26,6 +26,15 @@
     return new Date(now.getFullYear(), now.getMonth(), 1);
   }
 
+  function sundayWeekRange(referenceDate = new Date()) {
+    const start = new Date(referenceDate);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - start.getDay());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
+  }
+
   function chunkArray(items, size) {
     const chunks = [];
     for (let index = 0; index < items.length; index += size) {
@@ -174,6 +183,7 @@
     isoDateTime,
     daysAgoDate,
     monthStartDate,
+    sundayWeekRange,
     chunkArray,
     fileBaseName,
     safeFileName,

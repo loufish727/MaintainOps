@@ -420,8 +420,8 @@
     postgrestSearchTerm,
     isoDate,
     isoDateTime,
-    daysAgoDate,
     monthStartDate,
+    sundayWeekRange,
     chunkArray,
     fileBaseName,
     safeFileName,
@@ -670,11 +670,11 @@
     activeLocationId: () => activeLocationId,
     activeSection: () => activeSection,
     activeStatusFilter: () => workspaceUiState.getActiveStatusFilter(),
-    daysAgoDate,
     isoDate,
     isoDateTime,
     locationsReady: () => locationsReady,
     monthStartDate,
+    sundayWeekRange,
     myWorkFilter: () => workspaceUiState.getMyWorkFilter(),
     OUTSIDE_VENDOR_NOTE,
     postgrestSearchTerm,
@@ -1314,7 +1314,8 @@
     getDueState,
     getRequestsReady: () => requestsReady,
     openMaintenanceRequests,
-    matchesActiveLocation
+    matchesActiveLocation,
+    sundayWeekRange
   });
   var {
     renderGaugeReadout,
@@ -1349,7 +1350,8 @@
     roleLabel,
     normalizeRole,
     statusLabel,
-    escapeHtml
+    escapeHtml,
+    sundayWeekRange
   });
   var emptyStateTextHelpers = createEmptyStateTextHelpers({
     getSearchQuery: () => workspaceUiState.getSearchQuery(),
