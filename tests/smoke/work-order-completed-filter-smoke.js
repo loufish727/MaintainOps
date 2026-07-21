@@ -12,7 +12,15 @@ const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFi
 const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const { createDashboardDisplayHelpers } = window.MaintainOpsDashboardDisplay;
-const { statusLabel } = window.MaintainOpsFormatting;
+const { statusLabel, sundayWeekRange } = window.MaintainOpsFormatting;
+
+const calendarWeek = sundayWeekRange(new Date(2026, 6, 21, 15, 30));
+assert.equal(calendarWeek.start.getDay(), 0);
+assert.equal(calendarWeek.start.getDate(), 19);
+assert.equal(calendarWeek.start.getHours(), 0);
+assert.equal(calendarWeek.end.getDay(), 0);
+assert.equal(calendarWeek.end.getDate(), 26);
+assert.equal(calendarWeek.end.getHours(), 0);
 
 function createQuery() {
   const calls = [];
@@ -65,7 +73,10 @@ const queryHelpers = createWorkOrderQueryFilterHelpers({
   isoDate: () => "2026-07-01",
   isoDateTime: (value) => value.toISOString(),
   monthStartDate: () => new Date("2026-07-01T00:00:00Z"),
-  daysAgoDate: () => new Date("2026-06-24T00:00:00Z"),
+  sundayWeekRange: () => ({
+    start: new Date("2026-07-19T07:00:00Z"),
+    end: new Date("2026-07-26T07:00:00Z"),
+  }),
   startOfToday: () => new Date("2026-07-01T00:00:00Z"),
   OUTSIDE_VENDOR_NOTE: "OUTSIDE VENDOR",
 });
@@ -73,6 +84,13 @@ const queryHelpers = createWorkOrderQueryFilterHelpers({
 const query = createQuery();
 queryHelpers.applyWorkOrderStatusFilter(query, "completed");
 assert.deepEqual(query.calls, [["eq", "status", "completed"]]);
+
+const completedWeekQuery = createQuery();
+queryHelpers.applyWorkOrderStatusFilter(completedWeekQuery, "completed_week");
+assert.deepEqual(completedWeekQuery.calls, [
+  ["gte", "completed_at", "2026-07-19T07:00:00.000Z"],
+  ["lt", "completed_at", "2026-07-26T07:00:00.000Z"],
+]);
 
 workOrderTypeFilter = "preventive";
 workOrderPriorityFilter = "critical";
@@ -193,11 +211,29 @@ const dashboard = createDashboardDisplayHelpers({
   getWorkOrders: () => [],
   getPreventiveSchedules: () => [],
   getDueState: () => ({ className: "" }),
+  sundayWeekRange: () => ({
+    start: new Date("2026-07-19T07:00:00Z"),
+    end: new Date("2026-07-26T07:00:00Z"),
+  }),
 });
 const dashboardHtml = dashboard.renderWorkOrderGaugeDashboard();
 assert.match(dashboardHtml, /All Completed/);
 assert.match(dashboardHtml, /data-status-filter="completed"/);
 assert.match(dashboardHtml, />12<\/strong>/);
+
+const weekBoundaryDashboard = createDashboardDisplayHelpers({
+  getWorkOrders: () => [
+    { id: "before", completed_at: "2026-07-19T06:59:59.999Z" },
+    { id: "start", completed_at: "2026-07-19T07:00:00.000Z" },
+    { id: "end-before", completed_at: "2026-07-26T06:59:59.999Z" },
+    { id: "next-week", completed_at: "2026-07-26T07:00:00.000Z" },
+  ],
+  sundayWeekRange: () => ({
+    start: new Date("2026-07-19T07:00:00Z"),
+    end: new Date("2026-07-26T07:00:00Z"),
+  }),
+});
+assert.deepEqual(weekBoundaryDashboard.completedThisWeek().map((workOrder) => workOrder.id), ["start", "end-before"]);
 
 assert.equal(statusLabel("completed"), "All Completed");
 

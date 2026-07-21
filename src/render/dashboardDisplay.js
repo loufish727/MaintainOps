@@ -87,13 +87,14 @@
   }
 
   function completedThisWeek(deps) {
-    return deps.getWorkOrders().filter(isCompletedThisWeek);
+    return deps.getWorkOrders().filter((workOrder) => isCompletedThisWeek(workOrder, deps));
   }
 
-  function isCompletedThisWeek(workOrder) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    return Boolean(workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
+  function isCompletedThisWeek(workOrder, deps, referenceDate = new Date()) {
+    if (!workOrder.completed_at) return false;
+    const completedAt = new Date(workOrder.completed_at);
+    const week = deps.sundayWeekRange(referenceDate);
+    return Number.isFinite(completedAt.getTime()) && completedAt >= week.start && completedAt < week.end;
   }
 
   function completedThisMonth(deps) {
@@ -131,7 +132,7 @@
       renderWorkloadStrip: (items) => renderWorkloadStrip(items, deps),
       overdueWorkOrders: () => overdueWorkOrders(deps),
       completedThisWeek: () => completedThisWeek(deps),
-      isCompletedThisWeek,
+      isCompletedThisWeek: (workOrder, referenceDate) => isCompletedThisWeek(workOrder, deps, referenceDate),
       completedThisMonth: () => completedThisMonth(deps),
       isCompletedThisMonth,
       averageCompletionMinutes: (source = deps.getWorkOrders()) => averageCompletionMinutes(source),

@@ -17,6 +17,13 @@
       return Boolean(workOrder.completed_at && new Date(workOrder.completed_at) >= cutoff);
     }
 
+    function isCompletedThisWeek(workOrder) {
+      if (!workOrder.completed_at) return false;
+      const completedAt = new Date(workOrder.completed_at);
+      const week = deps.sundayWeekRange();
+      return Number.isFinite(completedAt.getTime()) && completedAt >= week.start && completedAt < week.end;
+    }
+
     function ageDays(workOrder) {
       const created = new Date(workOrder.created_at || Date.now()).getTime();
       if (!Number.isFinite(created)) return 0;
@@ -171,7 +178,7 @@
         in_progress: "In Progress",
         blocked: "Blocked",
         overdue: "Overdue",
-        completed_week: "Done 7d",
+        completed_week: "Done This Week",
         completed_month: "Done 30d",
         converted_requests: "Converted Requests",
         summary_open: "Open Work",
@@ -186,7 +193,7 @@
         summary_completed_month: "Completed Month",
         summary_converted_requests: "Converted Requests",
         summary_stale_requests: "Stale Requests",
-        summary_completion_rate: "7d Completion Rate",
+        summary_completion_rate: "Weekly Completion Rate",
       })[metric] || "Open Work";
     }
 
@@ -197,7 +204,7 @@
       if (metric === "summary_high_priority") return openWorkOrders().filter(isHighPriorityOpen);
       if (metric === "summary_stale") return openWorkOrders().filter(isStaleOpen);
       if (metric === "summary_follow_up") return openWorkOrders().filter(needsFollowUp);
-      if (metric === "summary_completed_week") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
+      if (metric === "summary_completed_week") return completedWorkOrders().filter(isCompletedThisWeek);
       if (metric === "summary_completed_month") return completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return openWorkOrders();
     }
@@ -217,7 +224,7 @@
       if (metric === "critical") return assigned.filter(isCriticalOpen);
       if (metric === "stale") return assigned.filter(isStaleOpen);
       if (metric === "follow_up") return assigned.filter(needsFollowUp);
-      if (metric === "completed_week") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(7)));
+      if (metric === "completed_week") return completed.filter(isCompletedThisWeek);
       if (metric === "completed_month") return completed.filter((workOrder) => isCompletedSince(workOrder, daysAgo(30)));
       return assigned;
     }
@@ -228,7 +235,7 @@
     }
 
     function managerCompletionRate() {
-      const completedWeek = completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length;
+      const completedWeek = completedWorkOrders().filter(isCompletedThisWeek).length;
       const currentOpen = openWorkOrders().length;
       const total = currentOpen + completedWeek;
       if (!total) return 0;
@@ -291,16 +298,15 @@
         ["Critical Open", openRows.filter(isCriticalOpen).length, "Critical open work needing manager attention.", "summary_critical"],
         ["Stale 7d+", openRows.filter(isStaleOpen).length, "Open work older than 7 days.", "summary_stale"],
         ["Follow-up Needed", openRows.filter(needsFollowUp).length, "Open work marked for follow-up.", "summary_follow_up"],
-        ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length, "Work completed in the last 7 days.", "summary_completed_week"],
+        ["Completed Week", counts.completedWeek ?? completedWorkOrders().filter(isCompletedThisWeek).length, "Work completed since Sunday.", "summary_completed_week"],
         ["Completed Month", counts.completedMonth ?? completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(30))).length, "Work completed in the last 30 days.", "summary_completed_month"],
         ["Converted Requests", requestCounts.converted ?? convertedRequests().length, "Requests already turned into work orders.", "summary_converted_requests"],
         ["Stale Requests", staleRequests, "Submitted requests older than 2 days.", "summary_stale_requests"],
-        ["7d Completion Rate", `${managerCompletionRate()}%`, "Completed this week compared with current open work.", "summary_completion_rate"],
+        ["Weekly Completion Rate", `${managerCompletionRate()}%`, "Completed since Sunday compared with current open work.", "summary_completion_rate"],
       ];
     }
 
     function technicianRows() {
-      const weekCutoff = daysAgo(7);
       const monthCutoff = daysAgo(30);
       return deps.getCompanyMembers()
         .filter((member) => ["technician", "manager", "admin"].includes(deps.normalizeRole(member.role)))
@@ -320,7 +326,7 @@
             overdue: assigned.filter((workOrder) => deps.getDueState(workOrder)?.className === "overdue").length,
             critical: assigned.filter(isCriticalOpen).length,
             followUp: assigned.filter(needsFollowUp).length,
-            completedWeek: completed.filter((workOrder) => isCompletedSince(workOrder, weekCutoff)).length,
+            completedWeek: completed.filter(isCompletedThisWeek).length,
             completedMonth: completed.filter((workOrder) => isCompletedSince(workOrder, monthCutoff)).length,
             convertedRequests: converted.length,
             averageAge: averageAgeDays(assigned),
@@ -361,7 +367,7 @@
           <button type="button" class="manager-drill-button${activeClass("overdue")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="overdue"><span>Overdue</span><strong>${row.overdue}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("critical")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="critical"><span>Critical</span><strong>${row.critical}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("follow_up")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="follow_up"><span>Follow-up</span><strong>${row.followUp}</strong></button>
-          <button type="button" class="manager-drill-button${activeClass("completed_week")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_week"><span>Done 7d</span><strong>${row.completedWeek}</strong></button>
+          <button type="button" class="manager-drill-button${activeClass("completed_week")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_week"><span>Done Week</span><strong>${row.completedWeek}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("completed_month")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="completed_month"><span>Done 30d</span><strong>${row.completedMonth}</strong></button>
           <button type="button" class="manager-drill-button${activeClass("converted_requests")}" data-manager-drill-user="${deps.escapeHtml(row.userId)}" data-manager-drill-metric="converted_requests"><span>Converted</span><strong>${row.convertedRequests}</strong></button>
           <div><span>Avg Age</span><strong>${row.averageAge}d</strong></div>
@@ -484,12 +490,12 @@
     }
 
     function renderCompletionRateDetail() {
-      const completedWeek = completedWorkOrders().filter((workOrder) => isCompletedSince(workOrder, daysAgo(7))).length;
+      const completedWeek = completedWorkOrders().filter(isCompletedThisWeek).length;
       const currentOpen = openWorkOrders().length;
       return `
         <article class="manager-report-card">
           <strong>${managerCompletionRate()}%</strong>
-          <span>${completedWeek} completed in 7 days against ${currentOpen} currently open.</span>
+          <span>${completedWeek} completed since Sunday against ${currentOpen} currently open.</span>
           <small>Use this as a manager signal, not a productivity score. It depends on work mix, staffing, and request volume.</small>
         </article>
       `;

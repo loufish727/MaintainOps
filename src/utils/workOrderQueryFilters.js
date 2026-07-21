@@ -92,7 +92,12 @@
       if (statusFilter === "__none__") return query.eq("id", "00000000-0000-0000-0000-000000000000");
       if (statusFilter === "overdue") return query.neq("status", "completed").lt("due_at", today);
       if (statusFilter === "completed_month") return query.gte("completed_at", deps.isoDateTime(deps.monthStartDate()));
-      if (statusFilter === "completed_week") return query.gte("completed_at", deps.isoDateTime(deps.daysAgoDate(7)));
+      if (statusFilter === "completed_week") {
+        const week = deps.sundayWeekRange();
+        return query
+          .gte("completed_at", deps.isoDateTime(week.start))
+          .lt("completed_at", deps.isoDateTime(week.end));
+      }
       if (statusFilter === "active" || statusFilter === "all") return query.neq("status", "completed");
       return query.eq("status", statusFilter);
     }
