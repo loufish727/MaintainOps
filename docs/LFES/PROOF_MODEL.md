@@ -45,7 +45,7 @@ The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes
 
 Use dedicated disposable QA companies and users. Do not store personal or production-company credentials in GitHub.
 
-Latest verified proof: GitHub run `29772114849` passed on commit `dfcae0176820276592064f6220a8be9a5443a947` on 2026-07-20.
+Latest verified proof: GitHub run `29871957982` passed on commit `457ed4fe7e087998dec40baae88baed71bd83e6e` on 2026-07-21.
 
 ## LFES Gold
 
