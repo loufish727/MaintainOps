@@ -43,7 +43,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       test.setTimeout(150000);
       const pageErrors = await signIn(page, role);
 
-      for (const section of ["mywork", "work", "planning", "requests", "assets", "team"]) {
+      for (const section of ["mywork", "work", "planning", "requests", "assets", "team", "performance"]) {
         await expect(page.locator(`[data-section="${section}"]`)).toBeVisible();
       }
 
@@ -89,6 +89,15 @@ test.describe("MaintainOps authenticated role proof", () => {
       const managerNav = page.locator('[data-section="manager"]');
       if (role.managerDashboard) await expect(managerNav).toBeVisible();
       else await expect(managerNav).toHaveCount(0);
+
+      if (role.name === "admin") {
+        await page.locator('[data-section="performance"]').click();
+        const performanceFrame = page.frameLocator('iframe[data-platform-spatial-frame]');
+        await expect(performanceFrame.locator(".quality-control")).toBeVisible({ timeout: 120000 });
+        await expect(performanceFrame.locator(".health-metric-card").first()).toBeVisible();
+        await expect(performanceFrame.locator(".metric-scale[role='meter']").first()).toBeVisible();
+        await expect(performanceFrame.locator(".header-system-state strong")).not.toHaveText("Healthy");
+      }
 
       if (role.operational === "read") {
         await page.locator('[data-section="assets"]').click();

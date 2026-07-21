@@ -335,8 +335,9 @@ const CONVERSION_RESOURCE_PATHS = [
   "src/render/conversionDisplay.js?v=conversion-lazy-load-1",
 ];
 const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
-  "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
-  "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-2",
+  "src/performance/platformPerformanceThresholds.js?v=platform-performance-health-1",
+  "src/performance/platformPerformanceService.js?v=platform-performance-health-1",
+  "src/performance/platformPerformanceDisplay.js?v=platform-performance-health-1",
 ];
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
@@ -454,6 +455,7 @@ let platformPerformanceLoadPromise = null;
 let platformSpatialFrameRendered = false;
 let platformPerformanceTimedOut = false;
 let platformSpatialFrameWatchdog = null;
+const appTelemetry = window.MaintainOpsAppTelemetry;
 let reportIssueMode = false;
 let activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
 function setActiveMessageThreadIdState(value) {
@@ -1547,6 +1549,7 @@ async function render() {
     activeCompanyId = companies[0].id;
     localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
   }
+  appTelemetry?.configure({ client: supabaseClient, companyId: activeCompanyId });
 
   try {
     renderWorkspaceLoading("Preparing your company profile...");
@@ -1567,6 +1570,7 @@ async function render() {
       await loadManagerDashboardCompletedWork();
     }
     renderWorkspace();
+    appTelemetry?.markWorkspaceReady(activeCompanyId);
   } catch (error) {
     appError = error.message || String(error);
     renderWorkspaceLoadError(appError);
@@ -2251,6 +2255,7 @@ async function loadPlatformPerformance(options = {}) {
           parts,
           companyMembers,
           canViewStorage: canManageTeam(),
+          localTelemetry: appTelemetry?.snapshot() || null,
         }),
         "App Performance load timed out. Check your connection and try again.",
         18000
@@ -2334,6 +2339,9 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "maintainops-platform-spatial-rendered") {
     platformSpatialFrameRendered = true;
     clearPlatformSpatialFrameWatchdog();
+  }
+  if (event.data?.type === "maintainops-platform-spatial-telemetry") {
+    appTelemetry?.recordSpatial(event.data.sample || {});
   }
   if (event.data?.type === "maintainops-platform-spatial-exit") {
     exitPlatformPerformance();
@@ -2455,21 +2463,25 @@ function scheduleWorkspaceHydration(hydrationLoaders = []) {
 }
 
 async function loadWorkspaceResponse(label, promise, timeoutMs = 12000) {
+  const startedAt = performance.now();
   const response = await withOperationTimeout(
     promise,
     `${label} timed out.`,
     timeoutMs
   ).catch((error) => ({ error, data: [] }));
+  appTelemetry?.recordQueryLatency(label, startedAt, response.error || null);
   if (response.error) workspaceLoadWarnings.push(`${label}: ${response.error.message || response.error}`);
   return response;
 }
 
 async function runWorkspaceLoader(label, loader, timeoutMs = 12000) {
+  const startedAt = performance.now();
   const error = await withOperationTimeout(
     loader(),
     `${label} timed out.`,
     timeoutMs
   ).then(() => null).catch((failure) => failure);
+  appTelemetry?.recordQueryLatency(label, startedAt, error);
   if (error) workspaceLoadWarnings.push(`${label}: ${error.message || error}`);
 }
 
@@ -4929,6 +4941,7 @@ function bindWorkspaceEvents() {
       await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
     },
     loadPlatformPerformance,
+    onSectionNavigation: (section, startedAt) => appTelemetry?.recordSectionNavigation(section, startedAt),
     loadManagerDashboardCompletedWork,
     reloadPlanningWorkOrderQueue,
     reloadWorkOrderQueue,

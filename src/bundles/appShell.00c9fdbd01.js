@@ -252,7 +252,8 @@
           }
           const service = windowRef.MaintainOpsPlatformPerformanceService;
           const display = windowRef.MaintainOpsPlatformPerformanceDisplay;
-          if (!service || !display) throw new Error("Platform Performance resources did not initialize.");
+          const thresholds = windowRef.MaintainOpsPlatformPerformanceThresholds;
+          if (!service || !display || !thresholds) throw new Error("Platform Performance resources did not initialize.");
           platformPerformanceDisplayHelpers = display.createPlatformPerformanceDisplayHelpers({ escapeHtml: escapeHtml2 });
           return platformPerformanceDisplayHelpers;
         })().catch((error) => {
@@ -720,8 +721,9 @@
     "src/render/conversionDisplay.js?v=conversion-lazy-load-1"
   ];
   var PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
-    "src/performance/platformPerformanceService.js?v=platform-performance-lazy-1",
-    "src/performance/platformPerformanceDisplay.js?v=platform-performance-lazy-2"
+    "src/performance/platformPerformanceThresholds.js?v=platform-performance-health-1",
+    "src/performance/platformPerformanceService.js?v=platform-performance-health-1",
+    "src/performance/platformPerformanceDisplay.js?v=platform-performance-health-1"
   ];
   var workspaceHydrationToken = 0;
   var workspaceHydrationPromise = null;
@@ -843,6 +845,7 @@
   var platformSpatialFrameRendered = false;
   var platformPerformanceTimedOut = false;
   var platformSpatialFrameWatchdog = null;
+  var appTelemetry = window.MaintainOpsAppTelemetry;
   var reportIssueMode = false;
   var activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
   function setActiveMessageThreadIdState(value) {
@@ -1920,6 +1923,7 @@
       activeCompanyId = companies[0].id;
       localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
     }
+    appTelemetry?.configure({ client: supabaseClient, companyId: activeCompanyId });
     try {
       renderWorkspaceLoading("Preparing your company profile...");
       const profileReady = await withOperationTimeout(
@@ -1938,6 +1942,7 @@
         await loadManagerDashboardCompletedWork();
       }
       renderWorkspace();
+      appTelemetry?.markWorkspaceReady(activeCompanyId);
     } catch (error) {
       appError = error.message || String(error);
       renderWorkspaceLoadError(appError);
@@ -2491,7 +2496,8 @@
             assets,
             parts,
             companyMembers,
-            canViewStorage: canManageTeam()
+            canViewStorage: canManageTeam(),
+            localTelemetry: appTelemetry?.snapshot() || null
           }),
           "App Performance load timed out. Check your connection and try again.",
           18e3
@@ -2568,6 +2574,9 @@
     if (event.data?.type === "maintainops-platform-spatial-rendered") {
       platformSpatialFrameRendered = true;
       clearPlatformSpatialFrameWatchdog();
+    }
+    if (event.data?.type === "maintainops-platform-spatial-telemetry") {
+      appTelemetry?.recordSpatial(event.data.sample || {});
     }
     if (event.data?.type === "maintainops-platform-spatial-exit") {
       exitPlatformPerformance();
@@ -2679,20 +2688,24 @@
     return workspaceHydrationPromise;
   }
   async function loadWorkspaceResponse(label, promise, timeoutMs = 12e3) {
+    const startedAt = performance.now();
     const response = await withOperationTimeout(
       promise,
       `${label} timed out.`,
       timeoutMs
     ).catch((error) => ({ error, data: [] }));
+    appTelemetry?.recordQueryLatency(label, startedAt, response.error || null);
     if (response.error) workspaceLoadWarnings.push(`${label}: ${response.error.message || response.error}`);
     return response;
   }
   async function runWorkspaceLoader(label, loader, timeoutMs = 12e3) {
+    const startedAt = performance.now();
     const error = await withOperationTimeout(
       loader(),
       `${label} timed out.`,
       timeoutMs
     ).then(() => null).catch((failure) => failure);
+    appTelemetry?.recordQueryLatency(label, startedAt, error);
     if (error) workspaceLoadWarnings.push(`${label}: ${error.message || error}`);
   }
   function applyWorkspaceLoadWarnings() {
@@ -4895,6 +4908,7 @@ Continue ${actionLabel}?`);
         await runWorkspaceLoader("Storage dashboard", loadStorageDashboard);
       },
       loadPlatformPerformance,
+      onSectionNavigation: (section, startedAt) => appTelemetry?.recordSectionNavigation(section, startedAt),
       loadManagerDashboardCompletedWork,
       reloadPlanningWorkOrderQueue,
       reloadWorkOrderQueue,

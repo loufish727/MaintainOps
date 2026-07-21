@@ -19,6 +19,7 @@
 
     doc.querySelectorAll("[data-section]").forEach((button) => {
       button.addEventListener("click", async () => {
+        const navigationStartedAt = performance.now();
         const nextSection = button.dataset.section;
         if (!options.visibleNavItems().some(([id]) => id === nextSection)) return;
 
@@ -55,6 +56,9 @@
         }
         if (nextSection === "performance" && typeof options.loadPlatformPerformance === "function") {
           await options.loadPlatformPerformance();
+        }
+        if (typeof options.onSectionNavigation === "function") {
+          options.onSectionNavigation(nextSection, navigationStartedAt);
         }
       });
     });

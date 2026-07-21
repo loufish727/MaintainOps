@@ -35,6 +35,22 @@ test("mobile Performance supports object and empty-space taps and keeps Back ins
     && window.__STORAGE_WORLD_DEBUG().travelT >= 0.99
   ));
 
+  const initialRendering = await page.evaluate(() => window.__STORAGE_WORLD_DEBUG());
+  expect(initialRendering.quality.preference).toBe("auto");
+  expect(initialRendering.quality.effective).toBe("performance");
+  expect(initialRendering.renderer.drawCalls).toBeGreaterThan(0);
+  expect(initialRendering.renderer.triangles).toBeGreaterThan(0);
+  expect(initialRendering.renderer.drawingWidth).toBeLessThanOrEqual(392);
+  expect(initialRendering.renderer.pixels.nonBlack).toBeGreaterThan(100);
+  expect(initialRendering.renderer.pixels.range).toBeGreaterThan(8);
+
+  await expect(page.locator('[data-quality-tier="auto"]')).toContainText("Auto");
+  await page.locator('[data-quality-tier="cinematic"]').click();
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective)).toBe("cinematic");
+  expect(await page.evaluate(() => window.__STORAGE_WORLD_DEBUG().renderer.drawingWidth)).toBeGreaterThanOrEqual(526);
+  await page.locator('[data-quality-tier="auto"]').click();
+  await expect.poll(() => page.evaluate(() => window.__STORAGE_WORLD_DEBUG().quality.effective)).toBe("performance");
+
   const visibleObjectHits = await page.evaluate(() => (
     window.__STORAGE_WORLD_DEBUG().targets
       .filter((target) => ["bucket", "file"].includes(target.type))
@@ -119,8 +135,19 @@ test("mobile Performance supports object and empty-space taps and keeps Back ins
   const header = page.locator(".page-header");
   const back = page.locator(".performance-header-exit");
   const notice = page.locator("#sampling-notice");
+  const quality = page.locator(".quality-control");
   await expect(back).toBeVisible();
   await expect(back).toHaveAttribute("aria-label", "Back to My Work");
+  await expect(quality).toBeVisible();
+
+  await page.evaluate(() => window.postMessage({
+    type: "maintainops-platform-spatial-snapshot",
+    snapshot: { sampledAt: new Date().toISOString(), sampling: { status: "current", message: "Browser test sample" } },
+  }, window.location.origin));
+  await expect(page.locator(".summary-source > summary")).toBeVisible();
+  await page.locator(".summary-source > summary").click();
+  await expect(page.locator(".health-metric-card")).toHaveCount(4);
+  await expect(page.locator(".metric-scale")).toHaveCount(4);
 
   const { headerBox, backBox, noticeBox } = await page.evaluate(() => {
     const rect = (selector) => {

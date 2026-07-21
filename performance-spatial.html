@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maintain Ops App Performance</title>
-    <link rel="stylesheet" href="src/performance/platformSpatial.css?v=mo-build-20260717-mobile-dom-targets-1" />
-    <script defer src="src/bundles/platformSpatial.6236131b85.js"></script>
+    <link rel="stylesheet" href="src/performance/platformSpatial.css?v=mo-build-20260721-health-gauges-1" />
+    <script defer src="src/bundles/platformSpatial.d8683c53d4.js"></script>
   </head>
   <body>
     <canvas id="storage-world" aria-label="Interactive 3D Maintain Ops app performance model"></canvas>
@@ -22,11 +22,17 @@
           <h1 class="visually-hidden">App Performance</h1>
           <p class="subtitle subtle"><span id="linked-files-count">0</span> company records monitored</p>
         </div>
-        <div class="header-system-state" aria-label="Platform system status">
-          <small>Platform status</small>
-          <strong><i aria-hidden="true"></i>Healthy</strong>
+        <div class="header-system-state" aria-label="App performance status">
+          <small>App experience</small>
+          <strong><i aria-hidden="true"></i>Collecting</strong>
         </div>
         <div class="header-actions">
+          <div class="quality-control" role="group" aria-label="3D quality">
+            <span>3D quality</span>
+            <button class="active" data-quality-tier="auto" type="button" aria-pressed="true">Auto</button>
+            <button data-quality-tier="performance" type="button" aria-pressed="false">Efficient</button>
+            <button data-quality-tier="cinematic" type="button" aria-pressed="false">Ultra</button>
+          </div>
           <label class="search-box">
             <span>Search</span>
             <input id="file-search" type="search" placeholder="Search systems..." autocomplete="off" />
@@ -90,9 +96,9 @@
           <div class="timeline-console-head">
             <div>
               <strong>Timeline</strong>
-              <small>12 months view</small>
+              <small>Recent daily view</small>
             </div>
-            <span>12 Months</span>
+            <span>Recent Days</span>
           </div>
           <div class="timeline-console-track" aria-hidden="true">
             <i style="left:8%"></i>
@@ -105,7 +111,7 @@
             <i style="left:78%"></i>
             <i style="left:88%"></i>
           </div>
-          <div class="timeline-console-labels" aria-label="Select a month in the usage timeline">
+          <div class="timeline-console-labels" aria-label="Select a day in the activity timeline">
             <button data-timeline-month="0" type="button">Aug</button><button data-timeline-month="1" type="button">Sep</button><button data-timeline-month="2" type="button">Oct</button><button data-timeline-month="3" type="button">Nov</button><button data-timeline-month="4" type="button">Dec</button><button data-timeline-month="5" type="button">Jan</button><button data-timeline-month="6" type="button">Feb</button><button data-timeline-month="7" type="button">Mar</button><button data-timeline-month="8" type="button">Apr</button><button data-timeline-month="9" type="button">May</button><button data-timeline-month="10" type="button">Jun</button><button data-timeline-month="11" type="button">Jul</button>
           </div>
         </aside>
@@ -114,7 +120,7 @@
           <button class="stage-action" data-world-target="buckets" type="button" aria-pressed="false">Buckets</button>
           <button class="stage-action" data-world-target="timeline" type="button" aria-pressed="false">Timeline</button>
           <button class="stage-action" data-world-target="files" type="button" aria-pressed="false">Files</button>
-          <button class="stage-action" data-world-target="vault" type="button" aria-pressed="false">Core</button>
+          <button class="stage-action" data-world-target="vault" type="button" aria-pressed="false">Health</button>
         </div>
       </section>
 
@@ -127,7 +133,7 @@
         <span><i aria-hidden="true"></i>5 systems sampled</span>
       </div>
       <details class="source-panel summary-source">
-        <summary class="source-summary"><span>Platform Pulse</span><strong>4 metrics</strong></summary>
+        <summary class="source-summary"><span>App Health</span><strong>Collecting</strong></summary>
       <section class="summary-grid" aria-label="Platform summary">
         <article class="metric-card accent-cyan">
           <span>Orders Through System</span>

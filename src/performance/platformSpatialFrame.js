@@ -6,6 +6,7 @@ let world = null;
 let hasSnapshot = false;
 let frameState = null;
 let worldRenderAnnounced = false;
+const frameStartedAt = performance.now();
 
 const fallbackSnapshot = {
   sampledAt: new Date().toISOString(),
@@ -15,6 +16,19 @@ const fallbackSnapshot = {
     notices: [],
   },
   telemetry: { message: "Platform instrumentation is not connected yet." },
+  health: {
+    score: null,
+    status: "collecting",
+    label: "Collecting",
+    measuredCount: 0,
+    totalCount: 4,
+    metrics: [
+      { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page load", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "2.5 s or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+      { metric: "inp_ms", label: "Interaction to Next Paint", shortLabel: "Responsiveness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "200 ms or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+      { metric: "query_latency_ms", label: "Data Query Latency", shortLabel: "Data response", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
+      { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", target: "50 FPS desktop / 40 FPS mobile", basis: "Device-aware MaintainOps target", sampleCount: 0 },
+    ],
+  },
   summary: {
     teamSeats: 0,
     requestsToday: 0,
@@ -143,6 +157,7 @@ function buildSignals(snapshot) {
 
 function buildFrameData(snapshot) {
   const summary = snapshot.summary || fallbackSnapshot.summary;
+  const health = snapshot.health || fallbackSnapshot.health;
   const sampling = snapshot.sampling || { status: "current", message: "Company data sampled.", notices: [] };
   const statusLabel = samplingLabel(sampling);
   const systems = (snapshot.systems || fallbackSnapshot.systems).slice(0, 5);
@@ -206,6 +221,8 @@ function buildFrameData(snapshot) {
     };
   });
   return {
+    health,
+    telemetry: snapshot.telemetry || fallbackSnapshot.telemetry,
     summary,
     systems,
     signals,
@@ -240,19 +257,19 @@ function buildFrameData(snapshot) {
       },
     ],
     core: {
-      eyebrow: "Maintain Ops / Platform Pulse",
-      title: "Platform Pulse",
-      subtitle: "Company platform scale and data footprint",
-      badge: statusLabel,
-      tooltip: summary.totalRecords === null ? "Company record count unavailable" : `${numberText(summary.totalRecords)} company records monitored`,
+      eyebrow: "Maintain Ops / App Health",
+      title: "App Health",
+      subtitle: "Measured browser and platform responsiveness",
+      badge: health.label,
+      tooltip: health.score === null ? "Collecting performance samples" : `${health.score} of 100 across measured signals`,
       rows: [
-        ["Orders through system", numberText(summary.ordersReceivedTotal)],
-        ["Public intake", numberText(summary.publicIntakeTotal)],
-        ["Data stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited"],
-        ["Records monitored", numberText(summary.totalRecords)],
+        ["Health score", health.score === null ? "Collecting" : `${health.score}/100`],
+        ["Signals measured", `${health.measuredCount || 0}/${health.totalCount || 0}`],
+        [health.metrics?.[0]?.shortLabel || "Page load", health.metrics?.[0]?.valueText || "Collecting"],
+        [health.metrics?.[1]?.shortLabel || "Responsiveness", health.metrics?.[1]?.valueText || "Collecting"],
       ],
-      footer: "Company platform command core",
-      status: statusLabel,
+      footer: "Company app health command core",
+      status: health.label,
     },
     sampling,
   };
@@ -294,6 +311,9 @@ function getElements() {
     touchTargets: document.querySelector("[data-spatial-touch-targets]"),
     tooltip: document.querySelector("#world-tooltip"),
     exit: document.querySelector("[data-performance-exit]"),
+    qualityButtons: [...document.querySelectorAll("[data-quality-tier]")],
+    timelineConsoleDetail: document.querySelector(".timeline-console-head small"),
+    timelineConsoleWindow: document.querySelector(".timeline-console-head > span"),
   };
 }
 
@@ -301,22 +321,24 @@ let els = null;
 let activeBucketFilter = "all";
 
 function updateStaticCopy(data) {
-  const { summary, systems, months, sampling } = data;
-  const statusLabel = samplingLabel(sampling);
+  const { summary, systems, months, sampling, health } = data;
+  const statusLabel = health?.label || samplingLabel(sampling);
   const isCurrent = sampling.status === "current";
+  const telemetryUnavailable = data.telemetry?.status === "unavailable";
   document.title = "Maintain Ops App Performance";
   document.documentElement.classList.toggle("platform-spatial-degraded", sampling.status === "degraded");
   document.documentElement.classList.toggle("platform-spatial-pending", sampling.status === "pending");
+  document.documentElement.dataset.health = health?.status || "collecting";
   els.headerKicker.textContent = "App Performance";
   els.headerSubtitle.innerHTML = summary.totalRecords === null
     ? "Company record count unavailable"
     : `<span id="linked-files-count">${escapeHtml(numberText(summary.totalRecords))}</span> company records monitored`;
-  els.headerStateLabel.textContent = "Platform status";
+  els.headerStateLabel.textContent = "App experience";
   els.headerState.innerHTML = `<i aria-hidden="true"></i>${escapeHtml(statusLabel)}`;
-  els.samplingNotice.hidden = isCurrent;
-  if (!isCurrent) {
-    els.samplingNotice.querySelector("strong").textContent = statusLabel;
-    els.samplingNotice.querySelector("span").textContent = sampling.message;
+  els.samplingNotice.hidden = isCurrent && !telemetryUnavailable;
+  if (!els.samplingNotice.hidden) {
+    els.samplingNotice.querySelector("strong").textContent = telemetryUnavailable ? "Telemetry unavailable" : statusLabel;
+    els.samplingNotice.querySelector("span").textContent = telemetryUnavailable ? data.telemetry.message : sampling.message;
   }
   const stageMetrics = [
     ["Orders Through System", numberText(summary.ordersReceivedTotal), "all company history"],
@@ -324,7 +346,7 @@ function updateStaticCopy(data) {
     ["Data Stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited", ""],
     ["Records Monitored", numberText(summary.totalRecords), ""],
   ];
-  els.stageReadoutStatus.innerHTML = `System Status <b>${escapeHtml(statusLabel)}</b>`;
+  els.stageReadoutStatus.innerHTML = `App Experience <b>${escapeHtml(statusLabel)}</b>`;
   els.stageReadoutMetrics.forEach((metric, index) => {
     const [label, value, detail] = stageMetrics[index] || ["Platform signal", "Current", ""];
     metric.querySelector("small").textContent = label;
@@ -334,11 +356,8 @@ function updateStaticCopy(data) {
   });
   els.search.placeholder = "Search systems...";
   const telemetry = [
-    ["Platform pulse", statusLabel],
-    ["Public intake total", numberText(summary.publicIntakeTotal)],
-    ["Orders through system", numberText(summary.ordersReceivedTotal)],
-    ["Records monitored", numberText(summary.totalRecords)],
-    ["Data vault", summary.storage?.available ? summary.storage.totalBytesText : "Role limited"],
+    ["App health", health?.score === null ? "Collecting" : `${health.score}/100`],
+    ...((health?.metrics || []).slice(0, 4).map((metric) => [metric.shortLabel, metric.valueText])),
   ];
   els.telemetryRows.forEach((row, index) => {
     const entry = telemetry[index] || ["Platform signal", "Current"];
@@ -359,7 +378,7 @@ function updateStaticCopy(data) {
   document.querySelector(".source-lattice-head > span").innerHTML = `<i aria-hidden="true"></i>${systems.length} systems sampled`;
   const sourceSummaries = [...document.querySelectorAll(".source-summary")];
   const labels = [
-    ["Platform Pulse", "4 metrics"],
+    ["App Health", `${health?.measuredCount || 0}/${health?.totalCount || 0} measured`],
     ["App Systems", `${systems.length} systems`],
     ["Activity Runway", `${months.length} days`],
     ["Platform Systems", `${systems.length} systems`],
@@ -391,6 +410,8 @@ function updateStaticCopy(data) {
     stat.querySelector("small").textContent = label;
     stat.querySelector("strong").textContent = value;
   });
+  els.timelineConsoleDetail.textContent = `${months.length} day activity view`;
+  els.timelineConsoleWindow.textContent = `${months.length} Days`;
   const segments = [...document.querySelectorAll("[data-bucket-filter]")];
   ["All", "Systems", "Signals"].forEach((label, index) => {
     if (segments[index]) {
@@ -401,20 +422,17 @@ function updateStaticCopy(data) {
 }
 
 function renderSummary(data) {
-  const { summary } = data;
-  const metrics = [
-    ["Orders Through System", numberText(summary.ordersReceivedTotal), "All company history", "cyan"],
-    ["Data Stored", summary.storage?.available ? summary.storage.totalBytesText : "Role limited", summary.storage?.available ? `${numberText(summary.storage?.fileCount)} stored objects` : "Storage access follows role", "blue"],
-    ["Public Intake Total", numberText(summary.publicIntakeTotal), `${numberText(summary.requestsToday)} received today`, "mint"],
-    ["Records Monitored", numberText(summary.totalRecords), `${numberText(summary.locations)} plants`, "blue"],
-  ];
+  const metrics = data.health?.metrics || [];
   const container = els.summarySource.querySelector(".summary-grid");
-  container.innerHTML = metrics.map(([label, value, detail, tone]) => `
-    <article class="metric-card accent-${tone}">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <small>${escapeHtml(detail)}</small>
-      <div class="metric-meter"><i style="width:${label === "Data Stored" ? 58 : 72}%"></i></div>
+  container.innerHTML = metrics.map((metric) => `
+    <article class="metric-card health-metric-card status-${escapeHtml(metric.status)}">
+      <div class="health-metric-head"><span>${escapeHtml(metric.shortLabel)}</span><b>${escapeHtml(metric.statusLabel)}</b></div>
+      <strong>${escapeHtml(metric.valueText)}</strong>
+      <div class="metric-scale direction-${escapeHtml(metric.direction)} ${metric.status === "collecting" ? "is-collecting" : ""}" style="--good-position:${Math.round(metric.goodPosition || 0)}%;--watch-position:${Math.round(metric.watchPosition || 0)}%" role="meter" aria-label="${escapeHtml(metric.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(metric.gaugePosition || 0)}" aria-valuetext="${escapeHtml(`${metric.valueText}, ${metric.statusLabel}`)}">
+        <i style="left:${Math.max(0, Math.min(100, metric.gaugePosition || 0))}%"></i>
+      </div>
+      <small>${escapeHtml(metric.target)}</small>
+      <p>${escapeHtml(metric.basis)}${metric.sampleCount ? ` / ${numberText(metric.sampleCount)} samples` : ""}</p>
     </article>
   `).join("");
 }
@@ -589,16 +607,34 @@ function renderFrame(snapshot) {
       onVaultSelected: () => {
         els.summarySource.open = true;
       },
+      qualityPreference: localStorage.getItem("maintainops.performanceQuality") || "auto",
+      onPerformanceSample: (sample) => {
+        window.parent.postMessage({ type: "maintainops-platform-spatial-telemetry", sample }, parentOrigin);
+      },
+      onQualityChange: (quality) => updateQualityButtons(quality.preference, quality.effective),
+      onFirstRender: (sample) => {
+        if (worldRenderAnnounced) return;
+        worldRenderAnnounced = true;
+        document.documentElement.classList.add("platform-spatial-ready");
+        window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY = true;
+        window.parent.postMessage({ type: "maintainops-platform-spatial-rendered" }, parentOrigin);
+        window.parent.postMessage({
+          type: "maintainops-platform-spatial-telemetry",
+          sample: { ...sample, readyMs: performance.now() - frameStartedAt },
+        }, parentOrigin);
+      },
     });
   }
-  document.documentElement.classList.add("platform-spatial-ready");
-  window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY = true;
-  if (!worldRenderAnnounced) {
-    window.requestAnimationFrame(() => {
-      worldRenderAnnounced = true;
-      window.parent.postMessage({ type: "maintainops-platform-spatial-rendered" }, parentOrigin);
-    });
-  }
+}
+
+function updateQualityButtons(preference, effective) {
+  els.qualityButtons.forEach((button) => {
+    const active = button.dataset.qualityTier === preference;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    const base = button.dataset.qualityTier === "performance" ? "Efficient" : button.dataset.qualityTier === "cinematic" ? "Ultra" : "Auto";
+    button.textContent = button.dataset.qualityTier === "auto" && effective ? `${base}: ${effective === "performance" ? "Efficient" : effective === "cinematic" ? "Ultra" : "Balanced"}` : base;
+  });
 }
 
 function requestRefresh() {
@@ -635,6 +671,12 @@ function bindInteractions() {
     renderFiles(frameState);
   });
   els.refresh.addEventListener("click", requestRefresh);
+  els.qualityButtons.forEach((button) => button.addEventListener("click", () => {
+    const preference = button.dataset.qualityTier || "auto";
+    localStorage.setItem("maintainops.performanceQuality", preference);
+    const quality = world?.setQuality(preference);
+    updateQualityButtons(preference, quality?.effective || "");
+  }));
   els.stageActions.forEach((button) => button.addEventListener("click", () => {
     const target = button.dataset.worldTarget;
     if (target === "timeline") openTimelineSource();

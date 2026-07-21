@@ -240,6 +240,7 @@ async function main() {
       "playwright",
       "test",
       "tests/smoke/platform-performance-mobile-browser.spec.js",
+      "tests/smoke/platform-performance-desktop-browser.spec.js",
     ], {
       label: "mobile Performance controls smoke",
       env: {

@@ -47,6 +47,7 @@ Strict LFES command:
 - Machine-readable evidence is written to `lfes-evidence/` and retained by GitHub for 30 days.
 - Run `npm run test:lfes:authenticated` through the manual `Authenticated LFES Proof` workflow when hosted authentication, company isolation, role permissions, or storage paths are in scope. This command fails when any required QA credential or fixture is absent.
 - After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
+- The scheduled `Performance Monitor` workflow adds a separate read-only synthetic check for deployed response time, payload size, and resource availability. It supports release evidence but does not replace authenticated testing, browser telemetry, or an uptime service.
 - `npm run release:verify` now sequences hashed bundle generation, strict LFES, and hosted LFES in one command. Set `MAINTAINOPS_RELEASE_SKIP_HOSTED=1` when you need the local portion before push.
 - A targeted smoke may still be required for a touched path that is not covered by the strict command.
 - See `docs/LFES/PROOF_MODEL.md` for the boundary between the required release gate, authenticated hosted proof, and the human LFES Gold audit.
