@@ -32,6 +32,9 @@ function createElement({ id = "", value = "", dataset = {} } = {}) {
     value,
     dataset,
     focused: false,
+    focusOptions: null,
+    selectionStart: value.length,
+    selectionEnd: value.length,
     selectionRange: null,
     addEventListener(type, handler) {
       listeners[type] = listeners[type] || [];
@@ -42,8 +45,9 @@ function createElement({ id = "", value = "", dataset = {} } = {}) {
         await handler();
       }
     },
-    focus() {
+    focus(options) {
       this.focused = true;
+      this.focusOptions = options || null;
     },
     setSelectionRange(start, end) {
       this.selectionRange = [start, end];
@@ -82,6 +86,9 @@ let invalidateCount = 0;
 let workReloadCount = 0;
 let requestReloadCount = 0;
 let renderCount = 0;
+let pendingSearchTask = null;
+let clearedSearchTimers = 0;
+const scrollCalls = [];
 
 bindWorkspaceSearchEvents({
   documentRef: doc,
@@ -102,10 +109,29 @@ bindWorkspaceSearchEvents({
   reloadRequestQueue: async () => {
     requestReloadCount += 1;
   },
+  renderWorkspace: () => {
+    renderCount += 1;
+  },
   resetWorkOrderPage: () => state.resetWorkOrderPage(),
   resetPartsPage: () => state.resetPartsPage(),
   resetRequestsPage: () => state.resetRequestsPage(),
   setWorkOrderSearchMode: (value) => state.setWorkOrderSearchMode(Boolean(value && state.getSearchQuery().trim())),
+  setTimeoutRef: (callback) => {
+    pendingSearchTask = callback;
+    return 1;
+  },
+  clearTimeoutRef: () => {
+    pendingSearchTask = null;
+    clearedSearchTimers += 1;
+  },
+  searchDelayMs: 300,
+  windowRef: {
+    scrollX: 0,
+    scrollY: 640,
+    scrollTo(x, y) {
+      scrollCalls.push([x, y]);
+    },
+  },
 });
 
 bindGlobalSearchNavigationEvents({
@@ -119,16 +145,32 @@ bindGlobalSearchNavigationEvents({
 });
 
 (async () => {
+  searchInput.value = "pu";
+  searchInput.selectionStart = 2;
+  searchInput.selectionEnd = 2;
+  await searchInput.dispatch("input");
+  searchInput.value = "pump";
+  searchInput.selectionStart = 4;
+  searchInput.selectionEnd = 4;
   await searchInput.dispatch("input");
   assert.equal(state.getSearchQuery(), "pump");
   assert.equal(storage.values["maintainops.searchQuery"], "pump");
   assert.equal(state.getWorkOrderPage(), 1);
   assert.equal(state.getPartsPage(), 1);
   assert.equal(state.getRequestsPage(), 1);
-  assert.equal(invalidateCount, 1);
+  assert.equal(invalidateCount, 2);
+  assert.equal(clearedSearchTimers, 1);
+  assert.equal(workReloadCount, 0);
+  assert.equal(requestReloadCount, 0);
+  assert.equal(typeof pendingSearchTask, "function");
+
+  await pendingSearchTask();
   assert.equal(workReloadCount, 1);
   assert.equal(requestReloadCount, 1);
+  assert.equal(renderCount, 1);
   assert.deepEqual(searchInput.selectionRange, [4, 4]);
+  assert.deepEqual(searchInput.focusOptions, { preventScroll: true });
+  assert.deepEqual(scrollCalls, [[0, 640]]);
 
   await viewWorkSearch.dispatch("click");
   assert.equal(state.getActiveSection(), "work");
@@ -147,7 +189,7 @@ bindGlobalSearchNavigationEvents({
   assert.equal(state.getActiveWorkOrderId(), "wo-1");
   assert.equal(state.getActiveSection(), "work");
   assert.equal(state.getWorkOrderSearchMode(), false);
-  assert.equal(renderCount, 1);
+  assert.equal(renderCount, 2);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

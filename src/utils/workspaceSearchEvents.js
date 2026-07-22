@@ -1,4 +1,8 @@
 (function () {
+  let pendingSearchTimer = null;
+  let searchRevision = 0;
+  let searchReloadChain = Promise.resolve();
+
   /*
    * Module contract: binds workspace search and exact work-search controls only.
    * Requires injected state getters/setters and queue reload/page reset callbacks from app.js.
@@ -10,21 +14,47 @@
     const doc = options.documentRef || document;
     const storage = options.storage || localStorage;
     const state = options.state;
+    const windowRef = options.windowRef || (typeof window !== "undefined" ? window : null);
+    const setTimeoutRef = options.setTimeoutRef || setTimeout;
+    const clearTimeoutRef = options.clearTimeoutRef || clearTimeout;
+    const searchDelayMs = Number.isFinite(options.searchDelayMs) ? options.searchDelayMs : 300;
 
     if (!state) return;
 
-    const restoreSearchFocus = (inputId) => {
+    const cancelPendingSearchReload = () => {
+      searchRevision += 1;
+      if (pendingSearchTimer !== null) {
+        clearTimeoutRef(pendingSearchTimer);
+        pendingSearchTimer = null;
+      }
+    };
+
+    const restoreScrollPosition = (scrollPosition) => {
+      if (scrollPosition && typeof windowRef?.scrollTo === "function") {
+        windowRef.scrollTo(scrollPosition.x, scrollPosition.y);
+      }
+    };
+
+    const restoreSearchFocus = (inputId, selectionStart, selectionEnd, scrollPosition) => {
       const nextSearchInput = doc.getElementById
         ? doc.getElementById(inputId)
         : doc.querySelector(`#${inputId}`);
       if (!nextSearchInput) return;
-      nextSearchInput.focus();
-      nextSearchInput.setSelectionRange(state.getSearchQuery().length, state.getSearchQuery().length);
+      const inputLength = nextSearchInput.value.length;
+      const nextStart = Math.min(selectionStart ?? inputLength, inputLength);
+      const nextEnd = Math.min(selectionEnd ?? nextStart, inputLength);
+      nextSearchInput.focus({ preventScroll: true });
+      nextSearchInput.setSelectionRange(nextStart, nextEnd);
+      restoreScrollPosition(scrollPosition);
     };
 
     doc.querySelectorAll(".workspace-search-input").forEach((searchInput) => {
-      searchInput.addEventListener("input", async () => {
+      searchInput.addEventListener("input", () => {
         const activeSearchId = searchInput.id;
+        const selectionStart = searchInput.selectionStart;
+        const selectionEnd = searchInput.selectionEnd;
+        cancelPendingSearchReload();
+        const revision = searchRevision;
         state.setSearchQuery(searchInput.value);
         options.invalidateExactWorkOrderSearchCache();
         if (!state.getSearchQuery().trim()) options.setWorkOrderSearchMode(false);
@@ -41,14 +71,42 @@
         options.resetWorkOrderPage();
         options.resetPartsPage();
         options.resetRequestsPage();
-        await options.reloadWorkOrderQueue();
-        await options.reloadRequestQueue();
-        restoreSearchFocus(activeSearchId);
+
+        pendingSearchTimer = setTimeoutRef(() => {
+          pendingSearchTimer = null;
+          searchReloadChain = searchReloadChain
+            .catch(() => null)
+            .then(async () => {
+              if (revision !== searchRevision) return;
+              await Promise.all([
+                options.reloadWorkOrderQueue({ render: false }),
+                options.reloadRequestQueue({ render: false }),
+              ]);
+              if (revision !== searchRevision) return;
+              const scrollPosition = windowRef ? {
+                x: Number(windowRef.scrollX || windowRef.pageXOffset || 0),
+                y: Number(windowRef.scrollY || windowRef.pageYOffset || 0),
+              } : null;
+              const currentSearchInput = doc.getElementById
+                ? doc.getElementById(activeSearchId)
+                : doc.querySelector(`#${activeSearchId}`);
+              const shouldRestoreFocus = !("activeElement" in doc)
+                || doc.activeElement === currentSearchInput;
+              options.renderWorkspace();
+              if (shouldRestoreFocus) {
+                restoreSearchFocus(activeSearchId, selectionStart, selectionEnd, scrollPosition);
+              } else {
+                restoreScrollPosition(scrollPosition);
+              }
+            });
+          return searchReloadChain;
+        }, searchDelayMs);
       });
     });
 
     doc.querySelectorAll("[data-view-work-search]").forEach((button) => {
       button.addEventListener("click", async () => {
+        cancelPendingSearchReload();
         state.setActiveSection("work");
         state.setActiveWorkOrderId(null);
         state.setActiveAssetId(null);
@@ -65,6 +123,7 @@
 
     doc.querySelectorAll("[data-close-work-search]").forEach((button) => {
       button.addEventListener("click", async () => {
+        cancelPendingSearchReload();
         options.setWorkOrderSearchMode(false);
         options.invalidateExactWorkOrderSearchCache();
         options.resetWorkOrderPage();
