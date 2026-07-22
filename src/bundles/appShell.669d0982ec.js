@@ -2715,7 +2715,7 @@
     appNotice = `Some workspace data loaded slowly: ${visibleWarnings}${extraCount}`;
     appNoticeTone = "warning";
   }
-  async function reloadWorkOrderQueue() {
+  async function reloadWorkOrderQueue(options = {}) {
     try {
       invalidatePlanningWorkOrders();
       const response = await loadServerWorkOrderSlice();
@@ -2724,7 +2724,7 @@
         return;
       }
       await Promise.all([loadComments(), loadPhotos(), loadPartsUsed(), loadAssetParts(), loadAssetDocuments(), loadStepResults(), loadWorkOrderEvents()]);
-      renderWorkspace();
+      if (options.render !== false) renderWorkspace();
     } catch (error) {
       showNotice(`Could not load work orders: ${error.message || error}`, "warning");
     }
@@ -2744,7 +2744,7 @@
       renderWorkspace();
     }
   }
-  async function reloadRequestQueue() {
+  async function reloadRequestQueue(options = {}) {
     try {
       const response = await loadServerRequestSlice();
       requestsReady = !response.error;
@@ -2753,7 +2753,7 @@
         return;
       }
       await addSignedRequestPhotoUrls();
-      renderWorkspace();
+      if (options.render !== false) renderWorkspace();
     } catch (error) {
       requestsReady = false;
       showNotice(`Could not load requests: ${error.message || error}`, "warning");
@@ -5207,6 +5207,7 @@ Continue ${actionLabel}?`);
       resetPartsPage,
       resetRequestsPage,
       resetWorkOrderPage,
+      renderWorkspace,
       setWorkOrderSearchMode
     });
     bindGlobalSearchNavigationEvents({

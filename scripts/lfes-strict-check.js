@@ -232,6 +232,7 @@ async function main() {
     "tests/smoke/quick-fix-date-field-browser.spec.js",
     "tests/smoke/team-sections-browser.spec.js",
     "tests/smoke/work-order-filter-toolbar-browser.spec.js",
+    "tests/smoke/workspace-search-stability-browser.spec.js",
   ], {
     label: "targeted browser regression smokes",
   }));
