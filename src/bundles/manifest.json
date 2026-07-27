@@ -1,5 +1,11 @@
 {
-  "runtime": "runtime.efb07e2dc7.js",
-  "appShell": "appShell.6866c15d65.js",
-  "platformSpatial": "platformSpatial.c7176fbf5b.js"
+  "runtime": "runtime.4c3cb45ae7.js",
+  "managerFeature": "managerFeature.797ad941c6.js",
+  "financialFeature": "financialFeature.a60bd72a36.js",
+  "teamFeature": "teamFeature.0ec47ed7a2.js",
+  "setupFeature": "setupFeature.ff3e0ed5c2.js",
+  "appShell": "appShell.3c9ce2493e.js",
+  "platformSpatial": "platformSpatial.50a6425bbe.js",
+  "appStyles": "appStyles.2ebaa2636d.css",
+  "platformSpatialStyles": "platformSpatialStyles.4119c5812b.css"
 }

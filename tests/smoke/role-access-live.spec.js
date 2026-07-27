@@ -3,6 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const workspaceRequestBudget = Math.max(1, Number(process.env.LFES_WORKSPACE_REQUEST_BUDGET) || 35);
+const workspaceDomBudget = Math.max(1, Number(process.env.LFES_WORKSPACE_DOM_BUDGET) || 1600);
+const workspaceReadyBudgetMs = Math.max(1000, Number(process.env.LFES_WORKSPACE_READY_BUDGET_MS) || 12000);
 const evidencePath = path.resolve(__dirname, "../../lfes-evidence/authenticated-workspace-request-counts.json");
 
 const roles = [
@@ -97,6 +99,20 @@ function recordWorkspaceRequestEvidence(role, browserName, evidence) {
   fs.writeFileSync(evidencePath, `${JSON.stringify(report, null, 2)}\n`);
 }
 
+async function workspaceRenderEvidence(page) {
+  return page.evaluate(() => ({
+    domNodes: document.querySelectorAll("*").length,
+    featureBundles: performance.getEntriesByType("resource")
+      .map((entry) => entry.name.match(/\/([^/]+Feature\.[a-f0-9]{10}\.js)(?:\?|$)/)?.[1] || "")
+      .filter(Boolean),
+    workspacePanels: document.querySelectorAll("#workspace-main .layout-grid > section.panel").length,
+  }));
+}
+
+async function expectSingleActiveWorkspacePanel(page) {
+  await expect(page.locator("#workspace-main .layout-grid > section.panel")).toHaveCount(1);
+}
+
 async function signIn(page, role, browserName) {
   const pageErrors = [];
   const requestTrace = createWorkspaceRequestTrace(page);
@@ -106,10 +122,19 @@ async function signIn(page, role, browserName) {
   await page.getByLabel("Email").fill(role.email);
   await page.getByLabel("Password").fill(role.password);
   requestTrace.start();
+  const workspaceStartedAt = Date.now();
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
+  const workspaceVisibleMs = Date.now() - workspaceStartedAt;
   const requestEvidence = await requestTrace.settle();
-  recordWorkspaceRequestEvidence(role, browserName, requestEvidence);
+  const renderEvidence = await workspaceRenderEvidence(page);
+  recordWorkspaceRequestEvidence(role, browserName, {
+    ...requestEvidence,
+    ...renderEvidence,
+    domBudget: workspaceDomBudget,
+    workspaceReadyBudgetMs,
+    workspaceVisibleMs,
+  });
   expect(
     requestEvidence.requests,
     `${role.name} initial workspace Supabase requests exceeded the ${workspaceRequestBudget}-request budget: ${JSON.stringify(requestEvidence.byEndpoint)}`
@@ -119,6 +144,10 @@ async function signIn(page, role, browserName) {
   expect(requestEvidence.byEndpoint.assets).toBe(1);
   expect(requestEvidence.byEndpoint.work_orders).toBe(1);
   expect(requestEvidence.byEndpoint["rpc:get_workspace_work_order_counts"]).toBe(1);
+  expect(renderEvidence.featureBundles, `${role.name} should not load optional feature bundles on My Work`).toEqual([]);
+  expect(renderEvidence.workspacePanels, `${role.name} should render one active workspace panel`).toBe(1);
+  expect(renderEvidence.domNodes, `${role.name} initial workspace DOM exceeds ${workspaceDomBudget} nodes`).toBeLessThanOrEqual(workspaceDomBudget);
+  expect(workspaceVisibleMs, `${role.name} workspace took longer than ${workspaceReadyBudgetMs} ms to become visible`).toBeLessThanOrEqual(workspaceReadyBudgetMs);
   expect(pageErrors, `page errors while signing in as ${role.name}`).toEqual([]);
   return { pageErrors, requestEvidence };
 }
@@ -142,7 +171,8 @@ test.describe("MaintainOps authenticated role proof", () => {
       }
 
       await page.locator('[data-section="planning"]').click();
-      await expect(page.getByRole("heading", { name: "Planning", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Planning", exact: true, level: 2 })).toBeVisible();
+      await expectSingleActiveWorkspacePanel(page);
       await expect(page.getByText("No Due Date", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Current schedule", exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
@@ -156,12 +186,12 @@ test.describe("MaintainOps authenticated role proof", () => {
       } else {
         await expect(financialNav).toBeVisible();
         await financialNav.click();
-        await expect(page.getByRole("heading", { name: "Financial", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Financial", exact: true, level: 2 })).toBeVisible();
         await expect(page.locator('[data-financial-filter="missing"]')).toBeVisible();
         const financialCards = page.locator("[data-open-financial-asset]");
         await expect(financialCards.first(), `${role.name} QA fixture needs at least one financial equipment card`).toBeVisible();
         await financialCards.first().click();
-        await expect(page.getByRole("heading", { name: "Financial Detail", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Financial Detail", exact: true, level: 2 })).toBeVisible();
         if (role.financial === "edit") {
           await expect(page.locator(".financial-asset-form")).toBeVisible();
           await expect(page.getByRole("button", { name: "Save Financial Info" })).toBeEnabled();
@@ -169,22 +199,40 @@ test.describe("MaintainOps authenticated role proof", () => {
           await expect(page.locator(".financial-readonly-list")).toBeVisible();
           await expect(page.locator(".financial-asset-form")).toHaveCount(0);
         }
+        const financialLoads = (await workspaceRenderEvidence(page)).featureBundles;
+        expect(financialLoads.some((name) => name.startsWith("financialFeature."))).toBe(true);
       }
 
       await page.locator('[data-section="team"]').click();
-      await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Team", exact: true, level: 2 })).toBeVisible();
+      await expectSingleActiveWorkspacePanel(page);
       const memberCards = page.locator(".member-card");
       await expect(memberCards.first()).toBeVisible();
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ New/);
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ In Progress/);
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ Blocked/);
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ Completed/);
+      const teamLoads = (await workspaceRenderEvidence(page)).featureBundles;
+      expect(teamLoads.some((name) => name.startsWith("teamFeature."))).toBe(true);
 
       const managerNav = page.locator('[data-section="manager"]');
-      if (role.managerDashboard) await expect(managerNav).toBeVisible();
+      if (role.managerDashboard) {
+        await expect(managerNav).toBeVisible();
+        await managerNav.click();
+        await expect(page.locator(".manager-dashboard")).toBeVisible({ timeout: 30000 });
+        await expectSingleActiveWorkspacePanel(page);
+        const managerLoads = (await workspaceRenderEvidence(page)).featureBundles;
+        expect(managerLoads.some((name) => name.startsWith("managerFeature."))).toBe(true);
+      }
       else await expect(managerNav).toHaveCount(0);
 
       if (role.name === "admin") {
+        await page.locator('[data-section="setup"]').click();
+        await expect(page.locator(".setup-list")).toBeVisible({ timeout: 30000 });
+        await expectSingleActiveWorkspacePanel(page);
+        const setupLoads = (await workspaceRenderEvidence(page)).featureBundles;
+        expect(setupLoads.some((name) => name.startsWith("setupFeature."))).toBe(true);
+
         await page.locator('[data-section="performance"]').click();
         const performanceFrame = page.frameLocator('iframe[data-platform-spatial-frame]');
         await expect(performanceFrame.locator(".quality-control")).toBeVisible({ timeout: 120000 });

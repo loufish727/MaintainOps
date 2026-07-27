@@ -94,6 +94,8 @@ jobs:
           LFES_FORBIDDEN_COMPANY_ID: ${{ secrets.LFES_FORBIDDEN_COMPANY_ID }}
           LFES_TECH_DELETE_REQUEST_ID: ${{ secrets.LFES_TECH_DELETE_REQUEST_ID }}
           LFES_WORKSPACE_REQUEST_BUDGET: "35"
+          LFES_WORKSPACE_DOM_BUDGET: "1600"
+          LFES_WORKSPACE_READY_BUDGET_MS: "12000"
 
       - name: Upload LFES evidence
         if: always()

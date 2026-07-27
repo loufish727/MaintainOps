@@ -5,8 +5,8 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It uses stati
 ## Frontend Files
 
 - `index.html`
-  - Loads the Supabase client, `supabase-config.js`, and the generated content-hashed runtime and app-shell bundles.
-  - `npm run build:runtime:bundles` derives CSS and browser-config cache keys from file contents and updates the HTML entry points. Manual cache-tag bumping is not part of the release path.
+  - Loads the Supabase client, `supabase-config.js`, and the generated minified, content-hashed runtime, app-shell, and application-style assets.
+  - `npm run build:runtime:bundles` generates production assets and external source maps without embedded source copies, derives the browser-config cache key, and updates the HTML entry points. Manual cache-tag bumping is not part of the release path.
 
 - `app.js`
   - Owns the current app shell authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, module wiring, dependency injection, and event-module composition.
@@ -17,10 +17,14 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It uses stati
   - Contains extracted render helpers, event-binding groups, UI state helpers, query/list helpers, and selected workflow boundaries.
   - New leaf services can use real ESM. Current examples are the keyed single-flight startup guard, workspace work-order count service, and company-logo signed-URL cache.
   - Recent examples include `src/workflows/quickFixWorkflow.js`, `src/workflows/messageWorkflow.js`, `src/workflows/preventiveMaintenanceWorkflow.js`, `src/workflows/procedureWorkflow.js`, `src/workflows/teamWorkflow.js`, `src/workflows/companySettingsWorkflow.js`, `src/workflows/appIssueWorkflow.js`, `src/workflows/publicRequestLinkWorkflow.js`, `src/workflows/partInventoryWorkflow.js`, `src/workflows/workOrderQuickUpdateWorkflow.js`, `src/workflows/assetWorkflow.js`, `src/workflows/requestLifecycleWorkflow.js`, `src/workflows/workOrderCreationWorkflow.js`, `src/workflows/workOrderDetailEditWorkflow.js`, `src/workflows/partUsageWorkflow.js`, `src/workflows/mediaStorageWorkflow.js`, `src/workflows/companyLogoWorkflow.js`, `src/utils/csvExport.js`, `src/services/authSessionFlow.js`, and render modules for Work Order Detail, Equipment Detail, Message Center, Create Work Order, and Quick Fix.
+  - Manager, Financial, Team presentation, and Admin Setup are separate hashed feature bundles. They load only when their screen is opened and initialize once per browser page.
 
 - `styles.css`
-  - App styling for desktop and mobile.
+  - Readable source styling for desktop and mobile. The browser loads a generated minified `appStyles.<hash>.css` file.
   - Includes dark sleek theme, mobile shell, card layouts, gauges, badges, and form styling.
+
+- `src/performance/platformSpatial.css`
+  - Readable source styling for the lazy 3D Performance room. Its page loads a generated minified `platformSpatialStyles.<hash>.css` file only when that room opens.
 
 - `assets/gauges/gauge-status-sprite.webp`
   - Current approved gauge artwork sheet used for status dashboard buttons.
@@ -33,9 +37,11 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It uses stati
 ## Workspace Startup
 
 - Workspace rendering is keyed by signed-in user and single-flight guarded so duplicate same-session auth events share one active bootstrap.
+- The shared shell renders only the active workspace screen. Inactive screens are not built as hidden DOM trees, and screen-specific list filtering/pagination is skipped until that screen is active.
 - Work-order dashboard and My Work totals use one company/location-scoped aggregate RPC when no text search is active. The compatibility path remains available until the migration is present.
 - Company logo signed URLs are cached in memory for eight minutes against a ten-minute signed URL.
-- The authenticated testing-platform proof limits initial workspace loading to 35 Supabase requests and requires the major core loaders and aggregate-count RPC to run exactly once.
+- The authenticated testing-platform proof limits initial workspace loading to 35 Supabase requests and requires the major core loaders and aggregate-count RPC to run exactly once. It also caps the initial workspace at 1,600 DOM nodes and 12 seconds to visible, and proves that optional feature bundles do not load on My Work.
+- `npm run test:bundle:budget` fails when decoded or compressed core, feature, style, or spatial bundles exceed their recorded ceilings. Current first-party startup output is 735,064 bytes decoded and 163,690 bytes gzip before vendor code and screen imagery.
 
 ## Supabase Architecture
 

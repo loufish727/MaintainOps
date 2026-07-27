@@ -7,7 +7,10 @@ function defaultLoadScriptResource(documentRef, src, options = {}) {
     }
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error(`Could not load ${src}`)), { once: true });
+      existing.addEventListener("error", () => {
+        existing.remove();
+        reject(new Error(`Could not load ${src}`));
+      }, { once: true });
       return;
     }
 
@@ -21,7 +24,10 @@ function defaultLoadScriptResource(documentRef, src, options = {}) {
       script.dataset.loaded = "true";
       resolve();
     };
-    script.onerror = () => reject(new Error(`Could not load ${src}`));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error(`Could not load ${src}`));
+    };
     documentRef.body.appendChild(script);
   });
 }
@@ -33,6 +39,8 @@ export function createLazyResourceHelpers({
   qrCodeResource,
   conversionResourcePaths,
   platformPerformanceResourcePaths,
+  featureBundlePaths = {},
+  initializeFeature = () => {},
   loadScriptResource = defaultLoadScriptResource,
   getActiveSection,
   getPublicRequestLinks,
@@ -46,6 +54,74 @@ export function createLazyResourceHelpers({
   let platformPerformanceResourcesError = "";
   let platformPerformanceDisplayHelpers = null;
   let qrLibraryPromise = null;
+  const featureStates = new Map();
+
+  function featureState(featureId) {
+    if (!featureStates.has(featureId)) {
+      featureStates.set(featureId, {
+        error: "",
+        promise: null,
+        ready: false,
+      });
+    }
+    return featureStates.get(featureId);
+  }
+
+  function isFeatureBundleReady(featureId) {
+    return featureState(featureId).ready;
+  }
+
+  function clearFeatureBundleError(featureId) {
+    featureState(featureId).error = "";
+  }
+
+  async function ensureFeatureBundleLoaded(featureId) {
+    const state = featureState(featureId);
+    if (state.ready) return true;
+    const src = featureBundlePaths[featureId];
+    if (!src) throw new Error(`No feature bundle is configured for ${featureId}.`);
+    if (!state.promise) {
+      state.error = "";
+      state.promise = loadScriptResource(documentRef, src)
+        .then(async () => {
+          await initializeFeature(featureId);
+          state.ready = true;
+          return true;
+        })
+        .catch((error) => {
+          state.error = error.message || `Could not load ${featureId}.`;
+          state.promise = null;
+          throw error;
+        });
+    }
+    return state.promise;
+  }
+
+  function renderFeatureBundlePanel(featureId, label) {
+    const state = featureState(featureId);
+    const status = state.error || `Loading ${label}...`;
+    const toneClass = state.error ? "status-blocked" : "status-in_progress";
+    return `
+      <section class="setup-card feature-resource-loading ${toneClass}" aria-live="polite">
+        <h3>${escapeHtml(label)}</h3>
+        <p>${escapeHtml(status)}</p>
+        ${state.error ? `<button class="secondary-button" data-retry-feature-bundle="${escapeHtml(featureId)}" type="button">Retry</button>` : ""}
+      </section>
+    `;
+  }
+
+  function scheduleFeatureBundleLoad(featureId = getActiveSection()) {
+    if (!featureBundlePaths[featureId]) return;
+    const state = featureState(featureId);
+    if (state.ready || state.promise) return;
+    ensureFeatureBundleLoaded(featureId)
+      .then(() => {
+        if (getActiveSection() === featureId) requestWorkspaceRender();
+      })
+      .catch(() => {
+        if (getActiveSection() === featureId) requestWorkspaceRender();
+      });
+  }
 
   function hasConversionDisplayHelpers() {
     return Boolean(conversionDisplayHelpers);
@@ -209,17 +285,22 @@ export function createLazyResourceHelpers({
 
   return {
     clearConversionResourcesError,
+    clearFeatureBundleError,
     clearPlatformPerformanceResourcesError,
     ensureConversionResourcesLoaded,
+    ensureFeatureBundleLoaded,
     ensurePlatformPerformanceResourcesLoaded,
     ensureQrLibraryLoaded,
     getConversionDisplayHelpers,
     getPlatformPerformanceDisplayHelpers,
     hasConversionDisplayHelpers,
     hasPlatformPerformanceDisplayHelpers,
+    isFeatureBundleReady,
     renderConversionsLazyPanel,
+    renderFeatureBundlePanel,
     renderPlatformPerformanceLazyPanel,
     scheduleConversionResourceLoad,
+    scheduleFeatureBundleLoad,
     schedulePlatformPerformanceResourceLoad,
     scheduleQrLibraryLoad,
   };

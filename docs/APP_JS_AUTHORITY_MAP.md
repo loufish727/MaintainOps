@@ -4,7 +4,9 @@ This document defines the intended role of `app.js` after the modularization pas
 
 ## Current Position
 
-`app.js` is currently about 6,100 lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
+`app.js` is currently about 6,400 physical lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
+
+The shell now renders only the active workspace screen. Manager, Financial, Team presentation, and Admin Setup are lazy feature bundles initialized through shell-owned dependency injection. Their screen authority remains modular without requiring a framework rewrite.
 
 At this stage, additional movement should be based on ownership clarity and operational risk reduction, not line count alone.
 
@@ -17,7 +19,7 @@ The following responsibilities are appropriate for `app.js` for the current arch
 - active company and active location selection
 - global state declarations that are still shared across modules
 - top-level render routing
-- `renderWorkspace` as the current workspace composition router
+- `renderWorkspace` as the current active-screen composition router
 - `bindWorkspaceEvents` as the current event module composition hub
 - module factory wiring and dependency injection
 - high-level reload orchestration after mutations

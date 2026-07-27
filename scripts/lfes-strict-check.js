@@ -46,6 +46,8 @@ function verifyGeneratedBundlesClean() {
     "index.html",
     "performance-spatial.html",
     "src/bundles",
+    ":(glob)appStyles.*.css",
+    ":(glob)appStyles.*.css.map",
   ], { cwd: root, encoding: "utf8" }).trim();
   if (output) {
     throw new Error(`Generated browser bundles differ from the committed source:\n${output}\nRun npm run build:runtime:bundles and commit the generated files.`);

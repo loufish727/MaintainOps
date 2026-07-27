@@ -95,8 +95,9 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Authenticated upload failures now create internal app issue reports with upload context, file name, MIME/type inference, size, and error details so unsupported-file reports are visible to managers/admins.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 6,300 physical lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 6,400 physical lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
 - Same-session workspace bootstrap is single-flight guarded, company-logo signed URLs are cached, and dashboard/My Work totals use one scoped aggregate RPC. The isolated testing platform dropped from about 88 Supabase requests per initial workspace load to 29, and the authenticated proof now fails above 35 or when a core loader repeats.
+- Production JavaScript and CSS are minified into content-hashed assets with external source maps. The workspace builds only the active screen, and Manager, Financial, Team presentation, and Admin Setup load as screen-specific feature chunks. Deterministic bundle budgets and authenticated request, visible-time, DOM-size, and lazy-load assertions prevent startup weight from silently returning.
 - Startup now waits for the initial Supabase session check before presenting editable login fields. This removed a WebKit-visible race that could clear an email and password entered while startup was still settling.
 - The dashboard gauge sprite was re-encoded from 1,960,314-byte PNG to a 188,356-byte WebP without changing its dimensions.
 - The production workspace now has a skip link, one page-level heading, active-navigation `aria-current`, and one shared live status region.
