@@ -54,6 +54,10 @@ async function runStage(name, callback) {
 
 function writeSummary(status, error = null) {
   const testingBackend = new URL(process.env.LFES_SUPABASE_URL || "https://missing.invalid");
+  const requestEvidencePath = path.join(evidenceDirectory(), "authenticated-workspace-request-counts.json");
+  const workspaceRequestEvidence = fs.existsSync(requestEvidencePath)
+    ? JSON.parse(fs.readFileSync(requestEvidencePath, "utf8"))
+    : null;
   writeEvidence("lfes-authenticated-summary.json", {
     status,
     scope: "Hosted sign-in for four roles plus required live tenant, role, RPC, request, and storage boundary probes",
@@ -62,6 +66,7 @@ function writeSummary(status, error = null) {
     baseUrl: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
     testingBackendHost: testingBackend.hostname,
     stages,
+    workspaceRequestEvidence,
     ...(error ? { error: error.message } : {}),
   });
 }
@@ -74,6 +79,8 @@ async function main() {
   await runStage("authenticated database and storage boundaries", () => run(npmCommand, ["run", "test:security:boundary"], {
     label: "required authenticated security boundary proof",
     env: {
+      MAINTAINOPS_SUPABASE_URL: process.env.LFES_SUPABASE_URL,
+      MAINTAINOPS_SUPABASE_ANON_KEY: process.env.LFES_SUPABASE_ANON_KEY,
       MAINTAINOPS_REQUIRE_AUTH_PROOF: "1",
       MAINTAINOPS_PROBE_EMAIL: process.env.LFES_TECHNICIAN_EMAIL,
       MAINTAINOPS_PROBE_PASSWORD: process.env.LFES_TECHNICIAN_PASSWORD,
@@ -83,13 +90,28 @@ async function main() {
     },
   }));
 
-  await runStage("hosted four-role browser contract", () => run(npxCommand, [
+  await runStage("hosted four-role browser and request-budget contract", () => run(npxCommand, [
     "playwright",
     "test",
     "tests/smoke/role-access-live.spec.js",
     "--workers=1",
   ], {
     label: "hosted authenticated role browser proof",
+    env: {
+      MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
+    },
+  }));
+
+  await runStage("WebKit admin browser and request-budget contract", () => run(npxCommand, [
+    "playwright",
+    "test",
+    "tests/smoke/role-access-live.spec.js",
+    "--browser=webkit",
+    "--grep",
+    "admin navigation and permission surfaces match the role contract",
+    "--workers=1",
+  ], {
+    label: "hosted authenticated WebKit admin proof",
     env: {
       MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
     },

@@ -2476,6 +2476,7 @@ export function createStorageWorld(options) {
     const now = performance.now();
     if (!force && rig.t >= 1 && !drag.active && now - lastTouchTargetUpdate < 250) return;
     lastTouchTargetUpdate = now;
+    const cameraSettled = rig.t >= 1;
     touchTargetEntries.forEach(({ button, object, projection }) => {
       object.getWorldPosition(projection);
       projection.project(camera);
@@ -2487,6 +2488,7 @@ export function createStorageWorld(options) {
         && projection.y <= 1.08;
       button.hidden = !visible;
       if (!visible) return;
+      button.disabled = !cameraSettled;
       button.style.left = `${(projection.x + 1) * 50}%`;
       button.style.top = `${(1 - projection.y) * 50}%`;
       button.style.zIndex = String(Math.round((1 - projection.z) * 1000));

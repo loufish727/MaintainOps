@@ -9,7 +9,15 @@ const sectionNavigationSource = fs.readFileSync(path.join(__dirname, "..", "..",
 assert.match(appSource, /function loadWorkspaceResponse\(label, promise, timeoutMs = 12000\)/);
 assert.match(appSource, /function runWorkspaceLoader\(label, loader, timeoutMs = 12000\)/);
 assert.match(appSource, /function scheduleWorkspaceHydration\(hydrationLoaders = \[\]\)/);
-assert.match(appSource, /loadWorkspaceResponse\("Work orders", loadServerWorkOrderSlice\(\), 16000\)/);
+assert.match(
+  appSource,
+  /loadWorkspaceResponse\(\s*"Work orders",\s*loadServerWorkOrderSlice\(workOrderCountSnapshotPromise\),\s*16000\s*\)/
+);
+assert.match(
+  appSource,
+  /async function loadServerWorkOrderSlice\(countSnapshotPromise = loadWorkspaceWorkOrderCountSnapshot\(\)\)/,
+  "later work-queue paging and filters must keep the aggregate-count path"
+);
 assert.match(appSource, /workspaceLoaderMap\[loader\]/);
 assert.match(appSource, /const startupLoaders = createWorkspaceStartupLoaders\(/);
 assert.match(startupLoaderSource, /\["Messages", "loadMessageCenter"\]/);

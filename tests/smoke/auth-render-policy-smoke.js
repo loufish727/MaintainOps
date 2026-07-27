@@ -11,6 +11,8 @@ const sessionB = { user: { id: "user-2" }, access_token: "new" };
 assert.equal(shouldRenderForAuthEvent("TOKEN_REFRESHED", sessionA, refreshedA), false);
 assert.equal(shouldRenderForAuthEvent("TOKEN_REFRESHED", null, refreshedA), true);
 assert.equal(shouldRenderForAuthEvent("TOKEN_REFRESHED", sessionA, sessionB), true);
+assert.equal(shouldRenderForAuthEvent("INITIAL_SESSION", null, null), false);
+assert.equal(shouldRenderForAuthEvent("SIGNED_OUT", null, null), false);
 assert.equal(shouldRenderForAuthEvent("SIGNED_IN", sessionA, refreshedA), true);
 assert.equal(shouldRenderForAuthEvent("SIGNED_OUT", sessionA, null), true);
 assert.equal(shouldRenderForAuthEvent("USER_UPDATED", sessionA, refreshedA), true);

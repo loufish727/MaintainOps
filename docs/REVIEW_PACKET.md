@@ -20,6 +20,7 @@ Strong areas:
 - Public QR request intake through scoped RPC paths rather than direct anonymous table access.
 - Significant modularization work underway from a large legacy `app.js`.
 - A required fast Release Gate, manual Full Strict LFES, targeted browser/smoke coverage, and a protected four-role authenticated testing-platform proof.
+- A measured authenticated workspace request budget that checks actual signed-in Supabase data calls, not only static resource delivery.
 
 Areas still maturing:
 
@@ -30,6 +31,8 @@ Areas still maturing:
 - Pilot hardening gates for backup/restore, support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `docs/PILOT_HARDENING_PLAN.md`.
 - Public request intake needs final production copy, routing, and support hardening.
 - The current hosted app contains QA and pilot-style data.
+- GitHub Pages cannot emit response-level clickjacking, content-type, or permissions headers; this remains a hosting boundary before broader external SaaS rollout.
+- Offline telemetry exists, but the app does not yet queue operational writes through a loss-resistant offline outbox.
 
 ## Architecture Snapshot
 
@@ -37,11 +40,13 @@ Areas still maturing:
 - Hosting: GitHub Pages.
 - Backend: Supabase Auth, Postgres, RLS policies, RPCs, and private storage buckets.
 - Main app entry: `index.html`.
-- Main orchestration: `app.js` at roughly 6,100 lines.
+- Main orchestration: `app.js` at roughly 6,300 physical lines.
 - Extracted modules: `src/`.
 - SQL source: `supabase/`.
 
 Current architecture is transitional but more intentional than earlier versions: `app.js` remains the app shell, bootstrapper, render router, and dependency wiring layer, while workflow, render, service, utility, and event modules continue moving into `src/`. The remaining `app.js` authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`.
+
+Measured startup trace on the isolated testing platform: the same signed-in workspace load fell from about 88 Supabase requests to 29 after a same-session single-flight guard and one scoped work-order count RPC. Signed-logo URL caching separately prevents repeated URL generation during later renders. Protected authenticated proof now fails above 35 requests and requires each major core loader and the count RPC exactly once.
 
 Recent UI trace: the Conversions tab now includes expanded shop reference charts and a screen-fit bolt gauge. Shop reference cards were corrected for desktop and mobile behavior: collapsed cards stay compact, opened desktop cards span the grid, opened mobile charts use stacked label/value rows instead of clipped wide tables, favorite charts are visually prominent, and reference search filters relevant cards by names, common IDs, sizes, row values, and notes. Favorites now sync to a signed-in user's Supabase `user_preferences` row when the preference table exists, with `localStorage` retained as a browser fallback/cache. Reference search is not connected to inventory or Supabase yet.
 
@@ -65,7 +70,7 @@ Reviewers should inspect:
 
 ## Testing And Verification
 
-Current verification uses a required fast Release Gate, manual Full Strict LFES, recursive SQL and isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, and protected four-role authenticated browser/security proof.
+Current verification uses a required fast Release Gate, manual Full Strict LFES, recursive SQL and reviewed-DOM-assignment checks, isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, protected four-role Chromium browser/security proof, and a signed-in WebKit admin contract.
 
 Useful entry points:
 

@@ -1,14 +1,23 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const indexHtml = fs.readFileSync(path.join(__dirname, "..", "..", "index.html"), "utf8");
-const runtimeEntry = fs.readFileSync(path.join(__dirname, "..", "..", "src", "bundles", "runtime.entry.js"), "utf8");
+const root = path.join(__dirname, "..", "..");
+const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const spatialHtml = fs.readFileSync(path.join(root, "performance-spatial.html"), "utf8");
+const runtimeEntry = fs.readFileSync(path.join(root, "src", "bundles", "runtime.entry.js"), "utf8");
 
+function sourceHash(relativePath) {
+  const source = fs.readFileSync(path.join(root, relativePath), "utf8");
+  return crypto.createHash("sha256").update(source).digest("hex").slice(0, 10);
+}
+
+assert.match(indexHtml, new RegExp(`styles\\.css\\?v=${sourceHash("styles.css")}`));
+assert.match(indexHtml, new RegExp(`supabase-config\\.js\\?v=${sourceHash("supabase-config.js")}`));
 assert.match(
-  indexHtml,
-  /styles\.css\?v=mo-build-20260720-team-sections-1/,
-  "styles.css must use the current Team sections cache tag"
+  spatialHtml,
+  new RegExp(`src/performance/platformSpatial\\.css\\?v=${sourceHash("src/performance/platformSpatial.css")}`)
 );
 assert.match(
   indexHtml,

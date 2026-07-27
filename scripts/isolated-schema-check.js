@@ -144,6 +144,23 @@ async function main() {
 
       insert into public.asset_financials (id, company_id, asset_id, finance_notes, updated_by) values
         (${sqlLiteral(ids.financialA)}::uuid, ${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, 'seed', ${sqlLiteral(ids.admin)}::uuid);
+
+      insert into public.work_orders (
+        company_id,
+        location_id,
+        asset_id,
+        assigned_to,
+        title,
+        status,
+        due_at,
+        created_by,
+        completed_at
+      ) values
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Assigned open', 'open', '2026-07-26', ${sqlLiteral(ids.admin)}::uuid, null),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Assigned in progress', 'in_progress', '2026-08-10', ${sqlLiteral(ids.technician)}::uuid, null),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.manager)}::uuid, 'Manager blocked', 'blocked', '2026-08-10', ${sqlLiteral(ids.manager)}::uuid, null),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Completed this month', 'completed', null, ${sqlLiteral(ids.admin)}::uuid, '2026-07-20T12:00:00Z'),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Completed this week', 'completed', null, ${sqlLiteral(ids.admin)}::uuid, '2026-07-27T12:00:00Z');
     `);
 
     await setAuthenticatedUser(database, ids.technician);
@@ -152,6 +169,140 @@ async function main() {
       throw new Error("Technician RLS did not isolate assets to the member company.");
     }
     checks.push({ name: "technician_cross_company_assets_filtered", verdict: "PASS" });
+
+    const workspaceCountsResult = await database.query(
+      `select public.get_workspace_work_order_counts(
+        $1::uuid,
+        $2::uuid,
+        $3::text,
+        $4::date,
+        $5::timestamptz,
+        $6::timestamptz,
+        $7::timestamptz
+      ) as counts`,
+      [
+        ids.companyA,
+        ids.locationA,
+        "assigned",
+        "2026-07-27",
+        "2026-07-01T00:00:00Z",
+        "2026-07-26T00:00:00Z",
+        "2026-08-02T00:00:00Z",
+      ]
+    );
+    const workspaceCounts = typeof workspaceCountsResult.rows[0]?.counts === "string"
+      ? JSON.parse(workspaceCountsResult.rows[0].counts)
+      : workspaceCountsResult.rows[0]?.counts;
+    const expectedCompanyCounts = {
+      activeWork: 3,
+      newWork: 1,
+      inProgress: 1,
+      blocked: 1,
+      overdue: 1,
+      completedAll: 2,
+      completedMonth: 2,
+      completedWeek: 1,
+    };
+    const expectedAssignedCounts = {
+      activeWork: 2,
+      newWork: 1,
+      inProgress: 1,
+      blocked: 0,
+      overdue: 1,
+      completedAll: 2,
+      completedMonth: 2,
+      completedWeek: 1,
+    };
+    if (Object.entries(expectedCompanyCounts).some(([key, value]) => Number(workspaceCounts?.workOrders?.[key]) !== value)) {
+      throw new Error(`Workspace company counts were incorrect: ${JSON.stringify(workspaceCounts?.workOrders)}`);
+    }
+    if (Object.entries(expectedAssignedCounts).some(([key, value]) => Number(workspaceCounts?.myWork?.[key]) !== value)) {
+      throw new Error(`Workspace assigned counts were incorrect: ${JSON.stringify(workspaceCounts?.myWork)}`);
+    }
+
+    const createdCountsResult = await database.query(
+      `select public.get_workspace_work_order_counts(
+        $1::uuid,
+        $2::uuid,
+        'created',
+        '2026-07-27'::date,
+        '2026-07-01T00:00:00Z'::timestamptz,
+        '2026-07-26T00:00:00Z'::timestamptz,
+        '2026-08-02T00:00:00Z'::timestamptz
+      ) as counts`,
+      [ids.companyA, ids.locationA]
+    );
+    const createdCounts = typeof createdCountsResult.rows[0]?.counts === "string"
+      ? JSON.parse(createdCountsResult.rows[0].counts)
+      : createdCountsResult.rows[0]?.counts;
+    if (
+      Number(createdCounts?.myWork?.activeWork) !== 1
+      || Number(createdCounts?.myWork?.inProgress) !== 1
+      || Number(createdCounts?.myWork?.completedAll) !== 0
+    ) {
+      throw new Error(`Workspace created-by counts were incorrect: ${JSON.stringify(createdCounts?.myWork)}`);
+    }
+    checks.push({ name: "workspace_work_order_counts_match_role_and_date_scope", verdict: "PASS" });
+
+    let mismatchedLocationDenied = false;
+    try {
+      await database.query(
+        `select public.get_workspace_work_order_counts(
+          $1::uuid,
+          $2::uuid,
+          'assigned',
+          '2026-07-27'::date,
+          '2026-07-01T00:00:00Z'::timestamptz,
+          '2026-07-26T00:00:00Z'::timestamptz,
+          '2026-08-02T00:00:00Z'::timestamptz
+        )`,
+        [ids.companyA, ids.locationB]
+      );
+    } catch {
+      mismatchedLocationDenied = true;
+    }
+    if (!mismatchedLocationDenied) throw new Error("Workspace count RPC allowed a location from another company.");
+    checks.push({ name: "workspace_work_order_counts_cross_company_location_denied", verdict: "PASS" });
+
+    let invalidFilterDenied = false;
+    try {
+      await database.query(
+        `select public.get_workspace_work_order_counts(
+          $1::uuid,
+          $2::uuid,
+          'unsupported',
+          '2026-07-27'::date,
+          '2026-07-01T00:00:00Z'::timestamptz,
+          '2026-07-26T00:00:00Z'::timestamptz,
+          '2026-08-02T00:00:00Z'::timestamptz
+        )`,
+        [ids.companyA, ids.locationA]
+      );
+    } catch {
+      invalidFilterDenied = true;
+    }
+    if (!invalidFilterDenied) throw new Error("Workspace count RPC accepted an unsupported My Work filter.");
+    checks.push({ name: "workspace_work_order_counts_invalid_filter_denied", verdict: "PASS" });
+
+    let crossCompanyCountsDenied = false;
+    try {
+      await database.query(
+        `select public.get_workspace_work_order_counts(
+          $1::uuid,
+          $2::uuid,
+          'assigned',
+          '2026-07-27'::date,
+          '2026-07-01T00:00:00Z'::timestamptz,
+          '2026-07-26T00:00:00Z'::timestamptz,
+          '2026-08-02T00:00:00Z'::timestamptz
+        )`,
+        [ids.companyB, ids.locationB]
+      );
+    } catch {
+      crossCompanyCountsDenied = true;
+    }
+    if (!crossCompanyCountsDenied) throw new Error("Workspace count RPC allowed a cross-company read.");
+    checks.push({ name: "workspace_work_order_counts_cross_company_denied", verdict: "PASS" });
 
     let crossCompanyInsertDenied = false;
     try {

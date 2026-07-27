@@ -42,10 +42,10 @@ Browser smoke fallback:
 
 LFES verification tiers:
 
-- Every executable pull request must pass `npm run test:release:gate`. This fast required check recursively inspects SQL, probes live anonymous boundaries, compiles the baseline and dated migrations in isolated PostgreSQL, verifies seeded RLS role boundaries, checks generated bundles are committed, runs the broad Node smoke sweep and targeted browser regressions, and verifies local resources.
+- Every executable pull request must pass `npm run test:release:gate`. This fast required check recursively inspects SQL, fail-closes on unreviewed first-party `innerHTML` assignment sites, probes live anonymous boundaries, compiles the baseline and dated migrations in isolated PostgreSQL, verifies seeded RLS role boundaries, checks generated bundles are committed, runs the broad Node smoke sweep and targeted browser regressions, and verifies local resources.
 - Run `npm run test:lfes:strict` before major releases or new work cycles and after security, database, authentication, permissions, storage, or Performance/3D changes. It adds the serial desktop/mobile Performance interaction to all Release Gate coverage.
 - Machine-readable evidence is written to `lfes-evidence/` and retained by GitHub for 30 days.
-- The manual `Full Strict LFES` workflow runs the full local proof and then the protected authenticated testing-platform proof. `Authenticated LFES Proof` can also be dispatched independently. Both authenticated paths fail when any required QA credential or fixture is absent.
+- The manual `Full Strict LFES` workflow runs the full local proof and then the protected authenticated testing-platform proof. `Authenticated LFES Proof` can also be dispatched independently. Both authenticated paths fail when any required QA credential or fixture is absent. The authenticated proof runs all four roles in Chromium, an admin path in WebKit, and enforces a 35-request initial workspace budget with exactly-once core-loader assertions.
 - After pushing, run `npm run test:lfes:hosted` to verify hosted GitHub Pages resources and the latest GitHub Actions resource-load smoke.
 - The scheduled `Performance Monitor` workflow adds a separate read-only synthetic check for deployed response time, payload size, and resource availability. It supports release evidence but does not replace authenticated testing, browser telemetry, or an uptime service.
 - `npm run release:verify` now sequences hashed bundle generation, strict LFES, and hosted LFES in one command. Set `MAINTAINOPS_RELEASE_SKIP_HOSTED=1` when you need the local portion before push.
@@ -56,6 +56,7 @@ Unsaved form input must survive background system events:
 
 - Background auth/session events, cache refreshes, read-only reloads, and polling-style updates must not rebuild active create/edit forms unless the user explicitly navigated, submitted, or signed out.
 - Same-user token refresh should update session state without calling the full workspace render.
+- Do not render an editable login form before the initial Supabase session lookup settles; a later startup render can erase credentials already being typed on slower browsers.
 - If a touched path can re-render while a user is typing in a work order, Quick Fix, request, PM, procedure, equipment, message, or part form, add a targeted smoke or policy check proving active input will not be wiped.
 
 Workspace data loads must fail by area, not as one opaque block:
@@ -63,6 +64,9 @@ Workspace data loads must fail by area, not as one opaque block:
 - Do not put many Supabase startup reads behind one unnamed timeout.
 - Each workspace startup read should have a named timeout or isolated fallback so one slow optional area does not block the whole app.
 - A startup warning should name the slow area whenever possible.
+- Same-session auth events must share one in-flight workspace bootstrap.
+- New dashboard totals should use a scoped aggregate query/RPC instead of adding one count request per card.
+- Changes to startup loading must keep the authenticated request-budget evidence green or deliberately revise the budget with measured justification.
 
 Related record panels must not depend on the current board slice:
 

@@ -21,31 +21,31 @@ A daily physical backup (12 Jun 2026 07:59 UTC) was restored into a new scratch 
 | messages | 7 | 7 |
 | company_invites | 6 | 6 |
 
-Spot checks: known equipment ("New thalmann") present; newest work order timestamp consistent with the backup window; work_order_photos metadata rows present (13).
+Spot checks: known equipment ("New thalmann") present; newest work order timestamp consistent with the backup window; `work_order_photos` metadata rows present (13).
 
-Restore duration: about 3 minutes from confirmation to ACTIVE_HEALTHY. Additional cost shown by the dashboard: $0 (the drill project should still be deleted after validation).
+Restore duration: about 3 minutes from confirmation to `ACTIVE_HEALTHY`. Additional cost shown by the dashboard: $0 (the drill project should still be deleted after validation).
 
 ## Validated Restore Procedure
 
-1. Dashboard → Taylor project → Database → Backups → **Restore to new project** tab.
-   - Never use the plain "Restore" buttons on the Scheduled backups tab — those overwrite the live project.
-2. Pick the newest backup → Restore → Continue.
-3. Name the new project (e.g. `taylor-restore-drill`), set a generated database password (store it in a password manager), submit.
-4. Wait for ACTIVE_HEALTHY (~3 minutes observed; poll with `npx supabase projects list`).
+1. Dashboard > Taylor project > Database > Backups > **Restore to new project** tab.
+   - Never use the plain "Restore" buttons on the Scheduled backups tab; those overwrite the live project.
+2. Pick the newest backup > Restore > Continue.
+3. Name the new project (for example, `taylor-restore-drill`), set a generated database password, store it in a password manager, and submit.
+4. Wait for `ACTIVE_HEALTHY` (about 3 minutes observed; poll with `npx supabase projects list`).
 5. Verify with row-count comparison between live and restored (SQL editor on both), plus named-record spot checks.
-6. For a drill: delete the restored project after validation (Project Settings → General → Delete project — triple-check the project name).
+6. For a drill: delete the restored project after validation (Project Settings > General > Delete project; triple-check the project name).
 7. For a real recovery: repoint `supabase-config.js` at the restored project, then complete the manual reconfiguration list below.
 
-## Known Gaps (confirmed by the dashboard during the drill)
+## Known Gaps
 
-Database backups DO NOT include:
+Database backups do not include:
 
-1. **Storage objects** — work-order photos, equipment files, part documents, and company logos are NOT included in Supabase database backups; only their metadata rows are. MITIGATION (2026-06-11): `npm run backup:storage` (`scripts/storage-backup-mirror.js`) mirrors all buckets to a local directory incrementally. The first full mirror completed with 172 objects across 5 buckets and 0 errors. Remaining proof: schedule the mirror and complete a stored-object restore drill.
-2. **Edge Functions** — `request-emailer` must be redeployed from the repo (`npx supabase functions deploy request-emailer --project-ref <new-ref>`) and its env vars (Google Apps Script webhook URL/secret, app URL) re-entered.
-3. **Auth settings & API keys** — Auth URL configuration (callback URLs) must be re-entered; the new project has new anon/service keys, so `supabase-config.js` must be updated.
-4. **Database extensions/settings and read replicas** — re-check after restore.
+1. **Storage objects** - Work-order photos, equipment files, part documents, and company logos are not included in Supabase database backups; only their metadata rows are. Mitigation (2026-06-11): `npm run backup:storage` (`scripts/storage-backup-mirror.js`) mirrors all buckets to a local directory incrementally. The first full mirror completed with 172 objects across 5 buckets and 0 errors. Remaining proof: schedule the mirror and complete a stored-object restore drill.
+2. **Edge Functions** - `request-emailer` must be redeployed from the repo (`npx supabase functions deploy request-emailer --project-ref <new-ref>`) and its environment values (Google Apps Script webhook URL/secret and app URL) re-entered.
+3. **Auth settings and API keys** - Auth URL configuration must be re-entered. The new project has new anon/service keys, so `supabase-config.js` must be updated.
+4. **Database extensions/settings and read replicas** - Re-check these after restore.
 
-Auth USERS and passwords ARE included in the database restore (they live in the `auth` schema), so users do not need to re-register.
+Auth users and passwords are included in the database restore because they live in the `auth` schema, so users do not need to re-register.
 
 ## Disaster Recovery Statement
 

@@ -119,6 +119,40 @@ body {
   letter-spacing: 0.005em;
 }
 
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 1000;
+  top: 10px;
+  left: 10px;
+  transform: translateY(-160%);
+  border: 2px solid var(--cyan);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.workspace-notice-region:empty {
+  display: none;
+}
+
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
@@ -1194,7 +1228,7 @@ button.gauge-readout {
   width: 86px;
   height: 86px;
   border-radius: 50%;
-  background-image: url("assets/gauges/gauge-status-sprite.png");
+  background-image: url("assets/gauges/gauge-status-sprite.webp");
   background-repeat: no-repeat;
   background-size: 300% 300%;
   background-position: 0% 0%;
@@ -8624,7 +8658,7 @@ textarea:focus {
     border-radius: 7px;
   }
 
-  .company-banner-title h1 {
+  .company-banner-title .company-display-name {
     font-size: 1.18rem;
     line-height: 1.08;
   }
@@ -9585,7 +9619,7 @@ textarea:focus {
   border-radius: 18px;
 }
 
-.company-banner-title h1 {
+.company-banner-title .company-display-name {
   font-size: clamp(1.35rem, 2vw, 2rem);
   font-weight: 720;
   line-height: 1.05;
@@ -9889,7 +9923,7 @@ textarea:focus {
     height: 54px;
   }
 
-  .company-banner-title h1 {
+  .company-banner-title .company-display-name {
     font-size: 1.16rem;
   }
 

@@ -10,8 +10,13 @@ import {
 } from "./src/appShell/startupRouting.js";
 import { createLazyResourceHelpers } from "./src/appShell/lazyResources.js";
 import { createWorkspaceStartupLoaders, loadWorkspaceCoreData } from "./src/appShell/workspaceStartupLoaders.js";
+import { createCompanyLogoUrlLoader } from "./src/services/companyLogoUrlService.mjs";
+import { fetchWorkspaceWorkOrderCounts } from "./src/services/workspaceWorkOrderCountsService.mjs";
+import { createKeyedSingleFlight } from "./src/utils/keyedSingleFlight.mjs";
 
 const app = document.querySelector("#app");
+const runRenderSingleFlight = createKeyedSingleFlight();
+const loadCachedCompanyLogoUrls = createCompanyLogoUrlLoader();
 
 const {
   STATUS_OPTIONS,
@@ -411,6 +416,7 @@ let planningWorkOrdersLoadToken = 0;
 let workOrderServerTotal = 0;
 let workOrderDashboardCounts = null;
 let myWorkDashboardCounts = null;
+let workspaceWorkOrderCountsRpcReady = true;
 let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
 let exactWorkOrderSearchCache = { key: "", rows: [] };
 let managerCompletedWorkOrders = [];
@@ -1476,6 +1482,7 @@ async function init() {
     return;
   }
 
+  renderWorkspaceLoading("Checking sign-in...");
   try {
     const startup = await initializeStartupRoute({
       windowRef: window,
@@ -1488,7 +1495,6 @@ async function init() {
       startAuthCallback,
       renderPublicRequestQrPage,
       renderPublicRequestIntake,
-      renderAuth,
       setSupabaseClient: (value) => { supabaseClient = value; },
       setSession: (value) => { session = value; },
     });
@@ -1514,8 +1520,30 @@ async function init() {
   await render();
 }
 
-async function render() {
-  if (!session) {
+function currentRenderSessionId() {
+  return session?.user?.id || "";
+}
+
+function renderSessionIsCurrent(expectedSessionId) {
+  if (currentRenderSessionId() === expectedSessionId) return true;
+  if (currentRenderSessionId()) {
+    setTimeout(() => {
+      render().catch((error) => {
+        appError = `Could not load workspace: ${error.message || error}`;
+        renderWorkspaceLoadError(appError);
+      });
+    }, 0);
+  }
+  return false;
+}
+
+function render() {
+  const expectedSessionId = currentRenderSessionId();
+  return runRenderSingleFlight(expectedSessionId, () => renderOnce(expectedSessionId));
+}
+
+async function renderOnce(expectedSessionId) {
+  if (!expectedSessionId || !session) {
     renderAuth("login");
     return;
   }
@@ -1527,6 +1555,7 @@ async function render() {
       appNotice = `Team invite check skipped: ${inviteError.message || inviteError}`;
       appNoticeTone = "warning";
     }
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
 
     renderWorkspaceLoading("Loading companies...");
     await withOperationTimeout(
@@ -1534,7 +1563,9 @@ async function render() {
       "Company membership load timed out. Supabase may be slow or blocking the request.",
       16000
     );
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
   } catch (error) {
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
     appError = error.message || String(error);
     renderWorkspaceLoadError(appError);
     return;
@@ -1558,6 +1589,7 @@ async function render() {
       "Company profile setup timed out. Refresh and try again.",
       12000
     );
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
     if (!profileReady) throw new Error(appError || "Could not prepare your company profile.");
 
     renderWorkspaceLoading("Loading workspace data...");
@@ -1566,12 +1598,15 @@ async function render() {
       "Workspace data load timed out. One of the Supabase data requests is not returning.",
       22000
     );
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
     if (activeSection === "manager" && canAdministerTeamRoles()) {
       await loadManagerDashboardCompletedWork();
     }
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
     renderWorkspace();
     appTelemetry?.markWorkspaceReady(activeCompanyId);
   } catch (error) {
+    if (!renderSessionIsCurrent(expectedSessionId)) return;
     appError = error.message || String(error);
     renderWorkspaceLoadError(appError);
   }
@@ -1876,19 +1911,7 @@ async function loadCompaniesFromMembershipRows(memberships) {
 }
 
 async function loadCompanyLogoUrls() {
-  await Promise.all(companies.map(async (company) => {
-    company.logoUrl = "";
-    company.logoError = "";
-    if (!company.logo_path) return;
-    const { data, error } = await supabaseClient.storage
-      .from("company-logos")
-      .createSignedUrl(company.logo_path, 60 * 10);
-    if (error) {
-      company.logoError = error.message;
-      return;
-    }
-    company.logoUrl = data?.signedUrl || "";
-  }));
+  await loadCachedCompanyLogoUrls(supabaseClient, companies);
 }
 
 async function ensureProfileForActiveCompany() {
@@ -1955,13 +1978,32 @@ async function seedStarterAssets() {
 const WORK_ORDER_RELATION_SELECT = "*, assets(name, location_id), locations!work_orders_company_location_fkey(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
 const WORK_ORDER_FALLBACK_SELECT = "*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
 
-async function loadServerWorkOrderSlice() {
+async function loadServerWorkOrderSlice(countSnapshotPromise = loadWorkspaceWorkOrderCountSnapshot()) {
   await refreshWorkOrderRelatedSearch();
-  const [pageResponse, dashboardCounts, myCounts] = await Promise.all([
-    fetchWorkOrderPage(),
-    loadWorkOrderDashboardCounts(),
-    loadMyWorkDashboardCounts(),
-  ]);
+  let pageResponse;
+  let dashboardCounts;
+  let myCounts;
+
+  if (countSnapshotPromise) {
+    const results = await Promise.all([fetchWorkOrderPage(), countSnapshotPromise]);
+    pageResponse = results[0];
+    const countSnapshot = results[1];
+    if (countSnapshot) {
+      dashboardCounts = countSnapshot.workOrders;
+      myCounts = countSnapshot.myWork;
+    } else {
+      [dashboardCounts, myCounts] = await Promise.all([
+        loadWorkOrderDashboardCounts(),
+        loadMyWorkDashboardCounts(),
+      ]);
+    }
+  } else {
+    [pageResponse, dashboardCounts, myCounts] = await Promise.all([
+      fetchWorkOrderPage(),
+      loadWorkOrderDashboardCounts(),
+      loadMyWorkDashboardCounts(),
+    ]);
+  }
 
   if (pageResponse.error && isColumnSchemaError(pageResponse.error, ["location_id", "locations"])) {
     const fallbackResponse = await fetchWorkOrderPage({ includeLocationRelation: false });
@@ -1977,6 +2019,29 @@ async function loadServerWorkOrderSlice() {
   workOrderDashboardCounts = dashboardCounts;
   myWorkDashboardCounts = myCounts;
   return pageResponse;
+}
+
+async function loadWorkspaceWorkOrderCountSnapshot() {
+  if (!workspaceWorkOrderCountsRpcReady || workspaceUiState.getSearchQuery().trim()) return null;
+  const week = sundayWeekRange();
+  const response = await fetchWorkspaceWorkOrderCounts(supabaseClient, {
+    target_company_id: activeCompanyId,
+    target_location_id: activeLocationDatabaseId(),
+    target_my_work_filter: workspaceUiState.getMyWorkFilter() === "created" ? "created" : "assigned",
+    target_today: isoDate(startOfToday()),
+    target_month_start: isoDateTime(monthStartDate()),
+    target_week_start: isoDateTime(week.start),
+    target_week_end: isoDateTime(week.end),
+  });
+  if (!response.error) return response.data;
+
+  const message = String(response.error.message || response.error);
+  if (message.includes("get_workspace_work_order_counts") || response.error.code === "PGRST202") {
+    workspaceWorkOrderCountsRpcReady = false;
+  } else {
+    console.warn("Workspace work-order count RPC failed; using compatibility counts.", response.error);
+  }
+  return null;
 }
 
 function mergeWorkOrdersById(rows = []) {
@@ -2410,7 +2475,12 @@ async function loadCompanyData() {
     ...template,
     procedure_steps: (template.procedure_steps || []).sort((a, b) => Number(a.position) - Number(b.position)),
   }));
-  const workOrderResponse = await loadWorkspaceResponse("Work orders", loadServerWorkOrderSlice(), 16000);
+  const workOrderCountSnapshotPromise = loadWorkspaceWorkOrderCountSnapshot();
+  const workOrderResponse = await loadWorkspaceResponse(
+    "Work orders",
+    loadServerWorkOrderSlice(workOrderCountSnapshotPromise),
+    16000
+  );
   if (activeSection === "planning") await ensurePlanningWorkOrdersLoaded();
   const requestResponse = await loadWorkspaceResponse("Requests", loadServerRequestSlice(), 14000);
   if (activeWorkOrderId && !workOrders.some((workOrder) => workOrder.id === activeWorkOrderId)) {
@@ -3442,11 +3512,10 @@ function renderWorkspace() {
       <div class="command-stack ${isMobile ? "mobile-command-stack" : "desktop-command-stack"}">
         <header class="topbar">
           <div class="topbar-main">
-            <p class="eyebrow">Authenticated Multi-Tenant MVP</p>
             <div class="company-banner-title">
               ${activeCompany?.logoUrl ? `<img class="company-banner-logo" src="${escapeHtml(activeCompany.logoUrl)}" alt="${escapeHtml(activeCompany?.name || "Company")} logo">` : ""}
               <div>
-                <h1>${escapeHtml(activeCompany?.name || "Company")}</h1>
+                <div class="company-display-name">${escapeHtml(activeCompany?.name || "Company")}</div>
                 <label class="topbar-location-switcher">
                   <span>Location</span>
                   <select class="location-select-control" data-location-select ${locationSwitchDisabled} title="${escapeHtml(locationSwitchNote)}">
@@ -3471,8 +3540,6 @@ function renderWorkspace() {
           </div>
         </header>
 
-        <div id="app-notice-slot">${renderAppNoticeMarkup()}</div>
-
         <label class="search-bar">
           Search workspace
           <input id="workspace-search${suffix}" class="workspace-search-input" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search work, equipment, parts, people">
@@ -3482,6 +3549,7 @@ function renderWorkspace() {
   };
   app.innerHTML = `
     <div class="app-shell">
+      <a class="skip-link" href="#workspace-main">Skip to workspace</a>
       <aside class="sidebar">
         <div class="brand">
           <span class="brand-mark">MO</span>
@@ -3509,11 +3577,13 @@ function renderWorkspace() {
         <button class="text-button inverse desktop-sign-out" data-sign-out type="button">Sign out</button>
         ${renderCommandStack("mobile")}
         <nav class="section-nav" aria-label="Workspace sections">
-          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button">${navIcon(id)}<span>${label}</span>${renderSectionNavBadge(id)}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button" ${activeSection === id ? `aria-current="page"` : ""}>${navIcon(id)}<span>${label}</span>${renderSectionNavBadge(id)}</button>`).join("")}
         </nav>
       </aside>
 
-      <main class="workspace">
+      <main class="workspace" id="workspace-main" tabindex="-1">
+        <h1 class="visually-hidden">${escapeHtml(activeCompany?.name || "Company")} MaintainOps workspace</h1>
+        <div id="app-notice-slot" class="workspace-notice-region" role="status" aria-live="polite" aria-atomic="true">${renderAppNoticeMarkup()}</div>
         ${renderCommandStack("desktop")}
 
         ${showGlobalSearch ? renderGlobalSearchResults(globalResults) : ""}
