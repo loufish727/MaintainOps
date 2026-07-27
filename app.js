@@ -311,22 +311,26 @@ const QR_CODE_RESOURCE = {
   integrity: "sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz",
   crossOrigin: "anonymous",
 };
+const SHOP_REFERENCE_CHARTS_ENABLED = false;
+const SHOP_REFERENCE_RESOURCE_PATHS = [
+  "src/data/reference/fasteners.js?v=conversion-lazy-load-2",
+  "src/data/reference/electricalControls.js?v=conversion-lazy-load-2",
+  "src/data/reference/dieselMobile.js?v=conversion-lazy-load-2",
+  "src/data/reference/machiningCnc.js?v=conversion-lazy-load-2",
+  "src/data/reference/fabrication.js?v=conversion-lazy-load-2",
+  "src/data/reference/motorsDrives.js?v=conversion-lazy-load-2",
+  "src/data/reference/fluidPower.js?v=conversion-lazy-load-2",
+  "src/data/reference/pneumatics.js?v=conversion-lazy-load-2",
+  "src/data/reference/bearingsBeltsChain.js?v=conversion-lazy-load-2",
+  "src/data/reference/pmTroubleshooting.js?v=conversion-lazy-load-2",
+  "src/data/reference/pipeHoseFittings.js?v=conversion-lazy-load-2",
+  "src/data/reference/materialsShop.js?v=conversion-lazy-load-2",
+  "src/data/shopReferenceCharts.js?v=conversion-lazy-load-2",
+];
 const CONVERSION_RESOURCE_PATHS = [
-  "src/utils/conversions.js?v=conversion-lazy-load-1",
-  "src/data/reference/fasteners.js?v=conversion-lazy-load-1",
-  "src/data/reference/electricalControls.js?v=conversion-lazy-load-1",
-  "src/data/reference/dieselMobile.js?v=conversion-lazy-load-1",
-  "src/data/reference/machiningCnc.js?v=conversion-lazy-load-1",
-  "src/data/reference/fabrication.js?v=conversion-lazy-load-1",
-  "src/data/reference/motorsDrives.js?v=conversion-lazy-load-1",
-  "src/data/reference/fluidPower.js?v=conversion-lazy-load-1",
-  "src/data/reference/pneumatics.js?v=conversion-lazy-load-1",
-  "src/data/reference/bearingsBeltsChain.js?v=conversion-lazy-load-1",
-  "src/data/reference/pmTroubleshooting.js?v=conversion-lazy-load-1",
-  "src/data/reference/pipeHoseFittings.js?v=conversion-lazy-load-1",
-  "src/data/reference/materialsShop.js?v=conversion-lazy-load-1",
-  "src/data/shopReferenceCharts.js?v=conversion-lazy-load-1",
-  "src/render/conversionDisplay.js?v=conversion-lazy-load-1",
+  "src/utils/conversions.js?v=conversion-lazy-load-2",
+  ...(SHOP_REFERENCE_CHARTS_ENABLED ? SHOP_REFERENCE_RESOURCE_PATHS : []),
+  "src/render/conversionDisplay.js?v=conversion-lazy-load-2",
 ];
 const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
   "src/performance/platformPerformanceThresholds.js?v=platform-performance-health-1",
@@ -373,6 +377,7 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   escapeHtml,
   qrCodeResource: QR_CODE_RESOURCE,
   conversionResourcePaths: CONVERSION_RESOURCE_PATHS,
+  shopReferenceChartsEnabled: SHOP_REFERENCE_CHARTS_ENABLED,
   platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
   featureBundlePaths: FEATURE_BUNDLE_PATHS,
   initializeFeature: initializeWorkspaceFeature,
@@ -4045,7 +4050,7 @@ function renderWorkspace() {
           <section class="panel full-width">
             <div class="panel-header">
               <h2>Conversions</h2>
-              <span>shop reference</span>
+              <span>shop tools</span>
             </div>
             ${renderConversionsLazyPanel()}
           </section>

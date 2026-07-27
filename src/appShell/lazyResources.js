@@ -38,6 +38,7 @@ export function createLazyResourceHelpers({
   escapeHtml,
   qrCodeResource,
   conversionResourcePaths,
+  shopReferenceChartsEnabled = true,
   platformPerformanceResourcePaths,
   featureBundlePaths = {},
   initializeFeature = () => {},
@@ -181,6 +182,7 @@ export function createLazyResourceHelpers({
           boltReference: conversions.BOLT_REFERENCE,
           wrenchReference: conversions.WRENCH_REFERENCE,
           conversionResultText: conversions.conversionResultText,
+          showShopReferenceCharts: shopReferenceChartsEnabled,
         });
         return conversionDisplayHelpers;
       })().catch((error) => {
@@ -217,7 +219,7 @@ export function createLazyResourceHelpers({
 
   function renderConversionsLazyPanel() {
     if (conversionDisplayHelpers) return conversionDisplayHelpers.renderConversionsPanel();
-    const status = conversionResourcesError || "Loading shop converters and reference charts...";
+    const status = conversionResourcesError || "Loading shop conversion tools...";
     const toneClass = conversionResourcesError ? "status-blocked" : "status-in_progress";
     return `
     <section class="setup-card conversion-loading-card ${toneClass}">

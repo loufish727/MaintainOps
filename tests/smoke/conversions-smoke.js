@@ -88,6 +88,24 @@ assert.match(html, /Thread diameter and wrench size are different measurements/)
 assert.match(html, /bolt-reference-table/);
 assert.match(html, /not interchangeable by diameter alone/);
 assert.match(html, /Shop Reference Charts/);
+
+const hiddenShopReferenceHelpers = createConversionDisplayHelpers({
+  escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+  conversionGroups: UNIT_GROUPS,
+  boltReference: BOLT_REFERENCE,
+  wrenchReference: WRENCH_REFERENCE,
+  conversionResultText,
+  shopReferenceSections: SHOP_REFERENCE_SECTIONS,
+  showShopReferenceCharts: false,
+});
+const hiddenShopReferenceHtml = hiddenShopReferenceHelpers.renderConversionsPanel();
+assert.match(hiddenShopReferenceHtml, /Unit Converters/);
+assert.match(hiddenShopReferenceHtml, /Bolt Gauge/);
+assert.match(hiddenShopReferenceHtml, /Common Inch Thread Reference/);
+assert.match(hiddenShopReferenceHtml, /Common Wrench \/ Head Size Reference/);
+assert.doesNotMatch(hiddenShopReferenceHtml, /Shop Reference Charts/);
+assert.doesNotMatch(hiddenShopReferenceHtml, /data-shop-reference-panel/);
+
 assert.match(html, /Drill \/ Tap Quick Reference/);
 assert.match(html, /Wire Gauge Reference/);
 assert.match(html, /Pipe \/ Tubing Reference/);

@@ -47,7 +47,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Work order types use one operational taxonomy everywhere: Corrective, Preventive, and Fabrication. Legacy Reactive and Request values map to Corrective; Inspection maps to Preventive; Fabrication is selected manually.
 - Converted request cards identify the team member who converted the request using the recorded reviewer/converter profile, with explicit legacy-data fallbacks.
 - Mobile shell and desktop layout.
-- Shop reference chart cards in the Conversions tab with desktop table layout, mobile stacked-row layout, 12-per-page pagination, signed-in user favorites with browser fallback/cache, and search across chart names, common IDs, sizes, row values, and notes.
+- The full Shop Reference Charts library is retained and tested but currently hidden behind `SHOP_REFERENCE_CHARTS_ENABLED`; its data files are not loaded while the feature is off.
 
 ## Stable Enough For QA
 

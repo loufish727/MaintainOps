@@ -55,6 +55,46 @@ async function importLazyResources() {
 
 (async () => {
   const { createLazyResourceHelpers } = await importLazyResources();
+  const appSource = fs.readFileSync(path.resolve(__dirname, "../../app.js"), "utf8");
+  assert.match(appSource, /const SHOP_REFERENCE_CHARTS_ENABLED = false;/);
+  assert.match(appSource, /\.\.\.\(SHOP_REFERENCE_CHARTS_ENABLED \? SHOP_REFERENCE_RESOURCE_PATHS : \[\]\)/);
+
+  const loadedConversionResources = [];
+  let conversionDisplayOptions = null;
+  const conversionHelpers = createLazyResourceHelpers({
+    windowRef: {
+      MaintainOpsConversions: {
+        UNIT_GROUPS: [],
+        BOLT_REFERENCE: [],
+        WRENCH_REFERENCE: [],
+        conversionResultText: () => "",
+      },
+      MaintainOpsConversionDisplay: {
+        createConversionDisplayHelpers(options) {
+          conversionDisplayOptions = options;
+          return { renderConversionsPanel: () => "conversion tools ready" };
+        },
+      },
+    },
+    documentRef: {},
+    escapeHtml: (value) => String(value),
+    qrCodeResource: {},
+    conversionResourcePaths: ["conversions.js", "conversionDisplay.js"],
+    shopReferenceChartsEnabled: false,
+    platformPerformanceResourcePaths: [],
+    loadScriptResource: async (_documentRef, src) => {
+      loadedConversionResources.push(src);
+    },
+    getActiveSection: () => "conversions",
+    getPublicRequestLinks: () => [],
+    canManageTeam: () => false,
+    requestWorkspaceRender: () => {},
+  });
+  await conversionHelpers.ensureConversionResourcesLoaded();
+  assert.deepEqual(loadedConversionResources, ["conversions.js", "conversionDisplay.js"]);
+  assert.equal(conversionDisplayOptions.showShopReferenceCharts, false);
+  assert.equal(conversionHelpers.renderConversionsLazyPanel(), "conversion tools ready");
+
   const harness = createDocumentHarness();
   let activeSection = "manager";
   let initializeCount = 0;
