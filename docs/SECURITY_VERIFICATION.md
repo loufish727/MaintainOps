@@ -59,16 +59,17 @@ npm run test:security:boundary
 
 ## Latest Verified Results
 
-Last checked: 2026-07-27. The linked GitHub release evidence below is from 2026-07-21; correction-candidate local evidence is identified separately.
+Last checked: 2026-07-27. Current hosted evidence is from merged `main` commit `610f7928ee86765e8c3f366887169619ed274169`.
 
 Release Gate and Full Strict LFES:
 
 - required GitHub branch-protection context: `Release Gate`; strict up-to-date enforcement and administrator enforcement are enabled, and force pushes remain disabled.
-- comparison PR `#22` Release Gate run `29876913705`: PASS in 1m18s.
-- same-commit legacy Strict LFES run `29876913680`: PASS in 5m10s.
-- local Release Gate: PASS in 34.6s; local Full Strict LFES: PASS in 128.8s, including 92.8s of serial desktop/mobile Performance interaction.
-- recursive security static audit on the correction candidate: PASS; 104 SQL files and all 5 dated migrations inspected.
-- DOM HTML-assignment audit on the correction candidate: PASS; 31 reviewed first-party assignment sites and no unreviewed sites.
+- PR `#25` Release Gate run `30290195952`: PASS in 1m27s.
+- `main` Full Strict LFES run `30290507022`: PASS; the full gate completed in 5m24s and the protected authenticated job completed in 2m39s.
+- Pages deployment run `30290357444`: PASS; post-deploy Hosted App Smoke run `30290422181`: PASS.
+- final local Full Strict LFES: PASS in 119.2s, including serial desktop and mobile Performance interaction.
+- recursive security static audit: PASS; 104 SQL files and all 5 dated migrations inspected.
+- DOM HTML-assignment audit: PASS; 31 reviewed first-party assignment sites and no unreviewed sites.
 - live anonymous security boundary probe: PASS.
 - isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.
 - generated bundle cleanliness: PASS.
@@ -80,14 +81,15 @@ Release Gate and Full Strict LFES:
 
 Authenticated testing-platform proof:
 
-- GitHub run `29772114849`: PASS on the same commit.
+- Full Strict LFES run `30290507022`: PASS on merged `main` commit `610f7928ee86765e8c3f366887169619ed274169`.
 - all 13 required values are configured as protected `lfes-qa` environment secrets.
 - authenticated database and storage boundaries: PASS.
 - admin, manager, accounting, and technician sign-in/browser contracts: PASS.
-- result inventory: 41 PASS, 5 INFO, 0 REVIEW, and 0 FAIL. The INFO results identify the technician probe identity and empty anonymous storage listings; they are not skipped controls.
+- signed-in WebKit admin contract: PASS.
+- result inventory: 46 PASS, 5 INFO, 0 REVIEW, and 0 FAIL. The INFO results identify the technician probe identity and empty anonymous storage listings; they are not skipped controls.
 - no Taylor production credentials or company data were used.
 
-Correction-candidate testing-platform proof on 2026-07-27:
+Current testing-platform request-budget proof:
 
 - admin, manager, accounting, and technician Chromium contracts: PASS.
 - signed-in WebKit admin contract: PASS.
