@@ -17,7 +17,7 @@ This plan is intentionally staged. It does not change runtime architecture until
 Completed:
 
 1. Script tags, global providers/consumers, and load order are inventoried in `docs/SCRIPT_LOAD_INVENTORY.md`.
-2. The production entry points use generated minified runtime, app-shell, application-style, spatial-script, and spatial-style assets with content-hashed filenames and external source maps.
+2. The production entry points use generated minified runtime, app-shell, application-style, spatial-script, and spatial-style assets with content-hashed filenames and external source maps. Maps retain source paths but omit embedded source copies so Windows and Linux builds stay byte-identical.
 3. Manager, Financial, Team presentation, and Admin Setup are lazy feature chunks rather than eager runtime dependencies.
 4. Shop Reference and the 3D Performance workspace retain their existing lazy boundaries.
 5. Compressed and decoded size budgets run inside `npm run test:bundle:pilot`.

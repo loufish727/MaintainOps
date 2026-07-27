@@ -35,6 +35,15 @@ for (const key of scriptBundleKeys) {
     fs.existsSync(path.join(bundlesDir, `${manifest[key]}.map`)),
     `Manifest ${key} source map must exist on disk`
   );
+  const sourceMap = JSON.parse(
+    fs.readFileSync(path.join(bundlesDir, `${manifest[key]}.map`), "utf8")
+  );
+  assert.ok(sourceMap.sources?.length, `Manifest ${key} source map must name its sources`);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(sourceMap, "sourcesContent"),
+    false,
+    `Manifest ${key} source map must not embed platform-sensitive source copies`
+  );
   assert.doesNotMatch(
     fs.readFileSync(path.join(bundlesDir, manifest[key]), "utf8"),
     /^[\t ]+$/m,
@@ -65,6 +74,14 @@ assert.ok(
   fs.existsSync(path.join(root, `${manifest.appStyles}.map`)),
   "Manifest appStyles source map must exist on disk"
 );
+const appStylesSourceMap = JSON.parse(
+  fs.readFileSync(path.join(root, `${manifest.appStyles}.map`), "utf8")
+);
+assert.equal(
+  Object.prototype.hasOwnProperty.call(appStylesSourceMap, "sourcesContent"),
+  false,
+  "Manifest appStyles source map must not embed platform-sensitive source copies"
+);
 assert.match(
   indexHtml,
   new RegExp(`href="${manifest.appStyles.replace(/\./g, "\\.")}"`),
@@ -83,6 +100,14 @@ assert.ok(
 assert.ok(
   fs.existsSync(path.join(bundlesDir, `${manifest.platformSpatialStyles}.map`)),
   "Manifest platformSpatialStyles source map must exist on disk"
+);
+const spatialStylesSourceMap = JSON.parse(
+  fs.readFileSync(path.join(bundlesDir, `${manifest.platformSpatialStyles}.map`), "utf8")
+);
+assert.equal(
+  Object.prototype.hasOwnProperty.call(spatialStylesSourceMap, "sourcesContent"),
+  false,
+  "Manifest platformSpatialStyles source map must not embed platform-sensitive source copies"
 );
 assert.match(
   spatialHtml,

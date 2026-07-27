@@ -6,7 +6,7 @@ MaintainOps is currently a vanilla browser app backed by Supabase. It uses stati
 
 - `index.html`
   - Loads the Supabase client, `supabase-config.js`, and the generated minified, content-hashed runtime, app-shell, and application-style assets.
-  - `npm run build:runtime:bundles` generates production assets and source maps, derives the browser-config cache key, and updates the HTML entry points. Manual cache-tag bumping is not part of the release path.
+  - `npm run build:runtime:bundles` generates production assets and external source maps without embedded source copies, derives the browser-config cache key, and updates the HTML entry points. Manual cache-tag bumping is not part of the release path.
 
 - `app.js`
   - Owns the current app shell authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, module wiring, dependency injection, and event-module composition.

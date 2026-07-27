@@ -120,7 +120,7 @@ async function main() {
       minify: true,
       outfile: path.join(bundlesDir, `${bundle.baseName}.js`),
       sourcemap: "external",
-      sourcesContent: true,
+      sourcesContent: false,
       treeShaking: true,
       write: false,
     });
@@ -145,7 +145,7 @@ async function main() {
     minify: true,
     sourcefile: "styles.css",
     sourcemap: "external",
-    sourcesContent: true,
+    sourcesContent: false,
   });
   const stylesHash = bundleHash(stylesResult.code);
   const stylesFileName = `appStyles.${stylesHash}.css`;
@@ -163,7 +163,7 @@ async function main() {
     minify: true,
     sourcefile: "src/performance/platformSpatial.css",
     sourcemap: "external",
-    sourcesContent: true,
+    sourcesContent: false,
   });
   const spatialStylesHash = bundleHash(spatialStylesResult.code);
   const spatialStylesFileName = `platformSpatialStyles.${spatialStylesHash}.css`;
