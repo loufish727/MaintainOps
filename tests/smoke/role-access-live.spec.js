@@ -186,7 +186,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       } else {
         await expect(financialNav).toBeVisible();
         await financialNav.click();
-        await expect(page.getByRole("heading", { name: "Financial", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Financial", exact: true, level: 2 })).toBeVisible();
         await expect(page.locator('[data-financial-filter="missing"]')).toBeVisible();
         const financialCards = page.locator("[data-open-financial-asset]");
         await expect(financialCards.first(), `${role.name} QA fixture needs at least one financial equipment card`).toBeVisible();
