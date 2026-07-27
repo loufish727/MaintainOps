@@ -90,6 +90,8 @@ assert.match(card, /data-assign-me="wo-1"/);
 assert.match(card, /data-card-assign="wo-1"/);
 assert.match(card, /data-quick-status="in_progress"/);
 assert.match(card, /data-quick-status="blocked"/);
+assert.match(card, /data-quick-status="completed"[^>]*>Complete<\/button>/);
+assert.doesNotMatch(card, />All Completed<\/button>/);
 assert.doesNotMatch(card, /data-quick-status="open"/);
 
 const grouped = helpers.renderWorkOrderCollection([

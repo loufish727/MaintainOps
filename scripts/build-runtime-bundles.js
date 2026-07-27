@@ -28,6 +28,10 @@ function bundleHash(text) {
   return crypto.createHash("sha256").update(text).digest("hex").slice(0, 10);
 }
 
+function sourceHash(relativePath) {
+  return bundleHash(fs.readFileSync(path.join(root, relativePath), "utf8"));
+}
+
 function removeOldBundleFiles(baseName) {
   if (!fs.existsSync(bundlesDir)) return;
   for (const fileName of fs.readdirSync(bundlesDir)) {
@@ -38,6 +42,14 @@ function removeOldBundleFiles(baseName) {
 
 function updateIndexHtml(manifest) {
   let html = fs.readFileSync(indexPath, "utf8");
+  html = html.replace(
+    /href="styles\.css(?:\?v=[^"]+)?"/,
+    `href="styles.css?v=${sourceHash("styles.css")}"`
+  );
+  html = html.replace(
+    /src="supabase-config\.js(?:\?v=[^"]+)?"/,
+    `src="supabase-config.js?v=${sourceHash("supabase-config.js")}"`
+  );
   html = html.replace(
     /^[ \t]*<script defer src="src\/bundles\/runtime(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/m,
     `    <script defer src="src/bundles/${manifest.runtime}"></script>`
@@ -51,6 +63,10 @@ function updateIndexHtml(manifest) {
 
 function updateSpatialPageHtml(manifest) {
   let html = fs.readFileSync(spatialPagePath, "utf8");
+  html = html.replace(
+    /href="src\/performance\/platformSpatial\.css(?:\?v=[^"]+)?"/,
+    `href="src/performance/platformSpatial.css?v=${sourceHash("src/performance/platformSpatial.css")}"`
+  );
   html = html.replace(
     /^[ \t]*<script defer src="src\/bundles\/platformSpatial(?:\.bundle)?(?:\.[a-f0-9]{10})?\.js(?:\?v=[^"]+)?"><\/script>/m,
     `    <script defer src="src/bundles/${manifest.platformSpatial}"></script>`

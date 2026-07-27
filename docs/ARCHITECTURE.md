@@ -1,33 +1,41 @@
 # MaintainOps Architecture
 
-MaintainOps is currently a vanilla browser app backed by Supabase. It is intentionally simple: static HTML/CSS/JavaScript, browser-loaded modules, SQL migration files, and Supabase services.
+MaintainOps is currently a vanilla browser app backed by Supabase. It uses static HTML/CSS/JavaScript, generated browser bundles, SQL migration files, and Supabase services.
 
 ## Frontend Files
 
 - `index.html`
-  - Loads Supabase client, QR code generator, `supabase-config.js`, extracted app modules, and `app.js`.
-  - Cache-buster query strings are manually bumped after changes.
+  - Loads the Supabase client, `supabase-config.js`, and the generated content-hashed runtime and app-shell bundles.
+  - `npm run build:runtime:bundles` derives CSS and browser-config cache keys from file contents and updates the HTML entry points. Manual cache-tag bumping is not part of the release path.
 
 - `app.js`
   - Owns the current app shell authority: auth/session startup, company/location bootstrapping, data loading, render orchestration, module wiring, dependency injection, and event-module composition.
-  - Current line count is about 5,500 after ongoing modularization work.
+  - Current line count is about 6,300 physical lines after ongoing modularization work.
   - Remaining authority is tracked in `docs/APP_JS_AUTHORITY_MAP.md`; additional extraction should be based on ownership clarity and operational risk reduction, not line count alone.
 
 - `src/`
   - Contains extracted render helpers, event-binding groups, UI state helpers, query/list helpers, and selected workflow boundaries.
+  - New leaf services can use real ESM. Current examples are the keyed single-flight startup guard, workspace work-order count service, and company-logo signed-URL cache.
   - Recent examples include `src/workflows/quickFixWorkflow.js`, `src/workflows/messageWorkflow.js`, `src/workflows/preventiveMaintenanceWorkflow.js`, `src/workflows/procedureWorkflow.js`, `src/workflows/teamWorkflow.js`, `src/workflows/companySettingsWorkflow.js`, `src/workflows/appIssueWorkflow.js`, `src/workflows/publicRequestLinkWorkflow.js`, `src/workflows/partInventoryWorkflow.js`, `src/workflows/workOrderQuickUpdateWorkflow.js`, `src/workflows/assetWorkflow.js`, `src/workflows/requestLifecycleWorkflow.js`, `src/workflows/workOrderCreationWorkflow.js`, `src/workflows/workOrderDetailEditWorkflow.js`, `src/workflows/partUsageWorkflow.js`, `src/workflows/mediaStorageWorkflow.js`, `src/workflows/companyLogoWorkflow.js`, `src/utils/csvExport.js`, `src/services/authSessionFlow.js`, and render modules for Work Order Detail, Equipment Detail, Message Center, Create Work Order, and Quick Fix.
 
 - `styles.css`
   - App styling for desktop and mobile.
   - Includes dark sleek theme, mobile shell, card layouts, gauges, badges, and form styling.
 
-- `assets/gauges/gauge-status-sprite.png`
+- `assets/gauges/gauge-status-sprite.webp`
   - Current approved gauge artwork sheet used for status dashboard buttons.
 
 - `src/performance/`
   - Owns the lazy Performance workspace, privacy-limited browser telemetry, objective grade thresholds, and adaptive 3D quality behavior.
   - The normal app shell imports only the small telemetry collector and threshold logic. Three.js, the spatial scene, and its visual assets remain behind the existing lazy Performance iframe.
   - See `docs/PERFORMANCE_TELEMETRY.md` for metric definitions, grade boundaries, privacy limits, and hosted-monitor scope.
+
+## Workspace Startup
+
+- Workspace rendering is keyed by signed-in user and single-flight guarded so duplicate same-session auth events share one active bootstrap.
+- Work-order dashboard and My Work totals use one company/location-scoped aggregate RPC when no text search is active. The compatibility path remains available until the migration is present.
+- Company logo signed URLs are cached in memory for eight minutes against a ten-minute signed URL.
+- The authenticated testing-platform proof limits initial workspace loading to 35 Supabase requests and requires the major core loaders and aggregate-count RPC to run exactly once.
 
 ## Supabase Architecture
 
@@ -197,5 +205,10 @@ Known security hardening already addressed:
 - Message membership policy was tightened.
 - RLS and Data API exposure were reviewed for the current app-used surface.
 - Anonymous direct table access is not part of the intended model.
+- A fail-closed static audit inventories all reviewed first-party `innerHTML` assignment sites and rejects unreviewed additions. This is a guard on assignment surfaces, not a substitute for output escaping or browser security headers.
 
 Do not weaken RLS for convenience.
+
+## Hosting Boundary
+
+The current GitHub Pages host cannot set response security headers. The meta CSP provides useful browser restrictions, but `frame-ancestors` cannot be enforced from a meta tag. Clickjacking protection, `X-Content-Type-Options`, and `Permissions-Policy` therefore require moving the static deployment to a host with configurable response headers before broader external SaaS rollout.

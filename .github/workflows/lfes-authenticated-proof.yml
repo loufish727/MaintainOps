@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Configure isolated testing backend
         shell: bash
@@ -93,6 +93,7 @@ jobs:
           LFES_QA_COMPANY_ID: ${{ secrets.LFES_QA_COMPANY_ID }}
           LFES_FORBIDDEN_COMPANY_ID: ${{ secrets.LFES_FORBIDDEN_COMPANY_ID }}
           LFES_TECH_DELETE_REQUEST_ID: ${{ secrets.LFES_TECH_DELETE_REQUEST_ID }}
+          LFES_WORKSPACE_REQUEST_BUDGET: "35"
 
       - name: Upload LFES evidence
         if: always()

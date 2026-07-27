@@ -8,6 +8,7 @@ const strictSource = fs.readFileSync(path.join(root, "scripts", "lfes-strict-che
 const evidenceSource = fs.readFileSync(path.join(root, "scripts", "lfes-evidence.js"), "utf8");
 const securitySource = fs.readFileSync(path.join(root, "scripts", "sql-security-static-audit.js"), "utf8");
 const boundarySource = fs.readFileSync(path.join(root, "scripts", "security-boundary-probe.js"), "utf8");
+const authenticatedSource = fs.readFileSync(path.join(root, "scripts", "lfes-authenticated-check.js"), "utf8");
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const releaseWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "release-gate.yml"), "utf8");
 const fullStrictWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "full-strict-lfes.yml"), "utf8");
@@ -26,6 +27,8 @@ assert.match(evidenceSource, /path\.join\(root, "lfes-evidence"\)/);
 assert.doesNotMatch(evidenceSource, /test-results/);
 assert.match(securitySource, /entry\.isDirectory\(\).*listSqlFiles/);
 assert.match(boundarySource, /or=\(external_source\.is\.null,external_source\.neq\.public_location_qr\)&select=id/);
+assert.match(authenticatedSource, /MAINTAINOPS_SUPABASE_URL:\s*process\.env\.LFES_SUPABASE_URL/);
+assert.match(authenticatedSource, /MAINTAINOPS_SUPABASE_ANON_KEY:\s*process\.env\.LFES_SUPABASE_ANON_KEY/);
 assert.match(releaseWorkflow, /name:\s*Release Gate/);
 assert.match(releaseWorkflow, /npm run test:release:gate/);
 assert.match(releaseWorkflow, /Documentation-only pull request/);

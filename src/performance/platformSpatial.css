@@ -103,6 +103,10 @@ body {
     display: block;
     pointer-events: auto;
   }
+
+  .spatial-touch-target:disabled {
+    pointer-events: none;
+  }
 }
 
 .performance-header-exit {

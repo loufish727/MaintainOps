@@ -22,6 +22,12 @@ Static SQL/RPC audit:
 npm run test:security:static
 ```
 
+Reviewed DOM HTML-assignment audit:
+
+```bash
+npm run test:security:dom
+```
+
 Isolated PostgreSQL schema, migration, catalog, and seeded RLS verification:
 
 ```bash
@@ -53,7 +59,7 @@ npm run test:security:boundary
 
 ## Latest Verified Results
 
-Last checked: 2026-07-21.
+Last checked: 2026-07-27. The linked GitHub release evidence below is from 2026-07-21; correction-candidate local evidence is identified separately.
 
 Release Gate and Full Strict LFES:
 
@@ -61,7 +67,8 @@ Release Gate and Full Strict LFES:
 - comparison PR `#22` Release Gate run `29876913705`: PASS in 1m18s.
 - same-commit legacy Strict LFES run `29876913680`: PASS in 5m10s.
 - local Release Gate: PASS in 34.6s; local Full Strict LFES: PASS in 128.8s, including 92.8s of serial desktop/mobile Performance interaction.
-- recursive security static audit: PASS; 97 SQL files and all dated migrations inspected.
+- recursive security static audit on the correction candidate: PASS; 104 SQL files and all 5 dated migrations inspected.
+- DOM HTML-assignment audit on the correction candidate: PASS; 31 reviewed first-party assignment sites and no unreviewed sites.
 - live anonymous security boundary probe: PASS.
 - isolated PostgreSQL schema, dated migration, catalog, and seeded RLS role checks: PASS.
 - generated bundle cleanliness: PASS.
@@ -80,9 +87,18 @@ Authenticated testing-platform proof:
 - result inventory: 41 PASS, 5 INFO, 0 REVIEW, and 0 FAIL. The INFO results identify the technician probe identity and empty anonymous storage listings; they are not skipped controls.
 - no Taylor production credentials or company data were used.
 
+Correction-candidate testing-platform proof on 2026-07-27:
+
+- admin, manager, accounting, and technician Chromium contracts: PASS.
+- signed-in WebKit admin contract: PASS.
+- authenticated initial-workspace budget: PASS; admin, manager, and accounting used 30 Supabase requests, technician used 34, and the WebKit admin used 30 against a limit of 35.
+- exactly-once assertions for company lookup, locations, assets, work orders, and the scoped work-order count RPC: PASS for every tested browser/role.
+- a WebKit-visible startup race that could clear login fields before submission was reproduced, corrected, and then passed with no browser errors.
+- isolated workspace-count RPC checks for company/location scope, assigned-versus-created scope, date boundaries, invalid-filter rejection, cross-company-location rejection, and cross-company membership rejection: PASS.
+
 Static SQL audit:
 
-- security-definer functions: PASS; all detected security-definer function blocks include `search_path`.
+- security-definer functions: PASS; all 64 parsed security-definer function blocks include `search_path`.
 - anonymous grant surface: PASS; anon grants match the intended public request/storage intake allowlist.
 - destructive/admin RPC language: PASS; detected destructive/admin function blocks include membership or role-check language.
 
@@ -167,6 +183,7 @@ These checks do not replace:
 - exhaustive signed-URL, storage-delete, and storage-restore tests
 - broad cross-browser end-to-end coverage of every workflow
 - scheduled storage backup execution and a stored-object restore drill
+- response-header verification on a configurable host; GitHub Pages cannot emit the required clickjacking/content-type/permissions headers
 
 ## Review Focus Still Recommended
 

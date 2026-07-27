@@ -29929,12 +29929,14 @@ void main() {
       const now2 = performance.now();
       if (!force && rig.t >= 1 && !drag.active && now2 - lastTouchTargetUpdate < 250) return;
       lastTouchTargetUpdate = now2;
+      const cameraSettled = rig.t >= 1;
       touchTargetEntries.forEach(({ button, object, projection }) => {
         object.getWorldPosition(projection);
         projection.project(camera);
         const visible = projection.z >= -1 && projection.z <= 1 && projection.x >= -1.08 && projection.x <= 1.08 && projection.y >= -1.08 && projection.y <= 1.08;
         button.hidden = !visible;
         if (!visible) return;
+        button.disabled = !cameraSettled;
         button.style.left = `${(projection.x + 1) * 50}%`;
         button.style.top = `${(1 - projection.y) * 50}%`;
         button.style.zIndex = String(Math.round((1 - projection.z) * 1e3));

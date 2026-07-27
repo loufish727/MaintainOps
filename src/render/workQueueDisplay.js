@@ -269,13 +269,15 @@
       const createdDate = workOrder.created_at ? new Date(workOrder.created_at) : null;
       const createdLabel = createdDate && !Number.isNaN(createdDate.getTime()) ? createdDate.toLocaleDateString() : "";
       const isCompleted = workOrder.status === "completed";
+      const statusChipLabel = isCompleted ? "Completed" : statusLabel(workOrder.status);
+      const statusActionLabel = (status) => status === "completed" ? "Complete" : statusLabel(status);
       return `
         <article class="work-card status-card status-${workOrder.status} ${workOrder.id === getActiveWorkOrderId() ? "selected" : ""}" data-id="${workOrder.id}" tabindex="0">
           <div class="work-card-header">
             <div class="chip-row">
               <span class="chip ${workOrder.priority}">${workOrder.priority}</span>
               <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
-              <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
+              <span class="chip ${workOrder.status}">${statusChipLabel}</span>
               ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
             </div>
           </div>
@@ -296,7 +298,7 @@
             ${!isCompleted && canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
             ${!isCompleted && canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
           ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
-            <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
+            <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusActionLabel(status)}</button>
           `).join("")}
         </div>
       </article>

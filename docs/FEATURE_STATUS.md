@@ -83,7 +83,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Highlighted "Very common" reference rows now use row-specific teaching text instead of only generic category fallback, so examples like 14 AWG, 10mm, and 6205 explain the actual nearby mistake and field reason they matter.
 - Shop reference source validation is now documented separately: identification charts require 4-source validation, decision charts require 10-source validation, and highlighted rows require row-specific support before deeper teaching text is treated as reviewed.
 - A new Spark Plug Condition Reference chart was added as the first source-validation process trial: it uses 4-source validation, mechanic-facing condition rows, signal-only detail expansion, and row-specific teaching text for common failure/high-consequence plug conditions.
-- Request email notifications now have a backend outbox and Supabase Edge Function sender path. The feature is provider-gated until email-provider secrets and a verified sender are configured in Supabase.
+- Request email notifications use the backend outbox and Supabase Edge Function sender path. Production currently routes through the configured Google Apps Script webhook; the Resend path remains scaffolded but is not configured.
 - Badged shop reference rows now have a stricter detail gate: signal rows must use row-specific teaching, not generic category fallback. Spark Plug Ash deposits was corrected, and Hydraulic Fluid Condition Reference was added as the second trial.
 - Extension Cord Load Reference now applies the same signal-detail rule as a simple-looking but higher-scrutiny common-spec chart: selected cord/load/jacket rows get row-specific teaching while unbadged rows stay clean.
 - Auth verification callback flow now returns verified users through MaintainOps instead of a dead-end Supabase page.
@@ -95,7 +95,13 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 - Authenticated upload failures now create internal app issue reports with upload context, file name, MIME/type inference, size, and error details so unsupported-file reports are visible to managers/admins.
 - Public request intake now has a per-link 10-submissions-per-minute database throttle; live throttle smoke accepted 10 disposable requests, rejected the next 2, and cleanup passed.
 - Major workflow, render, event, service, query, and utility code has been extracted from the legacy `app.js` into `src/`.
-- `app.js` is currently about 6,100 lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- `app.js` is currently about 6,300 physical lines and its remaining shell/coordinator role is tracked in `APP_JS_AUTHORITY_MAP.md`.
+- Same-session workspace bootstrap is single-flight guarded, company-logo signed URLs are cached, and dashboard/My Work totals use one scoped aggregate RPC. The isolated testing platform dropped from about 88 Supabase requests per initial workspace load to 29, and the authenticated proof now fails above 35 or when a core loader repeats.
+- Startup now waits for the initial Supabase session check before presenting editable login fields. This removed a WebKit-visible race that could clear an email and password entered while startup was still settling.
+- The dashboard gauge sprite was re-encoded from 1,960,314-byte PNG to a 188,356-byte WebP without changing its dimensions.
+- The production workspace now has a skip link, one page-level heading, active-navigation `aria-current`, and one shared live status region.
+- Manual CSS/config cache tags were replaced by build-derived content hashes.
+- A static DOM audit now fail-closes on any first-party `innerHTML` assignment outside the 31 reviewed assignment sites.
 - Public request-link admin button binding was extracted behind injected callbacks; public request token generation was extracted into a focused utility; public request-link RPCs and intake submit remain app-owned.
 - Storage restore/incident response, public request intake hardening, and public exposure review remain pilot-readiness workstreams. The database restore drill has passed.
 - Smoke tests and GitHub Actions resource-load proof now cover the current deployment path.
@@ -128,7 +134,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - Custom-domain routing, final public-facing copy, and production support process still need a final rollout pass.
 
 - Automated test coverage.
-  - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, and four-role authenticated testing-platform proof.
+  - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL and DOM assignment inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, four-role Chromium proof, and a signed-in WebKit admin contract against the testing platform.
   - Numeric line/branch coverage and an exhaustive live mutation/cross-browser matrix do not exist yet.
 
 - Operational readiness.
@@ -136,6 +142,12 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - The storage mirror completed an initial full backup, but automated scheduling and a stored-object restore drill remain open.
   - Pilot hardening gates for support, public request rollout, mobile/photo verification, and controlled onboarding are tracked in `PILOT_HARDENING_PLAN.md`.
   - Public exposure review is ongoing as the app remains publicly hosted and publicly reviewable.
+
+- Offline write resilience.
+  - Offline/reconnect telemetry exists, but Quick Fix and work-order mutations do not yet have a durable IndexedDB outbox. This remains a separate data-conflict and recovery design effort.
+
+- Configurable response security headers.
+  - GitHub Pages cannot emit the clickjacking and content-type headers needed for broader external deployment. A move to a configurable static host remains open.
 
 ## UI Direction
 

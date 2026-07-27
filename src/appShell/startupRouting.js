@@ -35,7 +35,6 @@ export async function initializeStartupRoute({
   startAuthCallback,
   renderPublicRequestQrPage,
   renderPublicRequestIntake,
-  renderAuth,
   setSupabaseClient,
   setSession,
 }) {
@@ -66,7 +65,6 @@ export async function initializeStartupRoute({
     return { routed: true, supabaseClient };
   }
 
-  renderAuth("login");
   const { data } = await supabaseClient.auth.getSession();
   setSession(data.session);
   return { routed: false, supabaseClient };

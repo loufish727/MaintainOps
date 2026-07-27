@@ -12,6 +12,7 @@
     "migration:apply": "node scripts/apply-dated-migration.js",
     "release:verify": "node scripts/release-verify.js",
     "test:security:static": "node scripts/sql-security-static-audit.js",
+    "test:security:dom": "node scripts/inner-html-static-audit.js",
     "test:security:boundary": "node scripts/security-boundary-probe.js",
     "test:schema:isolated": "node scripts/isolated-schema-check.js",
     "test:lfes:authenticated": "node scripts/lfes-authenticated-check.js",
@@ -26,8 +27,7 @@
     "test:release:gate": "node scripts/lfes-strict-check.js --release-gate",
     "test:lfes:strict": "node scripts/lfes-strict-check.js",
     "test:lfes:hosted": "node scripts/lfes-hosted-check.js",
-    "test:performance:hosted": "node scripts/hosted-performance-probe.js",
-    "cache:bump": "node scripts/bump-cache-tags.js"
+    "test:performance:hosted": "node scripts/hosted-performance-probe.js"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

@@ -1,4 +1,9 @@
 const { expect, test } = require("@playwright/test");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const workspaceRequestBudget = Math.max(1, Number(process.env.LFES_WORKSPACE_REQUEST_BUDGET) || 35);
+const evidencePath = path.resolve(__dirname, "../../lfes-evidence/authenticated-workspace-request-counts.json");
 
 const roles = [
   { name: "admin", prefix: "LFES_ADMIN", financial: "edit", operational: "edit", managerDashboard: true },
@@ -16,17 +21,106 @@ const missingCredentials = roles.flatMap((role) => [
   ...(!role.password ? [`${role.prefix}_PASSWORD`] : []),
 ]);
 
-async function signIn(page, role) {
+function supabaseEndpoint(url) {
+  const testingHost = new URL(process.env.LFES_SUPABASE_URL).host;
+  const parsed = new URL(url);
+  if (parsed.host !== testingHost) return "";
+  const rpc = parsed.pathname.match(/^\/rest\/v1\/rpc\/([^/]+)/);
+  if (rpc) return `rpc:${rpc[1]}`;
+  const table = parsed.pathname.match(/^\/rest\/v1\/([^/]+)/);
+  if (table) return table[1];
+  if (parsed.pathname.startsWith("/auth/")) return "auth";
+  if (parsed.pathname.startsWith("/storage/")) return "storage";
+  return parsed.pathname;
+}
+
+function createWorkspaceRequestTrace(page) {
+  const requests = [];
+  const inFlight = new Set();
+  let capturing = false;
+
+  page.on("request", (request) => {
+    if (!capturing) return;
+    const endpoint = supabaseEndpoint(request.url());
+    if (!endpoint) return;
+    requests.push({ endpoint, method: request.method() });
+    inFlight.add(request);
+  });
+  const finish = (request) => inFlight.delete(request);
+  page.on("requestfinished", finish);
+  page.on("requestfailed", finish);
+
+  return {
+    start() {
+      requests.length = 0;
+      inFlight.clear();
+      capturing = true;
+    },
+    async settle() {
+      const startedAt = Date.now();
+      let idleSince = 0;
+      while (Date.now() - startedAt < 30000) {
+        if (inFlight.size === 0) {
+          if (!idleSince) idleSince = Date.now();
+          if (Date.now() - idleSince >= 1000) break;
+        } else {
+          idleSince = 0;
+        }
+        await page.waitForTimeout(100);
+      }
+      capturing = false;
+      if (inFlight.size) throw new Error(`${inFlight.size} Supabase requests did not settle.`);
+
+      const byEndpoint = {};
+      requests.forEach(({ endpoint }) => {
+        byEndpoint[endpoint] = (byEndpoint[endpoint] || 0) + 1;
+      });
+      return {
+        budget: workspaceRequestBudget,
+        requests: requests.length,
+        byEndpoint: Object.fromEntries(
+          Object.entries(byEndpoint).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+        ),
+      };
+    },
+  };
+}
+
+function recordWorkspaceRequestEvidence(role, browserName, evidence) {
+  fs.mkdirSync(path.dirname(evidencePath), { recursive: true });
+  let report = { budget: workspaceRequestBudget, roles: {} };
+  if (fs.existsSync(evidencePath)) {
+    report = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
+  }
+  report.budget = workspaceRequestBudget;
+  report.roles[`${role.name}:${browserName}`] = { browserName, ...evidence };
+  fs.writeFileSync(evidencePath, `${JSON.stringify(report, null, 2)}\n`);
+}
+
+async function signIn(page, role, browserName) {
   const pageErrors = [];
+  const requestTrace = createWorkspaceRequestTrace(page);
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(`?lfes-auth-role=${role.name}-${Date.now()}`, { waitUntil: "load" });
   await expect(page.getByRole("button", { name: "Log In" })).toBeVisible({ timeout: 30000 });
   await page.getByLabel("Email").fill(role.email);
   await page.getByLabel("Password").fill(role.password);
+  requestTrace.start();
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
+  const requestEvidence = await requestTrace.settle();
+  recordWorkspaceRequestEvidence(role, browserName, requestEvidence);
+  expect(
+    requestEvidence.requests,
+    `${role.name} initial workspace Supabase requests exceeded the ${workspaceRequestBudget}-request budget: ${JSON.stringify(requestEvidence.byEndpoint)}`
+  ).toBeLessThanOrEqual(workspaceRequestBudget);
+  expect(requestEvidence.byEndpoint["rpc:get_my_companies"]).toBe(1);
+  expect(requestEvidence.byEndpoint.locations).toBe(1);
+  expect(requestEvidence.byEndpoint.assets).toBe(1);
+  expect(requestEvidence.byEndpoint.work_orders).toBe(1);
+  expect(requestEvidence.byEndpoint["rpc:get_workspace_work_order_counts"]).toBe(1);
   expect(pageErrors, `page errors while signing in as ${role.name}`).toEqual([]);
-  return pageErrors;
+  return { pageErrors, requestEvidence };
 }
 
 test.describe("MaintainOps authenticated role proof", () => {
@@ -39,9 +133,9 @@ test.describe("MaintainOps authenticated role proof", () => {
   });
 
   for (const role of roles) {
-    test(`${role.name} navigation and permission surfaces match the role contract`, async ({ page }) => {
+    test(`${role.name} navigation and permission surfaces match the role contract`, async ({ page, browserName }) => {
       test.setTimeout(150000);
-      const pageErrors = await signIn(page, role);
+      const { pageErrors } = await signIn(page, role, browserName);
 
       for (const section of ["mywork", "work", "planning", "requests", "assets", "team", "performance"]) {
         await expect(page.locator(`[data-section="${section}"]`)).toBeVisible();

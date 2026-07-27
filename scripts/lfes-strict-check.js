@@ -202,6 +202,9 @@ async function main() {
   await runStage("security static audit", () => run(npmCommand, ["run", "test:security:static"], {
     label: "security static audit",
   }));
+  await runStage("DOM HTML assignment audit", () => run(npmCommand, ["run", "test:security:dom"], {
+    label: "DOM HTML assignment audit",
+  }));
   await runStage("anonymous security boundary probe", () => run(npmCommand, ["run", "test:security:boundary"], {
     label: "security boundary probe",
   }));

@@ -11,5 +11,11 @@ assert.match(appSource, /await initializeStartupRoute\(/, "app.js must delegate 
 assert.match(startupRoutingSource, /export async function initializeStartupRoute\(/, "startup routing module must expose initializeStartupRoute");
 assert.match(startupRoutingSource, /export function publicRequestTokenFromUrl\(/, "startup routing module must own public request token parsing");
 assert.match(startupRoutingSource, /export function publicRequestQrTokenFromUrl\(/, "startup routing module must own QR token parsing");
+assert.match(appSource, /renderWorkspaceLoading\("Checking sign-in\.\.\."\);/, "startup should show a non-editable sign-in check");
+assert.doesNotMatch(
+  startupRoutingSource,
+  /\brenderAuth\("login"\)/,
+  "startup routing must not render an editable login form before getSession settles"
+);
 
 console.log("startup routing source smoke passed");

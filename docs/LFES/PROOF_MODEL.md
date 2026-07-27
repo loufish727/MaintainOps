@@ -12,6 +12,7 @@ LFES separates evidence by what actually ran. A green check must not imply that 
 - PostgreSQL catalog checks for RLS and security-definer `search_path`
 - seeded cross-company, manager read-only, and accounting write RLS checks
 - runtime bundle generation, manifest validation, and committed-output cleanliness
+- a fail-closed allowlist of reviewed first-party `innerHTML` assignment sites
 - the broad Node smoke suite and targeted browser regressions
 - local application resource loading
 
@@ -38,6 +39,8 @@ The separate `Hosted App Smoke` workflow runs the resource-load browser smoke af
 - raw performance samples are not directly readable, malformed samples are rejected, own-company aggregate access works, and cross-company telemetry RPC access is denied
 - admin, manager, accounting, and technician can sign in to the candidate app against the testing platform
 - each role receives the expected navigation, Team workload counts, Financial access, and operational read/edit presentation
+- each Chromium role completes initial workspace loading within 35 Supabase requests, with core loaders and the scoped work-order count RPC exactly once
+- the admin candidate path, including its request budget, also passes in WebKit
 - a signed-in browser opens App Performance and renders measured gauges through the lazy 3D frame
 
 The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes-qa` environment with these names:
