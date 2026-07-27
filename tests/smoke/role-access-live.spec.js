@@ -171,7 +171,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       }
 
       await page.locator('[data-section="planning"]').click();
-      await expect(page.getByRole("heading", { name: "Planning", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Planning", exact: true, level: 2 })).toBeVisible();
       await expectSingleActiveWorkspacePanel(page);
       await expect(page.getByText("No Due Date", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Current schedule", exact: true })).toBeVisible();
@@ -191,7 +191,7 @@ test.describe("MaintainOps authenticated role proof", () => {
         const financialCards = page.locator("[data-open-financial-asset]");
         await expect(financialCards.first(), `${role.name} QA fixture needs at least one financial equipment card`).toBeVisible();
         await financialCards.first().click();
-        await expect(page.getByRole("heading", { name: "Financial Detail", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Financial Detail", exact: true, level: 2 })).toBeVisible();
         if (role.financial === "edit") {
           await expect(page.locator(".financial-asset-form")).toBeVisible();
           await expect(page.getByRole("button", { name: "Save Financial Info" })).toBeEnabled();
@@ -204,7 +204,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       }
 
       await page.locator('[data-section="team"]').click();
-      await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Team", exact: true, level: 2 })).toBeVisible();
       await expectSingleActiveWorkspacePanel(page);
       const memberCards = page.locator(".member-card");
       await expect(memberCards.first()).toBeVisible();
