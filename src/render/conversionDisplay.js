@@ -9,6 +9,7 @@
     wrenchReference,
     conversionResultText,
     shopReferenceSections = DEFAULT_SHOP_REFERENCE_SECTIONS,
+    showShopReferenceCharts = true,
   }) {
     function optionHtml(group, selectedUnitId) {
       return group.units.map((unit) => (
@@ -742,7 +743,7 @@
               </table>
             </div>
           </details>
-          ${renderShopReferences()}
+          ${showShopReferenceCharts ? renderShopReferences() : ""}
         </section>
       `;
     }
