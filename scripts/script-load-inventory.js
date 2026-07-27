@@ -165,10 +165,10 @@ function buildInventory() {
   lines.push("");
   lines.push("## Bundling Notes");
   lines.push("");
-  lines.push("- Keep vendor and `supabase-config.js` outside the first bundling pass.");
-  lines.push("- Preserve `window.MaintainOps...` globals while bundling compatibility is being introduced.");
-  lines.push("- Bundle candidates should start with leaf utilities/render helpers that provide globals but consume few or none.");
-  lines.push("- `app.js` should remain last until its imports are converted deliberately.");
+  lines.push("- The Supabase vendor client and browser-safe `supabase-config.js` intentionally remain separate from first-party bundles.");
+  lines.push("- Production loads the minified, content-hashed eager runtime before the minified, content-hashed app shell.");
+  lines.push("- Missing main-index globals must be supplied by an intentional lazy feature/resource boundary and verified by smoke coverage.");
+  lines.push("- Add another lazy bundle only when measured startup or interaction evidence justifies the extra request.");
   lines.push("");
   lines.push("## Load Order");
   lines.push("");

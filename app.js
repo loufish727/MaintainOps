@@ -88,7 +88,6 @@ const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailE
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
-const { createAssetFinancialWorkflow } = window.MaintainOpsAssetFinancialWorkflow;
 const { createPartDeleteWorkflow } = window.MaintainOpsPartDeleteWorkflow;
 const { createProcedureChecklistWorkflow } = window.MaintainOpsProcedureChecklistWorkflow;
 const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
@@ -102,7 +101,6 @@ const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
 const { bindWorkspaceSearchEvents } = window.MaintainOpsWorkspaceSearchEvents;
 const { bindWorkspaceFilterPaginationEvents } = window.MaintainOpsWorkspaceFilterPaginationEvents;
-const { bindWorkspaceFinancialNavigationEvents } = window.MaintainOpsWorkspaceFinancialNavigationEvents;
 const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetailNavigationEvents;
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
@@ -115,7 +113,6 @@ const { bindWorkspaceTeamWorkViewEvents } = window.MaintainOpsWorkspaceTeamWorkV
 const { bindWorkspacePartDetailEvents } = window.MaintainOpsWorkspacePartDetailEvents;
 const { bindWorkspaceMessageUiEvents } = window.MaintainOpsWorkspaceMessageUiEvents;
 const { bindWorkspacePartSearchEvents } = window.MaintainOpsWorkspacePartSearchEvents;
-const { bindWorkspaceManagerDashboardEvents } = window.MaintainOpsWorkspaceManagerDashboardEvents;
 const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSectionNavigationEvents;
 const { bindWorkspaceMessageThreadEvents } = window.MaintainOpsWorkspaceMessageThreadEvents;
 const { bindWorkspaceIssueAdminUiEvents } = window.MaintainOpsWorkspaceIssueAdminUiEvents;
@@ -174,7 +171,6 @@ const {
   scopedTeamWorkloadQuery: buildScopedTeamWorkloadQuery,
   fetchPagedSearchRows,
 } = window.MaintainOpsWorkOrdersService;
-const { fetchRecentCompletedWorkOrders } = window.MaintainOpsManagerDashboardService;
 const {
   getMyCompanies,
   listUserCompanyMemberships,
@@ -213,8 +209,6 @@ const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDis
 const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
 const { createPartsDisplayHelpers } = window.MaintainOpsPartsDisplay;
 const { createOptionDisplayHelpers } = window.MaintainOpsOptionDisplay;
-const { createSetupDisplayHelpers } = window.MaintainOpsSetupDisplay;
-const { createStorageDashboardDisplayHelpers } = window.MaintainOpsStorageDashboardDisplay;
 const { createRequestPhotoDisplayHelpers } = window.MaintainOpsRequestPhotoDisplay;
 const { createMessageBadgeDisplayHelpers } = window.MaintainOpsMessageBadgeDisplay;
 const { createNavBadgeDisplayHelpers } = window.MaintainOpsNavBadgeDisplay;
@@ -226,7 +220,6 @@ const { createWorkCommandDisplayHelpers } = window.MaintainOpsWorkCommandDisplay
 const { createMissingWorkDetailDisplayHelpers } = window.MaintainOpsMissingWorkDetailDisplay;
 const { createPartSourceDisplayHelpers } = window.MaintainOpsPartSourceDisplay;
 const { createAssetCardDisplayHelpers } = window.MaintainOpsAssetCardDisplay;
-const { createFinancialDisplayHelpers } = window.MaintainOpsFinancialDisplay;
 const { createProcedureOptionsDisplayHelpers } = window.MaintainOpsProcedureOptionsDisplay;
 const { createMessageThreadLabelDisplayHelpers } = window.MaintainOpsMessageThreadLabelDisplay;
 const { createMessageThreadButtonDisplayHelpers } = window.MaintainOpsMessageThreadButtonDisplay;
@@ -234,9 +227,6 @@ const { createMessageComposerDisplayHelpers } = window.MaintainOpsMessageCompose
 const { createAppIssuePanelDisplayHelpers } = window.MaintainOpsAppIssuePanelDisplay;
 const { createInviteLocationDisplayHelpers } = window.MaintainOpsInviteLocationDisplay;
 const { createPartSetupDisplayHelpers } = window.MaintainOpsPartSetupDisplay;
-const { createTeamMemberDisplayHelpers } = window.MaintainOpsTeamMemberDisplay;
-const { createTeamWorkloadDisplayHelpers } = window.MaintainOpsTeamWorkloadDisplay;
-const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashboardDisplay;
 const { createLocationDisplayHelpers } = window.MaintainOpsLocationDisplay;
 const { createDowntimeEmailDisplayHelpers } = window.MaintainOpsDowntimeEmailDisplay;
 const { createSetupErrorDisplayHelpers } = window.MaintainOpsSetupErrorDisplay;
@@ -255,7 +245,6 @@ const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDispl
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
 const { createMessageThreadFilterDisplayHelpers } = window.MaintainOpsMessageThreadFilterDisplay;
-const { createSetupStatusDisplayHelpers } = window.MaintainOpsSetupStatusDisplay;
 const { createWorkOrderStatusFilterDisplayHelpers } = window.MaintainOpsWorkOrderStatusFilterDisplay;
 const { createWorkOrderSearchDisplayHelpers } = window.MaintainOpsWorkOrderSearchDisplay;
 const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay;
@@ -344,6 +333,12 @@ const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
   "src/performance/platformPerformanceService.js?v=platform-performance-health-1",
   "src/performance/platformPerformanceDisplay.js?v=platform-performance-health-1",
 ];
+const FEATURE_BUNDLE_PATHS = Object.freeze({
+  manager: __MAINTAINOPS_MANAGER_FEATURE_BUNDLE__,
+  financial: __MAINTAINOPS_FINANCIAL_FEATURE_BUNDLE__,
+  team: __MAINTAINOPS_TEAM_FEATURE_BUNDLE__,
+  setup: __MAINTAINOPS_SETUP_FEATURE_BUNDLE__,
+});
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
 const {
@@ -379,6 +374,8 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   qrCodeResource: QR_CODE_RESOURCE,
   conversionResourcePaths: CONVERSION_RESOURCE_PATHS,
   platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
+  featureBundlePaths: FEATURE_BUNDLE_PATHS,
+  initializeFeature: initializeWorkspaceFeature,
   getActiveSection: () => activeSection,
   getPublicRequestLinks: () => publicRequestLinks,
   canManageTeam,
@@ -386,17 +383,22 @@ const lazyResourceHelpers = createLazyResourceHelpers({
 });
 const {
   clearConversionResourcesError,
+  clearFeatureBundleError,
   clearPlatformPerformanceResourcesError,
   ensureConversionResourcesLoaded,
+  ensureFeatureBundleLoaded,
   ensurePlatformPerformanceResourcesLoaded,
   ensureQrLibraryLoaded,
   getConversionDisplayHelpers,
   getPlatformPerformanceDisplayHelpers,
   hasConversionDisplayHelpers,
   hasPlatformPerformanceDisplayHelpers,
+  isFeatureBundleReady,
   renderConversionsLazyPanel,
+  renderFeatureBundlePanel,
   renderPlatformPerformanceLazyPanel,
   scheduleConversionResourceLoad,
+  scheduleFeatureBundleLoad,
   schedulePlatformPerformanceResourceLoad,
   scheduleQrLibraryLoad,
 } = lazyResourceHelpers;
@@ -408,6 +410,7 @@ let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
 let teamWorkOrders = [];
+let teamFeature = null;
 let planningWorkOrders = [];
 let planningWorkOrdersReady = false;
 let planningWorkOrdersError = "";
@@ -421,6 +424,7 @@ let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] 
 let exactWorkOrderSearchCache = { key: "", rows: [] };
 let managerCompletedWorkOrders = [];
 let managerCompletedWorkReady = true;
+let managerDashboardFeature = null;
 const assetRelationshipOpenKeys = new Set();
 const assetRelationshipPages = {};
 let maintenanceRequests = [];
@@ -452,6 +456,7 @@ let appIssueReportsReady = true;
 let storageDashboard = null;
 let storageDashboardReady = true;
 let storageDashboardError = "";
+let setupFeature = null;
 let platformPerformance = null;
 let platformPerformanceReady = true;
 let platformPerformanceError = "";
@@ -504,6 +509,7 @@ let assetDocumentsByAssetId = {};
 let assetFinancialsReady = true;
 let assetFinancials = [];
 let assetFinancialsByAssetId = {};
+let financialFeature = null;
 let assetDocumentSigningByAssetId = {};
 let procedureTemplates = [];
 let proceduresReady = false;
@@ -652,57 +658,58 @@ const { applyRequestQueryFilters } = createRequestQueryFilterHelpers({
   SEARCH_ID_PAGE_SIZE,
   searchQuery: () => workspaceUiState.getSearchQuery(),
 });
-const {
-  teamMemberName,
-  filteredMembers,
-  renderTeamSection,
-  renderMember,
-  renderMyProfileForm,
-  renderPasswordChangeForm,
-  renderRequestNotificationRecipients,
-  renderTeamInviteForm,
-  renderTeamInvites,
-  renderTeamInviteLinks,
-} = createTeamMemberDisplayHelpers({
-  getProfilesByUserId: () => profilesByUserId,
-  getCurrentUser: () => session?.user,
-  getCompanyMembers: () => companyMembers,
-  getTeamInvites: () => teamInvites,
-  getTeamInvitesReady: () => teamInvitesReady,
-  getTeamInviteCancelError: () => teamInviteCancelError,
-  getPendingCancelInviteId: () => pendingCancelInviteId,
-  getTeamInviteLinks: () => teamInviteLinks,
-  getTeamInviteLinksReady: () => teamInviteLinksReady,
-  getTeamInviteLinkError: () => teamInviteLinkError,
-  getPendingRevokeInviteLinkId: () => pendingRevokeInviteLinkId,
-  getRequestNotificationRecipients: () => requestNotificationRecipients,
-  getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
-  getRequestNotificationRecipientError: () => requestNotificationRecipientError,
-  getSession: () => session,
-  getLocations: () => locations,
-  getActiveCompanyMembership: () => activeCompanyMembership(),
-  matchesSearch,
-  escapeHtml,
-  roleDescription,
-  roleLabel,
-  normalizeRole,
-  teamMemberWorkload: (...args) => teamMemberWorkload(...args),
-  canManageTeam,
-  canAdministerTeamRoles,
-  teamRoleOptionsForActor,
-  COMPANY_ROLES,
-  renderLocationOptions: (...args) => renderLocationOptions(...args),
-  inviteDefaultLocationLabel: (...args) => inviteDefaultLocationLabel(...args),
-  teamInviteSignupUrl,
-  teamJoinUrl,
-});
-const {
-  teamMemberWorkload,
-} = createTeamWorkloadDisplayHelpers({
-  getWorkOrders: () => teamWorkOrders,
-  matchesActiveLocation,
-  getDueState,
-});
+function teamMemberName(userId) {
+  const profile = profilesByUserId[userId];
+  const currentUser = session?.user;
+  if (userId === currentUser?.id) return profile?.full_name || currentUser?.email || "Me";
+  return profile?.full_name || userId;
+}
+
+function initializeTeamFeature() {
+  if (teamFeature) return teamFeature;
+  const display = window.MaintainOpsTeamMemberDisplay;
+  const workloadDisplay = window.MaintainOpsTeamWorkloadDisplay;
+  if (!display || !workloadDisplay) throw new Error("Team feature did not initialize.");
+  const { teamMemberWorkload } = workloadDisplay.createTeamWorkloadDisplayHelpers({
+    getWorkOrders: () => teamWorkOrders,
+    matchesActiveLocation,
+    getDueState,
+  });
+  teamFeature = display.createTeamMemberDisplayHelpers({
+    getProfilesByUserId: () => profilesByUserId,
+    getCurrentUser: () => session?.user,
+    getCompanyMembers: () => companyMembers,
+    getTeamInvites: () => teamInvites,
+    getTeamInvitesReady: () => teamInvitesReady,
+    getTeamInviteCancelError: () => teamInviteCancelError,
+    getPendingCancelInviteId: () => pendingCancelInviteId,
+    getTeamInviteLinks: () => teamInviteLinks,
+    getTeamInviteLinksReady: () => teamInviteLinksReady,
+    getTeamInviteLinkError: () => teamInviteLinkError,
+    getPendingRevokeInviteLinkId: () => pendingRevokeInviteLinkId,
+    getRequestNotificationRecipients: () => requestNotificationRecipients,
+    getRequestNotificationRecipientsReady: () => requestNotificationRecipientsReady,
+    getRequestNotificationRecipientError: () => requestNotificationRecipientError,
+    getSession: () => session,
+    getLocations: () => locations,
+    getActiveCompanyMembership: () => activeCompanyMembership(),
+    matchesSearch,
+    escapeHtml,
+    roleDescription,
+    roleLabel,
+    normalizeRole,
+    teamMemberWorkload,
+    canManageTeam,
+    canAdministerTeamRoles,
+    teamRoleOptionsForActor,
+    COMPANY_ROLES,
+    renderLocationOptions: (...args) => renderLocationOptions(...args),
+    inviteDefaultLocationLabel: (...args) => inviteDefaultLocationLabel(...args),
+    teamInviteSignupUrl,
+    teamJoinUrl,
+  });
+  return teamFeature;
+}
 const {
   activeLocationName,
 } = createLocationDisplayHelpers({
@@ -950,30 +957,49 @@ const {
   averageCompletionMinutes,
   preventiveDueSoon,
 } = dashboardDisplayHelpers;
-const {
-  renderManagerDashboard,
-} = createManagerDashboardDisplayHelpers({
-  getAssets: () => assets,
-  getPreventiveSchedules: () => preventiveSchedules,
-  getWorkOrders: () => workOrders,
-  getManagerCompletedWorkOrders: () => managerCompletedWorkOrders,
-  getManagerCompletedWorkReady: () => managerCompletedWorkReady,
-  getMaintenanceRequests: () => maintenanceRequests,
-  getCompanyMembers: () => companyMembers,
-  getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
-  getRequestDashboardCounts: () => requestDashboardCounts,
-  matchesActiveLocation,
-  isConvertedRequest,
-  getDueState,
-  getManagerDashboardMetric: () => workspaceUiState.getManagerDashboardMetric(),
-  getManagerDashboardUserId: () => workspaceUiState.getManagerDashboardUserId(),
-  teamMemberName,
-  roleLabel,
-  normalizeRole,
-  statusLabel,
-  escapeHtml,
-  sundayWeekRange,
-});
+function initializeManagerDashboardFeature() {
+  if (managerDashboardFeature) return managerDashboardFeature;
+  const service = window.MaintainOpsManagerDashboardService;
+  const display = window.MaintainOpsManagerDashboardDisplay;
+  const events = window.MaintainOpsWorkspaceManagerDashboardEvents;
+  if (!service || !display || !events) throw new Error("Manager feature did not initialize.");
+  const { renderManagerDashboard } = display.createManagerDashboardDisplayHelpers({
+    getAssets: () => assets,
+    getPreventiveSchedules: () => preventiveSchedules,
+    getWorkOrders: () => workOrders,
+    getManagerCompletedWorkOrders: () => managerCompletedWorkOrders,
+    getManagerCompletedWorkReady: () => managerCompletedWorkReady,
+    getMaintenanceRequests: () => maintenanceRequests,
+    getCompanyMembers: () => companyMembers,
+    getWorkOrderDashboardCounts: () => workOrderDashboardCounts,
+    getRequestDashboardCounts: () => requestDashboardCounts,
+    matchesActiveLocation,
+    isConvertedRequest,
+    getDueState,
+    getManagerDashboardMetric: () => workspaceUiState.getManagerDashboardMetric(),
+    getManagerDashboardUserId: () => workspaceUiState.getManagerDashboardUserId(),
+    teamMemberName,
+    roleLabel,
+    normalizeRole,
+    statusLabel,
+    escapeHtml,
+    sundayWeekRange,
+  });
+  managerDashboardFeature = {
+    bindEvents: events.bindWorkspaceManagerDashboardEvents,
+    fetchRecentCompletedWorkOrders: service.fetchRecentCompletedWorkOrders,
+    render: renderManagerDashboard,
+  };
+  return managerDashboardFeature;
+}
+
+function initializeWorkspaceFeature(featureId) {
+  if (featureId === "manager") return initializeManagerDashboardFeature();
+  if (featureId === "financial") return initializeFinancialFeature();
+  if (featureId === "team") return initializeTeamFeature();
+  if (featureId === "setup") return initializeSetupFeature();
+  throw new Error(`Unknown workspace feature: ${featureId}`);
+}
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
   getSearchQuery: () => workspaceUiState.getSearchQuery(),
   getAssetStatusFilter: () => workspaceUiState.getAssetStatusFilter(),
@@ -1121,17 +1147,6 @@ const {
   parentAssetFor,
 });
 const {
-  renderSetupItem,
-} = createSetupDisplayHelpers({
-  escapeHtml,
-});
-const {
-  renderStorageDashboardPanel,
-} = createStorageDashboardDisplayHelpers({
-  escapeHtml,
-  formatBytes,
-});
-const {
   renderMaintenanceRequestPhoto,
 } = createRequestPhotoDisplayHelpers({
   escapeHtml,
@@ -1265,30 +1280,56 @@ const {
   parentAssetFor,
   childAssetsFor,
 });
-const {
-  financialAssets,
-  renderFinancialPanel,
-  renderFinancialDetail,
-} = createFinancialDisplayHelpers({
-  escapeHtml,
-  assetTypeLabel,
-  parentAssetFor,
-  getAssets: () => assets,
-  getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
-  getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
-  getAssetFinancials: () => assetFinancials,
-  getAssetFinancialsReady: () => assetFinancialsReady,
-  getProfilesByUserId: () => profilesByUserId,
-  getLocations: () => locations,
-  matchesActiveLocation,
-  getFinancialPage: () => workspaceUiState.getFinancialPage(),
-  getFinancialMissingFilter: () => workspaceUiState.getFinancialMissingFilter(),
-  getFinancialLocationFilter: () => workspaceUiState.getFinancialLocationFilter(),
-  getFinancialTypeFilter: () => workspaceUiState.getFinancialTypeFilter(),
-  getFinancialAreaFilter: () => workspaceUiState.getFinancialAreaFilter(),
-  canEditFinancialRecords,
-  ASSETS_PER_PAGE,
-});
+function initializeFinancialFeature() {
+  if (financialFeature) return financialFeature;
+  const display = window.MaintainOpsFinancialDisplay;
+  const workflow = window.MaintainOpsAssetFinancialWorkflow;
+  const events = window.MaintainOpsWorkspaceFinancialNavigationEvents;
+  if (!display || !workflow || !events) throw new Error("Financial feature did not initialize.");
+  const displayHelpers = display.createFinancialDisplayHelpers({
+    escapeHtml,
+    assetTypeLabel,
+    parentAssetFor,
+    getAssets: () => assets,
+    getAssetDocumentsByAssetId: () => assetDocumentsByAssetId,
+    getAssetFinancialsByAssetId: () => assetFinancialsByAssetId,
+    getAssetFinancials: () => assetFinancials,
+    getAssetFinancialsReady: () => assetFinancialsReady,
+    getProfilesByUserId: () => profilesByUserId,
+    getLocations: () => locations,
+    matchesActiveLocation,
+    getFinancialPage: () => workspaceUiState.getFinancialPage(),
+    getFinancialMissingFilter: () => workspaceUiState.getFinancialMissingFilter(),
+    getFinancialLocationFilter: () => workspaceUiState.getFinancialLocationFilter(),
+    getFinancialTypeFilter: () => workspaceUiState.getFinancialTypeFilter(),
+    getFinancialAreaFilter: () => workspaceUiState.getFinancialAreaFilter(),
+    canEditFinancialRecords,
+    ASSETS_PER_PAGE,
+  });
+  const workflowHelpers = workflow.createAssetFinancialWorkflow({
+    documentRef: document,
+    FormDataCtor: FormData,
+    CSSRef: CSS,
+    confirmRef: confirm,
+    supabaseClient: () => supabaseClient,
+    withOperationTimeout,
+    getActiveCompanyId: () => activeCompanyId,
+    getSession: () => session,
+    canEditFinancialRecords,
+    isMissingTableError,
+    setAssetFinancialsReady: (value) => { assetFinancialsReady = value; },
+    loadAssetFinancials,
+    clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
+    showNotice,
+    renderWorkspace,
+  });
+  financialFeature = {
+    ...displayHelpers,
+    bindEvents: workflowHelpers.bindFinancialEvents,
+    bindNavigationEvents: events.bindWorkspaceFinancialNavigationEvents,
+  };
+  return financialFeature;
+}
 const {
   renderProcedureOptions,
 } = createProcedureOptionsDisplayHelpers({
@@ -1366,27 +1407,45 @@ const {
 const {
   renderNavCountBadge,
 } = createNavBadgeDisplayHelpers();
-const {
-  setupItems,
-} = createSetupStatusDisplayHelpers({
-  getSupabaseUrl: () => window.SUPABASE_URL,
-  getSupabaseAnonKey: () => window.SUPABASE_ANON_KEY,
-  getActiveCompanyId: () => activeCompanyId,
-  getRequestsReady: () => requestsReady,
-  getPublicRequestLinksReady: () => publicRequestLinksReady,
-  getSchedulesReady: () => schedulesReady,
-  getProceduresReady: () => proceduresReady,
-  getPartCostsReady: () => partCostsReady,
-  getPartSuppliersReady: () => partSuppliersReady,
-  getPartDocumentsReady: () => partDocumentsReady,
-  getAppIssueReportsReady: () => appIssueReportsReady,
-  getMessagesReady: () => messagesReady,
-  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
-  getOutcomesReady: () => outcomesReady,
-  getSafetyChecksReady: () => safetyChecksReady,
-  getAdminDeleteSqlConfirmed: () => adminDeleteSqlConfirmed,
-  getPhotosReady: () => photosReady,
-});
+function initializeSetupFeature() {
+  if (setupFeature) return setupFeature;
+  const setupDisplay = window.MaintainOpsSetupDisplay;
+  const setupStatusDisplay = window.MaintainOpsSetupStatusDisplay;
+  const storageDisplay = window.MaintainOpsStorageDashboardDisplay;
+  if (!setupDisplay || !setupStatusDisplay || !storageDisplay) {
+    throw new Error("Setup feature did not initialize.");
+  }
+  const { renderSetupItem } = setupDisplay.createSetupDisplayHelpers({ escapeHtml });
+  const { renderStorageDashboardPanel } = storageDisplay.createStorageDashboardDisplayHelpers({
+    escapeHtml,
+    formatBytes,
+  });
+  const { setupItems } = setupStatusDisplay.createSetupStatusDisplayHelpers({
+    getSupabaseUrl: () => window.SUPABASE_URL,
+    getSupabaseAnonKey: () => window.SUPABASE_ANON_KEY,
+    getActiveCompanyId: () => activeCompanyId,
+    getRequestsReady: () => requestsReady,
+    getPublicRequestLinksReady: () => publicRequestLinksReady,
+    getSchedulesReady: () => schedulesReady,
+    getProceduresReady: () => proceduresReady,
+    getPartCostsReady: () => partCostsReady,
+    getPartSuppliersReady: () => partSuppliersReady,
+    getPartDocumentsReady: () => partDocumentsReady,
+    getAppIssueReportsReady: () => appIssueReportsReady,
+    getMessagesReady: () => messagesReady,
+    getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+    getOutcomesReady: () => outcomesReady,
+    getSafetyChecksReady: () => safetyChecksReady,
+    getAdminDeleteSqlConfirmed: () => adminDeleteSqlConfirmed,
+    getPhotosReady: () => photosReady,
+  });
+  setupFeature = {
+    renderSetupItem,
+    renderStorageDashboardPanel,
+    setupItems,
+  };
+  return setupFeature;
+}
 const {
   renderMessageThreadButton,
 } = createMessageThreadButtonDisplayHelpers({
@@ -2109,6 +2168,8 @@ async function loadAssetWorkOrderHistory(assetId) {
 
 async function loadManagerDashboardCompletedWork() {
   if (!activeCompanyId) return;
+  await ensureFeatureBundleLoaded("manager");
+  const feature = initializeManagerDashboardFeature();
   managerCompletedWorkReady = false;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
@@ -2120,13 +2181,13 @@ async function loadManagerDashboardCompletedWork() {
     cutoffIso: cutoff.toISOString(),
   };
   const response = await withOperationTimeout(
-    fetchRecentCompletedWorkOrders(supabaseClient, params),
+    feature.fetchRecentCompletedWorkOrders(supabaseClient, params),
     "Manager completed work load timed out.",
     12000
   );
   if (response.error && isColumnSchemaError(response.error, ["location_id", "locations"])) {
     const fallbackResponse = await withOperationTimeout(
-      fetchRecentCompletedWorkOrders(supabaseClient, { ...params, selectClause: WORK_ORDER_FALLBACK_SELECT, locationsReady: false }),
+      feature.fetchRecentCompletedWorkOrders(supabaseClient, { ...params, selectClause: WORK_ORDER_FALLBACK_SELECT, locationsReady: false }),
       "Manager completed work fallback load timed out.",
       12000
     );
@@ -3307,12 +3368,14 @@ function renderWorkspace() {
     : "Run location setup to enable locations.";
   const showWorkDashboard = activeSection === "work" && !isViewingWorkOrderSearch && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
   const showIssueReportPanel = reportIssueMode && !activeAssetId && !activeWorkOrderId && !quickFixMode && !createWorkOrderMode;
+  const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
   const showingRequestsInWorkQueue = activeSection === "work" && activeStatusFilter === "requests";
+  const needsRequestQueue = !showGlobalSearch && (activeSection === "requests" || showingRequestsInWorkQueue);
   const activeRequestViewFilter = showingRequestsInWorkQueue ? "active" : requestViewFilter;
   const requestCounts = requestFilterCounts();
-  const visibleRequests = filteredRequests(activeRequestViewFilter);
-  const visibleRequestCount = requestCounts[activeRequestViewFilter] ?? requestServerTotal;
-  const visibleWorkOrders = workOrders;
+  const visibleRequests = needsRequestQueue ? filteredRequests(activeRequestViewFilter) : [];
+  const visibleRequestCount = needsRequestQueue ? (requestCounts[activeRequestViewFilter] ?? requestServerTotal) : 0;
+  const visibleWorkOrders = isWorkArea && !showGlobalSearch ? workOrders : [];
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const renderSectionNavBadge = (id) => {
     if (id === "messages") return renderMessageNavBadge();
@@ -3321,40 +3384,38 @@ function renderWorkspace() {
     if (id === "requests") return renderNavCountBadge(requestCounts.active || 0, { alert: true });
     return "";
   };
-  const totalWorkOrderPages = Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE));
-  if (workspaceUiState.getWorkOrderPage() > totalWorkOrderPages) workspaceUiState.setWorkOrderPage(totalWorkOrderPages);
-  if (workspaceUiState.getWorkOrderPage() < 1) workspaceUiState.setWorkOrderPage(1);
+  const totalWorkOrderPages = isWorkArea ? Math.max(1, Math.ceil(visibleWorkOrderCount / WORK_ORDERS_PER_PAGE)) : 1;
+  if (isWorkArea && workspaceUiState.getWorkOrderPage() > totalWorkOrderPages) workspaceUiState.setWorkOrderPage(totalWorkOrderPages);
+  if (isWorkArea && workspaceUiState.getWorkOrderPage() < 1) workspaceUiState.setWorkOrderPage(1);
   const pagedWorkOrders = visibleWorkOrders;
-  const myWork = workOrders.filter((workOrder) => workOrder.assigned_to === session.user.id);
-  const myOpenWork = myWork.filter((workOrder) => workOrder.status !== "completed");
-  const createdByMe = workOrders.filter((workOrder) => workOrder.created_by === session.user.id && workOrder.status !== "completed");
-  const locationAssets = assets.filter(matchesActiveLocation);
+  const locationAssets = activeSection === "assets" && !showGlobalSearch ? assets.filter(matchesActiveLocation) : [];
   const assetAreaOptions = [...new Set(locationAssets.map((asset) => String(asset.location || "").trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b));
   if (workspaceUiState.getAssetAreaFilter() !== "all" && !assetAreaOptions.includes(workspaceUiState.getAssetAreaFilter())) {
     workspaceUiState.setAssetAreaFilter("all");
   }
   const activeAssetAreaFilter = workspaceUiState.getAssetAreaFilter();
-  const visibleAssets = filteredAssets();
-  const visibleSchedules = filteredPreventiveSchedules();
-  const visibleProcedures = filteredProcedureTemplates();
-  const visibleParts = filteredParts();
-  const showGlobalSearch = Boolean(searchQuery.trim()) && !workOrderSearchMode && !activeAssetId && !activeWorkOrderId && !activePartId && !quickFixMode && !createWorkOrderMode;
+  const visibleAssets = activeSection === "assets" && !showGlobalSearch ? filteredAssets() : [];
+  const visibleSchedules = activeSection === "pm" && !showGlobalSearch ? filteredPreventiveSchedules() : [];
+  const visibleProcedures = activeSection === "procedures" && !showGlobalSearch ? filteredProcedureTemplates() : [];
+  const visibleParts = activeSection === "parts" && !showGlobalSearch ? filteredParts() : [];
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
-  const totalPartsPages = Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE));
-  if (workspaceUiState.getPartsPage() > totalPartsPages) workspaceUiState.setPartsPage(totalPartsPages);
-  if (workspaceUiState.getPartsPage() < 1) workspaceUiState.setPartsPage(1);
+  const totalPartsPages = activeSection === "parts" ? Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE)) : 1;
+  if (activeSection === "parts" && workspaceUiState.getPartsPage() > totalPartsPages) workspaceUiState.setPartsPage(totalPartsPages);
+  if (activeSection === "parts" && workspaceUiState.getPartsPage() < 1) workspaceUiState.setPartsPage(1);
   const partsPage = workspaceUiState.getPartsPage();
   const pagedParts = visibleParts.slice((partsPage - 1) * PARTS_PER_PAGE, partsPage * PARTS_PER_PAGE);
-  const totalAssetPages = Math.max(1, Math.ceil(visibleAssets.length / ASSETS_PER_PAGE));
-  if (workspaceUiState.getAssetsPage() > totalAssetPages) workspaceUiState.setAssetsPage(totalAssetPages);
-  if (workspaceUiState.getAssetsPage() < 1) workspaceUiState.setAssetsPage(1);
+  const totalAssetPages = activeSection === "assets" ? Math.max(1, Math.ceil(visibleAssets.length / ASSETS_PER_PAGE)) : 1;
+  if (activeSection === "assets" && workspaceUiState.getAssetsPage() > totalAssetPages) workspaceUiState.setAssetsPage(totalAssetPages);
+  if (activeSection === "assets" && workspaceUiState.getAssetsPage() < 1) workspaceUiState.setAssetsPage(1);
   const assetsPage = workspaceUiState.getAssetsPage();
   const pagedAssets = visibleAssets.slice((assetsPage - 1) * ASSETS_PER_PAGE, assetsPage * ASSETS_PER_PAGE);
-  const financialAssetCount = financialAssets().length;
-  const totalFinancialPages = Math.max(1, Math.ceil(financialAssetCount / ASSETS_PER_PAGE));
-  if (workspaceUiState.getFinancialPage() > totalFinancialPages) workspaceUiState.setFinancialPage(totalFinancialPages);
-  if (workspaceUiState.getFinancialPage() < 1) workspaceUiState.setFinancialPage(1);
+  const financialAssetCount = activeSection === "financial" && financialFeature
+    ? financialFeature.financialAssets().length
+    : 0;
+  const totalFinancialPages = activeSection === "financial" ? Math.max(1, Math.ceil(financialAssetCount / ASSETS_PER_PAGE)) : 1;
+  if (activeSection === "financial" && workspaceUiState.getFinancialPage() > totalFinancialPages) workspaceUiState.setFinancialPage(totalFinancialPages);
+  if (activeSection === "financial" && workspaceUiState.getFinancialPage() < 1) workspaceUiState.setFinancialPage(1);
   const assetTypeCounts = ASSET_TYPE_OPTIONS.reduce((counts, type) => {
     counts[type] = locationAssets.filter((asset) => (asset.asset_type || "machine") === type).length;
     return counts;
@@ -3473,32 +3534,32 @@ function renderWorkspace() {
       }).join("")}
     </section>
   `;
-  const visibleMembers = filteredMembers();
-  const workAssigneeSortMembers = Object.entries(profilesByUserId)
+  const visibleMembers = activeSection === "team" && !showGlobalSearch && teamFeature ? teamFeature.filteredMembers() : [];
+  const workAssigneeSortMembers = activeSection === "work" && !showGlobalSearch ? Object.entries(profilesByUserId)
     .map(([userId, profile]) => ({ userId, name: profile?.full_name || teamMemberName(userId) }))
     .filter((member) => member.userId && member.name)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const totalRequestPages = Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE));
-  if (workspaceUiState.getRequestsPage() > totalRequestPages) workspaceUiState.setRequestsPage(totalRequestPages);
-  if (workspaceUiState.getRequestsPage() < 1) workspaceUiState.setRequestsPage(1);
+    .sort((a, b) => a.name.localeCompare(b.name)) : [];
+  const totalRequestPages = needsRequestQueue ? Math.max(1, Math.ceil(visibleRequestCount / LIST_ITEMS_PER_PAGE)) : 1;
+  if (needsRequestQueue && workspaceUiState.getRequestsPage() > totalRequestPages) workspaceUiState.setRequestsPage(totalRequestPages);
+  if (needsRequestQueue && workspaceUiState.getRequestsPage() < 1) workspaceUiState.setRequestsPage(1);
   const requestsPage = workspaceUiState.getRequestsPage();
   const pagedRequests = visibleRequests;
-  const totalSchedulePages = Math.max(1, Math.ceil(visibleSchedules.length / LIST_ITEMS_PER_PAGE));
-  if (workspaceUiState.getSchedulesPage() > totalSchedulePages) workspaceUiState.setSchedulesPage(totalSchedulePages);
-  if (workspaceUiState.getSchedulesPage() < 1) workspaceUiState.setSchedulesPage(1);
+  const totalSchedulePages = activeSection === "pm" ? Math.max(1, Math.ceil(visibleSchedules.length / LIST_ITEMS_PER_PAGE)) : 1;
+  if (activeSection === "pm" && workspaceUiState.getSchedulesPage() > totalSchedulePages) workspaceUiState.setSchedulesPage(totalSchedulePages);
+  if (activeSection === "pm" && workspaceUiState.getSchedulesPage() < 1) workspaceUiState.setSchedulesPage(1);
   const schedulesPage = workspaceUiState.getSchedulesPage();
   const pagedSchedules = visibleSchedules.slice((schedulesPage - 1) * LIST_ITEMS_PER_PAGE, schedulesPage * LIST_ITEMS_PER_PAGE);
-  const totalProcedurePages = Math.max(1, Math.ceil(visibleProcedures.length / LIST_ITEMS_PER_PAGE));
-  if (workspaceUiState.getProceduresPage() > totalProcedurePages) workspaceUiState.setProceduresPage(totalProcedurePages);
-  if (workspaceUiState.getProceduresPage() < 1) workspaceUiState.setProceduresPage(1);
+  const totalProcedurePages = activeSection === "procedures" ? Math.max(1, Math.ceil(visibleProcedures.length / LIST_ITEMS_PER_PAGE)) : 1;
+  if (activeSection === "procedures" && workspaceUiState.getProceduresPage() > totalProcedurePages) workspaceUiState.setProceduresPage(totalProcedurePages);
+  if (activeSection === "procedures" && workspaceUiState.getProceduresPage() < 1) workspaceUiState.setProceduresPage(1);
   const proceduresPage = workspaceUiState.getProceduresPage();
   const pagedProcedures = visibleProcedures.slice((proceduresPage - 1) * LIST_ITEMS_PER_PAGE, proceduresPage * LIST_ITEMS_PER_PAGE);
-  const totalMemberPages = Math.max(1, Math.ceil(visibleMembers.length / LIST_ITEMS_PER_PAGE));
-  if (workspaceUiState.getMembersPage() > totalMemberPages) workspaceUiState.setMembersPage(totalMemberPages);
-  if (workspaceUiState.getMembersPage() < 1) workspaceUiState.setMembersPage(1);
+  const totalMemberPages = activeSection === "team" ? Math.max(1, Math.ceil(visibleMembers.length / LIST_ITEMS_PER_PAGE)) : 1;
+  if (activeSection === "team" && workspaceUiState.getMembersPage() > totalMemberPages) workspaceUiState.setMembersPage(totalMemberPages);
+  if (activeSection === "team" && workspaceUiState.getMembersPage() < 1) workspaceUiState.setMembersPage(1);
   const membersPage = workspaceUiState.getMembersPage();
   const pagedMembers = visibleMembers.slice((membersPage - 1) * LIST_ITEMS_PER_PAGE, membersPage * LIST_ITEMS_PER_PAGE);
-  const existingTeamSections = [...document.querySelectorAll("[data-team-section]")];
+  const existingTeamSections = activeSection === "team" ? [...document.querySelectorAll("[data-team-section]")] : [];
   const openTeamSectionIds = new Set(existingTeamSections
     .filter((section) => section.open)
     .map((section) => section.dataset.teamSection));
@@ -3600,7 +3661,8 @@ function renderWorkspace() {
           </section>
         ` : ""}
 
-        <section class="layout-grid single-column ${showGlobalSearch ? "hidden-section" : ""}">
+        ${showGlobalSearch ? "" : `
+        <section class="layout-grid single-column">
           ${isWorkArea ? `
             ${activeSection !== "assets" && (activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode) ? `
               <section class="panel full-width focus-panel">
@@ -3663,7 +3725,8 @@ function renderWorkspace() {
             `}
           ` : ""}
 
-          <section class="panel full-width ${activeSection === "planning" ? "" : "hidden-section"}">
+          ${activeSection === "planning" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Planning</h2>
               <span>${planningWorkOrdersReady
@@ -3685,8 +3748,10 @@ function renderWorkspace() {
               </div>
             `}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "requests" ? "" : "hidden-section"}">
+          ${activeSection === "requests" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Requests</h2>
               <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequestCount) : "setup needed"}</span>
@@ -3706,8 +3771,10 @@ function renderWorkspace() {
               ${renderListPagination("requests", visibleRequestCount, requestsPage, totalRequestPages)}
             ` : `<p class="muted">Run supabase/step-next-maintenance-requests.sql before submitting and reviewing requests.</p>`}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "assets" ? "" : "hidden-section"}">
+          ${activeSection === "assets" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>${activeAssetHistoryId ? "Equipment History" : activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
               ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
@@ -3752,16 +3819,26 @@ function renderWorkspace() {
             ${renderAssetsPagination(visibleAssets.length, totalAssetPages)}
             `}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "financial" ? "" : "hidden-section"}">
+          ${activeSection === "financial" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>${activeFinancialAssetId ? "Financial Detail" : "Financial"}</h2>
               <span>${activeFinancialAssetId ? "Accounting fields" : `${financialAssetCount} equipment record${financialAssetCount === 1 ? "" : "s"}`}</span>
             </div>
-            ${canUseFinancialMenu() ? (activeFinancialAssetId ? renderFinancialDetail(activeFinancialAssetId) : renderFinancialPanel()) : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
+            ${canUseFinancialMenu()
+              ? (isFeatureBundleReady("financial") && financialFeature
+                  ? (activeFinancialAssetId
+                      ? financialFeature.renderFinancialDetail(activeFinancialAssetId)
+                      : financialFeature.renderFinancialPanel())
+                  : renderFeatureBundlePanel("financial", "Financial"))
+              : `<p class="muted">Financial records are available to managers, admins, and accounting.</p>`}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "pm" ? "" : "hidden-section"}">
+          ${activeSection === "pm" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Preventive Maintenance</h2>
               <span>${visibleSchedules.length} shown</span>
@@ -3793,8 +3870,10 @@ function renderWorkspace() {
             </div>
             ${renderListPagination("schedules", visibleSchedules.length, schedulesPage, totalSchedulePages)}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "procedures" ? "" : "hidden-section"}">
+          ${activeSection === "procedures" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Procedure Checklists</h2>
               <span>${visibleProcedures.length} shown</span>
@@ -3813,104 +3892,120 @@ function renderWorkspace() {
             ${renderListPagination("procedures", visibleProcedures.length, proceduresPage, totalProcedurePages)}
             ` : `<p class="muted">Run supabase/step-next-procedures.sql to turn on procedure checklists.</p>`}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "messages" ? "" : "hidden-section"}">
+          ${activeSection === "messages" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Messages</h2>
               <span>${messagesReady ? `${messageThreads.length} threads` : "setup needed"}</span>
             </div>
             ${renderMessageCenter()}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "team" ? "" : "hidden-section"}">
+          ${activeSection === "team" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Team</h2>
               <span>${visibleMembers.length} shown</span>
             </div>
-            ${renderTeamSection({
-              id: "members",
-              label: "Team Members",
-              meta: `${visibleMembers.length} shown`,
-              open: teamSectionIsOpen("members"),
-              content: `
-                <div class="member-list">
-                  ${pagedMembers.map(renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
-                </div>
-                ${renderListPagination("members", visibleMembers.length, membersPage, totalMemberPages)}
-              `,
-            })}
-            ${canEditOperations ? renderTeamSection({
-              id: "profile",
-              label: "My Profile",
-              open: teamSectionIsOpen("profile"),
-              content: renderMyProfileForm(),
-            }) : ""}
-            ${renderTeamSection({
-              id: "security",
-              label: "Account Security",
-              open: teamSectionIsOpen("security"),
-              content: renderPasswordChangeForm(),
-            })}
-            ${renderTeamSection({
-              id: "roles",
-              label: "Roles and Permissions",
-              open: teamSectionIsOpen("roles"),
-              content: renderRoleGuide(),
-            })}
-            ${canManageTeam() ? `
-              ${renderTeamSection({
-                id: "notifications",
-                label: "Request Email Recipients",
-                meta: `${requestNotificationRecipients.length} configured`,
-                open: teamSectionIsOpen("notifications"),
-                content: renderRequestNotificationRecipients(activeLocationId),
-              })}
-              ${renderTeamSection({
-                id: "invitations",
-                label: "Invitations",
-                meta: `${teamInvites.filter((invite) => !invite.accepted_at).length} pending`,
-                open: teamSectionIsOpen("invitations"),
+            ${isFeatureBundleReady("team") && teamFeature ? `
+              ${teamFeature.renderTeamSection({
+                id: "members",
+                label: "Team Members",
+                meta: `${visibleMembers.length} shown`,
+                open: teamSectionIsOpen("members"),
                 content: `
-                  ${renderTeamInviteLinks(activeLocationId)}
-                  ${renderTeamInviteForm(activeLocationId)}
-                  ${teamInvitesReady ? renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
+                  <div class="member-list">
+                    ${pagedMembers.map(teamFeature.renderMember).join("") || `<p class="muted">No team members match this search.</p>`}
+                  </div>
+                  ${renderListPagination("members", visibleMembers.length, membersPage, totalMemberPages)}
                 `,
               })}
-              ${renderTeamSection({
-                id: "advanced",
-                label: "Advanced Member Tools",
-                open: teamSectionIsOpen("advanced"),
-                content: `
-                  <form class="inline-form team-form" id="add-member-form">
-                    <input name="user_id" required placeholder="User UUID">
-                    <select name="role">
-                      ${teamRoleOptionsForActor().map((role) => `<option value="${role}">${escapeHtml(roleLabel(role))}</option>`).join("")}
-                    </select>
-                    <button class="secondary-button" type="submit">Add Member</button>
-                  </form>
-                `,
+              ${canEditOperations ? teamFeature.renderTeamSection({
+                id: "profile",
+                label: "My Profile",
+                open: teamSectionIsOpen("profile"),
+                content: teamFeature.renderMyProfileForm(),
+              }) : ""}
+              ${teamFeature.renderTeamSection({
+                id: "security",
+                label: "Account Security",
+                open: teamSectionIsOpen("security"),
+                content: teamFeature.renderPasswordChangeForm(),
               })}
-            ` : `<p class="muted team-permission-note">Admins can grant roles. Managers can invite technicians.</p>`}
+              ${teamFeature.renderTeamSection({
+                id: "roles",
+                label: "Roles and Permissions",
+                open: teamSectionIsOpen("roles"),
+                content: renderRoleGuide(),
+              })}
+              ${canManageTeam() ? `
+                ${teamFeature.renderTeamSection({
+                  id: "notifications",
+                  label: "Request Email Recipients",
+                  meta: `${requestNotificationRecipients.length} configured`,
+                  open: teamSectionIsOpen("notifications"),
+                  content: teamFeature.renderRequestNotificationRecipients(activeLocationId),
+                })}
+                ${teamFeature.renderTeamSection({
+                  id: "invitations",
+                  label: "Invitations",
+                  meta: `${teamInvites.filter((invite) => !invite.accepted_at).length} pending`,
+                  open: teamSectionIsOpen("invitations"),
+                  content: `
+                    ${teamFeature.renderTeamInviteLinks(activeLocationId)}
+                    ${teamFeature.renderTeamInviteForm(activeLocationId)}
+                    ${teamInvitesReady ? teamFeature.renderTeamInvites() : `<p class="warning-text">Run supabase/step-next-invite-default-location.sql to invite teammates by email.</p>`}
+                  `,
+                })}
+                ${teamFeature.renderTeamSection({
+                  id: "advanced",
+                  label: "Advanced Member Tools",
+                  open: teamSectionIsOpen("advanced"),
+                  content: `
+                    <form class="inline-form team-form" id="add-member-form">
+                      <input name="user_id" required placeholder="User UUID">
+                      <select name="role">
+                        ${teamRoleOptionsForActor().map((role) => `<option value="${role}">${escapeHtml(roleLabel(role))}</option>`).join("")}
+                      </select>
+                      <button class="secondary-button" type="submit">Add Member</button>
+                    </form>
+                  `,
+                })}
+              ` : `<p class="muted team-permission-note">Admins can grant roles. Managers can invite technicians.</p>`}
+            ` : renderFeatureBundlePanel("team", "Team")}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "manager" ? "" : "hidden-section"}">
+          ${activeSection === "manager" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Manager</h2>
               <span>${escapeHtml(activeLocationName())}</span>
             </div>
-            ${canManageTeam() ? renderManagerDashboard() : `<p class="muted">Manager dashboard is available to managers and admins.</p>`}
+            ${canManageTeam()
+              ? (isFeatureBundleReady("manager") && managerDashboardFeature
+                  ? managerDashboardFeature.render()
+                  : renderFeatureBundlePanel("manager", "Manager"))
+              : `<p class="muted">Manager dashboard is available to managers and admins.</p>`}
           </section>
+          ` : ""}
 
-          <section class="panel full-width performance-workspace-panel ${activeSection === "performance" ? "" : "hidden-section"}">
-            ${activeSection === "performance" ? renderPlatformPerformanceLazyPanel({
+          ${activeSection === "performance" ? `
+          <section class="panel full-width performance-workspace-panel">
+            ${renderPlatformPerformanceLazyPanel({
               snapshot: platformPerformance,
               ready: platformPerformanceReady,
               error: platformPerformanceError,
               timedOut: platformPerformanceTimedOut,
-            }) : ""}
+            })}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "parts" ? "" : "hidden-section"}">
+          ${activeSection === "parts" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>${activePartId ? "Part Detail" : "Parts Inventory"}</h2>
               <span>${activePartId ? "editing" : `${visibleParts.length} shown`}</span>
@@ -3944,16 +4039,20 @@ function renderWorkspace() {
               ${renderPartsPagination(visibleParts.length, totalPartsPages)}
             `}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "conversions" ? "" : "hidden-section"}">
+          ${activeSection === "conversions" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Conversions</h2>
               <span>shop reference</span>
             </div>
-            ${activeSection === "conversions" ? renderConversionsLazyPanel() : ""}
+            ${renderConversionsLazyPanel()}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "settings" ? "" : "hidden-section"}">
+          ${activeSection === "settings" ? `
+          <section class="panel full-width">
             <div class="panel-header">
               <h2>Company Settings</h2>
               <span>${escapeHtml(roleLabel(activeCompany?.role))}</span>
@@ -3991,25 +4090,31 @@ function renderWorkspace() {
               </div>
             ` : `<p class="muted">Company settings are available to managers and admins.</p>`}
           </section>
+          ` : ""}
 
-          <section class="panel full-width ${activeSection === "setup" ? "" : "hidden-section"}">
-            <div class="panel-header">
-              <h2>Admin Setup</h2>
-              <span>${setupItems().filter((item) => item.ready).length}/${setupItems().length} ready</span>
-            </div>
-            <p class="muted setup-note">Builder diagnostic area. Use this to confirm Supabase tables, columns, storage, and config are ready before demos or deployment.</p>
-            <div class="setup-list">
-              ${setupItems().map(renderSetupItem).join("")}
-            </div>
-            ${renderStorageDashboardPanel({
-              canView: canManageTeam(),
-              dashboard: storageDashboard,
-              ready: storageDashboardReady,
-              error: storageDashboardError,
-            })}
-            ${renderAppIssueReportsPanel()}
+          ${activeSection === "setup" ? `
+          <section class="panel full-width">
+            ${isFeatureBundleReady("setup") && setupFeature ? `
+              <div class="panel-header">
+                <h2>Admin Setup</h2>
+                <span>${setupFeature.setupItems().filter((item) => item.ready).length}/${setupFeature.setupItems().length} ready</span>
+              </div>
+              <p class="muted setup-note">Builder diagnostic area. Use this to confirm Supabase tables, columns, storage, and config are ready before demos or deployment.</p>
+              <div class="setup-list">
+                ${setupFeature.setupItems().map(setupFeature.renderSetupItem).join("")}
+              </div>
+              ${setupFeature.renderStorageDashboardPanel({
+                canView: canManageTeam(),
+                dashboard: storageDashboard,
+                ready: storageDashboardReady,
+                error: storageDashboardError,
+              })}
+              ${renderAppIssueReportsPanel()}
+            ` : renderFeatureBundlePanel("setup", "Admin Setup")}
           </section>
+          ` : ""}
         </section>
+        `}
       </main>
     </div>
   `;
@@ -4276,26 +4381,6 @@ const {
   showNotice,
   recordAssetEvent,
   render,
-  renderWorkspace,
-});
-
-const {
-  bindFinancialEvents,
-} = createAssetFinancialWorkflow({
-  documentRef: document,
-  FormDataCtor: FormData,
-  CSSRef: CSS,
-  confirmRef: confirm,
-  supabaseClient: () => supabaseClient,
-  withOperationTimeout,
-  getActiveCompanyId: () => activeCompanyId,
-  getSession: () => session,
-  canEditFinancialRecords,
-  isMissingTableError,
-  setAssetFinancialsReady: (value) => { assetFinancialsReady = value; },
-  loadAssetFinancials,
-  clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
-  showNotice,
   renderWorkspace,
 });
 
@@ -5175,15 +5260,27 @@ function bindWorkspaceEvents() {
     renderWorkspace,
   });
 
-  bindWorkspaceManagerDashboardEvents({
-    state: {
-      setActiveSection: setActiveSectionState,
-      setManagerDashboardMetric: (value) => workspaceUiState.setManagerDashboardMetric(value),
-      setManagerDashboardUserId: (value) => workspaceUiState.setManagerDashboardUserId(value),
-      setRequestViewFilter: (value) => workspaceUiState.setRequestViewFilter(value),
-    },
-    renderWorkspace,
+  if (activeSection === "manager" && managerDashboardFeature) {
+    managerDashboardFeature.bindEvents({
+      state: {
+        setActiveSection: setActiveSectionState,
+        setManagerDashboardMetric: (value) => workspaceUiState.setManagerDashboardMetric(value),
+        setManagerDashboardUserId: (value) => workspaceUiState.setManagerDashboardUserId(value),
+        setRequestViewFilter: (value) => workspaceUiState.setRequestViewFilter(value),
+      },
+      renderWorkspace,
+    });
+  }
+
+  document.querySelectorAll("[data-retry-feature-bundle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const featureId = button.dataset.retryFeatureBundle;
+      clearFeatureBundleError(featureId);
+      scheduleFeatureBundleLoad(featureId);
+      renderWorkspace();
+    });
   });
+  scheduleFeatureBundleLoad();
 
   bindWorkSectionJumpEvents();
 
@@ -5452,20 +5549,22 @@ function bindWorkspaceEvents() {
   const assetForm = document.querySelector("#create-asset-form");
   if (assetForm) assetForm.addEventListener("submit", createAsset);
 
-  bindFinancialEvents();
-  bindWorkspaceFinancialNavigationEvents({
-    documentRef: document,
-    state: {
-      setActiveFinancialAssetId: setActiveFinancialAssetIdState,
-      clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
-      setActiveAssetId: setActiveAssetIdState,
-      setActiveWorkOrderId: setActiveWorkOrderIdState,
-      setActivePartId: setActivePartIdState,
-      setActiveSection: setActiveSectionState,
-    },
-    renderWorkspace,
-    scrollToDetailTop: scrollEquipmentDetailToActions,
-  });
+  if (activeSection === "financial" && financialFeature) {
+    financialFeature.bindEvents();
+    financialFeature.bindNavigationEvents({
+      documentRef: document,
+      state: {
+        setActiveFinancialAssetId: setActiveFinancialAssetIdState,
+        clearActiveFinancialAssetId: () => setActiveFinancialAssetIdState(null),
+        setActiveAssetId: setActiveAssetIdState,
+        setActiveWorkOrderId: setActiveWorkOrderIdState,
+        setActivePartId: setActivePartIdState,
+        setActiveSection: setActiveSectionState,
+      },
+      renderWorkspace,
+      scrollToDetailTop: scrollEquipmentDetailToActions,
+    });
+  }
 
   const editAssetForm = document.querySelector("#edit-asset-form");
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);

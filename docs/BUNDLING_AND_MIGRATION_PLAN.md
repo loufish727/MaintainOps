@@ -1,6 +1,6 @@
 # Bundling And Migration Plan
 
-MaintainOps is still a static browser app that loads many JavaScript files directly from `index.html`. That is workable for the current app, but it makes cache control, dependency order, and review confidence harder as the app grows.
+MaintainOps remains a static browser app, but production now loads generated minified and content-hashed assets instead of the source-file graph.
 
 This plan is intentionally staged. It does not change runtime architecture until the current LFES checks can prove the same behavior before and after each step.
 
@@ -14,14 +14,16 @@ This plan is intentionally staged. It does not change runtime architecture until
 
 ## Bundling Phases
 
-1. Inventory current script tags, module globals, and load-order dependencies in `docs/SCRIPT_LOAD_INVENTORY.md`.
-2. Enforce that main-index globals are provided before they are consumed.
-3. Add a build tool in compatibility mode that still outputs static files for GitHub Pages.
-4. Bundle low-risk extracted modules first while preserving the existing global API expected by `app.js`.
-5. Prove the first pilot bundle through `npm run test:bundle:pilot` without loading the generated bundle in production.
-6. Swap proven bundles into `index.html` in small batches, ending with the eager `runtime` plus `appShell` split once the smoke suite stays green.
-7. Use generated hashed bundle filenames so browser cache busting is automatic.
-8. Keep a rollback path to the current static script tags until strict LFES and hosted LFES pass on the bundled output.
+Completed:
+
+1. Script tags, global providers/consumers, and load order are inventoried in `docs/SCRIPT_LOAD_INVENTORY.md`.
+2. The production entry points use generated minified runtime, app-shell, application-style, spatial-script, and spatial-style assets with content-hashed filenames and external source maps.
+3. Manager, Financial, Team presentation, and Admin Setup are lazy feature chunks rather than eager runtime dependencies.
+4. Shop Reference and the 3D Performance workspace retain their existing lazy boundaries.
+5. Compressed and decoded size budgets run inside `npm run test:bundle:pilot`.
+6. Authenticated browser proof enforces initial request, DOM, ready-time, and feature-loading budgets.
+
+Next bundling work should be evidence-driven. Add another lazy boundary only when a measured startup or interaction cost justifies it; do not create one network request per small source module.
 
 ## SQL Migration Phases
 
