@@ -46,6 +46,7 @@
     disabledUntil: 0,
     configuredCompanyId: "",
     workspaceCompanies: new Set(),
+    persistedVitals: new Set(),
     workspaceStartedAt: pageStartedAt,
     navigationStartedAt: now(),
     offlineStartedAt: 0,
@@ -164,7 +165,12 @@
   function captureVitals() {
     Object.values(state.latest)
       .filter((sample) => ["fcp_ms", "lcp_ms", "inp_ms", "cls"].includes(sample.metric))
-      .forEach((sample) => record(sample.metric, sample.value, { source: "performance-observer" }));
+      .forEach((sample) => {
+        if (state.persistedVitals.has(sample.metric)) return;
+        if (record(sample.metric, sample.value, { source: "performance-observer" })) {
+          state.persistedVitals.add(sample.metric);
+        }
+      });
   }
 
   function markNavigationStart() {

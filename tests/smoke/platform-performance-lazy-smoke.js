@@ -98,6 +98,7 @@ function createQueryResponse(table, companyRows, calls) {
       return Promise.resolve({
         data: {
           status: "current",
+          window_days: 30,
           sample_count: 20,
           session_count: 4,
           metrics: {
@@ -121,6 +122,15 @@ function createQueryResponse(table, companyRows, calls) {
     parts: [{ id: "part-1" }, { id: "part-2" }],
     companyMembers: [{ user_id: "user-1" }, { user_id: "user-2" }],
     canViewStorage: true,
+    localTelemetry: {
+      latest: {
+        lcp_ms: { value: 640 },
+      },
+      connection: {
+        viewport_class: "desktop",
+        connection_type: "4g",
+      },
+    },
   });
 
   assert.equal(snapshot.summary.teamSeats, 2);
@@ -134,7 +144,10 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(snapshot.plants[0].name, "Salem");
   assert.equal(snapshot.sampling.status, "current");
   assert.equal(snapshot.telemetry.status, "current");
-  assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "lcp_ms").status, "good");
+  const lcpMetric = snapshot.health.metrics.find((metric) => metric.metric === "lcp_ms");
+  assert.equal(lcpMetric.status, "good");
+  assert.equal(lcpMetric.statisticLabel, "30-day p75");
+  assert.equal(lcpMetric.currentComparisonLabel, "This visit 640 ms");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "query_latency_ms").status, "watch");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "client_error_rate").status, "poor");
   assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
@@ -165,6 +178,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameSource, /localStorage\.setItem\("maintainops\.activeSection", "mywork"\)/);
   assert.match(frameSource, /platform-spatial-standalone/);
   assert.match(frameSource, /App Health/);
+  assert.match(frameSource, /health-metric-period/);
+  assert.match(frameSource, /directionLabel/);
   assert.match(frameSource, /platform-spatial-degraded/);
   assert.match(frameSource, /Unavailable/);
   assert.match(frameSource, /refresh\.classList\.remove\("refreshing"\)/);

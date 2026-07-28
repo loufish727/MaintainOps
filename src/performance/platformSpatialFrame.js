@@ -23,10 +23,10 @@ const fallbackSnapshot = {
     measuredCount: 0,
     totalCount: 4,
     metrics: [
-      { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page load", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "2.5 s or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
-      { metric: "inp_ms", label: "Interaction to Next Paint", shortLabel: "Responsiveness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "200 ms or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
-      { metric: "query_latency_ms", label: "Data Query Latency", shortLabel: "Data response", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
-      { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", target: "50 FPS desktop / 40 FPS mobile", basis: "Device-aware MaintainOps target", sampleCount: 0 },
+      { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page render (LCP)", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "2.5 s or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+      { metric: "inp_ms", label: "Interaction to Next Paint", shortLabel: "Responsiveness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "200 ms or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+      { metric: "query_latency_ms", label: "Data Query Latency", shortLabel: "Data response", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
+      { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", directionLabel: "Higher is better", statisticLabel: "Collecting", target: "50 FPS desktop / 40 FPS mobile", basis: "Device-aware MaintainOps target", sampleCount: 0 },
     ],
   },
   summary: {
@@ -428,10 +428,14 @@ function renderSummary(data) {
     <article class="metric-card health-metric-card status-${escapeHtml(metric.status)}">
       <div class="health-metric-head"><span>${escapeHtml(metric.shortLabel)}</span><b>${escapeHtml(metric.statusLabel)}</b></div>
       <strong>${escapeHtml(metric.valueText)}</strong>
-      <div class="metric-scale direction-${escapeHtml(metric.direction)} ${metric.status === "collecting" ? "is-collecting" : ""}" style="--good-position:${Math.round(metric.goodPosition || 0)}%;--watch-position:${Math.round(metric.watchPosition || 0)}%" role="meter" aria-label="${escapeHtml(metric.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(metric.gaugePosition || 0)}" aria-valuetext="${escapeHtml(`${metric.valueText}, ${metric.statusLabel}`)}">
+      <div class="health-metric-period">
+        <span>${escapeHtml(metric.statisticLabel || "Current")}</span>
+        ${metric.currentComparisonLabel ? `<span>${escapeHtml(metric.currentComparisonLabel)}</span>` : ""}
+      </div>
+      <div class="metric-scale direction-${escapeHtml(metric.direction)} ${metric.status === "collecting" ? "is-collecting" : ""}" style="--good-position:${Math.round(metric.goodPosition || 0)}%;--watch-position:${Math.round(metric.watchPosition || 0)}%" role="meter" aria-label="${escapeHtml(metric.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(metric.gaugePosition || 0)}" aria-valuetext="${escapeHtml(`${metric.valueText}, ${metric.statusLabel}, ${metric.directionLabel || ""}`)}">
         <i style="left:${Math.max(0, Math.min(100, metric.gaugePosition || 0))}%"></i>
       </div>
-      <small>${escapeHtml(metric.target)}</small>
+      <small>${escapeHtml(metric.target)}${metric.directionLabel ? ` / ${escapeHtml(metric.directionLabel)}` : ""}</small>
       <p>${escapeHtml(metric.basis)}${metric.sampleCount ? ` / ${numberText(metric.sampleCount)} samples` : ""}</p>
     </article>
   `).join("");
