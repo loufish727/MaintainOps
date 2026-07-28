@@ -15,7 +15,9 @@ The raw telemetry table is not readable through the browser API. Signed-in compa
 
 ## Grades And Gauges
 
-The Performance screen uses Good, Watch, Poor, or Collecting. Every measured gauge displays its value, target, basis, and sample count. An overall grade is withheld until at least three measurements are available.
+The Performance screen uses Good, Watch, Poor, or Collecting. Every measured gauge displays its value, measurement period, target, direction, basis, and sample count. When a 30-day aggregate exists, the card also shows the current browser visit separately. An overall grade is withheld until at least three measurements are available.
+
+Scale colors run from the lowest numeric value on the left to the highest on the right. Green is therefore on the left for measurements where lower is better, such as render time and errors, and on the right where higher is better, such as frame rate and connection speed. Each card states the direction in text.
 
 | Metric | Good | Watch | Poor | Basis |
 |---|---:|---:|---:|---|
@@ -32,7 +34,7 @@ The Performance screen uses Good, Watch, Poor, or Collecting. Every measured gau
 | Estimated connection | 10 Mbps or more | 2-10 Mbps | below 2 Mbps | Browser connection estimate |
 | Storage used | 70% or less | 70-85% | over 85% | MaintainOps capacity target |
 
-The 3D ready thresholds expand on connections reported as 3G or 2G. Connection speed is an estimate supplied by compatible browsers, not a test of the user's internet provider. Core Web Vitals follow Google's published thresholds and use the 75th percentile so a small number of fast devices cannot hide a poor experience for a meaningful share of users: [Web Vitals](https://web.dev/articles/vitals).
+The 3D ready thresholds expand on connections reported as 3G or 2G. Connection speed is an estimate supplied by compatible browsers, not a test of the user's internet provider. Core Web Vitals follow Google's published thresholds and use the 75th percentile so a small number of fast devices cannot hide a poor experience for a meaningful share of users: [Web Vitals](https://web.dev/articles/vitals). Each Core Web Vital contributes at most one aggregate reading per signed-in browser session. Historical duplicate rows remain intact for auditability but are excluded from the dashboard aggregate.
 
 The overall score is a transparent, unweighted average of the measured gauges: Good contributes 100 points, Watch 62, and Poor 24. It is an at-a-glance experience indicator, not an industry benchmark, and remains Collecting until at least three gauges have evidence.
 

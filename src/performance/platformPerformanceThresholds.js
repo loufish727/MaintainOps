@@ -2,7 +2,7 @@
   const DEFINITIONS = Object.freeze({
     lcp_ms: {
       label: "Largest Contentful Paint",
-      shortLabel: "Page load",
+      shortLabel: "Page render (LCP)",
       unit: "ms",
       direction: "lower",
       good: 2500,
@@ -156,9 +156,14 @@
         statusLabel: "Collecting",
         gaugePosition: 0,
         direction: definition?.direction || "lower",
+        directionLabel: definition?.direction === "higher" ? "Higher is better" : "Lower is better",
         target: definition?.target || "No target defined",
         basis: definition?.basis || "No threshold defined",
         sampleCount: Number(context.sampleCount) || 0,
+        statisticLabel: context.statisticLabel || "Current",
+        currentValue: null,
+        currentValueText: "",
+        currentComparisonLabel: "",
       };
     }
 
@@ -186,6 +191,9 @@
     const gaugePosition = Math.max(0, Math.min(100, (numeric / definition.gaugeMax) * 100));
     const goodPosition = Math.max(0, Math.min(100, (good / definition.gaugeMax) * 100));
     const watchPosition = Math.max(0, Math.min(100, (watch / definition.gaugeMax) * 100));
+    const currentValue = finite(context.currentValue);
+    const statisticLabel = context.statisticLabel || "Current";
+    const currentValueText = currentValue === null ? "" : formatValue(currentValue, definition.unit);
     return {
       metric,
       label: definition.label,
@@ -199,9 +207,16 @@
       goodPosition,
       watchPosition,
       direction: definition.direction,
+      directionLabel: definition.direction === "higher" ? "Higher is better" : "Lower is better",
       target: definition.target,
       basis: definition.basis,
       sampleCount: Number(context.sampleCount) || 0,
+      statisticLabel,
+      currentValue,
+      currentValueText,
+      currentComparisonLabel: currentValueText && statisticLabel !== "This visit"
+        ? `This visit ${currentValueText}`
+        : "",
     };
   }
 

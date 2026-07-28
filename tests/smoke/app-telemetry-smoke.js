@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { performance } = require("node:perf_hooks");
 
 const windowListeners = new Map();
+const documentListeners = new Map();
 global.performance = performance;
 global.window = {
   innerWidth: 1280,
@@ -11,7 +12,7 @@ global.window = {
 };
 global.document = {
   visibilityState: "visible",
-  addEventListener() {},
+  addEventListener(type, listener) { documentListeners.set(type, listener); },
 };
 Object.defineProperty(global, "navigator", {
   configurable: true,
@@ -37,9 +38,12 @@ const telemetry = require("../../src/performance/appTelemetry.js");
   };
 
   telemetry.configure({ client, companyId: "company-a" });
-  assert.equal(telemetry.record("lcp_ms", 1800, { source: "test" }), true);
+  assert.equal(telemetry.record("lcp_ms", 1800, { source: "test" }, { persist: false }), true);
   assert.equal(telemetry.record("unsupported", 1), false);
   telemetry.markWorkspaceReady("company-a");
+  global.document.visibilityState = "hidden";
+  documentListeners.get("visibilitychange")();
+  documentListeners.get("visibilitychange")();
   telemetry.recordSpatial({ fps: 42, frameMs: 23, contextLosses: 0, qualityTier: "performance" });
   assert.equal(await telemetry.flush(), true);
 
@@ -48,6 +52,7 @@ const telemetry = require("../../src/performance/appTelemetry.js");
   assert.ok(calls.every((call) => call.args.target_company_id === "company-a"));
   assert.ok(samples.some((sample) => sample.metric === "session_start" && sample.unit === "count"));
   assert.ok(samples.some((sample) => sample.metric === "workspace_ready_ms" && sample.unit === "ms"));
+  assert.equal(samples.filter((sample) => sample.metric === "lcp_ms").length, 1);
   assert.ok(samples.some((sample) => sample.metric === "spatial_fps" && sample.unit === "fps"));
   assert.ok(!samples.some((sample) => sample.metric === "webgl_context_loss"));
   assert.equal(telemetry.snapshot().connection.device_tier, "standard");

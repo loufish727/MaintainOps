@@ -206,12 +206,23 @@
   function telemetryMetricValue(telemetry, localTelemetry, metric, percentile = "p75") {
     const aggregate = telemetry?.metrics?.[metric];
     const aggregateValue = Number(aggregate?.[percentile]);
+    const localValue = localTelemetry?.latest?.[metric]?.value;
+    const currentValue = localValue === null || localValue === undefined || localValue === ""
+      ? null
+      : Number(localValue);
+    const validCurrentValue = Number.isFinite(currentValue) ? currentValue : null;
     if (Number.isFinite(aggregateValue)) {
-      return { value: aggregateValue, sampleCount: Number(aggregate.count) || 0 };
+      return {
+        value: aggregateValue,
+        sampleCount: Number(aggregate.count) || 0,
+        currentValue: validCurrentValue,
+        statisticLabel: `${Math.max(1, Number(telemetry?.window_days) || 30)}-day ${percentile}`,
+      };
     }
-    const localValue = Number(localTelemetry?.latest?.[metric]?.value);
-    if (Number.isFinite(localValue)) return { value: localValue, sampleCount: 1 };
-    return { value: null, sampleCount: 0 };
+    if (validCurrentValue !== null) {
+      return { value: validCurrentValue, sampleCount: 1, currentValue: null, statisticLabel: "This visit" };
+    }
+    return { value: null, sampleCount: 0, currentValue: null, statisticLabel: "Collecting" };
   }
 
   function buildHealth({ telemetry, localTelemetry, storage }) {
@@ -236,16 +247,23 @@
         sampleCount: sampled.sampleCount,
         viewportClass,
         connectionType,
+        currentValue: sampled.currentValue,
+        statisticLabel: sampled.statisticLabel,
       });
     });
 
     const sessions = Number(telemetry?.session_count) || 0;
+    const telemetryWindowDays = Math.max(1, Number(telemetry?.window_days) || 30);
     const errors = telemetry?.metrics?.client_error;
     const errorTotal = Number(errors?.average) * Number(errors?.count);
     const errorRate = sessions > 0 && Number.isFinite(errorTotal) ? (errorTotal / sessions) * 100 : null;
-    metrics.push(grade("client_error_rate", errorRate, { sampleCount: Number(errors?.count) || 0 }));
+    metrics.push(grade("client_error_rate", errorRate, {
+      sampleCount: Number(errors?.count) || 0,
+      statisticLabel: `${telemetryWindowDays}-day rate`,
+    }));
     metrics.push(grade("storage_usage_percent", storage.available ? storage.usagePercent : null, {
       sampleCount: storage.available ? 1 : 0,
+      statisticLabel: "Current capacity",
     }));
 
     const measuredCount = metrics.filter((metric) => metric.status !== "collecting").length;

@@ -335,6 +335,15 @@ async function main() {
     if (Number(telemetryInsert.rows[0]?.inserted) !== 2) throw new Error("Technician could not submit allowed company telemetry.");
     checks.push({ name: "company_member_performance_sample_insert", verdict: "PASS" });
 
+    await database.query(
+      "select public.record_app_performance_samples($1::uuid, $2::jsonb)",
+      [ids.companyA, JSON.stringify([
+        { metric: "lcp_ms", value: 5900, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop" } },
+        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes" } },
+        { metric: "lcp_ms", value: 1800, unit: "ms", context: { source: "isolated-lfes", viewport_class: "mobile" } },
+      ])]
+    );
+
     let crossCompanyTelemetryDenied = false;
     try {
       await database.query(
@@ -374,13 +383,20 @@ async function main() {
     const dashboard = typeof dashboardResult.rows[0]?.dashboard === "string"
       ? JSON.parse(dashboardResult.rows[0].dashboard)
       : dashboardResult.rows[0]?.dashboard;
-    if (Number(dashboard?.sample_count) !== 2 || Number(dashboard?.metrics?.lcp_ms?.p75) !== 2200) {
+    if (
+      Number(dashboard?.sample_count) !== 4
+      || Number(dashboard?.raw_sample_count) !== 5
+      || Number(dashboard?.duplicate_vital_samples_ignored) !== 1
+      || Number(dashboard?.metrics?.lcp_ms?.count) !== 2
+      || Number(dashboard?.metrics?.lcp_ms?.p75) !== 5900
+    ) {
       throw new Error("Performance dashboard did not return the expected company aggregate.");
     }
     if (JSON.stringify(dashboard).includes(ids.technician) || Object.hasOwn(dashboard || {}, "recorded_by")) {
       throw new Error("Performance dashboard exposed a contributor identity.");
     }
     checks.push({ name: "performance_dashboard_is_aggregate_without_identity", verdict: "PASS" });
+    checks.push({ name: "performance_dashboard_deduplicates_vitals_by_session", verdict: "PASS" });
 
     await setAuthenticatedUser(database, ids.manager);
     const managerFinancialRead = await database.query("select id from public.asset_financials");
