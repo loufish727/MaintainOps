@@ -333,9 +333,9 @@ const CONVERSION_RESOURCE_PATHS = [
   "src/render/conversionDisplay.js?v=conversion-lazy-load-2",
 ];
 const PLATFORM_PERFORMANCE_RESOURCE_PATHS = [
-  "src/performance/platformPerformanceThresholds.js?v=platform-performance-health-1",
-  "src/performance/platformPerformanceService.js?v=platform-performance-health-1",
-  "src/performance/platformPerformanceDisplay.js?v=platform-performance-health-1",
+  "src/performance/platformPerformanceThresholds.js?v=platform-performance-health-2",
+  "src/performance/platformPerformanceService.js?v=platform-performance-health-2",
+  "src/performance/platformPerformanceDisplay.js?v=platform-performance-health-2",
 ];
 const FEATURE_BUNDLE_PATHS = Object.freeze({
   manager: __MAINTAINOPS_MANAGER_FEATURE_BUNDLE__,
