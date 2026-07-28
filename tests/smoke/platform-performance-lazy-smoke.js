@@ -230,7 +230,9 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(degradedSnapshot.signals[0].title, "Partial data sample");
 
   const appSource = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../app.js"), "utf8");
-  assert.match(appSource, /platformPerformanceThresholds\.js\?v=platform-performance-health-1/);
+  assert.match(appSource, /platformPerformanceThresholds\.js\?v=platform-performance-health-2/);
+  assert.match(appSource, /platformPerformanceService\.js\?v=platform-performance-health-2/);
+  assert.match(appSource, /platformPerformanceDisplay\.js\?v=platform-performance-health-2/);
   assert.match(appSource, /function armPlatformSpatialFrameWatchdog\(\)/);
   assert.match(appSource, /\}, 10000\);/);
   assert.match(appSource, /platformPerformanceTimedOut = true/);
