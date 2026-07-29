@@ -328,8 +328,8 @@ async function main() {
     const telemetryInsert = await database.query(
       "select public.record_app_performance_samples($1::uuid, $2::jsonb) as inserted",
       [ids.companyA, JSON.stringify([
-        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes" } },
-        { metric: "lcp_ms", value: 2200, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop" } },
+        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes", measurement_version: 2 } },
+        { metric: "lcp_ms", value: 2200, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop", measurement_version: 2 } },
       ])]
     );
     if (Number(telemetryInsert.rows[0]?.inserted) !== 2) throw new Error("Technician could not submit allowed company telemetry.");
@@ -338,9 +338,15 @@ async function main() {
     await database.query(
       "select public.record_app_performance_samples($1::uuid, $2::jsonb)",
       [ids.companyA, JSON.stringify([
-        { metric: "lcp_ms", value: 5900, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop" } },
-        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes" } },
-        { metric: "lcp_ms", value: 1800, unit: "ms", context: { source: "isolated-lfes", viewport_class: "mobile" } },
+        { metric: "lcp_ms", value: 5900, unit: "ms", context: { source: "isolated-lfes", viewport_class: "desktop", measurement_version: 2 } },
+        { metric: "session_start", value: 1, unit: "count", context: { source: "isolated-lfes", measurement_version: 2 } },
+        { metric: "lcp_ms", value: 1800, unit: "ms", context: { source: "isolated-lfes", viewport_class: "mobile", measurement_version: 2 } },
+      ])]
+    );
+    await database.query(
+      "select public.record_app_performance_samples($1::uuid, $2::jsonb)",
+      [ids.companyA, JSON.stringify([
+        { metric: "lcp_ms", value: 999999, unit: "ms", context: { source: "legacy-client" } },
       ])]
     );
 
@@ -386,6 +392,8 @@ async function main() {
     if (
       Number(dashboard?.sample_count) !== 4
       || Number(dashboard?.raw_sample_count) !== 5
+      || Number(dashboard?.legacy_sample_count_ignored) !== 1
+      || Number(dashboard?.measurement_version) !== 2
       || Number(dashboard?.duplicate_vital_samples_ignored) !== 1
       || Number(dashboard?.metrics?.lcp_ms?.count) !== 2
       || Number(dashboard?.metrics?.lcp_ms?.p75) !== 5900
@@ -397,6 +405,7 @@ async function main() {
     }
     checks.push({ name: "performance_dashboard_is_aggregate_without_identity", verdict: "PASS" });
     checks.push({ name: "performance_dashboard_deduplicates_vitals_by_session", verdict: "PASS" });
+    checks.push({ name: "performance_dashboard_excludes_legacy_measurements", verdict: "PASS" });
 
     await setAuthenticatedUser(database, ids.manager);
     const managerFinancialRead = await database.query("select id from public.asset_financials");

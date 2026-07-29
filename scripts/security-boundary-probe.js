@@ -272,7 +272,7 @@ async function run() {
           metric: "session_start",
           value: 1,
           unit: "count",
-          context: { source: "lfes-auth-probe", ignored_field: "must-not-be-stored" },
+          context: { source: "lfes-auth-probe", measurement_version: 2, ignored_field: "must-not-be-stored" },
         }],
       },
     });
@@ -298,6 +298,7 @@ async function run() {
       && dashboard.payload
       && typeof dashboard.payload === "object"
       && Number(dashboard.payload.sample_count) >= 1
+      && Number(dashboard.payload.measurement_version) === 2
       && !dashboardText.includes("recorded_by")
       && !dashboardText.includes(authUserId)
     ) {

@@ -3,7 +3,7 @@ const { gradeMetric, overallHealth } = require("../../src/performance/platformPe
 
 const goodLcp = gradeMetric("lcp_ms", 2500, { sampleCount: 12 });
 assert.equal(goodLcp.status, "good");
-assert.equal(goodLcp.basis, "Core Web Vitals threshold");
+assert.match(goodLcp.basis, /separate from workspace readiness/);
 assert.equal(goodLcp.sampleCount, 12);
 assert.equal(goodLcp.directionLabel, "Lower is better");
 assert.equal(goodLcp.statisticLabel, "Current");
@@ -19,19 +19,21 @@ assert.equal(gradeMetric("storage_usage_percent", 70).status, "good");
 assert.equal(gradeMetric("storage_usage_percent", 85).status, "watch");
 assert.equal(gradeMetric("storage_usage_percent", 70).goodPosition, 70);
 assert.equal(gradeMetric("spatial_fps", 40, { viewportClass: "mobile" }).status, "good");
-assert.equal(gradeMetric("spatial_fps", 40, { viewportClass: "desktop" }).status, "watch");
+assert.equal(gradeMetric("spatial_fps", 40, { viewportClass: "desktop" }).status, "good");
+assert.equal(gradeMetric("spatial_fps", 39).status, "watch");
 assert.equal(gradeMetric("spatial_fps", 40).directionLabel, "Higher is better");
 assert.equal(gradeMetric("connection_downlink_mbps", 1.9).status, "poor");
 assert.equal(gradeMetric("query_latency_ms", null).status, "collecting");
+assert.equal(gradeMetric("client_error_rate", 0.8).valueText, "0.8 / 100");
 
 const historicalLcp = gradeMetric("lcp_ms", 3704, {
   currentValue: 584,
   sampleCount: 44,
   statisticLabel: "30-day p75",
 });
-assert.equal(historicalLcp.shortLabel, "Page render (LCP)");
+assert.equal(historicalLcp.shortLabel, "Page paint (LCP)");
 assert.equal(historicalLcp.currentValueText, "584 ms");
-assert.equal(historicalLcp.currentComparisonLabel, "This visit 584 ms");
+assert.equal(historicalLcp.currentComparisonLabel, "Latest this visit 584 ms");
 
 const overall = overallHealth([
   gradeMetric("lcp_ms", 2100),
