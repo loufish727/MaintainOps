@@ -25,6 +25,7 @@ assert.equal(gradeMetric("spatial_fps", 40).directionLabel, "Higher is better");
 assert.equal(gradeMetric("connection_downlink_mbps", 1.9).status, "poor");
 assert.equal(gradeMetric("query_latency_ms", null).status, "collecting");
 assert.equal(gradeMetric("client_error_rate", 0.8).valueText, "0.8 / 100");
+assert.equal(gradeMetric("client_error_rate", 0).valueText, "0 / 100");
 
 const historicalLcp = gradeMetric("lcp_ms", 3704, {
   currentValue: 584,
