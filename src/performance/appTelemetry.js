@@ -30,6 +30,7 @@
     spatial_textures: "count",
     webgl_context_loss: "count",
   };
+  const MEASUREMENT_VERSION = 2;
   const browserWindow = typeof window !== "undefined" ? window : null;
   const browserDocument = typeof document !== "undefined" ? document : null;
   const browserNavigator = typeof navigator !== "undefined" ? navigator : {};
@@ -48,8 +49,12 @@
     workspaceCompanies: new Set(),
     persistedVitals: new Set(),
     workspaceStartedAt: pageStartedAt,
+    workspaceLoadPending: false,
+    workspaceLoadWasHidden: browserDocument?.visibilityState === "hidden",
     navigationStartedAt: now(),
     offlineStartedAt: 0,
+    lastHiddenAt: -1,
+    persistenceEnabled: !browserNavigator.webdriver,
   };
   const interactionDurations = new Map();
   let clsValue = 0;
@@ -78,7 +83,11 @@
   }
 
   function cleanContext(context = {}) {
-    const base = { ...connectionContext(), ...context };
+    const base = {
+      ...connectionContext(),
+      measurement_version: MEASUREMENT_VERSION,
+      ...context,
+    };
     return Object.fromEntries(Object.entries(base).filter(([, value]) => value !== undefined && value !== null && value !== ""));
   }
 
@@ -103,7 +112,7 @@
       context: cleanContext(context),
       measuredAt: new Date().toISOString(),
     };
-    if (options.persist !== false) {
+    if (options.persist !== false && state.persistenceEnabled) {
       state.pending.push({
         metric,
         value: rounded,
@@ -145,7 +154,6 @@
     state.companyId = companyId || "";
     if (!state.client || !state.companyId) return;
     if (state.configuredCompanyId !== state.companyId) {
-      if (state.configuredCompanyId) state.workspaceStartedAt = now();
       state.configuredCompanyId = state.companyId;
       record("session_start", 1, { source: "workspace" }, { immediate: true });
       const connection = browserNavigator.connection || browserNavigator.mozConnection || browserNavigator.webkitConnection;
@@ -155,16 +163,40 @@
     scheduleFlush(250);
   }
 
-  function markWorkspaceReady(companyId) {
-    if (!companyId || state.workspaceCompanies.has(companyId)) return;
-    state.workspaceCompanies.add(companyId);
-    record("workspace_ready_ms", now() - state.workspaceStartedAt, { source: "app-shell" }, { immediate: true });
-    browserWindow?.setTimeout?.(captureVitals, 1000);
+  function beginWorkspaceLoad() {
+    state.workspaceStartedAt = now();
+    state.workspaceLoadPending = true;
+    state.workspaceLoadWasHidden = browserDocument?.visibilityState === "hidden";
   }
 
-  function captureVitals() {
+  function markWorkspaceReady(companyId) {
+    if (!companyId) return;
+    if (state.workspaceCompanies.has(companyId)) {
+      state.workspaceLoadPending = false;
+      return;
+    }
+    state.workspaceCompanies.add(companyId);
+    const visibleMeasurement = !state.workspaceLoadWasHidden && browserDocument?.visibilityState !== "hidden";
+    record(
+      "workspace_ready_ms",
+      now() - state.workspaceStartedAt,
+      { source: "app-shell" },
+      { immediate: true, persist: visibleMeasurement },
+    );
+    state.workspaceLoadPending = false;
+    if (!state.latest.cls) {
+      record("cls", clsValue, { source: "performance-observer" }, { persist: false });
+    }
+    if (visibleMeasurement) {
+      browserWindow?.setTimeout?.(() => captureVitals(["fcp_ms", "lcp_ms"]), 1000);
+    }
+  }
+
+  function captureVitals(metricNames = ["fcp_ms", "lcp_ms", "inp_ms", "cls"]) {
+    if (!state.companyId || !state.workspaceCompanies.has(state.companyId)) return;
+    const selectedMetrics = new Set(metricNames);
     Object.values(state.latest)
-      .filter((sample) => ["fcp_ms", "lcp_ms", "inp_ms", "cls"].includes(sample.metric))
+      .filter((sample) => selectedMetrics.has(sample.metric))
       .forEach((sample) => {
         if (state.persistedVitals.has(sample.metric)) return;
         if (record(sample.metric, sample.value, { source: "performance-observer" })) {
@@ -177,12 +209,28 @@
     state.navigationStartedAt = now();
   }
 
+  function durationWasInterrupted(startedAt) {
+    const numericStartedAt = Number(startedAt);
+    return browserDocument?.visibilityState === "hidden"
+      || (Number.isFinite(numericStartedAt) && state.lastHiddenAt >= numericStartedAt);
+  }
+
   function recordSectionNavigation(section, startedAt = state.navigationStartedAt) {
-    record("section_navigation_ms", now() - startedAt, { source: String(section || "workspace").slice(0, 48) });
+    record(
+      "section_navigation_ms",
+      now() - startedAt,
+      { source: String(section || "workspace").slice(0, 48) },
+      { persist: !durationWasInterrupted(startedAt) },
+    );
   }
 
   function recordQueryLatency(source, startedAt, error = null) {
-    record("query_latency_ms", now() - startedAt, { source: String(source || "query").slice(0, 48) });
+    record(
+      "query_latency_ms",
+      now() - startedAt,
+      { source: String(source || "query").slice(0, 48) },
+      { persist: !durationWasInterrupted(startedAt) },
+    );
     if (error) record("client_error", 1, { source: `query:${String(source || "unknown").slice(0, 36)}` }, { immediate: true });
   }
 
@@ -209,6 +257,8 @@
       latest: { ...state.latest },
       connection: connectionContext(),
       pendingCount: state.pending.length,
+      measurementVersion: MEASUREMENT_VERSION,
+      persistenceEnabled: state.persistenceEnabled,
     };
   }
 
@@ -255,12 +305,15 @@
   });
   browserDocument?.addEventListener?.("visibilitychange", () => {
     if (browserDocument.visibilityState === "hidden") {
+      state.lastHiddenAt = now();
+      if (state.workspaceLoadPending) state.workspaceLoadWasHidden = true;
       captureVitals();
       void flush();
     }
   });
 
   const api = {
+    beginWorkspaceLoad,
     configure,
     flush,
     markNavigationStart,

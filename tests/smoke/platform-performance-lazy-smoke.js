@@ -147,7 +147,7 @@ function createQueryResponse(table, companyRows, calls) {
   const lcpMetric = snapshot.health.metrics.find((metric) => metric.metric === "lcp_ms");
   assert.equal(lcpMetric.status, "good");
   assert.equal(lcpMetric.statisticLabel, "30-day p75");
-  assert.equal(lcpMetric.currentComparisonLabel, "This visit 640 ms");
+  assert.equal(lcpMetric.currentComparisonLabel, "Latest this visit 640 ms");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "query_latency_ms").status, "watch");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "client_error_rate").status, "poor");
   assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
@@ -198,6 +198,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /function updateTouchTargets\(force = false\)/);
   assert.match(worldSource, /QUALITY_SETTINGS/);
   assert.match(worldSource, /onPerformanceSample/);
+  assert.match(worldSource, /function resetPerformanceSampleWindow\(timestamp = performance\.now\(\)\)/);
+  assert.match(worldSource, /document\.addEventListener\("visibilitychange", \(\) => \{\s*resetPerformanceSampleWindow\(\);/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
 
@@ -241,6 +243,9 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(appSource, /if \(platformPerformanceError\) clearPlatformSpatialFrameWatchdog\(\)/);
   assert.match(appSource, /function reloadPlatformSpatialFrame\(\)/);
   assert.match(appSource, /performance-spatial\.html\?sample=\$\{Date\.now\(\)\}/);
+  assert.match(appSource, /appTelemetry\?\.beginWorkspaceLoad\?\.\(\)/);
+  assert.match(appSource, /platformSpatialLoadStartedAt = performance\.now\(\)/);
+  assert.match(appSource, /readyMs: performance\.now\(\) - platformSpatialLoadStartedAt/);
   assert.match(appSource, /loadPlatformPerformance\(\{ force: true \}\)\.then\(reloadPlatformSpatialFrame\)/);
   assert.match(appSource, /function exitPlatformPerformance\(\)/);
   assert.match(appSource, /maintainops-platform-spatial-exit/);

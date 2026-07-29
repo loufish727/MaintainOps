@@ -23,10 +23,10 @@ const fallbackSnapshot = {
     measuredCount: 0,
     totalCount: 4,
     metrics: [
-      { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page render (LCP)", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "2.5 s or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
+      { metric: "lcp_ms", label: "Largest Contentful Paint", shortLabel: "Page paint (LCP)", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "2.5 s or less", basis: "Core Web Vitals page-paint threshold; separate from workspace readiness", sampleCount: 0 },
       { metric: "inp_ms", label: "Interaction to Next Paint", shortLabel: "Responsiveness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "200 ms or less", basis: "Core Web Vitals threshold", sampleCount: 0 },
-      { metric: "query_latency_ms", label: "Data Query Latency", shortLabel: "Data response", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
-      { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", directionLabel: "Higher is better", statisticLabel: "Collecting", target: "50 FPS desktop / 40 FPS mobile", basis: "Device-aware MaintainOps target", sampleCount: 0 },
+      { metric: "query_latency_ms", label: "Data Loader Response", shortLabel: "Data loader", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "lower", directionLabel: "Lower is better", statisticLabel: "Collecting", target: "500 ms or less", basis: "MaintainOps product target", sampleCount: 0 },
+      { metric: "spatial_fps", label: "3D Frame Rate", shortLabel: "3D smoothness", valueText: "Collecting", status: "collecting", statusLabel: "Collecting", gaugePosition: 0, direction: "higher", directionLabel: "Higher is better", statisticLabel: "Collecting", target: "40 FPS or more", basis: "Mixed-device MaintainOps target", sampleCount: 0 },
     ],
   },
   summary: {

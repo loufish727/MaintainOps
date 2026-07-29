@@ -469,6 +469,7 @@ let platformPerformanceCompanyId = "";
 let platformPerformanceLoadedAt = 0;
 let platformPerformanceLoadPromise = null;
 let platformSpatialFrameRendered = false;
+let platformSpatialLoadStartedAt = 0;
 let platformPerformanceTimedOut = false;
 let platformSpatialFrameWatchdog = null;
 const appTelemetry = window.MaintainOpsAppTelemetry;
@@ -1611,6 +1612,7 @@ async function renderOnce(expectedSessionId) {
     renderAuth("login");
     return;
   }
+  appTelemetry?.beginWorkspaceLoad?.();
 
   try {
     renderWorkspaceLoading("Checking team access...");
@@ -2433,6 +2435,7 @@ function reloadPlatformSpatialFrame() {
   platformSpatialFrameRendered = false;
   platformPerformanceTimedOut = false;
   clearPlatformSpatialFrameWatchdog();
+  if (!platformSpatialLoadStartedAt) platformSpatialLoadStartedAt = performance.now();
   frame.addEventListener("load", postPlatformPerformanceSnapshotToSpatialFrame, { once: true });
   frame.src = `performance-spatial.html?sample=${Date.now()}`;
   armPlatformSpatialFrameWatchdog();
@@ -2454,6 +2457,7 @@ function armPlatformSpatialFrameWatchdog() {
 }
 
 function exitPlatformPerformance() {
+  platformSpatialLoadStartedAt = 0;
   setActiveSectionState("mywork");
   localStorage.setItem("maintainops.activeSection", "mywork");
   renderWorkspace();
@@ -2472,7 +2476,12 @@ window.addEventListener("message", (event) => {
     clearPlatformSpatialFrameWatchdog();
   }
   if (event.data?.type === "maintainops-platform-spatial-telemetry") {
-    appTelemetry?.recordSpatial(event.data.sample || {});
+    const sample = event.data.sample || {};
+    const measuredSample = Number.isFinite(Number(sample.readyMs)) && platformSpatialLoadStartedAt
+      ? { ...sample, readyMs: performance.now() - platformSpatialLoadStartedAt }
+      : sample;
+    if (Number.isFinite(Number(sample.readyMs))) platformSpatialLoadStartedAt = 0;
+    appTelemetry?.recordSpatial(measuredSample);
   }
   if (event.data?.type === "maintainops-platform-spatial-exit") {
     exitPlatformPerformance();
@@ -2481,6 +2490,7 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "maintainops-platform-spatial-refresh") {
     platformSpatialFrameRendered = false;
     platformPerformanceTimedOut = false;
+    platformSpatialLoadStartedAt = performance.now();
     clearPlatformSpatialFrameWatchdog();
     armPlatformSpatialFrameWatchdog();
     void loadPlatformPerformance({ force: true }).then(reloadPlatformSpatialFrame);
@@ -3337,6 +3347,7 @@ function renderWorkspace() {
   document.body.classList.toggle("spatial-performance-active", activeSection === "performance");
   if (activeSection !== "performance") {
     platformSpatialFrameRendered = false;
+    platformSpatialLoadStartedAt = 0;
     platformPerformanceTimedOut = false;
     clearPlatformSpatialFrameWatchdog();
   }
@@ -3346,6 +3357,9 @@ function renderWorkspace() {
   const existingPerformanceFrame = activeSection === "performance"
     ? document.querySelector("[data-platform-spatial-frame]")
     : null;
+  if (activeSection === "performance" && !existingPerformanceFrame && !platformSpatialLoadStartedAt) {
+    platformSpatialLoadStartedAt = performance.now();
+  }
   if (existingPerformanceFrame && platformPerformance) {
     postPlatformPerformanceSnapshotToSpatialFrame();
     return;

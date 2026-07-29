@@ -2738,6 +2738,18 @@ export function createStorageWorld(options) {
   let firstRenderReported = false;
   let performanceSampleReported = false;
 
+  function resetPerformanceSampleWindow(timestamp = performance.now()) {
+    lastRenderAt = 0;
+    sampleStartedAt = timestamp;
+    sampledFrames = 0;
+    sampledFrameTime = 0;
+    sampledSlowFrames = 0;
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    resetPerformanceSampleWindow();
+  });
+
   function animate(timestamp = performance.now()) {
     requestAnimationFrame(animate);
     const targetFps = document.hidden ? 4 : qualitySettings.targetFps;

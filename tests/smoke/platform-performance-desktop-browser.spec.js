@@ -37,8 +37,8 @@ test("desktop Performance renders measured scales and adaptive 3D output", async
     gradeMetric("spatial_ready_ms", 3200, { sampleCount: 15, statisticLabel: "30-day p75", currentValue: 2800 }),
     gradeMetric("spatial_fps", 53, { sampleCount: 25, statisticLabel: "30-day p50", currentValue: 58 }),
     gradeMetric("connection_downlink_mbps", 10, { sampleCount: 32, statisticLabel: "30-day p50", currentValue: 10 }),
-    gradeMetric("client_error_rate", 2.2, { sampleCount: 1, statisticLabel: "30-day rate" }),
-    gradeMetric("storage_usage_percent", 0.2, { sampleCount: 1, statisticLabel: "Current capacity" }),
+    gradeMetric("client_error_rate", 2.2, { sampleCount: 1, statisticLabel: "30-day events / 100 visits" }),
+    gradeMetric("storage_usage_percent", 0.2, { sampleCount: 1, statisticLabel: "Current company-linked usage" }),
   ];
   await page.evaluate((metrics) => window.postMessage({
     type: "maintainops-platform-spatial-snapshot",
@@ -59,10 +59,10 @@ test("desktop Performance renders measured scales and adaptive 3D output", async
   await page.locator(".summary-source > summary").click();
   await expect(page.locator(".health-metric-card")).toHaveCount(11);
   await expect(page.locator(".metric-scale[role='meter']")).toHaveCount(11);
-  await expect(page.locator(".health-metric-card").first()).toContainText("Core Web Vitals threshold");
-  await expect(page.locator(".health-metric-card").first()).toContainText("Page render (LCP)");
+  await expect(page.locator(".health-metric-card").first()).toContainText("separate from workspace readiness");
+  await expect(page.locator(".health-metric-card").first()).toContainText("Page paint (LCP)");
   await expect(page.locator(".health-metric-card").first()).toContainText("30-day p75");
-  await expect(page.locator(".health-metric-card").first()).toContainText("This visit 584 ms");
+  await expect(page.locator(".health-metric-card").first()).toContainText("Latest this visit 584 ms");
   await expect(page.locator(".health-metric-card").first()).toContainText("Lower is better");
   await expect(page.locator(".health-metric-card").filter({ hasText: "3D smoothness" })).toContainText("Higher is better");
   const overflowingCards = await page.locator(".health-metric-card").evaluateAll((cards) => cards.filter((card) => (

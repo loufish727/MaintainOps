@@ -2,14 +2,14 @@
   const DEFINITIONS = Object.freeze({
     lcp_ms: {
       label: "Largest Contentful Paint",
-      shortLabel: "Page render (LCP)",
+      shortLabel: "Page paint (LCP)",
       unit: "ms",
       direction: "lower",
       good: 2500,
       watch: 4000,
       gaugeMax: 6000,
       target: "2.5 s or less",
-      basis: "Core Web Vitals threshold",
+      basis: "Core Web Vitals page-paint threshold; separate from workspace readiness",
     },
     inp_ms: {
       label: "Interaction to Next Paint",
@@ -42,7 +42,7 @@
       watch: 6000,
       gaugeMax: 10000,
       target: "3 s or less",
-      basis: "MaintainOps product target",
+      basis: "Authenticated load start through usable workspace",
     },
     section_navigation_ms: {
       label: "Section Navigation",
@@ -56,8 +56,8 @@
       basis: "MaintainOps product target",
     },
     query_latency_ms: {
-      label: "Data Query Latency",
-      shortLabel: "Data response",
+      label: "Data Loader Response",
+      shortLabel: "Data loader",
       unit: "ms",
       direction: "lower",
       good: 500,
@@ -67,43 +67,41 @@
       basis: "MaintainOps product target",
     },
     client_error_rate: {
-      label: "Client Error Rate",
-      shortLabel: "Browser errors",
-      unit: "percent",
+      label: "Client Errors per 100 Visits",
+      shortLabel: "Client errors",
+      unit: "per_100",
       direction: "lower",
       good: 1,
       watch: 5,
       gaugeMax: 10,
-      target: "1 or fewer per 100 sessions",
-      basis: "MaintainOps reliability target",
+      target: "1 or fewer per 100 visits",
+      basis: "App and data-loader error events",
     },
     spatial_fps: {
       label: "3D Frame Rate",
       shortLabel: "3D smoothness",
       unit: "fps",
       direction: "higher",
-      good: 50,
-      watch: 30,
-      mobileGood: 40,
-      mobileWatch: 24,
+      good: 40,
+      watch: 24,
       gaugeMax: 60,
-      target: "50 FPS desktop / 40 FPS mobile",
-      basis: "Device-aware MaintainOps target",
+      target: "40 FPS or more",
+      basis: "Mixed-device MaintainOps target",
     },
     spatial_ready_ms: {
-      label: "3D Ready Time",
-      shortLabel: "3D ready",
+      label: "3D View Ready Time",
+      shortLabel: "3D view ready",
       unit: "ms",
       direction: "lower",
       good: 5000,
       watch: 10000,
       gaugeMax: 20000,
-      target: "5 s on a standard connection",
-      basis: "Connection-aware MaintainOps target",
+      target: "5 s or less",
+      basis: "Performance-view entry through first rendered frame",
     },
     connection_downlink_mbps: {
       label: "Estimated Connection",
-      shortLabel: "Connection",
+      shortLabel: "Network estimate",
       unit: "mbps",
       direction: "higher",
       good: 10,
@@ -113,15 +111,15 @@
       basis: "Browser connection estimate",
     },
     storage_usage_percent: {
-      label: "Storage Capacity Used",
-      shortLabel: "Storage used",
+      label: "Company Linked File Usage",
+      shortLabel: "Company files",
       unit: "percent",
       direction: "lower",
       good: 70,
       watch: 85,
       gaugeMax: 100,
-      target: "Keep below 70%",
-      basis: "MaintainOps capacity target",
+      target: "Keep below 70% of project allowance",
+      basis: "Company-linked files compared with the 100 GB project allowance",
     },
   });
 
@@ -136,6 +134,7 @@
     if (numeric === null) return "Collecting";
     if (unit === "ms") return numeric >= 1000 ? `${(numeric / 1000).toFixed(numeric >= 10000 ? 0 : 1)} s` : `${Math.round(numeric)} ms`;
     if (unit === "percent") return `${numeric.toFixed(numeric < 10 ? 1 : 0)}%`;
+    if (unit === "per_100") return `${numeric.toFixed(numeric < 10 ? 1 : 0)} / 100`;
     if (unit === "fps") return `${Math.round(numeric)} FPS`;
     if (unit === "mbps") return `${numeric.toFixed(numeric < 10 ? 1 : 0)} Mbps`;
     if (unit === "score") return numeric.toFixed(3);
@@ -169,21 +168,6 @@
 
     let good = definition.good;
     let watch = definition.watch;
-    if (metric === "spatial_fps" && context.viewportClass === "mobile") {
-      good = definition.mobileGood;
-      watch = definition.mobileWatch;
-    }
-    if (metric === "spatial_ready_ms") {
-      const type = String(context.connectionType || "").toLowerCase();
-      if (type.includes("2g")) {
-        good = 20000;
-        watch = 30000;
-      } else if (type.includes("3g")) {
-        good = 10000;
-        watch = 20000;
-      }
-    }
-
     const isGood = definition.direction === "higher" ? numeric >= good : numeric <= good;
     const isWatch = definition.direction === "higher" ? numeric >= watch : numeric <= watch;
     const status = isGood ? "good" : isWatch ? "watch" : "poor";
@@ -214,8 +198,8 @@
       statisticLabel,
       currentValue,
       currentValueText,
-      currentComparisonLabel: currentValueText && statisticLabel !== "This visit"
-        ? `This visit ${currentValueText}`
+      currentComparisonLabel: currentValueText && statisticLabel !== "Latest this visit"
+        ? `Latest this visit ${currentValueText}`
         : "",
     };
   }

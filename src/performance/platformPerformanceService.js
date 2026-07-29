@@ -220,7 +220,7 @@
       };
     }
     if (validCurrentValue !== null) {
-      return { value: validCurrentValue, sampleCount: 1, currentValue: null, statisticLabel: "This visit" };
+      return { value: validCurrentValue, sampleCount: 1, currentValue: null, statisticLabel: "Latest this visit" };
     }
     return { value: null, sampleCount: 0, currentValue: null, statisticLabel: "Collecting" };
   }
@@ -259,11 +259,11 @@
     const errorRate = sessions > 0 && Number.isFinite(errorTotal) ? (errorTotal / sessions) * 100 : null;
     metrics.push(grade("client_error_rate", errorRate, {
       sampleCount: Number(errors?.count) || 0,
-      statisticLabel: `${telemetryWindowDays}-day rate`,
+      statisticLabel: `${telemetryWindowDays}-day events / 100 visits`,
     }));
     metrics.push(grade("storage_usage_percent", storage.available ? storage.usagePercent : null, {
       sampleCount: storage.available ? 1 : 0,
-      statisticLabel: "Current capacity",
+      statisticLabel: "Current company-linked usage",
     }));
 
     const measuredCount = metrics.filter((metric) => metric.status !== "collecting").length;
