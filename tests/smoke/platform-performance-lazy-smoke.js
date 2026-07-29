@@ -85,6 +85,19 @@ function createQueryResponse(table, companyRows, calls) {
       },
     ],
   };
+  let telemetryFixture = {
+    status: "current",
+    window_days: 30,
+    sample_count: 20,
+    session_count: 4,
+    metrics: {
+      lcp_ms: { count: 4, p75: 2100 },
+      inp_ms: { count: 4, p75: 180 },
+      query_latency_ms: { count: 8, p75: 620 },
+      client_error: { count: 1, average: 1 },
+    },
+    daily: [],
+  };
   const supabaseClient = {
     from(table) {
       return createQueryResponse(table, rows, calls);
@@ -96,19 +109,7 @@ function createQueryResponse(table, companyRows, calls) {
       }
       assert.equal(name, "get_app_performance_dashboard");
       return Promise.resolve({
-        data: {
-          status: "current",
-          window_days: 30,
-          sample_count: 20,
-          session_count: 4,
-          metrics: {
-            lcp_ms: { count: 4, p75: 2100 },
-            inp_ms: { count: 4, p75: 180 },
-            query_latency_ms: { count: 8, p75: 620 },
-            client_error: { count: 1, average: 1 },
-          },
-          daily: [],
-        },
+        data: telemetryFixture,
         error: null,
       });
     },
@@ -150,6 +151,28 @@ function createQueryResponse(table, companyRows, calls) {
   assert.equal(lcpMetric.currentComparisonLabel, "Latest this visit 640 ms");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "query_latency_ms").status, "watch");
   assert.equal(snapshot.health.metrics.find((metric) => metric.metric === "client_error_rate").status, "poor");
+
+  telemetryFixture = {
+    ...telemetryFixture,
+    metrics: {
+      ...telemetryFixture.metrics,
+    },
+  };
+  delete telemetryFixture.metrics.client_error;
+  const noErrorSnapshot = await service.loadPlatformPerformanceSnapshot(supabaseClient, {
+    companyId,
+    now: "2026-07-14T16:00:00.000Z",
+    locations: [{ id: "plant-1", name: "Salem" }, { id: "plant-2", name: "Auburn" }],
+    assets: [{ id: "asset-1" }],
+    parts: [{ id: "part-1" }, { id: "part-2" }],
+    companyMembers: [{ user_id: "user-1" }, { user_id: "user-2" }],
+    canViewStorage: true,
+    localTelemetry: { latest: {}, connection: {} },
+  });
+  const noErrorMetric = noErrorSnapshot.health.metrics.find((metric) => metric.metric === "client_error_rate");
+  assert.equal(noErrorMetric.status, "good");
+  assert.equal(noErrorMetric.valueText, "0 / 100");
+  assert.equal(noErrorMetric.sampleCount, 4);
   assert.ok(calls.every((call) => call.filters.some(([operator, column, value]) => (
     operator === "eq" && column === "company_id" && value === companyId
   ))), "every performance query must be scoped to the active company");

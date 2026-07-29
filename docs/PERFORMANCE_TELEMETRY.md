@@ -15,6 +15,8 @@ The raw telemetry table is not readable through the browser API. Signed-in compa
 
 Measurement generation 2 excludes automated browsers and does not persist workspace, navigation, or data-loader timings interrupted by a hidden tab. The 3D sampler resets its timing window whenever visibility changes. Generation-1 rows remain retained for audit history but do not drive current gauges.
 
+INP observation uses the browser's 16 ms event-timing threshold. The current visit's INP is saved shortly after a measured interaction and may be updated during that visit; the dashboard keeps only the latest INP reading from each visit. A measured visit with no client-error events reports `0 / 100` rather than Collecting.
+
 ## Grades And Gauges
 
 The Performance screen uses Good, Watch, Poor, or Collecting. Every measured gauge displays its value, measurement period, target, direction, basis, and sample count. When a 30-day aggregate exists, the card also shows the latest measurement from the current browser visit. An overall grade is withheld until at least three measurements are available.

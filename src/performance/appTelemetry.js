@@ -48,6 +48,8 @@
     configuredCompanyId: "",
     workspaceCompanies: new Set(),
     persistedVitals: new Set(),
+    lastPersistedInpValue: null,
+    inpCaptureTimer: null,
     workspaceStartedAt: pageStartedAt,
     workspaceLoadPending: false,
     workspaceLoadWasHidden: browserDocument?.visibilityState === "hidden",
@@ -188,7 +190,7 @@
       record("cls", clsValue, { source: "performance-observer" }, { persist: false });
     }
     if (visibleMeasurement) {
-      browserWindow?.setTimeout?.(() => captureVitals(["fcp_ms", "lcp_ms"]), 1000);
+      browserWindow?.setTimeout?.(() => captureVitals(["fcp_ms", "lcp_ms", "inp_ms"]), 1000);
     }
   }
 
@@ -198,11 +200,24 @@
     Object.values(state.latest)
       .filter((sample) => selectedMetrics.has(sample.metric))
       .forEach((sample) => {
-        if (state.persistedVitals.has(sample.metric)) return;
+        const isInp = sample.metric === "inp_ms";
+        if (isInp ? state.lastPersistedInpValue === sample.value : state.persistedVitals.has(sample.metric)) return;
         if (record(sample.metric, sample.value, { source: "performance-observer" })) {
-          state.persistedVitals.add(sample.metric);
+          if (isInp) state.lastPersistedInpValue = sample.value;
+          else state.persistedVitals.add(sample.metric);
         }
       });
+  }
+
+  function scheduleInpCapture(delay = 1500) {
+    if (typeof browserWindow?.setTimeout !== "function") return;
+    if (state.inpCaptureTimer && typeof browserWindow.clearTimeout === "function") {
+      browserWindow.clearTimeout(state.inpCaptureTimer);
+    }
+    state.inpCaptureTimer = browserWindow.setTimeout(() => {
+      state.inpCaptureTimer = null;
+      captureVitals(["inp_ms"]);
+    }, delay);
   }
 
   function markNavigationStart() {
@@ -290,8 +305,11 @@
       interactionDurations.set(entry.interactionId, Math.max(interactionDurations.get(entry.interactionId) || 0, entry.duration));
     });
     const ranked = [...interactionDurations.values()].sort((left, right) => right - left);
-    if (ranked.length) record("inp_ms", ranked[Math.min(Math.floor(ranked.length / 50), 10)], { source: "performance-observer" }, { persist: false });
-  }, { buffered: true, durationThreshold: 40 });
+    if (ranked.length) {
+      record("inp_ms", ranked[Math.min(Math.floor(ranked.length / 50), 10)], { source: "performance-observer" }, { persist: false });
+      scheduleInpCapture();
+    }
+  }, { buffered: true, durationThreshold: 16 });
 
   browserWindow?.addEventListener?.("error", () => record("client_error", 1, { source: "window-error" }, { immediate: true }));
   browserWindow?.addEventListener?.("unhandledrejection", () => record("client_error", 1, { source: "unhandled-rejection" }, { immediate: true }));

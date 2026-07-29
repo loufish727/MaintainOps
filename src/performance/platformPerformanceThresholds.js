@@ -134,7 +134,7 @@
     if (numeric === null) return "Collecting";
     if (unit === "ms") return numeric >= 1000 ? `${(numeric / 1000).toFixed(numeric >= 10000 ? 0 : 1)} s` : `${Math.round(numeric)} ms`;
     if (unit === "percent") return `${numeric.toFixed(numeric < 10 ? 1 : 0)}%`;
-    if (unit === "per_100") return `${numeric.toFixed(numeric < 10 ? 1 : 0)} / 100`;
+    if (unit === "per_100") return `${numeric === 0 ? "0" : numeric.toFixed(numeric < 10 ? 1 : 0)} / 100`;
     if (unit === "fps") return `${Math.round(numeric)} FPS`;
     if (unit === "mbps") return `${numeric.toFixed(numeric < 10 ? 1 : 0)} Mbps`;
     if (unit === "score") return numeric.toFixed(3);

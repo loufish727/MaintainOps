@@ -255,10 +255,12 @@
     const sessions = Number(telemetry?.session_count) || 0;
     const telemetryWindowDays = Math.max(1, Number(telemetry?.window_days) || 30);
     const errors = telemetry?.metrics?.client_error;
-    const errorTotal = Number(errors?.average) * Number(errors?.count);
+    const errorCount = Number(errors?.count) || 0;
+    const measuredErrorTotal = Number(errors?.average) * errorCount;
+    const errorTotal = errors ? measuredErrorTotal : 0;
     const errorRate = sessions > 0 && Number.isFinite(errorTotal) ? (errorTotal / sessions) * 100 : null;
     metrics.push(grade("client_error_rate", errorRate, {
-      sampleCount: Number(errors?.count) || 0,
+      sampleCount: sessions,
       statisticLabel: `${telemetryWindowDays}-day events / 100 visits`,
     }));
     metrics.push(grade("storage_usage_percent", storage.available ? storage.usagePercent : null, {
