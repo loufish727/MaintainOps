@@ -2,7 +2,7 @@ const { execFileSync } = require("node:child_process");
 const https = require("node:https");
 
 const repo = process.env.GITHUB_REPOSITORY || "loufish727/MaintainOps";
-const workflowName = process.env.MAINTAINOPS_ACTION_WORKFLOW || "Resource Load Smoke";
+const workflowName = process.env.MAINTAINOPS_ACTION_WORKFLOW || "Hosted App Smoke";
 const sha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 const attempts = Number(process.env.MAINTAINOPS_ACTION_ATTEMPTS || 36);
 const delayMs = Number(process.env.MAINTAINOPS_ACTION_DELAY_MS || 5000);
