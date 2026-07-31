@@ -106,6 +106,8 @@ assert.match(form, /Saved equipment/);
 assert.match(form, /Equipment not listed \/ general area/);
 assert.match(form, /name="description" rows="4" required/);
 assert.match(form, /name="photo"/);
+assert.match(form, /name="photo"[^>]*accept="image\/\*"/);
+assert.doesNotMatch(form, /capture=/);
 assert.match(form, /data-location-sensitive-asset/);
 assert.match(form, /name="asset_id"[^>]*disabled/);
 assert.match(form, /id="request-error"/);

@@ -47,6 +47,8 @@ assert.match(form, /name="equipment_note" required/);
 assert.match(form, /name="description" rows="4" required/);
 assert.match(form, /name="requester_name" required/);
 assert.match(form, /name="photo"/);
+assert.match(form, /name="photo"[^>]*accept="image\/\*"/);
+assert.doesNotMatch(form, /capture=/);
 assert.match(form, /name="priority"/);
 assert.match(form, /Send Request/);
 

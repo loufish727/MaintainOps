@@ -86,7 +86,7 @@
               <label>What needs attention?<input name="title" required maxlength="140" placeholder="Short issue description"></label>
               <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
               <label>Details<textarea name="description" rows="4" required maxlength="1000" placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-              <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
+              <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
               <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
               <label>Contact<input name="requester_contact" maxlength="160" placeholder="Optional phone, radio, or email"></label>
               <label>Urgency
