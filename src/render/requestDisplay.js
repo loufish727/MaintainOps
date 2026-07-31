@@ -114,7 +114,7 @@
             </div>
           </fieldset>
           <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
+          <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
           <p class="error-text" data-asset-location-warning></p>
           <label>Priority
             <select name="priority">

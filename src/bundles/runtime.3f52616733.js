@@ -105,7 +105,7 @@ ${A}`,asset_id:y,priority:h.get("priority"),status:"submitted",requested_by:e.ge
             </div>
           </fieldset>
           <label>Details<textarea name="description" rows="4" required placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-          <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
+          <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
           <p class="error-text" data-asset-location-warning></p>
           <label>Priority
             <select name="priority">
@@ -1707,7 +1707,7 @@ ${A}`,asset_id:y,priority:h.get("priority"),status:"submitted",requested_by:e.ge
               <label>What needs attention?<input name="title" required maxlength="140" placeholder="Short issue description"></label>
               <label>Machine / area<input name="equipment_note" required maxlength="140" placeholder="Roll former 1, saw area, aisle 3"></label>
               <label>Details<textarea name="description" rows="4" required maxlength="1000" placeholder="What is happening? Any noise, leak, jam, alarm, or safety concern?"></textarea></label>
-              <label>Photo<input name="photo" type="file" accept="image/*" capture="environment"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
+              <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are not accepted in this photo box. Photos are resized to 768px.</small></label>
               <label>Your name<input name="requester_name" required maxlength="120" placeholder="Who is submitting this?"></label>
               <label>Contact<input name="requester_contact" maxlength="160" placeholder="Optional phone, radio, or email"></label>
               <label>Urgency
@@ -2193,4 +2193,4 @@ ${o}`:o}return{cleanWorkOrderDescription:n,descriptionWithAssignmentNote:t,descr
       ${s?`<button class="message-delete-button" data-delete-message="${e.escapeHtml(r.id)}" type="button">Delete</button>`:""}
     </article>
   `}function t(r){let s=r.filter(a=>!a.deleted_at);if(!s.length)return'<p class="muted">No messages yet.</p>';let p="";return s.map(a=>{let o=e.formatMessageDay(a.created_at),d=o!==p?`<div class="message-day-divider"><span>${e.escapeHtml(o)}</span></div>`:"";return p=o,`${d}${n(a)}`}).join("")}return Object.freeze({renderMessageBubble:n,renderMessageList:t})}window.MaintainOpsMessageDisplay=Object.freeze({createMessageDisplayHelpers:c})})();})();
-//# sourceMappingURL=runtime.f6c74e9c93.js.map
+//# sourceMappingURL=runtime.3f52616733.js.map
