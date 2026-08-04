@@ -84,7 +84,7 @@
   }
 
   function normalizeRole(role) {
-    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "accounting", "manager", "admin"];
+    const roles = window.MaintainOpsConstants?.COMPANY_ROLES || ["technician", "production", "accounting", "manager", "admin"];
     const normalized = String(role || "technician").trim().toLowerCase();
     if (normalized === "member") return "technician";
     return roles.includes(normalized) ? normalized : "technician";
@@ -95,6 +95,7 @@
       admin: "Admin",
       manager: "Manager",
       accounting: "Accounting",
+      production: "Production",
       technician: "Technician",
     };
     return labels[normalizeRole(role)] || "Technician";
@@ -105,6 +106,7 @@
       admin: "Full company setup, team, and work access.",
       manager: "Can manage work, settings, and teammates.",
       accounting: "Can review equipment financial records without changing operations.",
+      production: "Technician access plus production action items assigned from work orders.",
       technician: "Can create work, convert requests, and claim unassigned work.",
     };
     return descriptions[normalizeRole(role)] || descriptions.technician;

@@ -36,6 +36,8 @@
   --rel-comment-ink: #475a96;
   --rel-photo-bg: #fae8ff;
   --rel-photo-ink: #8a2bb0;
+  --production-bg: #e9f3f8;
+  --production-ink: #225f78;
   --asset-running-bg: #dcf8e6;
   --asset-running-ink: #187a3f;
   --asset-watch-bg: #fff0d9;
@@ -86,6 +88,8 @@
   --rel-comment-ink: #a8b8f0;
   --rel-photo-bg: #432151;
   --rel-photo-ink: #f0b5ff;
+  --production-bg: #18313d;
+  --production-ink: #8fd6ee;
   --asset-running-bg: #173f29;
   --asset-running-ink: #8beaab;
   --asset-watch-bg: #362d1c;
@@ -2538,6 +2542,157 @@ textarea {
   min-height: 34px;
   padding: 7px 8px;
   font-size: 0.78rem;
+}
+
+.production-action-control {
+  border-top: 1px solid color-mix(in srgb, var(--production-ink) 34%, var(--line));
+  background: var(--production-bg);
+  color: var(--production-ink);
+}
+
+.work-card > .production-action-control {
+  padding: 10px;
+}
+
+.production-action-control > summary,
+.production-action-card-actions details > summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.production-action-add > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+}
+
+.production-action-add > summary::-webkit-details-marker,
+.production-action-card-actions details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.production-action-add[open] > summary {
+  margin-bottom: 10px;
+}
+
+.production-action-chip {
+  border-color: color-mix(in srgb, var(--production-ink) 42%, transparent);
+  background: color-mix(in srgb, var(--production-bg) 76%, var(--surface));
+  color: var(--production-ink);
+}
+
+.production-action-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.production-action-heading strong {
+  text-align: right;
+  font-size: 0.84rem;
+}
+
+.production-action-text {
+  margin: 8px 0 5px;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.production-action-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.7fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.production-action-form.compact {
+  grid-template-columns: 1fr;
+  margin-top: 8px;
+}
+
+.production-action-form label,
+.production-action-form textarea,
+.production-action-form select {
+  min-width: 0;
+  width: 100%;
+}
+
+.production-action-form .error-text,
+.production-action-form-actions {
+  grid-column: 1 / -1;
+}
+
+.production-action-form-actions,
+.production-action-card-actions,
+.production-action-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.production-action-card-actions {
+  margin-top: 9px;
+}
+
+.production-action-card-actions details {
+  flex: 1 1 190px;
+}
+
+.production-action-card-actions details[open] > summary {
+  margin-bottom: 8px;
+}
+
+.production-action-control button,
+.production-action-detail button {
+  min-height: 40px;
+}
+
+.production-action-detail {
+  border-color: color-mix(in srgb, var(--production-ink) 50%, var(--line));
+  background: var(--production-bg);
+  color: var(--production-ink);
+}
+
+.production-action-detail > .production-action-heading,
+.production-action-detail > .production-action-text,
+.production-action-detail > small,
+.production-action-detail > .muted,
+.production-action-detail > .production-action-detail-actions,
+.production-action-detail > .production-action-form,
+.production-action-detail > .production-action-empty {
+  margin-inline: 12px;
+}
+
+.production-action-detail > summary {
+  color: var(--production-ink);
+}
+
+.production-action-detail .production-action-text {
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .production-action-heading,
+  .production-action-form {
+    grid-template-columns: 1fr;
+  }
+
+  .production-action-heading {
+    display: grid;
+  }
+
+  .production-action-heading strong {
+    text-align: left;
+  }
+
+  .production-action-control button,
+  .production-action-detail button {
+    min-height: 44px;
+  }
 }
 
 .card-assign-form {

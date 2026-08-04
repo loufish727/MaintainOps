@@ -2,7 +2,7 @@
   function createTeamWorkloadDisplayHelpers(deps) {
     function teamMemberWorkload(userId) {
       const workOrders = deps.getWorkOrders();
-      const assigned = workOrders.filter((workOrder) => deps.matchesActiveLocation(workOrder) && workOrder.assigned_to === userId);
+      const assigned = workOrders.filter((workOrder) => deps.matchesActiveLocation(workOrder) && deps.isWorkOrderAssignedToUser(workOrder, userId));
       return {
         newWork: assigned.filter((workOrder) => workOrder.status === "open").length,
         inProgress: assigned.filter((workOrder) => workOrder.status === "in_progress").length,

@@ -85,7 +85,7 @@
     }
 
     function assignedOpenWork(userId) {
-      return openWorkOrders().filter((workOrder) => workOrder.assigned_to === userId);
+      return openWorkOrders().filter((workOrder) => deps.isWorkOrderAssignedToUser(workOrder, userId));
     }
 
     function completedOwnerId(workOrder) {
@@ -254,7 +254,7 @@
 
     function latestActivityFor(userId) {
       const dates = deps.getWorkOrders()
-        .filter((workOrder) => deps.matchesActiveLocation(workOrder) && (workOrder.assigned_to === userId || workOrder.completed_by === userId || workOrder.created_by === userId))
+        .filter((workOrder) => deps.matchesActiveLocation(workOrder) && (deps.isWorkOrderAssignedToUser(workOrder, userId) || workOrder.completed_by === userId || workOrder.created_by === userId))
         .map((workOrder) => workOrder.completed_at || workOrder.updated_at || workOrder.created_at)
         .filter(Boolean)
         .map((value) => new Date(value))
@@ -309,7 +309,7 @@
     function technicianRows() {
       const monthCutoff = daysAgo(30);
       return deps.getCompanyMembers()
-        .filter((member) => ["technician", "manager", "admin"].includes(deps.normalizeRole(member.role)))
+        .filter((member) => ["technician", "production", "manager", "admin"].includes(deps.normalizeRole(member.role)))
         .map((member) => {
           const userId = member.user_id;
           const assigned = assignedOpenWork(userId);

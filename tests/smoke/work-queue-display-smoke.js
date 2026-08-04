@@ -37,6 +37,8 @@ const helpers = createWorkQueueDisplayHelpers({
   renderRelationshipChips: () => '<div class="relationship-chips"></div>',
   canAssignWorkOrderToMe: () => true,
   canManageTeam: () => true,
+  renderProductionActionCard: (workOrder) => `<section data-test-production-action="${workOrder.id}"></section>`,
+  hasOpenProductionAction: (workOrder) => workOrder.production_action_status === "open",
 });
 
 assert.equal(helpers.workQueuePanelTitle(), "Active Work Orders");
@@ -88,11 +90,19 @@ assert.doesNotMatch(card, />reactive</i);
 assert.match(card, /data-id="wo-1"/);
 assert.match(card, /data-assign-me="wo-1"/);
 assert.match(card, /data-card-assign="wo-1"/);
+assert.match(card, /data-test-production-action="wo-1"/);
 assert.match(card, /data-quick-status="in_progress"/);
 assert.match(card, /data-quick-status="blocked"/);
 assert.match(card, /data-quick-status="completed"[^>]*>Complete<\/button>/);
 assert.doesNotMatch(card, />All Completed<\/button>/);
 assert.doesNotMatch(card, /data-quick-status="open"/);
+
+const productionActionCard = helpers.renderWorkOrderCard({
+  ...workOrder,
+  production_action: "Clear line",
+  production_action_status: "open",
+});
+assert.doesNotMatch(productionActionCard, /data-quick-status="completed"/);
 
 const grouped = helpers.renderWorkOrderCollection([
   workOrder,

@@ -62,6 +62,9 @@ const roles = context.window.MaintainOpsConstants.COMPANY_ROLES || [];
 if (!roles.includes("accounting")) {
   throw new Error("Runtime bundle constants lost the accounting role.");
 }
+if (!roles.includes("production")) {
+  throw new Error("Runtime bundle constants lost the production role.");
+}
 
 const requestPhotoHelpers = context.window.MaintainOpsRequestPhotoDisplay.createRequestPhotoDisplayHelpers({
   escapeHtml: (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;"),

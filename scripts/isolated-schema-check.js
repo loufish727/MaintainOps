@@ -13,6 +13,7 @@ const ids = {
   accounting: "00000000-0000-4000-8000-000000000003",
   technician: "00000000-0000-4000-8000-000000000004",
   outsider: "00000000-0000-4000-8000-000000000005",
+  production: "00000000-0000-4000-8000-000000000006",
   companyA: "10000000-0000-4000-8000-000000000001",
   companyB: "10000000-0000-4000-8000-000000000002",
   locationA: "20000000-0000-4000-8000-000000000001",
@@ -114,7 +115,8 @@ async function main() {
         (${sqlLiteral(ids.manager)}::uuid, 'manager@lfes.invalid'),
         (${sqlLiteral(ids.accounting)}::uuid, 'accounting@lfes.invalid'),
         (${sqlLiteral(ids.technician)}::uuid, 'technician@lfes.invalid'),
-        (${sqlLiteral(ids.outsider)}::uuid, 'outsider@lfes.invalid');
+        (${sqlLiteral(ids.outsider)}::uuid, 'outsider@lfes.invalid'),
+        (${sqlLiteral(ids.production)}::uuid, 'production@lfes.invalid');
 
       insert into public.companies (id, name, created_by) values
         (${sqlLiteral(ids.companyA)}::uuid, 'LFES Company A', ${sqlLiteral(ids.admin)}::uuid),
@@ -129,6 +131,7 @@ async function main() {
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.manager)}::uuid, 'manager', ${sqlLiteral(ids.locationA)}::uuid),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.accounting)}::uuid, 'accounting', ${sqlLiteral(ids.locationA)}::uuid),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'technician', ${sqlLiteral(ids.locationA)}::uuid),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.production)}::uuid, 'production', ${sqlLiteral(ids.locationA)}::uuid),
         (${sqlLiteral(ids.companyB)}::uuid, ${sqlLiteral(ids.outsider)}::uuid, 'admin', ${sqlLiteral(ids.locationB)}::uuid);
 
       insert into public.profiles (company_id, user_id, full_name) values
@@ -136,6 +139,7 @@ async function main() {
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.manager)}::uuid, 'LFES Manager'),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.accounting)}::uuid, 'LFES Accounting'),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'LFES Technician'),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.production)}::uuid, 'LFES Production'),
         (${sqlLiteral(ids.companyB)}::uuid, ${sqlLiteral(ids.outsider)}::uuid, 'LFES Outsider');
 
       insert into public.assets (id, company_id, location_id, name, created_by) values
@@ -144,6 +148,9 @@ async function main() {
 
       insert into public.asset_financials (id, company_id, asset_id, finance_notes, updated_by) values
         (${sqlLiteral(ids.financialA)}::uuid, ${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, 'seed', ${sqlLiteral(ids.admin)}::uuid);
+
+      select set_config('request.jwt.claim.sub', ${sqlLiteral(ids.admin)}, false);
+      select set_config('request.jwt.claims', ${sqlLiteral(JSON.stringify({ sub: ids.admin }))}, false);
 
       insert into public.work_orders (
         company_id,
@@ -161,6 +168,20 @@ async function main() {
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.manager)}::uuid, 'Manager blocked', 'blocked', '2026-08-10', ${sqlLiteral(ids.manager)}::uuid, null),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Completed this month', 'completed', null, ${sqlLiteral(ids.admin)}::uuid, '2026-07-20T12:00:00Z'),
         (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.assetA)}::uuid, ${sqlLiteral(ids.technician)}::uuid, 'Completed this week', 'completed', null, ${sqlLiteral(ids.admin)}::uuid, '2026-07-27T12:00:00Z');
+
+      insert into public.work_orders (
+        company_id,
+        location_id,
+        assigned_to,
+        title,
+        status,
+        due_at,
+        created_by,
+        production_action,
+        production_action_assigned_to
+      ) values
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, null, 'Production action only', 'open', '2026-08-10', ${sqlLiteral(ids.admin)}::uuid, 'Confirm line clearance', ${sqlLiteral(ids.production)}::uuid),
+        (${sqlLiteral(ids.companyA)}::uuid, ${sqlLiteral(ids.locationA)}::uuid, ${sqlLiteral(ids.production)}::uuid, 'Dual production assignment', 'in_progress', '2026-08-10', ${sqlLiteral(ids.admin)}::uuid, 'Schedule production window', ${sqlLiteral(ids.production)}::uuid);
     `);
 
     await setAuthenticatedUser(database, ids.technician);
@@ -194,9 +215,9 @@ async function main() {
       ? JSON.parse(workspaceCountsResult.rows[0].counts)
       : workspaceCountsResult.rows[0]?.counts;
     const expectedCompanyCounts = {
-      activeWork: 3,
-      newWork: 1,
-      inProgress: 1,
+      activeWork: 5,
+      newWork: 2,
+      inProgress: 2,
       blocked: 1,
       overdue: 1,
       completedAll: 2,
@@ -243,6 +264,134 @@ async function main() {
       throw new Error(`Workspace created-by counts were incorrect: ${JSON.stringify(createdCounts?.myWork)}`);
     }
     checks.push({ name: "workspace_work_order_counts_match_role_and_date_scope", verdict: "PASS" });
+
+    await setAuthenticatedUser(database, ids.production);
+    const productionCountsResult = await database.query(
+      `select public.get_workspace_work_order_counts(
+        $1::uuid,
+        $2::uuid,
+        'assigned',
+        '2026-07-27'::date,
+        '2026-07-01T00:00:00Z'::timestamptz,
+        '2026-07-26T00:00:00Z'::timestamptz,
+        '2026-08-02T00:00:00Z'::timestamptz
+      ) as counts`,
+      [ids.companyA, ids.locationA]
+    );
+    const productionCounts = typeof productionCountsResult.rows[0]?.counts === "string"
+      ? JSON.parse(productionCountsResult.rows[0].counts)
+      : productionCountsResult.rows[0]?.counts;
+    if (
+      Number(productionCounts?.myWork?.activeWork) !== 2
+      || Number(productionCounts?.myWork?.newWork) !== 1
+      || Number(productionCounts?.myWork?.inProgress) !== 1
+    ) {
+      throw new Error(`Production My Work did not union and deduplicate both assignment lanes: ${JSON.stringify(productionCounts?.myWork)}`);
+    }
+
+    const productionWorkOrders = await database.query(
+      "select id, title from public.work_orders where title in ('Production action only', 'Dual production assignment') order by title"
+    );
+    const productionActionOnlyId = productionWorkOrders.rows.find((row) => row.title === "Production action only")?.id;
+    const dualProductionId = productionWorkOrders.rows.find((row) => row.title === "Dual production assignment")?.id;
+    if (!productionActionOnlyId || !dualProductionId) throw new Error("Production Action fixtures were not created.");
+
+    let openActionCompletionDenied = false;
+    try {
+      await database.query("update public.work_orders set status = 'completed' where id = $1 returning id", [productionActionOnlyId]);
+    } catch {
+      openActionCompletionDenied = true;
+    }
+    if (!openActionCompletionDenied) throw new Error("An open Production Action did not block work-order completion.");
+
+    const completedProductionAction = await database.query(
+      "update public.work_orders set production_action_status = 'completed' where id = $1 returning production_action_status, production_action_completed_by, production_action_completed_at",
+      [productionActionOnlyId]
+    );
+    if (
+      completedProductionAction.rows[0]?.production_action_status !== "completed"
+      || completedProductionAction.rows[0]?.production_action_completed_by !== ids.production
+      || !completedProductionAction.rows[0]?.production_action_completed_at
+    ) {
+      throw new Error("The assigned Production user could not complete their Production Action with audit metadata.");
+    }
+
+    const productionCountsAfterCompletionResult = await database.query(
+      `select public.get_workspace_work_order_counts(
+        $1::uuid,
+        $2::uuid,
+        'assigned',
+        '2026-07-27'::date,
+        '2026-07-01T00:00:00Z'::timestamptz,
+        '2026-07-26T00:00:00Z'::timestamptz,
+        '2026-08-02T00:00:00Z'::timestamptz
+      ) as counts`,
+      [ids.companyA, ids.locationA]
+    );
+    const productionCountsAfterCompletion = typeof productionCountsAfterCompletionResult.rows[0]?.counts === "string"
+      ? JSON.parse(productionCountsAfterCompletionResult.rows[0].counts)
+      : productionCountsAfterCompletionResult.rows[0]?.counts;
+    if (
+      Number(productionCountsAfterCompletion?.myWork?.activeWork) !== 1
+      || Number(productionCountsAfterCompletion?.myWork?.inProgress) !== 1
+    ) {
+      throw new Error(`Completed Production Actions did not leave My Work correctly: ${JSON.stringify(productionCountsAfterCompletion?.myWork)}`);
+    }
+
+    const productionHistory = await database.query(
+      "select event_type from public.work_order_events where work_order_id = $1 order by created_at",
+      [productionActionOnlyId]
+    );
+    const productionEventTypes = new Set(productionHistory.rows.map((row) => row.event_type));
+    if (!productionEventTypes.has("production_action_created") || !productionEventTypes.has("production_action_completed")) {
+      throw new Error(`Production Action history was incomplete: ${JSON.stringify([...productionEventTypes])}`);
+    }
+
+    const productionOperationalUpdate = await database.query(
+      "update public.assets set status = 'watch' where id = $1 returning id",
+      [ids.assetA]
+    );
+    if (productionOperationalUpdate.rows.length !== 1) throw new Error("Production role did not retain technician-level operational edit access.");
+    await database.query("update public.assets set status = 'running' where id = $1", [ids.assetA]);
+    checks.push({ name: "production_role_action_routing_completion_history_and_operational_access", verdict: "PASS" });
+
+    await setAuthenticatedUser(database, ids.technician);
+    let unauthorizedProductionCompletionDenied = false;
+    try {
+      await database.query(
+        "update public.work_orders set production_action_status = 'completed' where id = $1 returning id",
+        [dualProductionId]
+      );
+    } catch {
+      unauthorizedProductionCompletionDenied = true;
+    }
+    if (!unauthorizedProductionCompletionDenied) throw new Error("A technician completed another user's Production Action.");
+
+    await setAuthenticatedUser(database, ids.admin);
+    let invalidProductionTargetDenied = false;
+    try {
+      await database.query(
+        "update public.work_orders set production_action_assigned_to = $1 where id = $2 returning id",
+        [ids.technician, productionActionOnlyId]
+      );
+    } catch {
+      invalidProductionTargetDenied = true;
+    }
+    if (!invalidProductionTargetDenied) throw new Error("A Production Action was assigned to a non-Production user.");
+
+    let productionRoleChangeDenied = false;
+    try {
+      await database.query(
+        "select public.update_company_member_role($1::uuid, $2::uuid, 'technician')",
+        [ids.companyA, ids.production]
+      );
+    } catch {
+      productionRoleChangeDenied = true;
+    }
+    if (!productionRoleChangeDenied) throw new Error("A Production user with open actions was changed to another role.");
+    checks.push({ name: "production_action_target_status_and_role_change_guards", verdict: "PASS" });
+
+    await setAuthenticatedUser(database, ids.technician);
 
     let mismatchedLocationDenied = false;
     try {

@@ -93,9 +93,16 @@ const { createProcedureChecklistWorkflow } = window.MaintainOpsProcedureChecklis
 const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
 const { createCompanySetupWorkflow } = window.MaintainOpsCompanySetupWorkflow;
 const { createWorkOrderStatusWorkflow } = window.MaintainOpsWorkOrderStatusWorkflow;
+const { createProductionActionWorkflow } = window.MaintainOpsProductionActionWorkflow;
 const { createPlanningDueDateWorkflow } = window.MaintainOpsPlanningDueDateWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
+const {
+  hasProductionAction,
+  hasOpenProductionAction,
+  isWorkOrderAssignedToUser,
+  productionActionCompletionMessage,
+} = window.MaintainOpsProductionAction;
 const { createWorkOrderQueryFilterHelpers } = window.MaintainOpsWorkOrderQueryFilters;
 const { bindWorkSectionJumpEvents } = window.MaintainOpsWorkSectionJumpEvents;
 const { bindGlobalSearchNavigationEvents } = window.MaintainOpsGlobalSearchNavigationEvents;
@@ -105,6 +112,7 @@ const { bindWorkspaceDetailNavigationEvents } = window.MaintainOpsWorkspaceDetai
 const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInventoryFilterEvents;
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
 const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
+const { bindWorkspaceProductionActionEvents } = window.MaintainOpsWorkspaceProductionActionEvents;
 const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
 const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
 const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
@@ -204,6 +212,7 @@ const { createEmptyStateTextHelpers } = window.MaintainOpsEmptyStateText;
 const { createRequestDisplayHelpers } = window.MaintainOpsRequestDisplay;
 const { createGlobalSearchDisplayHelpers } = window.MaintainOpsGlobalSearchDisplay;
 const { createWorkQueueDisplayHelpers } = window.MaintainOpsWorkQueueDisplay;
+const { createProductionActionDisplayHelpers } = window.MaintainOpsProductionActionDisplay;
 const { createPlanningDisplayHelpers } = window.MaintainOpsPlanningDisplay;
 const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDisplay;
 const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
@@ -680,6 +689,7 @@ function initializeTeamFeature() {
     getWorkOrders: () => teamWorkOrders,
     matchesActiveLocation,
     getDueState,
+    isWorkOrderAssignedToUser,
   });
   teamFeature = display.createTeamMemberDisplayHelpers({
     getProfilesByUserId: () => profilesByUserId,
@@ -990,6 +1000,7 @@ function initializeManagerDashboardFeature() {
     statusLabel,
     escapeHtml,
     sundayWeekRange,
+    isWorkOrderAssignedToUser,
   });
   managerDashboardFeature = {
     bindEvents: events.bindWorkspaceManagerDashboardEvents,
@@ -1057,6 +1068,21 @@ const {
   getSearchQuery: () => workspaceUiState.getSearchQuery(),
 });
 const {
+  productionMembers,
+  productionAssigneeName,
+  renderProductionActionCard,
+  renderProductionActionDetail,
+} = createProductionActionDisplayHelpers({
+  getCompanyMembers: () => companyMembers,
+  getSession: () => session,
+  normalizeRole,
+  teamMemberName,
+  activeCompanyRole,
+  canEditOperationalRecords,
+  hasProductionAction,
+  escapeHtml,
+});
+const {
   workOrdersPanelTitle,
   myWorkPanelTitle,
   workQueuePanelTitle,
@@ -1097,6 +1123,8 @@ const {
   renderRelationshipChips,
   canAssignWorkOrderToMe,
   canManageTeam,
+  renderProductionActionCard,
+  hasOpenProductionAction,
 });
 const {
   renderWorkPagination,
@@ -1493,6 +1521,7 @@ const {
   matchesActiveLocation,
   matchesSearch,
   workOrderSearchValues,
+  isWorkOrderAssignedToUser,
 });
 const {
   messageCenterErrorState,
@@ -4152,9 +4181,9 @@ function filteredWorkOrders() {
     const workOrderTypeFilter = workspaceUiState.getWorkOrderTypeFilter();
     const workOrderPriorityFilter = workspaceUiState.getWorkOrderPriorityFilter();
     const queueMatch = activeSection === "mywork"
-      ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : workOrder.assigned_to === session.user.id)
+      ? (myWorkFilter === "created" ? workOrder.created_by === session.user.id : isWorkOrderAssignedToUser(workOrder, session.user.id))
       : workOrderAssigneeFilter
-        ? workOrder.assigned_to === workOrderAssigneeFilter
+        ? isWorkOrderAssignedToUser(workOrder, workOrderAssigneeFilter)
         : workOrderFilter === "all" ||
           (workOrderFilter === "assigned" && Boolean(workOrder.assigned_to)) ||
           (workOrderFilter === "vendor" && isVendorAssigned(workOrder)) ||
@@ -4492,6 +4521,9 @@ const WORK_ORDER_SCHEMA_FIELDS = [
   "safety_devices_checked",
   "safety_devices_checked_at",
   "safety_check_required",
+  "production_action",
+  "production_action_assigned_to",
+  "production_action_status",
 ];
 
 async function insertWithOptionalProcedure(table, payload, options = {}) {
@@ -4527,6 +4559,33 @@ async function updateWorkOrderSafely(payload, id) {
     return withSetupError(response, databaseSetupRequiredMessage("saving work order details"));
   }
   return response;
+}
+
+async function updateProductionActionRecord(id, payload) {
+  const response = await supabaseClient
+    .from("work_orders")
+    .update(payload)
+    .eq("id", id)
+    .eq("company_id", activeCompanyId)
+    .select(WORK_ORDER_RELATION_SELECT)
+    .single();
+  if (response.error && isColumnSchemaError(response.error, WORK_ORDER_SCHEMA_FIELDS)) {
+    markSchemaReadiness(response.error);
+    return withSetupError(response, databaseSetupRequiredMessage("saving a Production Action"));
+  }
+  return response;
+}
+
+async function afterProductionActionMutation(updatedWorkOrder, workOrderId) {
+  if (updatedWorkOrder) mergeWorkOrdersById([updatedWorkOrder]);
+  const workOrder = updatedWorkOrder || workOrders.find((item) => item.id === workOrderId);
+  if (activeSection === "mywork" && workOrder) {
+    const staysInQueue = workspaceUiState.getMyWorkFilter() === "created"
+      ? workOrder.created_by === session.user.id
+      : isWorkOrderAssignedToUser(workOrder, session.user.id);
+    if (!staysInQueue && activeWorkOrderId === workOrderId) setActiveWorkOrderIdState(null);
+  }
+  await reloadWorkOrderQueue();
 }
 
 const { savePlanningDueDate } = createPlanningDueDateWorkflow({
@@ -4888,6 +4947,8 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   renderActivityItem,
   canDeleteWorkOrders,
   canEditOperationalRecords,
+  renderProductionActionDetail,
+  hasOpenProductionAction,
 });
 
 function recommendedWorkOrderStep(workOrder) {
@@ -4963,6 +5024,7 @@ const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
   procedureColumn,
   applySafetyRequirementPayload,
   blocksProcedureCompletion,
+  productionActionCompletionMessage,
   setWorkOrderActionWarning,
   applySafetyCheckPayload,
   requiresSafetyDeviceCheck,
@@ -5428,6 +5490,12 @@ function bindWorkspaceEvents() {
     assignWorkOrderFromCard,
   });
 
+  bindWorkspaceProductionActionEvents({
+    saveProductionAction,
+    setProductionActionStatus,
+    removeProductionAction,
+  });
+
   createWorkspaceWorkOrderDeleteEvents({
     alertRef: alert,
     canDeleteWorkOrders,
@@ -5550,6 +5618,7 @@ function bindWorkspaceEvents() {
     render,
     requiredChecklistProgress,
     requiresSafetyDeviceCheck,
+    productionActionCompletionMessage,
     setWorkOrderActionWarning,
     showNotice,
     updateWorkOrderSafely,
@@ -6009,6 +6078,7 @@ const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
   assetRequiresSafety,
   hasCompletedSafetyDeviceCheck,
   blocksProcedureCompletion,
+  productionActionCompletionMessage,
   setWorkOrderActionWarning,
   applySafetyCheckPayload,
   withOperationTimeout,
@@ -6042,6 +6112,7 @@ const {
   applySafetyCheckPayload,
   applySafetyRequirementPayload,
   blocksProcedureCompletion,
+  productionActionCompletionMessage,
   currentSafetyCheckboxCheckedForWorkOrder,
   friendlyWorkOrderSaveError,
   getActiveWorkOrderId: () => activeWorkOrderId,
@@ -6058,6 +6129,20 @@ const {
   withOperationTimeout,
 });
 
+const {
+  saveProductionAction,
+  setProductionActionStatus,
+  removeProductionAction,
+} = createProductionActionWorkflow({
+  documentRef: document,
+  getWorkOrderById: (id) => workOrders.find((item) => item.id === id),
+  updateProductionActionRecord,
+  afterProductionActionMutation,
+  withOperationTimeout,
+  friendlyWorkOrderSaveError,
+  showNotice,
+});
+
 async function assignWorkOrderToMe(id) {
   try {
     const hasProfile = await ensureProfileForActiveCompany();
@@ -6067,7 +6152,7 @@ async function assignWorkOrderToMe(id) {
       return alert("Completed work orders cannot be reassigned.");
     }
     if (!canAssignWorkOrderToMe(workOrder)) {
-      return alert("Technicians can only claim unassigned work. Managers can reassign work.");
+      return alert("Technician and Production users can only claim unassigned work. Managers can reassign work.");
     }
 
     const { error } = await withOperationTimeout(

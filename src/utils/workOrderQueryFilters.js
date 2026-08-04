@@ -53,6 +53,7 @@
           const searchClauses = [
             `title.ilike.%${term}%`,
             `description.ilike.%${term}%`,
+            `production_action.ilike.%${term}%`,
             `priority.ilike.%${term}%`,
             `type.ilike.%${term}%`,
             `status.ilike.%${term}%`,
@@ -69,13 +70,17 @@
 
     function applyWorkOrderQueueFilters(query, section) {
       if (section === "mywork") {
+        const userId = state("session").user.id;
         return state("myWorkFilter") === "created"
-          ? query.eq("created_by", state("session").user.id)
-          : query.eq("assigned_to", state("session").user.id);
+          ? query.eq("created_by", userId)
+          : query.or(`assigned_to.eq.${userId},and(production_action_assigned_to.eq.${userId},production_action_status.eq.open)`);
       }
 
       if (section !== "work") return query;
-      if (state("workOrderAssigneeFilter")) return query.eq("assigned_to", state("workOrderAssigneeFilter"));
+      if (state("workOrderAssigneeFilter")) {
+        const userId = state("workOrderAssigneeFilter");
+        return query.or(`assigned_to.eq.${userId},and(production_action_assigned_to.eq.${userId},production_action_status.eq.open)`);
+      }
       if (state("workOrderFilter") === "assigned") return query.not("assigned_to", "is", null);
       if (state("workOrderFilter") === "vendor") return query.ilike("description", `%${deps.OUTSIDE_VENDOR_NOTE}%`);
       if (state("workOrderFilter") === "unassigned") {

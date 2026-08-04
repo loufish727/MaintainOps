@@ -19,7 +19,7 @@ Strong areas:
 - RLS-first security posture for shared operational data.
 - Public QR request intake through scoped RPC paths rather than direct anonymous table access.
 - Significant modularization work underway from a large legacy `app.js`.
-- A required fast Release Gate, manual Full Strict LFES, targeted browser/smoke coverage, and a protected four-role authenticated testing-platform proof.
+- A required fast Release Gate, manual Full Strict LFES, targeted browser/smoke coverage, and a protected five-role authenticated testing-platform proof.
 - A measured authenticated workspace request budget that checks actual signed-in Supabase data calls, not only static resource delivery.
 
 Areas still maturing:
@@ -70,7 +70,7 @@ Reviewers should inspect:
 
 ## Testing And Verification
 
-Current verification uses a required fast Release Gate, manual Full Strict LFES, recursive SQL and reviewed-DOM-assignment checks, isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, protected four-role Chromium browser/security proof, and a signed-in WebKit admin contract.
+Current verification uses a required fast Release Gate, manual Full Strict LFES, recursive SQL and reviewed-DOM-assignment checks, isolated PostgreSQL/RLS checks, targeted smoke tests, resource-load checks, protected five-role Chromium browser/security proof, and a signed-in WebKit admin contract.
 
 Useful entry points:
 

@@ -23,6 +23,14 @@
     async function setWorkOrderStatus(id, status) {
       const workOrder = deps.getWorkOrders().find((item) => item.id === id);
       if (status === "completed") {
+        const productionActionMessage = deps.productionActionCompletionMessage?.(workOrder) || "";
+        if (productionActionMessage) {
+          deps.setActiveWorkOrderId(id);
+          deps.setWorkOrderActionWarning(id, productionActionMessage);
+          deps.showNotice(productionActionMessage, "warning");
+          await deps.render();
+          return false;
+        }
         const procedureCompletionMessage = deps.blocksProcedureCompletion(workOrder);
         if (procedureCompletionMessage) {
           deps.setActiveWorkOrderId(id);

@@ -33,6 +33,14 @@
       const procedure = options.getProcedureById(workOrder?.procedure_template_id);
       const requiredProgress = procedure ? options.requiredChecklistProgress(workOrder, procedure) : { done: 0, total: 0 };
 
+      const productionActionMessage = options.productionActionCompletionMessage?.(workOrder) || "";
+      if (productionActionMessage) {
+        if (errorTarget) errorTarget.textContent = productionActionMessage;
+        options.setWorkOrderActionWarning(activeWorkOrderId, productionActionMessage);
+        options.showNotice(productionActionMessage, "warning");
+        return;
+      }
+
       if (requiredProgress.done < requiredProgress.total) {
         if (errorTarget) errorTarget.textContent = `Complete required checklist steps first (${requiredProgress.done}/${requiredProgress.total}).`;
         return;
@@ -113,4 +121,8 @@
   window.MaintainOpsWorkspaceWorkOrderCompletionEvents = {
     createWorkspaceWorkOrderCompletionEvents,
   };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createWorkspaceWorkOrderCompletionEvents };
+  }
 })();

@@ -81,6 +81,7 @@ function createWorkflow(overrides = {}) {
       calls.push(["blocksProcedureCompletion", ...args]);
       return overrides.procedureBlockMessage || "";
     },
+    productionActionCompletionMessage: () => overrides.productionActionBlockMessage || "",
     setWorkOrderActionWarning: (...args) => calls.push(["warning", ...args]),
     applySafetyCheckPayload: (payload, checked) => {
       payload.safety_devices_checked = checked;
@@ -158,6 +159,14 @@ function createWorkflow(overrides = {}) {
   assert.equal(blocked.calls.some((call) => call[0] === "update"), false);
   assert.equal(blockedButton.disabled, false);
   assert.equal(blockedButton.textContent, "Save Quick Update");
+
+  const productionBlocked = createWorkflow({
+    values: { status: "completed" },
+    productionActionBlockMessage: "Complete Production Action first.",
+  });
+  await productionBlocked.run();
+  assert.equal(productionBlocked.errorTarget.textContent, "Complete Production Action first.");
+  assert.equal(productionBlocked.calls.some((call) => call[0] === "update"), false);
 
   const down = createWorkflow({ values: { machine_down: "on" } });
   await down.run();

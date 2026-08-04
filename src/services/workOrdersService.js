@@ -61,10 +61,10 @@
     const { companyId, locationId, locationsReady } = params;
     let query = supabaseClient
       .from("work_orders")
-      .select("id, assigned_to, status, due_at, location_id")
+      .select("id, assigned_to, production_action_assigned_to, production_action_status, status, due_at, location_id")
       .eq("company_id", companyId)
       .in("status", ["open", "in_progress", "blocked", "completed"])
-      .not("assigned_to", "is", null);
+      .or("assigned_to.not.is.null,and(production_action_assigned_to.not.is.null,production_action_status.eq.open)");
     if (locationsReady && locationId) query = query.eq("location_id", locationId);
     return query.order("id", { ascending: true });
   }

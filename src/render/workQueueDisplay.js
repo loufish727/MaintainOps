@@ -29,6 +29,8 @@
     renderRelationshipChips,
     canAssignWorkOrderToMe,
     canManageTeam,
+    renderProductionActionCard = () => "",
+    hasOpenProductionAction = () => false,
   }) {
     function workOrdersPanelTitle() {
       const workOrderAssigneeFilter = getWorkOrderAssigneeFilter();
@@ -294,10 +296,11 @@
             ${workOrder.completed_at ? `<span>${segmentIcon("completed")}Completed ${new Date(workOrder.completed_at).toLocaleDateString()}</span>` : ""}
           </div>
           ${renderRelationshipChips(workOrder)}
+          ${renderProductionActionCard(workOrder)}
           <div class="quick-actions work-card-actions">
             ${!isCompleted && canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
             ${!isCompleted && canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
-          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).slice(0, 3).map((status) => `
+          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status && !(status === "completed" && hasOpenProductionAction(workOrder))).slice(0, 3).map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusActionLabel(status)}</button>
           `).join("")}
         </div>

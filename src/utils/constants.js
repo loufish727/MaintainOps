@@ -12,7 +12,7 @@
     SEARCH_PREVIEW_LIMIT: 6,
     OUTSIDE_VENDOR_VALUE: "__outside_vendor__",
     OUTSIDE_VENDOR_NOTE: "[Assignment: Outside vendor]",
-    COMPANY_ROLES: Object.freeze(["technician", "accounting", "manager", "admin"]),
+    COMPANY_ROLES: Object.freeze(["technician", "production", "accounting", "manager", "admin"]),
     ACTIVE_LOCATION_STORAGE_KEY: "maintainops.activeLocationId",
   });
 })();

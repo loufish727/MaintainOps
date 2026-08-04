@@ -33,6 +33,8 @@
       renderActivityItem,
       canDeleteWorkOrders,
       canEditOperationalRecords = () => true,
+      renderProductionActionDetail = () => "",
+      hasOpenProductionAction = () => false,
     } = deps;
 
     function renderChecklistStep(workOrder, step) {
@@ -139,6 +141,7 @@
   
         ${renderWorkOrderCommandSummary(workOrder)}
         ${renderWorkOrderRecommendation(workOrder)}
+        ${renderProductionActionDetail(workOrder)}
   
         ${workOrder.completed_at && (workOrder.failure_cause || workOrder.resolution_summary || workOrder.follow_up_needed) ? `
           <div class="outcome-summary">
@@ -151,13 +154,13 @@
   
         ${canEditOperational ? `<label>Status
           <select id="status-select">
-            ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
+            ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""} ${status === "completed" && hasOpenProductionAction(workOrder) ? "disabled" : ""}>${statusLabel(status)}</option>`).join("")}
           </select>
         </label>` : ""}
   
         ${canEditOperational ? `<div class="quick-actions detail-quick-actions">
           ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
-          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status).map((status) => `
+          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status && !(status === "completed" && hasOpenProductionAction(workOrder))).map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
           `).join("")}
         </div>` : ""}
@@ -195,7 +198,7 @@
             </label>
             <label id="quick-update-status-field">Status
               <select name="status">
-                ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}
+                ${STATUS_OPTIONS.map((status) => `<option value="${status}" ${status === workOrder.status ? "selected" : ""} ${status === "completed" && hasOpenProductionAction(workOrder) ? "disabled" : ""}>${statusLabel(status)}</option>`).join("")}
               </select>
             </label>
             <label>Priority
@@ -298,6 +301,7 @@
           <form class="completion-box" id="complete-work-order-form">
             <h3>Complete Work</h3>
             ${requiredProgress?.total ? `<p class="${requiredProgress.done === requiredProgress.total ? "completion-note" : "warning-text"}">Required checklist: ${requiredProgress.done}/${requiredProgress.total}</p>` : ""}
+            ${hasOpenProductionAction(workOrder) ? `<p class="warning-text">Complete or remove the open Production Action first.</p>` : ""}
             <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
             <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
             <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
@@ -310,7 +314,7 @@
               </label>
             ` : ""}
             <p class="error-text" id="completion-error"></p>
-            <button class="primary-button" type="submit">Complete Work Order</button>
+            <button class="primary-button" type="submit" ${hasOpenProductionAction(workOrder) ? "disabled" : ""}>Complete Work Order</button>
           </form>
           </details>
         ` : ""}

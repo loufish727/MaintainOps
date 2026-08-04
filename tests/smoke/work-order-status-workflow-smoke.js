@@ -17,6 +17,7 @@ function createWorkflow(overrides = {}) {
       payload.safety_check_required = true;
     },
     blocksProcedureCompletion: overrides.blocksProcedureCompletion || (() => ""),
+    productionActionCompletionMessage: overrides.productionActionCompletionMessage || (() => ""),
     currentSafetyCheckboxCheckedForWorkOrder: overrides.currentSafetyCheckboxCheckedForWorkOrder || (() => true),
     friendlyWorkOrderSaveError: (error) => error.message || String(error),
     getActiveWorkOrderId: () => activeWorkOrderId,
@@ -58,6 +59,14 @@ function createWorkflow(overrides = {}) {
   assert.equal(blockedSaved, false);
   assert.equal(blocked.calls.some((call) => call[0] === "updateWorkOrderSafely"), false);
   assert.equal(blocked.calls.some((call) => call[0] === "setWorkOrderActionWarning" && call[1] === "wo-1"), true);
+
+  const productionBlocked = createWorkflow({
+    productionActionCompletionMessage: () => "Complete Production Action first.",
+  });
+  const productionBlockedSaved = await productionBlocked.workflow.setWorkOrderStatus("wo-1", "completed");
+  assert.equal(productionBlockedSaved, false);
+  assert.equal(productionBlocked.calls.some((call) => call[0] === "updateWorkOrderSafely"), false);
+  assert.deepEqual(productionBlocked.notices.at(-1), ["Complete Production Action first.", "warning"]);
 
   const selectTarget = { value: "completed", disabled: false };
   const selectBlocked = createWorkflow({ currentSafetyCheckboxCheckedForWorkOrder: () => false });
