@@ -73,6 +73,7 @@ function createWorkflow(overrides = {}) {
     },
     hasCompletedSafetyDeviceCheck: () => overrides.hasCompletedSafety || false,
     blocksProcedureCompletion: () => overrides.procedureBlockMessage || "",
+    productionActionCompletionMessage: () => overrides.productionActionBlockMessage || "",
     setWorkOrderActionWarning: (...args) => calls.push(["warning", ...args]),
     applySafetyCheckPayload: (payload, checked) => { payload.safety_devices_checked = checked; },
     withOperationTimeout: async (operation) => operation,
@@ -153,6 +154,14 @@ function createWorkflow(overrides = {}) {
   await procedureBlocked.run();
   assert.equal(procedureBlocked.errorTarget.textContent, "Checklist incomplete.");
   assert.equal(procedureBlocked.calls.some((call) => call[0] === "warning" && call[1] === "wo-1"), true);
+
+  const productionBlocked = createWorkflow({
+    statusValue: "completed",
+    productionActionBlockMessage: "Complete Production Action first.",
+  });
+  await productionBlocked.run();
+  assert.equal(productionBlocked.errorTarget.textContent, "Complete Production Action first.");
+  assert.equal(productionBlocked.calls.some((call) => call[0] === "update"), false);
 
   console.log("work order detail edit workflow smoke passed");
 })().catch((error) => {

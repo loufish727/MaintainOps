@@ -37,9 +37,10 @@ The separate `Hosted App Smoke` workflow runs the resource-load browser smoke af
 - forbidden-company storage upload is rejected
 - technician request deletion and internal-request photo attachment are rejected
 - raw performance samples are not directly readable, malformed samples are rejected, own-company aggregate access works, and cross-company telemetry RPC access is denied
-- admin, manager, accounting, and technician can sign in to the candidate app against the testing platform
+- admin, manager, accounting, production, and technician can sign in to the candidate app against the testing platform
 - each role receives the expected navigation, Team workload counts, Financial access, and operational read/edit presentation
 - each Chromium role completes initial workspace loading within 35 Supabase requests, with core loaders and the scoped work-order count RPC exactly once
+- a signed-in Production user can assign, receive, complete, and remove a Production Action without changing work-order ownership; the work order remains blocked from completion while the action is open
 - the admin candidate path, including its request budget, also passes in WebKit
 - a signed-in browser opens App Performance and renders measured gauges through the lazy 3D frame
 
@@ -49,6 +50,7 @@ The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes
 - `LFES_ADMIN_EMAIL` and `LFES_ADMIN_PASSWORD`
 - `LFES_MANAGER_EMAIL` and `LFES_MANAGER_PASSWORD`
 - `LFES_ACCOUNTING_EMAIL` and `LFES_ACCOUNTING_PASSWORD`
+- `LFES_PRODUCTION_EMAIL` and `LFES_PRODUCTION_PASSWORD`
 - `LFES_TECHNICIAN_EMAIL` and `LFES_TECHNICIAN_PASSWORD`
 - `LFES_QA_COMPANY_ID`
 - `LFES_FORBIDDEN_COMPANY_ID`

@@ -6,7 +6,7 @@
         if (!deps.matchesActiveLocation(workOrder)) return false;
         const queueMatch = deps.getMyWorkFilter() === "created"
           ? workOrder.created_by === currentUserId
-          : workOrder.assigned_to === currentUserId;
+          : deps.isWorkOrderAssignedToUser(workOrder, currentUserId);
         return queueMatch && deps.matchesSearch(deps.workOrderSearchValues(workOrder));
       });
     }

@@ -135,7 +135,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
   - Custom-domain routing, final public-facing copy, and production support process still need a final rollout pass.
 
 - Automated test coverage.
-  - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL and DOM assignment inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, four-role Chromium proof, and a signed-in WebKit admin contract against the testing platform.
+  - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL and DOM assignment inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, five-role Chromium proof, and a signed-in WebKit admin contract against the testing platform.
   - Numeric line/branch coverage and an exhaustive live mutation/cross-browser matrix do not exist yet.
 
 - Operational readiness.

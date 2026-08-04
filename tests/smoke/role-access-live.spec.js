@@ -11,6 +11,7 @@ const roles = [
   { name: "admin", prefix: "LFES_ADMIN", financial: "edit", operational: "edit", managerDashboard: true },
   { name: "manager", prefix: "LFES_MANAGER", financial: "read", operational: "edit", managerDashboard: false },
   { name: "accounting", prefix: "LFES_ACCOUNTING", financial: "edit", operational: "read", managerDashboard: false },
+  { name: "production", prefix: "LFES_PRODUCTION", financial: "none", operational: "edit", managerDashboard: false },
   { name: "technician", prefix: "LFES_TECHNICIAN", financial: "none", operational: "edit", managerDashboard: false },
 ].map((role) => ({
   ...role,

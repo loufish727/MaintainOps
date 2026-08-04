@@ -19,7 +19,7 @@ create table if not exists public.company_members (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  role text not null default 'member' check (role in ('admin', 'manager', 'accounting', 'technician', 'member')),
+  role text not null default 'member' check (role in ('admin', 'manager', 'accounting', 'production', 'technician', 'member')),
   default_location_id uuid,
   created_at timestamptz not null default now(),
   unique (company_id, user_id)
@@ -155,11 +155,44 @@ create table if not exists public.work_orders (
   follow_up_needed boolean not null default false,
   completion_notes text,
   completed_at timestamptz,
+  production_action text,
+  production_action_assigned_to uuid,
+  production_action_status text check (production_action_status in ('open', 'completed') or production_action_status is null),
+  production_action_created_by uuid references auth.users(id) on delete set null,
+  production_action_created_at timestamptz,
+  production_action_completed_by uuid references auth.users(id) on delete set null,
+  production_action_completed_at timestamptz,
   safety_devices_checked boolean not null default false,
   safety_devices_checked_at timestamptz,
   safety_check_required boolean not null default false,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint work_orders_production_action_consistency_check check (
+    (
+      production_action is null
+      and production_action_assigned_to is null
+      and production_action_status is null
+      and production_action_created_by is null
+      and production_action_created_at is null
+      and production_action_completed_by is null
+      and production_action_completed_at is null
+    )
+    or
+    (
+      nullif(btrim(production_action), '') is not null
+      and production_action_assigned_to is not null
+      and production_action_status in ('open', 'completed')
+      and production_action_created_at is not null
+      and (
+        (production_action_status = 'open' and production_action_completed_by is null and production_action_completed_at is null)
+        or
+        (production_action_status = 'completed' and production_action_completed_at is not null)
+      )
+    )
+  ),
+  constraint work_orders_production_action_completion_check check (
+    status <> 'completed' or production_action_status is distinct from 'open'
+  )
 );
 
 create table if not exists public.work_order_comments (
@@ -514,6 +547,16 @@ begin
       references public.profiles(company_id, user_id)
       on delete restrict;
   end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'work_orders_company_production_action_assigned_profile_fkey'
+  ) then
+    alter table public.work_orders
+      add constraint work_orders_company_production_action_assigned_profile_fkey
+      foreign key (company_id, production_action_assigned_to)
+      references public.profiles(company_id, user_id)
+      on delete restrict;
+  end if;
 end $$;
 
 update public.work_orders wo
@@ -546,6 +589,9 @@ create index if not exists assets_company_asset_type_idx on public.assets(compan
 create index if not exists work_orders_company_id_idx on public.work_orders(company_id);
 create index if not exists work_orders_location_id_idx on public.work_orders(location_id);
 create index if not exists work_orders_assigned_to_idx on public.work_orders(assigned_to);
+create index if not exists work_orders_company_production_action_idx
+on public.work_orders(company_id, production_action_assigned_to, production_action_status)
+where production_action_assigned_to is not null;
 create index if not exists work_orders_safety_check_required_idx on public.work_orders(company_id, safety_check_required);
 create index if not exists work_orders_company_location_priority_idx on public.work_orders(company_id, location_id, priority_rank desc, created_at desc);
 create index if not exists work_order_comments_company_id_idx on public.work_order_comments(company_id);
@@ -616,9 +662,332 @@ as $$
     from public.company_members cm
     where cm.company_id = target_company_id
       and cm.user_id = auth.uid()
-      and cm.role in ('admin', 'manager', 'technician', 'member')
+      and cm.role in ('admin', 'manager', 'production', 'technician', 'member')
   );
 $$;
+
+create or replace function private.enforce_work_order_production_action()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  actor_role text;
+  target_role text;
+  normalized_action text;
+  action_details_changed boolean := false;
+  action_status_changed boolean := false;
+  audit_fields_changed boolean := false;
+begin
+  normalized_action := nullif(btrim(new.production_action), '');
+
+  if tg_op = 'INSERT' then
+    if normalized_action is null then
+      new.production_action := null;
+      new.production_action_assigned_to := null;
+      new.production_action_status := null;
+      new.production_action_created_by := null;
+      new.production_action_created_at := null;
+      new.production_action_completed_by := null;
+      new.production_action_completed_at := null;
+      return new;
+    end if;
+
+    if not private.is_company_operational_editor(new.company_id) then
+      raise exception 'Operational edit access is required to create a Production Action.';
+    end if;
+
+    select cm.role into target_role
+    from public.company_members cm
+    where cm.company_id = new.company_id
+      and cm.user_id = new.production_action_assigned_to;
+
+    if target_role is distinct from 'production' then
+      raise exception 'Production Actions must be assigned to a Production user.';
+    end if;
+
+    if new.status = 'completed' then
+      raise exception 'Complete or remove the open Production Action before completing this work order.';
+    end if;
+
+    new.production_action := normalized_action;
+    new.production_action_status := 'open';
+    new.production_action_created_by := auth.uid();
+    new.production_action_created_at := now();
+    new.production_action_completed_by := null;
+    new.production_action_completed_at := null;
+    return new;
+  end if;
+
+  action_details_changed := normalized_action is distinct from nullif(btrim(old.production_action), '')
+    or new.production_action_assigned_to is distinct from old.production_action_assigned_to;
+  action_status_changed := new.production_action_status is distinct from old.production_action_status;
+  audit_fields_changed := new.production_action_created_by is distinct from old.production_action_created_by
+    or new.production_action_created_at is distinct from old.production_action_created_at
+    or new.production_action_completed_by is distinct from old.production_action_completed_by
+    or new.production_action_completed_at is distinct from old.production_action_completed_at;
+
+  select cm.role into actor_role
+  from public.company_members cm
+  where cm.company_id = new.company_id
+    and cm.user_id = auth.uid();
+
+  if normalized_action is null then
+    if old.production_action is not null
+      and actor_role not in ('admin', 'manager', 'production', 'technician', 'member') then
+      raise exception 'Operational edit access is required to remove a Production Action.';
+    end if;
+    new.production_action := null;
+    new.production_action_assigned_to := null;
+    new.production_action_status := null;
+    new.production_action_created_by := null;
+    new.production_action_created_at := null;
+    new.production_action_completed_by := null;
+    new.production_action_completed_at := null;
+    return new;
+  end if;
+
+  if old.production_action is null then
+    if actor_role not in ('admin', 'manager', 'production', 'technician', 'member') then
+      raise exception 'Operational edit access is required to create a Production Action.';
+    end if;
+
+    select cm.role into target_role
+    from public.company_members cm
+    where cm.company_id = new.company_id
+      and cm.user_id = new.production_action_assigned_to;
+
+    if target_role is distinct from 'production' then
+      raise exception 'Production Actions must be assigned to a Production user.';
+    end if;
+
+    new.production_action := normalized_action;
+    new.production_action_status := 'open';
+    new.production_action_created_by := auth.uid();
+    new.production_action_created_at := now();
+    new.production_action_completed_by := null;
+    new.production_action_completed_at := null;
+  elsif action_details_changed then
+    if actor_role not in ('admin', 'manager', 'production', 'technician', 'member') then
+      raise exception 'Operational edit access is required to edit a Production Action.';
+    end if;
+
+    select cm.role into target_role
+    from public.company_members cm
+    where cm.company_id = new.company_id
+      and cm.user_id = new.production_action_assigned_to;
+
+    if target_role is distinct from 'production' then
+      raise exception 'Production Actions must be assigned to a Production user.';
+    end if;
+
+    new.production_action := normalized_action;
+    new.production_action_status := 'open';
+    new.production_action_created_by := old.production_action_created_by;
+    new.production_action_created_at := old.production_action_created_at;
+    new.production_action_completed_by := null;
+    new.production_action_completed_at := null;
+  elsif action_status_changed then
+    if actor_role not in ('admin', 'manager')
+      and auth.uid() is distinct from old.production_action_assigned_to then
+      raise exception 'Only the assigned Production user or a manager can change this Production Action status.';
+    end if;
+
+    new.production_action := old.production_action;
+    new.production_action_assigned_to := old.production_action_assigned_to;
+    new.production_action_created_by := old.production_action_created_by;
+    new.production_action_created_at := old.production_action_created_at;
+    if new.production_action_status = 'completed' then
+      new.production_action_completed_by := auth.uid();
+      new.production_action_completed_at := now();
+    elsif new.production_action_status = 'open' then
+      new.production_action_completed_by := null;
+      new.production_action_completed_at := null;
+    else
+      raise exception 'Production Action status must be open or completed.';
+    end if;
+  elsif audit_fields_changed then
+    raise exception 'Production Action audit fields cannot be edited directly.';
+  else
+    new.production_action := normalized_action;
+  end if;
+
+  if new.status = 'completed' and new.production_action_status = 'open' then
+    raise exception 'Complete or remove the open Production Action before completing this work order.';
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function private.record_work_order_production_action_event()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  event_name text;
+  event_summary text;
+  assignee_name text;
+  action_text text;
+  assignee_id uuid;
+begin
+  if tg_op = 'INSERT' then
+    if new.production_action is null then return new; end if;
+    event_name := 'production_action_created';
+    action_text := new.production_action;
+    assignee_id := new.production_action_assigned_to;
+  elsif old.production_action is null and new.production_action is not null then
+    event_name := 'production_action_created';
+    action_text := new.production_action;
+    assignee_id := new.production_action_assigned_to;
+  elsif old.production_action is not null and new.production_action is null then
+    event_name := 'production_action_removed';
+    action_text := old.production_action;
+    assignee_id := old.production_action_assigned_to;
+  elsif old.production_action_status is distinct from new.production_action_status
+    and new.production_action_status = 'completed' then
+    event_name := 'production_action_completed';
+    action_text := new.production_action;
+    assignee_id := new.production_action_assigned_to;
+  elsif old.production_action_status is distinct from new.production_action_status
+    and new.production_action_status = 'open' then
+    event_name := 'production_action_reopened';
+    action_text := new.production_action;
+    assignee_id := new.production_action_assigned_to;
+  elsif old.production_action is distinct from new.production_action
+    or old.production_action_assigned_to is distinct from new.production_action_assigned_to then
+    event_name := 'production_action_updated';
+    action_text := new.production_action;
+    assignee_id := new.production_action_assigned_to;
+  else
+    return new;
+  end if;
+
+  select p.full_name into assignee_name
+  from public.profiles p
+  where p.company_id = new.company_id
+    and p.user_id = assignee_id;
+
+  event_summary := case event_name
+    when 'production_action_created' then format('Production Action assigned to %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
+    when 'production_action_updated' then format('Production Action updated for %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
+    when 'production_action_completed' then format('Production Action completed by %s.', coalesce(nullif(assignee_name, ''), 'Production'))
+    when 'production_action_reopened' then format('Production Action reopened for %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
+    else format('Production Action removed: %s', left(action_text, 180))
+  end;
+
+  insert into public.work_order_events (company_id, work_order_id, actor_id, event_type, summary)
+  values (new.company_id, new.id, auth.uid(), event_name, event_summary);
+  return new;
+end;
+$$;
+
+create or replace function private.guard_production_role_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+begin
+  if old.role <> 'production' then
+    if tg_op = 'DELETE' then return old; end if;
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and new.role = 'production' then return new; end if;
+
+  if exists (
+    select 1
+    from public.work_orders wo
+    where wo.company_id = old.company_id
+      and wo.production_action_assigned_to = old.user_id
+      and wo.production_action_status = 'open'
+  ) then
+    raise exception 'Reassign or complete this user''s open Production Actions before changing or removing their role.';
+  end if;
+
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_work_order_production_action on public.work_orders;
+create trigger enforce_work_order_production_action
+before insert or update on public.work_orders
+for each row execute function private.enforce_work_order_production_action();
+
+drop trigger if exists record_work_order_production_action_event on public.work_orders;
+create trigger record_work_order_production_action_event
+after insert or update on public.work_orders
+for each row execute function private.record_work_order_production_action_event();
+
+drop trigger if exists guard_production_role_update on public.company_members;
+create trigger guard_production_role_update
+before update of role on public.company_members
+for each row execute function private.guard_production_role_change();
+
+drop trigger if exists guard_production_role_delete on public.company_members;
+create trigger guard_production_role_delete
+before delete on public.company_members
+for each row execute function private.guard_production_role_change();
+
+revoke all on function private.enforce_work_order_production_action() from public, anon, authenticated;
+revoke all on function private.record_work_order_production_action_event() from public, anon, authenticated;
+revoke all on function private.guard_production_role_change() from public, anon, authenticated;
+
+create or replace function public.enforce_work_order_assignment_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  actor_role text;
+  new_has_vendor_note boolean;
+  old_has_vendor_note boolean;
+begin
+  select cm.role into actor_role
+  from public.company_members cm
+  where cm.company_id = new.company_id
+    and cm.user_id = auth.uid();
+
+  if actor_role is null then raise exception 'Not a member of this company.'; end if;
+  if actor_role in ('admin', 'manager') then return new; end if;
+
+  if tg_op = 'INSERT' then
+    new_has_vendor_note := coalesce(new.description, '') like '%[Assignment: Outside vendor]%';
+    if new.assigned_to is not null and new.assigned_to <> auth.uid() then
+      raise exception 'Technician and Production users can only assign new work to themselves or leave it unassigned.';
+    end if;
+    if new_has_vendor_note then
+      raise exception 'Only managers or admins can assign work to an outside vendor.';
+    end if;
+    return new;
+  end if;
+
+  new_has_vendor_note := coalesce(new.description, '') like '%[Assignment: Outside vendor]%';
+  old_has_vendor_note := coalesce(old.description, '') like '%[Assignment: Outside vendor]%';
+  if new.assigned_to is distinct from old.assigned_to then
+    if old.assigned_to is null and not old_has_vendor_note and new.assigned_to = auth.uid() then
+      return new;
+    end if;
+    raise exception 'Technician and Production users can only claim unassigned work for themselves.';
+  end if;
+  if new_has_vendor_note and not old_has_vendor_note then
+    raise exception 'Only managers or admins can assign work to an outside vendor.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_work_order_assignment_role on public.work_orders;
+create trigger enforce_work_order_assignment_role
+before insert or update on public.work_orders
+for each row execute function public.enforce_work_order_assignment_role();
+
+revoke all on function public.enforce_work_order_assignment_role() from public, anon, authenticated;
 
 create or replace function private.location_belongs_to_company(target_company_id uuid, target_location_id uuid)
 returns boolean
@@ -786,7 +1155,9 @@ begin
       wo.due_at,
       wo.completed_at,
       wo.assigned_to,
-      wo.created_by
+      wo.created_by,
+      wo.production_action_assigned_to,
+      wo.production_action_status
     from public.work_orders wo
     where wo.company_id = target_company_id
       and (target_location_id is null or wo.location_id = target_location_id)
@@ -797,7 +1168,13 @@ begin
     where
       (target_my_work_filter = 'created' and wo.created_by = auth.uid())
       or
-      (target_my_work_filter = 'assigned' and wo.assigned_to = auth.uid())
+      (
+        target_my_work_filter = 'assigned'
+        and (
+          wo.assigned_to = auth.uid()
+          or (wo.production_action_assigned_to = auth.uid() and wo.production_action_status = 'open')
+        )
+      )
   ),
   company_counts as (
     select

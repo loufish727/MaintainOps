@@ -4,6 +4,7 @@ global.window = {};
 require("../../src/render/managerDashboardDisplay.js");
 
 const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashboardDisplay;
+const { isWorkOrderAssignedToUser } = require("../../src/utils/productionAction.js");
 
 function sundayWeekRange(referenceDate = new Date()) {
   const start = new Date(referenceDate);
@@ -54,6 +55,7 @@ const helpers = createManagerDashboardDisplayHelpers({
   normalizeRole: (role) => role,
   statusLabel: (status) => status === "in_progress" ? "In Progress" : status,
   sundayWeekRange,
+  isWorkOrderAssignedToUser,
 });
 
 const cards = helpers.managerSummaryCards();
@@ -143,6 +145,7 @@ const summaryHelpers = createManagerDashboardDisplayHelpers({
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
   sundayWeekRange,
+  isWorkOrderAssignedToUser,
 });
 
 const summaryHtml = summaryHelpers.renderManagerDashboard();
@@ -176,6 +179,7 @@ const completedHelpers = createManagerDashboardDisplayHelpers({
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
   sundayWeekRange,
+  isWorkOrderAssignedToUser,
 });
 
 const completedHtml = completedHelpers.renderManagerDashboard();
@@ -205,6 +209,7 @@ const convertedDrillHelpers = createManagerDashboardDisplayHelpers({
   normalizeRole: (role) => role,
   statusLabel: (status) => status,
   sundayWeekRange,
+  isWorkOrderAssignedToUser,
 });
 
 const convertedDrillHtml = convertedDrillHelpers.renderManagerDashboard();

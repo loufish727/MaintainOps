@@ -4,6 +4,7 @@ global.window = {};
 require("../../src/render/teamWorkloadDisplay.js");
 
 const { createTeamWorkloadDisplayHelpers } = window.MaintainOpsTeamWorkloadDisplay;
+const { isWorkOrderAssignedToUser } = require("../../src/utils/productionAction.js");
 const workOrders = [
   ...Array.from({ length: 15 }, (_, index) => ({
     id: `bulk-${index}`,
@@ -25,6 +26,7 @@ const { teamMemberWorkload } = createTeamWorkloadDisplayHelpers({
   getWorkOrders: () => workOrders,
   matchesActiveLocation: (workOrder) => workOrder.location_id === "location-1",
   getDueState: (workOrder) => workOrder.due_at ? { className: "overdue" } : null,
+  isWorkOrderAssignedToUser,
 });
 
 assert.deepEqual(teamMemberWorkload("user-1"), {

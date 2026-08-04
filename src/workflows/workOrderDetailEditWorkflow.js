@@ -41,6 +41,16 @@
           actual_minutes: Number(form.get("actual_minutes")) || 0,
         };
         payload.safety_check_required = deps.assetRequiresSafety(assetId);
+        if (payload.status === "completed") {
+          const productionActionMessage = deps.productionActionCompletionMessage?.(previous) || "";
+          if (productionActionMessage) {
+            deps.setWorkOrderActionWarning(activeWorkOrderId, productionActionMessage);
+            submitButton.disabled = false;
+            submitButton.textContent = "Save Work Order";
+            if (errorTarget) errorTarget.textContent = productionActionMessage;
+            return;
+          }
+        }
         if (payload.status === "completed" && payload.safety_check_required && !deps.hasCompletedSafetyDeviceCheck(previous) && form.get("safety_devices_checked") !== "on") {
           submitButton.disabled = false;
           submitButton.textContent = "Save Work Order";

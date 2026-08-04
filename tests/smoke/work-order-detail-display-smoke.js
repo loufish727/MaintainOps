@@ -61,6 +61,8 @@ const workOrderDetailDeps = {
   photoMetaText: () => "uploaded",
   renderActivityItem: () => "<article>Status changed</article>",
   canDeleteWorkOrders: () => true,
+  renderProductionActionDetail: (item) => `<section data-test-production-action="${item.id}"></section>`,
+  hasOpenProductionAction: (item) => item.production_action_status === "open",
 };
 
 const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers(workOrderDetailDeps);
@@ -98,6 +100,17 @@ assert.match(html, /<details class="work-detail-section relationship-detail proc
 assert.match(html, /Procedure Checklist/);
 assert.match(html, /data-step-result="step-1"/);
 assert.match(html, /Finish checklist first\./);
+assert.match(html, /data-test-production-action="wo-1"/);
+
+workOrder.production_action = "Clear the line";
+workOrder.production_action_status = "open";
+const openProductionActionHtml = renderWorkOrderDetail();
+assert.match(openProductionActionHtml, /Complete or remove the open Production Action first/);
+assert.match(openProductionActionHtml, /Complete Work Order<\/button>/);
+assert.match(openProductionActionHtml, /type="submit" disabled>Complete Work Order/);
+assert.doesNotMatch(openProductionActionHtml, /data-quick-status="completed"/);
+delete workOrder.production_action;
+delete workOrder.production_action_status;
 
 const readOnlyHtml = createWorkOrderDetailDisplayHelpers({
   ...workOrderDetailDeps,

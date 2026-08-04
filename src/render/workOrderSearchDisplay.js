@@ -18,6 +18,8 @@
         workOrder.type,
         workOrder.assets?.name,
         deps.assignmentLabel(workOrder),
+        workOrder.production_action,
+        profilesByUserId[workOrder.production_action_assigned_to]?.full_name,
         workOrder.failure_cause,
         workOrder.resolution_summary,
         workOrder.completion_notes,

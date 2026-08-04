@@ -18,6 +18,8 @@ const requiredEnvironment = [
   "LFES_MANAGER_PASSWORD",
   "LFES_ACCOUNTING_EMAIL",
   "LFES_ACCOUNTING_PASSWORD",
+  "LFES_PRODUCTION_EMAIL",
+  "LFES_PRODUCTION_PASSWORD",
   "LFES_TECHNICIAN_EMAIL",
   "LFES_TECHNICIAN_PASSWORD",
   "LFES_QA_COMPANY_ID",
@@ -60,7 +62,7 @@ function writeSummary(status, error = null) {
     : null;
   writeEvidence("lfes-authenticated-summary.json", {
     status,
-    scope: "Hosted sign-in for four roles plus required live tenant, role, RPC, request, and storage boundary probes",
+    scope: "Hosted sign-in for five roles plus required live tenant, role, RPC, request, and storage boundary probes",
     startedAt,
     completedAt: new Date().toISOString(),
     baseUrl: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
@@ -90,13 +92,25 @@ async function main() {
     },
   }));
 
-  await runStage("hosted four-role browser and request-budget contract", () => run(npxCommand, [
+  await runStage("hosted five-role browser and request-budget contract", () => run(npxCommand, [
     "playwright",
     "test",
     "tests/smoke/role-access-live.spec.js",
     "--workers=1",
   ], {
     label: "hosted authenticated role browser proof",
+    env: {
+      MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
+    },
+  }));
+
+  await runStage("signed-in Production Action lifecycle", () => run(npxCommand, [
+    "playwright",
+    "test",
+    "tests/smoke/production-action-live.spec.js",
+    "--workers=1",
+  ], {
+    label: "hosted Production Action lifecycle proof",
     env: {
       MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
     },

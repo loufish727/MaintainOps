@@ -47,6 +47,14 @@
         deps.applySafetyRequirementPayload(payload);
         const safetyChecked = form.get("safety_devices_checked") === "on";
         if (payload.status === "completed" && previous?.status !== "completed") {
+          const productionActionMessage = deps.productionActionCompletionMessage?.(previous) || "";
+          if (productionActionMessage) {
+            deps.setWorkOrderActionWarning(deps.getActiveWorkOrderId(), productionActionMessage);
+            submitButton.disabled = false;
+            submitButton.textContent = "Save Quick Update";
+            if (errorTarget) errorTarget.textContent = productionActionMessage;
+            return;
+          }
           const procedureCompletionMessage = deps.blocksProcedureCompletion(previous, payload.procedure_template_id || null);
           if (procedureCompletionMessage) {
             deps.setWorkOrderActionWarning(deps.getActiveWorkOrderId(), procedureCompletionMessage);
