@@ -1223,20 +1223,62 @@ export function createStorageWorld(options) {
     beam.userData.baseOpacity = 0.22;
     animated.push(beam);
 
-    // Gyroscope rings
+    // Machined gyroscope rings with narrow illuminated edge rails.
     [
       { radius: 2.72, tube: 0.07, rotation: [Math.PI / 2, 0, 0], speed: 0.35, color: COLORS.cyan, intensity: 0.78 },
       { radius: 2.96, tube: 0.045, rotation: [Math.PI / 2.25, 0, Math.PI / 9], speed: -0.22, color: COLORS.amber, intensity: 0.42 },
       { radius: 3.16, tube: 0.045, rotation: [Math.PI / 3, 0, Math.PI / 7], speed: -0.18, color: COLORS.cyan, intensity: 0.62 },
       { radius: 3.36, tube: 0.035, rotation: [-Math.PI / 4, Math.PI / 6, 0], speed: 0.16, color: COLORS.blue, intensity: 0.5 },
     ].forEach(({ radius, tube, rotation, speed, color, intensity }, index) => {
-      const gyro = addMesh(
-        vaultGroup,
-        new THREE.TorusGeometry(radius, tube, 10, 96),
-        metal(COLORS.steelLight, { roughness: 0.3, emissive: color, emissiveIntensity: intensity }),
-        [0, 3.4, 0],
+      const gyro = new THREE.Group();
+      const bandTube = Math.max(0.024, tube * 0.52);
+      const railOffset = bandTube * 1.7;
+      gyro.position.set(0, 3.4, 0);
+      vaultGroup.add(gyro);
+
+      addMesh(
+        gyro,
+        new THREE.TorusGeometry(radius, bandTube, 14, 160),
+        new THREE.MeshPhysicalMaterial({
+          color: 0x111c22,
+          metalness: 0.96,
+          roughness: 0.2,
+          clearcoat: 0.72,
+          clearcoatRoughness: 0.16,
+          emissive: color,
+          emissiveIntensity: 0.07,
+        }),
+        [0, 0, 0],
         { shadow: false },
       );
+      addMesh(gyro, new THREE.TorusGeometry(radius - railOffset, 0.007, 8, 160), glow(color, intensity * 0.58), [0, 0, 0], { shadow: false });
+      addMesh(gyro, new THREE.TorusGeometry(radius + railOffset, 0.006, 8, 160), glow(color, intensity * 0.42), [0, 0, 0], { shadow: false });
+
+      const clampCount = 8;
+      const clampGeometry = new RoundedBoxGeometry(0.2, 0.07, Math.max(0.055, bandTube * 2.2), 3, 0.014);
+      const clampMaterial = metal(0x53626a, {
+        roughness: 0.24,
+        metalness: 0.98,
+        emissive: color,
+        emissiveIntensity: 0.18,
+      });
+      const clamps = new THREE.InstancedMesh(clampGeometry, clampMaterial, clampCount);
+      const clampMatrix = new THREE.Matrix4();
+      const clampPosition = new THREE.Vector3();
+      const clampRotation = new THREE.Quaternion();
+      const clampScale = new THREE.Vector3(1, 1, 1);
+      for (let clampIndex = 0; clampIndex < clampCount; clampIndex += 1) {
+        const angle = (clampIndex / clampCount) * Math.PI * 2;
+        clampPosition.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+        clampRotation.setFromEuler(new THREE.Euler(0, 0, angle + Math.PI / 2));
+        clampMatrix.compose(clampPosition, clampRotation, clampScale);
+        clamps.setMatrixAt(clampIndex, clampMatrix);
+      }
+      clamps.instanceMatrix.needsUpdate = true;
+      clamps.castShadow = false;
+      clamps.receiveShadow = false;
+      gyro.add(clamps);
+
       gyro.rotation.set(...rotation);
       gyro.userData.kind = "coreGyro";
       gyro.userData.speed = speed;
@@ -2806,8 +2848,6 @@ export function createStorageWorld(options) {
       if (object.userData.kind === "coreGyro") {
         const speed = object.userData.speed ?? 0.12;
         object.rotateZ(dt * speed);
-        object.rotateX(dt * speed * 0.12);
-        object.rotateY(dt * speed * 0.18);
         return;
       }
       if (object.userData.kind === "coreCage") {
