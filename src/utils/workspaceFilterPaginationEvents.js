@@ -33,6 +33,12 @@
     doc.querySelectorAll("[data-status-filter]").forEach((button) => {
       button.addEventListener("click", async () => {
         await preserveScroll(async () => {
+          if (state.getActiveSection?.() === "work") {
+            state.setWorkOrderFilter("all");
+            state.setWorkOrderAssigneeFilter("");
+            state.setWorkOrderTypeFilter("all");
+            state.setWorkOrderPriorityFilter("all");
+          }
           state.setActiveStatusFilter(button.dataset.statusFilter);
           options.resetWorkOrderPage();
           if (state.getActiveStatusFilter() === "requests") {
