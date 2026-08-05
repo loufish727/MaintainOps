@@ -228,6 +228,11 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /const PLATFORM_SYSTEM_SILO_HEIGHT = 2\.7;/);
   assert.match(worldSource, /const height = PLATFORM_SYSTEM_SILO_HEIGHT;/);
   assert.doesNotMatch(worldSource, /Math\.sqrt\(bucket\.size \/ largest\) \* 3\.45/);
+  assert.match(worldSource, /const clamps = new THREE\.InstancedMesh\(clampGeometry, clampMaterial, clampCount\);/);
+  assert.match(worldSource, /new THREE\.TorusGeometry\(radius - railOffset, 0\.007, 8, 160\)/);
+  assert.doesNotMatch(worldSource, /new THREE\.TorusGeometry\(radius, tube, 10, 96\)/);
+  assert.match(worldSource, /if \(object\.userData\.kind === "coreGyro"\) \{\s*const speed = object\.userData\.speed \?\? 0\.12;\s*object\.rotateZ\(dt \* speed\);\s*return;/);
+  assert.doesNotMatch(worldSource, /object\.rotate[XY]\(dt \* speed/);
 
   function createFailingQuery(table) {
     const response = { data: null, count: null, error: { message: `${table} unavailable` } };
