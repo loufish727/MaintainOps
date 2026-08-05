@@ -28,6 +28,8 @@ const ZONES = {
   vault: { id: "vault", label: "App Health", pos: [-15.0, 6.8, 5.8], look: [-8.25, 3.95, -7.0] },
 };
 
+const PLATFORM_SYSTEM_SILO_HEIGHT = 2.7;
+
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -1289,10 +1291,9 @@ export function createStorageWorld(options) {
       baseStrip: { x: 0.02, y: 0.782, w: 0.31, h: 0.072 },
       vent: { x: 0.509, y: 0.47, w: 0.056, h: 0.174 },
     };
-    const largest = Math.max(...buckets.map((bucket) => bucket.size));
     buckets.forEach((bucket, index) => {
       const x = -3.8 + index * 3.05;
-      const height = 0.62 + Math.sqrt(bucket.size / largest) * 3.45;
+      const height = PLATFORM_SYSTEM_SILO_HEIGHT;
       const color = bucketColors[index % bucketColors.length];
       const columnGroup = new THREE.Group();
       columnGroup.position.set(x, 0, -8.15);
