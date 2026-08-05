@@ -53,6 +53,9 @@ export function createWorkspaceStartupLoaders({
 
   const immediateLoaders = [];
   if (activeSection === "messages") immediateLoaders.push(["Messages", "loadMessageCenter"]);
+  if (["mywork", "work", "messages"].includes(activeSection)) {
+    immediateLoaders.push(["Work notifications", "loadWorkOrderNotifications"]);
+  }
   if (activeSection === "settings") immediateLoaders.push(["Public request links", "loadPublicRequestLinks"]);
   if (activeSection === "setup") immediateLoaders.push(["Storage dashboard", "loadStorageDashboard"]);
   if (activeSection === "requests") immediateLoaders.push(["Request photos", "addSignedRequestPhotoUrls"]);
@@ -63,13 +66,16 @@ export function createWorkspaceStartupLoaders({
 
   const hydrationLoaders = [
     ["Messages", "loadMessageCenter"],
+    ["Work notifications", "loadWorkOrderNotifications"],
     ["Public request links", "loadPublicRequestLinks"],
     ["Request photos", "addSignedRequestPhotoUrls"],
     ...relatedLoaders,
   ];
 
   return {
-    hydrationLoaders,
+    hydrationLoaders: hydrationLoaders.filter(([, loader]) => (
+      !immediateLoaders.some(([, immediateLoader]) => immediateLoader === loader)
+    )),
     immediateLoaders,
   };
 }

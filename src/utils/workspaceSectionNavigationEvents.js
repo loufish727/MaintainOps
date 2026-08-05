@@ -38,6 +38,16 @@
         storage.setItem("maintainops.activeSection", nextSection);
         options.renderWorkspace();
         scrollToSectionTop();
+        if (nextSection === "messages") {
+          await Promise.all([
+            typeof options.loadWorkOrderNotifications === "function" ? options.loadWorkOrderNotifications() : null,
+            typeof options.loadMessageCenter === "function" ? options.loadMessageCenter() : null,
+          ]);
+          options.renderWorkspace();
+        } else if (["work", "mywork"].includes(nextSection)
+          && typeof options.loadWorkOrderNotifications === "function") {
+          await options.loadWorkOrderNotifications();
+        }
         if (nextSection === "work" || nextSection === "mywork") await options.reloadWorkOrderQueue();
         if (nextSection === "planning" && typeof options.reloadPlanningWorkOrderQueue === "function") {
           await options.reloadPlanningWorkOrderQueue();

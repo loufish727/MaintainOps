@@ -347,6 +347,122 @@ async function main() {
       throw new Error(`Production Action history was incomplete: ${JSON.stringify([...productionEventTypes])}`);
     }
 
+    await setAuthenticatedUser(database, ids.admin);
+    const adminFallbackNotifications = await database.query(
+      "select id, recipient_id, read_at from public.work_order_notifications where work_order_id = $1",
+      [productionActionOnlyId]
+    );
+    if (
+      adminFallbackNotifications.rows.length !== 1
+      || adminFallbackNotifications.rows[0]?.recipient_id !== ids.admin
+      || adminFallbackNotifications.rows[0]?.read_at
+    ) {
+      throw new Error("The unassigned Production Ready fallback did not notify the work-order creator.");
+    }
+    const adminNotificationId = adminFallbackNotifications.rows[0].id;
+    const markedRead = await database.query(
+      "update public.work_order_notifications set read_at = now() where id = $1 returning id, read_at",
+      [adminNotificationId]
+    );
+    if (markedRead.rows.length !== 1 || !markedRead.rows[0]?.read_at) {
+      throw new Error("A notification recipient could not mark their notification read.");
+    }
+    let notificationBodyWriteDenied = false;
+    try {
+      await database.query(
+        "update public.work_order_notifications set body = 'forged' where id = $1 returning id",
+        [adminNotificationId]
+      );
+    } catch {
+      notificationBodyWriteDenied = true;
+    }
+    if (!notificationBodyWriteDenied) throw new Error("A recipient altered protected notification content.");
+
+    await setAuthenticatedUser(database, ids.manager);
+    const managerFallbackNotifications = await database.query(
+      "select recipient_id from public.work_order_notifications where work_order_id = $1",
+      [productionActionOnlyId]
+    );
+    if (
+      managerFallbackNotifications.rows.length !== 1
+      || managerFallbackNotifications.rows[0]?.recipient_id !== ids.manager
+    ) {
+      throw new Error("The unassigned Production Ready fallback did not notify managers.");
+    }
+
+    await setAuthenticatedUser(database, ids.technician);
+    const unrelatedFallbackNotifications = await database.query(
+      "select id from public.work_order_notifications where work_order_id = $1",
+      [productionActionOnlyId]
+    );
+    if (unrelatedFallbackNotifications.rows.length !== 0) {
+      throw new Error("An unrelated technician could read an unassigned Production Ready fallback.");
+    }
+
+    await setAuthenticatedUser(database, ids.admin);
+    const assignedHandoff = await database.query(
+      `insert into public.work_orders (
+        company_id,
+        location_id,
+        assigned_to,
+        title,
+        status,
+        created_by,
+        production_action,
+        production_action_assigned_to
+      ) values ($1, $2, $3, 'Assigned Production handoff', 'open', $4, 'Release the guarded area', $5)
+      returning id`,
+      [ids.companyA, ids.locationA, ids.technician, ids.admin, ids.production]
+    );
+    const assignedHandoffId = assignedHandoff.rows[0]?.id;
+    if (!assignedHandoffId) throw new Error("The assigned Production Ready fixture was not created.");
+
+    await setAuthenticatedUser(database, ids.production);
+    await database.query(
+      "update public.work_orders set production_action_status = 'completed' where id = $1 returning id",
+      [assignedHandoffId]
+    );
+
+    await setAuthenticatedUser(database, ids.technician);
+    const assignedNotifications = await database.query(
+      "select recipient_id, kind, read_at from public.work_order_notifications where work_order_id = $1",
+      [assignedHandoffId]
+    );
+    if (
+      assignedNotifications.rows.length !== 1
+      || assignedNotifications.rows[0]?.recipient_id !== ids.technician
+      || assignedNotifications.rows[0]?.kind !== "production_action_completed"
+      || assignedNotifications.rows[0]?.read_at
+    ) {
+      throw new Error("The assigned technician did not receive exactly one unread Production Ready notification.");
+    }
+    const assignedStatus = await database.query(
+      "select status from public.work_orders where id = $1",
+      [assignedHandoffId]
+    );
+    if (assignedStatus.rows[0]?.status !== "open") {
+      throw new Error("Production Action completion changed the work-order New status.");
+    }
+
+    await setAuthenticatedUser(database, ids.admin);
+    const managerLeak = await database.query(
+      "select id from public.work_order_notifications where work_order_id = $1",
+      [assignedHandoffId]
+    );
+    if (managerLeak.rows.length !== 0) {
+      throw new Error("Assigned Production Ready work also notified fallback recipients.");
+    }
+
+    await setAuthenticatedUser(database, ids.outsider);
+    const outsiderNotifications = await database.query("select id from public.work_order_notifications");
+    if (outsiderNotifications.rows.length !== 0) {
+      throw new Error("A cross-company outsider could read Production Ready notifications.");
+    }
+
+    checks.push({ name: "production_ready_target_fallback_read_and_tenant_boundaries", verdict: "PASS" });
+
+    await setAuthenticatedUser(database, ids.production);
+
     const productionOperationalUpdate = await database.query(
       "update public.assets set status = 'watch' where id = $1 returning id",
       [ids.assetA]

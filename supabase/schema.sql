@@ -278,6 +278,21 @@ create table if not exists public.work_order_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.work_order_notifications (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  work_order_id uuid not null references public.work_orders(id) on delete cascade,
+  recipient_id uuid not null references auth.users(id) on delete cascade,
+  actor_id uuid references auth.users(id) on delete set null,
+  source_event_id uuid not null references public.work_order_events(id) on delete cascade,
+  kind text not null check (kind in ('production_action_completed')),
+  title text not null,
+  body text not null,
+  read_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (source_event_id, recipient_id)
+);
+
 create table if not exists public.asset_events (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -609,6 +624,11 @@ create index if not exists part_documents_company_id_idx on public.part_document
 create index if not exists part_documents_part_id_idx on public.part_documents(part_id);
 create index if not exists work_order_events_company_id_idx on public.work_order_events(company_id);
 create index if not exists work_order_events_work_order_id_idx on public.work_order_events(work_order_id);
+create index if not exists work_order_notifications_recipient_unread_idx
+on public.work_order_notifications(company_id, recipient_id, created_at desc)
+where read_at is null;
+create index if not exists work_order_notifications_work_order_idx
+on public.work_order_notifications(company_id, work_order_id, created_at desc);
 create index if not exists asset_events_company_id_idx on public.asset_events(company_id);
 create index if not exists asset_events_asset_id_idx on public.asset_events(asset_id);
 create index if not exists asset_events_company_asset_created_idx on public.asset_events(company_id, asset_id, created_at desc);
@@ -632,6 +652,9 @@ grant select, insert, update, delete on public.parts to authenticated;
 grant select, insert on public.work_order_parts to authenticated;
 grant select, insert on public.part_documents to authenticated;
 grant select, insert on public.work_order_events to authenticated;
+revoke all on public.work_order_notifications from public, anon, authenticated;
+grant select on public.work_order_notifications to authenticated;
+grant update (read_at) on public.work_order_notifications to authenticated;
 grant select, insert on public.asset_events to authenticated;
 grant select on public.applied_migrations to authenticated;
 
@@ -831,8 +854,11 @@ declare
   event_name text;
   event_summary text;
   assignee_name text;
+  actor_name text;
   action_text text;
   assignee_id uuid;
+  event_id uuid;
+  primary_recipient_id uuid;
 begin
   if tg_op = 'INSERT' then
     if new.production_action is null then return new; end if;
@@ -868,19 +894,87 @@ begin
 
   select p.full_name into assignee_name
   from public.profiles p
-  where p.company_id = new.company_id
-    and p.user_id = assignee_id;
+  where p.company_id = new.company_id and p.user_id = assignee_id;
+
+  select p.full_name into actor_name
+  from public.profiles p
+  where p.company_id = new.company_id and p.user_id = auth.uid();
 
   event_summary := case event_name
     when 'production_action_created' then format('Production Action assigned to %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
     when 'production_action_updated' then format('Production Action updated for %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
-    when 'production_action_completed' then format('Production Action completed by %s.', coalesce(nullif(assignee_name, ''), 'Production'))
+    when 'production_action_completed' then format('Production Action completed by %s.', coalesce(nullif(actor_name, ''), 'Production'))
     when 'production_action_reopened' then format('Production Action reopened for %s: %s', coalesce(nullif(assignee_name, ''), 'Production'), left(action_text, 180))
     else format('Production Action removed: %s', left(action_text, 180))
   end;
 
   insert into public.work_order_events (company_id, work_order_id, actor_id, event_type, summary)
-  values (new.company_id, new.id, auth.uid(), event_name, event_summary);
+  values (new.company_id, new.id, auth.uid(), event_name, event_summary)
+  returning id into event_id;
+
+  if event_name <> 'production_action_completed' then return new; end if;
+
+  select cm.user_id into primary_recipient_id
+  from public.company_members cm
+  where cm.company_id = new.company_id
+    and cm.user_id = new.assigned_to
+    and cm.user_id is distinct from auth.uid()
+  limit 1;
+
+  if primary_recipient_id is not null then
+    insert into public.work_order_notifications (
+      company_id,
+      work_order_id,
+      recipient_id,
+      actor_id,
+      source_event_id,
+      kind,
+      title,
+      body
+    ) values (
+      new.company_id,
+      new.id,
+      primary_recipient_id,
+      auth.uid(),
+      event_id,
+      'production_action_completed',
+      format('Production ready: %s', new.title),
+      format(
+        'Production Action completed by %s. This work order is ready for Maintenance.',
+        coalesce(nullif(actor_name, ''), 'Production')
+      )
+    )
+    on conflict (source_event_id, recipient_id) do nothing;
+  else
+    insert into public.work_order_notifications (
+      company_id,
+      work_order_id,
+      recipient_id,
+      actor_id,
+      source_event_id,
+      kind,
+      title,
+      body
+    )
+    select
+      new.company_id,
+      new.id,
+      cm.user_id,
+      auth.uid(),
+      event_id,
+      'production_action_completed',
+      format('Production ready: %s', new.title),
+      format(
+        'Production Action completed by %s. This unassigned work order is ready for Maintenance.',
+        coalesce(nullif(actor_name, ''), 'Production')
+      )
+    from public.company_members cm
+    where cm.company_id = new.company_id
+      and (cm.user_id = new.created_by or cm.role in ('admin', 'manager'))
+      and cm.user_id is distinct from auth.uid()
+    on conflict (source_event_id, recipient_id) do nothing;
+  end if;
+
   return new;
 end;
 $$;
@@ -1331,6 +1425,7 @@ alter table public.parts enable row level security;
 alter table public.work_order_parts enable row level security;
 alter table public.part_documents enable row level security;
 alter table public.work_order_events enable row level security;
+alter table public.work_order_notifications enable row level security;
 alter table public.asset_events enable row level security;
 alter table public.applied_migrations enable row level security;
 
@@ -1775,6 +1870,28 @@ with check (
     where wo.id = work_order_id
       and wo.company_id = work_order_events.company_id
   )
+);
+
+drop policy if exists "Recipients can read work order notifications" on public.work_order_notifications;
+create policy "Recipients can read work order notifications"
+on public.work_order_notifications for select
+to authenticated
+using (
+  recipient_id = auth.uid()
+  and private.is_company_member(company_id)
+);
+
+drop policy if exists "Recipients can mark work order notifications read" on public.work_order_notifications;
+create policy "Recipients can mark work order notifications read"
+on public.work_order_notifications for update
+to authenticated
+using (
+  recipient_id = auth.uid()
+  and private.is_company_member(company_id)
+)
+with check (
+  recipient_id = auth.uid()
+  and private.is_company_member(company_id)
 );
 
 drop policy if exists "Members can read asset events" on public.asset_events;

@@ -2818,6 +2818,12 @@ textarea {
   background: linear-gradient(180deg, #32c87d, #0e633b);
   color: #04120b;
 }
+.chip.production-ready {
+  border-color: #35d6b0;
+  background: linear-gradient(180deg, #2ebd99, #0b5a49);
+  color: #03130f;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 10px rgba(53,214,176,0.22);
+}
 .chip.in_progress {
   border-color: #3d8eff;
   background: linear-gradient(180deg, #6fb3ff, #194c96);
@@ -4730,6 +4736,91 @@ textarea {
 .message-rail-header p {
   margin: 2px 0 0;
   color: var(--muted);
+}
+
+.work-notification-panel {
+  border: 1px solid color-mix(in srgb, #35d6b0 38%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, #0b5a49 18%, transparent);
+  overflow: hidden;
+}
+
+.work-notification-panel summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  align-items: center;
+  cursor: pointer;
+  color: var(--ink);
+  padding: 8px 10px;
+  font-weight: 680;
+}
+
+.work-notification-panel summary span:last-child {
+  color: #73e6c8;
+  font-size: 0.74rem;
+}
+
+.work-notification-list {
+  display: grid;
+  gap: 5px;
+  max-height: 310px;
+  overflow-y: auto;
+  padding: 0 7px 7px;
+}
+
+.work-notification-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid var(--line);
+  border-left: 4px solid transparent;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-2) 84%, transparent);
+  color: var(--ink);
+  padding: 9px;
+  text-align: left;
+}
+
+.work-notification-item.unread {
+  border-left-color: #35d6b0;
+  background: color-mix(in srgb, #0b5a49 30%, var(--surface-2));
+}
+
+.work-notification-item.read {
+  opacity: 0.78;
+}
+
+.work-notification-item:hover,
+.work-notification-item:focus-visible {
+  border-color: #35d6b0;
+  outline: none;
+}
+
+.work-notification-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.work-notification-heading time,
+.work-notification-item > span:last-child,
+.work-notification-limit {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.work-notification-item strong,
+.work-notification-item > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.work-notification-limit {
+  margin: 0;
+  padding: 0 9px 9px;
 }
 
 .message-people-strip {
@@ -8254,6 +8345,12 @@ body {
   border-color: #29b76f;
   background: linear-gradient(180deg, #34bd77, #0e5935);
   color: #041109;
+}
+
+:root[data-theme="dark"] .chip.production-ready {
+  border-color: #69efce;
+  background: linear-gradient(180deg, #41cda9, #0b5a49);
+  color: #02130f;
 }
 
 .panel,

@@ -94,6 +94,7 @@ const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestInt
 const { createCompanySetupWorkflow } = window.MaintainOpsCompanySetupWorkflow;
 const { createWorkOrderStatusWorkflow } = window.MaintainOpsWorkOrderStatusWorkflow;
 const { createProductionActionWorkflow } = window.MaintainOpsProductionActionWorkflow;
+const { createWorkOrderNotificationWorkflow } = window.MaintainOpsWorkOrderNotificationWorkflow;
 const { createPlanningDueDateWorkflow } = window.MaintainOpsPlanningDueDateWorkflow;
 const { nextDueDate } = window.MaintainOpsMaintenanceScheduleDates;
 const { createWorkspaceUiState } = window.MaintainOpsWorkspaceUiState;
@@ -113,6 +114,7 @@ const { bindWorkspaceInventoryFilterEvents } = window.MaintainOpsWorkspaceInvent
 const { bindWorkspaceWorkOrderStatusEvents } = window.MaintainOpsWorkspaceWorkOrderStatusEvents;
 const { bindWorkspaceWorkOrderAssignmentEvents } = window.MaintainOpsWorkspaceWorkOrderAssignmentEvents;
 const { bindWorkspaceProductionActionEvents } = window.MaintainOpsWorkspaceProductionActionEvents;
+const { bindWorkspaceWorkOrderNotificationEvents } = window.MaintainOpsWorkspaceWorkOrderNotificationEvents;
 const { bindWorkspaceWorkOrderDowntimeEvents } = window.MaintainOpsWorkspaceWorkOrderDowntimeEvents;
 const { bindWorkspaceWorkOrderDetailStatusEvents } = window.MaintainOpsWorkspaceWorkOrderDetailStatusEvents;
 const { createWorkspaceWorkOrderCompletionEvents } = window.MaintainOpsWorkspaceWorkOrderCompletionEvents;
@@ -180,6 +182,10 @@ const {
   fetchPagedSearchRows,
 } = window.MaintainOpsWorkOrdersService;
 const {
+  listWorkOrderNotifications,
+  markWorkOrderNotificationsRead,
+} = window.MaintainOpsWorkOrderNotificationsService;
+const {
   getMyCompanies,
   listUserCompanyMemberships,
   listUserCompanyMembershipsLegacy,
@@ -213,6 +219,7 @@ const { createRequestDisplayHelpers } = window.MaintainOpsRequestDisplay;
 const { createGlobalSearchDisplayHelpers } = window.MaintainOpsGlobalSearchDisplay;
 const { createWorkQueueDisplayHelpers } = window.MaintainOpsWorkQueueDisplay;
 const { createProductionActionDisplayHelpers } = window.MaintainOpsProductionActionDisplay;
+const { createWorkOrderNotificationDisplayHelpers } = window.MaintainOpsWorkOrderNotificationDisplay;
 const { createPlanningDisplayHelpers } = window.MaintainOpsPlanningDisplay;
 const { createMiniWorkOrderDisplayHelpers } = window.MaintainOpsMiniWorkOrderDisplay;
 const { createPaginationDisplayHelpers } = window.MaintainOpsPaginationDisplay;
@@ -465,6 +472,8 @@ let messagesByThreadId = {};
 let messageReadsByThreadId = {};
 let messagesReady = true;
 let messageWorkOrderLinksReady = true;
+let workOrderNotifications = [];
+let workOrderNotificationsReady = true;
 let appIssueReports = [];
 let appIssueReportsReady = true;
 let storageDashboard = null;
@@ -1068,6 +1077,17 @@ const {
   getSearchQuery: () => workspaceUiState.getSearchQuery(),
 });
 const {
+  hasUnreadProductionReady,
+  renderWorkOrderNotifications,
+  unreadWorkOrderNotificationCount,
+} = createWorkOrderNotificationDisplayHelpers({
+  getNotifications: () => workOrderNotifications,
+  getReady: () => workOrderNotificationsReady,
+  escapeHtml,
+  formatMessageTime,
+  visibleLimit: LIST_ITEMS_PER_PAGE,
+});
+const {
   productionMembers,
   productionAssigneeName,
   renderProductionActionCard,
@@ -1125,6 +1145,7 @@ const {
   canManageTeam,
   renderProductionActionCard,
   hasOpenProductionAction,
+  hasUnreadProductionReady,
 });
 const {
   renderWorkPagination,
@@ -1435,8 +1456,8 @@ const {
 const {
   renderMessageNavBadge,
 } = createMessageBadgeDisplayHelpers({
-  directUnreadMessages,
-  totalUnreadMessages,
+  directUnreadMessages: () => directUnreadMessages() + unreadWorkOrderNotificationCount(),
+  totalUnreadMessages: () => totalUnreadMessages() + unreadWorkOrderNotificationCount(),
 });
 const {
   renderNavCountBadge,
@@ -2534,6 +2555,7 @@ const workspaceLoaderMap = {
   loadComments,
   loadMembers,
   loadMessageCenter,
+  loadWorkOrderNotifications,
   loadPartDocuments,
   loadPartsUsed,
   loadPhotos,
@@ -2822,6 +2844,29 @@ async function loadRequestNotificationRecipients() {
   }
 
   requestNotificationRecipients = data || [];
+}
+
+async function loadWorkOrderNotifications() {
+  workOrderNotificationsReady = true;
+  workOrderNotifications = [];
+  if (!session?.user?.id || !activeCompanyId) return;
+
+  const { data, error } = await listWorkOrderNotifications(
+    supabaseClient,
+    activeCompanyId,
+    session.user.id,
+    50
+  );
+
+  if (error) {
+    if (isMissingTableError(error, "work_order_notifications")) {
+      workOrderNotificationsReady = false;
+      return;
+    }
+    throw error;
+  }
+
+  workOrderNotifications = data || [];
 }
 
 async function loadMessageCenter() {
@@ -4650,7 +4695,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessageThreadsPage: () => workspaceUiState.getMessageThreadsPage(),
   LIST_ITEMS_PER_PAGE,
   filteredMessageThreads,
-  totalUnreadMessages,
+  totalUnreadMessages: () => totalUnreadMessages() + unreadWorkOrderNotificationCount(),
   teamMemberName,
   escapeHtml,
   messageComposerScopeNote,
@@ -4659,6 +4704,7 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   renderMessageThreadButton,
   messageThreadScopeLabel,
   renderMessageList,
+  renderWorkOrderNotifications,
   renderListPagination,
   canEditOperationalRecords,
 });
@@ -4689,6 +4735,49 @@ const {
   showNotice,
   render: () => render(),
 });
+const {
+  markWorkOrderNotificationRead,
+  markWorkOrderNotificationsReadForOrder,
+} = createWorkOrderNotificationWorkflow({
+  getSupabaseClient: () => supabaseClient,
+  getSession: () => session,
+  getNotifications: () => workOrderNotifications,
+  setNotifications: (notifications) => { workOrderNotifications = notifications; },
+  markWorkOrderNotificationsRead,
+  withOperationTimeout,
+  showNotice,
+  renderWorkspace,
+});
+
+async function openWorkOrderNotification(notificationId, workOrderId) {
+  if (!notificationId || !workOrderId) return;
+  if (!workOrders.some((workOrder) => workOrder.id === workOrderId)) {
+    const { data, error } = await fetchWorkOrderById(
+      supabaseClient,
+      activeCompanyId,
+      workOrderId,
+      WORK_ORDER_RELATION_SELECT
+    );
+    if (error || !data) {
+      showNotice(`Could not open the linked work order: ${error?.message || "Work order not found."}`, "warning");
+      renderWorkspace();
+      return;
+    }
+    workOrders = [data, ...workOrders.filter((workOrder) => workOrder.id !== data.id)];
+  }
+
+  await markWorkOrderNotificationRead(notificationId, { render: false });
+  setActiveAssetIdState(null);
+  setActivePartIdState(null);
+  setActiveWorkOrderIdState(workOrderId);
+  setActiveSectionState("work");
+  createWorkOrderMode = false;
+  quickFixMode = false;
+  setWorkOrderSearchMode(false);
+  localStorage.setItem("maintainops.activeSection", "work");
+  renderWorkspace();
+  scrollWorkspaceTopIntoView();
+}
 const {
   bindPreventiveMaintenanceWorkflowEvents,
   requestDeletePreventiveSchedule,
@@ -5179,6 +5268,8 @@ function bindWorkspaceEvents() {
     loadPlatformPerformance,
     onSectionNavigation: (section, startedAt) => appTelemetry?.recordSectionNavigation(section, startedAt),
     loadManagerDashboardCompletedWork,
+    loadMessageCenter,
+    loadWorkOrderNotifications,
     reloadPlanningWorkOrderQueue,
     reloadWorkOrderQueue,
     renderWorkspace,
@@ -5393,6 +5484,11 @@ function bindWorkspaceEvents() {
     autoGrowTextarea,
     messageComposerScopeNote,
     renderWorkspace,
+  });
+
+  bindWorkspaceWorkOrderNotificationEvents({
+    markWorkOrderNotificationsReadForOrder,
+    openWorkOrderNotification,
   });
 
   bindWorkspaceDetailNavigationEvents({

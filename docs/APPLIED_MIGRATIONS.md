@@ -24,6 +24,7 @@ Live status:
 - `supabase/migrations/202607281200_performance_vital_session_dedup.sql` changes only the performance aggregate RPC so repeated Web Vital captures count once per browser session; testing-platform and production application are recorded below.
 - `supabase/migrations/202607291200_performance_measurement_integrity.sql` versions performance samples so only visibility-safe, non-automated generation-2 measurements drive the dashboard; testing-platform and production application are recorded below.
 - `supabase/migrations/202608041200_production_actions.sql` adds the Production role, work-order Production Actions, My Work routing, completion guards, and automatic history; testing-platform and production application are recorded below.
+- `supabase/migrations/202608051200_production_ready_notifications.sql` adds recipient-only in-app Production Ready notifications, assigned-technician routing, creator/manager fallback routing, and read tracking without changing work-order status or sending email; awaiting testing-platform and production verification.
 
 Repo source:
 
@@ -54,7 +55,7 @@ Repo source:
 | SQL file | Reason |
 |---|---|
 | `supabase/step-next-audit-log.sql` | SQL foundation exists in repo, but live application status was unknown in the 2026-06-11 review. |
-| `supabase/migrations/202608041200_production_actions.sql` | Not yet applied to testing or production; awaiting focused browser, Strict LFES, and authenticated testing-platform verification. |
+| `supabase/migrations/202608051200_production_ready_notifications.sql` | Not yet applied to testing or production; awaiting focused browser, Strict LFES, and authenticated testing-platform verification. |
 
 ## Rule
 

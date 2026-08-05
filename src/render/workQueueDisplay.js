@@ -31,6 +31,7 @@
     canManageTeam,
     renderProductionActionCard = () => "",
     hasOpenProductionAction = () => false,
+    hasUnreadProductionReady = () => false,
   }) {
     function workOrdersPanelTitle() {
       const workOrderAssigneeFilter = getWorkOrderAssigneeFilter();
@@ -281,6 +282,7 @@
               <span class="chip">${escapeHtml(workOrderTypeLabel(workOrder.type))}</span>
               <span class="chip ${workOrder.status}">${statusChipLabel}</span>
               ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
+              ${hasUnreadProductionReady(workOrder.id) ? `<span class="chip production-ready">Production Ready</span>` : ""}
             </div>
           </div>
           <div class="work-card-body">
