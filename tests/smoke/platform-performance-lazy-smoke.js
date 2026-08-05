@@ -225,6 +225,9 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(worldSource, /document\.addEventListener\("visibilitychange", \(\) => \{\s*resetPerformanceSampleWindow\(\);/);
   assert.match(worldSource, /CircleGeometry\(0\.76, 56\)/, "silo caps should use round geometry");
   assert.doesNotMatch(worldSource, /\[1\.42, 1\.42\]/, "square silo cap planes should stay removed");
+  assert.match(worldSource, /const PLATFORM_SYSTEM_SILO_HEIGHT = 2\.7;/);
+  assert.match(worldSource, /const height = PLATFORM_SYSTEM_SILO_HEIGHT;/);
+  assert.doesNotMatch(worldSource, /Math\.sqrt\(bucket\.size \/ largest\) \* 3\.45/);
 
   function createFailingQuery(table) {
     const response = { data: null, count: null, error: { message: `${table} unavailable` } };
