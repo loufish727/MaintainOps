@@ -41,6 +41,11 @@ async function main() {
   assert.match(notice, /Could not mark the work notification read/);
   assert.equal(renderCount, 2);
 
+  failUpdate = false;
+  serviceCall = null;
+  assert.equal(await workflow.markWorkOrderNotificationRead("stale-render-notification", { render: false }), true);
+  assert.deepEqual(serviceCall.ids, ["stale-render-notification"]);
+
   console.log("work order notification workflow smoke passed");
 }
 

@@ -19,6 +19,8 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Status changes.
 - Assignment and reassignment.
 - Outside vendor assignment marker.
+- Production users retain technician workflows and receive Production Actions assigned from work-order cards or detail.
+- Completing a Production Action creates an in-app Production Ready alert for the assigned technician, or the order creator plus managers/admins when the order is unassigned. The unread badge links directly to that work order and does not change its status, New count, or email delivery.
 - Comments.
 - Photo upload with client-side resize.
 - Parts inventory.

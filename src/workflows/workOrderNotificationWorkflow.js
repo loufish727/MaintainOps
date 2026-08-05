@@ -1,7 +1,7 @@
 (function () {
   function createWorkOrderNotificationWorkflow(deps = {}) {
     async function markNotificationsRead(notifications, options = {}) {
-      const unread = notifications.filter((notification) => !notification.read_at);
+      const unread = notifications.filter((notification) => notification.id && !notification.read_at);
       if (!unread.length) return true;
 
       const originalById = new Map(unread.map((notification) => [notification.id, notification]));
@@ -36,8 +36,10 @@
     }
 
     function markWorkOrderNotificationRead(notificationId, options = {}) {
+      const notification = deps.getNotifications().find((item) => item.id === notificationId);
+      if (notification?.read_at) return Promise.resolve(true);
       return markNotificationsRead(
-        deps.getNotifications().filter((notification) => notification.id === notificationId),
+        [notification || { id: notificationId, read_at: null }],
         options
       );
     }
