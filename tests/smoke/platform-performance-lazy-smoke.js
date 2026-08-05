@@ -279,6 +279,8 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(frameHtml, /aria-label="Back to My Work"/);
   assert.match(frameHtml, /data-spatial-touch-targets/);
   assert.match(frameHtml, /data-quality-tier="auto"/);
+  assert.match(frameHtml, /data-world-target="files"[^>]*>Signals<\/button>/);
+  assert.doesNotMatch(frameHtml, /data-world-target="files"[^>]*>Files<\/button>/);
   assert.doesNotMatch(frameHtml, /12 months/i);
 
   const spatialStyles = require("node:fs").readFileSync(require("node:path").resolve(__dirname, "../../src/performance/platformSpatial.css"), "utf8");
