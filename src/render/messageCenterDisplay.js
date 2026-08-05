@@ -17,6 +17,7 @@
       renderMessageThreadButton,
       messageThreadScopeLabel,
       renderMessageList,
+      renderWorkOrderNotifications = () => "",
     } = deps;
     const canEditOperationalRecords = deps.canEditOperationalRecords || (() => true);
 
@@ -77,6 +78,7 @@
                   <p>${totalUnreadMessages()} unread</p>
                 </div>
               </div>
+              ${renderWorkOrderNotifications()}
               <div class="message-people-strip" aria-label="Company message contacts">
                 ${messagePeople.map(renderMessagePerson).join("") || `<span class="muted">No teammates added yet.</span>`}
               </div>

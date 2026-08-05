@@ -116,6 +116,18 @@ async function main() {
     },
   }));
 
+  await runStage("signed-in Production Ready notification lifecycle", () => run(npxCommand, [
+    "playwright",
+    "test",
+    "tests/smoke/production-ready-notification-live.spec.js",
+    "--workers=1",
+  ], {
+    label: "hosted Production Ready notification lifecycle proof",
+    env: {
+      MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
+    },
+  }));
+
   await runStage("WebKit admin browser and request-budget contract", () => run(npxCommand, [
     "playwright",
     "test",
