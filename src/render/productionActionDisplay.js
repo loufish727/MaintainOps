@@ -50,7 +50,7 @@
           </label>
           <p class="error-text" data-production-action-error="${deps.escapeHtml(workOrder.id)}"></p>
           <div class="button-row production-action-form-actions">
-            <button class="secondary-button" type="submit">${deps.hasProductionAction(workOrder) ? "Save Production Action" : "Assign Production Action"}</button>
+            <button class="secondary-button production-action-button" type="submit">${deps.hasProductionAction(workOrder) ? "Save Production Action" : "Assign Production Action"}</button>
             ${deps.hasProductionAction(workOrder) ? `<button class="text-button danger-link" data-production-action-remove="${deps.escapeHtml(workOrder.id)}" type="button">Remove</button>` : ""}
           </div>
         </form>
@@ -60,9 +60,9 @@
     function renderProductionActionStatusControls(workOrder) {
       if (!canChangeProductionActionStatus(workOrder) || workOrder.status === "completed") return "";
       if (workOrder.production_action_status === "open") {
-        return `<button class="secondary-button" data-production-action-status="completed" data-work-order-id="${deps.escapeHtml(workOrder.id)}" type="button">Complete Production Action</button>`;
+        return `<button class="secondary-button production-action-button" data-production-action-status="completed" data-work-order-id="${deps.escapeHtml(workOrder.id)}" type="button">Complete Production Action</button>`;
       }
-      return `<button class="secondary-button" data-production-action-status="open" data-work-order-id="${deps.escapeHtml(workOrder.id)}" type="button">Reopen Production Action</button>`;
+      return `<button class="secondary-button production-action-button" data-production-action-status="open" data-work-order-id="${deps.escapeHtml(workOrder.id)}" type="button">Reopen Production Action</button>`;
     }
 
     function renderProductionActionSummary(workOrder) {
