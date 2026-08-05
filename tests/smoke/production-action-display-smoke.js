@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 global.window = {};
 
@@ -25,6 +27,7 @@ const emptyCard = helpers.renderProductionActionCard(workOrder);
 assert.match(emptyCard, /data-production-action-control/);
 assert.match(emptyCard, /data-production-action-form="wo-1"/);
 assert.match(emptyCard, /Justin Werber/);
+assert.match(emptyCard, /secondary-button production-action-button/);
 
 const openAction = {
   ...workOrder,
@@ -37,6 +40,7 @@ assert.match(openCard, /Production Action/);
 assert.match(openCard, /Hold Line &lt;2&gt; for maintenance/);
 assert.match(openCard, /Justin Werber/);
 assert.match(openCard, /data-production-action-status="completed"/);
+assert.match(openCard, /secondary-button production-action-button/);
 assert.match(openCard, /data-production-action-remove="wo-1"/);
 
 const completedDetail = helpers.renderProductionActionDetail({
@@ -53,5 +57,15 @@ const readOnlyDetail = helpers.renderProductionActionDetail(openAction);
 assert.match(readOnlyDetail, /Hold Line/);
 assert.doesNotMatch(readOnlyDetail, /data-production-action-form/);
 assert.doesNotMatch(readOnlyDetail, /data-production-action-status/);
+
+const styles = fs.readFileSync(path.join(__dirname, "../../styles.css"), "utf8");
+const darkGlassStart = styles.indexOf("/* Dark glass theme pass */");
+const darkGlassEnd = styles.indexOf("\nbody {", darkGlassStart);
+const darkGlassTheme = styles.slice(darkGlassStart, darkGlassEnd);
+assert.ok(darkGlassStart >= 0 && darkGlassEnd > darkGlassStart);
+assert.match(darkGlassTheme, /--production-bg:/);
+assert.match(darkGlassTheme, /--production-ink:/);
+assert.match(styles, /\.production-action-control \.production-action-button/);
+assert.match(styles, /color: var\(--production-ink\)/);
 
 console.log("production action display smoke passed");

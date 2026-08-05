@@ -2227,6 +2227,7 @@ textarea {
 .work-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
 }
 
@@ -2613,6 +2614,14 @@ textarea {
   margin-top: 8px;
 }
 
+.production-action-form.compact textarea {
+  height: 88px;
+  min-height: 88px;
+  max-height: 88px;
+  overflow-y: auto;
+  resize: none;
+}
+
 .production-action-form label,
 .production-action-form textarea,
 .production-action-form select {
@@ -2649,6 +2658,22 @@ textarea {
 .production-action-control button,
 .production-action-detail button {
   min-height: 40px;
+}
+
+.production-action-control .production-action-button,
+.production-action-detail .production-action-button {
+  border-color: color-mix(in srgb, var(--production-ink) 52%, var(--line));
+  background: color-mix(in srgb, var(--production-ink) 14%, var(--control-bg));
+  color: var(--production-ink);
+}
+
+.production-action-control .production-action-button:hover,
+.production-action-control .production-action-button:focus-visible,
+.production-action-detail .production-action-button:hover,
+.production-action-detail .production-action-button:focus-visible {
+  border-color: var(--production-ink);
+  background: color-mix(in srgb, var(--production-ink) 24%, var(--control-bg));
+  color: var(--production-ink);
 }
 
 .production-action-detail {
@@ -8091,6 +8116,8 @@ textarea {
   --rel-comment-ink: #9bb9ff;
   --rel-photo-bg: rgba(240, 181, 255, 0.16);
   --rel-photo-ink: #f0b5ff;
+  --production-bg: rgba(119, 215, 255, 0.11);
+  --production-ink: #8fd6ee;
   --asset-running-bg: rgba(139, 234, 171, 0.15);
   --asset-running-ink: #8beaab;
   --asset-watch-bg: rgba(240, 188, 99, 0.13);

@@ -275,11 +275,11 @@ ${A}`,asset_id:y,priority:h.get("priority"),status:"submitted",requested_by:e.ge
           </label>
           <p class="error-text" data-production-action-error="${e.escapeHtml(c.id)}"></p>
           <div class="button-row production-action-form-actions">
-            <button class="secondary-button" type="submit">${e.hasProductionAction(c)?"Save Production Action":"Assign Production Action"}</button>
+            <button class="secondary-button production-action-button" type="submit">${e.hasProductionAction(c)?"Save Production Action":"Assign Production Action"}</button>
             ${e.hasProductionAction(c)?`<button class="text-button danger-link" data-production-action-remove="${e.escapeHtml(c.id)}" type="button">Remove</button>`:""}
           </div>
         </form>
-      `}function a(c){return!r(c)||c.status==="completed"?"":c.production_action_status==="open"?`<button class="secondary-button" data-production-action-status="completed" data-work-order-id="${e.escapeHtml(c.id)}" type="button">Complete Production Action</button>`:`<button class="secondary-button" data-production-action-status="open" data-work-order-id="${e.escapeHtml(c.id)}" type="button">Reopen Production Action</button>`}function i(c){let o=c.production_action_status==="completed";return`
+      `}function a(c){return!r(c)||c.status==="completed"?"":c.production_action_status==="open"?`<button class="secondary-button production-action-button" data-production-action-status="completed" data-work-order-id="${e.escapeHtml(c.id)}" type="button">Complete Production Action</button>`:`<button class="secondary-button production-action-button" data-production-action-status="open" data-work-order-id="${e.escapeHtml(c.id)}" type="button">Reopen Production Action</button>`}function i(c){let o=c.production_action_status==="completed";return`
         <div class="production-action-heading">
           <div class="chip-row">
             <span class="chip production-action-chip">Production Action</span>
@@ -2253,4 +2253,4 @@ ${i}`:i}return{cleanWorkOrderDescription:n,descriptionWithAssignmentNote:t,descr
       ${s?`<button class="message-delete-button" data-delete-message="${e.escapeHtml(r.id)}" type="button">Delete</button>`:""}
     </article>
   `}function t(r){let s=r.filter(a=>!a.deleted_at);if(!s.length)return'<p class="muted">No messages yet.</p>';let f="";return s.map(a=>{let i=e.formatMessageDay(a.created_at),d=i!==f?`<div class="message-day-divider"><span>${e.escapeHtml(i)}</span></div>`:"";return f=i,`${d}${n(a)}`}).join("")}return Object.freeze({renderMessageBubble:n,renderMessageList:t})}window.MaintainOpsMessageDisplay=Object.freeze({createMessageDisplayHelpers:l})})();})();
-//# sourceMappingURL=runtime.3aef9bb3c1.js.map
+//# sourceMappingURL=runtime.a1c791cc03.js.map
