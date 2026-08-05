@@ -11,7 +11,10 @@ import {
 import { createLazyResourceHelpers } from "./src/appShell/lazyResources.js";
 import { createWorkspaceStartupLoaders, loadWorkspaceCoreData } from "./src/appShell/workspaceStartupLoaders.js";
 import { createCompanyLogoUrlLoader } from "./src/services/companyLogoUrlService.mjs";
-import { fetchWorkspaceWorkOrderCounts } from "./src/services/workspaceWorkOrderCountsService.mjs";
+import {
+  fetchWorkspaceWorkOrderCounts,
+  reconcileCountGroupForStatus,
+} from "./src/services/workspaceWorkOrderCountsService.mjs";
 import { createKeyedSingleFlight } from "./src/utils/keyedSingleFlight.mjs";
 
 const app = document.querySelector("#app");
@@ -440,6 +443,7 @@ let planningWorkOrdersLoadToken = 0;
 let workOrderServerTotal = 0;
 let workOrderDashboardCounts = null;
 let myWorkDashboardCounts = null;
+let workOrderQueueLoadRevision = 0;
 let workspaceWorkOrderCountsRpcReady = true;
 let workOrderRelatedSearch = { assetIds: [], workOrderIds: [], procedureIds: [] };
 let exactWorkOrderSearchCache = { key: "", rows: [] };
@@ -2094,7 +2098,43 @@ async function seedStarterAssets() {
 const WORK_ORDER_RELATION_SELECT = "*, assets(name, location_id), locations!work_orders_company_location_fkey(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
 const WORK_ORDER_FALLBACK_SELECT = "*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
 
+function workOrderQueueMatchesGaugeScope(section) {
+  if (workspaceUiState.getSearchQuery().trim()) return false;
+  if (section === "mywork") return true;
+  if (section !== "work") return false;
+  return workspaceUiState.getWorkOrderFilter() === "all"
+    && !workspaceUiState.getWorkOrderAssigneeFilter()
+    && workspaceUiState.getWorkOrderTypeFilter() === "all"
+    && workspaceUiState.getWorkOrderPriorityFilter() === "all";
+}
+
+function commitLoadedWorkOrderSlice(response, dashboardCounts, myCounts, context) {
+  if (context.revision !== workOrderQueueLoadRevision) return false;
+
+  const rows = response.data || [];
+  const exactTotal = response.count ?? rows.length;
+  if (!response.error && context.matchesGaugeScope) {
+    if (context.section === "mywork") {
+      myCounts = reconcileCountGroupForStatus(myCounts, context.statusFilter, exactTotal);
+    } else if (context.section === "work") {
+      dashboardCounts = reconcileCountGroupForStatus(dashboardCounts, context.statusFilter, exactTotal);
+    }
+  }
+
+  workOrders = rows;
+  workOrderServerTotal = exactTotal;
+  workOrderDashboardCounts = dashboardCounts;
+  myWorkDashboardCounts = myCounts;
+  return true;
+}
+
 async function loadServerWorkOrderSlice(countSnapshotPromise = loadWorkspaceWorkOrderCountSnapshot()) {
+  const context = {
+    revision: ++workOrderQueueLoadRevision,
+    section: activeSection,
+    statusFilter: workspaceUiState.getActiveStatusFilter(),
+    matchesGaugeScope: workOrderQueueMatchesGaugeScope(activeSection),
+  };
   await refreshWorkOrderRelatedSearch();
   let pageResponse;
   let dashboardCounts;
@@ -2123,18 +2163,12 @@ async function loadServerWorkOrderSlice(countSnapshotPromise = loadWorkspaceWork
 
   if (pageResponse.error && isColumnSchemaError(pageResponse.error, ["location_id", "locations"])) {
     const fallbackResponse = await fetchWorkOrderPage({ includeLocationRelation: false });
-    workOrders = fallbackResponse.data || [];
-    workOrderServerTotal = fallbackResponse.count ?? workOrders.length;
-    workOrderDashboardCounts = dashboardCounts;
-    myWorkDashboardCounts = myCounts;
-    return fallbackResponse;
+    const committed = commitLoadedWorkOrderSlice(fallbackResponse, dashboardCounts, myCounts, context);
+    return committed ? fallbackResponse : { ...fallbackResponse, stale: true };
   }
 
-  workOrders = pageResponse.data || [];
-  workOrderServerTotal = pageResponse.count ?? workOrders.length;
-  workOrderDashboardCounts = dashboardCounts;
-  myWorkDashboardCounts = myCounts;
-  return pageResponse;
+  const committed = commitLoadedWorkOrderSlice(pageResponse, dashboardCounts, myCounts, context);
+  return committed ? pageResponse : { ...pageResponse, stale: true };
 }
 
 async function loadWorkspaceWorkOrderCountSnapshot() {
@@ -2694,6 +2728,7 @@ async function reloadWorkOrderQueue(options = {}) {
   try {
     invalidatePlanningWorkOrders();
     const response = await loadServerWorkOrderSlice();
+    if (response.stale) return;
     if (response.error) {
       showNotice(`Could not load work orders: ${response.error.message}`, "warning");
       return;

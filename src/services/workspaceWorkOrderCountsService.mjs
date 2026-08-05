@@ -9,6 +9,18 @@ const COUNT_KEYS = Object.freeze([
   "completedWeek",
 ]);
 
+const COUNT_KEY_BY_STATUS = Object.freeze({
+  active: "activeWork",
+  all: "activeWork",
+  open: "newWork",
+  in_progress: "inProgress",
+  blocked: "blocked",
+  overdue: "overdue",
+  completed: "completedAll",
+  completed_month: "completedMonth",
+  completed_week: "completedWeek",
+});
+
 function normalizeCountGroup(value) {
   return Object.fromEntries(COUNT_KEYS.map((key) => [key, Math.max(0, Number(value?.[key]) || 0)]));
 }
@@ -18,6 +30,16 @@ export function normalizeWorkspaceWorkOrderCounts(value) {
   return {
     workOrders: normalizeCountGroup(value.workOrders),
     myWork: normalizeCountGroup(value.myWork),
+  };
+}
+
+export function reconcileCountGroupForStatus(counts, statusFilter, exactTotal) {
+  const countKey = COUNT_KEY_BY_STATUS[statusFilter];
+  const numericTotal = Number(exactTotal);
+  if (!counts || !countKey || !Number.isFinite(numericTotal)) return counts;
+  return {
+    ...counts,
+    [countKey]: Math.max(0, Math.trunc(numericTotal)),
   };
 }
 

@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
   const {
     fetchWorkspaceWorkOrderCounts,
     normalizeWorkspaceWorkOrderCounts,
+    reconcileCountGroupForStatus,
   } = await import("../../src/services/workspaceWorkOrderCountsService.mjs");
 
   const calls = [];
@@ -53,6 +54,18 @@ const assert = require("node:assert/strict");
     completedWeek: 0,
   });
   assert.equal(normalizeWorkspaceWorkOrderCounts(null), null);
+  assert.deepEqual(
+    reconcileCountGroupForStatus({ newWork: 3, blocked: 1 }, "open", 2),
+    { newWork: 2, blocked: 1 }
+  );
+  assert.deepEqual(
+    reconcileCountGroupForStatus({ activeWork: 4 }, "all", "3"),
+    { activeWork: 3 }
+  );
+  assert.deepEqual(
+    reconcileCountGroupForStatus({ newWork: 3 }, "requests", 2),
+    { newWork: 3 }
+  );
 
   console.log("workspace work-order counts service smoke passed");
 })().catch((error) => {

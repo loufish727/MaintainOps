@@ -23,6 +23,7 @@ async function renderWorkOrderFilters(page) {
       },
     };
     const state = window.MaintainOpsWorkspaceUiState.createWorkspaceUiState({ storage });
+    state.setActiveSection("work");
     const members = [
       { userId: "user-1", name: "Taylor Tech" },
       { userId: "user-2", name: "Morgan Manager" },
@@ -122,6 +123,7 @@ async function renderWorkOrderFilters(page) {
     window.__renderWorkFilterTest = () => {
       document.querySelector("#work-order-filter-test").innerHTML = `
         <div class="panel-header"><h2>${helpers.workQueuePanelTitle()}</h2><span>3 shown</span></div>
+        <button data-status-filter="open" type="button">3 New</button>
         ${helpers.renderWorkOrderFilterToolbar(members)}
         ${helpers.renderWorkOrderCollection(workOrders, { groupBy: state.getWorkGroup() })}
       `;
@@ -183,6 +185,13 @@ test("Work Orders filters expose their hierarchy and remain usable on phones", a
   await expect(page.getByText("Type: Preventive", { exact: true })).toBeVisible();
   await expect(page.getByText("Priority: High", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Sort work orders")).toHaveValue("type");
+
+  await page.getByRole("button", { name: "3 New", exact: true }).click();
+  await expect(page.getByLabel("Filter work orders by status")).toHaveValue("open");
+  await expect(page.getByLabel("Filter work orders by assignment")).toHaveValue("all");
+  await expect(page.getByLabel("Filter work orders by assigned person")).toHaveValue("");
+  await expect(page.getByLabel("Filter work orders by work type")).toHaveValue("all");
+  await expect(page.getByLabel("Filter work orders by priority")).toHaveValue("all");
 
   await page.getByLabel("Group work orders").selectOption("assignee");
   await expect(page.locator(".work-order-group-heading").getByText("Morgan Manager", { exact: true })).toBeVisible();

@@ -144,13 +144,23 @@ bindWorkspaceFilterPaginationEvents({
 });
 
 (async () => {
+  state.setActiveSection("work");
+  state.setWorkOrderFilter("assigned");
+  state.setWorkOrderAssigneeFilter("user-1");
+  state.setWorkOrderTypeFilter("fabrication");
+  state.setWorkOrderPriorityFilter("high");
   await statusRequests.dispatch("click");
   assert.equal(state.getActiveStatusFilter(), "requests");
+  assert.equal(state.getWorkOrderFilter(), "all");
+  assert.equal(state.getWorkOrderAssigneeFilter(), "");
+  assert.equal(state.getWorkOrderTypeFilter(), "all");
+  assert.equal(state.getWorkOrderPriorityFilter(), "all");
   assert.equal(state.getWorkOrderPage(), 1);
   assert.equal(state.getRequestsPage(), 1);
   assert.equal(workReloadCount, 1);
   assert.equal(requestReloadCount, 1);
 
+  state.setActiveSection("mywork");
   await myWorkCreated.dispatch("click");
   assert.equal(state.getMyWorkFilter(), "created");
   assert.equal(storage.values["maintainops.myWorkFilter"], "created");
