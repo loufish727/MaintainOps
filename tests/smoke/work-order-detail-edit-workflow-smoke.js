@@ -30,7 +30,6 @@ function createWorkflow(overrides = {}) {
     priority: "high",
     type: "reactive",
     procedure_template_id: "",
-    asset_id: "asset-1",
     failure_cause: "",
     resolution_summary: "Fixed",
     follow_up_needed: "",
@@ -109,9 +108,11 @@ function createWorkflow(overrides = {}) {
 (async () => {
   const normal = createWorkflow();
   const button = await normal.run();
-  assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].title === "Edited work"), true);
-  assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].asset_id === "asset-1"), true);
-  assert.equal(normal.calls.some((call) => call[0] === "update" && call[2].location_id === "location-asset-1"), true);
+  const normalUpdate = normal.calls.find((call) => call[0] === "update");
+  assert.equal(normalUpdate[2].title, "Edited work");
+  assert.equal(Object.hasOwn(normalUpdate[2], "asset_id"), false, "full details must not clear the existing machine");
+  assert.equal(Object.hasOwn(normalUpdate[2], "location_id"), false, "full details must not move the work order location");
+  assert.equal(normal.calls.some((call) => call[0] === "confirmAssetLocationRouting"), false);
   assert.equal(normal.calls.some((call) => call[0] === "assetRequiresSafety" && call[1] === "asset-1"), true);
   assert.equal(normal.calls.some((call) => call[0] === "event" && call[2] === "updated"), true);
   assert.equal(normal.calls.at(-1)[0], "render");
