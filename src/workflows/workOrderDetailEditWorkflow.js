@@ -18,8 +18,9 @@
         const activeWorkOrderId = deps.getActiveWorkOrderId();
         const previous = deps.getWorkOrders().find((workOrder) => workOrder.id === activeWorkOrderId);
         const currentStatus = documentRef.querySelector("#status-select")?.value || previous?.status || "open";
-        const assetId = form.get("asset_id") || null;
-        if (typeof deps.confirmAssetLocationRouting === "function" && !deps.confirmAssetLocationRouting(assetId, "saving this work order", errorTarget)) {
+        const formOwnsAsset = form.has("asset_id");
+        const assetId = formOwnsAsset ? form.get("asset_id") || null : previous?.asset_id || null;
+        if (formOwnsAsset && typeof deps.confirmAssetLocationRouting === "function" && !deps.confirmAssetLocationRouting(assetId, "saving this work order", errorTarget)) {
           submitButton.disabled = false;
           submitButton.textContent = "Save Work Order";
           return;
@@ -28,8 +29,6 @@
           title: deps.requiredText(form.get("title"), "Work order title"),
           description: deps.descriptionWithAssignmentNote(form.get("description"), form.get("assigned_to")),
           due_at: deps.workOrderDateValue(form.get("due_at")),
-          asset_id: assetId,
-          location_id: deps.locationIdForAsset(assetId),
           status: currentStatus,
           priority: form.get("priority"),
           type: form.get("type"),
@@ -40,6 +39,10 @@
           follow_up_needed: form.get("follow_up_needed") === "on",
           actual_minutes: Number(form.get("actual_minutes")) || 0,
         };
+        if (formOwnsAsset) {
+          payload.asset_id = assetId;
+          payload.location_id = deps.locationIdForAsset(assetId);
+        }
         payload.safety_check_required = deps.assetRequiresSafety(assetId);
         if (payload.status === "completed") {
           const productionActionMessage = deps.productionActionCompletionMessage?.(previous) || "";
