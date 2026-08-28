@@ -82,29 +82,55 @@
       `;
     }
 
+    function renderProductionActionDialog(workOrder, canEdit) {
+      const hasAction = deps.hasProductionAction(workOrder);
+      const dialogId = `production-action-dialog-${workOrder.id}`;
+      return `
+        <dialog class="production-action-dialog" id="${deps.escapeHtml(dialogId)}" data-production-action-dialog="${deps.escapeHtml(workOrder.id)}" aria-labelledby="${deps.escapeHtml(dialogId)}-title">
+          <div class="production-action-dialog-shell">
+            <header class="production-action-dialog-header">
+              <div>
+                <small>Work order action</small>
+                <h3 id="${deps.escapeHtml(dialogId)}-title">Production Action</h3>
+              </div>
+              <button class="text-button production-action-dialog-close" data-production-action-dialog-close type="button">Close</button>
+            </header>
+            <div class="production-action-dialog-body">
+              ${hasAction ? renderProductionActionSummary(workOrder) : `<p class="muted">No Production Action is assigned.</p>`}
+              ${canEdit ? `
+                <div class="button-row production-action-detail-actions">
+                  ${hasAction ? renderProductionActionStatusControls(workOrder) : ""}
+                </div>
+                ${renderProductionActionForm(workOrder)}
+              ` : ""}
+            </div>
+          </div>
+        </dialog>
+      `;
+    }
+
     function renderProductionActionCard(workOrder) {
       const canEdit = deps.canEditOperationalRecords() && workOrder.status !== "completed";
-      if (!deps.hasProductionAction(workOrder)) {
-        if (!canEdit) return "";
-        return `
-          <details class="production-action-control production-action-add" data-production-action-control>
-            <summary><span class="chip production-action-chip">Production Action</span><span>Assign</span></summary>
-            ${renderProductionActionForm(workOrder, { compact: true })}
-          </details>
-        `;
-      }
+      const hasAction = deps.hasProductionAction(workOrder);
+      if (!hasAction && !canEdit) return "";
+      const completed = workOrder.production_action_status === "completed";
+      const dialogId = `production-action-dialog-${workOrder.id}`;
+      const owner = hasAction ? productionAssigneeName(workOrder) : "Not assigned";
+      const preview = hasAction ? `${owner} - ${workOrder.production_action}` : owner;
+      const controlLabel = hasAction ? "Manage Production Action" : "Assign Production Action";
       return `
-        <section class="production-action-control ${workOrder.production_action_status === "completed" ? "is-completed" : "is-open"}" data-production-action-control>
-          ${renderProductionActionSummary(workOrder)}
-          ${canEdit ? `
-            <div class="button-row production-action-card-actions">
-              ${renderProductionActionStatusControls(workOrder)}
-              <details data-production-action-control>
-                <summary>Edit Production Action</summary>
-                ${renderProductionActionForm(workOrder, { compact: true })}
-              </details>
+        <section class="production-action-control production-action-card-compact ${completed ? "is-completed" : hasAction ? "is-open" : "is-empty"}" data-production-action-control>
+          <div class="production-action-card-copy">
+            <div class="chip-row production-action-card-heading">
+              <span class="chip production-action-chip">Production Action</span>
+              ${hasAction ? `<span class="chip ${completed ? "status-completed" : "status-open"}">${completed ? "Completed" : "Open"}</span>` : `<span class="chip">None</span>`}
             </div>
-          ` : ""}
+            <p class="production-action-card-preview" title="${deps.escapeHtml(preview)}">${deps.escapeHtml(preview)}</p>
+          </div>
+          <button class="secondary-button production-action-card-open" data-production-action-dialog-open="${deps.escapeHtml(workOrder.id)}" type="button" aria-haspopup="dialog" aria-controls="${deps.escapeHtml(dialogId)}" aria-label="${controlLabel}" title="${controlLabel}">
+            <span aria-hidden="true">${hasAction ? "..." : "+"}</span>
+          </button>
+          ${renderProductionActionDialog(workOrder, canEdit)}
         </section>
       `;
     }

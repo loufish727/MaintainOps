@@ -2227,7 +2227,7 @@ textarea {
 .work-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: start;
+  align-items: stretch;
   gap: 12px;
 }
 
@@ -2411,6 +2411,7 @@ textarea {
   background: color-mix(in srgb, var(--accent) 5%, var(--surface));
   box-shadow: 0 8px 20px rgba(19, 34, 30, 0.04);
   min-height: 280px;
+  height: 100%;
   padding: 0;
 }
 
@@ -2553,6 +2554,125 @@ textarea {
 
 .work-card > .production-action-control {
   padding: 10px;
+}
+
+.work-card > .production-action-card-compact {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  min-height: 64px;
+  padding: 6px 10px;
+}
+
+.production-action-card-copy {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.production-action-card-heading {
+  flex-wrap: nowrap;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.production-action-card-heading .chip {
+  min-width: 0;
+  padding: 4px 7px;
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.production-action-card-preview {
+  display: block;
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.production-action-card-open {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-color: color-mix(in srgb, var(--production-ink) 52%, var(--line));
+  background: color-mix(in srgb, var(--production-ink) 14%, var(--control-bg));
+  color: var(--production-ink);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.production-action-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-width: 640px;
+  max-height: min(760px, calc(100vh - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--production-ink) 48%, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
+}
+
+.production-action-dialog::backdrop {
+  background: rgba(2, 8, 12, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.production-action-dialog-shell {
+  display: grid;
+  max-height: min(760px, calc(100vh - 32px));
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.production-action-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--production-bg);
+}
+
+.production-action-dialog-header h3,
+.production-action-dialog-header small {
+  margin: 0;
+}
+
+.production-action-dialog-header small {
+  color: var(--production-ink);
+  font-weight: 700;
+}
+
+.production-action-dialog-close {
+  flex: 0 0 auto;
+}
+
+.production-action-dialog-body {
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.production-action-dialog-body > .production-action-heading,
+.production-action-dialog-body > .production-action-text,
+.production-action-dialog-body > small,
+.production-action-dialog-body > .muted,
+.production-action-dialog-body > .production-action-detail-actions,
+.production-action-dialog-body > .production-action-form,
+.production-action-dialog-body > .production-action-empty {
+  margin-inline: 0;
 }
 
 .production-action-control > summary,
@@ -2717,6 +2837,16 @@ textarea {
   .production-action-control button,
   .production-action-detail button {
     min-height: 44px;
+  }
+
+  .work-card > .production-action-card-compact {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .production-action-card-open {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
   }
 }
 

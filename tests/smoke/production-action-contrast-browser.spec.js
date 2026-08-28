@@ -2,6 +2,7 @@ const path = require("node:path");
 const { test, expect } = require("@playwright/test");
 
 const stylesPath = path.resolve(__dirname, "../../styles.css");
+const eventsPath = path.resolve(__dirname, "../../src/utils/workspaceProductionActionEvents.js");
 
 for (const viewport of [
   { name: "desktop", width: 1100, height: 760 },
@@ -19,16 +20,25 @@ for (const viewport of [
             <div class="work-card-meta"><span>Assigned to Maintenance</span></div>
             <div class="relationship-row"><span class="relationship-chip">Press 2</span></div>
             <div class="quick-actions work-card-actions"><button type="button">Complete</button></div>
-            <details class="production-action-control production-action-add" open>
-              <summary><span class="chip production-action-chip">Production Action</span><span>Assign</span></summary>
-              <form class="production-action-form compact">
-                <label>Production action<textarea>Stage material for maintenance.</textarea></label>
-                <label>Production owner<select><option>Justin Werber</option></select></label>
-                <div class="button-row production-action-form-actions">
-                  <button class="secondary-button production-action-button" type="button">Assign Production Action</button>
+            <section class="production-action-control production-action-card-compact is-open" data-production-action-control>
+              <div class="production-action-card-copy">
+                <div class="chip-row production-action-card-heading"><span class="chip production-action-chip">Production Action</span><span class="chip status-open">Open</span></div>
+                <p class="production-action-card-preview">Justin Werber - Stage material for maintenance.</p>
+              </div>
+              <button class="secondary-button production-action-card-open" data-production-action-dialog-open="wo-1" aria-controls="production-action-dialog-wo-1" aria-label="Manage Production Action" type="button"><span aria-hidden="true">...</span></button>
+              <dialog class="production-action-dialog" id="production-action-dialog-wo-1" data-production-action-dialog="wo-1">
+                <div class="production-action-dialog-shell">
+                  <header class="production-action-dialog-header"><h3>Production Action</h3><button class="text-button production-action-dialog-close" data-production-action-dialog-close type="button">Close</button></header>
+                  <div class="production-action-dialog-body">
+                    <form class="production-action-form compact">
+                      <label>Production action<textarea>Stage material for maintenance.</textarea></label>
+                      <label>Production owner<select><option>Justin Werber</option></select></label>
+                      <div class="button-row production-action-form-actions"><button class="secondary-button production-action-button" type="button">Save Production Action</button></div>
+                    </form>
+                  </div>
                 </div>
-              </form>
-            </details>
+              </dialog>
+            </section>
           </article>
           <article class="work-card" data-neighbor-card>
             <div class="work-card-header"><span class="chip">New</span></div>
@@ -36,14 +46,38 @@ for (const viewport of [
             <div class="work-card-meta"><span>Unassigned</span></div>
             <div class="relationship-row"><span class="relationship-chip">Conveyor 1</span></div>
             <div class="quick-actions work-card-actions"><button type="button">Start</button></div>
-            <details class="production-action-control production-action-add">
-              <summary><span class="chip production-action-chip">Production Action</span><span>Assign</span></summary>
-            </details>
+            <section class="production-action-control production-action-card-compact is-empty" data-production-action-control>
+              <div class="production-action-card-copy">
+                <div class="chip-row production-action-card-heading"><span class="chip production-action-chip">Production Action</span><span class="chip">None</span></div>
+                <p class="production-action-card-preview">Not assigned</p>
+              </div>
+              <button class="secondary-button production-action-card-open" data-production-action-dialog-open="wo-2" aria-controls="production-action-dialog-wo-2" aria-label="Assign Production Action" type="button"><span aria-hidden="true">+</span></button>
+              <dialog class="production-action-dialog" id="production-action-dialog-wo-2" data-production-action-dialog="wo-2"></dialog>
+            </section>
           </article>
         </div>
       </main>
     `);
     await page.addStyleTag({ path: stylesPath });
+    await page.addScriptTag({ path: eventsPath });
+    await page.evaluate(() => {
+      window.MaintainOpsWorkspaceProductionActionEvents.bindWorkspaceProductionActionEvents({
+        saveProductionAction: () => {},
+        setProductionActionStatus: () => {},
+        removeProductionAction: () => {},
+      });
+    });
+
+    const initialLayout = await page.evaluate(() => ({
+      expandedHeight: document.querySelector("[data-expanded-card]").getBoundingClientRect().height,
+      neighborHeight: document.querySelector("[data-neighbor-card]").getBoundingClientRect().height,
+      productionActionHeight: document.querySelector("[data-expanded-card] .production-action-card-compact").getBoundingClientRect().height,
+    }));
+    expect(Math.abs(initialLayout.expandedHeight - initialLayout.neighborHeight)).toBeLessThanOrEqual(1);
+    expect(initialLayout.productionActionHeight).toBe(64);
+
+    await page.locator('[data-production-action-dialog-open="wo-1"]').click();
+    await expect(page.locator('[data-production-action-dialog="wo-1"]')).toBeVisible();
 
     for (const theme of ["default", "dark"]) {
       await page.evaluate((activeTheme) => {
@@ -111,14 +145,16 @@ for (const viewport of [
       expect(result.contrast).toBeGreaterThanOrEqual(4.5);
     }
 
-    const layout = await page.evaluate(() => ({
+    const openLayout = await page.evaluate(() => ({
       expandedHeight: document.querySelector("[data-expanded-card]").getBoundingClientRect().height,
       neighborHeight: document.querySelector("[data-neighbor-card]").getBoundingClientRect().height,
       textareaHeight: document.querySelector(".production-action-form.compact textarea").getBoundingClientRect().height,
     }));
-    expect(layout.textareaHeight).toBe(88);
-    if (viewport.name === "desktop") {
-      expect(layout.expandedHeight).toBeGreaterThan(layout.neighborHeight + 40);
-    }
+    expect(openLayout.textareaHeight).toBe(88);
+    expect(Math.abs(openLayout.expandedHeight - openLayout.neighborHeight)).toBeLessThanOrEqual(1);
+    expect(openLayout.expandedHeight).toBe(initialLayout.expandedHeight);
+
+    await page.locator('[data-production-action-dialog="wo-1"] [data-production-action-dialog-close]').click();
+    await expect(page.locator('[data-production-action-dialog="wo-1"]')).toBeHidden();
   });
 }

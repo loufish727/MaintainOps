@@ -28,6 +28,10 @@ assert.match(emptyCard, /data-production-action-control/);
 assert.match(emptyCard, /data-production-action-form="wo-1"/);
 assert.match(emptyCard, /Justin Werber/);
 assert.match(emptyCard, /secondary-button production-action-button/);
+assert.match(emptyCard, /production-action-card-compact/);
+assert.match(emptyCard, /data-production-action-dialog-open="wo-1"/);
+assert.match(emptyCard, /data-production-action-dialog="wo-1"/);
+assert.match(emptyCard, /aria-label="Assign Production Action"/);
 
 const openAction = {
   ...workOrder,
@@ -42,6 +46,8 @@ assert.match(openCard, /Justin Werber/);
 assert.match(openCard, /data-production-action-status="completed"/);
 assert.match(openCard, /secondary-button production-action-button/);
 assert.match(openCard, /data-production-action-remove="wo-1"/);
+assert.match(openCard, /production-action-card-preview/);
+assert.match(openCard, /aria-label="Manage Production Action"/);
 
 const completedDetail = helpers.renderProductionActionDetail({
   ...openAction,
@@ -67,5 +73,8 @@ assert.match(darkGlassTheme, /--production-bg:/);
 assert.match(darkGlassTheme, /--production-ink:/);
 assert.match(styles, /\.production-action-control \.production-action-button/);
 assert.match(styles, /color: var\(--production-ink\)/);
+assert.match(styles, /\.work-card > \.production-action-card-compact/);
+assert.match(styles, /height: 64px/);
+assert.match(styles, /\.production-action-dialog/);
 
 console.log("production action display smoke passed");
