@@ -1951,7 +1951,9 @@ option {
 textarea {
   min-height: 70px;
   max-height: 260px;
-  overflow-y: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   resize: none;
 }
 
