@@ -46,6 +46,8 @@ Generated conversations and uploaded objects were removed after proof. The user'
 
 Voice-confirmation checkpoint `442de54` passed all 13 Full Strict stages with a clean worktree, including the three new composer confirmation regressions. Focused confirmation checks also passed WebKit; signed-in expanded-tools proof passed Chromium and WebKit with cancel-before-upload and confirmed failure/retry assertions. Startup decoded JS/CSS remains 772,829 bytes; Messages-only JS/CSS totals 20,882 gzip bytes, within the existing limits. No additional provider, schema migration or production deployment was needed. Generated QA conversations/files were removed and the manual conversation retained.
 
+Voice-flow cleanup checkpoint `7ae129b` passed the 12-stage Release Gate on a clean worktree, focused Chromium/WebKit recorder lifecycle/confirmation tests, and signed-in expanded-tools proof in both browsers. The gate's current evidence is `release-gate-summary.json`; the unrelated full 3D interaction stage was not rerun for this voice-only change. Startup remains 772,829 decoded bytes; Messages-only JS/CSS is 21,329 gzip bytes within unchanged budgets. Generated QA fixtures were cleaned; the manual conversation remains. Physical microphone verification is still outstanding.
+
 - `message-center-loader-boundary-smoke.js`: more than 1,000 metadata rows, more than 500 memberships, recoverable legacy archive, bounded history and timestamp tie-breaker.
 - `message-retry-smoke.js` and `message-workflow-smoke.js`: ambiguous send retries, partial creation recovery, timestamp/read-marker failures and mutation contracts.
 - `message-live-smoke.js`: authenticated channel setup, actual database subscription status, event coalescing, serial flush, reconnect and scope teardown.
