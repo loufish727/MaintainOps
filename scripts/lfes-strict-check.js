@@ -241,6 +241,7 @@ async function main() {
     "tests/smoke/work-order-filter-toolbar-browser.spec.js",
     "tests/smoke/work-order-resolution-scroll-browser.spec.js",
     "tests/smoke/workspace-search-stability-browser.spec.js",
+    "tests/smoke/messaging-browser.spec.js",
   ], {
     label: "targeted browser regression smokes",
   }));

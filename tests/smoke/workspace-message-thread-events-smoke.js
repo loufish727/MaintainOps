@@ -68,7 +68,7 @@ bindWorkspaceMessageThreadEvents({
   assert.equal(storage.values["maintainops.activeMessageThreadId"], "thread-1");
   assert.deepEqual(loadCalls, ["thread-1"]);
   assert.deepEqual(readCalls, ["thread-1"]);
-  assert.equal(renderCount, 1);
+  assert.equal(renderCount, 3);
 
   await workThreadButton.dispatch("click");
   assert.equal(stateValues.activeMessageThreadId, "thread-2");
@@ -78,7 +78,7 @@ bindWorkspaceMessageThreadEvents({
   assert.equal(storage.values["maintainops.activeSection"], "messages");
   assert.deepEqual(loadCalls, ["thread-1", "thread-2"]);
   assert.deepEqual(readCalls, ["thread-1", "thread-2"]);
-  assert.equal(renderCount, 2);
+  assert.equal(renderCount, 6);
 
   bindWorkspaceMessageThreadEvents({
     documentRef: createDocument({ "[data-message-thread]": [threadButton] }),

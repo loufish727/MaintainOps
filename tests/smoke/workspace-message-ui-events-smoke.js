@@ -173,7 +173,7 @@ assert.equal(stateValues.messageThreadsPage, 1);
 assert.equal(storage.values["maintainops.messageSearchQuery"], "pump");
 assert.equal(storage.values["maintainops.messageThreadsPage"], "1");
 assert.equal(searchInput.focused, true);
-assert.deepEqual(searchInput.selectionRange, [4, 4]);
+assert.equal(searchInput.selectionRange, null, "Inputs without a supported caret must not receive setSelectionRange");
 assert.equal(renderCount, 4);
 
 typeSelect.value = "work_order";

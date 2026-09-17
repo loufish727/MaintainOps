@@ -5025,9 +5025,15 @@ textarea {
 }
 
 .message-search input {
-  min-height: 36px;
+  min-height: 44px;
+  color: var(--text);
   border-radius: 999px;
   background: rgba(255,255,255,0.06);
+}
+
+.message-search input::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .message-thread-fields,
@@ -10271,9 +10277,63 @@ textarea:focus {
 
 .message-layout {
   gap: 12px;
+  align-items: start;
 }
 
-.message-thread-list,
+.message-thread-rail {
+  grid-template-rows: none;
+  min-width: 0;
+}
+
+.message-thread-list {
+  min-height: 0;
+  max-height: 560px;
+}
+
+.message-thread-detail {
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto auto auto;
+}
+
+.message-list {
+  align-content: start;
+  height: 52vh;
+  min-height: 240px;
+  max-height: 560px;
+  overflow-anchor: none;
+}
+
+.message-bubble p,
+.message-chat-header h3 {
+  overflow-wrap: anywhere;
+}
+
+.message-chat-header {
+  flex-wrap: wrap;
+}
+
+.message-thread-detail > .muted {
+  padding: 24px;
+}
+
+@media (max-width: 920px) {
+  .message-center.has-active-thread .message-thread-rail,
+  .message-center:not(.has-active-thread) .message-thread-detail {
+    display: none;
+  }
+  .message-center button {
+    min-height: 44px;
+  }
+  .message-layout,
+  .message-center {
+    min-height: 0;
+  }
+  .message-list {
+    padding: 12px;
+  }
+}
+
 .message-panel {
   min-height: 420px;
 }

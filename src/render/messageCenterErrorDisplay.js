@@ -7,7 +7,7 @@
           messagesReady: null,
         };
       }
-      if (deps.isColumnSchemaError(error, ["message_threads", "message_thread_members", "messages"]) || String(error?.message || "").includes("message_threads")) {
+      if (deps.isColumnSchemaError(error, ["message_threads", "message_thread_members", "messages"])) {
         return {
           message: "Run supabase/step-next-message-center.sql before using Messages.",
           messagesReady: false,

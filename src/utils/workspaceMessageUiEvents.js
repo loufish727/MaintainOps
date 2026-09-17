@@ -19,6 +19,13 @@
     if (!state || typeof renderWorkspace !== "function") return;
 
     const storage = options.storage || localStorage;
+    doc.querySelector("[data-message-back]")?.addEventListener("click", () => options.backToMessages?.());
+    doc.querySelector("[data-retry-messages]")?.addEventListener("click", () => options.retryMessages?.());
+    doc.querySelector("[data-message-older]")?.addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      const button = event.currentTarget;
+      try { await options.loadOlderMessages?.(); } finally { if (button.isConnected) button.disabled = false; }
+    });
 
     doc.querySelectorAll("[data-message-filter]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -33,6 +40,10 @@
 
     doc.querySelectorAll("[data-open-linked-work-order]").forEach((button) => {
       button.addEventListener("click", () => {
+        if (options.openLinkedWorkOrder) {
+          options.openLinkedWorkOrder(button.dataset.openLinkedWorkOrder);
+          return;
+        }
         state.setActiveWorkOrderId(button.dataset.openLinkedWorkOrder);
         state.setActiveAssetId(null);
         state.setActivePartId(null);
@@ -64,8 +75,9 @@
         renderWorkspace();
         const nextSearch = doc.querySelector("#message-search");
         if (!nextSearch) return;
-        nextSearch.focus();
-        nextSearch.setSelectionRange(value.length, value.length);
+        nextSearch.focus({ preventScroll: true });
+        if (nextSearch.selectionStart == null) return;
+        nextSearch.setSelectionRange(messageSearch.selectionStart, messageSearch.selectionEnd);
       });
     }
 

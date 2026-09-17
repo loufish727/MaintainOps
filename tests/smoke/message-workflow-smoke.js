@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 global.window = {};
+Object.defineProperty(global, "crypto", { value: { randomUUID: () => "thread-1" }, configurable: true });
 
 const { createMessageWorkflow } = require("../../src/workflows/messageWorkflow.js");
 
@@ -186,10 +187,10 @@ function createQuery(table, calls) {
   assert.equal(state.renders, 3);
 
   await deleteThreadButton.dispatch("click");
-  assert.match(state.confirms[1], /Delete this thread/);
+  assert.match(state.confirms[1], /Hide this conversation.*future replies/);
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message_thread" && call[2].target_thread_id === "thread-1"));
   assert.equal(state.activeThread, "");
-  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted.", "Thread deleted."]);
+  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted.", "Conversation hidden from your inbox."]);
   assert.equal(state.renders, 4);
 
   assert.deepEqual(workflow.messageThreadMembersForType("direct", "user-2"), ["user-1", "user-2"]);

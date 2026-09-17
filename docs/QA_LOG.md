@@ -13,6 +13,8 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 
 ## Recent Verification Notes
 
+- 2026-09-17: Messaging review adds paged metadata/latest previews, bounded conversation history, memory-only scoped drafts, safe retry IDs, message-only reloads, accurate hide wording and mobile inbox/conversation navigation. The isolated signed-in lifecycle exercises creation/reply/delete/hide, partial failures and read-only UI. See `docs/MESSAGING_VERIFICATION.md` for exact contracts, automated checks and remaining limits. No production data or database policies changed.
+
 - 2026-07-06: Accounting read-only boundary hardening applied to live Supabase. Financial records now read through admin/manager/accounting RLS and write through admin/accounting RLS; operational mutations use `private.is_company_operational_editor(company_id)` so accounting remains view-only outside Financial. Verified with SQL policy catalog query, static security audit, security boundary probe, broad non-live Node smokes, local resource smoke, work-attach browser smoke, and targeted Setup storage navigation smoke.
 - Team join-link frontend shipped with targeted display/workflow smokes.
 - The live browser check caught and fixed a false successful-team-access warning after join-link acceptance was paired with legacy invite acceptance.
