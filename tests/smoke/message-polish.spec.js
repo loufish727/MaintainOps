@@ -12,6 +12,7 @@ for (const width of [1440, 768, 390, 320]) {
     await page.addScriptTag({ content: fs.readFileSync(path.join(root,'src/workflows/messagePresentation.mjs'),'utf8').replace('export function','function') });
     await page.evaluate(() => {
       document.body.style.margin = '0';
+      document.body.classList.add('messages-active');
       const escapeHtml = text => String(text).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
       const names = { me: 'Alex Morgan', sam: 'Sam Rivera', jo: 'Jordan Lee' };
       const icon = window.MaintainOpsIconDisplay.segmentIcon;
@@ -71,6 +72,7 @@ for (const width of [1440, 768, 390, 320]) {
     const history = page.locator('.message-list');
     await history.evaluate(node=>{node.scrollTop=node.scrollHeight;});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if(width<=920) expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1)).toBe(true);
     const reply = page.getByRole('textbox',{name:'Reply',exact:true});
     await expect(reply).toBeVisible();
     await reply.fill('Draft stays here');
