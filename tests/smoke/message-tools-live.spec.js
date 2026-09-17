@@ -106,7 +106,18 @@ test('message tools: search, organization, discussions, private files and voice 
     await expect.poll(()=>page.locator('[data-message-photo] img').evaluate(img=>img.naturalWidth)).toBe(768);
     await page.getByRole('button',{name:/equipment-reference/}).click();await expect.poll(()=>page.locator('.message-media-dialog img').evaluate(img=>img.naturalWidth)).toBe(768);await page.getByRole('button',{name:'Close',exact:true}).click();
     await page.screenshot({path:path.join(evidence,'message-tools-desktop.png')});
-    for(const width of [390,320]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1)).toBe(true);const box=await page.locator('.message-chat-header').boundingBox();expect(box.height).toBeLessThan(110);await expect(page.getByRole('button',{name:'Send reply',exact:true})).toBeInViewport();await page.screenshot({path:path.join(evidence,`message-tools-mobile-${width}.png`)});}
+    for(const width of [390,320]) {
+      await page.setViewportSize({width,height:844});
+      const geometry = () => page.evaluate(()=>({width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollHeight,viewport:visualViewport.height,root:document.querySelector('.message-center').getBoundingClientRect().toJSON(),configured:getComputedStyle(document.documentElement).getPropertyValue('--message-viewport-height')}));
+      const before = await geometry();
+      await expect(page.locator('.message-center')).toHaveCSS('height','844px');
+      fs.writeFileSync(path.join(evidence,`message-tools-geometry-${width}.json`),JSON.stringify({before,settled:await geometry()},null,2));
+      await page.screenshot({path:path.join(evidence,`message-tools-mobile-${width}.png`)});
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1)).toBe(true);
+      const box=await page.locator('.message-chat-header').boundingBox();expect(box.height).toBeLessThan(110);
+      await expect(page.getByRole('button',{name:'Send reply',exact:true})).toBeInViewport();
+    }
     expect(errors).toEqual([]);
   } finally {
     const uploaded=await api(tech,'GET',`message_files?thread_id=eq.${thread}&select=message_id,object_path`);

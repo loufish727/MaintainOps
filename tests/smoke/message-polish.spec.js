@@ -92,6 +92,11 @@ for (const width of [1440, 768, 390, 320]) {
     await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0);
     await expect(reply).toHaveValue('Draft stays here');
     const composerBox=await page.locator('.message-reply-form').boundingBox();
+    if(width<=420) {
+      const mediaBox=await page.locator('.message-media-tools').boundingBox();
+      expect(mediaBox.height).toBeLessThanOrEqual(50);
+      await expect(page.locator('.message-voice-button')).toContainText('Send voice message');
+    }
     await page.locator('.message-quick-menu > summary').click();
     await expect(page.getByRole('button',{name:'On it',exact:true})).toBeVisible();
     expect((await page.locator('.message-reply-form').boundingBox()).height).toBe(composerBox.height);
