@@ -79,6 +79,8 @@ async function verifyMessaging(database, ids, setUser, resetRole) {
   await denied("select public.set_my_message_preferences($1,true,true)", [thread]);
   pass("nonparticipant_and_cross_tenant_privacy");
 
+  checks.push(...await require('./isolated-message-tools-check').verifyMessageTools(database, ids, setUser, resetRole, thread, other, message));
+
   await resetRole(database);
   await database.query("update public.messages set deleted_at=now() where id=$1", [message]);
   await setUser(database, ids.technician);

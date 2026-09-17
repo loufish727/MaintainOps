@@ -17,8 +17,9 @@ const budgets = {
   financialFeature: { decoded: 28 * 1024, gzip: 8 * 1024 },
   teamFeature: { decoded: 22 * 1024, gzip: 6 * 1024 },
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
-  messageFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },
-  messageStyles: { decoded: 18 * 1024, gzip: 4 * 1024 },
+  // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
+  messageFeature: { decoded: 54 * 1024, gzip: 17 * 1024 },
+  messageStyles: { decoded: 23 * 1024, gzip: 6 * 1024 },
 };
 
 const initialKeys = ["runtime", "appShell", "appStyles"];

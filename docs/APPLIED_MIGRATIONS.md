@@ -70,3 +70,7 @@ Every new SQL run should record:
 ## Messaging Experience, 2026-09-17
 
 - `supabase/migrations/202609171659_messaging_experience.sql`: isolated PostgreSQL/RLS proof passed; applied incrementally to testing project `fsxqrngpaseqdxijggcm` through the Supabase migration tool on 2026-09-17. Not applied to production. Adds recoverable preferences, same-thread quotes, scoped reactions and realtime publication membership, and enforces the existing Accounting read-only messaging contract. Signed-in Chromium and WebKit lifecycle checks passed on the testing platform. Existing operational records and production conversations were not rewritten. The checked-in consolidated migration is the fresh-application contract. Deployment order, cleanup and rollback notes are in `docs/MESSAGING_VERIFICATION.md`.
+# Messaging Tools Expansion (Local / Testing Only)
+
+- `supabase/migrations/202609171801_messaging_complete.sql`: indexed message search, personal favorites/sections, same-conversation reply threads, private message-file bucket and transactional attachment sends. Production has NOT been migrated. Testing proof is recorded separately before release.
+- `supabase/migrations/202609171830_message_storage_usage.sql`: includes message-file bytes and photos in storage totals/months. Nonparticipants see aggregate usage but never private filenames, paths, titles or links. Testing platform only; production pending.

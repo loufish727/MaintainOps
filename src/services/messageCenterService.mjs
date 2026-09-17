@@ -1,6 +1,6 @@
 const SNAPSHOT_PAGE_SIZE = 500;
 export const MESSAGE_HISTORY_PAGE_SIZE = 50;
-const HISTORY_SELECT = "*, reply:message_reply(id, sender_id, body, deleted_at), message_reactions(*)";
+const HISTORY_SELECT = "id,company_id,thread_id,sender_id,body,created_at,deleted_at,reply_to_id,parent_message_id,reply:message_reply(id, sender_id, body, deleted_at), message_reactions(*),message_files(id,file_name,content_type,byte_size,object_path)";
 
 async function readPages(query) {
   const rows = [];
@@ -28,7 +28,7 @@ export async function fetchMessageCenter(client, companyId, userId) {
     threads.some((thread) => thread.message_thread_members?.length >= SNAPSHOT_PAGE_SIZE)
       ? readPages(() => client.from("message_thread_members").select("*").eq("company_id", companyId).order("id"))
       : threads.flatMap((thread) => thread.message_thread_members || []),
-    readPages(() => client.from("messages").select("id, thread_id, sender_id, created_at, deleted_at")
+    readPages(() => client.from("messages").select("id, thread_id, sender_id, created_at, deleted_at, parent_message_id")
       .eq("company_id", companyId).is("deleted_at", null).order("id")),
   ]);
   const reads = threads.flatMap((thread) => thread.message_reads || []);
@@ -46,7 +46,7 @@ export async function fetchMessageCenter(client, companyId, userId) {
 
 export async function fetchMessageHistory(client, companyId, threadId, before = null) {
   let query = client.from("messages").select(HISTORY_SELECT).eq("company_id", companyId)
-    .eq("thread_id", threadId).is("deleted_at", null)
+    .eq("thread_id", threadId).is("deleted_at", null).is("parent_message_id", null)
     .order("created_at", { ascending: false }).order("id", { ascending: false });
   if (before) query = query.or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`);
   const { data, error } = await query.limit(MESSAGE_HISTORY_PAGE_SIZE + 1);

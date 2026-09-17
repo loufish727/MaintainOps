@@ -1,4 +1,4 @@
-(()=>{var I=Object.create;var S=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var T=Object.getOwnPropertyNames;var W=Object.getPrototypeOf,O=Object.prototype.hasOwnProperty;var j=(r,e)=>()=>{try{return e||r((e={exports:{}}).exports,e),e.exports}catch(l){throw e=0,l}};var U=(r,e,l,c)=>{if(e&&typeof e=="object"||typeof e=="function")for(let g of T(e))!O.call(r,g)&&g!==l&&S(r,g,{get:()=>e[g],enumerable:!(c=D(e,g))||c.enumerable});return r};var E=(r,e,l)=>(l=r!=null?I(W(r)):{},U(e||!r||!r.__esModule?S(l,"default",{value:r,enumerable:!0}):l,r));var q=j((K,M)=>{(function(){function r({escapeHtml:e,formatBytes:l}){let c={"asset-documents":"Equipment files","company-logos":"Company logos","maintenance-request-photos":"Request photos","part-documents":"Part files","work-order-photos":"Work order photos"},g={company:"Company",equipment:"Equipment",part:"Part",request:"Request",work_order:"Work Order"};function d(a){let t=Number(a)||0;if(!t)return"0 B";if(t>=1099511627776){let n=t/1099511627776;return`${n.toFixed(Number.isInteger(n)?0:1)} TB`}if(t>=1073741824){let n=t/1073741824;return`${n.toFixed(Number.isInteger(n)?0:1)} GB`}return l(t)||"0 B"}function _(a){let t=Number(a)||0;return t<=0?"0%":t<.01?"<0.01%":`${t.toFixed(t>=10?1:2)}%`}function P(a){let t=a.map(i=>Number(i)||0).sort((i,s)=>i-s);if(!t.length)return 0;let n=Math.floor(t.length/2);return t.length%2?t[n]:(t[n-1]+t[n])/2}function x(a){let t=Number(a)||0;if(t<=0)return"not enough usage history";let n=Math.floor(t/12),i=Math.floor(t%12),s=Math.max(Math.round((t-Math.floor(t))*30.4375),0),o=[];return n&&o.push(`${n} ${n===1?"year":"years"}`),i&&o.push(`${i} ${i===1?"month":"months"}`),(s||!o.length)&&o.push(`${s} ${s===1?"day":"days"}`),o.join(", ")}function k(a){return c[a]||String(a||"Storage")}function N(a){return g[a]||String(a||"Record")}function p(a,t,n){return`
+(()=>{var I=Object.create;var S=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var O=Object.getOwnPropertyNames;var T=Object.getPrototypeOf,W=Object.prototype.hasOwnProperty;var j=(r,e)=>()=>{try{return e||r((e={exports:{}}).exports,e),e.exports}catch(l){throw e=0,l}};var U=(r,e,l,c)=>{if(e&&typeof e=="object"||typeof e=="function")for(let g of O(e))!W.call(r,g)&&g!==l&&S(r,g,{get:()=>e[g],enumerable:!(c=D(e,g))||c.enumerable});return r};var E=(r,e,l)=>(l=r!=null?I(T(r)):{},U(e||!r||!r.__esModule?S(l,"default",{value:r,enumerable:!0}):l,r));var q=j((K,M)=>{(function(){function r({escapeHtml:e,formatBytes:l}){let c={"asset-documents":"Equipment files","company-logos":"Company logos","maintenance-request-photos":"Request photos","part-documents":"Part files","work-order-photos":"Work order photos","message-files":"Message attachments"},g={company:"Company",equipment:"Equipment",part:"Part",request:"Request",work_order:"Work Order",message:"Conversation"};function d(a){let t=Number(a)||0;if(!t)return"0 B";if(t>=1099511627776){let n=t/1099511627776;return`${n.toFixed(Number.isInteger(n)?0:1)} TB`}if(t>=1073741824){let n=t/1073741824;return`${n.toFixed(Number.isInteger(n)?0:1)} GB`}return l(t)||"0 B"}function _(a){let t=Number(a)||0;return t<=0?"0%":t<.01?"<0.01%":`${t.toFixed(t>=10?1:2)}%`}function P(a){let t=a.map(i=>Number(i)||0).sort((i,s)=>i-s);if(!t.length)return 0;let n=Math.floor(t.length/2);return t.length%2?t[n]:(t[n-1]+t[n])/2}function x(a){let t=Number(a)||0;if(t<=0)return"not enough usage history";let n=Math.floor(t/12),i=Math.floor(t%12),s=Math.max(Math.round((t-Math.floor(t))*30.4375),0),o=[];return n&&o.push(`${n} ${n===1?"year":"years"}`),i&&o.push(`${i} ${i===1?"month":"months"}`),(s||!o.length)&&o.push(`${s} ${s===1?"day":"days"}`),o.join(", ")}function k(a){return c[a]||String(a||"Storage")}function N(a){return g[a]||String(a||"Record")}function p(a,t,n){return`
         <article class="storage-metric">
           <span>${e(a)}</span>
           <strong>${e(t)}</strong>
@@ -22,7 +22,7 @@
             `).join("")}
           </div>
         </section>
-      `}function B(a,t){let n=Number(a.size_bytes)||0,i=t?n/t*100:0;return`
+      `}function w(a,t){let n=Number(a.size_bytes)||0,i=t?n/t*100:0;return`
         <article class="storage-bucket-row">
           <div>
             <strong>${e(k(a.bucket_id))}</strong>
@@ -33,7 +33,7 @@
           </div>
           <strong>${e(d(n))}</strong>
         </article>
-      `}function w(a){let t=a.link_section||"",n=a.linked_record_id||"",i=!!(t&&n);return`
+      `}function B(a){let t=a.link_section||"",n=a.linked_record_id||"",i=!!(t&&n);return`
         <article class="storage-file-row">
           <div class="storage-file-main">
             <strong title="${e(a.object_path||"")}">${e(a.file_name||a.object_path||"Stored file")}</strong>
@@ -41,7 +41,7 @@
           </div>
           <div class="storage-file-record">
             <span>${e(a.linked_record_label||"Linked record")}</span>
-            ${i?`<button class="secondary-button small" data-storage-record-link data-storage-link-section="${e(t)}" data-storage-link-id="${e(n)}" data-storage-link-label="${e(a.linked_record_label||"")}" type="button">Open</button>`:""}
+            ${i&&t==="messages"?`<button class="secondary-button small" data-open-work-message-thread="${e(n)}" type="button">Open conversation</button>`:i?`<button class="secondary-button small" data-storage-record-link data-storage-link-section="${e(t)}" data-storage-link-id="${e(n)}" data-storage-link-label="${e(a.linked_record_label||"")}" type="button">Open</button>`:""}
           </div>
           <strong class="storage-file-size">${e(d(a.size_bytes))}</strong>
         </article>
@@ -120,7 +120,7 @@
                 </div>
               </div>
               <div class="storage-bucket-list">
-                ${$.map(R=>B(R,o)).join("")||'<p class="muted">No linked files found for this company yet.</p>'}
+                ${$.map(R=>w(R,o)).join("")||'<p class="muted">No linked files found for this company yet.</p>'}
               </div>
             </section>
             <section class="storage-largest-files">
@@ -131,7 +131,7 @@
                 </div>
               </div>
               <div class="storage-file-list">
-                ${f.map(w).join("")||'<p class="muted">No files to list yet.</p>'}
+                ${f.map(B).join("")||'<p class="muted">No files to list yet.</p>'}
               </div>
             </section>
           </div>
@@ -146,4 +146,4 @@
           <span class="chip ${c.ready?"completed":"blocked"}">${c.ready?"ready":"setup"}</span>
         </article>
       `}return{renderSetupItem:l}}window.MaintainOpsSetupDisplay={createSetupDisplayHelpers:r}})();(function(){function r(e){function l(){return[{name:"Supabase config",ready:!!(e.getSupabaseUrl()&&e.getSupabaseAnonKey()),detail:e.getSupabaseUrl()||"Missing supabase-config.js"},{name:"Company data",ready:!!e.getActiveCompanyId(),detail:e.getActiveCompanyId()?"Active tenant selected":"Create or select a company"},{name:"Requests",ready:e.getRequestsReady(),detail:e.getRequestsReady()?"Stored in maintenance_requests":"Run step-next-maintenance-requests.sql"},{name:"Public request QR links",ready:e.getPublicRequestLinksReady(),detail:e.getPublicRequestLinksReady()?"External location intake is available":"Run step-next-public-request-links.sql"},{name:"Preventive schedules",ready:e.getSchedulesReady(),detail:e.getSchedulesReady()?"PM schedules available":"Run step-next-preventive-schedules.sql"},{name:"Procedure Checklists",ready:e.getProceduresReady(),detail:e.getProceduresReady()?"Procedure checklists available":"Run step-next-procedures.sql"},{name:"Part costs",ready:e.getPartCostsReady(),detail:e.getPartCostsReady()?"Unit costs available":"Run step-next-part-costs.sql"},{name:"Part sources",ready:e.getPartSuppliersReady(),detail:e.getPartSuppliersReady()?"Vendor/source names available":"Run step-next-part-suppliers.sql"},{name:"Part files",ready:e.getPartDocumentsReady(),detail:e.getPartDocumentsReady()?"Receipts and invoices can be filed with parts":"Run step-next-part-documents.sql"},{name:"App issue reports",ready:e.getAppIssueReportsReady(),detail:e.getAppIssueReportsReady()?"Live tester feedback can be captured":"Run step-next-app-issue-reports.sql"},{name:"Message center",ready:e.getMessagesReady(),detail:e.getMessagesReady()?"Company, location, and direct message threads available":"Run step-next-message-center.sql"},{name:"Message work links",ready:e.getMessageWorkOrderLinksReady(),detail:e.getMessageWorkOrderLinksReady()?"Message threads can link back to work orders":"Run step-next-message-work-order-links.sql"},{name:"Work outcomes",ready:e.getOutcomesReady(),detail:e.getOutcomesReady()?"Cause/resolution/follow-up available":"Run step-next-work-order-outcomes.sql"},{name:"Safety checks",ready:e.getSafetyChecksReady(),detail:e.getSafetyChecksReady()?"Asset safety check completion available":"Run step-next-safety-checks.sql"},{name:"Admin delete protection",ready:e.getAdminDeleteSqlConfirmed(),detail:e.getAdminDeleteSqlConfirmed()?"Admin-only delete SQL marked applied":"Run step-next-admin-delete-work-orders.sql, then mark it applied",action:e.getAdminDeleteSqlConfirmed()?"":"confirm-admin-delete-sql",actionLabel:"Mark SQL Applied"},{name:"Photos",ready:e.getPhotosReady(),detail:e.getPhotosReady()?"Photo records available":"Check storage bucket and photo table policies"}]}return{setupItems:l}}window.MaintainOpsSetupStatusDisplay={createSetupStatusDisplayHelpers:r}})();var J=E(q());})();
-//# sourceMappingURL=setupFeature.ff3e0ed5c2.js.map
+//# sourceMappingURL=setupFeature.f415cf97d3.js.map

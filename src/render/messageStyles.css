@@ -15,14 +15,14 @@ body.messages-active .command-stack { display: none; }
 .message-view-tabs button { min-height: 44px; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 0; color: var(--message-muted); }
 .message-view-tabs button[aria-pressed="true"] { color: var(--message-accent); border-bottom-color: var(--message-accent); }
 .message-center .message-layout { flex: 1; min-height: 0; align-items: stretch; gap: 0; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); border: 0; border-radius: 0; background: none; }
-.message-center .message-thread-rail { min-height: 0; padding: 12px 0 0; gap: 10px; grid-template-rows: auto auto minmax(0, 1fr) auto; background: #1c2123; border-right: 1px solid #3d4548; }
+.message-center .message-thread-rail { display: flex; flex-direction: column; min-height: 0; padding: 12px 0 0; gap: 10px; background: #1c2123; border-right: 1px solid #3d4548; }
 .message-center .message-search { padding: 0 12px; margin: 0; }
 .message-center .message-search input { color: #f0f3f4; background: #272e31; border: 1px solid #657277; border-radius: 6px; min-height: 44px; padding: 10px 12px; width: 100%; }
 .message-center input::placeholder, .message-center textarea::placeholder { color: #b1bbc0; opacity: 1; }
 .message-center .message-filter-bar { display: flex; flex-wrap: wrap; gap: 3px; padding: 0 10px; }
 .message-center .message-filter-bar button { border: 0; min-height: 36px; border-radius: 6px; color: var(--message-muted); background: transparent; padding: 7px 9px; font-size: 12px; }
 .message-center .message-filter-bar button.active { background: #294047; color: #a6edfc; }
-.message-center .message-thread-list { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: auto; max-height: none; min-height: 0; }
+.message-center .message-thread-list { display: flex; flex: 1; flex-direction: column; gap: 0; padding: 0; overflow: auto; max-height: none; min-height: 0; }
 .message-center .message-thread-button { display: grid; flex: 0 0 auto; gap: 6px; width: 100%; min-width: 0; min-height: 88px; padding: 13px 14px; border: 0; border-left: 3px solid transparent; border-bottom: 1px solid #30383b; border-radius: 0; text-align: left; background: transparent; color: #d1d9dc; }
 .message-center .message-thread-button:hover { background: #252f33; }
 .message-center .message-thread-button.active { background: #283c42; border-left-color: var(--message-accent); }

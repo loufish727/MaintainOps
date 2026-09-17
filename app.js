@@ -29,6 +29,7 @@ const messageDrafts = createMessageDrafts();
 const updateMessageViewport = trackMessageViewport();
 let messageHistory = {};
 let messageHistoryVersions = {};
+const messageHistoryLoads = new Map();
 const loadMessageCenter = createMessageReloadQueue(performMessageCenterLoad);
 let messageLoadError = "";
 let messageLoadVersion = 0;
@@ -1479,6 +1480,7 @@ const {
   getPartMachineNotesReady: () => partMachineNotesReady,
 });
 let messageDisplayHelpers = null;
+let messageExperience = null;
 function renderMessageList(rows) { return messageDisplayHelpers?.renderMessageList(rows) || ""; }
 const {
   recentMessageLinkWorkOrders,
@@ -1493,6 +1495,7 @@ const {
   matchesActiveLocation,
   getMessageThreads: () => messageThreads,
   getMessageThreadFilter: () => messageThreadFilter,
+  getMessageSection: () => messageExperience?.getSection(),
   getMessageSearchQuery: () => messageSearchQuery,
   matchesQuery,
   getMessagesByThreadId: () => messagesByThreadId,
@@ -1809,6 +1812,7 @@ function createShopReferenceFavoriteStore() {
 
 function renderAuth(mode, initialError = "") {
   messageLive.stop();
+  messageExperience?.reset();
   document.body.classList.remove("messages-active");
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   const isSignup = mode === "signup";
@@ -2959,6 +2963,7 @@ async function performMessageCenterLoad(preserveHistory = false) {
   const version = ++messageLoadVersion;
   if (messageDataScope !== `${userId}:${companyId}`) {
     messageLive.stop();
+    messageExperience?.reset();
     messageQuotes = {};
     messageView = "conversations";
     messageDataScope = `${userId}:${companyId}`;
@@ -2994,6 +2999,17 @@ async function performMessageCenterLoad(preserveHistory = false) {
 }
 
 async function loadActiveMessageThreadMessages(threadId, older = false, preserveHistory = false) {
+  const scope = `${session?.user.id}:${activeCompanyId}`, key = `${scope}:${threadId}`;
+  const previous = messageHistoryLoads.get(key);
+  const task = (async () => {
+    if (previous) await previous.catch(() => {});
+    if (scope === `${session?.user.id}:${activeCompanyId}`) await performMessageHistoryLoad(threadId, older, preserveHistory);
+  })();
+  messageHistoryLoads.set(key, task);
+  try { await task; } finally { if (messageHistoryLoads.get(key) === task) messageHistoryLoads.delete(key); }
+}
+
+async function performMessageHistoryLoad(threadId, older = false, preserveHistory = false) {
   if (!threadId) return;
   const version = messageHistoryVersions[threadId] = (messageHistoryVersions[threadId] || 0) + 1;
   const companyId = activeCompanyId;
@@ -3010,7 +3026,7 @@ async function loadActiveMessageThreadMessages(threadId, older = false, preserve
   messageHistory[threadId] = { ...history, rows: sorted,
     hasOlder: preserveHistory && kept.length ? messageHistory[threadId].hasOlder : history.hasOlder };
   const metadata = new Map((messagesByThreadId[threadId] || []).map((message) => [message.id, message]));
-  for (const { id, sender_id, created_at, deleted_at } of history.rows) metadata.set(id, { id, thread_id: threadId, sender_id, created_at, deleted_at });
+  for (const { id, sender_id, created_at, deleted_at, parent_message_id } of history.rows) metadata.set(id, { id, thread_id: threadId, sender_id, created_at, deleted_at, parent_message_id });
   messagesByThreadId[threadId] = [...metadata.values()];
 }
 
@@ -3021,9 +3037,7 @@ function messageConversationTitle(thread) {
 }
 
 function findDirectConversation(userId) {
-  return messageThreads.find((thread) => thread.thread_type === "direct" && thread.title === "Direct message" && !thread.work_order_id
-    && messageThreadMembers.filter((member) => member.thread_id === thread.id).length === 2
-    && messageThreadMembers.some((member) => member.thread_id === thread.id && member.user_id === userId));
+  return messageExperience?.findDirectConversation(userId);
 }
 
 function setMessageQuote(id) {
@@ -3047,7 +3061,7 @@ function updateMessageNavBadges() {
   });
 }
 
-function renderLiveMessages() { messageLiveDisplay?.renderLiveMessages(); }
+function renderLiveMessages() { messageLiveDisplay?.renderLiveMessages(); messageExperience?.liveUpdate(); }
 
 function acknowledgeVisibleMessages() {
   const threadId = activeMessageThreadId;
@@ -3059,11 +3073,7 @@ function acknowledgeVisibleMessages() {
 }
 
 function jumpToLatestMessage() {
-  const list = document.querySelector(".message-list");
-  if (list) list.scrollTop = list.scrollHeight;
-  const button = document.querySelector("[data-message-new]");
-  if (button) button.hidden = true;
-  if (activeMessageThreadId) acknowledgeVisibleMessages();
+  messageLiveDisplay?.jumpToLatestMessage();
 }
 
 async function loadPublicRequestLinks() {
@@ -4317,6 +4327,7 @@ function renderWorkspace() {
 
   bindWorkspaceEvents();
   messageDrafts.restore(document);
+  messageExperience?.hydrate();
   updateMessageViewport();
   document.querySelectorAll(".message-center textarea").forEach(autoGrowTextarea);
   scheduleQrLibraryLoad();
@@ -4792,9 +4803,9 @@ function renderMessageCenter() {
   return messageCenterDisplay ? messageCenterDisplay.renderMessageCenter() : renderFeatureBundlePanel("messages", "Messages");
 }
 function bindMessageWorkflowEvents(root) { messageWorkflow?.bindMessageWorkflowEvents(root); }
-async function markMessageThreadRead(threadId) {
+async function markMessageThreadRead(threadId, readAt) {
   await ensureFeatureBundleLoaded("messages");
-  return messageWorkflow.markMessageThreadRead(threadId);
+  return messageWorkflow.markMessageThreadRead(threadId, readAt);
 }
 function initializeMessagesFeature() {
   if (messageWorkflow) return messageWorkflow;
@@ -4807,10 +4818,28 @@ function initializeMessagesFeature() {
   messageDisplayHelpers = window.MaintainOpsMessageDisplay.createMessageDisplayHelpers({
     icon: segmentIcon, canEditOperationalRecords, escapeHtml, getCurrentUserId: () => session?.user?.id,
     teamMemberName, initials, formatMessageTime, formatMessageDay,
+    getReplyCount: id => Object.values(messagesByThreadId).flat().filter(row => row.parent_message_id === id && !row.deleted_at).length,
+  });
+  messageExperience = window.MaintainOpsMessageExperience.createMessageExperience({
+    documentRef: document, escapeHtml, icon: segmentIcon, client: () => supabaseClient,
+    getCompanyId: () => activeCompanyId, getUserId: () => session?.user.id, getActiveSection: () => activeSection,
+    canEdit: canEditOperationalRecords, getThreads: () => messageThreads, getMembers: () => companyMembers,
+    getThreadMembers: () => messageThreadMembers,
+    getMetadata: id => messagesByThreadId[id] || [], name: teamMemberName, time: formatMessageTime,
+    threadTitle: messageConversationTitle, optimizePhoto, notice: showNotice, render: renderWorkspace,
+    getMessage: id => Object.values(messageHistory).flatMap(history => history.rows).find(row => row.id === id),
+    renderBubble: (...args) => messageDisplayHelpers.renderMessageBubble(...args), bindWorkflow: bindMessageWorkflowEvents,
+    markRead: markMessageThreadRead, reload: async () => { await loadMessageCenter(true); renderLiveMessages(); },
+    openConversation: async id => {
+      setActiveMessageThreadIdState(id); setMessageComposerOpenState(false); messageView = "conversations";
+      await loadActiveMessageThreadMessages(id); renderWorkspace();
+    },
   });
   messageCenterDisplay = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
     getWorkspaceLabel: () => [activeCompanyMembership()?.name, locations.find((location) => location.id === activeLocationId)?.name].filter(Boolean).join(" / "),
     icon: segmentIcon,
+    renderMessageTools: key => messageExperience.renderTools(key),
+    getMessageSection: () => messageExperience.getSection(),
     getMessageView: () => messageView,
     getActivityCount: unreadWorkOrderNotificationCount,
     getMessageConnection: () => messageConnection,
@@ -4850,7 +4879,9 @@ function initializeMessagesFeature() {
 
   messageWorkflow = window.MaintainOpsMessageWorkflow.createMessageWorkflow({
     findDirectConversation,
-    getMessage: (id) => Object.values(messageHistory).flatMap((history) => history.rows).find((row) => row.id === id),
+    getMessage: (id) => messageExperience.getMessage(id) || Object.values(messageHistory).flatMap((history) => history.rows).find((row) => row.id === id),
+    attachmentIds: key => messageExperience.fileList(key).map(file => file.id),
+    sendAttachments: args => messageExperience.sendAttachments(args),
     clearReplyQuote: (threadId, quoteId) => { if (messageQuotes[threadId]?.id === quoteId) delete messageQuotes[threadId]; },
     reloadConversation: async (id, messageId) => {
       const companyId = activeCompanyId, userId = session?.user.id;
@@ -5576,6 +5607,7 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceMessageThreadEvents({
+    renderLiveMessages,
     getActiveThreadId: () => activeMessageThreadId,
     getActiveSection: () => activeSection,
     showNotice,

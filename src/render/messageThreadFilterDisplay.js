@@ -14,10 +14,12 @@
         if (archived) return false;
         const filterMatch =
           messageThreadFilter === "all" ||
+          (messageThreadFilter === "favorites" && thread.preferences?.favorite) ||
           (messageThreadFilter === "unread" && unreadMessageCount(thread.id) > 0) ||
           thread.thread_type === messageThreadFilter;
-        return filterMatch && deps.matchesQuery(messageThreadSearchValues(thread), deps.getMessageSearchQuery());
-      });
+        const section = deps.getMessageSection?.() || "";
+        return filterMatch && (!section || thread.preferences?.section_name === section) && deps.matchesQuery(messageThreadSearchValues(thread), deps.getMessageSearchQuery());
+      }).sort((a, b) => Number(Boolean(b.preferences?.favorite)) - Number(Boolean(a.preferences?.favorite)));
     }
 
     function messageThreadSearchValues(thread) {

@@ -76,7 +76,7 @@
         if (errorElement) errorElement.textContent = "Choose a teammate for a direct message.";
         return;
       }
-      if (!title || !body) {
+      if (!title || (!body && !deps.attachmentIds?.("composer")?.length)) {
         if (errorElement) errorElement.textContent = "Add a subject and message before starting the thread.";
         return;
       }
@@ -86,7 +86,7 @@
       const workOrderId = form.get("work_order_id") || null;
       const existing = threadType === "direct" && !enteredTitle && !workOrderId ? deps.findDirectConversation?.(directUserId) : null;
       const locationId = threadType === "location" ? deps.activeLocationDatabaseId() : null;
-      const key = JSON.stringify([companyId, userId, threadType, directUserId, title, body, workOrderId, locationId]);
+      const key = JSON.stringify([companyId, userId, threadType, directUserId, title, body, workOrderId, locationId, deps.attachmentIds?.("composer")]);
       const pending = pendingThreads.get(key) || { id: crypto.randomUUID() };
       pendingThreads.set(key, pending);
       busyForms.add("composer");
@@ -139,7 +139,7 @@
         }
         pending.membersSaved = true;
 
-        const { error: messageError } = await insertThreadMessage(thread.id, body, companyId, userId);
+        const { error: messageError } = await insertThreadMessage(thread.id, body, companyId, userId, null, "composer");
         if (messageError) throw messageError;
         pendingThreads.delete(key);
         threadStarted = true;
@@ -173,7 +173,7 @@
       const form = new FormDataCtor(formElement);
       const body = String(form.get("body") || "").trim();
       const replyToId = form.get("reply_to_id") || null;
-      if (!body) return;
+      if (!body && !deps.attachmentIds?.(threadId)?.length) return;
       busyForms.add(threadId);
       const companyId = deps.getActiveCompanyId();
       const userId = deps.getSession().user.id;
@@ -313,9 +313,9 @@
     }
 
 
-    async function markMessageThreadRead(threadId) {
+    async function markMessageThreadRead(threadId, readAtOverride) {
       if (!deps.getMessagesReady() || !threadId) return;
-      const readAt = deps.getLatestReadTime ? deps.getLatestReadTime(threadId) : new Date().toISOString();
+      const readAt = readAtOverride || (deps.getLatestReadTime ? deps.getLatestReadTime(threadId) : new Date().toISOString());
       if (!readAt) return;
       const readRow = {
         company_id: deps.getActiveCompanyId(),
@@ -342,11 +342,12 @@
       try { await save; } finally { if (readWrites.get(key) === save) readWrites.delete(key); }
     }
 
-    async function insertThreadMessage(threadId, body, companyId = deps.getActiveCompanyId(), userId = deps.getSession().user.id, replyToId = null) {
-      const key = JSON.stringify([companyId, userId, threadId, body, replyToId]);
+    async function insertThreadMessage(threadId, body, companyId = deps.getActiveCompanyId(), userId = deps.getSession().user.id, replyToId = null, attachmentKey = threadId) {
+      const key = JSON.stringify([companyId, userId, threadId, body, replyToId, deps.attachmentIds?.(attachmentKey)]);
       const id = pendingMessages.get(key) || crypto.randomUUID();
       pendingMessages.set(key, id);
-      const message = await insertOnce("messages", { id, company_id: companyId, thread_id: threadId, sender_id: userId, body, ...(replyToId ? { reply_to_id: replyToId } : {}) });
+      const attached = await deps.sendAttachments?.({ key: attachmentKey, messageId: id, threadId, body, quoteId: replyToId });
+      const message = attached ? {} : await insertOnce("messages", { id, company_id: companyId, thread_id: threadId, sender_id: userId, body, ...(replyToId ? { reply_to_id: replyToId } : {}) });
 
       if (message.error) return { error: message.error };
       pendingMessages.delete(key);

@@ -1,6 +1,12 @@
 (function () {
   function segmentIcon(type) {
     const icons = {
+      search: `<circle cx="10" cy="10" r="7"></circle><path d="m15 15 6 6"></path>`,
+      star: `<path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z"></path>`,
+      attach: `<path d="m21 11-8 8a6 6 0 0 1-8-8l9-9a4 4 0 0 1 6 6l-9 9a2 2 0 0 1-3-3l8-8"></path>`,
+      mic: `<rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"></path>`,
+      stop: `<rect x="6" y="6" width="12" height="12"></rect>`,
+      file: `<path d="M14 2H5v20h14V7l-5-5v5h5M8 12h8M8 16h8"></path>`,
       send: `<path d="m22 2-7 20-4-9-9-4 20-7z"></path><path d="M22 2 11 13"></path>`,
       reply: `<path d="m9 10-5 5 5 5"></path><path d="M4 15h10a6 6 0 0 0 0-12h-2"></path>`,
       back: `<path d="m12 5-7 7 7 7"></path><path d="M5 12h15"></path>`,

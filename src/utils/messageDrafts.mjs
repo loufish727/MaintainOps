@@ -13,7 +13,7 @@ export function createMessageDrafts() {
     for (const form of root.querySelectorAll("form")) {
       const key = form.dataset.threadId || "composer";
       drafts.set(key, {
-        fields: [...form.querySelectorAll("[name]")].filter((field) => field.type !== "hidden").map((field) => [field.name, field.value]),
+        fields: [...form.querySelectorAll("[name]")].filter((field) => !["hidden", "file"].includes(field.type)).map((field) => [field.name, field.value]),
         open: form.querySelector("details")?.open,
       });
     }

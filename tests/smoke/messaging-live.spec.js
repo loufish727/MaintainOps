@@ -79,6 +79,7 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
   await expect(page.locator(".message-bubble")).toHaveCount(55);
   await expect(page.getByRole("button", { name: "Earlier messages" })).toHaveCount(0);
   const oldest = page.locator(".message-bubble").first();
+  await oldest.locator('summary[aria-label="Message actions"]').click();
   await oldest.locator('summary[aria-label="React to message"]').click();
   await oldest.getByRole("button", { name: "Looking into it", exact: true }).click();
   await expect(oldest.locator('.message-reaction[aria-pressed="true"]')).toContainText("1");
@@ -111,7 +112,7 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
   expect(await rest(admin, "GET", `messages?thread_id=eq.${threads[0].id}&sender_id=eq.${tech.user.id}&select=id`)).toHaveLength(1);
   await page.unroute("**/rest/v1/message_threads?**");
   page.on("dialog", (dialog) => dialog.accept());
-  await page.locator(".message-bubble.mine summary").last().click();
+  await page.locator('.message-bubble.mine summary[aria-label="Message actions"]').last().click();
   await page.locator(".message-bubble.mine").getByRole("button", { name: "Delete message", exact: true }).click();
   await expect(page.locator(".message-bubble p").filter({ hasText: sentBody })).toHaveCount(0);
   await expect(page.locator(".message-chat-header")).toContainText("55 messages");
@@ -126,6 +127,7 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
   await expect(page.getByRole("button", { name: "New messages", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "New messages", exact: true }).click();
   const source = page.locator(".message-bubble").filter({ has: page.locator("p").filter({ hasText: incoming }) });
+  await source.locator('summary[aria-label="Message actions"]').click();
   await source.locator("[data-quote-message]").click();
   await expect(page.locator(".message-reply-context")).toContainText(incoming);
   await reply.fill(`${prefix} quoted answer`);
@@ -133,6 +135,7 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
   await expect(page.locator(".message-bubble.mine .message-quote")).toContainText(incoming);
   const quoteRows = await rest(admin, "GET", `messages?thread_id=eq.${threads[0].id}&body=eq.${encodeURIComponent(`${prefix} quoted answer`)}&select=reply_to_id`);
   expect(quoteRows[0].reply_to_id).toBeTruthy();
+  await source.locator('summary[aria-label="Message actions"]').click();
   await source.locator('summary[aria-label="React to message"]').click();
   await source.getByRole("button", { name: "Acknowledged", exact: true }).click();
   await expect(source.locator('.message-reaction[aria-pressed="true"]')).toContainText("1");

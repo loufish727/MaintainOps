@@ -5,6 +5,12 @@ const root = path.resolve(__dirname, "..");
 
 const approvals = [
   {
+    file: "src/workflows/messageExperience.mjs",
+    line: /^function html\(node, markup\) \{ if \(node\) node\.innerHTML = markup; \}$/,
+    maxOccurrences: 1,
+    reason: "Private messaging dialogs/trays: escaped body, names, titles and filenames; UUID/numeric attributes from typed database fields. File previews use DOM APIs and authenticated blob downloads, never HTML document embedding.",
+  },
+  {
     file: "src/render/messageLiveDisplay.js",
     line: /^list\.innerHTML = renderMessageList\(history\.rows\);$/,
     maxOccurrences: 1,

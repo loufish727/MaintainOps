@@ -45,6 +45,7 @@ const stateValues = {
 const readCalls = [];
 const loadCalls = [];
 let renderCount = 0;
+let liveRenderCount = 0;
 
 bindWorkspaceMessageThreadEvents({
   documentRef: createDocument({
@@ -60,6 +61,7 @@ bindWorkspaceMessageThreadEvents({
   loadActiveMessageThreadMessages: async (threadId) => { loadCalls.push(threadId); },
   markMessageThreadRead: async (threadId) => { readCalls.push(threadId); },
   renderWorkspace: () => { renderCount += 1; },
+  renderLiveMessages: () => { liveRenderCount += 1; },
 });
 
 (async () => {
@@ -68,7 +70,8 @@ bindWorkspaceMessageThreadEvents({
   assert.equal(storage.values["maintainops.activeMessageThreadId"], "thread-1");
   assert.deepEqual(loadCalls, ["thread-1"]);
   assert.deepEqual(readCalls, ["thread-1"]);
-  assert.equal(renderCount, 3);
+  assert.equal(renderCount, 2);
+  assert.equal(liveRenderCount, 1, "read-marker completion must not rebuild an open menu/composer");
 
   await workThreadButton.dispatch("click");
   assert.equal(stateValues.activeMessageThreadId, "thread-2");
@@ -78,7 +81,8 @@ bindWorkspaceMessageThreadEvents({
   assert.equal(storage.values["maintainops.activeSection"], "messages");
   assert.deepEqual(loadCalls, ["thread-1", "thread-2"]);
   assert.deepEqual(readCalls, ["thread-1", "thread-2"]);
-  assert.equal(renderCount, 6);
+  assert.equal(renderCount, 4);
+  assert.equal(liveRenderCount, 2);
 
   bindWorkspaceMessageThreadEvents({
     documentRef: createDocument({ "[data-message-thread]": [threadButton] }),

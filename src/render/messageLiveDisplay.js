@@ -39,7 +39,7 @@
         bindWorkspaceMessageThreadEvents({ documentRef: railList, getActiveThreadId: deps.getActiveThreadId,
           getActiveSection: deps.getActiveSection, showNotice,
           state: { setActiveMessageThreadId: setActiveMessageThreadIdState, setMessageComposerOpen: setMessageComposerOpenState },
-          loadActiveMessageThreadMessages, markMessageThreadRead, renderWorkspace });
+          loadActiveMessageThreadMessages, markMessageThreadRead, renderWorkspace, renderLiveMessages });
         const pagination = root.querySelector("[data-message-pagination]");
         if (pagination) {
           pagination.innerHTML = renderListPagination("messages", filtered.length, page, pages);
@@ -83,7 +83,14 @@
       if (announcement && unreadMessageCount(activeMessageThreadId)) announcement.textContent = "New message received.";
       if (atBottom && !document.hidden && unreadMessageCount(activeMessageThreadId)) acknowledgeVisibleMessages();
     }
-    return { renderLiveMessages };
+    function jumpToLatestMessage() {
+      const list = document.querySelector(".message-list");
+      if (list) list.scrollTop = list.scrollHeight;
+      const button = document.querySelector("[data-message-new]");
+      if (button) button.hidden = true;
+      if (deps.getActiveThreadId()) acknowledgeVisibleMessages();
+    }
+    return { renderLiveMessages, jumpToLatestMessage };
   }
   window.MaintainOpsMessageLiveDisplay = { createMessageLiveDisplay };
 })();

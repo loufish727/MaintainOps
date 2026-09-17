@@ -23,11 +23,13 @@
       const archived = active && deps.isConversationArchived?.(active);
       const title = active ? (deps.threadTitle?.(active) || active.title) : "";
       const unread = deps.totalUnreadMessages();
+      const sections = [...new Set(threads.map(thread => thread.preferences?.section_name).filter(Boolean))].sort();
       return `<section class="message-center ${active && !composing && view === "conversations" ? "has-active-thread" : ""} ${composing && view === "conversations" ? "has-composer" : ""}" data-inbox-view="${escape(`${deps.getMessageThreadFilter()}:${deps.getMessageSearchQuery()}:${page}`)}" data-thread-id="${escape(composing ? "" : active?.id || "")}">
         <header class="message-toolbar">
           <button class="message-mobile-exit" data-message-exit type="button">${icon("back")}My Work</button>
           <div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}</div><span class="message-inbox-count">${unread} unread conversation${unread === 1 ? "" : "s"}</span></div>
           <div class="message-toolbar-actions"><span class="message-connection" data-message-connection role="status">${escape(deps.getMessageConnection?.() || "")}</span>
+          <button class="message-icon-button" data-search-messages="" type="button" aria-label="Search message content" title="Search message content">${icon("search")}</button>
           <button class="message-connection-retry" data-retry-messages type="button" ${["Live updates unavailable", "Update failed"].includes(deps.getMessageConnection?.()) ? "" : "hidden"}>Retry connection</button>
           ${canEdit() ? `<button class="message-icon-button message-compose-button" data-message-compose type="button" aria-label="New message" title="New message">${icon("compose")}</button>` : ""}</div>
         </header>
@@ -41,8 +43,9 @@
           <aside class="message-thread-rail" aria-label="Conversations">
             <label class="message-search"><input id="message-search" type="search" aria-label="Search subjects or people" value="${escape(deps.getMessageSearchQuery())}" placeholder="Search conversations"></label>
             <div class="message-filter-bar" aria-label="Message thread filter">
-              ${[["all", "All"], ["unread", "Unread"], ["direct", "Direct"], ["location", "Team"], ["archived", "Archived"]].map(([id, label]) => `<button data-message-filter="${id}" type="button" aria-pressed="${deps.getMessageThreadFilter() === id}" class="${deps.getMessageThreadFilter() === id ? "active" : ""}">${label}</button>`).join("")}
+              ${[["all", "All"], ["unread", "Unread"], ["favorites", "Favorites"], ["direct", "Direct"], ["location", "Team"], ["archived", "Archived"]].map(([id, label]) => `<button data-message-filter="${id}" type="button" aria-pressed="${deps.getMessageThreadFilter() === id}" class="${deps.getMessageThreadFilter() === id ? "active" : ""}">${label}</button>`).join("")}
             </div>
+            ${sections.length ? `<label class="message-section-filter">Section<select data-message-section-filter><option value="">All sections</option>${sections.map(name => `<option value="${escape(name)}" ${deps.getMessageSection?.() === name ? 'selected' : ''}>${escape(name)}</option>`).join('')}</select></label>` : ''}
             <div class="message-thread-list">${filtered.slice((page - 1) * deps.LIST_ITEMS_PER_PAGE, page * deps.LIST_ITEMS_PER_PAGE).map(deps.renderMessageThreadButton).join("") || '<p class="message-empty">No conversations match this view.</p>'}</div>
             <div data-message-pagination>${deps.renderListPagination("messages", filtered.length, page, pages)}</div>
           </aside>
@@ -57,6 +60,7 @@
                 <label>Subject <span class="muted">(optional for direct messages)</span><input name="title" maxlength="180" placeholder="Subject" value="${linked ? escape(linked.title) : ""}"></label>
                 ${linked ? `<input name="work_order_id" type="hidden" value="${escape(linked.id)}"><div class="message-linked-draft"><span>Work order</span><strong>${escape(linked.title)}</strong><button class="text-button" data-clear-message-work-link type="button">Remove link</button></div>` : `<label>Work order <span class="muted">(optional)</span><select name="work_order_id" ${deps.getMessageWorkOrderLinksReady() ? "" : "disabled"}><option value="">No work order</option>${deps.recentMessageLinkWorkOrders().map((order) => `<option value="${escape(order.id)}">${escape(order.title)} - ${escape(deps.statusLabel(order.status))}</option>`).join("")}</select></label>`}
                 <label>Message<textarea name="body" rows="4" maxlength="12000" required placeholder="Write a message..."></textarea></label>
+                ${deps.renderMessageTools?.("composer") || ""}
                 <p class="error-text" id="message-thread-error" role="alert"></p>
                 <button class="message-send-button" type="submit">${icon("send")}<span>Send message</span></button>
               </form>
@@ -64,11 +68,14 @@
               <header class="message-chat-header">
                 <div class="message-chat-title"><button class="message-icon-button" data-message-back type="button" title="Back to conversations" aria-label="Back to conversations">${icon("back")}</button><div><h3>${escape(title)}</h3><p>${escape(deps.messageThreadScopeLabel(active))}</p></div></div>
                 <div class="message-header-actions">
+                  <button class="message-icon-button" data-search-messages="${escape(active.id)}" type="button" aria-label="Search this conversation" title="Search this conversation">${icon("search")}</button>
                   ${active.work_order_id ? `<button class="message-linked-work-button" data-open-linked-work-order="${escape(active.work_order_id)}" type="button">Open Work Order</button>` : ""}
                   <span class="message-history-count">${count} message${count === 1 ? "" : "s"}</span>
                   ${canEdit() ? `<details class="message-action-menu"><summary title="Conversation options" aria-label="Conversation options">${icon("more")}</summary><div class="message-menu-items">
+                    <button data-favorite-conversation="${escape(active.id)}" aria-pressed="${Boolean(active.preferences?.favorite)}" type="button">${icon("star")}${active.preferences?.favorite ? "Remove favorite" : "Add to favorites"}</button>
                     <button data-archive-message-thread="${escape(active.id)}" data-archive="${!archived}" type="button">${archived ? "Move to inbox" : "Archive conversation"}</button>
                     <button data-mute-message-thread="${escape(active.id)}" data-mute="${!active.preferences?.muted}" type="button">${active.preferences?.muted ? "Unmute conversation" : "Mute conversation"}</button>
+                    <label>Section<input data-message-section-name maxlength="40" list="message-section-names" value="${escape(active.preferences?.section_name || '')}" placeholder="Unsectioned"></label><datalist id="message-section-names">${sections.map(name => `<option value="${escape(name)}"></option>`).join('')}</datalist><button data-save-message-section="${escape(active.id)}" type="button">Save section</button>
                   </div></details>` : ""}
                 </div>
               </header>
@@ -83,7 +90,7 @@
                 ${quote ? `<div class="message-reply-context"><div><strong>Replying to ${escape(deps.teamMemberName(quote.sender_id))}</strong><span>${escape(quote.body.slice(0, 200))}</span></div><button class="message-icon-button" data-clear-message-quote type="button" aria-label="Cancel quoted reply" title="Cancel quoted reply">${icon("close")}</button></div>` : ""}
                 <input type="hidden" name="reply_to_id" value="${escape(quote?.id || "")}">
                 <div class="message-compose-line"><textarea name="body" rows="1" maxlength="12000" required aria-label="Reply" placeholder="Write a reply..."></textarea><button class="message-icon-button message-send-button" type="submit" title="Send reply" aria-label="Send reply">${icon("send")}</button></div>
-                <div class="message-composer-footer"><details class="message-quick-menu"><summary>Quick replies</summary><div class="message-quick-replies">${["On it", "Need more info", "Waiting on parts", "My part is done"].map((reply) => `<button data-quick-reply="${escape(reply)}" type="button">${reply}</button>`).join("")}</div></details><span class="message-send-state" role="status"></span></div>
+                <div class="message-composer-footer">${deps.renderMessageTools?.(active.id) || ""}<details class="message-quick-menu"><summary>Quick replies</summary><div class="message-quick-replies">${["On it", "Need more info", "Waiting on parts", "My part is done"].map((reply) => `<button data-quick-reply="${escape(reply)}" type="button">${reply}</button>`).join("")}</div></details><span class="message-send-state" role="status"></span></div>
                 <p class="error-text" id="message-reply-error" role="alert"></p>
               </form>` : !loading ? '<p class="message-readonly">Read-only conversation</p>' : ""}
             ` : `<div class="message-empty-state">${icon("reply")}<h3>Your conversations</h3><p>No conversation selected.</p>${canEdit() ? '<button data-message-compose type="button">New message</button>' : ""}</div>`}

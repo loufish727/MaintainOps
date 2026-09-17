@@ -105,7 +105,7 @@ function updateSpatialPageHtml(manifest) {
 
 async function main() {
   const manifest = {};
-  const messageStyles = await esbuild.transform(fs.readFileSync(path.join(root, "src/render/messageStyles.css"), "utf8"), {
+  const messageStyles = await esbuild.transform(["messageStyles.css", "messageTools.css"].map(file => fs.readFileSync(path.join(root, "src/render", file), "utf8")).join("\n"), {
     loader: "css", minify: true, sourcefile: "src/render/messageStyles.css", sourcemap: "external", sourcesContent: false,
   });
   const messageStylesName = `messageStyles.${bundleHash(messageStyles.code)}.css`;
