@@ -104,6 +104,16 @@ At expanded-feature checkpoint `f32c5e7`, initial first-party JS/CSS measured 77
 
 ## Automated Evidence
 
+Dark-contrast code checkpoint `11599d3` passed all 13 Full Strict LFES stages on
+2026-09-17 with a clean worktree. The focused presentation/contrast, waveform and
+voice-confirmation suite passed 11 tests each in Chromium and WebKit. The signed-in
+testing preview was visually checked after rebuilding, including the conversation
+and search dialog; it reported no browser errors. This narrow presentation change
+did not rerun authenticated mutation suites or create/delete QA conversations.
+Earlier mutation proof remains attributed to its own checkpoints below. No push,
+deployment or production data change occurred. Physical-device verification remains
+outstanding.
+
 Matte-surface code checkpoint `35562c5` passed all 13 Full Strict LFES stages on
 2026-09-17 with a clean worktree. Focused presentation, waveform and voice checks
 passed Chromium and WebKit; separate signed-in messaging lifecycle and expanded
