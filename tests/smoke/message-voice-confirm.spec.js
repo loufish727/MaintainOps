@@ -84,8 +84,8 @@ for (const formType of ['message-thread-form', 'message-reply-form', 'message-di
     await send.press('Enter');
     await expect(confirm).toBeVisible();
     expect(await confirm.evaluate(node => ({background:getComputedStyle(node).backgroundColor,scheme:getComputedStyle(node).colorScheme})))
-      .toEqual({background:'rgb(243, 243, 238)',scheme:'light'});
-    expect(await confirm.locator('[data-confirm-voice-send]').evaluate(node => getComputedStyle(node).color)).toBe('rgb(255, 255, 255)');
+      .toEqual({background:'rgb(24, 28, 32)',scheme:'dark'});
+    expect(await confirm.locator('[data-confirm-voice-send]').evaluate(node => getComputedStyle(node).color)).toBe('rgb(20, 43, 35)');
     await expect(confirm.locator('audio')).toHaveCount(1);
     expect(await page.evaluate(() => voiceProof.writes)).toBe(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

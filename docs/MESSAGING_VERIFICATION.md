@@ -28,9 +28,30 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its additive
 
 ### Visual Polish
 
+#### Dark Contrast (Current)
+
+The working Messages screen returns to the surrounding app's dark theme. Neutral
+charcoal reading surfaces (`#181c20`), a deeper inbox and lighter graphite headers
+separate the regions. Soft-white names/headings, readable supporting text, muted
+teal outgoing messages, mint actions, amber status tags and six tinted initials
+retain the reading hierarchy without a bright page. Menus, dialogs, native selects,
+search, attachments, recording/error states and waveform ink share this palette.
+
+This changes presentation only. Layout, permissions, paging, data loading and
+media lifecycles are unchanged. The test suite retains the 1440/768/390/320px
+geometry and interaction checks and adds sampled secondary-state/initials contrast
+at 4.5:1, placeholder contrast at 4.5:1 and field-border contrast at 3:1. These are
+targeted checks, not a complete accessibility certification. Obsolete alternative
+theme screenshot generation was removed from the active regression suite.
+
+Startup is 773,382 decoded / 174,700 gzip bytes. Lazy Messages is 62,113 JS decoded /
+19,612 gzip and 31,721 CSS decoded / 6,476 gzip: 26,088 gzip bytes combined, seven
+fewer than the matte checkpoint. Budgets, dependencies and startup resources are
+unchanged. `app.js`, global styles and backend contracts are untouched.
+
 #### Matte Reading Surfaces
 
-The approved local preview direction is now adapted to the working Messages UI:
+This earlier local treatment is superseded by Dark Contrast above:
 matte eggshell (`#f3f3ee`) conversation/dialog surfaces, a slightly deeper neutral
 inbox, dark sender names and headings, pastel initials avatars, and pale green
 outgoing messages. The field background is `#f8f8f3`, not pure white. Menus,
@@ -66,7 +87,7 @@ Audio review and opened voice attachments progressively enhance native playback 
 
 `message-audio-player.spec.js` covers actual PCM decoding in Chromium, deterministic waveform pixels, seeking, rate, disposal races, native fallback and no remote decoding requests. WebKit tests cover the controller and fallback; they do not prove physical iPhone microphone/codec support. Initial loading limits remain unchanged. Lazy Messages budgets are 61/20 KiB JS and 31/7 KiB CSS decoded/gzip to accommodate the player and material treatment. No new dependency, live database migration or production deployment is involved.
 
-- The Messages-only design uses matte neutral surfaces, dark green actions, pale outgoing bubbles and six deterministic initials-avatar colors. These colors identify conversations, not availability or presence.
+- The Messages-only design uses charcoal surfaces, mint actions, muted teal outgoing bubbles and six deterministic initials-avatar colors. These colors identify conversations, not availability or presence.
 - The inbox, chat header, file cards, search, reply threads and voice review share spacing and type rules. Mobile has compact navigation and 48px primary touch controls. Short histories sit next to the composer; longer history remains independently scrollable.
 - Message/conversation menus are clamped to the viewport and support outside-click/Escape dismissal. Quick replies open above the composer without changing its height. Linked-work-order controls remain accessible at 320px.
 - Inline photos use participant-authorized private downloads only when entering the viewport. At most two downloads run concurrently; the temporary cache is limited to 12 photos / 12 MiB. Photos above 5 MiB retain the explicit open action instead of automatic preview. URLs are revoked on scope changes or leaving Messages. No audio autoplays and no document downloads occur merely to draw a file card.

@@ -39,8 +39,8 @@ export function enhanceMessageAudio({ audio, blob, documentRef: doc }) {
       const error = element('p', 'message-audio-error'); error.setAttribute('role', 'status'); error.hidden = true;
       transport.append(play, stamp, speed); panel.append(canvas, seek, transport, error); audio.after(panel);
       const palette = win.getComputedStyle(panel);
-      const playedInk = palette.getPropertyValue('--message-waveform-progress').trim() || '#27654b';
-      const unplayedInk = palette.getPropertyValue('--message-waveform').trim() || '#718b7c';
+      const playedInk = palette.getPropertyValue('--message-waveform-progress').trim() || '#99dfce';
+      const unplayedInk = palette.getPropertyValue('--message-waveform').trim() || '#81978f';
       const draw = () => {
         const value = Math.max(0, audio.currentTime || 0), progress = value / audio.duration;
         seek.value = String(value); seek.setAttribute('aria-valuetext', `${time(value)} of ${time(audio.duration)}`);

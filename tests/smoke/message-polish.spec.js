@@ -3,6 +3,47 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 
+test('dark message controls and secondary states keep readable contrast', async ({ page }) => {
+  await page.setContent(`<section class="message-center"><div class="message-tool-dialog">
+    <div class="message-work-context"><span class="message-context-status" data-status="blocked" data-check>Blocked</span></div>
+    <p class="message-archive-note" data-check>Archived conversation</p>
+    <p class="message-record-state" data-check>Recording 0:12</p>
+    <p class="error-text" data-check>Upload could not be completed</p>
+    <div class="message-menu-items"><button class="danger-link" data-check>Delete message</button></div>
+    <button class="message-search-result"><strong data-check>Shift handoff</strong><small data-check>Yesterday</small></button>
+    <div class="message-pending-file"><span data-check>Inspection.pdf</span><small data-check>184 KB</small></div>
+    <div class="message-record-controls"><button data-check>Cancel recording</button></div>
+    <div class="message-quick-replies"><button data-check>On it</button></div>
+    <div class="message-voice-confirm-actions"><button data-confirm-voice-send data-check>Send voice message</button></div>
+    <div class="message-activity"><button class="work-notification-item unread"><span data-check>Production action complete</span></button></div>
+    <label>Recipient<select><option>Sam Rivera</option></select></label>
+    <textarea placeholder="Write a reply"></textarea>
+    ${Array.from({length:6},(_,tone)=>`<span class="message-thread-avatar" data-tone="${tone}" data-check>SR</span>`).join('')}
+  </div></section>`);
+  for (const file of ['styles.css','src/render/messageStyles.css','src/render/messageTools.css']) await page.addStyleTag({path:path.join(root,file)});
+  const proof = await page.evaluate(() => {
+    const lum = color => color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+    const ratio = (a,b) => (Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);
+    const background = node => {
+      while (node) {
+        const value=getComputedStyle(node).backgroundColor;
+        if (value.startsWith('rgb(')) return value;
+        node=node.parentElement;
+      }
+      throw new Error('Missing opaque test surface');
+    };
+    const field = document.querySelector('textarea'), css=getComputedStyle(field);
+    const scheme=getComputedStyle(document.querySelector('select')).colorScheme;
+    return { scheme, text:[...document.querySelectorAll('[data-check]')].map(node=>({text:node.textContent,ratio:ratio(getComputedStyle(node).color,background(node))})),
+      placeholder:ratio(getComputedStyle(field,'::placeholder').color,css.backgroundColor),
+      border:ratio(css.borderTopColor,css.backgroundColor) };
+  });
+  expect(proof.scheme).toBe('dark');
+  for (const item of proof.text) expect(item.ratio,item.text).toBeGreaterThanOrEqual(4.5);
+  expect(proof.placeholder).toBeGreaterThanOrEqual(4.5);
+  expect(proof.border).toBeGreaterThanOrEqual(3);
+});
+
 for (const width of [1440, 768, 390, 320]) {
   test(`message presentation, menus and private previews at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 960 });
@@ -88,6 +129,10 @@ for (const width of [1440, 768, 390, 320]) {
         ['.message-bubble-meta strong','.message-thread-detail'],
         ['.message-bubble:not(.mine) p','.message-thread-detail'],
         ['.message-bubble.mine p','.message-bubble.mine'],
+        ['.message-bubble.mine .message-stamp','.message-bubble.mine'],
+        ['.message-quote span','.message-quote'],
+        ['.message-compose-line textarea','.message-compose-line textarea'],
+        ['.message-thread-avatar','.message-thread-avatar'],
         ['.message-row-heading strong','.message-thread-button.active'],
         ['.message-row-preview small','.message-thread-rail'],
         ['.message-chat-header h3','.message-chat-header'],
@@ -101,8 +146,8 @@ for (const width of [1440, 768, 390, 320]) {
       return { surface:css('.message-thread-detail').backgroundColor, scheme:css('.message-center').colorScheme,
         ratios:pairs.map(([fg,bg])=>({selector:fg,ratio:contrast(css(fg).color,css(bg).backgroundColor)})) };
     });
-    expect(palette.surface).toBe('rgb(243, 243, 238)');
-    expect(palette.scheme).toBe('light');
+    expect(palette.surface).toBe('rgb(24, 28, 32)');
+    expect(palette.scheme).toBe('dark');
     for (const check of palette.ratios) expect(check.ratio,`${check.selector} contrast`).toBeGreaterThanOrEqual(4.5);
     await history.evaluate(node=>{node.scrollTop=node.scrollHeight;});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -138,34 +183,6 @@ for (const width of [1440, 768, 390, 320]) {
     await reply.fill('');
     await reply.blur();
     await page.screenshot({path:path.join(evidence,`messages-polish-${width}.png`)});
-    if ([1440,390].includes(width)) {
-      const studies = {
-        daylight: `.message-center {--message-muted:#51635c;--message-ink:#20332b;--message-accent:#176447;color-scheme:light;color:#20332b}
-          .message-toolbar,.message-center .message-chat-header,.message-center .message-reply-form{background:#e0e6e2;border-color:#a1aea7;box-shadow:0 1px 0 #fff inset}
-          .message-view-tabs,.message-center .message-thread-rail{background:#edf0ee;border-color:#a1aea7}.message-center .message-thread-detail{background:#f8faf8}
-          .message-center .message-bubble{background:#fff;border-color:#c3cdc7;color:#21382c}.message-center .message-bubble.mine{background:#d9ede2;border-color:#a5c6b4}
-          .message-center .message-bubble-meta strong{color:#1e4f37}.message-center .message-stamp{color:#476353}
-          .message-center .message-thread-button{color:#243a2d}.message-center .message-thread-button.active{background:#d6e6dd;border-color:#8ba596;box-shadow:3px 0 #33704f inset}
-          .message-center .message-row-preview small,.message-center .message-row-scope{color:#53635b}.message-center .message-compose-line textarea,.message-center .message-search input{background:#fff;color:#20332b;box-shadow:0 1px 2px #0001 inset}
-          .message-center .message-file{background:#e2eae6;color:#20332b}.message-center .message-file small{color:#465e50}.message-quote{background:#b8d8c8}
-          .message-center .message-send-button,.message-center .message-compose-button{background:#266246;color:#fff}.message-center .message-view-tabs button[aria-pressed="true"]{color:#1c6345}
-          .message-center .message-filter-bar button{background:#e1e9e4;color:#324d3e;border-color:#b0c0b7}.message-center .message-filter-bar button.active{background:#35674e;color:#fff}
-          .message-center .message-icon-button,.message-center .message-action-menu > summary{color:#395a49}.message-center .message-send-button,.message-center .message-compose-button{color:#fff}
-          .message-center .unread .message-row-heading strong{color:#193d2b}.message-center .message-quote span{color:#244d36}.message-center .message-discussion-link{color:#246443}
-          .message-center input::placeholder,.message-center textarea::placeholder{color:#667b6d}`,
-        midnight: `.message-toolbar,.message-center .message-chat-header,.message-center .message-reply-form{background:#151719;border-color:#494d51;box-shadow:0 1px 0 #ffffff16 inset}
-          .message-center .message-thread-rail,.message-view-tabs{background:#1b1d20}.message-center .message-thread-detail{background:#0b0e10}
-          .message-center .message-bubble{background:#25292d;border-color:#464e53}.message-center .message-bubble.mine{background:#263b40;border-color:#52777e}
-          .message-center .message-work-context{background:#252e32;color:#e5eceb;border-color:#4d646b}.message-work-context small{color:#b6c6c8}
-          .message-center .message-thread-button.active{background:#24383d;border-color:#63868a;box-shadow:3px 0 #addbe2 inset}
-          .message-center .message-send-button,.message-center .message-compose-button{background:#b8dce3;border-color:#d5f0f3;color:#203b41}`,
-      };
-      for (const [name,css] of Object.entries(studies)) {
-        const style = await page.addStyleTag({content:css+' .message-center *{transition:none!important}'});
-        await page.screenshot({path:path.join(evidence,`messages-study-${name}-${width}.png`)});
-        await style.evaluate(node=>node.remove());
-      }
-    }
     await page.getByRole('button',{name:'Back to conversations'}).click();
     await expect(page.locator('.message-thread-button')).toHaveCount(6);
     await page.screenshot({path:path.join(evidence,`messages-inbox-${width}.png`)});
