@@ -4,7 +4,7 @@
 
 - The inbox displays 12 conversations per page. Search covers subjects, people and scope labels, not a partial search of whichever message bodies happen to be loaded.
 - Conversations open with the latest 50 non-deleted messages. Earlier messages load in 50-message batches with stable timestamp/ID cursors.
-- Only the latest preview and opened history load message bodies. The unread index is paged metadata; it still grows with accessible message volume and is not a server-side count aggregate.
+- Only the latest preview and opened history load message bodies. Ordinary inbox snapshots combine thread previews, membership and own read markers in one request, plus a paged metadata query. Memberships reaching the embedded page limit use an explicit paged fallback. The unread index still grows with accessible message volume and is not a server-side count aggregate.
 - Direct conversations include the sender and selected teammate. A location topic includes the company team and is tagged to a location; it is not location-private.
 - Accounting retains its existing read-only interface. This change does not modify database grants or role policies.
 - Delete removes one's own message from the visible conversation for participants. Hide conversation hides one's own inbox membership, including future replies. It does not delete other participants' copies. There is no restore-hidden interface yet.
@@ -14,7 +14,8 @@
 
 ## Automated Evidence
 
-- `message-center-loader-boundary-smoke.js`: metadata exceeding 1,000 rows; hidden membership filtering; bounded history and timestamp tie-breaker; errors propagated.
+- `message-center-loader-boundary-smoke.js`: metadata exceeding 1,000 rows; membership exceeding 500 rows; hidden membership filtering; bounded history and timestamp tie-breaker; errors propagated.
+- `message-retry-smoke.js`: a timeout after the server committed does not duplicate a reply; secondary timestamp failure does not fail delivery; failed read markers do not clear local unread counts.
 - `message-workflow-smoke.js`: creation, reply, deletion, hiding and read-marker contracts.
 - `messaging-browser.spec.js`: desktop/mobile scrolling, draft retention, company-scope reset, search focus and escaping of text into markup. Included in Release Gate and Strict LFES.
 - Existing message display and event tests retain their assertions for pagination and read-only controls.

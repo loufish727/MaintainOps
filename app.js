@@ -4215,6 +4215,7 @@ function renderWorkspace() {
 
   bindWorkspaceEvents();
   messageDrafts.restore(document);
+  document.querySelectorAll(".message-center textarea").forEach(autoGrowTextarea);
   scheduleQrLibraryLoad();
 }
 
@@ -4725,7 +4726,7 @@ const {
   messageCenterErrorState,
   warn: console.warn,
   confirmUser: (message) => window.confirm(message),
-  clearDraft: (key) => messageDrafts.clear(document, key),
+  clearDraft: (key, submitted) => messageDrafts.clear(document, key, submitted),
   getLatestReadTime: (threadId) => messageHistory[threadId]?.rows.at(-1)?.created_at,
   getSession: () => session,
   getActiveCompanyId: () => activeCompanyId,

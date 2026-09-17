@@ -45,10 +45,14 @@ export function createMessageDrafts() {
       doc.defaultView.scrollTo(0, view.y);
     }
   }
-  function clear(doc, key) {
-    drafts.delete(key);
+  function clear(doc, key, submitted = {}) {
     const form = key === "composer" ? doc.querySelector("#message-thread-form") : doc.querySelector("#message-reply-form");
-    if (form && (key === "composer" || form.dataset.threadId === key)) {
+    const isCurrent = form && (key === "composer" || form.dataset.threadId === key);
+    const fields = isCurrent ? [...form.querySelectorAll("[name]")].map((field) => [field.name, field.value]) : drafts.get(key)?.fields || [];
+    const values = Object.fromEntries(fields);
+    if (Object.entries(submitted).some(([name, value]) => values[name] != null && values[name].trim() !== value)) return;
+    drafts.delete(key);
+    if (isCurrent) {
       form.reset();
       const details = form.querySelector("details");
       if (details) details.open = false;

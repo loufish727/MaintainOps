@@ -13,25 +13,28 @@ async function readPages(query) {
 
 export async function fetchMessageCenter(client, companyId, userId) {
   const threads = await readPages(() => client.from("message_threads")
-    .select("*, messages(id, body, sender_id, created_at)")
+    .select("*, messages(id, body, sender_id, created_at), message_thread_members(*), message_reads(*)")
     .eq("company_id", companyId).is("messages.deleted_at", null)
+    .eq("message_reads.user_id", userId)
     .order("created_at", { referencedTable: "messages", ascending: false })
     .order("id", { referencedTable: "messages", ascending: false })
-    .limit(1, { referencedTable: "messages" }).order("id"));
+    .limit(1, { referencedTable: "messages" })
+    .limit(SNAPSHOT_PAGE_SIZE, { referencedTable: "message_thread_members" }).order("id"));
   if (!threads.length) return { threads: [], members: [], metadata: [], reads: [] };
   // Bodies stay out of the unread index; only the latest preview and open history load them.
-  const [members, metadata, reads] = await Promise.all([
-    readPages(() => client.from("message_thread_members").select("*")
-      .eq("company_id", companyId).order("id")),
+  // Embed the usual small membership/read lists; page unusually large memberships explicitly.
+  const [members, metadata] = await Promise.all([
+    threads.some((thread) => thread.message_thread_members?.length >= SNAPSHOT_PAGE_SIZE)
+      ? readPages(() => client.from("message_thread_members").select("*").eq("company_id", companyId).order("id"))
+      : threads.flatMap((thread) => thread.message_thread_members || []),
     readPages(() => client.from("messages").select("id, thread_id, sender_id, created_at, deleted_at")
       .eq("company_id", companyId).is("deleted_at", null).order("id")),
-    readPages(() => client.from("message_reads").select("*")
-      .eq("company_id", companyId).eq("user_id", userId).order("thread_id")),
   ]);
+  const reads = threads.flatMap((thread) => thread.message_reads || []);
   const visible = new Set(members.filter((member) => member.user_id === userId && !member.deleted_at)
     .map((member) => member.thread_id));
   return {
-    threads: threads.filter((thread) => visible.has(thread.id)).map(({ messages, ...thread }) => ({
+    threads: threads.filter((thread) => visible.has(thread.id)).map(({ messages, message_thread_members, message_reads, ...thread }) => ({
       ...thread, latest_message: messages?.[0] || null,
     })).sort((a, b) => String(b.latest_message?.created_at || b.updated_at)
       .localeCompare(String(a.latest_message?.created_at || a.updated_at)) || a.id.localeCompare(b.id)),

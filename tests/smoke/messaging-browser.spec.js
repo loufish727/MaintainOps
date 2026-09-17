@@ -45,7 +45,8 @@ for (const viewport of [{ width: 1300, height: 900 }, { width: 390, height: 844 
         document.querySelector("[data-test-open]").onclick = () => { active = "one"; render(); };
         drafts.restore(document);
       }
-      window.messageTest = { render, changeScope: () => { scope = "company:b:user:b"; render(); } };
+      window.messageTest = { render, clearSubmitted: (body) => { drafts.clear(document, "one", { body }); render(); },
+        changeScope: () => { scope = "company:b:user:b"; render(); } };
       render();
     });
     await expect(page.locator(".message-center img")).toHaveCount(0);
@@ -61,6 +62,8 @@ for (const viewport of [{ width: 1300, height: 900 }, { width: 390, height: 844 
     }
     await page.getByRole("button", { name: "Back to conversations" }).click();
     await page.locator("[data-test-open]").click();
+    await expect(page.getByRole("textbox", { name: "Reply", exact: true })).toHaveValue("Do not lose this draft");
+    await page.evaluate(() => window.messageTest.clearSubmitted("Previously submitted message"));
     await expect(page.getByRole("textbox", { name: "Reply", exact: true })).toHaveValue("Do not lose this draft");
     await page.evaluate(() => window.messageTest.changeScope());
     await expect(page.getByRole("textbox", { name: "Reply", exact: true })).toHaveValue("");

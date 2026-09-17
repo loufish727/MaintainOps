@@ -138,7 +138,7 @@
         threadStarted = true;
         if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user.id) return;
 
-        deps.clearDraft?.("composer");
+        deps.clearDraft?.("composer", { title, body });
         deps.setActiveMessageThreadId(thread.id);
         deps.setMessageComposerWorkOrderId("");
         deps.setMessageComposerOpen(false);
@@ -181,7 +181,7 @@
 
         replySent = true;
         if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user.id) return;
-        deps.clearDraft?.(threadId);
+        deps.clearDraft?.(threadId, { body });
         deps.showNotice("Message sent.");
         await markMessageThreadRead(threadId);
         await deps.render();
