@@ -77,11 +77,11 @@ const { renderMessageCenter: renderReadOnlyMessageCenter } = createMessageCenter
 
 const html = renderMessageCenter();
 
-assert.match(html, /class="message-center"/);
+assert.match(html, /class="message-center has-active-thread"/);
 assert.match(html, /id="message-thread-form"/);
 assert.match(html, /id="message-thread-type"/);
 assert.doesNotMatch(html, /Whole company/);
-assert.match(html, /Current location/);
+assert.match(html, /Location topic \(company team\)/);
 assert.match(html, /Direct message/);
 assert.match(html, /Only the current location can see this\./);
 assert.match(html, /QA Teammate/);
@@ -101,13 +101,16 @@ assert.doesNotMatch(html, /data-open-message-thread="thread-13"/);
 assert.match(html, /data-page-kind="messages">13:1:2/);
 assert.match(html, /data-open-linked-work-order="wo-1"/);
 assert.match(html, /data-delete-message-thread="thread-1"/);
-assert.match(html, /Delete Thread/);
+assert.match(html, /Hide conversation/);
+assert.match(html, /Back to conversations/);
+assert.match(html, /aria-label="Conversation history"/);
 assert.match(html, /id="message-reply-form"/);
 assert.match(html, /data-thread-id="thread-1"/);
 assert.match(html, /data-quick-reply="On it"/);
 
 const readOnlyHtml = renderReadOnlyMessageCenter();
-assert.match(readOnlyHtml, /class="message-center"/);
+assert.match(readOnlyHtml, /class="message-center has-active-thread"/);
+assert.doesNotMatch(readOnlyHtml, /data-message-person=/);
 assert.match(readOnlyHtml, /data-open-message-thread="thread-1"/);
 assert.match(readOnlyHtml, /Checked line/);
 assert.doesNotMatch(readOnlyHtml, /id="message-thread-form"/);
@@ -118,6 +121,6 @@ assert.doesNotMatch(readOnlyHtml, /data-quick-reply="On it"/);
 const unavailableRenderer = createMessageCenterDisplayHelpers({
   getMessagesReady: () => false,
 }).renderMessageCenter;
-assert.match(unavailableRenderer(), /step-next-message-center\.sql/);
+assert.match(unavailableRenderer(), /data-retry-messages/);
 
 console.log("message center display smoke passed");

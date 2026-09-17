@@ -14,15 +14,30 @@
     if (!state || typeof options.renderWorkspace !== "function" || typeof options.markMessageThreadRead !== "function") return;
 
     const storage = options.storage || localStorage;
+    async function open(threadId) {
+      options.renderWorkspace();
+      try {
+        if (typeof options.loadActiveMessageThreadMessages === "function") await options.loadActiveMessageThreadMessages(threadId);
+        if (options.getActiveThreadId && options.getActiveThreadId() !== threadId) return;
+        if (options.getActiveSection && options.getActiveSection() !== "messages") return;
+        options.renderWorkspace();
+        await options.markMessageThreadRead(threadId);
+        if ((!options.getActiveThreadId || options.getActiveThreadId() === threadId)
+          && (!options.getActiveSection || options.getActiveSection() === "messages")) options.renderWorkspace();
+      } catch {
+        if (options.getActiveThreadId && options.getActiveThreadId() !== threadId) return;
+        state.setActiveMessageThreadId("");
+        options.showNotice?.("Could not open this conversation. Try again.", "warning");
+        options.renderWorkspace();
+      }
+    }
 
     doc.querySelectorAll("[data-message-thread]").forEach((button) => {
       button.addEventListener("click", async () => {
         const threadId = button.dataset.messageThread;
         state.setActiveMessageThreadId(threadId);
         storage.setItem("maintainops.activeMessageThreadId", threadId);
-        if (typeof options.loadActiveMessageThreadMessages === "function") await options.loadActiveMessageThreadMessages(threadId);
-        await options.markMessageThreadRead(threadId);
-        options.renderWorkspace();
+        await open(threadId);
       });
     });
 
@@ -34,9 +49,7 @@
         state.setActiveSection("messages");
         storage.setItem("maintainops.activeMessageThreadId", threadId);
         storage.setItem("maintainops.activeSection", "messages");
-        if (typeof options.loadActiveMessageThreadMessages === "function") await options.loadActiveMessageThreadMessages(threadId);
-        await options.markMessageThreadRead(threadId);
-        options.renderWorkspace();
+        await open(threadId);
       });
     });
   }

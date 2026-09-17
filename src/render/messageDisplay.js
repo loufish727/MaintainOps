@@ -11,7 +11,7 @@
         <span>${deps.escapeHtml(deps.formatMessageTime(message.created_at))}</span>
       </div>
       <p>${deps.escapeHtml(message.body)}</p>
-      ${mine ? `<button class="message-delete-button" data-delete-message="${deps.escapeHtml(message.id)}" type="button">Delete</button>` : ""}
+      ${mine && (deps.canEditOperationalRecords?.() ?? true) ? `<button class="message-delete-button" data-delete-message="${deps.escapeHtml(message.id)}" type="button">Delete</button>` : ""}
     </article>
   `;
     }

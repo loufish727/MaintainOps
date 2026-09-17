@@ -34,7 +34,7 @@
     function renderMessageCenter() {
       const messagesReady = deps.getMessagesReady();
       if (!messagesReady) {
-        return `<p class="muted">Run supabase/step-next-message-center.sql to enable company, location, and direct message threads.</p>`;
+        return `<p class="error-text" role="alert">Messages are unavailable.</p><button data-retry-messages type="button">Try again</button>`;
       }
       const messageThreads = deps.getMessageThreads();
       const activeMessageThreadId = deps.getActiveMessageThreadId();
@@ -47,11 +47,15 @@
       const messageWorkOrderLinksReady = deps.getMessageWorkOrderLinksReady();
       const messageSearchQuery = deps.getMessageSearchQuery();
       const messageThreadFilter = deps.getMessageThreadFilter();
-      const messagePeople = companyMembers.filter((member) => member.user_id !== session.user.id);
+      const messagePeople = companyMembers.filter((member) => member.user_id !== session.user.id)
+        .sort((a, b) => teamMemberName(a.user_id).localeCompare(teamMemberName(b.user_id)));
       const canEditOperational = canEditOperationalRecords();
     
-      const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId) || messageThreads[0];
-      const threadMessages = activeThread ? (messagesByThreadId[activeThread.id] || []) : [];
+      const activeThread = messageThreads.find((thread) => thread.id === activeMessageThreadId);
+      const history = deps.getMessageHistory?.()[activeThread?.id];
+      const loadingHistory = Boolean(activeThread && deps.getMessageHistory && !history);
+      const threadMessages = activeThread ? (history?.rows || messagesByThreadId[activeThread.id] || []).filter((message) => !message.deleted_at) : [];
+      const messageCount = activeThread ? (messagesByThreadId[activeThread.id] || []).filter((message) => !message.deleted_at).length : 0;
       const visibleThreads = filteredMessageThreads();
       const messageThreadsPage = deps.getMessageThreadsPage();
       const totalMessageThreadPages = Math.max(1, Math.ceil(visibleThreads.length / deps.LIST_ITEMS_PER_PAGE));
@@ -69,7 +73,8 @@
       };
     
       return `
-        <section class="message-center">
+        <section class="message-center ${activeThread ? "has-active-thread" : ""}" data-thread-id="${escapeHtml(activeThread?.id || "")}">
+          ${deps.getMessageLoadError?.() ? `<p class="error-text" role="alert">${escapeHtml(deps.getMessageLoadError())} <button data-retry-messages type="button">Try again</button></p>` : ""}
           <div class="message-layout">
             <aside class="message-thread-rail">
               <div class="message-rail-header">
@@ -79,25 +84,25 @@
                 </div>
               </div>
               ${renderWorkOrderNotifications()}
-              <div class="message-people-strip" aria-label="Company message contacts">
+              ${canEditOperational ? `<div class="message-people-strip" aria-label="Company message contacts">
                 ${messagePeople.map(renderMessagePerson).join("") || `<span class="muted">No teammates added yet.</span>`}
-              </div>
+              </div>` : ""}
               ${canEditOperational ? `<form class="message-thread-form" id="message-thread-form">
                 <details ${messageComposerOpen || linkedDraftWorkOrder ? "open" : ""}>
                   <summary>New message</summary>
                   <div class="message-thread-fields">
                     <label>Send to
                       <select name="thread_type" id="message-thread-type">
-                        <option value="location">Current location</option>
+                        <option value="location">Location topic (company team)</option>
                         <option value="direct">Direct message</option>
                       </select>
                     </label>
                     <label class="message-direct-field">Person
                       <select name="direct_user_id">
-                        ${companyMembers.filter((member) => member.user_id !== session.user.id).map((member) => `<option value="${member.user_id}">${escapeHtml(teamMemberName(member.user_id))}</option>`).join("") || `<option value="">No teammates yet</option>`}
+                        ${messagePeople.map((member) => `<option value="${member.user_id}">${escapeHtml(teamMemberName(member.user_id))}</option>`).join("") || `<option value="">No teammates yet</option>`}
                       </select>
                     </label>
-                    <div class="message-scope-note" id="message-scope-note">${messageComposerScopeNote("location")}</div>
+                    <div class="message-scope-note" id="message-scope-note">${escapeHtml(messageComposerScopeNote("location"))}</div>
                     <label>Subject<input name="title" required placeholder="Thread subject" value="${linkedDraftWorkOrder ? `Work order: ${escapeHtml(linkedDraftWorkOrder.title)}` : ""}"></label>
                     ${linkedDraftWorkOrder ? `
                       <input name="work_order_id" type="hidden" value="${linkedDraftWorkOrder.id}">
@@ -121,16 +126,16 @@
                 </details>
               </form>` : ""}
               <label class="message-search">
-                <input id="message-search" type="search" value="${escapeHtml(messageSearchQuery)}" placeholder="Search messages">
+                <input id="message-search" type="search" aria-label="Search subjects or people" value="${escapeHtml(messageSearchQuery)}" placeholder="Search subjects or people">
               </label>
               <div class="message-filter-bar" aria-label="Message thread filter">
                 ${[
                   ["all", "All"],
                   ["unread", "Unread"],
-                  ["company", "Company"],
+                  ...(messageThreads.some((thread) => thread.thread_type === "company") ? [["company", "Company"]] : []),
                   ["location", "Location"],
                   ["direct", "Direct"],
-                ].map(([id, label]) => `<button class="${messageThreadFilter === id ? "active" : ""}" data-message-filter="${id}" type="button">${label}</button>`).join("")}
+                ].map(([id, label]) => `<button class="${messageThreadFilter === id ? "active" : ""}" aria-pressed="${messageThreadFilter === id}" data-message-filter="${id}" type="button">${label}</button>`).join("")}
               </div>
               <div class="message-thread-list">
                 ${pagedVisibleThreads.map(renderMessageThreadButton).join("") || `<p class="muted">No threads match this filter.</p>`}
@@ -141,24 +146,26 @@
               ${activeThread ? `
                 <div class="message-chat-header">
                   <div>
+                    <button class="text-button" data-message-back type="button">Back to conversations</button>
                     <h3>${escapeHtml(activeThread.title)}</h3>
-                    <p class="muted">${messageThreadScopeLabel(activeThread)}</p>
+                    <p class="muted">${escapeHtml(messageThreadScopeLabel(activeThread))}</p>
                   </div>
                   <div class="message-header-actions">
                     ${activeThread.work_order_id ? `<button class="secondary-button message-linked-work-button" data-open-linked-work-order="${activeThread.work_order_id}" type="button">Open Work Order</button>` : ""}
-                    <span class="chip comment">${threadMessages.length} message${threadMessages.length === 1 ? "" : "s"}</span>
-                    ${canEditOperational ? `<button class="text-button danger-link" data-delete-message-thread="${escapeHtml(activeThread.id)}" type="button">Delete Thread</button>` : ""}
+                    <span class="chip comment">${messageCount} message${messageCount === 1 ? "" : "s"}</span>
+                    ${canEditOperational ? `<button class="text-button danger-link" data-delete-message-thread="${escapeHtml(activeThread.id)}" type="button" ${loadingHistory ? "disabled" : ""}>Hide conversation</button>` : ""}
                   </div>
                 </div>
-                <div class="message-list">
-                  ${renderMessageList(threadMessages)}
+                <div class="message-list" role="region" aria-label="Conversation history" aria-busy="${loadingHistory}" tabindex="0">
+                  ${history?.hasOlder ? `<button class="secondary-button" data-message-older type="button">Earlier messages</button>` : ""}
+                  ${loadingHistory ? `<p class="muted" role="status">Loading conversation...</p>` : renderMessageList(threadMessages)}
                 </div>
-                ${canEditOperational ? `<form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
+                ${canEditOperational && !loadingHistory ? `<form class="message-reply-form" id="message-reply-form" data-thread-id="${activeThread.id}">
                   <div class="message-quick-replies">
                     ${["On it", "Need more info", "Waiting on parts", "Complete"].map((reply) => `<button data-quick-reply="${escapeHtml(reply)}" type="button">${escapeHtml(reply)}</button>`).join("")}
                   </div>
-                  <textarea name="body" rows="2" required placeholder="Reply to this thread..."></textarea>
-                  <p class="error-text" id="message-reply-error"></p>
+                  <textarea name="body" rows="2" required aria-label="Reply" placeholder="Reply to this thread..."></textarea>
+                  <p class="error-text" id="message-reply-error" role="alert"></p>
                   <button class="secondary-button message-action-button" type="submit">Send Reply</button>
                 </form>` : ""}
               ` : `<p class="muted">Choose or start a thread.</p>`}

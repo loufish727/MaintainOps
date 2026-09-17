@@ -11,7 +11,7 @@
     function renderMessageThreadButton(thread) {
       const messages = getMessagesByThreadId()[thread.id] || [];
       const visibleMessages = messages.filter((message) => !message.deleted_at);
-      const lastMessage = visibleMessages[visibleMessages.length - 1];
+      const lastMessage = thread.latest_message || visibleMessages[visibleMessages.length - 1];
       const unreadCount = unreadMessageCount(thread.id);
       const lastMessageBody = lastMessage?.body ? `${escapeHtml(teamMemberName(lastMessage.sender_id))}: ${escapeHtml(lastMessage.body)}` : "Last activity";
       const lastMessageText = lastMessage ? `${lastMessageBody} - ${escapeHtml(formatMessageTime(lastMessage.created_at))}` : "No messages yet";

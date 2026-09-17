@@ -1,0 +1,51 @@
+const SNAPSHOT_PAGE_SIZE = 500;
+export const MESSAGE_HISTORY_PAGE_SIZE = 50;
+
+async function readPages(query) {
+  const rows = [];
+  for (let offset = 0; ; offset += SNAPSHOT_PAGE_SIZE) {
+    const { data, error } = await query().range(offset, offset + SNAPSHOT_PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < SNAPSHOT_PAGE_SIZE) return rows;
+  }
+}
+
+export async function fetchMessageCenter(client, companyId, userId) {
+  const threads = await readPages(() => client.from("message_threads")
+    .select("*, messages(id, body, sender_id, created_at)")
+    .eq("company_id", companyId).is("messages.deleted_at", null)
+    .order("created_at", { referencedTable: "messages", ascending: false })
+    .order("id", { referencedTable: "messages", ascending: false })
+    .limit(1, { referencedTable: "messages" }).order("id"));
+  if (!threads.length) return { threads: [], members: [], metadata: [], reads: [] };
+  // Bodies stay out of the unread index; only the latest preview and open history load them.
+  const [members, metadata, reads] = await Promise.all([
+    readPages(() => client.from("message_thread_members").select("*")
+      .eq("company_id", companyId).order("id")),
+    readPages(() => client.from("messages").select("id, thread_id, sender_id, created_at, deleted_at")
+      .eq("company_id", companyId).is("deleted_at", null).order("id")),
+    readPages(() => client.from("message_reads").select("*")
+      .eq("company_id", companyId).eq("user_id", userId).order("thread_id")),
+  ]);
+  const visible = new Set(members.filter((member) => member.user_id === userId && !member.deleted_at)
+    .map((member) => member.thread_id));
+  return {
+    threads: threads.filter((thread) => visible.has(thread.id)).map(({ messages, ...thread }) => ({
+      ...thread, latest_message: messages?.[0] || null,
+    })).sort((a, b) => String(b.latest_message?.created_at || b.updated_at)
+      .localeCompare(String(a.latest_message?.created_at || a.updated_at)) || a.id.localeCompare(b.id)),
+    members, metadata: metadata.filter((message) => visible.has(message.thread_id)), reads,
+  };
+}
+
+export async function fetchMessageHistory(client, companyId, threadId, before = null) {
+  let query = client.from("messages").select("*").eq("company_id", companyId)
+    .eq("thread_id", threadId).is("deleted_at", null)
+    .order("created_at", { ascending: false }).order("id", { ascending: false });
+  if (before) query = query.or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`);
+  const { data, error } = await query.limit(MESSAGE_HISTORY_PAGE_SIZE + 1);
+  if (error) throw error;
+  return { rows: (data || []).slice(0, MESSAGE_HISTORY_PAGE_SIZE).reverse(),
+    hasOlder: (data || []).length > MESSAGE_HISTORY_PAGE_SIZE };
+}

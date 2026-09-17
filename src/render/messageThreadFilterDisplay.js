@@ -18,7 +18,6 @@
     }
 
     function messageThreadSearchValues(thread) {
-      const messages = deps.getMessagesByThreadId()[thread.id] || [];
       const participants = deps.getMessageThreadMembers()
         .filter((member) => member.thread_id === thread.id)
         .map((member) => deps.teamMemberName(member.user_id));
@@ -26,7 +25,6 @@
         thread.title,
         deps.messageThreadScopeLabel(thread),
         ...participants,
-        ...messages.map((message) => message.body || ""),
       ];
     }
 
@@ -34,7 +32,7 @@
       const lastReadAt = deps.getMessageReadsByThreadId()[threadId]?.last_read_at;
       const lastReadTime = lastReadAt ? new Date(lastReadAt).getTime() : 0;
       return (deps.getMessagesByThreadId()[threadId] || []).filter((message) => {
-        if (message.sender_id === deps.getCurrentUser()?.id) return false;
+        if (message.deleted_at || message.sender_id === deps.getCurrentUser()?.id) return false;
         return new Date(message.created_at).getTime() > lastReadTime;
       }).length;
     }
