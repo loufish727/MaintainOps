@@ -72,6 +72,38 @@ for (const width of [1440, 768, 390, 320]) {
       render();
     });
     const history = page.locator('.message-list');
+    const palette = await page.evaluate(() => {
+      const css = selector => getComputedStyle(document.querySelector(selector));
+      const luminance = color => {
+        const [r,g,b] = color.match(/[\d.]+/g).slice(0,3).map(value => {
+          const channel = Number(value)/255; return channel <= .04045 ? channel/12.92 : ((channel+.055)/1.055)**2.4;
+        });
+        return .2126*r+.7152*g+.0722*b;
+      };
+      const contrast = (foreground,background) => {
+        const a=luminance(foreground),b=luminance(background);
+        return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+      };
+      const pairs = [
+        ['.message-bubble-meta strong','.message-thread-detail'],
+        ['.message-bubble:not(.mine) p','.message-thread-detail'],
+        ['.message-bubble.mine p','.message-bubble.mine'],
+        ['.message-row-heading strong','.message-thread-button.active'],
+        ['.message-row-preview small','.message-thread-rail'],
+        ['.message-chat-header h3','.message-chat-header'],
+        ['.message-chat-header p','.message-chat-header'],
+        ['.message-context-status','.message-context-status'],
+        ['.message-file-caption strong','.message-file'],
+        ['.message-file small','.message-file'],
+        ['.message-voice-button','.message-voice-button'],
+        ['.message-send-button','.message-send-button'],
+      ];
+      return { surface:css('.message-thread-detail').backgroundColor, scheme:css('.message-center').colorScheme,
+        ratios:pairs.map(([fg,bg])=>({selector:fg,ratio:contrast(css(fg).color,css(bg).backgroundColor)})) };
+    });
+    expect(palette.surface).toBe('rgb(243, 243, 238)');
+    expect(palette.scheme).toBe('light');
+    for (const check of palette.ratios) expect(check.ratio,`${check.selector} contrast`).toBeGreaterThanOrEqual(4.5);
     await history.evaluate(node=>{node.scrollTop=node.scrollHeight;});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if(width<=920) expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1)).toBe(true);

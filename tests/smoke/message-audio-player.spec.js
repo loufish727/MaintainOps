@@ -36,7 +36,12 @@ test('waveform transport uses decoded samples, supports seeking and disposes pen
   await expect(page.locator('.message-audio-time')).toHaveText('0:05 / 0:10');
   await page.getByLabel('Playback speed').selectOption('1.5');
   expect(await page.locator('audio').evaluate(audio=>audio.playbackRate)).toBe(1.5);
-  expect(await page.getByLabel('Playback speed').evaluate(node=>getComputedStyle(node).colorScheme)).toBe('dark');
+  expect(await page.getByLabel('Playback speed').evaluate(node=>getComputedStyle(node).colorScheme)).toBe('light');
+  const colors = await page.locator('canvas').evaluate(canvas => {
+    const ctx = canvas.getContext('2d');
+    return { played: [...ctx.getImageData(2,47,1,1).data], unplayed: [...ctx.getImageData(762,20,1,1).data] };
+  });
+  expect(colors).toEqual({played:[39,101,75,255],unplayed:[113,139,124,255]});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   fs.mkdirSync(path.join(root,'lfes-evidence'),{recursive:true});
   await page.screenshot({path:path.join(root,'lfes-evidence','messages-audio-320.png')});

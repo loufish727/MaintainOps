@@ -83,6 +83,9 @@ for (const formType of ['message-thread-form', 'message-reply-form', 'message-di
     const confirm = page.getByRole('dialog', { name: 'Send voice message?', exact: true });
     await send.press('Enter');
     await expect(confirm).toBeVisible();
+    expect(await confirm.evaluate(node => ({background:getComputedStyle(node).backgroundColor,scheme:getComputedStyle(node).colorScheme})))
+      .toEqual({background:'rgb(243, 243, 238)',scheme:'light'});
+    expect(await confirm.locator('[data-confirm-voice-send]').evaluate(node => getComputedStyle(node).color)).toBe('rgb(255, 255, 255)');
     await expect(confirm.locator('audio')).toHaveCount(1);
     expect(await page.evaluate(() => voiceProof.writes)).toBe(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -38,6 +38,9 @@ export function enhanceMessageAudio({ audio, blob, documentRef: doc }) {
       for (const rate of [0.75, 1, 1.25, 1.5, 2]) { const option = doc.createElement('option'); option.value = String(rate); option.textContent = `${rate}x`; option.selected = rate === 1; speed.append(option); }
       const error = element('p', 'message-audio-error'); error.setAttribute('role', 'status'); error.hidden = true;
       transport.append(play, stamp, speed); panel.append(canvas, seek, transport, error); audio.after(panel);
+      const palette = win.getComputedStyle(panel);
+      const playedInk = palette.getPropertyValue('--message-waveform-progress').trim() || '#27654b';
+      const unplayedInk = palette.getPropertyValue('--message-waveform').trim() || '#718b7c';
       const draw = () => {
         const value = Math.max(0, audio.currentTime || 0), progress = value / audio.duration;
         seek.value = String(value); seek.setAttribute('aria-valuetext', `${time(value)} of ${time(audio.duration)}`);
@@ -46,7 +49,7 @@ export function enhanceMessageAudio({ audio, blob, documentRef: doc }) {
         const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
         peaks.forEach((peak, index) => {
           const height = Math.max(2, peak * 88);
-          ctx.fillStyle = index / peaks.length < progress ? '#a1e4d1' : '#748d86';
+          ctx.fillStyle = index / peaks.length < progress ? playedInk : unplayedInk;
           ctx.fillRect(index * 8 + 1, (96 - height) / 2, 4, height);
         });
       };
