@@ -35,6 +35,7 @@
     doc.querySelectorAll("[data-message-thread]").forEach((button) => {
       button.addEventListener("click", async () => {
         const threadId = button.dataset.messageThread;
+        state.setMessageComposerOpen?.(false);
         state.setActiveMessageThreadId(threadId);
         storage.setItem("maintainops.activeMessageThreadId", threadId);
         await open(threadId);

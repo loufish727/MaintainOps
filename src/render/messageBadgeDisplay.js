@@ -4,10 +4,8 @@
     totalUnreadMessages,
   }) {
     function renderMessageNavBadge() {
-      const directUnread = directUnreadMessages();
-      if (directUnread > 0) return `<b class="nav-badge nav-alert-badge">${directUnread}!</b>`;
       const unread = totalUnreadMessages();
-      return unread > 0 ? `<b class="nav-badge">${unread}</b>` : "";
+      return unread > 0 ? `<b class="nav-badge nav-message-badge" aria-label="${unread} unread conversations and work alerts">${unread}</b>` : "";
     }
 
     return {

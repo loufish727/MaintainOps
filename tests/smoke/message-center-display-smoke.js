@@ -11,6 +11,8 @@ const threads = Array.from({ length: 13 }, (_, index) => ({
   work_order_id: index === 0 ? "wo-1" : "",
 }));
 const thread = threads[0];
+let composing = true;
+let view = "conversations";
 
 const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessagesReady: () => true,
@@ -19,7 +21,8 @@ const { renderMessageCenter } = createMessageCenterDisplayHelpers({
   getMessagesByThreadId: () => ({ "thread-1": [{ body: "Checked line", author_id: "user-2" }] }),
   getWorkOrders: () => [{ id: "wo-1", title: "Hydraulic Leak", status: "open" }],
   getMessageComposerWorkOrderId: () => "wo-1",
-  getMessageComposerOpen: () => true,
+  getMessageComposerOpen: () => composing,
+  getMessageView: () => view,
   getCompanyMembers: () => [
     { user_id: "user-1" },
     { user_id: "user-2" },
@@ -77,19 +80,17 @@ const { renderMessageCenter: renderReadOnlyMessageCenter } = createMessageCenter
 
 const html = renderMessageCenter();
 
-assert.match(html, /class="message-center has-active-thread"/);
+assert.match(html, /has-composer/);
 assert.match(html, /id="message-thread-form"/);
 assert.match(html, /id="message-thread-type"/);
 assert.doesNotMatch(html, /Whole company/);
-assert.match(html, /Location topic \(company team\)/);
+assert.match(html, /Company team \/ location topic/);
 assert.match(html, /Direct message/);
-assert.match(html, /Only the current location can see this\./);
+assert.match(html, /Direct thread\./);
 assert.match(html, /QA Teammate/);
-assert.match(html, /class="message-people-strip"/);
-assert.match(html, /class="message-person-avatar"/);
-assert.match(html, /data-message-person="user-2"/);
-assert.match(html, /title="Message QA Teammate"/);
-assert.match(html, /QT/);
+assert.match(html, /option value="user-2">QA Teammate/);
+assert.match(html, /optional for direct messages/);
+assert.match(html, /Choose a teammate/);
 assert.doesNotMatch(html, /data-message-person="user-1"/);
 assert.match(html, /data-clear-message-work-link/);
 assert.match(html, /id="message-search"/);
@@ -99,22 +100,32 @@ assert.match(html, /data-open-message-thread="thread-1"/);
 assert.match(html, /data-open-message-thread="thread-12"/);
 assert.doesNotMatch(html, /data-open-message-thread="thread-13"/);
 assert.match(html, /data-page-kind="messages">13:1:2/);
-assert.match(html, /data-open-linked-work-order="wo-1"/);
-assert.match(html, /data-delete-message-thread="thread-1"/);
-assert.match(html, /Hide conversation/);
-assert.match(html, /Back to conversations/);
-assert.match(html, /aria-label="Conversation history"/);
-assert.match(html, /id="message-reply-form"/);
-assert.match(html, /data-thread-id="thread-1"/);
-assert.match(html, /data-quick-reply="On it"/);
+assert.doesNotMatch(html, /id="message-reply-form"/);
+composing = false;
+const conversation = renderMessageCenter();
+assert.match(conversation, /has-active-thread/);
+assert.match(conversation, /data-open-linked-work-order="wo-1"/);
+assert.match(conversation, /data-archive-message-thread="thread-1"/);
+assert.match(conversation, /data-mute-message-thread="thread-1"/);
+assert.match(conversation, /Back to conversations/);
+assert.match(conversation, /aria-label="Conversation history"/);
+assert.match(conversation, /id="message-reply-form"/);
+assert.match(conversation, /data-thread-id="thread-1"/);
+assert.match(conversation, /data-quick-reply="On it"/);
+assert.doesNotMatch(conversation, /id="message-thread-form"|Hide conversation/);
+view = "activity";
+const activity = renderMessageCenter();
+assert.match(activity, /class="message-activity"/);
+assert.doesNotMatch(activity, /has-active-thread|id="message-reply-form"/);
 
 const readOnlyHtml = renderReadOnlyMessageCenter();
-assert.match(readOnlyHtml, /class="message-center has-active-thread"/);
+assert.match(readOnlyHtml, /class="message-center has-active-thread/);
 assert.doesNotMatch(readOnlyHtml, /data-message-person=/);
 assert.match(readOnlyHtml, /data-open-message-thread="thread-1"/);
 assert.match(readOnlyHtml, /Checked line/);
 assert.doesNotMatch(readOnlyHtml, /id="message-thread-form"/);
 assert.doesNotMatch(readOnlyHtml, /data-delete-message-thread="thread-1"/);
+assert.doesNotMatch(readOnlyHtml, /data-archive-message-thread|data-mute-message-thread|data-message-compose/);
 assert.doesNotMatch(readOnlyHtml, /id="message-reply-form"/);
 assert.doesNotMatch(readOnlyHtml, /data-quick-reply="On it"/);
 

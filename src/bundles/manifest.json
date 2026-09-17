@@ -1,10 +1,12 @@
 {
-  "runtime": "runtime.cf9f78c7f5.js",
+  "messageStyles": "messageStyles.12b4f95170.css",
+  "runtime": "runtime.f0fde19fcd.js",
   "managerFeature": "managerFeature.2b35063749.js",
   "financialFeature": "financialFeature.a60bd72a36.js",
   "teamFeature": "teamFeature.c03c96163b.js",
   "setupFeature": "setupFeature.ff3e0ed5c2.js",
-  "appShell": "appShell.a4afe9d358.js",
+  "messageFeature": "messageFeature.a64174ae69.js",
+  "appShell": "appShell.6af18dc8b2.js",
   "platformSpatial": "platformSpatial.2cda393b3e.js",
   "appStyles": "appStyles.b5d335e48a.css",
   "platformSpatialStyles": "platformSpatialStyles.e0d514a3d3.css"

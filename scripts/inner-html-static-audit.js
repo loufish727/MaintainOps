@@ -5,6 +5,24 @@ const root = path.resolve(__dirname, "..");
 
 const approvals = [
   {
+    file: "src/render/messageLiveDisplay.js",
+    line: /^list\.innerHTML = renderMessageList\(history\.rows\);$/,
+    maxOccurrences: 1,
+    reason: "Messaging-only live update; escaped message, quote, sender and reaction builders. Composer is not replaced.",
+  },
+  {
+    file: "src/render/messageLiveDisplay.js",
+    line: /^railList\.innerHTML = filtered\.slice\(/,
+    maxOccurrences: 1,
+    reason: "Live inbox rows use the escaped thread renderer; fallback is fixed markup.",
+  },
+  {
+    file: "src/render/messageLiveDisplay.js",
+    line: /^pagination\.innerHTML = renderListPagination\("messages", filtered\.length, page, pages\);$/,
+    maxOccurrences: 1,
+    reason: "Fixed messages pagination with numeric counts only.",
+  },
+  {
     file: "app.js",
     line: /^setAppHtml: \(html\) => \{ app\.innerHTML = html; \},$/,
     maxOccurrences: 2,

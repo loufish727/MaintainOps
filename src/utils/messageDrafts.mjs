@@ -2,11 +2,14 @@
 export function createMessageDrafts() {
   let scope = "";
   const drafts = new Map();
+  const inboxPositions = new Map();
   let view = null;
   function capture(doc, nextScope) {
-    if (scope !== nextScope) { drafts.clear(); view = null; scope = nextScope; return; }
+    if (scope !== nextScope) { drafts.clear(); inboxPositions.clear(); view = null; scope = nextScope; return; }
     const root = doc.querySelector(".message-center");
     if (!root) return;
+    const rail = root.querySelector(".message-thread-list");
+    if (rail?.clientHeight) inboxPositions.set(root.dataset.inboxView, rail.scrollTop);
     for (const form of root.querySelectorAll("form")) {
       const key = form.dataset.threadId || "composer";
       drafts.set(key, {
@@ -23,6 +26,8 @@ export function createMessageDrafts() {
   function restore(doc) {
     const root = doc.querySelector(".message-center");
     if (!root) return;
+    const rail = root.querySelector(".message-thread-list");
+    if (rail) rail.scrollTop = inboxPositions.get(root.dataset.inboxView) || 0;
     for (const form of root.querySelectorAll("form")) {
       const draft = drafts.get(form.dataset.threadId || "composer");
       if (!draft) continue;

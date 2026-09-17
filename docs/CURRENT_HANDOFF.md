@@ -11,6 +11,7 @@ MaintainOps uses local/private handoff files for detailed continuity, catch logs
 - Team invites and join links do not send email automatically.
 - The Team screen supports single-use join links after `supabase/step-next-invite-links.sql` is applied.
 - `app.js` is an intentional shell/coordinator, not an extraction target by line count alone.
+- The 2026-09-17 Messages redesign is isolated review work, not a production deployment. Its migration is applied only to the testing platform. See `docs/MESSAGING_VERIFICATION.md` before releasing the matching frontend.
 
 ## Before Work Starts
 

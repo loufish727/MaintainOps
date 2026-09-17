@@ -9,7 +9,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json
 
 const budgets = {
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
-  appShell: { decoded: 160 * 1024, gzip: 44 * 1024 },
+  appShell: { decoded: 170 * 1024, gzip: 46 * 1024 },
   appStyles: { decoded: 185 * 1024, gzip: 33 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
@@ -17,6 +17,8 @@ const budgets = {
   financialFeature: { decoded: 28 * 1024, gzip: 8 * 1024 },
   teamFeature: { decoded: 22 * 1024, gzip: 6 * 1024 },
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
+  messageFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },
+  messageStyles: { decoded: 18 * 1024, gzip: 4 * 1024 },
 };
 
 const initialKeys = ["runtime", "appShell", "appStyles"];

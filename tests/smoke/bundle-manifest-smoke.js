@@ -17,10 +17,11 @@ const scriptBundleKeys = [
   "financialFeature",
   "teamFeature",
   "setupFeature",
+  "messageFeature",
   "appShell",
   "platformSpatial",
 ];
-const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature"]);
+const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature", "messageFeature"]);
 for (const key of scriptBundleKeys) {
   assert.match(
     String(manifest[key] || ""),
@@ -142,5 +143,14 @@ const hashedStyles = fs.readdirSync(root)
   .filter((name) => /^appStyles\.[a-f0-9]{10}\.css$/.test(name));
 assert.equal(hashedStyles.length, 1, "appStyles must have exactly one current hashed stylesheet");
 assert.equal(hashedStyles[0], manifest.appStyles, "appStyles hashed stylesheet must match the manifest");
+
+assert.match(manifest.messageStyles, /^messageStyles\.[a-f0-9]{10}\.css$/);
+assert.ok(fs.existsSync(path.join(bundlesDir, manifest.messageStyles)));
+const messageStyleMap = JSON.parse(fs.readFileSync(path.join(bundlesDir, `${manifest.messageStyles}.map`), "utf8"));
+assert.ok(messageStyleMap.sources?.length);
+assert.equal(Object.hasOwn(messageStyleMap, "sourcesContent"), false);
+assert.deepEqual(fs.readdirSync(bundlesDir).filter((name) => /^messageStyles\.[a-f0-9]{10}\.css$/.test(name)), [manifest.messageStyles]);
+assert.ok(fs.readFileSync(path.join(bundlesDir, manifest.appShell), "utf8").includes(`src/bundles/${manifest.messageStyles}`));
+assert.ok(!indexHtml.includes(manifest.messageStyles), "Messages CSS must remain off the initial load path");
 
 console.log("bundle manifest smoke passed");

@@ -9,6 +9,9 @@
     function filteredMessageThreads() {
       const messageThreadFilter = deps.getMessageThreadFilter();
       return deps.getMessageThreads().filter((thread) => {
+        const archived = deps.isConversationArchived?.(thread) || false;
+        if (messageThreadFilter === "archived") return archived && deps.matchesQuery(messageThreadSearchValues(thread), deps.getMessageSearchQuery());
+        if (archived) return false;
         const filterMatch =
           messageThreadFilter === "all" ||
           (messageThreadFilter === "unread" && unreadMessageCount(thread.id) > 0) ||
@@ -38,13 +41,14 @@
     }
 
     function totalUnreadMessages() {
-      return deps.getMessageThreads().reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
+      return deps.getMessageThreads().filter((thread) => !thread.preferences?.muted && !deps.isConversationArchived?.(thread))
+        .reduce((total, thread) => total + (unreadMessageCount(thread.id) > 0 ? 1 : 0), 0);
     }
 
     function directUnreadMessages() {
       return deps.getMessageThreads()
-        .filter((thread) => thread.thread_type === "direct")
-        .reduce((total, thread) => total + unreadMessageCount(thread.id), 0);
+        .filter((thread) => thread.thread_type === "direct" && !thread.preferences?.muted && !deps.isConversationArchived?.(thread))
+        .reduce((total, thread) => total + (unreadMessageCount(thread.id) > 0 ? 1 : 0), 0);
     }
 
     return {

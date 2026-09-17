@@ -5,6 +5,7 @@
     const pendingThreads = new Map();
     const pendingMessages = new Map();
     const busyForms = new Set();
+    const readWrites = new Map();
 
     async function insertOnce(table, payload) {
       let response = await deps.withOperationTimeout(
@@ -24,24 +25,28 @@
       return deps.getCompanyMembers().map((member) => member.user_id);
     }
 
-    function bindMessageWorkflowEvents() {
-      const messageThreadForm = documentRef.querySelector("#message-thread-form");
+    function bindMessageWorkflowEvents(root = documentRef) {
+      const messageThreadForm = root.querySelector("#message-thread-form");
       if (messageThreadForm) {
         messageThreadForm.addEventListener("submit", createMessageThread);
       }
 
-      const messageReplyForm = documentRef.querySelector("#message-reply-form");
+      const messageReplyForm = root.querySelector("#message-reply-form");
       if (messageReplyForm) {
         messageReplyForm.addEventListener("submit", sendThreadReply);
       }
 
-      documentRef.querySelectorAll("[data-delete-message]").forEach((button) => {
+      root.querySelectorAll("[data-delete-message]").forEach((button) => {
         button.addEventListener("click", deleteOwnMessage);
       });
 
-      documentRef.querySelectorAll("[data-delete-message-thread]").forEach((button) => {
+      root.querySelectorAll("[data-delete-message-thread]").forEach((button) => {
         button.addEventListener("click", deleteMessageThread);
       });
+      root.querySelectorAll("[data-archive-message-thread], [data-mute-message-thread]").forEach((button) => {
+        button.addEventListener("click", updateConversationPreferences);
+      });
+      root.querySelectorAll("[data-message-reaction]").forEach((button) => button.addEventListener("click", toggleReaction));
     }
 
     async function createMessageThread(event) {
@@ -60,7 +65,8 @@
       const threadType = form.get("thread_type");
       const directUserId = form.get("direct_user_id");
       const memberIds = messageThreadMembersForType(threadType, directUserId);
-      const title = String(form.get("title") || "").trim();
+      const enteredTitle = String(form.get("title") || "").trim();
+      const title = enteredTitle || (threadType === "direct" ? "Direct message" : "");
       const body = String(form.get("body") || "").trim();
       if (threadType === "company") {
         if (errorElement) errorElement.textContent = "Company-wide broadcast threads are disabled. Choose location or direct.";
@@ -78,6 +84,7 @@
       const companyId = deps.getActiveCompanyId();
       const userId = deps.getSession().user.id;
       const workOrderId = form.get("work_order_id") || null;
+      const existing = threadType === "direct" && !enteredTitle && !workOrderId ? deps.findDirectConversation?.(directUserId) : null;
       const locationId = threadType === "location" ? deps.activeLocationDatabaseId() : null;
       const key = JSON.stringify([companyId, userId, threadType, directUserId, title, body, workOrderId, locationId]);
       const pending = pendingThreads.get(key) || { id: crypto.randomUUID() };
@@ -103,7 +110,7 @@
           threadPayload.work_order_id = workOrderId;
         }
 
-        const { data: thread, error: threadError } = pending.thread
+        const { data: thread, error: threadError } = existing ? { data: existing } : pending.thread
           ? { data: pending.thread } : await insertOnce("message_threads", threadPayload);
 
         if (threadError) {
@@ -119,7 +126,7 @@
           thread_id: thread.id,
           user_id: userId,
         }));
-        const { error: memberError } = pending.membersSaved ? {} : await deps.withOperationTimeout(
+        const { error: memberError } = existing || pending.membersSaved ? {} : await deps.withOperationTimeout(
           deps.supabaseClient().from("message_thread_members").insert(memberRows),
           "Message member save timed out. Check your connection and try again.",
           15000
@@ -138,12 +145,12 @@
         threadStarted = true;
         if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user.id) return;
 
-        deps.clearDraft?.("composer", { title, body });
+        deps.clearDraft?.("composer", { title: enteredTitle, body });
         deps.setActiveMessageThreadId(thread.id);
         deps.setMessageComposerWorkOrderId("");
         deps.setMessageComposerOpen(false);
         await markMessageThreadRead(thread.id);
-        deps.showNotice("Thread started.");
+        deps.showNotice("Message sent.");
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = friendlyMessageCenterError(error);
@@ -151,7 +158,7 @@
         busyForms.delete("composer");
         if (!threadStarted && submitButton?.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = "Start Thread";
+          submitButton.textContent = "Send message";
         }
       }
     }
@@ -163,7 +170,9 @@
       if (busyForms.has(threadId)) return;
       const errorElement = documentRef.querySelector("#message-reply-error");
       const submitButton = formElement.querySelector("button[type='submit']");
-      const body = String(new FormDataCtor(formElement).get("body") || "").trim();
+      const form = new FormDataCtor(formElement);
+      const body = String(form.get("body") || "").trim();
+      const replyToId = form.get("reply_to_id") || null;
       if (!body) return;
       busyForms.add(threadId);
       const companyId = deps.getActiveCompanyId();
@@ -171,17 +180,20 @@
       if (errorElement) errorElement.textContent = "";
       if (submitButton) {
         submitButton.disabled = true;
-        submitButton.textContent = "Sending...";
+        submitButton.setAttribute?.("aria-label", "Sending reply");
       }
+      const sendState = formElement.querySelector(".message-send-state");
+      if (sendState) sendState.textContent = "Sending...";
 
       let replySent = false;
       try {
-        const { error } = await insertThreadMessage(threadId, body, companyId, userId);
+        const { error } = await insertThreadMessage(threadId, body, companyId, userId, replyToId);
         if (error) throw error;
 
         replySent = true;
         if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user.id) return;
         deps.clearDraft?.(threadId, { body });
+        deps.clearReplyQuote?.(threadId, replyToId);
         deps.showNotice("Message sent.");
         await markMessageThreadRead(threadId);
         await deps.render();
@@ -193,9 +205,56 @@
         busyForms.delete(threadId);
         if (!replySent && submitButton?.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = "Send Reply";
+          submitButton.setAttribute?.("aria-label", "Send reply");
+          if (sendState) sendState.textContent = "Not sent";
         }
       }
+    }
+
+    async function updateConversationPreferences(event) {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      button.closest?.("details")?.removeAttribute("open");
+      button.disabled = true;
+      const archive = button.dataset.archiveMessageThread ? button.dataset.archive === "true" : null;
+      const mute = button.dataset.muteMessageThread ? button.dataset.mute === "true" : null;
+      const threadId = button.dataset.archiveMessageThread || button.dataset.muteMessageThread;
+      const companyId = deps.getActiveCompanyId();
+      const userId = deps.getSession()?.user.id;
+      try {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("set_my_message_preferences", {
+          target_thread_id: threadId, archive, mute,
+        }), "Conversation update timed out. Try again.", 10000);
+        if (error) throw error;
+        if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user.id) return;
+        if (archive === true) deps.setActiveMessageThreadId("");
+        deps.showNotice(archive === null ? (mute ? "Conversation muted." : "Conversation unmuted.") : (archive ? "Conversation archived." : "Conversation moved to inbox."));
+        if (archive === null && deps.reloadPreferences) await deps.reloadPreferences();
+        else await deps.render();
+      } catch (error) { deps.showNotice(friendlyMessageCenterError(error), "warning"); }
+      finally { if (button.isConnected) button.disabled = false; }
+    }
+
+    async function toggleReaction(event) {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      button.closest?.("details")?.removeAttribute("open");
+      const message = deps.getMessage?.(button.dataset.messageId);
+      if (!message || message.deleted_at) return;
+      const reaction = button.dataset.messageReaction;
+      if (!["acknowledged", "looking", "thanks", "question"].includes(reaction)) return;
+      const userId = deps.getSession().user.id;
+      const companyId = deps.getActiveCompanyId();
+      const existing = message.message_reactions?.find((row) => row.user_id === userId && row.reaction === reaction);
+      button.disabled = true;
+      try {
+        const query = existing ? deps.supabaseClient().from("message_reactions").update({ active: !existing.active }).eq("id", existing.id).eq("user_id", userId).eq("company_id", companyId)
+          : deps.supabaseClient().from("message_reactions").insert({ company_id: companyId, thread_id: message.thread_id, message_id: message.id, user_id: userId, reaction });
+        const { error } = await deps.withOperationTimeout(query, "Reaction update timed out. Try again.", 10000);
+        if (error && error.code !== "23505") throw error;
+        if (companyId === deps.getActiveCompanyId() && userId === deps.getSession()?.user.id) await deps.reloadConversation?.(message.thread_id, message.id);
+      } catch (error) { deps.showNotice(friendlyMessageCenterError(error), "warning"); }
+      finally { if (button.isConnected) button.disabled = false; }
     }
 
     async function deleteOwnMessage(event) {
@@ -264,22 +323,30 @@
         user_id: deps.getSession().user.id,
         last_read_at: readAt,
       };
-      const { error } = await deps.withOperationTimeout(
-        deps.supabaseClient()
-          .from("message_reads")
-          .upsert(readRow, { onConflict: "thread_id,user_id" }),
-        "Message read marker timed out.",
-        8000
-      ).catch((error) => ({ error }));
-      if (error) deps.warn("Could not mark message thread read", error);
-      else if (readRow.company_id === deps.getActiveCompanyId() && readRow.user_id === deps.getSession()?.user.id) deps.setMessageThreadRead(threadId, readRow);
+      const key = `${readRow.company_id}:${readRow.user_id}:${threadId}`;
+      const previous = readWrites.get(key);
+      const save = (async () => {
+        if (previous) await previous;
+        if (readRow.company_id !== deps.getActiveCompanyId() || readRow.user_id !== deps.getSession()?.user.id || deps.getReadTime?.(threadId) >= readAt) return;
+        const { error } = await deps.withOperationTimeout(
+          deps.supabaseClient()
+            .from("message_reads")
+            .upsert(readRow, { onConflict: "thread_id,user_id" }),
+          "Message read marker timed out.",
+          8000
+        ).catch((error) => ({ error }));
+        if (error) deps.warn("Could not mark message thread read", error);
+        else if (readRow.company_id === deps.getActiveCompanyId() && readRow.user_id === deps.getSession()?.user.id) deps.setMessageThreadRead(threadId, readRow);
+      })();
+      readWrites.set(key, save);
+      try { await save; } finally { if (readWrites.get(key) === save) readWrites.delete(key); }
     }
 
-    async function insertThreadMessage(threadId, body, companyId = deps.getActiveCompanyId(), userId = deps.getSession().user.id) {
-      const key = JSON.stringify([companyId, userId, threadId, body]);
+    async function insertThreadMessage(threadId, body, companyId = deps.getActiveCompanyId(), userId = deps.getSession().user.id, replyToId = null) {
+      const key = JSON.stringify([companyId, userId, threadId, body, replyToId]);
       const id = pendingMessages.get(key) || crypto.randomUUID();
       pendingMessages.set(key, id);
-      const message = await insertOnce("messages", { id, company_id: companyId, thread_id: threadId, sender_id: userId, body });
+      const message = await insertOnce("messages", { id, company_id: companyId, thread_id: threadId, sender_id: userId, body, ...(replyToId ? { reply_to_id: replyToId } : {}) });
 
       if (message.error) return { error: message.error };
       pendingMessages.delete(key);

@@ -67,3 +67,6 @@ Every new SQL run should record:
 - who/what applied it
 - verification performed
 - rollback note if applicable
+## Messaging Experience, 2026-09-17
+
+- `supabase/migrations/202609171659_messaging_experience.sql`: isolated PostgreSQL/RLS proof passed; applied incrementally to testing project `fsxqrngpaseqdxijggcm` through the Supabase migration tool on 2026-09-17. Not applied to production. Adds recoverable preferences, same-thread quotes, scoped reactions and realtime publication membership, and enforces the existing Accounting read-only messaging contract. Signed-in Chromium and WebKit lifecycle checks passed on the testing platform. Existing operational records and production conversations were not rewritten. The checked-in consolidated migration is the fresh-application contract. Deployment order, cleanup and rollback notes are in `docs/MESSAGING_VERIFICATION.md`.

@@ -171,6 +171,22 @@ test.describe("MaintainOps authenticated role proof", () => {
         await expect(page.locator(`[data-section="${section}"]`)).toBeVisible();
       }
 
+      await page.locator('[data-section="messages"]').click();
+      await expect(page.locator(".message-center")).toBeVisible();
+      await expect(page.locator('[data-message-view="activity"]')).toBeVisible();
+      await expect(page.locator('[data-message-connection]')).toHaveText("Connected", { timeout: 20000 });
+      const messageLoads = (await workspaceRenderEvidence(page)).featureBundles;
+      expect(messageLoads.some((name) => name.startsWith("messageFeature."))).toBe(true);
+      await expect(page.locator('link[href*="messageStyles."]')).toHaveCount(1);
+      if (role.operational === "read") {
+        await expect(page.locator('[data-message-compose]')).toHaveCount(0);
+      } else {
+        await page.getByRole("button", { name: "New message", exact: true }).first().click();
+        await expect(page.locator("#message-thread-form")).toBeVisible();
+        await expect(page.locator('#message-thread-form [name="title"]')).not.toHaveAttribute("required");
+        await page.getByRole("button", { name: "Cancel new message" }).click();
+      }
+
       await page.locator('[data-section="planning"]').click();
       await expect(page.getByRole("heading", { name: "Planning", exact: true, level: 2 })).toBeVisible();
       await expectSingleActiveWorkspacePanel(page);

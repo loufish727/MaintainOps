@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 (async () => {
-  const { fetchMessageCenter, fetchMessageHistory } = await import("../../src/services/messageCenterService.mjs");
+  const { fetchMessageCenter, fetchMessageHistory, isConversationArchived } = await import("../../src/services/messageCenterService.mjs");
   const calls = [];
   const tables = {
     message_threads: [{ id: "one", messages: [{ body: "Latest", created_at: "2026-09-17" }] }, { id: "hidden" }],
@@ -24,8 +24,10 @@ const assert = require("node:assert/strict");
   } };
   const snapshot = await fetchMessageCenter(client, "company", "me");
   assert.equal(snapshot.metadata.length, 1001, "Do not silently stop at Supabase's response cap");
-  assert.deepEqual(snapshot.threads.map((thread) => thread.id), ["one"]);
-  assert.equal(snapshot.threads[0].latest_message.body, "Latest");
+  assert.deepEqual(snapshot.threads.map((thread) => thread.id).sort(), ["hidden", "one"]);
+  assert.equal(snapshot.threads.find((thread) => thread.id === "one").latest_message.body, "Latest");
+  assert.equal(isConversationArchived(snapshot.threads.find((thread) => thread.id === "hidden")), true, "Legacy hidden threads must be recoverable");
+  assert.equal(isConversationArchived({ preferences: { archived_at: "2026-09-16" }, latest_message: { created_at: "2026-09-17" } }), false, "New replies return archived conversations to the inbox");
   assert.equal(calls.filter(([table]) => table === "message_thread_members" || table === "message_reads").length, 0, "Small inboxes embed memberships and own read markers");
   assert.equal(calls.filter(([table, op]) => table === "messages" && op === "range").length, 3);
   assert.ok(calls.some(([table, op, value]) => table === "messages" && op === "select" && !value.includes("body")));

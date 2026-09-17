@@ -19,8 +19,16 @@
     if (!state || typeof renderWorkspace !== "function") return;
 
     const storage = options.storage || localStorage;
+    doc.querySelectorAll("[data-message-compose]").forEach((button) => button.addEventListener("click", () => options.openComposer?.()));
+    doc.querySelector("[data-message-close-compose]")?.addEventListener("click", () => options.closeComposer?.());
+    doc.querySelector("[data-message-exit]")?.addEventListener("click", () => options.exitMessages?.());
+    doc.querySelectorAll("[data-message-view]").forEach((button) => button.addEventListener("click", () => options.setMessageView?.(button.dataset.messageView)));
+    doc.querySelectorAll("[data-quote-message]").forEach((button) => button.addEventListener("click", () => options.quoteMessage?.(button.dataset.quoteMessage)));
+    doc.querySelector("[data-clear-message-quote]")?.addEventListener("click", () => options.quoteMessage?.(null));
+    doc.querySelector("[data-message-new]")?.addEventListener("click", () => options.jumpToLatest?.());
+    doc.querySelector(".message-list")?.addEventListener("scroll", () => options.onHistoryScroll?.(), { passive: true });
     doc.querySelector("[data-message-back]")?.addEventListener("click", () => options.backToMessages?.());
-    doc.querySelector("[data-retry-messages]")?.addEventListener("click", () => options.retryMessages?.());
+    doc.querySelectorAll("[data-retry-messages]").forEach((button) => button.addEventListener("click", () => options.retryMessages?.()));
     doc.querySelector("[data-message-older]")?.addEventListener("click", async (event) => {
       event.currentTarget.disabled = true;
       const button = event.currentTarget;
@@ -91,10 +99,14 @@
           const isDirect = typeSelect.value === "direct";
           directField.classList.toggle("hidden-section", !isDirect);
           const directSelect = directField.querySelector("select");
-          if (directSelect) directSelect.disabled = !isDirect;
+          if (directSelect) { directSelect.disabled = !isDirect; directSelect.required = isDirect; }
+          const title = messageThreadForm.querySelector("[name='title']");
+          if (title) title.required = !isDirect;
           scopeNote.textContent = messageComposerScopeNote(typeSelect.value);
+          options.showExistingConversation?.(isDirect ? directSelect?.value : "");
         };
         typeSelect.addEventListener("change", syncMessageComposer);
+        directField.querySelector("select")?.addEventListener("change", syncMessageComposer);
         syncMessageComposer();
       }
     }

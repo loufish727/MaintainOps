@@ -32,6 +32,19 @@ function defaultLoadScriptResource(documentRef, src, options = {}) {
   });
 }
 
+export function loadStyleResource(documentRef, src) {
+  return new Promise((resolve, reject) => {
+    const existing = documentRef.querySelector(`link[href="${src}"]`);
+    if (existing?.dataset.loaded === "true") return resolve();
+    const link = existing || documentRef.createElement("link");
+    const fail = () => { clearTimeout(timer); link.remove(); reject(new Error(`Could not load ${src}`)); };
+    const timer = setTimeout(fail, 10000);
+    link.addEventListener("load", () => { clearTimeout(timer); link.dataset.loaded = "true"; resolve(); }, { once: true });
+    link.addEventListener("error", fail, { once: true });
+    if (!existing) { link.rel = "stylesheet"; link.href = src; documentRef.head.appendChild(link); }
+  });
+}
+
 export function createLazyResourceHelpers({
   windowRef,
   documentRef,
@@ -41,6 +54,7 @@ export function createLazyResourceHelpers({
   shopReferenceChartsEnabled = true,
   platformPerformanceResourcePaths,
   featureBundlePaths = {},
+  featureStylePaths = {},
   initializeFeature = () => {},
   loadScriptResource = defaultLoadScriptResource,
   getActiveSection,
@@ -83,7 +97,8 @@ export function createLazyResourceHelpers({
     if (!src) throw new Error(`No feature bundle is configured for ${featureId}.`);
     if (!state.promise) {
       state.error = "";
-      state.promise = loadScriptResource(documentRef, src)
+      state.promise = Promise.all([loadScriptResource(documentRef, src),
+        featureStylePaths[featureId] ? loadStyleResource(documentRef, featureStylePaths[featureId]) : Promise.resolve()])
         .then(async () => {
           await initializeFeature(featureId);
           state.ready = true;

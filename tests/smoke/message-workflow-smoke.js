@@ -167,7 +167,7 @@ function createQuery(table, calls) {
   assert.equal(state.composerWorkOrderId, "");
   assert.equal(state.composerOpen, false);
   assert.equal(state.reads["thread-1"].user_id, "user-1");
-  assert.deepEqual(state.notices, ["Thread started."]);
+  assert.deepEqual(state.notices, ["Message sent."]);
   assert.equal(state.renders, 1);
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "message_threads"));
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "message_thread_members"));
@@ -177,20 +177,20 @@ function createQuery(table, calls) {
   assert.equal(threadInsert[2].thread_type, "location");
 
   await replyForm.dispatch("submit");
-  assert.deepEqual(state.notices, ["Thread started.", "Message sent."]);
+  assert.deepEqual(state.notices, ["Message sent.", "Message sent."]);
   assert.equal(state.renders, 2);
 
   await deleteButton.dispatch("click");
   assert.match(state.confirms[0], /Admins can still review/);
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message" && call[2].target_message_id === "message-1"));
-  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted."]);
+  assert.deepEqual(state.notices, ["Message sent.", "Message sent.", "Message deleted."]);
   assert.equal(state.renders, 3);
 
   await deleteThreadButton.dispatch("click");
   assert.match(state.confirms[1], /Hide this conversation.*future replies/);
   assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "soft_delete_own_message_thread" && call[2].target_thread_id === "thread-1"));
   assert.equal(state.activeThread, "");
-  assert.deepEqual(state.notices, ["Thread started.", "Message sent.", "Message deleted.", "Conversation hidden from your inbox."]);
+  assert.deepEqual(state.notices, ["Message sent.", "Message sent.", "Message deleted.", "Conversation hidden from your inbox."]);
   assert.equal(state.renders, 4);
 
   assert.deepEqual(workflow.messageThreadMembersForType("direct", "user-2"), ["user-1", "user-2"]);

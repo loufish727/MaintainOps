@@ -6,7 +6,9 @@ This document defines the intended role of `app.js` after the modularization pas
 
 `app.js` is currently about 6,400 physical lines. It has been reduced from a much larger legacy orchestration file by moving render helpers, event-binding groups, workflow modules, service helpers, query/list helpers, and utility logic into `src/`.
 
-The shell now renders only the active workspace screen. Manager, Financial, Team presentation, and Admin Setup are lazy feature bundles initialized through shell-owned dependency injection. Their screen authority remains modular without requiring a framework rewrite.
+The shell now renders only the active workspace screen. Manager, Financial, Team presentation, Admin Setup and Messages are lazy feature bundles initialized through shell-owned dependency injection. Their screen authority remains modular without requiring a framework rewrite.
+
+Messages' query contract, live subscription and serial reload queue are ESM services. Workflow mutations and live DOM updates belong to `messageWorkflow.js` and `messageLiveDisplay.js`; the shell coordinates current scope and history state. New Messages CSS loads only on demand.
 
 At this stage, additional movement should be based on ownership clarity and operational risk reduction, not line count alone.
 

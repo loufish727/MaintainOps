@@ -1,6 +1,13 @@
 (function () {
   function segmentIcon(type) {
     const icons = {
+      send: `<path d="m22 2-7 20-4-9-9-4 20-7z"></path><path d="M22 2 11 13"></path>`,
+      reply: `<path d="m9 10-5 5 5 5"></path><path d="M4 15h10a6 6 0 0 0 0-12h-2"></path>`,
+      back: `<path d="m12 5-7 7 7 7"></path><path d="M5 12h15"></path>`,
+      close: `<path d="m6 6 12 12M6 18 18 6"></path>`,
+      compose: `<path d="M12 20H4V4h8"></path><path d="m14 4 4-2 4 4-12 12H6v-4L18 2"></path>`,
+      more: `<circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle>`,
+      smile: `<circle cx="12" cy="12" r="9"></circle><path d="M8 14s1 3 4 3 4-3 4-3M8 9h.01M16 9h.01"></path>`,
       active: `<path d="M4 12h5l2-6 4 12 2-6h3"></path>`,
       all: `<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>`,
       mine: `<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M4 21a8 8 0 0 1 16 0"></path>`,

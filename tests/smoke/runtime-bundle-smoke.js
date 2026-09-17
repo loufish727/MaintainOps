@@ -49,13 +49,20 @@ const requiredGlobals = [
   "MaintainOpsRenderDisplayHelpers",
   "MaintainOpsRequestPhotoDisplay",
   "MaintainOpsWorkMessageDisplay",
-  "MaintainOpsMessageDisplay",
 ];
 
 for (const name of requiredGlobals) {
   if (!context.window[name]) {
     throw new Error(`Runtime bundle did not expose ${name}.`);
   }
+}
+
+for (const name of ["MaintainOpsMessageDisplay", "MaintainOpsMessageWorkflow", "MaintainOpsMessageCenterDisplay"]) {
+  if (context.window[name]) throw new Error(`${name} must not load on the initial path.`);
+}
+vm.runInContext(fs.readFileSync(path.join(root, "src", "bundles", manifest.messageFeature), "utf8"), context);
+for (const name of ["MaintainOpsMessageDisplay", "MaintainOpsMessageWorkflow", "MaintainOpsMessageCenterDisplay"]) {
+  if (!context.window[name]) throw new Error(`Messages feature did not expose ${name}.`);
 }
 
 const roles = context.window.MaintainOpsConstants.COMPANY_ROLES || [];
