@@ -43,6 +43,8 @@ The final five-role Chromium proof passed: admin 33, manager 31, accounting 31, 
 
 Generated conversations and uploaded objects were removed after proof. The user's manually created `new` conversation was retained. All changes remain local/testing-only: no production migration, push, deployment or hosted-release validation occurred. Evidence is in ignored `lfes-evidence/` and timestamped private proof snapshots.
 
+Voice-confirmation checkpoint `442de54` passed all 13 Full Strict stages with a clean worktree, including the three new composer confirmation regressions. Focused confirmation checks also passed WebKit; signed-in expanded-tools proof passed Chromium and WebKit with cancel-before-upload and confirmed failure/retry assertions. Startup decoded JS/CSS remains 772,829 bytes; Messages-only JS/CSS totals 20,882 gzip bytes, within the existing limits. No additional provider, schema migration or production deployment was needed. Generated QA conversations/files were removed and the manual conversation retained.
+
 - `message-center-loader-boundary-smoke.js`: more than 1,000 metadata rows, more than 500 memberships, recoverable legacy archive, bounded history and timestamp tie-breaker.
 - `message-retry-smoke.js` and `message-workflow-smoke.js`: ambiguous send retries, partial creation recovery, timestamp/read-marker failures and mutation contracts.
 - `message-live-smoke.js`: authenticated channel setup, actual database subscription status, event coalescing, serial flush, reconnect and scope teardown.
