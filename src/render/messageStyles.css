@@ -103,7 +103,7 @@ body.messages-active .command-stack { display: none; }
 .message-center .message-send-button:hover,.message-center .message-compose-button:hover { background: #b9efdf; }
 .message-composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 7px; color: var(--message-muted); font-size: 12px; }
 .message-quick-menu summary { min-height: 32px; cursor: pointer; padding: 7px 0; }
-.message-quick-menu { position: relative; flex-shrink: 0; }
+.message-quick-menu { position: relative; flex: 0 0 92px; width: 92px; }
 .message-center .message-quick-replies { position: absolute; bottom: calc(100% + 8px); right: 0; display: grid; padding: 6px; gap: 4px; width: 220px; max-width: calc(100vw - 24px); background: #252e32; border: 1px solid #627278; border-radius: 6px; z-index: 20; box-shadow: 0 12px 36px #0008; }
 .message-center .message-quick-replies button { background: #303e43; border: 1px solid #627980; color: #e1f2ec; border-radius: 6px; }
 .message-center .error-text:empty { display: none; }
