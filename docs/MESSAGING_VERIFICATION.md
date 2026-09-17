@@ -12,8 +12,8 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its additive
 - Direct messages require a teammate, not a subject. An existing generic two-person conversation is reused. Subject-specific conversations and linked work-order discussions remain separate.
 - A company-team/location topic includes the company team, not just people at that location. It is not location-private. Direct conversations remain participant-only under RLS.
 - Archive is recoverable and personal. A newer reply returns an archived conversation to the inbox. Mute is independent and suppresses the conversation's unread badge, not its delivery. Legacy hidden conversations can be restored from Archived.
-- The navigation badge counts unread, unmuted, unarchived conversations. Individual thread pills count unread messages. Work-order Activity keeps its own count.
-- Quoted replies reference a non-deleted message in the same thread/company. Four optional reactions mean acknowledged, looking, thanks or question. They never complete work, change assignment, or alter Production Actions.
+- The navigation badge combines unread, unmuted, unarchived conversations with unread work-order alerts. Individual thread pills count unread messages; the Activity tab also shows its own alert count.
+- Quoted replies stay within the same thread/company; deleted originals display as unavailable. Four optional reactions mean acknowledged, looking, thanks or question. They never complete work, change assignment, or alter Production Actions.
 - Delete removes one's own message from visible conversation history. Accounting is read-only for conversations, enforced in both UI and database; Accounting may still mark messages read.
 - Drafts survive local filtering, paging and conversation changes in memory, scoped to user/company/conversation. They do not survive a browser reload and are not an offline queue.
 - Sends retry the same generated ID after an ambiguous timeout. A secondary thread-timestamp failure does not turn a committed send into a failed send. Read-marker writes are serialized and deduplicated.
@@ -22,13 +22,15 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its additive
 
 - Messages presentation, workflow, live DOM updates and its new CSS are content-hashed lazy resources. My Work does not request them. Lightweight inbox metadata, badge helpers and realtime coordination remain in the startup path.
 - One authenticated realtime channel per company/user watches messages, membership preferences and reactions. No polling or workspace refresh is added. The connection label waits for the database subscription acknowledgement, not just a joined socket.
-- Reconnect reconciles inbox metadata and opened history, including older loaded messages. Normal reaction updates fetch the affected message only. Coalesced reloads await the newest queued read so an older response cannot hide a just-completed mutation.
+- Reconnect reconciles inbox metadata and opened history, including older loaded messages. A local reaction write re-reads the affected message, including when it is outside the latest 50. Realtime batches reconcile the messaging snapshot and opened history; they never reload operational workspace data. Coalesced reloads await the newest queued read so an older response cannot hide a just-completed mutation.
 - Only latest previews and opened history load message bodies. Inbox metadata and read markers still grow with accessible message volume; this is not a server-side unread aggregate.
 - Cross-device read-marker changes and work-order Activity are not subscribed live. Browser notifications, email, attachments, presence, typing indicators and durable offline delivery are not added.
 
 Measured initial first-party JS/CSS decreased from 776,429 to 770,853 decoded bytes and from 174,117 to 173,767 gzip bytes. The on-demand Messages bundle and CSS add 11,701 gzip bytes only when opened. This is a payload measurement, not a claim of faster real-world latency. The total startup budget remains unchanged. The app-shell sub-budget was reallocated from 160/44 KiB decoded/gzip to 170/46 KiB for scope/realtime coordination while the eager runtime shrank; the new lazy resources have separate 32/9 KiB JS and 18/4 KiB CSS limits.
 
 ## Automated Evidence
+
+Local code checkpoint `ffaf0da` passed all 13 Full Strict LFES stages on 2026-09-17 with a clean worktree. Separate signed-in Chromium/WebKit messaging lifecycles and five-role Chromium navigation/permission proof passed. The five-role test measured 30-35 startup requests against the unchanged 35-request budget and no optional feature bundles on My Work. These are testing-platform measurements, not production latency claims. All disposable messaging fixtures were removed afterward; no production deployment or hosted-release check was performed.
 
 - `message-center-loader-boundary-smoke.js`: more than 1,000 metadata rows, more than 500 memberships, recoverable legacy archive, bounded history and timestamp tie-breaker.
 - `message-retry-smoke.js` and `message-workflow-smoke.js`: ambiguous send retries, partial creation recovery, timestamp/read-marker failures and mutation contracts.
