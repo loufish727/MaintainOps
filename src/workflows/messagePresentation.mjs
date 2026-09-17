@@ -90,7 +90,7 @@ export function createMessagePresentation({ documentRef: doc, getFile, download 
     const active = menus().at(-1); active.open = false; active.querySelector('summary').focus({ preventScroll: true });
   }, true);
   doc.addEventListener('scroll', event => {
-    if (!event.target.closest?.('.message-menu-items')) menus().forEach(menu => { menu.open = false; });
+    if (!event.target.closest?.('.message-menu-items')) menus().forEach(position);
   }, true);
   doc.defaultView.addEventListener('resize', () => menus().forEach(position));
   return { hydrate, reset };

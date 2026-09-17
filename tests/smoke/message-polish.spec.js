@@ -78,6 +78,8 @@ for (const width of [1440, 768, 390, 320]) {
     await actions.click();
     const menu=page.locator('.message-overflow[open] > .message-menu-items');
     await expect(menu).toBeVisible();
+    await history.evaluate(node=>{node.scrollTop=Math.max(0,node.scrollTop-2);node.dispatchEvent(new Event('scroll'));});
+    await expect(menu).toBeVisible();
     const box=await menu.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x+box.width).toBeLessThanOrEqual(width);
     expect(box.y+box.height).toBeLessThanOrEqual(960);
@@ -109,6 +111,8 @@ for (const width of [1440, 768, 390, 320]) {
     await expect(page.locator('[data-message-photo]').last()).toBeInViewport();
     await page.evaluate(()=>polish.finish());
     await expect(page.locator('[data-message-photo] img:not([hidden])').first()).toBeVisible();
+    const photoBox=await page.locator('[data-message-photo]').last().boundingBox();
+    expect(Math.abs(photoBox.width / photoBox.height - 4/3)).toBeLessThan(.02);
     await page.evaluate(()=>polish.reset());
     await page.evaluate(()=>polish.finish());
     await expect.poll(()=>page.evaluate(()=>polish.created===polish.revoked)).toBe(true);
