@@ -41,6 +41,10 @@
 .message-voice-confirm-actions button { display: inline-flex; align-items: center; gap: 6px; }
 .message-voice-confirm-actions [data-confirm-voice-send] { color: #10282e; background: #8bdbea; border-color: #8bdbea; }
 .message-record-state { color: #ffb6af; font-size: 12px; }
+.message-record-controls { gap: 8px; }
+.message-record-controls .message-record-state { flex: 1 1 96px; min-width: 0; }
+.message-record-controls button { min-height: 40px; padding: 6px 12px; color: #edf5f8; background: #293a40; border: 1px solid #627980; border-radius: 6px; }
+.message-composer-footer:has(.message-record-controls,[data-review-message-voice]) > .message-quick-menu { display: none; }
 .message-file-list { display: grid; gap: 5px; }
 :is(.message-center,.message-tool-dialog) .message-file { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px; border: 1px solid #71878e; border-radius: 6px; color: #edf5f8; background: #1a292d; text-align: left; }
 .message-file > span { min-width: 0; overflow-wrap: anywhere; }
@@ -92,5 +96,5 @@
   .message-reactions { gap: 2px; }
   .message-center .message-reaction { padding: 3px 6px; min-width: 44px; }
   .message-center .message-composer-footer { gap: 4px; }
-  .message-media-tools .message-voice-button { min-height: 48px; }
+  .message-media-tools .message-voice-button,.message-record-controls button { min-height: 48px; }
 }

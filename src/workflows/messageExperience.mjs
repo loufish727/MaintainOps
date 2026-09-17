@@ -6,7 +6,7 @@ export function createMessageExperience(deps) {
   const doc = deps.documentRef, escape = deps.escapeHtml, icon = deps.icon;
   const files = new Map(), busy = new Set(), drafts = new Map();
   let scope = '', section = '', dialog, discussion, search = { text: '', sender: '', since: '', thread: '', page: 0 }, searchVersion = 0, searchTimer, discussionVersion = 0, record, recordKey, lastFocus;
-  let refreshTimer, refreshing = false, cleanedScope = '', cancelVoiceConfirmation;
+  let refreshTimer, refreshing = false, cleanedScope = '', cancelVoiceConfirmation, recordPending = false, recordSeconds = 0;
   const approvedVoiceForms = new WeakSet();
   const previews = new Set();
   const scopeNow = () => `${deps.getUserId()}:${deps.getCompanyId()}`;
@@ -16,16 +16,22 @@ export function createMessageExperience(deps) {
   const errorText = error => error?.message || 'Could not complete this action. Try again.';
   // Every caller supplies our own escaped builders, never server-provided HTML.
   function html(node, markup) { if (node) node.innerHTML = markup; }
+  function clearRecording(cancel = true) {
+    const previous = record;
+    record = null; recordKey = null; recordPending = false; recordSeconds = 0;
+    if (cancel) previous?.cancel();
+  }
 
   function closeDialog() {
     cancelVoiceConfirmation?.();
     if (discussion) drafts.set(discussion.root, dialog?.querySelector('[name="body"]')?.value || '');
-    if (recordKey?.startsWith('discussion:')) { record?.cancel(); record = null; recordKey = null; }
+    if (recordKey?.startsWith('discussion:')) clearRecording();
     searchVersion++; discussionVersion++; discussion = null;
     dialog?.close(); dialog?.remove(); dialog = null;
     if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
   }
   function makeDialog(title, content) {
+    if (record) { clearRecording(); hydrate(); }
     closeDialog(); lastFocus = doc.activeElement;
     dialog = doc.createElement('dialog'); dialog.className = 'message-tool-dialog';
     html(dialog, `<header><h2>${escape(title)}</h2><button class="message-icon-button" data-close-message-dialog type="button" aria-label="Close" title="Close">${icon('close')}</button></header>${content}`);
@@ -34,7 +40,7 @@ export function createMessageExperience(deps) {
     return dialog;
   }
   function reset() {
-    scope = scopeNow(); section = ''; files.clear(); busy.clear(); record?.cancel(); record = null; recordKey = null;
+    scope = scopeNow(); section = ''; files.clear(); busy.clear(); clearRecording();
     closeDialog(); clearTimeout(searchTimer); clearTimeout(refreshTimer);
     drafts.clear(); cleanedScope = '';
     for (const preview of previews) { URL.revokeObjectURL(preview.url); preview.node.remove(); }
@@ -46,16 +52,22 @@ export function createMessageExperience(deps) {
   }
   function hydrate() {
     if (scope !== scopeNow()) reset();
-    if (deps.getActiveSection() !== 'messages') { closeDialog(); record?.cancel(); record = null; recordKey = null; return; }
+    if (deps.getActiveSection() !== 'messages') { closeDialog(); clearRecording(); return; }
     if (cleanedScope !== scope && deps.canEdit()) { cleanedScope = scope; void cleanupPendingUploads().catch(() => {}); }
-    doc.querySelectorAll('.message-attachments').forEach(node => {
+    const composers = [...doc.querySelectorAll('.message-attachments')];
+    if (record && !composers.some(node => node.dataset.attachmentKey === recordKey)) clearRecording();
+    composers.forEach(node => {
       const key = node.dataset.attachmentKey;
+      const recordingHere = Boolean(record && recordKey === key), hasVoice = fileList(key).some(file => file.type.startsWith('audio/'));
       html(node, `<div class="message-attachment-tray">${fileList(key).map(file => `<span class="message-pending-file"><span>${escape(file.name)} <small>${Math.ceil(file.blob.size / 1024)} KB</small></span><button data-remove-pending-file="${file.id}" data-file-key="${escape(key)}" type="button" aria-label="Remove ${escape(file.name)}" title="Remove attachment" ${busy.has(key) ? 'disabled' : ''}>${icon('close')}</button></span>`).join('')}</div>
-        <div class="message-media-tools"><button class="message-icon-button" data-choose-message-files type="button" aria-label="Attach files" title="Attach photos or files" ${busy.has(key) ? 'disabled' : ''}>${icon('attach')}</button><input data-message-files type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,audio/*" hidden>
-        <button class="message-voice-button" data-record-message type="button" title="Record a voice message" ${record || busy.has(key) ? 'disabled' : ''}>${icon('mic')}<span>Send voice message</span></button>
-        ${recordKey === key ? `<span class="message-record-state" role="status">Recording <span data-record-time>0:00</span></span><button data-stop-recording type="button">Stop</button><button data-cancel-recording type="button">Cancel</button>` : ''}</div>`);
+        <div class="message-media-tools ${recordingHere ? 'message-record-controls' : ''}">${recordingHere
+          ? `<span class="message-record-state" role="status">${recordPending ? 'Waiting for microphone...' : `Recording <span data-record-time>${Math.floor(recordSeconds / 60)}:${String(recordSeconds % 60).padStart(2,'0')}</span>`}</span>${recordPending ? '' : '<button data-stop-recording type="button">Stop</button>'}<button data-cancel-recording type="button">Cancel</button>`
+          : `<button class="message-icon-button" data-choose-message-files type="button" aria-label="Attach files" title="Attach photos or files" ${busy.has(key) ? 'disabled' : ''}>${icon('attach')}</button><input data-message-files type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,audio/*" hidden><button class="message-voice-button" ${hasVoice ? 'data-review-message-voice' : 'data-record-message'} type="button" title="${hasVoice ? 'Review before sending' : 'Record a voice message'}" ${record || busy.has(key) ? 'disabled' : ''}>${icon(hasVoice ? 'send' : 'mic')}<span>${hasVoice ? 'Review voice message' : 'Send voice message'}</span></button>`}</div>`);
       const form = node.closest('form');
       if (form?.querySelector('[name="body"]')) form.querySelector('[name="body"]').required = !fileList(key).length;
+      const submit = form?.querySelector('button[type="submit"]');
+      if (submit && recordingHere && !submit.disabled) { submit.dataset.voiceLocked = 'true'; submit.disabled = true; }
+      else if (submit && !recordingHere && submit.dataset.voiceLocked) { delete submit.dataset.voiceLocked; submit.disabled = false; }
     });
   }
   async function addFiles(key, inputFiles) {
@@ -69,14 +81,18 @@ export function createMessageExperience(deps) {
   }
   async function recordVoice(key) {
     if (record || !deps.canEdit()) return;
-    const saved = scopeNow(); recordKey = key;
-    record = createVoiceRecorder({
-      onTime: seconds => { const el = doc.querySelector('[data-record-time]'); if (el) el.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2,'0')}`; },
-      onComplete: file => { record = null; recordKey = null; if (current(saved)) void addFiles(key,[file]).catch(error => deps.notice(errorText(error),'warning')); hydrate(); },
-      onError: error => { record?.cancel(); record = null; recordKey = null; hydrate(); deps.notice(errorText(error),'warning'); },
+    const composer = [...doc.querySelectorAll('.message-attachments')].find(node => node.dataset.attachmentKey === key);
+    if (composer?.closest('form')?.querySelector('button[type="submit"]')?.disabled) return;
+    const saved = scopeNow(); recordKey = key; recordPending = true;
+    const recorder = createVoiceRecorder({
+      onTime: seconds => { if (record !== recorder) return; recordSeconds = seconds; const el = doc.querySelector('[data-record-time]'); if (el) el.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2,'0')}`; },
+      onComplete: file => { if (record !== recorder) return; clearRecording(false); if (current(saved)) void addFiles(key,[file]).catch(error => deps.notice(errorText(error),'warning')); hydrate(); },
+      onError: error => { if (record !== recorder) return; clearRecording(); hydrate(); deps.notice(errorText(error),'warning'); },
     });
+    record = recorder;
     hydrate();
-    try { await record.start(); } catch (error) { record = null; recordKey = null; hydrate(); throw error; }
+    try { await recorder.start(); if (record === recorder) { recordPending = false; hydrate(); } }
+    catch (error) { if (record !== recorder) return; clearRecording(); hydrate(); throw error; }
   }
   async function sendAttachments({ key, messageId, threadId, body, quoteId, parentId }) {
     const selected = [...fileList(key)], saved = scopeNow();
@@ -113,7 +129,8 @@ export function createMessageExperience(deps) {
       const label = doc.createElement('p'); label.textContent = file.name;
       const audio = doc.createElement('audio'); audio.controls = true; audio.preload = 'metadata';
       const url = URL.createObjectURL(file.blob); urls.push(url); audio.src = url;
-      const fallback = doc.createElement('a'); fallback.href = url; fallback.download = file.name; fallback.textContent = 'Download recording';
+      const fallback = doc.createElement('a'); fallback.href = url; fallback.download = file.name; fallback.textContent = 'Preview unavailable. Download recording'; fallback.hidden = true;
+      audio.addEventListener('error', () => { if (audio.getAttribute('src')) fallback.hidden = false; });
       review.append(label, audio, fallback);
     }
     const close = () => {
@@ -227,6 +244,7 @@ export function createMessageExperience(deps) {
     const row = deps.getMessage(messageId) || discussion?.rows.find(row => row.id === messageId);
     const file = row?.message_files?.find(file => file.id === id);
     if (!file) return;
+    if (record) { clearRecording(); hydrate(); }
     const saved = scopeNow();
     const node = doc.createElement('dialog'); node.className = 'message-tool-dialog message-media-dialog';
     const heading = doc.createElement('h2'); heading.textContent = file.file_name;
@@ -277,8 +295,9 @@ export function createMessageExperience(deps) {
       if(button.hasAttribute('data-open-message-file')) await openFile(button.dataset.openMessageFile,button.dataset.messageId);
       if(button.hasAttribute('data-choose-message-files')) button.closest('.message-attachments').querySelector('input[type="file"]').click();
       if(button.hasAttribute('data-record-message')) await recordVoice(button.closest('.message-attachments').dataset.attachmentKey);
+      if(button.hasAttribute('data-review-message-voice')) { const form=button.closest('form'), submit=form?.querySelector('button[type="submit"]'); if(form && !submit?.disabled) form.requestSubmit(submit); }
       if(button.hasAttribute('data-stop-recording')) record?.stop();
-      if(button.hasAttribute('data-cancel-recording')) {record?.cancel();record=null;recordKey=null;hydrate();}
+      if(button.hasAttribute('data-cancel-recording')) {clearRecording();hydrate();}
       if(button.hasAttribute('data-remove-pending-file')) { const key=button.dataset.fileKey; if(busy.has(key))return; const file=fileList(key).find(file=>file.id===button.dataset.removePendingFile); if(file){await removePendingFile(client(),file);files.set(key,fileList(key).filter(item=>item!==file));hydrate();} }
       if(button.hasAttribute('data-favorite-conversation')) { const thread=deps.getThreads().find(t=>t.id===button.dataset.favoriteConversation); if(thread)await organize(thread.id,!thread.preferences?.favorite,thread.preferences?.section_name); }
       if(button.hasAttribute('data-save-message-section')) { const thread=deps.getThreads().find(t=>t.id===button.dataset.saveMessageSection); if(thread)await organize(thread.id,null,button.closest('.message-menu-items').querySelector('[data-message-section-name]').value); }

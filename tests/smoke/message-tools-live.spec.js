@@ -58,8 +58,12 @@ test('message tools: search, organization, discussions, private files and voice 
     await page.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByRole('button',{name:'52 replies',exact:true})).toBeVisible();
     expect(await page.evaluate(()=>window.__micCalls)).toBe(0);
     await page.getByRole('button',{name:'Send voice message',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.__micCalls)).toBe(1);
+    await expect(page.getByRole('button',{name:'Send reply',exact:true})).toBeDisabled();
+    await expect(page.getByRole('button',{name:'Attach files',exact:true})).toHaveCount(0);
     await page.getByRole('button',{name:'Cancel',exact:true}).click();expect(await page.evaluate(()=>window.__micStops)).toBe(1);await expect(page.locator('.message-pending-file')).toHaveCount(0);
     await page.getByRole('button',{name:'Send voice message',exact:true}).click();await page.getByRole('button',{name:'Stop',exact:true}).click();await expect(page.locator('.message-pending-file')).toContainText('Voice message.wav');
+    await expect(page.getByRole('button',{name:'Review voice message',exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Send voice message',exact:true})).toHaveCount(0);
     await page.locator('[data-message-files]').setInputFiles({name:'manual.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\nQA attachment\n%%EOF')});
     await expect(page.locator('.message-pending-file')).toHaveCount(2);
     const photo=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=2048;c.height=1024;const x=c.getContext('2d');x.fillStyle='#eac234';x.fillRect(0,0,c.width,c.height);return c.toDataURL('image/png').split(',')[1];});
@@ -68,7 +72,7 @@ test('message tools: search, organization, discussions, private files and voice 
     await page.getByRole('textbox',{name:'Reply',exact:true}).fill('Files for the job');
     let blocked=true;
     await page.route('**/rest/v1/rpc/send_message_with_files',async route=>{if(blocked){blocked=false;await route.fulfill({status:503,contentType:'application/json',body:'{"message":"Injected commit failure"}'});}else await route.continue();});
-    await page.getByRole('button',{name:'Send reply',exact:true}).click();
+    await page.getByRole('button',{name:'Review voice message',exact:true}).click();
     const confirmation=page.getByRole('dialog',{name:'Send voice message?',exact:true});
     await expect(confirmation.locator('audio')).toHaveCount(1);
     await confirmation.getByRole('button',{name:'Keep editing',exact:true}).click();
