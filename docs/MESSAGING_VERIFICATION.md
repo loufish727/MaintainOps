@@ -26,6 +26,15 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its additive
 
 ## Loading And Live Updates
 
+### Visual Polish
+
+- The Messages-only design uses neutral graphite surfaces, mint actions, emerald outgoing bubbles and six deterministic initials-avatar colors. These colors identify conversations, not availability or presence.
+- The inbox, chat header, file cards, search, reply threads and voice review share spacing and type rules. Mobile has compact navigation and 48px primary touch controls. Short histories sit next to the composer; longer history remains independently scrollable.
+- Message/conversation menus are clamped to the viewport and support outside-click/Escape dismissal. Quick replies open above the composer without changing its height. Linked-work-order controls remain accessible at 320px.
+- Inline photos use participant-authorized private downloads only when entering the viewport. At most two downloads run concurrently; the temporary cache is limited to 12 photos / 12 MiB. Photos above 5 MiB retain the explicit open action instead of automatic preview. URLs are revoked on scope changes or leaving Messages. No audio autoplays and no document downloads occur merely to draw a file card.
+- `messagePresentation.mjs` owns thumbnail lifecycle and popup positioning inside the existing lazy Messages bundle; `app.js` is unchanged. Startup budgets are unchanged. The lazy feature budgets are now 59/19 KiB JS and 27/6 KiB CSS (decoded/gzip), reflecting the bounded media controller and presentation styling.
+- `message-polish.spec.js` uses clearly fictional local conversations at 1440/768/390/320px. It checks draft stability, keyboard dismissal, menu bounds, quick-reply layout, linked orders, viewport-triggered private previews, concurrency and revoked URLs. It is included in the release/strict browser stage. These fixtures are not production data.
+
 - Messages presentation, workflow, live DOM updates and its new CSS are content-hashed lazy resources. My Work does not request them. Lightweight inbox metadata, badge helpers and realtime coordination remain in the startup path.
 - One authenticated realtime channel per company/user watches messages, membership preferences and reactions. No polling or workspace refresh is added. The connection label waits for the database subscription acknowledgement, not just a joined socket.
 - Reconnect reconciles inbox metadata and opened history, including older loaded messages. A local reaction write re-reads the affected message, including when it is outside the latest 50. Realtime batches reconcile the messaging snapshot and opened history; they never reload operational workspace data. Coalesced reloads await the newest queued read so an older response cannot hide a just-completed mutation.

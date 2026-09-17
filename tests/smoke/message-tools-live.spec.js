@@ -101,6 +101,8 @@ test('message tools: search, organization, discussions, private files and voice 
     fs.writeFileSync(path.join(evidence,'message-audio-decoder.json'),JSON.stringify(audioEvidence,null,2));
     if(audioEvidence.errorCode) await expect(page.locator('.message-media-dialog')).toContainText('Download the file to listen');
     await page.getByRole('button',{name:'Close',exact:true}).click();
+    await page.locator('[data-message-photo]').scrollIntoViewIfNeeded();
+    await expect.poll(()=>page.locator('[data-message-photo] img').evaluate(img=>img.naturalWidth)).toBe(768);
     await page.getByRole('button',{name:/equipment-reference/}).click();await expect.poll(()=>page.locator('.message-media-dialog img').evaluate(img=>img.naturalWidth)).toBe(768);await page.getByRole('button',{name:'Close',exact:true}).click();
     await page.screenshot({path:path.join(evidence,'message-tools-desktop.png')});
     for(const width of [390,320]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);const box=await page.locator('.message-chat-header').boundingBox();expect(box.height).toBeLessThan(110);await expect(page.getByRole('button',{name:'Send reply',exact:true})).toBeInViewport();await page.screenshot({path:path.join(evidence,`message-tools-mobile-${width}.png`)});}

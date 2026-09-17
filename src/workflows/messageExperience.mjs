@@ -1,4 +1,5 @@
 import { prepareMessageFile, sendMessageFiles, removePendingFile, createVoiceRecorder } from '../services/messageMedia.mjs';
+import { createMessagePresentation } from './messagePresentation.mjs';
 
 const SELECT = 'id,company_id,thread_id,sender_id,body,created_at,deleted_at,reply_to_id,parent_message_id,message_reactions(*),message_files(id,file_name,content_type,byte_size,object_path)';
 
@@ -12,6 +13,10 @@ export function createMessageExperience(deps) {
   const scopeNow = () => `${deps.getUserId()}:${deps.getCompanyId()}`;
   const current = saved => saved === scopeNow();
   const client = () => deps.client();
+  const presentation = createMessagePresentation({ documentRef: doc,
+    getFile: (id, messageId) => (deps.getMessage?.(messageId) || discussion?.rows.find(row => row.id === messageId))?.message_files?.find(file => file.id === id),
+    download: path => client().storage.from('message-files').download(path),
+  });
   const fileList = key => files.get(key) || [];
   const errorText = error => error?.message || 'Could not complete this action. Try again.';
   // Every caller supplies our own escaped builders, never server-provided HTML.
@@ -40,6 +45,7 @@ export function createMessageExperience(deps) {
     return dialog;
   }
   function reset() {
+    presentation.reset();
     scope = scopeNow(); section = ''; files.clear(); busy.clear(); clearRecording();
     closeDialog(); clearTimeout(searchTimer); clearTimeout(refreshTimer);
     drafts.clear(); cleanedScope = '';
@@ -52,7 +58,8 @@ export function createMessageExperience(deps) {
   }
   function hydrate() {
     if (scope !== scopeNow()) reset();
-    if (deps.getActiveSection() !== 'messages') { closeDialog(); clearRecording(); return; }
+    if (deps.getActiveSection() !== 'messages') { closeDialog(); clearRecording(); presentation.reset(); return; }
+    presentation.hydrate();
     if (cleanedScope !== scope && deps.canEdit()) { cleanedScope = scope; void cleanupPendingUploads().catch(() => {}); }
     const composers = [...doc.querySelectorAll('.message-attachments')];
     if (record && !composers.some(node => node.dataset.attachmentKey === recordKey)) clearRecording();
@@ -213,6 +220,7 @@ export function createMessageExperience(deps) {
     const form = dialog.querySelector('.message-discussion-form');
     if (form) form.hidden = !rootResult.data || Boolean(rootResult.data.deleted_at);
     deps.bindWorkflow(list);
+    presentation.hydrate();
     if (state.highlight) { list.querySelector(`[data-message-id="${CSS.escape(state.highlight)}"]`)?.scrollIntoView({ block:'center' }); state.highlight = ''; }
     else list.scrollTop = preserve && !bottom ? top : list.scrollHeight;
     if (!doc.hidden && (!preserve || bottom)) await deps.markRead(state.thread, state.rows.at(-1)?.created_at);
@@ -279,6 +287,7 @@ export function createMessageExperience(deps) {
     } finally { busy.delete('organization'); if (actions) actions.inert = false; }
   }
   function liveUpdate() {
+    presentation.hydrate();
     if (!discussion) return;
     clearTimeout(refreshTimer); refreshTimer=setTimeout(async()=>{ if(refreshing) return; refreshing=true; try { await loadDiscussion(true); } catch {} finally { refreshing=false; } },180);
   }

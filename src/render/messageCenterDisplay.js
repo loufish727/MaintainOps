@@ -22,12 +22,14 @@
       const quote = deps.getReplyQuote?.(active?.id);
       const archived = active && deps.isConversationArchived?.(active);
       const title = active ? (deps.threadTitle?.(active) || active.title) : "";
+      const avatar = String(title).trim().split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join("").toUpperCase();
+      const tone = Math.abs([...String(title)].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) | 0, 0)) % 6;
       const unread = deps.totalUnreadMessages();
       const sections = [...new Set(threads.map(thread => thread.preferences?.section_name).filter(Boolean))].sort();
       return `<section class="message-center ${active && !composing && view === "conversations" ? "has-active-thread" : ""} ${composing && view === "conversations" ? "has-composer" : ""}" data-inbox-view="${escape(`${deps.getMessageThreadFilter()}:${deps.getMessageSearchQuery()}:${page}`)}" data-thread-id="${escape(composing ? "" : active?.id || "")}">
         <header class="message-toolbar">
-          <button class="message-mobile-exit" data-message-exit type="button">${icon("back")}My Work</button>
-          <div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}</div><span class="message-inbox-count">${unread} unread conversation${unread === 1 ? "" : "s"}</span></div>
+          <button class="message-mobile-exit" data-message-exit type="button" aria-label="Back to My Work" title="Back to My Work">${icon("back")}</button>
+          <div class="message-toolbar-title"><span class="message-heading-icon" aria-hidden="true">${icon("reply")}</span><div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}<span class="message-inbox-count">${unread} unread</span></div></div></div>
           <div class="message-toolbar-actions"><span class="message-connection" data-message-connection role="status">${escape(deps.getMessageConnection?.() || "")}</span>
           <button class="message-icon-button" data-search-messages="" type="button" aria-label="Search message content" title="Search message content">${icon("search")}</button>
           <button class="message-connection-retry" data-retry-messages type="button" ${["Live updates unavailable", "Update failed"].includes(deps.getMessageConnection?.()) ? "" : "hidden"}>Retry connection</button>
@@ -41,7 +43,7 @@
         ${view === "activity" ? `<section class="message-activity">${deps.renderWorkOrderNotifications?.() || '<p class="message-empty">No work notifications.</p>'}</section>` : `
         <div class="message-layout">
           <aside class="message-thread-rail" aria-label="Conversations">
-            <label class="message-search"><input id="message-search" type="search" aria-label="Search subjects or people" value="${escape(deps.getMessageSearchQuery())}" placeholder="Search conversations"></label>
+            <label class="message-search">${icon("search")}<input id="message-search" type="search" aria-label="Search subjects or people" value="${escape(deps.getMessageSearchQuery())}" placeholder="Search conversations"></label>
             <div class="message-filter-bar" aria-label="Message thread filter">
               ${[["all", "All"], ["unread", "Unread"], ["favorites", "Favorites"], ["direct", "Direct"], ["location", "Team"], ["archived", "Archived"]].map(([id, label]) => `<button data-message-filter="${id}" type="button" aria-pressed="${deps.getMessageThreadFilter() === id}" class="${deps.getMessageThreadFilter() === id ? "active" : ""}">${label}</button>`).join("")}
             </div>
@@ -66,10 +68,10 @@
               </form>
             ` : active ? `
               <header class="message-chat-header">
-                <div class="message-chat-title"><button class="message-icon-button" data-message-back type="button" title="Back to conversations" aria-label="Back to conversations">${icon("back")}</button><div><h3>${escape(title)}</h3><p>${escape(deps.messageThreadScopeLabel(active))}</p></div></div>
+                <div class="message-chat-title"><button class="message-icon-button" data-message-back type="button" title="Back to conversations" aria-label="Back to conversations">${icon("back")}</button><span class="message-thread-avatar" data-tone="${tone}" aria-hidden="true">${active.thread_type === "direct" ? escape(avatar) : "#"}</span><div><h3>${escape(title)}</h3><p>${escape(deps.messageThreadScopeLabel(active))}</p></div></div>
                 <div class="message-header-actions">
                   <button class="message-icon-button" data-search-messages="${escape(active.id)}" type="button" aria-label="Search this conversation" title="Search this conversation">${icon("search")}</button>
-                  ${active.work_order_id ? `<button class="message-linked-work-button" data-open-linked-work-order="${escape(active.work_order_id)}" type="button">Open Work Order</button>` : ""}
+                  ${active.work_order_id ? `<button class="message-linked-work-button" data-open-linked-work-order="${escape(active.work_order_id)}" type="button" title="Open Work Order" aria-label="Open Work Order">${icon("open")}<span>Open Work Order</span></button>` : ""}
                   <span class="message-history-count">${count} message${count === 1 ? "" : "s"}</span>
                   ${canEdit() ? `<details class="message-action-menu"><summary title="Conversation options" aria-label="Conversation options">${icon("more")}</summary><div class="message-menu-items">
                     <button data-favorite-conversation="${escape(active.id)}" aria-pressed="${Boolean(active.preferences?.favorite)}" type="button">${icon("star")}${active.preferences?.favorite ? "Remove favorite" : "Add to favorites"}</button>
