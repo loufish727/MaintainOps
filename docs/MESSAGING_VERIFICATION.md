@@ -2,7 +2,7 @@
 
 ## Release State
 
-The 2026-09-17 redesign is on the isolated messaging review branch. Its additive migration is verified in isolated PostgreSQL and applied to the testing platform, not production. Deploy the migration before the matching frontend. Do not publish the frontend alone: quoted history and preferences require the new database contract.
+The 2026-09-17 redesign is on the isolated messaging review branch. Its three additive migrations are verified in isolated PostgreSQL and applied to the testing platform, not production. Deploy the migrations before the matching frontend. Do not publish the frontend alone: quoted history, preferences and private attachments require the new database contract. Local implementation and test-bed verification are complete; physical-device checks and production release remain separate.
 
 ## Current Contract
 
@@ -44,7 +44,7 @@ at 4.5:1, placeholder contrast at 4.5:1 and field-border contrast at 3:1. These 
 targeted checks, not a complete accessibility certification. Obsolete alternative
 theme screenshot generation was removed from the active regression suite.
 
-Startup is 773,382 decoded / 174,700 gzip bytes. Lazy Messages is 62,113 JS decoded /
+At the dark-contrast checkpoint, startup was 773,382 decoded / 174,700 gzip bytes. Lazy Messages is 62,113 JS decoded /
 19,612 gzip and 31,721 CSS decoded / 6,476 gzip: 26,088 gzip bytes combined, seven
 fewer than the matte checkpoint. Budgets, dependencies and startup resources are
 unchanged. `app.js`, global styles and backend contracts are untouched.
@@ -96,6 +96,7 @@ Audio review and opened voice attachments progressively enhance native playback 
 
 - Messages presentation, workflow, live DOM updates and its new CSS are content-hashed lazy resources. My Work does not request them. Lightweight inbox metadata, badge helpers and realtime coordination remain in the startup path.
 - One authenticated realtime channel per company/user watches messages, membership preferences and reactions. No polling or workspace refresh is added. The connection label waits for the database subscription acknowledgement, not just a joined socket.
+- Initial messaging loading now waits for that acknowledgement before reading its snapshot, with a two-second fallback so unavailable realtime does not indefinitely block the inbox. A late first acknowledgement or reconnect reconciles missed changes. Real events received during a read still queue a fresh snapshot. Normal startup avoids the former duplicate read; this is not a guarantee of constant request count during reconnects or concurrent writes.
 - Reconnect reconciles inbox metadata and opened history, including older loaded messages. A local reaction write re-reads the affected message, including when it is outside the latest 50. Realtime batches reconcile the messaging snapshot and opened history; they never reload operational workspace data. Coalesced reloads await the newest queued read so an older response cannot hide a just-completed mutation.
 - Only latest previews and opened history load message bodies. Inbox metadata and read markers still grow with accessible message volume; this is not a server-side unread aggregate.
 - Cross-device read-marker changes and work-order Activity are not subscribed live. Browser push notifications, email, presence, typing indicators and durable offline delivery are not added.
@@ -103,6 +104,64 @@ Audio review and opened voice attachments progressively enhance native playback 
 At expanded-feature checkpoint `f32c5e7`, initial first-party JS/CSS measured 772,829 decoded / 174,518 gzip bytes versus 770,853 / 173,767 for the earlier revamp. The change is 751 additional gzip bytes at startup. Messages JS/CSS adds about 20 KB gzip only when opened. Initial limits are unchanged. The expanded lazy feature has separate 54/17 KiB JS and 23/6 KiB CSS decoded/gzip budgets. This is a payload measurement, not a real-world latency claim; final build evidence is authoritative.
 
 ## Automated Evidence
+
+### Final Full Review, 2026-09-17
+
+Checkpoint `42968e1` passed all 13 Full Strict LFES stages with a clean worktree:
+173 Node smoke commands, 28 targeted browser regressions, work-attachment checks,
+local resources, desktop/mobile Performance interaction, recursive SQL and DOM
+audits, isolated PostgreSQL/RLS, bundle budgets and generated-file cleanliness.
+The separate authenticated suite passed all five stages on the same application
+code: 46 boundary probes passed with five informational results, all five roles
+passed Chromium contracts, Production Action and Production Ready lifecycles
+passed, and the admin WebKit contract passed.
+
+Signed-in messaging lifecycle and expanded-tools suites passed separately in
+Chromium and WebKit. The focused presentation/contrast, waveform and
+voice-confirmation suite passed all 11 WebKit tests; Chromium equivalents are in
+the full gate. Desktop and 320px attachment screenshots and the restored local
+preview were visually inspected. The preview reported no browser errors.
+`npm audit` reported zero known dependency vulnerabilities.
+
+This run found and corrected a real startup inefficiency: the initial realtime
+acknowledgement caused two additional messaging reads. The readiness-first
+coordination retains late-join/reconnect recovery, covered by new regression
+assertions. Request-budget proof now records admin/manager/accounting at 31,
+production at 30 and technician at 35 requests; WebKit admin is 31. The existing
+35-request limit was not increased. No optional feature bundle loaded on My Work.
+Workspace visibility measured 1.87-1.89 seconds in Chromium and 2.54 seconds in
+WebKit on this local test platform, not production or physical-phone latency.
+
+The authenticated Production tests also had stale selectors for the old inline
+expander and Messages notification layout. They now open the Production Action
+dialog and Messages Activity view, retaining mutation, ownership, notification,
+no-email and cleanup assertions. A stale generated script inventory was rebuilt.
+Both initial failures remain in private logs; final runs passed without skipping
+the failing stages.
+
+Final startup is 773,659 decoded / 174,856 gzip bytes, 156 gzip bytes above the
+dark-contrast checkpoint. The app-shell-only gzip allowance was reviewed from
+46 to 47 KiB for bounded startup coordination (measured 47,230 bytes); the overall
+startup, request-count and lazy-message budgets remain unchanged. Lazy Messages
+JS/CSS remains 26,088 gzip bytes combined. No dependency or visual asset was added.
+
+Thirty-three run-scoped QA conversations were removed after verifying zero
+remaining stored objects for them. Both manually created conversations and the
+baseline eight work orders and three requests were preserved. Evidence snapshots
+are under ignored `LFES/private/final-review-9f26fa5/`, with a separate private
+closure report. Nothing was pushed, deployed, or migrated into production.
+
+Risk-scoped review included company/user scope cancellation, retry idempotence,
+private file authorization, bounded history/media loading, HTML escaping, draft
+and scroll retention, recorder disposal, lazy boundaries and additive rollback.
+Known limits remain: inbox metadata grows with message volume; drafts are
+memory-only; read markers and work-order Activity do not have cross-device live
+subscriptions. Physical iOS/Android microphone, codec and virtual-keyboard behavior
+is not proven by simulated capture or desktop WebKit. Sampled contrast checks are
+not a complete accessibility certification. These results establish tested
+behavior, not a claim that every possible app path or device is defect-free.
+
+### Earlier Checkpoints
 
 Dark-contrast code checkpoint `11599d3` passed all 13 Full Strict LFES stages on
 2026-09-17 with a clean worktree. The focused presentation/contrast, waveform and
