@@ -2976,6 +2976,8 @@ async function performMessageCenterLoad(preserveHistory = false) {
     messageLoadError = "";
   }
   try {
+    await messageLive.start(supabaseClient, companyId, userId, session?.access_token);
+    if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     const snapshot = await withOperationTimeout(fetchMessageCenter(supabaseClient, companyId, userId), "Message Center load timed out.", 15000);
     if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     messageThreads = snapshot.threads;
@@ -2990,7 +2992,6 @@ async function performMessageCenterLoad(preserveHistory = false) {
     messageLoadError = "";
     if (selectedAtStart === activeMessageThreadId && !messageThreads.some((thread) => thread.id === activeMessageThreadId)) setActiveMessageThreadIdState("");
     if (activeMessageThreadId) await loadActiveMessageThreadMessages(activeMessageThreadId, false, preserveHistory);
-    await messageLive.start(supabaseClient, companyId, userId, session?.access_token);
   } catch (error) {
     if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     messageLoadError = "Could not load messages. Check your connection and try again.";

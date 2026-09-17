@@ -1,7 +1,10 @@
 // One company-scoped subscription. No polling and no operational workspace reloads.
-export function createMessageLive({ onChanges, onStatus, delay = 180 }) {
+export function createMessageLive({ onChanges, onStatus, delay = 180, readyTimeout = 2000 }) {
   let channel, client, scope = "", generation = 0, timer, queued = [], running = false;
+  let ready, finishReady;
   function stop() {
+    finishReady?.(false);
+    ready = finishReady = null;
     generation++;
     clearTimeout(timer);
     queued = [];
@@ -12,12 +15,24 @@ export function createMessageLive({ onChanges, onStatus, delay = 180 }) {
   }
   async function start(nextClient, companyId, userId, accessToken) {
     const nextScope = `${userId}:${companyId}`;
-    if (!nextClient?.channel || !companyId || !userId || scope === nextScope) return;
+    if (!nextClient?.channel || !companyId || !userId) return;
+    if (scope === nextScope) return ready;
     stop();
     client = nextClient;
     scope = nextScope;
     const version = generation;
     const current = () => version === generation;
+    let waiting = true, readyTimer;
+    const initialReady = ready = new Promise((resolve) => {
+      finishReady = (connected) => {
+        if (!waiting) return;
+        waiting = false;
+        clearTimeout(readyTimer);
+        resolve(connected);
+      };
+    });
+    const finish = finishReady;
+    readyTimer = setTimeout(() => finish(false), readyTimeout);
     if (accessToken) await client.realtime?.setAuth(accessToken);
     if (!current()) return;
     let connected = false;
@@ -51,20 +66,25 @@ export function createMessageLive({ onChanges, onStatus, delay = 180 }) {
     let subscribed = false;
     channel.on("system", {}, (payload) => {
       if (!current() || payload.extension !== "postgres_changes") return;
+      const wasConnected = connected;
       connected = payload.status === "ok";
       onStatus(connected ? "live" : "unavailable");
-      if (connected) {
-        receive({ table: "reconcile", reconnect: subscribed });
+      if (connected && !wasConnected) {
+        // The first snapshot follows stream readiness. Late joins and reconnects must catch up.
+        if (!waiting) receive({ table: "reconcile", reconnect: subscribed });
+        finish(true);
         subscribed = true;
-      }
+      } else if (!connected) finish(false);
     });
     channel.subscribe((status) => {
       if (!current()) return;
       if (status !== "SUBSCRIBED") {
         connected = false;
+        finish(false);
         onStatus("reconnecting");
       }
     });
+    return initialReady;
   }
   return { start, stop };
 }

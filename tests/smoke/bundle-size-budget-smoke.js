@@ -9,7 +9,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json
 
 const budgets = {
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
-  appShell: { decoded: 170 * 1024, gzip: 46 * 1024 },
+  // Bounded stream-before-snapshot startup is 47,230 gzip bytes; total startup cap stays unchanged.
+  appShell: { decoded: 170 * 1024, gzip: 47 * 1024 },
   appStyles: { decoded: 185 * 1024, gzip: 33 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
