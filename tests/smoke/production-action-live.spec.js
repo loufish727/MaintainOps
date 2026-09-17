@@ -1,4 +1,5 @@
 const { expect, test } = require("@playwright/test");
+test.use({ actionTimeout: 15000 });
 
 const requiredEnvironment = [
   "LFES_SUPABASE_URL",
@@ -105,15 +106,16 @@ test.describe("Production Action signed-in lifecycle", () => {
       const workCard = page.locator(`.work-card[data-id="${fixtureId}"]`);
       await expect(workCard).toBeVisible();
 
-      const actionForm = workCard.locator(`[data-production-action-form="${fixtureId}"]`).first();
+      await workCard.getByRole("button", { name: "Assign Production Action", exact: true }).click();
+      const actionDialog = workCard.getByRole("dialog", { name: "Production Action", exact: true });
+      await expect(actionDialog).toBeVisible();
+      const actionForm = actionDialog.locator(`[data-production-action-form="${fixtureId}"]`);
       const actionField = actionForm.locator('[name="production_action"]');
-      if (!await actionField.isVisible()) {
-        await actionForm.locator("xpath=ancestor::details[1]/summary").click();
-      }
       await actionField.fill(marker);
       await actionForm.locator('[name="production_action_assigned_to"]').selectOption(production.user.id);
       await actionForm.getByRole("button", { name: /Production Action/ }).click();
-      await expect(workCard.locator(".production-action-text").filter({ hasText: marker })).toBeVisible();
+      await expect(workCard.locator(".production-action-card-preview")).toContainText(marker);
+      await expect(actionDialog).not.toBeVisible();
       await expect(workCard.locator('[data-quick-status="completed"]')).toHaveCount(0);
 
       await page.locator('[data-section="team"]').click();
@@ -125,13 +127,15 @@ test.describe("Production Action signed-in lifecycle", () => {
       await page.locator('[data-section="mywork"]').click();
       const myWorkCard = page.locator(`.work-card[data-id="${fixtureId}"]`);
       await expect(myWorkCard).toBeVisible();
-      await expect(myWorkCard.locator(".production-action-text").filter({ hasText: marker })).toBeVisible();
+      await expect(myWorkCard.locator(".production-action-card-preview")).toContainText(marker);
+      await myWorkCard.getByRole("button", { name: "Manage Production Action", exact: true }).click();
+      await expect(myWorkCard.getByRole("dialog").locator(".production-action-text")).toHaveText(marker);
       await myWorkCard.getByRole("button", { name: "Complete Production Action" }).click();
       await expect(myWorkCard).toHaveCount(0);
 
       await page.locator('[data-section="work"]').click();
       await page.getByRole("button", { name: "Clear filters", exact: true }).click();
-      await expect(workCard.locator(".production-action-text").filter({ hasText: marker })).toBeVisible();
+      await expect(workCard.locator(".production-action-card-preview")).toContainText(marker);
       await expect(workCard.getByText("Completed", { exact: true }).first()).toBeVisible();
       await expect(workCard.locator('[data-quick-status="completed"]')).toBeVisible();
 
