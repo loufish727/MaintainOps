@@ -83,6 +83,23 @@ At expanded-feature checkpoint `f32c5e7`, initial first-party JS/CSS measured 77
 
 ## Automated Evidence
 
+Matte-surface code checkpoint `35562c5` passed all 13 Full Strict LFES stages on
+2026-09-17 with a clean worktree. Focused presentation, waveform and voice checks
+passed Chromium and WebKit; separate signed-in messaging lifecycle and expanded
+tools suites passed both browsers. Sampled text contrast checks cover the scoped
+palette, not complete WCAG conformance. The current payload figures are recorded
+under Matte Reading Surfaces above; no budget was increased for this change.
+
+The initial signed-in run encountered a local preview server whose startup-only
+tracked-file allowlist did not include newly rebuilt bundle filenames. Restarting
+that server resolved the resource failures; no application startup or auth logic
+was changed. Fourteen fixtures from the failed attempt and 33 from the successful
+runs were removed. The latter cleanup verified zero stored objects before deleting
+the exact run-scoped threads and zero remaining fixtures afterward. The manual
+`new` and `test` conversations were preserved. No push, production deployment or
+production data change occurred. Physical-phone microphone, codec and virtual
+keyboard checks remain outstanding.
+
 Industrial-design code checkpoint `a0442ac` passed all 13 Full Strict LFES stages with a clean worktree, including the added waveform regressions and compact-composer checks. Focused Chromium/WebKit tests cover 1440/768/390/320px, recorded-sample waveform pixels, native fallback, seeking/speed, no autoplay, disposal races, menu bounds and draft/confirmation protection. Signed-in attachment/search/reply-thread/voice workflows passed Chromium and WebKit at `2213ab1`; the subsequent narrow-composer-only refinement passed the full Chromium gate and focused WebKit presentation tests.
 
 The signed-in resize assertion initially sampled the old 899px desktop height immediately after switching to an 844px viewport. Evidence showed it settling to exactly 844px on the resize event. The test now waits for the expected height and still asserts no horizontal or vertical document overflow; no application resize logic was weakened. Native select color-scheme and narrow composer wrapping were corrected after visual inspection.
