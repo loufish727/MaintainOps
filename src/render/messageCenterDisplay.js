@@ -19,6 +19,7 @@
       const people = deps.getCompanyMembers().filter((member) => member.user_id !== deps.getSession().user.id)
         .sort((a, b) => deps.teamMemberName(a.user_id).localeCompare(deps.teamMemberName(b.user_id)));
       const linked = deps.getWorkOrders().find((order) => order.id === deps.getMessageComposerWorkOrderId());
+      const conversationWork = active?.work_order_id ? deps.getWorkOrders().find(order => order.id === active.work_order_id) : null;
       const quote = deps.getReplyQuote?.(active?.id);
       const archived = active && deps.isConversationArchived?.(active);
       const title = active ? (deps.threadTitle?.(active) || active.title) : "";
@@ -81,6 +82,7 @@
                   </div></details>` : ""}
                 </div>
               </header>
+              ${conversationWork ? `<div class="message-work-context"><span class="message-context-icon" aria-hidden="true">${icon('open')}</span><div><small>Work order${conversationWork.assets?.name ? ` / ${escape(conversationWork.assets.name)}` : ''}</small><strong>${escape(conversationWork.title)}</strong></div><span class="message-context-status" data-status="${escape(conversationWork.status)}">${escape(deps.statusLabel(conversationWork.status))}</span></div>` : ''}
               <div class="message-archive-note" ${archived ? "" : "hidden"}>Archived</div>
               <span class="sr-only" data-message-announcement role="status"></span>
               <div class="message-list" role="region" aria-label="Conversation history" aria-busy="${loading}" tabindex="0">

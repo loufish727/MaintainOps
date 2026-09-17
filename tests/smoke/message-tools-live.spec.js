@@ -95,11 +95,12 @@ test('message tools: search, organization, discussions, private files and voice 
     for(const row of storage.top_files.filter(file=>file.bucket_id==='message-files')) {
       expect(row.file_name).toBe('Private message attachment');expect(row.object_path).toBe('');expect(row.linked_record_id).toBeNull();
     }
-    await page.getByRole('button',{name:/Voice message.wav/}).click();await expect(page.locator('.message-media-dialog audio')).toBeVisible();
+    await page.getByRole('button',{name:/Voice message.wav/}).click();await expect(page.locator('.message-media-dialog audio')).toHaveCount(1);
     await expect.poll(()=>page.locator('.message-media-dialog audio').evaluate(audio=>audio.readyState>0||Boolean(audio.error))).toBe(true);
     const audioEvidence=await page.locator('.message-media-dialog audio').evaluate(audio=>({readyState:audio.readyState,errorCode:audio.error?.code||null,error:audio.error?.message||null,supported:audio.canPlayType('audio/wav')}));
     fs.writeFileSync(path.join(evidence,'message-audio-decoder.json'),JSON.stringify(audioEvidence,null,2));
     if(audioEvidence.errorCode) await expect(page.locator('.message-media-dialog')).toContainText('Download the file to listen');
+    else await expect(page.locator('.message-media-dialog audio:not([hidden]),.message-media-dialog .message-audio-player').first()).toBeVisible();
     await page.getByRole('button',{name:'Close',exact:true}).click();
     await page.locator('[data-message-photo]').scrollIntoViewIfNeeded();
     await expect.poll(()=>page.locator('[data-message-photo] img').evaluate(img=>img.naturalWidth)).toBe(768);

@@ -21,7 +21,7 @@
 .message-pending-file button { flex: 0 0 40px; min-height: 40px; width: 40px; padding: 8px; }
 .message-media-tools { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .message-media-tools input[hidden] { display: none; }
-.message-media-tools .message-voice-button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; max-width: 100%; padding: 6px 8px; font-size: 12px; line-height: 1.25; color: #c9dcd5; background: transparent; border: 1px solid transparent; border-radius: 6px; }
+.message-media-tools .message-voice-button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; max-width: 100%; padding: 6px 8px; font-size: 12px; line-height: 1.25; color: #d5eee4; background: #253630; border: 1px solid #637d71; border-radius: 6px; box-shadow: 0 1px 0 #ffffff12 inset; }
 .message-media-tools .message-voice-button:hover { background: #2b3d36; border-color: #58766a; }
 .message-voice-button .segment-icon { width: 16px; height: 16px; flex-shrink: 0; }
 .message-voice-button span { overflow-wrap: anywhere; }
@@ -33,7 +33,8 @@
 .message-voice-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .message-voice-confirm-actions button { display: inline-flex; align-items: center; gap: 6px; }
 .message-voice-confirm-actions [data-confirm-voice-send] { color: #17372b; background: var(--message-accent); border-color: var(--message-accent); }
-.message-record-state { color: #ffb6af !important; font-size: 12px; }
+.message-record-state { color: #ffd0ca !important; font-size: 12px; font-variant-numeric: tabular-nums; }
+.message-record-state::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #ff9d92; }
 .message-record-controls { gap: 8px; }
 .message-record-controls .message-record-state { flex: 1 1 96px; min-width: 0; }
 .message-record-controls button { min-height: 40px; padding: 6px 12px; color: #edf5f8; background: #293a40; border: 1px solid #627980; border-radius: 6px; }
@@ -41,7 +42,7 @@
 .message-file-list { display: grid; gap: 8px; margin: 4px 0; }
 :is(.message-center,.message-tool-dialog) .message-file { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; padding: 10px; border: 1px solid #60776f; border-radius: 6px; color: #edf5f8; background: #17292480; text-align: left; }
 .message-file > span { min-width: 0; overflow-wrap: anywhere; }
-.message-file-icon { display: grid; place-items: center; width: 34px; height: 40px; flex: 0 0 34px; border-radius: 4px; background: #3c524a; color: #c4eadc !important; }
+.message-file-icon { display: grid; place-items: center; width: 34px; height: 40px; flex: 0 0 34px; border: 1px solid #84988e; border-radius: 4px; background: linear-gradient(#52665c,#394c43); color: #e3f5ed !important; box-shadow: 0 1px 0 #ffffff24 inset,0 2px 3px #0003; }
 .message-audio-file .message-file-icon { border-radius: 50%; width: 36px; height: 36px; }
 .message-file-caption strong { display: block; font-size: 13px; line-height: 1.4; font-weight: 550; }
 .message-file small { display: block; color: #b6c8c1; font-size: 11px; margin-top: 3px; }
@@ -50,7 +51,7 @@
 .message-photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .message-photo-frame > span { display: flex; align-items: center; gap: 8px; color: #c0cbcf; font-size: 12px; }
 .message-photo-file .message-file-caption { padding: 10px; }
-.message-tool-dialog { width: min(720px,calc(100% - 24px)); max-height: 90dvh; margin: auto; padding: 24px; background: var(--message-surface); border: 1px solid #627278; border-radius: 8px; overflow: auto; box-shadow: 0 24px 80px #0008; }
+.message-tool-dialog { width: min(720px,calc(100% - 24px)); max-height: 90dvh; margin: auto; padding: 24px; background: var(--message-surface); border: 1px solid #6c7678; border-radius: 8px; overflow: auto; box-shadow: 0 24px 80px #0008,0 1px 0 #ffffff21 inset; }
 .message-tool-dialog::backdrop { background: #080d10bd; }
 .message-tool-dialog > header { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--message-line); }
 .message-tool-dialog h2 { margin: 0; font-size: 18px; flex: 1; letter-spacing: 0; overflow-wrap: anywhere; }
@@ -74,6 +75,15 @@
 .message-media-dialog img { display: block; max-width: 100%; max-height: 65dvh; object-fit: contain; margin: 12px auto; }
 .message-media-dialog audio { width: 100%; margin: 12px 0; }
 .message-media-dialog a { display: block; padding: 12px 0; color: var(--message-accent); }
+.message-audio-player { padding: 14px; border: 1px solid #697a72; border-radius: 6px; background: #14231e; box-shadow: 0 2px 5px #0004 inset; }
+.message-waveform { display: block; width: 100%; height: 64px; }
+.message-audio-player .message-audio-seek { display: block; min-height: 28px; padding: 0; width: 100%; accent-color: #a1e4d1; cursor: pointer; border: 0; }
+.message-audio-transport { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.message-audio-player .message-audio-play { min-width: 72px; min-height: 44px; background: #a1e4d1; color: #17372b; border-color: #c6f5e5; font-weight: 600; }
+.message-audio-time { flex: 1; font-size: 12px; font-variant-numeric: tabular-nums; color: #c3d5cc !important; }
+.message-audio-player .message-audio-speed { min-width: 65px; width: 72px; padding: 6px; min-height: 44px; font-size: 13px; }
+.message-audio-error { font-size: 12px; color: #ffd0ca; }
+.message-tool-dialog [hidden] { display: none !important; }
 @media (max-width: 920px) {
   .message-tool-dialog button,.message-tool-dialog summary,.message-tool-dialog input,.message-tool-dialog select,.message-tool-dialog textarea,.message-discussion-link { min-height: 48px; }
   .message-pending-file button { width: 48px; height: 48px; min-height: 48px; }
@@ -86,4 +96,6 @@
   .message-center .message-reaction { padding: 3px 6px; min-width: 44px; }
   .message-center .message-composer-footer { gap: 4px; }
   .message-media-tools .message-voice-button,.message-record-controls button { min-height: 48px; }
+  .message-audio-player { padding: 10px; }
+  .message-audio-player :is(.message-audio-play,.message-audio-speed,.message-audio-seek) { min-height: 48px; }
 }

@@ -21,6 +21,8 @@ for (const width of [1440, 768, 390, 320]) {
         latest_message: { body: ['Guard is back on. Ready for your check.','Thanks, I have the replacement seals.','Inspection report is attached.','I can cover the second shift.','Bearings should arrive tomorrow.','The schedule is ready.'][i],
           sender_id: i%2 ? 'sam':'jo', created_at: new Date().toISOString() },
       }));
+      threads[0].work_order_id = 'order';
+      const orders = [{id:'order',title:'Replace hydraulic seal',status:'in_progress',assets:{name:'Press brake 02'}}];
       const rows = [
         { id:'a',sender_id:'sam',body:'Morning team. The line is isolated and ready for the seal replacement.' },
         { id:'b',sender_id:'me',body:'Thanks, Sam. I have the parts. I will check the guard before we bring it back online.' },
@@ -39,10 +41,10 @@ for (const width of [1440, 768, 390, 320]) {
       const renderer = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
         ...options,getMessagesReady:()=>true,getMessageThreads:()=>threads,getActiveMessageThreadId:()=>active,
         getMessageComposerOpen:()=>composing,getMessageHistory:()=>({0:{rows,hasOlder:false}}),getMessagesByThreadId:()=>({0:rows}),
-        getWorkOrders:()=>[],getMessageComposerWorkOrderId:()=>'',getCompanyMembers:()=>[],getSession:()=>({user:{id:'me'}}),
+        getWorkOrders:()=>orders,getMessageComposerWorkOrderId:()=>'',getCompanyMembers:()=>[],getSession:()=>({user:{id:'me'}}),
         getMessageWorkOrderLinksReady:()=>true,getMessageSearchQuery:()=>'',getMessageThreadFilter:()=> 'all',getMessageThreadsPage:()=>1,
         LIST_ITEMS_PER_PAGE:12,filteredMessageThreads:()=>threads,totalUnreadMessages:()=>1, getWorkspaceLabel:()=> 'Salem / Taylor Metal',
-        messageComposerScopeNote:()=> 'Direct message',recentMessageLinkWorkOrders:()=>[],statusLabel:String,
+        messageComposerScopeNote:()=> 'Direct message',recentMessageLinkWorkOrders:()=>[],statusLabel:()=> 'In progress',
         messageThreadScopeLabel:()=> 'Salem / Maintenance',renderMessageThreadButton:list.renderMessageThreadButton,
         renderMessageList:bubbles.renderMessageList,renderListPagination:()=>'',getMessageConnection:()=> 'Live',
         renderMessageTools:()=>`<div class="message-attachments"><div class="message-media-tools"><button class="message-icon-button" type="button" aria-label="Attach files">${icon('attach')}</button><button class="message-voice-button" type="button">${icon('mic')}<span>Send voice message</span></button></div></div>`,
@@ -95,7 +97,38 @@ for (const width of [1440, 768, 390, 320]) {
     expect((await page.locator('.message-reply-form').boundingBox()).height).toBe(composerBox.height);
     await page.keyboard.press('Escape');
     const evidence=path.join(root,'lfes-evidence'); fs.mkdirSync(evidence,{recursive:true});
+    await expect(page.locator('.message-work-context')).toContainText('Press brake 02');
+    await reply.fill('');
+    await reply.blur();
     await page.screenshot({path:path.join(evidence,`messages-polish-${width}.png`)});
+    if ([1440,390].includes(width)) {
+      const studies = {
+        daylight: `.message-center {--message-muted:#51635c;--message-ink:#20332b;--message-accent:#176447;color-scheme:light;color:#20332b}
+          .message-toolbar,.message-center .message-chat-header,.message-center .message-reply-form{background:#e0e6e2;border-color:#a1aea7;box-shadow:0 1px 0 #fff inset}
+          .message-view-tabs,.message-center .message-thread-rail{background:#edf0ee;border-color:#a1aea7}.message-center .message-thread-detail{background:#f8faf8}
+          .message-center .message-bubble{background:#fff;border-color:#c3cdc7;color:#21382c}.message-center .message-bubble.mine{background:#d9ede2;border-color:#a5c6b4}
+          .message-center .message-bubble-meta strong{color:#1e4f37}.message-center .message-stamp{color:#476353}
+          .message-center .message-thread-button{color:#243a2d}.message-center .message-thread-button.active{background:#d6e6dd;border-color:#8ba596;box-shadow:3px 0 #33704f inset}
+          .message-center .message-row-preview small,.message-center .message-row-scope{color:#53635b}.message-center .message-compose-line textarea,.message-center .message-search input{background:#fff;color:#20332b;box-shadow:0 1px 2px #0001 inset}
+          .message-center .message-file{background:#e2eae6;color:#20332b}.message-center .message-file small{color:#465e50}.message-quote{background:#b8d8c8}
+          .message-center .message-send-button,.message-center .message-compose-button{background:#266246;color:#fff}.message-center .message-view-tabs button[aria-pressed="true"]{color:#1c6345}
+          .message-center .message-filter-bar button{background:#e1e9e4;color:#324d3e;border-color:#b0c0b7}.message-center .message-filter-bar button.active{background:#35674e;color:#fff}
+          .message-center .message-icon-button,.message-center .message-action-menu > summary{color:#395a49}.message-center .message-send-button,.message-center .message-compose-button{color:#fff}
+          .message-center .unread .message-row-heading strong{color:#193d2b}.message-center .message-quote span{color:#244d36}.message-center .message-discussion-link{color:#246443}
+          .message-center input::placeholder,.message-center textarea::placeholder{color:#667b6d}`,
+        midnight: `.message-toolbar,.message-center .message-chat-header,.message-center .message-reply-form{background:#151719;border-color:#494d51;box-shadow:0 1px 0 #ffffff16 inset}
+          .message-center .message-thread-rail,.message-view-tabs{background:#1b1d20}.message-center .message-thread-detail{background:#0b0e10}
+          .message-center .message-bubble{background:#25292d;border-color:#464e53}.message-center .message-bubble.mine{background:#263b40;border-color:#52777e}
+          .message-center .message-work-context{background:#252e32;color:#e5eceb;border-color:#4d646b}.message-work-context small{color:#b6c6c8}
+          .message-center .message-thread-button.active{background:#24383d;border-color:#63868a;box-shadow:3px 0 #addbe2 inset}
+          .message-center .message-send-button,.message-center .message-compose-button{background:#b8dce3;border-color:#d5f0f3;color:#203b41}`,
+      };
+      for (const [name,css] of Object.entries(studies)) {
+        const style = await page.addStyleTag({content:css+' .message-center *{transition:none!important}'});
+        await page.screenshot({path:path.join(evidence,`messages-study-${name}-${width}.png`)});
+        await style.evaluate(node=>node.remove());
+      }
+    }
     await page.getByRole('button',{name:'Back to conversations'}).click();
     await expect(page.locator('.message-thread-button')).toHaveCount(6);
     await page.screenshot({path:path.join(evidence,`messages-inbox-${width}.png`)});

@@ -12,6 +12,7 @@ for (const formType of ['message-thread-form', 'message-reply-form', 'message-di
     for (const file of ['styles.css', 'src/render/messageStyles.css', 'src/render/messageTools.css']) await page.addStyleTag({ path: path.join(root, file) });
     await page.addScriptTag({ content: fs.readFileSync(path.join(root, 'src/services/messageMedia.mjs'), 'utf8').replace(/export /g, '') });
     await page.addScriptTag({ content: fs.readFileSync(path.join(root, 'src/workflows/messagePresentation.mjs'), 'utf8').replace('export function', 'function') });
+    await page.addScriptTag({ content: fs.readFileSync(path.join(root, 'src/workflows/messageAudioPlayer.mjs'), 'utf8').replace('export function', 'function') });
     await page.addScriptTag({ content: fs.readFileSync(path.join(root, 'src/workflows/messageExperience.mjs'), 'utf8').replace(/^import .*\r?\n/gm, '').replace('export function', 'function') });
     await page.evaluate(() => {
       window.voiceProof = { writes: 0, company: 'one', notices: [], created: 0, revoked: 0, micStops: 0, starts: 0, permission: [] };

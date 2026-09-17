@@ -18,9 +18,9 @@ const budgets = {
   teamFeature: { decoded: 22 * 1024, gzip: 6 * 1024 },
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
   // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
-  // Private viewport-only previews and bounded menus add ~2 KB gzip, never to startup.
-  messageFeature: { decoded: 59 * 1024, gzip: 19 * 1024 },
-  messageStyles: { decoded: 27 * 1024, gzip: 6 * 1024 },
+  // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
+  messageFeature: { decoded: 61 * 1024, gzip: 20 * 1024 },
+  messageStyles: { decoded: 31 * 1024, gzip: 7 * 1024 },
 };
 
 const initialKeys = ["runtime", "appShell", "appStyles"];

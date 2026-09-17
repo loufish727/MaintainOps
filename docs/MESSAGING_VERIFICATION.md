@@ -28,6 +28,14 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its additive
 
 ### Visual Polish
 
+#### Industrial Visual Study
+
+The local industrial treatment uses graphite panel surfaces, restrained edge lighting, recessed fields and tactile mint send controls. The reading surface remains plain. An even two-row filter grid replaces the orphaned Archived filter. Linked conversations show the already-loaded work-order title, equipment name and status; no extra query or equipment-photo download is added. Graphite, daylight and midnight studies use the same fictional conversation and viewport in `message-polish.spec.js`; only graphite is shipped in the lazy stylesheet. The other two are screenshot studies, not a new theme preference.
+
+Audio review and opened voice attachments progressively enhance native playback with a waveform sampled from the actual decoded audio, keyboard-operable seeking, elapsed/duration and speed selection. The player is in `messageAudioPlayer.mjs`, inside the lazy Messages bundle. Decoding is local, only after an explicit review/open, for files at most 5 MiB with a known duration of at most five minutes. Large files, unknown/infinite duration, unsupported codecs and decoder failures keep native playback/download. There is no waveform fabrication, autoplay, speech provider or transcription. Closing, changing scope or leaving Messages stops playback and releases URLs; late decoding cannot recreate a closed player.
+
+`message-audio-player.spec.js` covers actual PCM decoding in Chromium, deterministic waveform pixels, seeking, rate, disposal races, native fallback and no remote decoding requests. WebKit tests cover the controller and fallback; they do not prove physical iPhone microphone/codec support. Initial loading limits remain unchanged. Lazy Messages budgets are 61/20 KiB JS and 31/7 KiB CSS decoded/gzip to accommodate the player and material treatment. No new dependency, live database migration or production deployment is involved.
+
 - The Messages-only design uses neutral graphite surfaces, mint actions, emerald outgoing bubbles and six deterministic initials-avatar colors. These colors identify conversations, not availability or presence.
 - The inbox, chat header, file cards, search, reply threads and voice review share spacing and type rules. Mobile has compact navigation and 48px primary touch controls. Short histories sit next to the composer; longer history remains independently scrollable.
 - Message/conversation menus are clamped to the viewport and support outside-click/Escape dismissal. Quick replies open above the composer without changing its height. Linked-work-order controls remain accessible at 320px.

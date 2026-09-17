@@ -1,5 +1,6 @@
 import { prepareMessageFile, sendMessageFiles, removePendingFile, createVoiceRecorder } from '../services/messageMedia.mjs';
 import { createMessagePresentation } from './messagePresentation.mjs';
+import { enhanceMessageAudio } from './messageAudioPlayer.mjs';
 
 const SELECT = 'id,company_id,thread_id,sender_id,body,created_at,deleted_at,reply_to_id,parent_message_id,message_reactions(*),message_files(id,file_name,content_type,byte_size,object_path)';
 
@@ -49,7 +50,7 @@ export function createMessageExperience(deps) {
     scope = scopeNow(); section = ''; files.clear(); busy.clear(); clearRecording();
     closeDialog(); clearTimeout(searchTimer); clearTimeout(refreshTimer);
     drafts.clear(); cleanedScope = '';
-    for (const preview of previews) { URL.revokeObjectURL(preview.url); preview.node.remove(); }
+    for (const preview of previews) preview.cleanup();
     previews.clear();
   }
   function renderTools(key) {
@@ -58,7 +59,7 @@ export function createMessageExperience(deps) {
   }
   function hydrate() {
     if (scope !== scopeNow()) reset();
-    if (deps.getActiveSection() !== 'messages') { closeDialog(); clearRecording(); presentation.reset(); return; }
+    if (deps.getActiveSection() !== 'messages') { closeDialog(); clearRecording(); presentation.reset(); for (const preview of previews) preview.cleanup(); return; }
     presentation.hydrate();
     if (cleanedScope !== scope && deps.canEdit()) { cleanedScope = scope; void cleanupPendingUploads().catch(() => {}); }
     const composers = [...doc.querySelectorAll('.message-attachments')];
@@ -127,7 +128,7 @@ export function createMessageExperience(deps) {
     if (cancelVoiceConfirmation) return;
     const saved = scopeNow(), submitter = event.submitter, focus = doc.activeElement;
     const signature = () => JSON.stringify([form.dataset.threadId, form.querySelector('.message-attachments')?.dataset.attachmentKey, [...new FormData(form).entries()].filter(([,value]) => typeof value === 'string'), fileList(key).map(file => file.id)]);
-    const original = signature(), urls = [];
+    const original = signature(), urls = [], players = [];
     const node = doc.createElement('dialog'); node.className = 'message-tool-dialog message-voice-confirm';
     node.setAttribute('aria-labelledby', 'message-voice-confirm-title');
     html(node, `<h2 id="message-voice-confirm-title">Send voice message?</h2><p>The recording and the rest of this message will be sent together.</p><div class="message-voice-review"></div><div class="message-voice-confirm-actions"><button type="button" data-keep-voice-draft autofocus>Keep editing</button><button type="button" data-confirm-voice-send>${icon('send')}<span>Send voice message</span></button></div>`);
@@ -139,8 +140,10 @@ export function createMessageExperience(deps) {
       const fallback = doc.createElement('a'); fallback.href = url; fallback.download = file.name; fallback.textContent = 'Preview unavailable. Download recording'; fallback.hidden = true;
       audio.addEventListener('error', () => { if (audio.getAttribute('src')) fallback.hidden = false; });
       review.append(label, audio, fallback);
+      players.push(enhanceMessageAudio({ audio, blob: file.blob, documentRef: doc }));
     }
     const close = () => {
+      players.forEach(dispose => dispose());
       node.querySelectorAll('audio').forEach(audio => { audio.pause(); audio.removeAttribute('src'); audio.load(); });
       urls.forEach(url => URL.revokeObjectURL(url)); node.close(); node.remove(); cancelVoiceConfirmation = null;
       if (focus?.isConnected) focus.focus({ preventScroll: true });
@@ -253,13 +256,14 @@ export function createMessageExperience(deps) {
     const file = row?.message_files?.find(file => file.id === id);
     if (!file) return;
     if (record) { clearRecording(); hydrate(); }
-    const saved = scopeNow();
+    const saved = scopeNow(), focus = doc.activeElement;
     const node = doc.createElement('dialog'); node.className = 'message-tool-dialog message-media-dialog';
     const heading = doc.createElement('h2'); heading.textContent = file.file_name;
     const close = doc.createElement('button'); close.type='button'; close.textContent='Close';
     const status = doc.createElement('p'); status.textContent='Loading attachment...'; node.append(heading,close,status); doc.body.append(node); node.showModal();
     const preview = { node, url:null }; previews.add(preview);
-    const cleanup = () => { URL.revokeObjectURL(preview.url); previews.delete(preview); node.remove(); };
+    const cleanup = () => { preview.dispose?.(); URL.revokeObjectURL(preview.url); previews.delete(preview); node.close(); node.remove(); if (current(saved) && focus?.isConnected) focus.focus({ preventScroll:true }); };
+    preview.cleanup = cleanup;
     close.onclick=cleanup; node.addEventListener('cancel',event=>{event.preventDefault();cleanup();});
     const { data,error } = await client().storage.from('message-files').download(file.object_path);
     if (!current(saved) || !node.isConnected) return;
@@ -270,6 +274,7 @@ export function createMessageExperience(deps) {
       const audio=doc.createElement('audio'); audio.controls=true; audio.preload='metadata'; audio.src=preview.url;
       audio.addEventListener('error',()=>{ status.textContent='Audio preview unavailable in this browser. Download the file to listen.'; node.append(status); });
       node.append(audio); audio.load();
+      preview.dispose = enhanceMessageAudio({ audio, blob: data, documentRef: doc });
     }
     const download=doc.createElement('a'); download.href=preview.url; download.download=file.file_name; download.textContent='Download file'; node.append(download);
   }
