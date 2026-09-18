@@ -203,7 +203,17 @@ keeps explicit server-page IDs separate from detail/history/notification records
 preserves page order and updates, and adds no refresh or network request. A new
 Node regression first failed on the deployed source, reproducing the extra rows.
 The signed-in Planning case now also asserts the return list excludes the linked
-completed order. Follow-up validation and deployment are recorded separately.
+completed order. Follow-up [PR #50](https://github.com/loufish727/MaintainOps/pull/50)
+contains the correction and release evidence. At `0c59ad5`, Full Strict passed all
+13 stages with a clean worktree (178 Node smoke files). Five focused signed-in
+scenarios passed in each of Chromium and WebKit: part-usage permissions, linked
+parts, Planning original/return, paging/filter/search/location/export, and saved
+work/Manager drilldown. All ten disposable QA companies were removed with exact
+ID/creator/name/storage guards; the manual 8-order/3-request/2-conversation baseline
+remained intact. Initial JS/CSS is 777,549 decoded / 176,263 gzip bytes, a 22-byte
+gzip increase with no added requests. The first rerun correctly stopped on a stale
+generated script inventory; regenerating that document preceded the full clean pass.
+Final deployed commit and hosted retest are attached to that release PR.
 
 No operational create/save/assign/send/delete controls were used on production.
 Normal sign-in housekeeping, telemetry and conversation read markers may run during
