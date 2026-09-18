@@ -2,7 +2,14 @@
 
 ## Release State
 
-The 2026-09-17 redesign is on the isolated messaging review branch. Its three additive migrations are verified in isolated PostgreSQL and applied to the testing platform, not production. Deploy the migrations before the matching frontend. Do not publish the frontend alone: quoted history, preferences and private attachments require the new database contract. Local implementation and test-bed verification are complete; physical-device checks and production release remain separate.
+Released on 2026-09-18 through PR #49, merge `6ced496`. All three messaging
+migrations and both app-wide correction migrations were applied and verified in
+production before merging. The required Release Gate, Pages deployment and Hosted
+App Smoke passed. All 14 deployed entry/bundle resources match the tested candidate.
+Signed-in live Taylor browsing verified existing conversations, realtime connection,
+content search and the mobile conversation layout without sending test messages.
+Physical-device checks remain separate. See `docs/APP_WIDE_VERIFICATION.md` and
+`docs/APPLIED_MIGRATIONS.md` for rollout evidence and unchanged data boundaries.
 
 ## Current Contract
 
@@ -10,9 +17,9 @@ The combined 2026-09-18 app-wide candidate passed Full Strict and authenticated
 LFES at `24632a8`, followed by both signed-in messaging suites in Chromium and
 WebKit and 11 focused WebKit presentation/audio/confirmation cases. Its 33 generated
 conversations and all uploads were removed; the two manual conversations remain.
-The combined frontend also needs the two app-wide database corrections before
-production release, not only the three Messages migrations. See
-`docs/APP_WIDE_VERIFICATION.md` for all five prerequisites and the wider proof.
+The combined frontend requires both app-wide database corrections, not only the
+three Messages migrations. All five production prerequisites are now verified;
+see `docs/APP_WIDE_VERIFICATION.md` for the wider proof.
 
 - Desktop has a conversation rail and bounded history; mobile shows the inbox or one conversation. Back preserves the inbox position. Conversations and work-order Activity are separate views.
 - The inbox displays 12 conversations per page, with All, Unread, Favorites, Direct, Team and Archived filters. Personal sections can be assigned or cleared in conversation options. The rail search covers subjects/people; the separate content search covers the complete accessible history with sender/conversation/date filters and 12-result pages.

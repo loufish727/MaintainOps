@@ -487,6 +487,7 @@ let locationsReady = true;
 let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
+let workOrderPageIds = [];
 let teamWorkOrders = [];
 let teamFeature = null;
 let planningWorkOrders = [];
@@ -2179,6 +2180,7 @@ function commitLoadedWorkOrderSlice(response, dashboardCounts, myCounts, context
   }
 
   workOrders = rows;
+  workOrderPageIds = rows.map((row) => row.id);
   workOrderServerTotal = exactTotal;
   workOrderDashboardCounts = dashboardCounts;
   myWorkDashboardCounts = myCounts;
@@ -2249,6 +2251,12 @@ async function loadWorkspaceWorkOrderCountSnapshot() {
     console.warn("Workspace work-order count RPC failed; using compatibility counts.", response.error);
   }
   return null;
+}
+
+function loadedWorkOrderPage() {
+  // Detail/history records share the cache, but never become server-page members.
+  const byId = new Map(workOrders.map((row) => [row.id, row]));
+  return workOrderPageIds.map((id) => byId.get(id)).filter(Boolean);
 }
 
 function mergeWorkOrdersById(rows = []) {
@@ -3591,7 +3599,7 @@ function renderWorkspace() {
   const requestCounts = requestFilterCounts();
   const visibleRequests = needsRequestQueue ? filteredRequests(activeRequestViewFilter) : [];
   const visibleRequestCount = needsRequestQueue ? (requestCounts[activeRequestViewFilter] ?? requestServerTotal) : 0;
-  const visibleWorkOrders = isWorkArea && !showGlobalSearch ? workOrders : [];
+  const visibleWorkOrders = isWorkArea && !showGlobalSearch ? loadedWorkOrderPage() : [];
   const visibleWorkOrderCount = showingRequestsInWorkQueue ? 0 : workOrderServerTotal;
   const renderSectionNavBadge = (id) => {
     if (id === "messages") return renderMessageNavBadge();

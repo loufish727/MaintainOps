@@ -67,7 +67,41 @@ Every new SQL run should record:
 - who/what applied it
 - verification performed
 - rollback note if applicable
-## Messaging Experience, 2026-09-17
+## Production Rollout, 2026-09-18
+
+All five migrations below were applied in order to production project
+`lbphkzznvvumemdkqoay` through Supabase `apply_migration` before PR #49 merged.
+Application completed at approximately 16:21 UTC; verification was recorded in
+`public.applied_migrations` at 16:21:44 UTC. This supersedes the historical
+testing-only status in the following checkpoint notes.
+
+- `202609171659_messaging_experience.sql`
+- `202609171801_messaging_complete.sql`
+- `202609171830_message_storage_usage.sql`
+- `202609181444_appwide_role_and_request_integrity.sql`
+- `202609181531_work_part_usage_operational_boundary.sql`
+
+All 14 function bodies match the reviewed migration source. Postflight verified
+RLS, authenticated-only public RPC grants, immutable conversation audience,
+private 25 MiB message storage and all three realtime publication members.
+Fingerprints of existing fields across 18 business tables and stored-object
+metadata were identical before and immediately after migration. New nullable,
+defaulted and generated columns were excluded only from comparisons of existing
+fields. No business rows or stored objects were removed or rewritten by rollout.
+Exact catalog and digest evidence is retained privately.
+
+Production advisor results are not an all-clear: 3 no-policy INFO findings,
+5 anonymous-callable and 28 authenticated-callable security-definer warnings,
+and disabled leaked-password protection remain recorded for risk-scoped review.
+See the provider's [RPC guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+and [password-protection guidance](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No unrelated Auth configuration or existing public intake function was changed.
+
+Recovery: roll back frontend presentation independently; retain additive schema
+and the stricter permission checks. Do not drop conversations, financial records,
+converted orders, attachments, or restore the superseded authorization functions.
+
+## Messaging Experience, 2026-09-17 (Historical QA Checkpoint)
 
 - `supabase/migrations/202609171659_messaging_experience.sql`: isolated PostgreSQL/RLS proof passed; applied incrementally to testing project `fsxqrngpaseqdxijggcm` through the Supabase migration tool on 2026-09-17. Not applied to production. Adds recoverable preferences, same-thread quotes, scoped reactions and realtime publication membership, and enforces the existing Accounting read-only messaging contract. Signed-in Chromium and WebKit lifecycle checks passed on the testing platform. Existing operational records and production conversations were not rewritten. The checked-in consolidated migration is the fresh-application contract. Deployment order, cleanup and rollback notes are in `docs/MESSAGING_VERIFICATION.md`.
 # Messaging Tools Expansion (Local / Testing Only)

@@ -135,5 +135,15 @@ test('fresh Planning Open Original loads completed work outside the active Work 
     await expect(page.locator(`[data-quick-status][data-id="${completed.id}"]`).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Work order not loaded', exact: true })).toHaveCount(0);
     await qa.shot(page, 'planning-uncached-original');
+    // Returning must use the existing server page, not every detail-cached order.
+    const beforeBack = qa.manifest.httpErrors.length;
+    await page.locator('#back-to-my-work').click();
+    await page.qaSettle();
+    await expect(page.locator('[data-work-status-filter]')).toHaveValue('active');
+    await expect(page.locator('.work-card')).toHaveCount(1);
+    await expect(page.locator(`.work-card[data-id="${open.id}"]`)).toBeVisible();
+    await expect(page.locator(`.work-card[data-id="${completed.id}"]`)).toHaveCount(0);
+    expect(qa.manifest.httpErrors.length).toBe(beforeBack);
+    await qa.shot(page, 'planning-original-return-page-isolated');
   } finally { await qa.finish(); }
 });

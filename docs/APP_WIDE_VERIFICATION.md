@@ -2,7 +2,8 @@
 
 ## Scope
 
-Started 2026-09-18 on the local messaging candidate. No push or production release.
+Started 2026-09-18 on the local messaging candidate. The initial QA pass below
+preceded publication; see Production Rollout for subsequent release evidence.
 Test each identified tab/workflow using repeatable isolated fixtures, browser UI,
 persisted-record assertions, role boundaries and failure/retry checks. Existing
 unit/static proof does not substitute for a signed-in lifecycle.
@@ -29,8 +30,8 @@ Subsequent documentation changes do not change the tested executable candidate.
 | Dependency audit | PASS | `npm audit`: 0 reported vulnerabilities |
 | Fixture cleanup | VERIFIED | 130 exact run-scoped companies and 33 generated conversations removed; no remaining fixture files; original 8 work orders, 3 requests and 2 manual conversations retained |
 
-No GitHub workflow was dispatched, no production migration was applied, and no
-push or deployment occurred. Two independent reviewers contributed findings;
+During that initial QA pass, no GitHub workflow was dispatched, no production
+migration was applied, and no push or deployment occurred. Two reviewers contributed findings;
 the parent review reproduced and corrected the 11 app defects below. This human
 review and its residual risks remain separate from the automated pass counts.
 
@@ -125,8 +126,8 @@ tests must remain explicitly separate until actually exercised.
 The new database contracts are
 `supabase/migrations/202609181444_appwide_role_and_request_integrity.sql` and
 `supabase/migrations/202609181531_work_part_usage_operational_boundary.sql`.
-Both are applied only to the isolated testing platform. Production remains
-unchanged. Full candidate reruns are recorded above.
+Both initially applied only to the isolated testing platform. They subsequently
+applied to production with PR #49. Full candidate QA reruns are recorded above.
 
 ## Verification Corrections
 
@@ -154,11 +155,9 @@ and [password protection guidance](https://supabase.com/docs/guides/auth/passwor
 
 ## Release Boundaries
 
-- This is a local candidate, not a production release or hosted-release smoke.
-- Five dated migrations remain pending in production: the three Messages
-  migrations (`202609171659`, `202609171801`, `202609171830`) followed by the two
-  app-wide corrections (`202609181444`, `202609181531`). Review and verify their
-  production application before releasing the corresponding frontend.
+- The initial candidate is now deployed through PR #49. All five dated migrations
+  (`202609171659`, `202609171801`, `202609171830`, `202609181444`, `202609181531`)
+  applied and passed production postflight before that frontend merge.
 - Physical iOS/Android camera/library, microphone/codec and virtual-keyboard
   checks remain open. Desktop WebKit is not a substitute for an actual iPhone.
 - Real invite acceptance, password-reset delivery and external request-email
@@ -169,6 +168,57 @@ and [password protection guidance](https://supabase.com/docs/guides/auth/passwor
   restore and large-volume load testing remain separate readiness workstreams.
 - Roll back frontend presentation independently of data. Do not remove business
   records or restore the superseded permission checks to roll back a UI release.
+
+## Production Rollout
+
+On 2026-09-18 the user authorized publishing and live retesting. PR
+[#49](https://github.com/loufish727/MaintainOps/pull/49) merged as `6ced496` only
+after production prerequisites and the required Release Gate passed. Branch
+protection and administrator enforcement were not bypassed.
+
+- [Release Gate](https://github.com/loufish727/MaintainOps/actions/runs/35367888398): PASS.
+- [Pages deployment](https://github.com/loufish727/MaintainOps/actions/runs/35368051421): PASS.
+- [Hosted App Smoke](https://github.com/loufish727/MaintainOps/actions/runs/35368132376): PASS.
+- Local hosted verification: both resource/shell cases and the exact-commit GitHub
+  smoke check passed. All 14 served entry/bundle files matched local bytes.
+- Database: 14 reviewed function bodies matched; RLS, RPC grants, private bucket
+  and realtime publication verified. Existing-field fingerprints for 18 tables
+  and all stored-object metadata matched preflight exactly. See the migration log.
+- Signed-in production browsing used the user's Taylor session and existing Salem
+  records. Messages connected, rendered existing history and returned scoped
+  content-search results. Planning opened an uncached completed original;
+  Equipment History displayed events/actors; Financial opened its own detail.
+  The permitted tabs were visited and their desktop/mobile DOM bounds inspected.
+- Performance reached `platform-spatial-ready` and its Back link worked. The
+  unchanged spatial bundle emitted nonfatal Three.js texture-without-image warnings;
+  browser error logs were empty. This is not a claim that all console warnings are
+  resolved. The in-app browser's desktop screenshot capture did not yield reliable
+  pixels after viewport override; live desktop proof is DOM/layout, not a new
+  desktop screenshot approval. Prior isolated visual proof remains separate.
+
+Live retesting caught an additional display defect: loading a linked completed
+order polluted the shared cache used as the active work list, so an extra card
+could remain after returning, despite the correct server count. The follow-up
+keeps explicit server-page IDs separate from detail/history/notification records,
+preserves page order and updates, and adds no refresh or network request. A new
+Node regression first failed on the deployed source, reproducing the extra rows.
+The signed-in Planning case now also asserts the return list excludes the linked
+completed order. Follow-up [PR #50](https://github.com/loufish727/MaintainOps/pull/50)
+contains the correction and release evidence. At `0c59ad5`, Full Strict passed all
+13 stages with a clean worktree (178 Node smoke files). Five focused signed-in
+scenarios passed in each of Chromium and WebKit: part-usage permissions, linked
+parts, Planning original/return, paging/filter/search/location/export, and saved
+work/Manager drilldown. All ten disposable QA companies were removed with exact
+ID/creator/name/storage guards; the manual 8-order/3-request/2-conversation baseline
+remained intact. Initial JS/CSS is 777,549 decoded / 176,263 gzip bytes, a 22-byte
+gzip increase with no added requests. The first rerun correctly stopped on a stale
+generated script inventory; regenerating that document preceded the full clean pass.
+Final deployed commit and hosted retest are attached to that release PR.
+
+No operational create/save/assign/send/delete controls were used on production.
+Normal sign-in housekeeping, telemetry and conversation read markers may run during
+browsing; those are not represented as a zero-write session. Destructive and
+failure/retry lifecycles remain isolated-QA proof, not live-company tests.
 
 ## Reproduction
 

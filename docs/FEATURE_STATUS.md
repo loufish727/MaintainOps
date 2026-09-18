@@ -36,7 +36,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Procedure checklist result saving.
 - Safety-device completion check.
 - Work order history/events.
-- Message center. The isolated 2026-09-17 redesign adds lazy-loaded desktop/mobile conversations, separate Activity, live replies, recoverable Archive/Mute, quotes and four non-operational reactions. Production release is pending the additive messaging migration and frontend deployment; see `docs/MESSAGING_VERIFICATION.md`.
+- Message center. Released 2026-09-18 with lazy-loaded desktop/mobile conversations, separate Activity, live replies, recoverable Archive/Mute, quotes, reactions, content search, reply threads and private file/voice attachments. Production migrations and deployment are verified; see `docs/MESSAGING_VERIFICATION.md` for exact proof and physical-device limits.
 - Message links to work orders.
 - Team invites and single-use join links.
 - Team-managed request email recipient routing.
