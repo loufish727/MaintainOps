@@ -11,27 +11,31 @@ No finite suite establishes every possible sequence, device or external failure.
 This matrix records specific evidence and explicitly unproven paths. It is not an
 unqualified release approval.
 
-## Work In Progress
+## Verification Matrix
 
-| Area | Planned proof | Current status |
+Executable checkpoint: `7b3bbec`. Final browser/gate reruns are in progress.
+The table names the signed-in cases, not every feature on the screen. The broader
+Node, isolated-database and browser regression suites are recorded separately.
+
+| Area | Signed-in scenario coverage | Explicit boundary |
 | --- | --- | --- |
-| Auth and workspace | Sign-in/out, role routes, company/location changes, stale scope, drafts | Existing proof; expanded run pending |
-| My Work | Assignment, gauges/filters, Quick Fix, production handoff | Expanded lifecycle pending |
-| Work Orders | Create/edit/status/checklist/safety, comments, photos, parts, completion, reopen, paging/export | Expanded lifecycle pending |
-| Planning | Undated/due/follow-up groups, set due, original/follow-up links, paging | Expanded lifecycle pending |
-| Requests | Internal and public intake, photos, convert, Quick Fix, reject/delete, retry | Expanded lifecycle pending |
-| Equipment | Create/edit/hierarchy, history, linked work/parts/PM, files, delete, export | Expanded lifecycle pending |
-| Financial | Accounting edit, manager read, filters/export, operational-delete retention | Expanded lifecycle pending |
-| PM | Schedule creation/generation/deletion, due advancement, linked procedure | Expanded lifecycle pending |
-| Procedure Checklist | Templates, steps, results, required completion guard, delete traceability | Expanded lifecycle pending |
-| Parts | Create/edit/restock/use, work-order usage, documents, delete guard | Expanded lifecycle pending |
-| Conversions | Units, reference visibility, calibration, local preference behavior | Expanded browser proof pending |
-| Messages | Paging, live events, permissions, retry, media, voice, Activity | Full scoped proof 2026-09-17; regression rerun pending |
-| Team | Profile, role changes, invites/links, totals, restrictions | Expanded lifecycle pending |
-| Manager | Measured totals, drilldowns, report/filter controls | Expanded browser proof pending |
-| Admin Setup | Setup disclosure, version/status and QR controls | Expanded browser proof pending |
-| Settings | Company/location settings, logo, public links, notification recipients, storage | Expanded lifecycle pending |
-| App Performance | Lazy load, gauges, objects, quality, mobile taps, back/fallback | Full scoped proof 2026-09-17; regression rerun pending |
+| Auth and workspace | Five role sessions, permitted tabs, company isolation, location switching, startup budgets | Real password changes/reset-email acceptance are not exercised with shared QA credentials |
+| My Work | Assigned queue, Team drill-through, Quick Fix completion/follow-up; separate Production Action/Ready lifecycle | Every gauge/filter combination is not a separate live scenario |
+| Work Orders | Guided create, failed-save draft/retry, assign, block/unblock, edit, checklist/safety, comments, photos, parts, completion, 12-row pages and 13-row CSV | New-order lost-response idempotency and every reopen/delete variant are not proven |
+| Planning | 12+2 undated rows, set due removes item, create follow-up, open original from both cached and cold completed records | All date/time-zone boundary combinations remain unit-level evidence |
+| Requests | Anonymous QR intake, photo-library input contract, conversion attribution/link, committed-but-lost-response retry | Internal request photo lifecycle, reject/delete and request CSV are not signed-in browser scenarios in this run |
+| Equipment | Create, operational edit, delete cancellation/deletion, retained finance, file upload/delete, history paging/back, linked-parts draft/save | Full hierarchy editing and audit export are covered by existing smokes, not a new end-to-end browser case |
+| Financial | Accounting save/reviewer, manager UI/API read-only, operational rename, deletion banner/retention, continued archived editing, mobile form | Full-register CSV and permanent financial deletion are not new signed-in cases |
+| PM | Create schedule, link procedure, generate order, advance due date | Delete/retry under an ambiguous generation response is not proven |
+| Procedure Checklist | Template and required step creation, result save, delayed-save draft retention, required completion, referenced-template delete guard | Arbitrary step reorder/delete combinations are not exhaustively exercised |
+| Parts | Create, restock/use/edit, concurrent stale forms, overlapping detail reads, explicit reopen recovery, work usage/quantity/actor, Accounting RPC denial | Part documents and permanent deletion remain existing smoke evidence |
+| Conversions | Inch/mm and swap, freezing and negative temperature, hidden reference charts, mobile bounds | Physical screen calibration accuracy is not proven |
+| Messages | Separate lifecycle/tools suites: paging, real incoming messages, drafts/retry, quotes/reactions, archive/mute, search/discussions, private attachments/voice, Activity | Simulated microphone is not real-phone codec/capture proof; see messaging report |
+| Team | Role round trips, scoped profile/mobile flag, password mismatch validation, invite create/cancel, link create/revoke, workload totals/drill-through | New-account invite acceptance and actual password updates are not exercised |
+| Manager | Seeded blocked total, drilldown to exact assigned order, mobile navigation | Every trend/report/export option is not a new signed-in scenario |
+| Admin Setup | Role route, setup disclosures/content; separate storage and permission checks | No destructive admin repair/setup operation against production |
+| Settings | Company rename, location creation, QR create/disable/reactivate | Actual email delivery, logo replacement and location deletion are not new signed-in cases |
+| App Performance | Five-role lazy-frame readiness/back and viewport bounds; Full Strict exercises desktop/mobile scene interaction | Software-rendered desktop tests do not measure physical phone performance |
 
 ## Isolation
 
@@ -82,9 +86,27 @@ tests must remain explicitly separate until actually exercised.
   missing-record screen. Mini links now use the existing linked-record loader,
   including detail relationships and cancellation after navigating away.
 
-The new database contract is in
-`supabase/migrations/202609181444_appwide_role_and_request_integrity.sql`.
-Production remains unchanged. Full candidate reruns are recorded above once done.
+The new database contracts are
+`supabase/migrations/202609181444_appwide_role_and_request_integrity.sql` and
+`supabase/migrations/202609181531_work_part_usage_operational_boundary.sql`.
+Both are applied only to the isolated testing platform. Production remains
+unchanged. Full candidate reruns are recorded above once done.
+
+## Release Boundaries
+
+- This is a local candidate, not a production release or hosted-release smoke.
+- Five dated migrations remain pending in production: the three Messages
+  migrations (`202609171659`, `202609171801`, `202609171830`) followed by the two
+  app-wide corrections (`202609181444`, `202609181531`). Review and verify their
+  production application before releasing the corresponding frontend.
+- Physical iOS/Android camera/library, microphone/codec and virtual-keyboard
+  checks remain open. Desktop WebKit is not a substitute for an actual iPhone.
+- Real invite acceptance, password-reset delivery and external request-email
+  delivery need separate controlled acceptance checks.
+- Offline telemetry does not provide a durable offline write queue. Storage
+  restore and large-volume load testing remain separate readiness workstreams.
+- Roll back frontend presentation independently of data. Do not remove business
+  records or restore the superseded permission checks to roll back a UI release.
 
 ## Reproduction
 
