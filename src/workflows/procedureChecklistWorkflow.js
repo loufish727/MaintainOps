@@ -2,11 +2,27 @@
   /*
    * Module contract: owns procedure checklist result saving only.
    * May upsert an injected checklist result, record an injected work-order event,
-   * refresh injected step-result state, clear injected completion warnings, and re-render workspace.
+   * refresh injected step-result state, clear completion warnings, and update checklist readouts in place.
    * Must not create/edit/delete procedure templates, complete work orders, own app state,
    * touch auth/session startup, storage/photo flows, SQL, or RLS.
    */
   function createProcedureChecklistWorkflow(deps = {}) {
+    function updateChecklistReadouts(field) {
+      if (!field.isConnected) return;
+      const workOrder = deps.getWorkOrders().find((item) => item.id === field.dataset.workOrderId);
+      const procedure = deps.getProcedureTemplates().find((item) => item.id === workOrder?.procedure_template_id);
+      if (!procedure) return;
+      const progress = deps.checklistProgress(workOrder, procedure);
+      const required = deps.requiredChecklistProgress(workOrder, procedure);
+      const detail = field.closest('.detail-stack');
+      const summary = detail?.querySelector('[data-checklist-summary]');
+      const chip = detail?.querySelector('.relationship-chip.procedure > span');
+      if (summary) summary.textContent = `${progress.done} of ${progress.total} complete - required ${required.done}/${required.total}`;
+      if (chip) chip.textContent = `${progress.done}/${progress.total}`;
+      const recorded = field.closest('.checklist-step')?.querySelector('[data-checklist-recorded]');
+      const result = deps.getStepResultsByWorkOrder()[workOrder.id]?.[field.dataset.stepResult];
+      if (recorded) recorded.textContent = result?.completed_at ? `Recorded ${new Date(result.completed_at).toLocaleString()}` : '';
+    }
     async function saveStepResult(event) {
       const field = event.target;
       const value = field.type === "checkbox" ? (field.checked ? "checked" : "") : field.value;
@@ -48,7 +64,9 @@
           if (!deps.blocksProcedureCompletion(refreshedWorkOrder)) deps.setWorkOrderActionWarning("", "");
         }
 
-        deps.renderWorkspace();
+        // A workspace rebuild here erased other forms the user was already typing in.
+        field.disabled = false;
+        updateChecklistReadouts(field);
       } catch (error) {
         deps.showNotice(`Could not save checklist step: ${error.message || error}`, "warning");
         field.disabled = false;

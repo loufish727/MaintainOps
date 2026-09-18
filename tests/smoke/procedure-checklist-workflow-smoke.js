@@ -51,7 +51,8 @@ const workflow = createProcedureChecklistWorkflow({
   assert.equal(calls.some((call) => call[0] === "recordWorkOrderEvent" && call[2] === "checklist_updated"), true);
   assert.equal(calls.some((call) => call[0] === "loadStepResults"), true);
   assert.deepEqual(calls.find((call) => call[0] === "setWorkOrderActionWarning"), ["setWorkOrderActionWarning", "", ""]);
-  assert.equal(calls.some((call) => call[0] === "renderWorkspace"), true);
+  assert.equal(calls.some((call) => call[0] === "renderWorkspace"), false, "Checklist save must not replace other unsaved forms");
+  assert.equal(field.disabled, false);
 
   console.log("procedure checklist workflow smoke passed");
 })().catch((error) => {

@@ -74,3 +74,15 @@ Every new SQL run should record:
 
 - `supabase/migrations/202609171801_messaging_complete.sql`: indexed message search, personal favorites/sections, same-conversation reply threads, private message-file bucket and transactional attachment sends. Production has NOT been migrated. Testing proof is recorded separately before release.
 - `supabase/migrations/202609171830_message_storage_usage.sql`: includes message-file bytes and photos in storage totals/months. Nonparticipants see aggregate usage but never private filenames, paths, titles or links. Testing platform only; production pending.
+# App-wide QA Candidate, 2026-09-18
+
+`supabase/migrations/202609181444_appwide_role_and_request_integrity.sql`:
+corrects the Team role authorization variable and makes request conversion atomic/idempotent.
+Production: NOT APPLIED. Applied to testing project `fsxqrngpaseqdxijggcm` on
+2026-09-18 through the Supabase migration tool. Isolated PostgreSQL proves admin
+authorization, self/nonadmin/cross-company denial, rollback on request-link failure,
+and idempotent conversion/history. Signed-in test-bed browser checks prove Team
+role round trips and conversion retry after a lost response. This is a release
+prerequisite, not an automatic production change. Apply before the corresponding
+frontend. Frontend rollback can leave these additive RPC changes in place; do not
+restore the broken role authorization function or delete converted work as rollback.

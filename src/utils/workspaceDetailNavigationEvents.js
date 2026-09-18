@@ -123,7 +123,7 @@
       });
     });
 
-    doc.querySelectorAll("[data-asset-id]").forEach((card) => {
+    doc.querySelectorAll(".asset-card[data-asset-id]").forEach((card) => {
       const openAsset = () => {
         state.setActiveAssetId(card.dataset.assetId);
         state.setActiveWorkOrderId(null);

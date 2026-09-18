@@ -58,6 +58,9 @@ async function main() {
     await database.exec(schemaSql);
     checks.push({ name: "schema_compiles", verdict: "PASS" });
 
+    await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-maintenance-requests.sql'), 'utf8'));
+    checks.push({ name: 'request_baseline:maintenance-requests', verdict: 'PASS' });
+
     // Messaging predates dated migrations; exercise its real legacy baseline too.
     for (const name of ["message-center", "message-soft-delete-and-thread-scope", "message-thread-soft-delete", "message-work-order-links"]) {
       await database.exec(fs.readFileSync(path.join(root, "supabase", `step-next-${name}.sql`), "utf8"));
@@ -713,6 +716,7 @@ async function main() {
     if (!accountingOperationalInsertDenied) throw new Error("Accounting was allowed to create operational equipment.");
     checks.push({ name: "accounting_operational_asset_writes_denied", verdict: "PASS" });
 
+    checks.push(...await require('./isolated-appwide-check').verifyAppwide(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require("./isolated-messaging-check").verifyMessaging(database, ids, setAuthenticatedUser, resetRole));
     await resetRole(database);
     const report = {

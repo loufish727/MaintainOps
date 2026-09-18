@@ -53,7 +53,7 @@ class FakeFormData {
   }
 }
 
-function createQuery(table, calls) {
+function createQuery(table, calls, result) {
   return {
     payload: null,
     insert(payload) {
@@ -78,7 +78,7 @@ function createQuery(table, calls) {
       return Promise.resolve({ data: { id: "part-new" }, error: null });
     },
     then(resolve) {
-      resolve({ error: null });
+      resolve(result);
     },
   };
 }
@@ -106,6 +106,7 @@ function createQuery(table, calls) {
   });
   const parts = [{ id: "part-1", quantity_on_hand: 10 }];
   const calls = [];
+  let result = { data: [{ id: "part-1" }], error: null };
   const state = {
     activePartId: "",
     locationsReady: true,
@@ -119,7 +120,7 @@ function createQuery(table, calls) {
   const workflow = createPartInventoryWorkflow({
     documentRef,
     FormDataCtor: FakeFormData,
-    supabaseClient: () => ({ from: (table) => createQuery(table, calls) }),
+    supabaseClient: () => ({ from: (table) => createQuery(table, calls, result) }),
     withOperationTimeout: (value) => value,
     activeLocationDatabaseId: () => "location-1",
     isMissingColumnError: () => false,
@@ -161,6 +162,22 @@ function createQuery(table, calls) {
   await sourceForm.dispatch("submit");
   assert.ok(calls.some((call) => call[0] === "update" && call[2].supplier_name === "Supply Co"));
   assert.equal(state.notices.at(-1)[0], "Part source updated.");
+
+  assert.equal(calls.filter(call => call[0] === "eq" && call[2] === "quantity_on_hand" && call[3] === 10).length, 3);
+  result = { data: [], error: null };
+  const renders = state.renders;
+  await restockForm.dispatch("submit");
+  assert.match(state.notices.at(-1)[0], /Inventory changed/);
+  await useForm.dispatch("submit");
+  assert.match(state.notices.at(-1)[0], /Inventory changed/);
+  await editForm.dispatch("submit");
+  assert.match(documentRef.querySelector('[data-part-edit-error="part-1"]').textContent, /Inventory changed/);
+  assert.equal(state.renders, renders);
+  const updates = calls.filter(call => call[0] === "update").length;
+  useForm.formValues.quantity = "11";
+  await useForm.dispatch("submit");
+  assert.match(state.notices.at(-1)[0], /exceeds/);
+  assert.equal(calls.filter(call => call[0] === "update").length, updates);
 
   console.log("part inventory workflow smoke passed");
 })();

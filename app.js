@@ -1103,6 +1103,11 @@ const {
   downloadCsv,
   exportActiveSectionCsv,
 } = createCsvExportHelpers({
+  createExportQuery: (section) => section === "requests"
+    ? applyRequestQueryFilters(supabaseClient.from("maintenance_requests").select(REQUEST_RELATION_SELECT, { count: "exact" })).order("created_at", { ascending: false }).order("id")
+    : applyWorkOrderListFilters(selectWorkOrders(supabaseClient, WORK_ORDER_RELATION_SELECT, { count: "exact" })).order("id"),
+  getExportScope: () => JSON.stringify([session?.user.id, activeCompanyId, activeLocationId, activeSection]),
+  withOperationTimeout,
   documentRef: document,
   URLRef: URL,
   BlobCtor: Blob,
@@ -3125,13 +3130,13 @@ async function loadComments() {
   }, {});
 }
 
-function replaceArrayGroupsForIds(currentGroups, ids, rows) {
+function replaceArrayGroupsForIds(currentGroups, ids, rows, foreignKey = "work_order_id") {
   const idSet = new Set(ids);
   const nextGroups = { ...currentGroups };
   idSet.forEach((id) => { delete nextGroups[id]; });
   (rows || []).forEach((row) => {
-    nextGroups[row.work_order_id] ||= [];
-    nextGroups[row.work_order_id].push(row);
+    nextGroups[row[foreignKey]] ||= [];
+    nextGroups[row[foreignKey]].push(row);
   });
   return nextGroups;
 }
@@ -3446,7 +3451,7 @@ async function loadAssetEventsForAssetIds(ids = []) {
   }
 
   assetEventsReady = true;
-  assetEventsByAssetId = replaceArrayGroupsForIds(assetEventsByAssetId, ids, data || []);
+  assetEventsByAssetId = replaceArrayGroupsForIds(assetEventsByAssetId, ids, data || [], "asset_id");
 }
 
 async function loadStepResults() {
@@ -6095,6 +6100,20 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspacePartDetailEvents({
+    loadPartDetail: async (id) => {
+      const companyId = activeCompanyId;
+      const locationId = activeLocationId;
+      const { data, error } = await withOperationTimeout(
+        supabaseClient.from("parts").select("*").eq("company_id", companyId).eq("id", id).maybeSingle(),
+        "Part loading timed out. Try opening it again.", 15000
+      );
+      if (activeCompanyId !== companyId || activeLocationId !== locationId || activeSection !== "parts") return false;
+      if (error) throw error;
+      if (!data || !matchesActiveLocation(data)) throw new Error("Part is no longer available in this location.");
+      parts = parts.map(part => part.id === id ? data : part);
+      return true;
+    },
+    showNotice,
     state: {
       getShowPartSourceManager: () => showPartSourceManager,
       setActivePartId: setActivePartIdState,
@@ -6430,13 +6449,16 @@ const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
 
 const { saveStepResult } = createProcedureChecklistWorkflow({
   blocksProcedureCompletion,
+  checklistProgress,
+  requiredChecklistProgress,
+  getProcedureTemplates: () => procedureTemplates,
+  getStepResultsByWorkOrder: () => stepResultsByWorkOrder,
   getActiveCompanyId: () => activeCompanyId,
   getSession: () => session,
   getWorkOrderActionWarningId: () => workOrderActionWarningId,
   getWorkOrders: () => workOrders,
   loadStepResults,
   recordWorkOrderEvent,
-  renderWorkspace,
   setWorkOrderActionWarning,
   showNotice,
   upsertStepResult: (payload) => supabaseClient.from("work_order_step_results").upsert(payload, { onConflict: "work_order_id,procedure_step_id" }),

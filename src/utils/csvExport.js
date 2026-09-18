@@ -139,11 +139,41 @@
         });
     }
 
+    async function exportPagedSection(section) {
+      const scope = deps.getExportScope();
+      const query = deps.createExportQuery(section);
+      const records = [];
+      let expectedCount;
+      try {
+        while (records.length < 100000) {
+          const response = await deps.withOperationTimeout(query.range(records.length, records.length + 499), "Export timed out. Try again.", 20000);
+          if (response.error) throw response.error;
+          if (deps.getExportScope() !== scope) throw new Error("Workspace changed. Export again from the intended location.");
+          if (!Number.isInteger(response.count)) throw new Error("Export could not verify the total record count.");
+          if (expectedCount !== undefined && expectedCount !== response.count) throw new Error("Records changed during export. Try again.");
+          expectedCount = response.count;
+          records.push(...(response.data || []));
+          if (new Set(records.map(row => row.id)).size !== records.length) throw new Error("Records moved during export. Try again.");
+          if (records.length === expectedCount) return exportRows(section, records);
+          if (!response.data?.length || records.length > expectedCount) throw new Error("Export returned an incomplete list. Try again.");
+        }
+        throw new Error("Export exceeds 100,000 records. Narrow the filters and try again.");
+      } catch (error) {
+        alertRef(`Could not export: ${error.message || error}`);
+      }
+    }
+
     function exportActiveSectionCsv() {
+      const section = deps.getActiveSection();
+      if (deps.createExportQuery && ["work", "mywork", "requests"].includes(section)) return exportPagedSection(section);
+      return exportRows(section);
+    }
+
+    function exportRows(section, records) {
       const exports = {
         work: {
           filename: "work-orders.csv",
-          rows: deps.getWorkOrders().map((workOrder) => ({
+          rows: (records && section !== "requests" ? records : deps.getWorkOrders()).map((workOrder) => ({
             title: workOrder.title,
             status: workOrder.status,
             priority: workOrder.priority,
@@ -168,7 +198,7 @@
         },
         requests: {
           filename: "maintenance-requests.csv",
-          rows: deps.getMaintenanceRequests().map((request) => ({
+          rows: (records && section === "requests" ? records : deps.getMaintenanceRequests()).map((request) => ({
             title: request.title,
             status: request.status,
             priority: request.priority,
@@ -217,7 +247,7 @@
         },
       };
 
-      const selected = exports[deps.getActiveSection()] || exports.work;
+      const selected = exports[section] || exports.work;
       if (!selected.rows.length) return alertRef("Nothing to export in this section yet.");
       downloadCsv(selected.filename, selected.rows);
     }

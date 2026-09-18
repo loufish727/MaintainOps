@@ -97,49 +97,20 @@
       }
 
       try {
-        const payload = {
-          company_id: deps.getActiveCompanyId(),
-          location_id: request.location_id || deps.locationIdForAsset(request.asset_id),
-          title: request.title,
-          description: deps.descriptionWithRequestPhotoNote(request.description, request),
-          asset_id: request.asset_id || null,
-          priority: request.priority || "medium",
-          type: "corrective",
-          status: "open",
-          created_by: deps.getSession().user.id,
-        };
-        deps.applySafetyRequirementPayload(payload);
-        deps.applySafetyCheckPayload(payload, false);
         const { data, error } = await deps.withOperationTimeout(
-          deps.insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
+          deps.supabaseClient().rpc("convert_maintenance_request", {
+            target_company_id: deps.getActiveCompanyId(),
+            target_request_id: requestId,
+          }),
           "Request conversion timed out. Check your connection and try again.",
           15000
         );
         if (error) throw error;
 
-        const { error: updateError } = await deps.withOperationTimeout(
-          deps.supabaseClient()
-            .from("maintenance_requests")
-            .update({
-              status: "converted",
-              reviewed_by: deps.getSession().user.id,
-              reviewed_at: new Date().toISOString(),
-              converted_work_order_id: data.id,
-            })
-            .eq("id", requestId)
-            .eq("company_id", deps.getActiveCompanyId()),
-          "Request status update timed out. Check your connection and try again.",
-          15000
-        );
-        if (updateError) throw updateError;
+        if (!data?.id) throw new Error("Conversion did not return a work order. Review the request before retrying.");
 
         deps.setActiveSection("work");
         deps.setActiveWorkOrderId(data.id);
-        await deps.withOperationTimeout(
-          deps.recordWorkOrderEvent(data.id, "request_converted", "Request converted to work order."),
-          "Activity log timed out.",
-          8000
-        ).catch(() => null);
         deps.showNotice("Request converted to work order.");
         await deps.render();
       } catch (error) {
