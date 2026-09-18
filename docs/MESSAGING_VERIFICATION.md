@@ -6,6 +6,14 @@ The 2026-09-17 redesign is on the isolated messaging review branch. Its three ad
 
 ## Current Contract
 
+The combined 2026-09-18 app-wide candidate passed Full Strict and authenticated
+LFES at `24632a8`, followed by both signed-in messaging suites in Chromium and
+WebKit and 11 focused WebKit presentation/audio/confirmation cases. Its 33 generated
+conversations and all uploads were removed; the two manual conversations remain.
+The combined frontend also needs the two app-wide database corrections before
+production release, not only the three Messages migrations. See
+`docs/APP_WIDE_VERIFICATION.md` for all five prerequisites and the wider proof.
+
 - Desktop has a conversation rail and bounded history; mobile shows the inbox or one conversation. Back preserves the inbox position. Conversations and work-order Activity are separate views.
 - The inbox displays 12 conversations per page, with All, Unread, Favorites, Direct, Team and Archived filters. Personal sections can be assigned or cleared in conversation options. The rail search covers subjects/people; the separate content search covers the complete accessible history with sender/conversation/date filters and 12-result pages.
 - History opens with 50 non-deleted messages. Earlier messages load in 50-message batches with stable timestamp/ID cursors. Incoming replies preserve a draft and a reader's position; a New messages control returns to the latest reply.

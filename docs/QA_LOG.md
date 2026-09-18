@@ -13,6 +13,8 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 
 ## Recent Verification Notes
 
+- 2026-09-18: App-wide pre-release review corrected 11 app defects plus a Windows test-runner argument bug. Twenty isolated workflow/navigation scenarios passed in each of Chromium and WebKit, followed by full Strict, authenticated boundaries/roles/Production lifecycles and messaging regressions. Exact cleanup retained the manual QA baseline. Two new database migrations are testing-only; no push or production deployment occurred. `docs/APP_WIDE_VERIFICATION.md` records the evidence matrix and unproven device/provider paths.
+
 - 2026-09-17: Messaging review adds paged metadata/latest previews, bounded conversation history, memory-only scoped drafts, safe retry IDs, message-only reloads, accurate hide wording and mobile inbox/conversation navigation. The isolated signed-in lifecycle exercises creation/reply/delete/hide, partial failures and read-only UI. See `docs/MESSAGING_VERIFICATION.md` for exact contracts, automated checks and remaining limits. No production data or database policies changed.
 
 - 2026-07-06: Accounting read-only boundary hardening applied to live Supabase. Financial records now read through admin/manager/accounting RLS and write through admin/accounting RLS; operational mutations use `private.is_company_operational_editor(company_id)` so accounting remains view-only outside Financial. Verified with SQL policy catalog query, static security audit, security boundary probe, broad non-live Node smokes, local resource smoke, work-attach browser smoke, and targeted Setup storage navigation smoke.

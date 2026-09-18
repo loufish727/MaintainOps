@@ -138,6 +138,7 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 - Automated test coverage.
   - Current coverage includes the required fast Release Gate, manual Full Strict LFES, recursive SQL and DOM assignment inspection, isolated PostgreSQL/RLS checks, targeted smoke tests, hosted resource checks, five-role Chromium proof, and a signed-in WebKit admin contract against the testing platform.
+  - The opt-in app-wide suite now adds saved-workflow, failure/retry and five-role tab/layout proof in Chromium and WebKit on run-scoped QA companies. Messaging has separate signed-in lifecycle/tools proof. See `APP_WIDE_VERIFICATION.md` for the dated scenario matrix and cleanup requirements; these mutation suites are not silently part of the fast Release Gate.
   - Numeric line/branch coverage and an exhaustive live mutation/cross-browser matrix do not exist yet.
 
 - Operational readiness.

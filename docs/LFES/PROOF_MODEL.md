@@ -58,7 +58,12 @@ The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes
 
 Use dedicated disposable QA companies and users. Do not store personal or production-company credentials in GitHub.
 
-Latest verified proof: GitHub run `30933804371` passed the five-role Chromium, signed-in Production Action lifecycle, authenticated boundary, and WebKit admin proof on commit `6b7c71a709ad556245b47d736f9ad4f61691961b` on 2026-08-04.
+Latest recorded GitHub proof: run `30933804371` passed the five-role Chromium, signed-in Production Action lifecycle, authenticated boundary, and WebKit admin proof on commit `6b7c71a709ad556245b47d736f9ad4f61691961b` on 2026-08-04.
+
+Local pre-release proof on 2026-09-18 passed Full Strict and all five authenticated
+stages at `24632a8`. The candidate was served locally against the testing backend,
+not deployed or verified on the production host. App-wide and messaging evidence,
+cleanup and remaining gaps are recorded in `docs/APP_WIDE_VERIFICATION.md`.
 
 ## App-Wide Lifecycle Proof
 

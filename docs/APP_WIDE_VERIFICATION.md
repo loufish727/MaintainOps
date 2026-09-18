@@ -11,9 +11,44 @@ No finite suite establishes every possible sequence, device or external failure.
 This matrix records specific evidence and explicitly unproven paths. It is not an
 unqualified release approval.
 
+## Final Results
+
+Verified locally on 2026-09-18 against the isolated testing platform. Application
+code checkpoint: `7b3bbec`; final verification-tool checkpoint: `24632a8`.
+Subsequent documentation changes do not change the tested executable candidate.
+
+| Proof | Result | Evidence scope |
+| --- | --- | --- |
+| Full Strict local | PASS | 13 stages, clean worktree at `24632a8`; includes Release Gate coverage, 177 Node smoke files, 28 targeted browser cases, resources and desktop/mobile 3D interaction |
+| Authenticated LFES | PASS | All 5 stages; 46 boundary PASS, 5 INFO, 0 FAIL; five Chromium roles, both Production lifecycles and WebKit admin |
+| App-wide lifecycle | PASS | 20 scenarios in Chromium and 20 in WebKit; no skipped, flaky or failed final cases |
+| Role/tab layouts | PASS | 68 permitted role/tab pairs at two widths in each engine: 272 viewport checks across 16 unique tabs |
+| Messaging regression | PASS | Two signed-in lifecycle/tools suites in each engine; 11 additional focused WebKit presentation/audio/confirmation cases |
+| Isolated database | PASS | 62 checks, including all 14 dated migrations, role boundaries, conversion rollback/retry and part usage |
+| Static security | PASS | 114 SQL files, 101 parsed functions, 89 security definers and 35 reviewed DOM assignment sites |
+| Dependency audit | PASS | `npm audit`: 0 reported vulnerabilities |
+| Fixture cleanup | VERIFIED | 130 exact run-scoped companies and 33 generated conversations removed; no remaining fixture files; original 8 work orders, 3 requests and 2 manual conversations retained |
+
+No GitHub workflow was dispatched, no production migration was applied, and no
+push or deployment occurred. Two independent reviewers contributed findings;
+the parent review reproduced and corrected the 11 app defects below. This human
+review and its residual risks remain separate from the automated pass counts.
+
+Startup measured 31 requests for admin, manager and accounting, 30 for production,
+and 35 for technician against the unchanged 35-request budget. WebKit admin used
+31. No optional feature bundle loaded on My Work. Chromium workspace visibility
+was 1.85-1.88 seconds on this local QA run, not a production or phone benchmark.
+The technician baseline has no request-budget headroom; this is not a large-volume
+scalability claim. Initial JS/CSS is 777,431 decoded / 176,241 gzip bytes, and lazy
+Messages JS/CSS is 26,088 gzip bytes. No budget, dependency or polling was added.
+
+Private evidence includes the three `appwide-*-reviewed*.json` reports, messaging
+JSON reports, `LFES/private/appwide-proof-20260918/`, timestamped LFES proof
+snapshots, fixture manifests and guarded cleanup SQL/results. Credentials and
+browser traces are not committed.
+
 ## Verification Matrix
 
-Executable checkpoint: `7b3bbec`. Final browser/gate reruns are in progress.
 The table names the signed-in cases, not every feature on the screen. The broader
 Node, isolated-database and browser regression suites are recorded separately.
 
@@ -44,7 +79,8 @@ inside the testing platform. Five pre-existing QA identities are members of thes
 temporary companies; production memberships and manual QA fixtures are unchanged.
 Each case records its company ID before mutations. File cleanup is confined to its
 company prefix. Company cleanup requires exact recorded IDs and verified storage
-removal, never a broad name-only delete.
+removal, never a broad name-only delete. Verification checks both company-prefixed
+objects and request-ID-prefixed photo objects before database cleanup.
 
 Request-email delivery is suppressed in the browser fixture and temporary
 companies start without notification recipients. This proves application behavior,
@@ -90,7 +126,31 @@ The new database contracts are
 `supabase/migrations/202609181444_appwide_role_and_request_integrity.sql` and
 `supabase/migrations/202609181531_work_part_usage_operational_boundary.sql`.
 Both are applied only to the isolated testing platform. Production remains
-unchanged. Full candidate reruns are recorded above once done.
+unchanged. Full candidate reruns are recorded above.
+
+## Verification Corrections
+
+- Independent-review failures were first reproduced on the older candidate;
+  they were not dismissed or converted into passing assertions.
+- An earlier Windows WebKit run finished its assertions but hung in worker
+  teardown and required stopping that worker. It is not the final clean proof.
+  The final WebKit run completed normally in separate 15-workflow and 5-role
+  batches, followed by the clean 13-case messaging run.
+- The private preview server initially excluded tracked `auth/callback` files.
+  Its allowlist was corrected and the complete Strict suite rerun; the resource
+  assertions were unchanged.
+- Windows shell splitting of the authenticated runner's multiword `--grep`
+  accidentally selected an opt-in app-wide case. Its guard refused before writes.
+  Playwright now runs directly through Node with preserved argv; a Windows/Linux
+  command regression was added. Authenticated LFES and Full Strict both passed
+  again at `24632a8` with a clean worktree.
+
+The testing-platform advisor output is retained separately and is not an
+all-clear: it includes callable SECURITY DEFINER warnings and disabled leaked
+password protection, including testing-platform functions outside this app's
+SQL inventory. No unrelated platform functions or Auth settings were changed.
+See the provider's [RPC warning guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+and [password protection guidance](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 
 ## Release Boundaries
 
@@ -103,6 +163,8 @@ unchanged. Full candidate reruns are recorded above once done.
   checks remain open. Desktop WebKit is not a substitute for an actual iPhone.
 - Real invite acceptance, password-reset delivery and external request-email
   delivery need separate controlled acceptance checks.
+- Focused contrast, layout and keyboard regressions are not a complete
+  accessibility or screen-reader conformance audit.
 - Offline telemetry does not provide a durable offline write queue. Storage
   restore and large-volume load testing remain separate readiness workstreams.
 - Roll back frontend presentation independently of data. Do not remove business
