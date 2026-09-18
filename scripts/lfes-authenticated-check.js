@@ -28,9 +28,15 @@ const requiredEnvironment = [
 ];
 
 function run(command, args, options = {}) {
-  const needsShell = process.platform === "win32" && command.endsWith(".cmd");
-  const spawnCommand = needsShell ? [command].concat(args).join(" ") : command;
-  const spawnArgs = needsShell ? [] : args;
+  // Keep Playwright filters as argv entries; cmd.exe split multiword --grep values.
+  const directPlaywright = command === npxCommand && args[0] === "playwright";
+  const executable = directPlaywright ? process.execPath : command;
+  const commandArgs = directPlaywright
+    ? [path.join(root, "node_modules/@playwright/test/cli.js"), ...args.slice(1)]
+    : args;
+  const needsShell = process.platform === "win32" && executable.endsWith(".cmd");
+  const spawnCommand = needsShell ? [executable].concat(commandArgs).join(" ") : executable;
+  const spawnArgs = needsShell ? [] : commandArgs;
   return new Promise((resolve, reject) => {
     const child = spawn(spawnCommand, spawnArgs, {
       cwd: root,
