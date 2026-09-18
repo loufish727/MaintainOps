@@ -16,6 +16,7 @@ const context = vm.createContext({
   workOrders: [], workOrderPageIds: [], workOrderServerTotal: 0,
   workOrderQueueLoadRevision: 2, isWorkArea: true, showGlobalSearch: false,
   workOrderDashboardCounts: {}, myWorkDashboardCounts: {},
+  workspaceUiState: { getWorkOrderPage: () => 1 },
 });
 vm.runInContext([
   definition('commitLoadedWorkOrderSlice'), definition('mergeWorkOrdersById'),
@@ -50,3 +51,33 @@ assert.deepEqual(Array.from(context.workOrderPageIds), []);
 context.showGlobalSearch = true;
 assert.deepEqual(ids(), []);
 console.log('Work-order server page stays isolated from detail/history/notification cache');
+
+(async () => {
+  let reloads = 0;
+  let renders = 0;
+  let page = 1;
+  context.activeSection = 'work';
+  context.workspaceUiState = { getWorkOrderPage: () => page };
+  context.renderWorkspace = () => { renders += 1; };
+  context.reloadWorkOrderQueue = async () => { reloads += 1; };
+  vm.runInContext(definition('returnToWorkOrderQueue') ||
+    'function returnToWorkOrderQueue() { renderWorkspace(); }', context);
+  context.commitLoadedWorkOrderSlice({ data: pageRows, count: 25 }, {}, {}, { revision: 3, section: 'mywork' });
+  await context.returnToWorkOrderQueue();
+  assert.equal(reloads, 1, 'Returning to all work must not reuse a personal queue');
+  context.commitLoadedWorkOrderSlice({ data: pageRows, count: 25 }, {}, {}, { revision: 3, section: 'work' });
+  await context.returnToWorkOrderQueue();
+  assert.equal(reloads, 1, 'Returning to the same queue must not add a refresh');
+  assert.equal(renders, 1);
+  context.activeSection = 'mywork';
+  await context.returnToWorkOrderQueue();
+  assert.equal(reloads, 2, 'Performance/Messages exit must not reuse the all-work queue');
+  context.activeSection = 'work';
+  page = 2;
+  await context.returnToWorkOrderQueue();
+  assert.equal(reloads, 3, 'A changed page must not reuse another page under new labels');
+  context.activeSection = 'assets';
+  await context.returnToWorkOrderQueue();
+  assert.equal(reloads, 3, 'Equipment return does not load a work queue');
+  console.log('Work queue return respects section/page ownership without redundant refreshes');
+})().catch(error => { console.error(error); process.exitCode = 1; });

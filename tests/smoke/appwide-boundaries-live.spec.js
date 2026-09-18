@@ -145,5 +145,29 @@ test('fresh Planning Open Original loads completed work outside the active Work 
     await expect(page.locator(`.work-card[data-id="${completed.id}"]`)).toHaveCount(0);
     expect(qa.manifest.httpErrors.length).toBe(beforeBack);
     await qa.shot(page, 'planning-original-return-page-isolated');
+
+    // My Work has no assignments in this fixture; the all-work return must still show the open order.
+    await nav(page, 'mywork');
+    await expect(page.locator('.work-card')).toHaveCount(0);
+    await nav(page, 'planning');
+    await expandFor(original);
+    await original.click();
+    await expect(page.locator('#quick-update-work-order-form [name=title]')).toHaveValue(completed.title);
+    await page.locator('#back-to-my-work').click();
+    await page.qaSettle();
+    await expect(page.locator('[data-section=work]')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.work-card')).toHaveCount(1);
+    await expect(page.locator(`.work-card[data-id="${open.id}"]`)).toBeVisible();
+    await expect(page.locator(`.work-card[data-id="${completed.id}"]`)).toHaveCount(0);
+    await qa.shot(page, 'planning-original-return-correct-scope');
+    const viewport = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await nav(page, 'messages');
+    await page.locator('[data-message-exit]').click();
+    await page.qaSettle();
+    await expect(page.locator('[data-section=mywork]')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.work-card')).toHaveCount(0);
+    await qa.shot(page, 'messages-exit-personal-queue');
+    if (viewport) await page.setViewportSize(viewport);
   } finally { await qa.finish(); }
 });

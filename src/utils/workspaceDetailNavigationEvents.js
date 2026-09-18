@@ -2,7 +2,7 @@
   /*
    * Module contract: binds workspace detail/open navigation controls only.
    * Requires app.js-owned active-detail/create/quick-fix state setters plus render callback.
-   * May update UI navigation state, active-section storage, and render the workspace.
+   * May update UI navigation state, active-section storage, render, and delegate queue return.
    * Must not mutate business records, change selectors, submit forms, delete, upload,
    * route auth/startup, touch Supabase/RLS, or take ownership of app.js state.
    */
@@ -65,12 +65,13 @@
 
     const backToMyWork = doc.querySelector("#back-to-my-work");
     if (backToMyWork) {
-      backToMyWork.addEventListener("click", () => {
+      backToMyWork.addEventListener("click", async () => {
         state.setActiveWorkOrderId(null);
         state.setActiveAssetId(null);
         closeAssetHistoryScreen();
         resetWorkCreationState();
-        options.renderWorkspace();
+        if (typeof options.returnToWorkOrderQueue === "function") await options.returnToWorkOrderQueue();
+        else options.renderWorkspace();
       });
     }
 
