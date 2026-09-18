@@ -32,3 +32,12 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 ## QA Rule
 
 A resource-load smoke proves assets load. It does not prove user workflow behavior. Any changed workflow still needs a targeted behavior smoke.
+# 2026-09-18 Live Return-Scope Follow-Up
+
+- Read-only production retesting after PR #50 reproduced My Work page membership
+  under Work Orders labels when returning from a Planning original.
+- PR #51 tracks the loaded section/page and conditionally loads the destination
+  on detail, Messages and Performance return; no same-page refresh or polling.
+- The Node regression failed before the correction. Full Strict passed 13/13 at
+  clean code checkpoint `b60a85b`; signed-in scope/exit regressions and final
+  release evidence are recorded on PR #51 and in the private release logs.
