@@ -13,6 +13,13 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 
 ## Recent Verification Notes
 
+- 2026-09-18 production rollout: PR #49 (`6ced496`) passed required Release Gate,
+  Pages and hosted smoke after all five database prerequisites passed postflight.
+  Signed-in Taylor browsing caught a further work-list/detail-cache isolation
+  defect; its regression first failed on deployed source and follow-up separates
+  server-page membership without adding reloads. Exact evidence and follow-up
+  status are in `docs/APP_WIDE_VERIFICATION.md`.
+
 - 2026-09-18: App-wide pre-release review corrected 11 app defects plus a Windows test-runner argument bug. Twenty isolated workflow/navigation scenarios passed in each of Chromium and WebKit, followed by full Strict, authenticated boundaries/roles/Production lifecycles and messaging regressions. Exact cleanup retained the manual QA baseline. Two new database migrations are testing-only; no push or production deployment occurred. `docs/APP_WIDE_VERIFICATION.md` records the evidence matrix and unproven device/provider paths.
 
 - 2026-09-17: Messaging review adds paged metadata/latest previews, bounded conversation history, memory-only scoped drafts, safe retry IDs, message-only reloads, accurate hide wording and mobile inbox/conversation navigation. The isolated signed-in lifecycle exercises creation/reply/delete/hide, partial failures and read-only UI. See `docs/MESSAGING_VERIFICATION.md` for exact contracts, automated checks and remaining limits. No production data or database policies changed.

@@ -11,8 +11,8 @@ MaintainOps uses local/private handoff files for detailed continuity, catch logs
 - Team invites and join links do not send email automatically.
 - The Team screen supports single-use join links after `supabase/step-next-invite-links.sql` is applied.
 - `app.js` is an intentional shell/coordinator, not an extraction target by line count alone.
-- The 2026-09-17 Messages redesign completed local full Strict LFES and separate authenticated Chromium/WebKit proof. It is not a production deployment. Its three migrations are applied only to the testing platform; physical-device verification remains outstanding. See `docs/MESSAGING_VERIFICATION.md` before releasing the matching frontend.
-- The 2026-09-18 app-wide pre-release pass corrected 11 app defects and added opt-in lifecycle proof for every permitted tab across five roles. Final Full Strict and authenticated proof passed at `24632a8`; app-wide Chromium/WebKit and messaging regressions passed, and generated fixtures were cleaned. Two additional migrations are QA-only, bringing this candidate's production prerequisites to five. Nothing was pushed or deployed. Read `docs/APP_WIDE_VERIFICATION.md` for the exact coverage, remaining gaps and release boundaries.
+- The Messages redesign and 11 app-wide defect corrections were released on 2026-09-18 through PR #49 (`6ced496`). All five database prerequisites are applied and verified in production. Required Release Gate, Pages deployment and Hosted App Smoke passed; live entry/bundle bytes match the tested candidate. See `docs/MESSAGING_VERIFICATION.md` and `docs/APPLIED_MIGRATIONS.md`.
+- Final local Full Strict and authenticated proof passed at `24632a8`; isolated app-wide Chromium/WebKit and messaging regressions passed, and generated fixtures were cleaned. Signed-in live verification uses existing records without operational test mutations. Read `docs/APP_WIDE_VERIFICATION.md` for exact scope and remaining physical-device/provider/restore/load gaps.
 
 ## Before Work Starts
 

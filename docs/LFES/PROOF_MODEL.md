@@ -62,8 +62,11 @@ Latest recorded GitHub proof: run `30933804371` passed the five-role Chromium, s
 
 Local pre-release proof on 2026-09-18 passed Full Strict and all five authenticated
 stages at `24632a8`. The candidate was served locally against the testing backend,
-not deployed or verified on the production host. App-wide and messaging evidence,
-cleanup and remaining gaps are recorded in `docs/APP_WIDE_VERIFICATION.md`.
+not on the production host for those mutation suites. The same executable
+candidate was subsequently released through PR #49 (`6ced496`) after production
+migrations and the required GitHub Release Gate passed. Pages and Hosted App Smoke
+passed; separate signed-in live browsing is read-only for business data. App-wide
+and messaging evidence, cleanup and gaps are in `docs/APP_WIDE_VERIFICATION.md`.
 
 ## App-Wide Lifecycle Proof
 
