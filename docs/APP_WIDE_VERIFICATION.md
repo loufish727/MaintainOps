@@ -215,6 +215,19 @@ gzip increase with no added requests. The first rerun correctly stopped on a sta
 generated script inventory; regenerating that document preceded the full clean pass.
 Final deployed commit and hosted retest are attached to that release PR.
 
+The subsequent live path starting in My Work exposed a separate return-scope
+defect: Back to Work Orders reused the personal page under all-work filters.
+[PR #51](https://github.com/loufish727/MaintainOps/pull/51) tracks loaded section
+and page ownership. Detail, Messages and Performance returns load the destination
+queue only when it differs; same-page returns retain the cache with no refresh.
+The regression failed before the correction and passed after it. Full Strict
+passed all 13 stages at clean executable checkpoint `b60a85b`. The signed-in
+Planning regression now enters from both scopes and exercises the mobile Messages
+exit. Initial JS/CSS is 777,835 decoded / 176,379 gzip bytes, 116 additional gzip
+bytes versus PR #50. No database changes or background polling were added.
+Final browser results, fixture cleanup and deployed retest evidence are attached
+to PR #51; physical-device limitations above still apply.
+
 No operational create/save/assign/send/delete controls were used on production.
 Normal sign-in housekeeping, telemetry and conversation read markers may run during
 browsing; those are not represented as a zero-write session. Destructive and

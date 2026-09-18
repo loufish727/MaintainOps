@@ -488,6 +488,8 @@ let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
 let assets = [];
 let workOrders = [];
 let workOrderPageIds = [];
+let workOrderPageSection = "";
+let workOrderPageNumber = 1;
 let teamWorkOrders = [];
 let teamFeature = null;
 let planningWorkOrders = [];
@@ -2181,6 +2183,8 @@ function commitLoadedWorkOrderSlice(response, dashboardCounts, myCounts, context
 
   workOrders = rows;
   workOrderPageIds = rows.map((row) => row.id);
+  workOrderPageSection = context.section;
+  workOrderPageNumber = workspaceUiState.getWorkOrderPage();
   workOrderServerTotal = exactTotal;
   workOrderDashboardCounts = dashboardCounts;
   myWorkDashboardCounts = myCounts;
@@ -2605,11 +2609,11 @@ function armPlatformSpatialFrameWatchdog() {
   }, 10000);
 }
 
-function exitPlatformPerformance() {
+async function exitPlatformPerformance() {
   platformSpatialLoadStartedAt = 0;
   setActiveSectionState("mywork");
   localStorage.setItem("maintainops.activeSection", "mywork");
-  renderWorkspace();
+  await returnToWorkOrderQueue();
   scrollWorkspaceTopIntoView();
 }
 
@@ -2787,6 +2791,16 @@ function applyWorkspaceLoadWarnings() {
   const extraCount = workspaceLoadWarnings.length > 2 ? ` (+${workspaceLoadWarnings.length - 2} more)` : "";
   appNotice = `Some workspace data loaded slowly: ${visibleWarnings}${extraCount}`;
   appNoticeTone = "warning";
+}
+
+function returnToWorkOrderQueue() {
+  // Linked details and tool exits can enter a different queue from the cached page.
+  if (["work", "mywork"].includes(activeSection)
+    && (workOrderPageSection !== activeSection || workOrderPageNumber !== workspaceUiState.getWorkOrderPage())) {
+    return reloadWorkOrderQueue();
+  }
+  renderWorkspace();
+  return Promise.resolve();
 }
 
 async function reloadWorkOrderQueue(options = {}) {
@@ -5686,7 +5700,7 @@ function bindWorkspaceEvents() {
   bindWorkspaceMessageUiEvents({
     openComposer: () => { messageView = "conversations"; setMessageComposerOpenState(true); renderWorkspace(); document.querySelector('#message-thread-form [name="direct_user_id"]')?.focus({ preventScroll: true }); },
     closeComposer: () => { setMessageComposerOpenState(false); renderWorkspace(); },
-    exitMessages: () => { setActiveSectionState("mywork"); renderWorkspace(); },
+    exitMessages: () => { setActiveSectionState("mywork"); return returnToWorkOrderQueue(); },
     setMessageView: (view) => { messageView = view; renderWorkspace(); },
     quoteMessage: setMessageQuote,
     jumpToLatest: jumpToLatestMessage,
@@ -5759,6 +5773,7 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceDetailNavigationEvents({
+    returnToWorkOrderQueue,
     openLinkedWorkOrder: (id, options) => openStorageLinkedRecord("work", id, "", options),
     showNotice,
     state: {
