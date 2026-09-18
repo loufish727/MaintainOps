@@ -416,7 +416,7 @@
             <div class="panel-header compact">
               ${canEditEquipment ? `<button class="secondary-button asset-action-button" data-section="parts" type="button">Go to Parts</button>` : ""}
             </div>
-            ${relationOpen("linked-parts") && assetPartsReady ? `
+            ${assetPartsReady ? `
               ${canEditEquipment ? `<form class="inline-form equipment-part-form relationship-detail parts" data-attach-asset-part="${escapeHtml(asset.id)}">
                 <label>Part
                   <select name="part_id" ${attachableParts.length ? "" : "disabled"}>
@@ -437,7 +437,7 @@
                 </article>`).join("") || `<p class="muted">No parts are linked to this equipment yet.</p>`}
               </div>
               ${relationPagination("linked-parts", linkedParts.length)}
-            ` : assetPartsReady ? `<p class="muted">Open this section to review or attach linked parts for this equipment.</p>` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
+            ` : `<p class="muted">Run supabase/step-next-asset-parts.sql to link parts directly to equipment.</p>`}
           </details>
 
           <details class="asset-relationship-panel relationship-detail parts" data-asset-relationship-section="parts-used" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("parts-used") ? "open" : ""}>
@@ -527,4 +527,3 @@
     module.exports = { createAssetDetailDisplayHelpers };
   }
 })();
-

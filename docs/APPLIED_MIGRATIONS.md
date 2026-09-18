@@ -86,3 +86,14 @@ role round trips and conversion retry after a lost response. This is a release
 prerequisite, not an automatic production change. Apply before the corresponding
 frontend. Frontend rollback can leave these additive RPC changes in place; do not
 restore the broken role authorization function or delete converted work as rollback.
+
+`supabase/migrations/202609181531_work_part_usage_operational_boundary.sql`:
+enforces the operational-editor role at the transactional part-usage RPC, preserving
+existing stock/history semantics. The isolated QA reproduction proved Accounting
+could previously deduct stock despite its read-only UI. Isolated PostgreSQL now
+proves Accounting/outsider denial with unchanged stock/history and success for all
+four operational roles. Production: NOT APPLIED. Applied to testing project
+`fsxqrngpaseqdxijggcm` on 2026-09-18 through the Supabase migration tool. Signed-in
+postflight rejects Accounting, preserves quantity/history, and allows technician
+usage with the correct actor and stock deduction. Do not restore the membership-only
+check on rollback.

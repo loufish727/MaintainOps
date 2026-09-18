@@ -139,6 +139,8 @@ function createQuery(table, calls, result) {
   });
 
   workflow.bindPartInventoryWorkflowEvents();
+  // A late read may replace shared cache data without replacing this form.
+  parts[0].quantity_on_hand = 11;
 
   await createForm.dispatch("submit");
   assert.equal(state.activePartId, "part-new");

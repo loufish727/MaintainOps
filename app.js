@@ -5319,8 +5319,13 @@ const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
   render,
 });
 
-async function openStorageLinkedRecord(section, id, label = "") {
+async function openStorageLinkedRecord(section, id, label = "", options = {}) {
   if (!section) return;
+  const companyId = activeCompanyId;
+  const locationId = activeLocationId;
+  const sourceSection = activeSection;
+  const isCurrent = () => activeCompanyId === companyId && activeLocationId === locationId
+    && activeSection === sourceSection && options.isCurrent?.() !== false;
   setActiveWorkOrderIdState(null);
   setActiveAssetIdState(null);
   setActivePartIdState(null);
@@ -5330,8 +5335,13 @@ async function openStorageLinkedRecord(section, id, label = "") {
 
   if (section === "work" && id) {
     if (!workOrders.some((workOrder) => workOrder.id === id)) {
-      const response = await loadWorkspaceResponse("Storage linked work order", fetchWorkOrderById(supabaseClient, activeCompanyId, id, WORK_ORDER_RELATION_SELECT), 12000);
-      if (!response.error && response.data) workOrders = [response.data, ...workOrders];
+      const response = await loadWorkspaceResponse("Linked work order", fetchWorkOrderById(supabaseClient, companyId, id, WORK_ORDER_RELATION_SELECT), 12000);
+      if (!isCurrent()) return false;
+      if (response.error || !response.data) {
+        showNotice(`Could not open work order: ${response.error?.message || "Work order not found."}`, "warning");
+        return false;
+      }
+      workOrders = [response.data, ...workOrders];
     }
     await Promise.all([
       runWorkspaceLoader("Storage linked work photos", () => loadPhotosForWorkOrderIds([id])),
@@ -5340,10 +5350,12 @@ async function openStorageLinkedRecord(section, id, label = "") {
       runWorkspaceLoader("Storage linked checklist results", () => loadStepResultsForWorkOrderIds([id])),
       runWorkspaceLoader("Storage linked parts used", () => loadPartsUsedForWorkOrderIds([id])),
     ]);
+    if (!isCurrent()) return false;
     setActiveWorkOrderIdState(id);
     setActiveSectionState("work");
+    localStorage.setItem("maintainops.activeSection", "work");
     renderWorkspace();
-    return;
+    return true;
   }
 
   if (section === "assets" && id) {
@@ -5739,6 +5751,8 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceDetailNavigationEvents({
+    openLinkedWorkOrder: (id, options) => openStorageLinkedRecord("work", id, "", options),
+    showNotice,
     state: {
       getActiveSection: () => activeSection,
       setActiveAssetId: setActiveAssetIdState,
@@ -6100,14 +6114,14 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspacePartDetailEvents({
-    loadPartDetail: async (id) => {
+    loadPartDetail: async (id, { isCurrent = () => true } = {}) => {
       const companyId = activeCompanyId;
       const locationId = activeLocationId;
       const { data, error } = await withOperationTimeout(
         supabaseClient.from("parts").select("*").eq("company_id", companyId).eq("id", id).maybeSingle(),
         "Part loading timed out. Try opening it again.", 15000
       );
-      if (activeCompanyId !== companyId || activeLocationId !== locationId || activeSection !== "parts") return false;
+      if (!isCurrent() || activeCompanyId !== companyId || activeLocationId !== locationId || activeSection !== "parts") return false;
       if (error) throw error;
       if (!data || !matchesActiveLocation(data)) throw new Error("Part is no longer available in this location.");
       parts = parts.map(part => part.id === id ? data : part);

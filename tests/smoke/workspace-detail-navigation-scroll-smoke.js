@@ -164,6 +164,11 @@ assert.equal(renderCount, 4);
 assert.equal(scrollCount, 3);
 assert.deepEqual(scrollRestores, []);
 
+// Restoring an already-open disclosure must not start another load/render cycle.
+await completedHistoryDetails.dispatch("toggle");
+assert.deepEqual(historyLoads, ["asset-1"]);
+assert.equal(renderCount, 4);
+
 windowRef.scrollY = 900;
 await openAssetHistory.dispatch("click", { preventDefault() {}, stopPropagation() {} });
 assert.deepEqual(historyLoads, ["asset-1", "asset-events:asset-1"]);

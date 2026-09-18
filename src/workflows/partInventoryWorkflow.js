@@ -2,20 +2,36 @@
   function createPartInventoryWorkflow(deps = {}) {
     const documentRef = deps.documentRef || document;
     const FormDataCtor = deps.FormDataCtor || FormData;
+    const formSnapshots = new WeakMap();
+
+    function rememberPart(form, id) {
+      const part = deps.getParts().find(item => item.id === id);
+      if (part && !formSnapshots.has(form)) {
+        // Compare against the quantity shown when this form opened, not a later cache read.
+        formSnapshots.set(form, { id, companyId: deps.getActiveCompanyId(), quantity_on_hand: Number(part.quantity_on_hand) || 0 });
+      }
+    }
+
+    function requireCurrentScope(part) {
+      if (!part || part.companyId !== deps.getActiveCompanyId()) throw new Error("Reopen this part before saving.");
+    }
 
     function bindPartInventoryWorkflowEvents() {
       const partForm = documentRef.querySelector("#create-part-form");
       if (partForm) partForm.addEventListener("submit", createPart);
 
       documentRef.querySelectorAll("[data-restock-part]").forEach((form) => {
+        rememberPart(form, form.dataset.restockPart);
         form.addEventListener("submit", restockPart);
       });
 
       documentRef.querySelectorAll("[data-use-part]").forEach((form) => {
+        rememberPart(form, form.dataset.usePart);
         form.addEventListener("submit", usePartFromInventory);
       });
 
       documentRef.querySelectorAll("[data-edit-part]").forEach((form) => {
+        rememberPart(form, form.dataset.editPart);
         form.addEventListener("submit", updatePart);
       });
 
@@ -100,7 +116,7 @@
       event.preventDefault();
       const formElement = event.target;
       const submitButton = formElement.querySelector("button[type='submit']");
-      const part = deps.getParts().find((item) => item.id === formElement.dataset.restockPart);
+      const part = formSnapshots.get(formElement);
       const quantity = Number(new FormDataCtor(formElement).get("quantity")) || 0;
       if (!part || quantity <= 0) return;
       const originalText = submitButton?.textContent || "Restock";
@@ -110,6 +126,7 @@
       }
 
       try {
+        requireCurrentScope(part);
         const { data, error } = await deps.withOperationTimeout(
           deps.supabaseClient()
             .from("parts")
@@ -139,7 +156,7 @@
       event.preventDefault();
       const formElement = event.currentTarget;
       const submitButton = formElement.querySelector("button[type='submit']");
-      const part = deps.getParts().find((item) => item.id === formElement.dataset.usePart);
+      const part = formSnapshots.get(formElement);
       const quantity = Number(new FormDataCtor(formElement).get("quantity")) || 0;
       if (!part || quantity <= 0) return;
       const originalText = submitButton?.textContent || "Use";
@@ -149,6 +166,7 @@
       }
 
       try {
+        requireCurrentScope(part);
         const currentQuantity = Number(part.quantity_on_hand) || 0;
         if (quantity > currentQuantity) throw new Error("Quantity used exceeds the stock on hand.");
         const nextQuantity = currentQuantity - quantity;
@@ -203,8 +221,9 @@
 
       try {
         if (!payload.name) throw new Error("Part name is required.");
-        const part = deps.getParts().find((item) => item.id === partId);
-        if (!part) throw new Error("Reopen this part before saving.");
+        const part = formSnapshots.get(formElement);
+        requireCurrentScope(part);
+        if (part.id !== partId) throw new Error("Reopen this part before saving.");
 
         const { data, error } = await deps.withOperationTimeout(
           deps.supabaseClient()

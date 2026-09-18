@@ -70,6 +70,17 @@ tests must remain explicitly separate until actually exercised.
 - Equipment navigation: the card click listener also matched history paging and
   relationship controls carrying `data-asset-id`. It now binds only asset cards,
   keeping Next/Previous and expandable relationship controls in their own views.
+- Independent-review expansion: obsolete part detail reads could change the cache
+  behind a visible form and defeat its quantity comparison. Loads now carry a
+  caller-validity guard; inventory writes compare against the bound form snapshot.
+- Part usage RPC: Accounting could deduct stock through a membership-only
+  security-definer function. The new migration enforces operational-editor access.
+- Linked equipment parts: recreated open disclosures repeatedly rerendered and
+  detached their own input controls. Unchanged toggle events are ignored and
+  already-loaded sections keep their DOM and drafts intact.
+- Planning originals: completed orders outside the active work slice opened a
+  missing-record screen. Mini links now use the existing linked-record loader,
+  including detail relationships and cancellation after navigating away.
 
 The new database contract is in
 `supabase/migrations/202609181444_appwide_role_and_request_integrity.sql`.
