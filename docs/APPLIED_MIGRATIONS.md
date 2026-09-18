@@ -67,3 +67,33 @@ Every new SQL run should record:
 - who/what applied it
 - verification performed
 - rollback note if applicable
+## Messaging Experience, 2026-09-17
+
+- `supabase/migrations/202609171659_messaging_experience.sql`: isolated PostgreSQL/RLS proof passed; applied incrementally to testing project `fsxqrngpaseqdxijggcm` through the Supabase migration tool on 2026-09-17. Not applied to production. Adds recoverable preferences, same-thread quotes, scoped reactions and realtime publication membership, and enforces the existing Accounting read-only messaging contract. Signed-in Chromium and WebKit lifecycle checks passed on the testing platform. Existing operational records and production conversations were not rewritten. The checked-in consolidated migration is the fresh-application contract. Deployment order, cleanup and rollback notes are in `docs/MESSAGING_VERIFICATION.md`.
+# Messaging Tools Expansion (Local / Testing Only)
+
+- `supabase/migrations/202609171801_messaging_complete.sql`: indexed message search, personal favorites/sections, same-conversation reply threads, private message-file bucket and transactional attachment sends. Production has NOT been migrated. Testing proof is recorded separately before release.
+- `supabase/migrations/202609171830_message_storage_usage.sql`: includes message-file bytes and photos in storage totals/months. Nonparticipants see aggregate usage but never private filenames, paths, titles or links. Testing platform only; production pending.
+# App-wide QA Candidate, 2026-09-18
+
+`supabase/migrations/202609181444_appwide_role_and_request_integrity.sql`:
+corrects the Team role authorization variable and makes request conversion atomic/idempotent.
+Production: NOT APPLIED. Applied to testing project `fsxqrngpaseqdxijggcm` on
+2026-09-18 through the Supabase migration tool. Isolated PostgreSQL proves admin
+authorization, self/nonadmin/cross-company denial, rollback on request-link failure,
+and idempotent conversion/history. Signed-in test-bed browser checks prove Team
+role round trips and conversion retry after a lost response. This is a release
+prerequisite, not an automatic production change. Apply before the corresponding
+frontend. Frontend rollback can leave these additive RPC changes in place; do not
+restore the broken role authorization function or delete converted work as rollback.
+
+`supabase/migrations/202609181531_work_part_usage_operational_boundary.sql`:
+enforces the operational-editor role at the transactional part-usage RPC, preserving
+existing stock/history semantics. The isolated QA reproduction proved Accounting
+could previously deduct stock despite its read-only UI. Isolated PostgreSQL now
+proves Accounting/outsider denial with unchanged stock/history and success for all
+four operational roles. Production: NOT APPLIED. Applied to testing project
+`fsxqrngpaseqdxijggcm` on 2026-09-18 through the Supabase migration tool. Signed-in
+postflight rejects Accounting, preserves quantity/history, and allows technician
+usage with the correct actor and stock deduction. Do not restore the membership-only
+check on rollback.

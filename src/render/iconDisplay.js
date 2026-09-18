@@ -1,6 +1,19 @@
 (function () {
   function segmentIcon(type) {
     const icons = {
+      search: `<circle cx="10" cy="10" r="7"></circle><path d="m15 15 6 6"></path>`,
+      star: `<path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z"></path>`,
+      attach: `<path d="m21 11-8 8a6 6 0 0 1-8-8l9-9a4 4 0 0 1 6 6l-9 9a2 2 0 0 1-3-3l8-8"></path>`,
+      mic: `<rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"></path>`,
+      stop: `<rect x="6" y="6" width="12" height="12"></rect>`,
+      file: `<path d="M14 2H5v20h14V7l-5-5v5h5M8 12h8M8 16h8"></path>`,
+      send: `<path d="m22 2-7 20-4-9-9-4 20-7z"></path><path d="M22 2 11 13"></path>`,
+      reply: `<path d="m9 10-5 5 5 5"></path><path d="M4 15h10a6 6 0 0 0 0-12h-2"></path>`,
+      back: `<path d="m12 5-7 7 7 7"></path><path d="M5 12h15"></path>`,
+      close: `<path d="m6 6 12 12M6 18 18 6"></path>`,
+      compose: `<path d="M12 20H4V4h8"></path><path d="m14 4 4-2 4 4-12 12H6v-4L18 2"></path>`,
+      more: `<circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle>`,
+      smile: `<circle cx="12" cy="12" r="9"></circle><path d="M8 14s1 3 4 3 4-3 4-3M8 9h.01M16 9h.01"></path>`,
       active: `<path d="M4 12h5l2-6 4 12 2-6h3"></path>`,
       all: `<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>`,
       mine: `<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M4 21a8 8 0 0 1 16 0"></path>`,

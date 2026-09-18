@@ -33,6 +33,10 @@ const bundles = [
     baseName: "setupFeature",
   },
   {
+    entry: "src/bundles/messageFeature.entry.js",
+    baseName: "messageFeature",
+  },
+  {
     entry: "app.js",
     baseName: "appShell",
   },
@@ -101,6 +105,14 @@ function updateSpatialPageHtml(manifest) {
 
 async function main() {
   const manifest = {};
+  const messageStyles = await esbuild.transform(["messageStyles.css", "messageTools.css"].map(file => fs.readFileSync(path.join(root, "src/render", file), "utf8")).join("\n"), {
+    loader: "css", minify: true, sourcefile: "src/render/messageStyles.css", sourcemap: "external", sourcesContent: false,
+  });
+  const messageStylesName = `messageStyles.${bundleHash(messageStyles.code)}.css`;
+  removeOldBundleFiles("messageStyles");
+  fs.writeFileSync(path.join(bundlesDir, messageStylesName), `${messageStyles.code.trimEnd()}\n/*# sourceMappingURL=${messageStylesName}.map */\n`);
+  fs.writeFileSync(path.join(bundlesDir, `${messageStylesName}.map`), messageStyles.map);
+  manifest.messageStyles = messageStylesName;
   for (const bundle of bundles) {
     const featureDefines = bundle.baseName === "appShell"
       ? {
@@ -108,6 +120,8 @@ async function main() {
           __MAINTAINOPS_FINANCIAL_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.financialFeature}`),
           __MAINTAINOPS_TEAM_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.teamFeature}`),
           __MAINTAINOPS_SETUP_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.setupFeature}`),
+          __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.messageFeature}`),
+          __MAINTAINOPS_MESSAGE_STYLES__: JSON.stringify(`src/bundles/${manifest.messageStyles}`),
         }
       : undefined;
     const result = await esbuild.build({

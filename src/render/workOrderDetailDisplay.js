@@ -65,7 +65,7 @@
         <div class="checklist-step relationship-detail procedure">
           <span>${step.position}. ${escapeHtml(step.prompt)} ${step.required ? `<small class="required-mark">Required</small>` : ""}</span>
           ${control}
-          ${result?.completed_at ? `<small>Recorded ${new Date(result.completed_at).toLocaleString()}</small>` : ""}
+          <small data-checklist-recorded>${result?.completed_at ? `Recorded ${new Date(result.completed_at).toLocaleString()}` : ""}</small>
         </div>
       `;
     }
@@ -282,7 +282,7 @@
             <summary>Procedure Checklist</summary>
             <div class="panel-header compact-header">
               <h3>${escapeHtml(procedure.name)}</h3>
-              <span>${progress.done} of ${progress.total} complete Â· required ${requiredProgress.done}/${requiredProgress.total}</span>
+              <span data-checklist-summary>${progress.done} of ${progress.total} complete - required ${requiredProgress.done}/${requiredProgress.total}</span>
             </div>
             <div class="checklist-list">
               ${procedure.procedure_steps.map((step) => canEditOperational ? renderChecklistStep(workOrder, step) : `

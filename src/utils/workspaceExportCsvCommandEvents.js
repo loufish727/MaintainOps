@@ -11,8 +11,13 @@
     if (typeof options.exportActiveSectionCsv !== "function") return;
 
     doc.querySelectorAll('[data-command-action="export-csv"]').forEach((button) => {
-      button.addEventListener("click", () => {
-        options.exportActiveSectionCsv();
+      button.addEventListener("click", async () => {
+        if (button.disabled) return;
+        button.disabled = true;
+        const label = button.textContent;
+        button.textContent = "Exporting...";
+        try { await options.exportActiveSectionCsv(); }
+        finally { button.disabled = false; button.textContent = label; }
       });
     });
   }

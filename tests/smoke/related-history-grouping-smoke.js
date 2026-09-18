@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync(require('node:path').resolve(__dirname, '../../app.js'), 'utf8');
+const start = source.indexOf('function replaceArrayGroupsForIds(');
+const end = source.indexOf('function replaceStepResultGroupsForIds(', start);
+assert.ok(start > 0 && end > start);
+const replace = vm.runInNewContext(`${source.slice(start, end)}; replaceArrayGroupsForIds`);
+const event = { asset_id: 'asset-1', id: 'event-1' };
+const groups = replace({ 'asset-1': ['old'], 'asset-2': ['retained'] }, ['asset-1'], [event], 'asset_id');
+assert.equal(groups['asset-1'][0], event);
+assert.equal(groups['asset-2'][0], 'retained');
+assert.equal(groups.undefined, undefined);
+assert.equal(replace({}, ['work-1'], [{ work_order_id: 'work-1', id: 'comment-1' }])['work-1'][0].id, 'comment-1');
+assert.match(source, /replaceArrayGroupsForIds\(assetEventsByAssetId, ids, data \|\| \[\], "asset_id"\)/);
+console.log('Equipment and work-order relationship grouping smoke passed');

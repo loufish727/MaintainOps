@@ -123,7 +123,7 @@
       });
     });
 
-    doc.querySelectorAll("[data-asset-id]").forEach((card) => {
+    doc.querySelectorAll(".asset-card[data-asset-id]").forEach((card) => {
       const openAsset = () => {
         state.setActiveAssetId(card.dataset.assetId);
         state.setActiveWorkOrderId(null);
@@ -145,8 +145,20 @@
       });
     });
 
+    let miniOpenSequence = 0;
     doc.querySelectorAll("[data-mini-work-order]").forEach((item) => {
-      item.addEventListener("click", () => {
+      item.addEventListener("click", async () => {
+        if (typeof options.openLinkedWorkOrder === "function") {
+          const sequence = ++miniOpenSequence;
+          const isCurrent = () => sequence === miniOpenSequence && item.isConnected !== false;
+          closeAssetHistoryScreen();
+          try {
+            if (await options.openLinkedWorkOrder(item.dataset.miniWorkOrder, { isCurrent })) scrollToDetailTop();
+          } catch (error) {
+            if (isCurrent()) options.showNotice?.(`Could not open work order: ${error.message || error}`, "warning");
+          }
+          return;
+        }
         state.setActiveWorkOrderId(item.dataset.miniWorkOrder);
         state.setActiveAssetId(null);
         closeAssetHistoryScreen();
@@ -159,19 +171,25 @@
     });
 
     doc.querySelectorAll("[data-asset-relationship-section]").forEach((details) => {
+      let previousOpen = details.open;
       details.addEventListener("toggle", async () => {
+        if (details.open === previousOpen) return;
+        previousOpen = details.open;
         const assetId = details.dataset.assetId;
         const section = details.dataset.assetRelationshipSection;
         if (!assetId || !section) return;
         if (typeof options.setAssetRelationshipOpen === "function") {
           options.setAssetRelationshipOpen(assetId, section, details.open);
         }
-        if (details.open && sectionNeedsAssetWorkHistory(section)) {
+        if (!details.open) return;
+        if (sectionNeedsAssetWorkHistory(section)) {
           await loadAssetHistory(assetId);
-        }
-        if (details.open && section === "asset-history") {
+        } else if (section === "asset-history") {
           await loadAssetEventHistory(assetId);
+        } else {
+          return;
         }
+        if (details.isConnected === false || !details.open) return;
         renderWorkspaceWithoutScrollControl();
       });
     });

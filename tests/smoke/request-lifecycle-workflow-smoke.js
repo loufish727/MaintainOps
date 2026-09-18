@@ -79,6 +79,10 @@ function createSupabase(calls) {
   }
 
   return {
+    rpc(name, payload) {
+      calls.push(["rpc", name, payload]);
+      return Promise.resolve({ data: { id: "wo-1" }, error: null });
+    },
     from(table) {
       return query(table);
     },
@@ -227,10 +231,8 @@ function createWorkflow(options = {}) {
 
   const converted = createWorkflow();
   await converted.workflow.convertRequestToWorkOrder("request-1");
-  assert.equal(converted.calls.some((call) => call[0] === "insertWorkOrder" && call[2].title === "Pump leaking"), true);
-  assert.equal(converted.calls.some((call) => call[0] === "insertWorkOrder" && call[2].type === "corrective"), true);
-  assert.equal(converted.calls.some((call) => call[0] === "update" && call[1] === "maintenance_requests"), true);
-  assert.equal(converted.calls.some((call) => call[0] === "update" && call[1] === "maintenance_requests" && call[2].reviewed_by === "user-1"), true);
+  assert.deepEqual(converted.calls.find((call) => call[0] === "rpc"), ["rpc", "convert_maintenance_request", { target_company_id: "company-1", target_request_id: "request-1" }]);
+  assert.equal(converted.calls.some((call) => call[0] === "insertWorkOrder" || call[0] === "update"), false, "Conversion must be a single atomic database operation");
   assert.equal(converted.calls.some((call) => call[0] === "activeWorkOrderId" && call[1] === "wo-1"), true);
 
   const quickFix = createWorkflow();

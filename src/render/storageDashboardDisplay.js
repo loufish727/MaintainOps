@@ -9,6 +9,7 @@
       "maintenance-request-photos": "Request photos",
       "part-documents": "Part files",
       "work-order-photos": "Work order photos",
+      "message-files": "Message attachments",
     };
     const typeLabels = {
       company: "Company",
@@ -16,6 +17,7 @@
       part: "Part",
       request: "Request",
       work_order: "Work Order",
+      message: "Conversation",
     };
 
     function byteText(value) {
@@ -163,7 +165,7 @@
           </div>
           <div class="storage-file-record">
             <span>${escapeHtml(file.linked_record_label || "Linked record")}</span>
-            ${canOpen ? `<button class="secondary-button small" data-storage-record-link data-storage-link-section="${escapeHtml(section)}" data-storage-link-id="${escapeHtml(linkedId)}" data-storage-link-label="${escapeHtml(file.linked_record_label || "")}" type="button">Open</button>` : ""}
+            ${canOpen && section === "messages" ? `<button class="secondary-button small" data-open-work-message-thread="${escapeHtml(linkedId)}" type="button">Open conversation</button>` : canOpen ? `<button class="secondary-button small" data-storage-record-link data-storage-link-section="${escapeHtml(section)}" data-storage-link-id="${escapeHtml(linkedId)}" data-storage-link-label="${escapeHtml(file.linked_record_label || "")}" type="button">Open</button>` : ""}
           </div>
           <strong class="storage-file-size">${escapeHtml(byteText(file.size_bytes))}</strong>
         </article>

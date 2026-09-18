@@ -58,7 +58,31 @@ The GitHub workflow is `Authenticated LFES Proof`. Store its values in the `lfes
 
 Use dedicated disposable QA companies and users. Do not store personal or production-company credentials in GitHub.
 
-Latest verified proof: GitHub run `30933804371` passed the five-role Chromium, signed-in Production Action lifecycle, authenticated boundary, and WebKit admin proof on commit `6b7c71a709ad556245b47d736f9ad4f61691961b` on 2026-08-04.
+Latest recorded GitHub proof: run `30933804371` passed the five-role Chromium, signed-in Production Action lifecycle, authenticated boundary, and WebKit admin proof on commit `6b7c71a709ad556245b47d736f9ad4f61691961b` on 2026-08-04.
+
+Local pre-release proof on 2026-09-18 passed Full Strict and all five authenticated
+stages at `24632a8`. The candidate was served locally against the testing backend,
+not deployed or verified on the production host. App-wide and messaging evidence,
+cleanup and remaining gaps are recorded in `docs/APP_WIDE_VERIFICATION.md`.
+
+## App-Wide Lifecycle Proof
+
+`npm run test:lfes:appwide` is a separate, opt-in mutation suite on the isolated
+testing platform. It is not silently added to the fast Release Gate. The suite
+creates run-scoped companies, exercises saved workflows and failure recovery,
+and checks all permitted tabs for five roles at desktop and phone widths.
+Run the same suite with `-- --browser=webkit` for second-engine coverage.
+
+The helper rejects production configuration and requires
+`LFES_APPWIDE_MUTATIONS=1`. Private manifests record every temporary company
+before mutation. An authorized QA operator must remove only those exact IDs
+after verifying ownership and storage cleanup. Archive evidence before another
+LFES command replaces `lfes-evidence/`.
+
+See `docs/APP_WIDE_VERIFICATION.md` for the scenario matrix, corrected defects,
+reproduction requirements and explicit exclusions. A tab opening is not proof
+of all its mutations. Browser viewport emulation is not physical-device proof,
+and a passing finite suite is not a claim that every possible flow was tested.
 
 ## LFES Gold
 

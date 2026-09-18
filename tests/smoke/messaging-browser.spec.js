@@ -8,6 +8,7 @@ for (const viewport of [{ width: 1300, height: 900 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.setContent('<main id="app"></main>');
     await page.addStyleTag({ path: path.join(root, "styles.css") });
+    await page.addStyleTag({ path: path.join(root, "src/render/messageStyles.css") });
     await page.addScriptTag({ path: path.join(root, "src/render/messageCenterDisplay.js") });
     await page.addScriptTag({ path: path.join(root, "src/render/messageDisplay.js") });
     await page.addScriptTag({ path: path.join(root, "src/utils/workspaceMessageUiEvents.js") });

@@ -23,7 +23,7 @@
         options.renderWorkspace();
         await options.markMessageThreadRead(threadId);
         if ((!options.getActiveThreadId || options.getActiveThreadId() === threadId)
-          && (!options.getActiveSection || options.getActiveSection() === "messages")) options.renderWorkspace();
+          && (!options.getActiveSection || options.getActiveSection() === "messages")) options.renderLiveMessages?.();
       } catch {
         if (options.getActiveThreadId && options.getActiveThreadId() !== threadId) return;
         state.setActiveMessageThreadId("");
@@ -35,6 +35,7 @@
     doc.querySelectorAll("[data-message-thread]").forEach((button) => {
       button.addEventListener("click", async () => {
         const threadId = button.dataset.messageThread;
+        state.setMessageComposerOpen?.(false);
         state.setActiveMessageThreadId(threadId);
         storage.setItem("maintainops.activeMessageThreadId", threadId);
         await open(threadId);

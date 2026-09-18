@@ -127,7 +127,8 @@ const destructiveWithoutRoleLanguage = destructiveFunctions.filter((fn) => {
     text.includes("role = 'admin'") ||
     text.includes("only admins") ||
     text.includes("only managers") ||
-    text.includes("is_company_member")
+    text.includes("is_company_member") ||
+    text.includes("private.is_company_operational_editor(")
   );
 });
 results.push(verdict(

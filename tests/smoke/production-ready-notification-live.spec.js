@@ -1,4 +1,5 @@
 const { expect, test } = require("@playwright/test");
+test.use({ actionTimeout: 15000 });
 
 const requiredEnvironment = [
   "LFES_SUPABASE_URL",
@@ -146,6 +147,8 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
       );
       const productionCard = productionPage.locator(`.work-card[data-id="${fixtureId}"]`);
       await expect(productionCard).toBeVisible();
+      await productionCard.getByRole("button", { name: "Manage Production Action", exact: true }).click();
+      await expect(productionCard.getByRole("dialog", { name: "Production Action", exact: true })).toBeVisible();
       await productionCard.getByRole("button", { name: "Complete Production Action" }).click();
       await expect(productionCard).toHaveCount(0);
       expect(forbiddenDeliveryRequests, "Production completion must not call any email delivery path").toEqual([]);
@@ -197,7 +200,8 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
       await expect(technicianCard.getByText("Production Ready", { exact: true })).toBeVisible();
 
       await technicianPage.locator('[data-section="messages"]').click();
-      await expect(technicianPage.getByRole("heading", { name: "Messages", exact: true, level: 2 })).toBeVisible();
+      await expect(technicianPage.locator(".message-center")).toBeVisible();
+      await technicianPage.locator('[data-message-view="activity"]').click();
       const notificationButton = technicianPage.locator(`[data-open-work-notification="${notifications[0].id}"]`);
       await expect(notificationButton).toBeVisible();
       await expect(notificationButton).toHaveClass(/unread/);

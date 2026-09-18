@@ -13,7 +13,7 @@
 
     function messageThreadScopeLabel(thread) {
       if (thread.thread_type === "direct") return directThreadNames(thread);
-      if (thread.thread_type === "location") return getLocations().find((location) => location.id === thread.location_id)?.name || "Location thread";
+      if (thread.thread_type === "location") return `Company team / ${getLocations().find((location) => location.id === thread.location_id)?.name || "Location topic"}`;
       return "Whole company";
     }
 

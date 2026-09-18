@@ -16,17 +16,65 @@ import {
   reconcileCountGroupForStatus,
 } from "./src/services/workspaceWorkOrderCountsService.mjs";
 import { createKeyedSingleFlight } from "./src/utils/keyedSingleFlight.mjs";
-import { fetchMessageCenter, fetchMessageHistory } from "./src/services/messageCenterService.mjs";
+import { fetchMessageCenter, fetchMessageHistory, fetchMessageRows, isConversationArchived } from "./src/services/messageCenterService.mjs";
+import { createMessageLive } from "./src/services/messageLive.mjs";
+import { createMessageReloadQueue } from "./src/services/messageReloadQueue.mjs";
 import { createMessageDrafts } from "./src/utils/messageDrafts.mjs";
+import { trackMessageViewport } from "./src/utils/messageViewport.mjs";
 
 const app = document.querySelector("#app");
 const runRenderSingleFlight = createKeyedSingleFlight();
 const loadCachedCompanyLogoUrls = createCompanyLogoUrlLoader();
 const messageDrafts = createMessageDrafts();
+const updateMessageViewport = trackMessageViewport();
 let messageHistory = {};
+let messageHistoryVersions = {};
+const messageHistoryLoads = new Map();
+const loadMessageCenter = createMessageReloadQueue(performMessageCenterLoad);
 let messageLoadError = "";
 let messageLoadVersion = 0;
 let messageDataScope = "";
+let messageView = "conversations";
+let messageConnection = "Connecting...";
+let messageQuotes = {};
+const messageLive = createMessageLive({
+  onStatus: (status) => {
+    messageConnection = ({ live: "Connected", connecting: "Connecting...", reconnecting: "Reconnecting...", unavailable: "Live updates unavailable", stale: "Update failed" })[status];
+    const indicator = document.querySelector("[data-message-connection]");
+    if (indicator) indicator.textContent = messageConnection;
+    const retry = document.querySelector(".message-connection-retry");
+    if (retry) retry.hidden = !["unavailable", "stale"].includes(status);
+  },
+  onChanges: async (changes, context) => {
+    if (activeCompanyId !== context.companyId || session?.user.id !== context.userId) return;
+    await loadMessageCenter(true);
+    if (messageLoadError) throw new Error(messageLoadError);
+    if (!context.current() || activeCompanyId !== context.companyId || session?.user.id !== context.userId) return;
+    const history = messageHistory[activeMessageThreadId];
+    if (history) {
+      const threadId = activeMessageThreadId;
+      const olderIds = history.rows.slice(0, -50).map((row) => row.id);
+      if (olderIds.length && changes.some((change) => change.table === "reconcile")) {
+        const older = await fetchMessageRows(supabaseClient, context.companyId, threadId, olderIds);
+        if (!context.current() || activeCompanyId !== context.companyId || session?.user.id !== context.userId) return;
+        const refreshed = new Map(older.map((row) => [row.id, row]));
+        history.rows = history.rows.filter((row) => !olderIds.includes(row.id) || refreshed.has(row.id)).map((row) => refreshed.get(row.id) || row);
+      }
+      for (const change of changes) {
+        if (change.table !== "message_reactions" || !change.new?.id) continue;
+        const message = history.rows.find((row) => row.id === change.new.message_id);
+        if (message) message.message_reactions = [...(message.message_reactions || []).filter((row) => row.id !== change.new.id), change.new];
+      }
+    }
+    if (activeSection === "messages") {
+      const selected = messageThreads.find((thread) => thread.id === activeMessageThreadId);
+      const displayed = document.querySelector(".message-center")?.dataset.threadId || "";
+      if (!messageComposerOpen && messageView === "conversations" && displayed !== (selected?.id || "")) renderWorkspace();
+      else renderLiveMessages();
+    }
+    else updateMessageNavBadges();
+  },
+});
 
 const {
   STATUS_OPTIONS,
@@ -82,7 +130,6 @@ const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
 const { shouldRenderForAuthEvent } = window.MaintainOpsAuthRenderPolicy;
-const { createMessageWorkflow } = window.MaintainOpsMessageWorkflow;
 const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMaintenanceWorkflow;
 const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
 const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
@@ -279,7 +326,6 @@ const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDis
 const { createWorkOrderDetailDisplayHelpers } = window.MaintainOpsWorkOrderDetailDisplay;
 const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay;
 const { createEquipmentStructureGuideDisplayHelpers } = window.MaintainOpsEquipmentStructureGuideDisplay;
-const { createMessageCenterDisplayHelpers } = window.MaintainOpsMessageCenterDisplay;
 const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const { createQuickFixDisplayHelpers } = window.MaintainOpsQuickFixDisplay;
 const {
@@ -328,7 +374,6 @@ const {
   formatMessageDay,
   initials,
 } = window.MaintainOpsMessageFormatting;
-const { createMessageDisplayHelpers } = window.MaintainOpsMessageDisplay;
 const { renderEquipmentStructureGuide } = createEquipmentStructureGuideDisplayHelpers();
 let supabaseClient;
 let session;
@@ -368,6 +413,7 @@ const FEATURE_BUNDLE_PATHS = Object.freeze({
   financial: __MAINTAINOPS_FINANCIAL_FEATURE_BUNDLE__,
   team: __MAINTAINOPS_TEAM_FEATURE_BUNDLE__,
   setup: __MAINTAINOPS_SETUP_FEATURE_BUNDLE__,
+  messages: __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__,
 });
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
@@ -406,6 +452,7 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   shopReferenceChartsEnabled: SHOP_REFERENCE_CHARTS_ENABLED,
   platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
   featureBundlePaths: FEATURE_BUNDLE_PATHS,
+  featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__ },
   initializeFeature: initializeWorkspaceFeature,
   getActiveSection: () => activeSection,
   getPublicRequestLinks: () => publicRequestLinks,
@@ -1035,6 +1082,7 @@ function initializeWorkspaceFeature(featureId) {
   if (featureId === "financial") return initializeFinancialFeature();
   if (featureId === "team") return initializeTeamFeature();
   if (featureId === "setup") return initializeSetupFeature();
+  if (featureId === "messages") return initializeMessagesFeature();
   throw new Error(`Unknown workspace feature: ${featureId}`);
 }
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
@@ -1055,6 +1103,11 @@ const {
   downloadCsv,
   exportActiveSectionCsv,
 } = createCsvExportHelpers({
+  createExportQuery: (section) => section === "requests"
+    ? applyRequestQueryFilters(supabaseClient.from("maintenance_requests").select(REQUEST_RELATION_SELECT, { count: "exact" })).order("created_at", { ascending: false }).order("id")
+    : applyWorkOrderListFilters(selectWorkOrders(supabaseClient, WORK_ORDER_RELATION_SELECT, { count: "exact" })).order("id"),
+  getExportScope: () => JSON.stringify([session?.user.id, activeCompanyId, activeLocationId, activeSection]),
+  withOperationTimeout,
   documentRef: document,
   URLRef: URL,
   BlobCtor: Blob,
@@ -1431,19 +1484,9 @@ const {
   getPartSuppliersReady: () => partSuppliersReady,
   getPartMachineNotesReady: () => partMachineNotesReady,
 });
-const messageDisplayHelpers = createMessageDisplayHelpers({
-  canEditOperationalRecords,
-  escapeHtml,
-  getCurrentUserId: () => session?.user?.id,
-  teamMemberName,
-  initials,
-  formatMessageTime,
-  formatMessageDay,
-});
-const {
-  renderMessageBubble,
-  renderMessageList,
-} = messageDisplayHelpers;
+let messageDisplayHelpers = null;
+let messageExperience = null;
+function renderMessageList(rows) { return messageDisplayHelpers?.renderMessageList(rows) || ""; }
 const {
   recentMessageLinkWorkOrders,
   filteredMessageThreads,
@@ -1452,10 +1495,12 @@ const {
   totalUnreadMessages,
   directUnreadMessages,
 } = createMessageThreadFilterDisplayHelpers({
+  isConversationArchived,
   getWorkOrders: () => workOrders,
   matchesActiveLocation,
   getMessageThreads: () => messageThreads,
   getMessageThreadFilter: () => messageThreadFilter,
+  getMessageSection: () => messageExperience?.getSection(),
   getMessageSearchQuery: () => messageSearchQuery,
   matchesQuery,
   getMessagesByThreadId: () => messagesByThreadId,
@@ -1516,6 +1561,7 @@ function initializeSetupFeature() {
 const {
   renderMessageThreadButton,
 } = createMessageThreadButtonDisplayHelpers({
+  threadTitle: messageConversationTitle,
   escapeHtml,
   formatMessageTime,
   teamMemberName,
@@ -1770,6 +1816,9 @@ function createShopReferenceFavoriteStore() {
 }
 
 function renderAuth(mode, initialError = "") {
+  messageLive.stop();
+  messageExperience?.reset();
+  document.body.classList.remove("messages-active");
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   const isSignup = mode === "signup";
   app.innerHTML = authForm(mode, initialError);
@@ -2912,20 +2961,28 @@ async function loadWorkOrderNotifications() {
   workOrderNotifications = data || [];
 }
 
-async function loadMessageCenter() {
+async function performMessageCenterLoad(preserveHistory = false) {
   const companyId = activeCompanyId;
   const userId = session?.user.id;
+  const selectedAtStart = activeMessageThreadId;
   const version = ++messageLoadVersion;
   if (messageDataScope !== `${userId}:${companyId}`) {
+    messageLive.stop();
+    messageExperience?.reset();
+    messageQuotes = {};
+    messageView = "conversations";
     messageDataScope = `${userId}:${companyId}`;
     messageThreads = [];
     messageThreadMembers = [];
     messagesByThreadId = {};
     messageReadsByThreadId = {};
     messageHistory = {};
+    messageHistoryVersions = {};
     messageLoadError = "";
   }
   try {
+    await messageLive.start(supabaseClient, companyId, userId, session?.access_token);
+    if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     const snapshot = await withOperationTimeout(fetchMessageCenter(supabaseClient, companyId, userId), "Message Center load timed out.", 15000);
     if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     messageThreads = snapshot.threads;
@@ -2935,11 +2992,11 @@ async function loadMessageCenter() {
       return groups;
     }, {});
     messageReadsByThreadId = Object.fromEntries(snapshot.reads.map((read) => [read.thread_id, read]));
-    messageHistory = {};
+    if (!preserveHistory) messageHistory = {};
     messagesReady = true;
     messageLoadError = "";
-    if (!messageThreads.some((thread) => thread.id === activeMessageThreadId)) setActiveMessageThreadIdState("");
-    if (activeMessageThreadId) await loadActiveMessageThreadMessages(activeMessageThreadId);
+    if (selectedAtStart === activeMessageThreadId && !messageThreads.some((thread) => thread.id === activeMessageThreadId)) setActiveMessageThreadIdState("");
+    if (activeMessageThreadId) await loadActiveMessageThreadMessages(activeMessageThreadId, false, preserveHistory);
   } catch (error) {
     if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageLoadVersion) return;
     messageLoadError = "Could not load messages. Check your connection and try again.";
@@ -2947,19 +3004,82 @@ async function loadMessageCenter() {
   }
 }
 
-async function loadActiveMessageThreadMessages(threadId, older = false) {
+async function loadActiveMessageThreadMessages(threadId, older = false, preserveHistory = false) {
+  const scope = `${session?.user.id}:${activeCompanyId}`, key = `${scope}:${threadId}`;
+  const previous = messageHistoryLoads.get(key);
+  const task = (async () => {
+    if (previous) await previous.catch(() => {});
+    if (scope === `${session?.user.id}:${activeCompanyId}`) await performMessageHistoryLoad(threadId, older, preserveHistory);
+  })();
+  messageHistoryLoads.set(key, task);
+  try { await task; } finally { if (messageHistoryLoads.get(key) === task) messageHistoryLoads.delete(key); }
+}
+
+async function performMessageHistoryLoad(threadId, older = false, preserveHistory = false) {
   if (!threadId) return;
+  const version = messageHistoryVersions[threadId] = (messageHistoryVersions[threadId] || 0) + 1;
   const companyId = activeCompanyId;
   const userId = session?.user.id;
   const previous = older ? messageHistory[threadId]?.rows || [] : [];
   const history = await withOperationTimeout(fetchMessageHistory(supabaseClient, companyId, threadId, older ? previous[0] : null), "Conversation load timed out.", 15000);
-  if (companyId !== activeCompanyId || userId !== session?.user.id) return;
-  messageHistory[threadId] = { ...history, rows: [...history.rows, ...previous] };
+  if (companyId !== activeCompanyId || userId !== session?.user.id || version !== messageHistoryVersions[threadId]) return;
+  const kept = preserveHistory ? (messageHistory[threadId]?.rows || []).filter((row) =>
+    (messagesByThreadId[threadId] || []).some((item) => item.id === row.id)) : previous;
+  const merged = new Map(kept.map((row) => [row.id, row]));
+  for (const row of history.rows) merged.set(row.id, row);
+  const sorted = [...merged.values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+  for (const row of sorted) if (row.reply && !(messagesByThreadId[threadId] || []).some((item) => item.id === row.reply.id)) row.reply = null;
+  messageHistory[threadId] = { ...history, rows: sorted,
+    hasOlder: preserveHistory && kept.length ? messageHistory[threadId].hasOlder : history.hasOlder };
   const metadata = new Map((messagesByThreadId[threadId] || []).map((message) => [message.id, message]));
-  for (const { id, sender_id, created_at, deleted_at } of history.rows) metadata.set(id, { id, thread_id: threadId, sender_id, created_at, deleted_at });
+  for (const { id, sender_id, created_at, deleted_at, parent_message_id } of history.rows) metadata.set(id, { id, thread_id: threadId, sender_id, created_at, deleted_at, parent_message_id });
   messagesByThreadId[threadId] = [...metadata.values()];
-  const thread = messageThreads.find((item) => item.id === threadId);
-  if (thread && !older) thread.latest_message = history.rows.at(-1) || null;
+}
+
+function messageConversationTitle(thread) {
+  if (thread.thread_type !== "direct" || thread.title !== "Direct message") return thread.title;
+  return messageThreadMembers.filter((member) => member.thread_id === thread.id && member.user_id !== session?.user.id)
+    .map((member) => teamMemberName(member.user_id)).join(", ") || "Direct message";
+}
+
+function findDirectConversation(userId) {
+  return messageExperience?.findDirectConversation(userId);
+}
+
+function setMessageQuote(id) {
+  const message = messageHistory[activeMessageThreadId]?.rows.find((row) => row.id === id && !row.deleted_at);
+  if (message) messageQuotes[activeMessageThreadId] = message;
+  else delete messageQuotes[activeMessageThreadId];
+  renderWorkspace();
+  document.querySelector("#message-reply-form textarea")?.focus({ preventScroll: true });
+}
+
+function updateMessageNavBadges() {
+  const count = totalUnreadMessages() + unreadWorkOrderNotificationCount();
+  document.querySelectorAll('[data-section="messages"]').forEach((button) => {
+    button.querySelectorAll(".nav-badge").forEach((badge) => badge.remove());
+    if (!count) return;
+    const badge = document.createElement("b");
+    badge.className = "nav-badge nav-message-badge";
+    badge.textContent = count;
+    badge.setAttribute("aria-label", `${count} unread conversations and work alerts`);
+    button.append(badge);
+  });
+}
+
+function renderLiveMessages() { messageLiveDisplay?.renderLiveMessages(); messageExperience?.liveUpdate(); }
+
+function acknowledgeVisibleMessages() {
+  const threadId = activeMessageThreadId;
+  const before = unreadMessageCount(threadId);
+  void markMessageThreadRead(threadId).then(() => {
+    updateMessageNavBadges();
+    if (activeSection === "messages" && threadId === activeMessageThreadId && unreadMessageCount(threadId) < before) renderLiveMessages();
+  });
+}
+
+function jumpToLatestMessage() {
+  messageLiveDisplay?.jumpToLatestMessage();
 }
 
 async function loadPublicRequestLinks() {
@@ -3010,13 +3130,13 @@ async function loadComments() {
   }, {});
 }
 
-function replaceArrayGroupsForIds(currentGroups, ids, rows) {
+function replaceArrayGroupsForIds(currentGroups, ids, rows, foreignKey = "work_order_id") {
   const idSet = new Set(ids);
   const nextGroups = { ...currentGroups };
   idSet.forEach((id) => { delete nextGroups[id]; });
   (rows || []).forEach((row) => {
-    nextGroups[row.work_order_id] ||= [];
-    nextGroups[row.work_order_id].push(row);
+    nextGroups[row[foreignKey]] ||= [];
+    nextGroups[row[foreignKey]].push(row);
   });
   return nextGroups;
 }
@@ -3331,7 +3451,7 @@ async function loadAssetEventsForAssetIds(ids = []) {
   }
 
   assetEventsReady = true;
-  assetEventsByAssetId = replaceArrayGroupsForIds(assetEventsByAssetId, ids, data || []);
+  assetEventsByAssetId = replaceArrayGroupsForIds(assetEventsByAssetId, ids, data || [], "asset_id");
 }
 
 async function loadStepResults() {
@@ -3420,6 +3540,8 @@ function renderWorkspace() {
     setActiveSectionState(navItems[0]?.[0] || "mywork");
   }
   document.body.classList.toggle("spatial-performance-active", activeSection === "performance");
+  document.body.classList.toggle("messages-active", activeSection === "messages" && !workspaceUiState.getSearchQuery().trim());
+  updateMessageViewport();
   if (activeSection !== "performance") {
     platformSpatialFrameRendered = false;
     platformSpatialLoadStartedAt = 0;
@@ -3989,11 +4111,7 @@ function renderWorkspace() {
           ` : ""}
 
           ${activeSection === "messages" ? `
-          <section class="panel full-width">
-            <div class="panel-header">
-              <h2>Messages</h2>
-              <span>${messagesReady ? `${messageThreads.length} threads` : "setup needed"}</span>
-            </div>
+          <section class="full-width" id="message-workspace">
             ${renderMessageCenter()}
           </section>
           ` : ""}
@@ -4215,6 +4333,8 @@ function renderWorkspace() {
 
   bindWorkspaceEvents();
   messageDrafts.restore(document);
+  messageExperience?.hydrate();
+  updateMessageViewport();
   document.querySelectorAll(".message-center textarea").forEach(autoGrowTextarea);
   scheduleQrLibraryLoad();
 }
@@ -4682,67 +4802,130 @@ function blocksProcedureCompletion(workOrder, procedureTemplateId = workOrder?.p
   return requiredChecklistCompletionMessage(workOrder, procedureTemplateId);
 }
 
-const { renderMessageCenter } = createMessageCenterDisplayHelpers({
-  getMessageLoadError: () => messageLoadError,
-  getMessageHistory: () => messageHistory,
-  getMessagesReady: () => messagesReady,
-  getMessageThreads: () => messageThreads,
-  getActiveMessageThreadId: () => activeMessageThreadId,
-  getMessagesByThreadId: () => messagesByThreadId,
-  getWorkOrders: () => workOrders,
-  getMessageComposerWorkOrderId: () => messageComposerWorkOrderId,
-  getMessageComposerOpen: () => messageComposerOpen,
-  getCompanyMembers: () => companyMembers,
-  getSession: () => session,
-  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
-  getMessageSearchQuery: () => messageSearchQuery,
-  getMessageThreadFilter: () => messageThreadFilter,
-  getMessageThreadsPage: () => workspaceUiState.getMessageThreadsPage(),
-  LIST_ITEMS_PER_PAGE,
-  filteredMessageThreads,
-  totalUnreadMessages: () => totalUnreadMessages() + unreadWorkOrderNotificationCount(),
-  teamMemberName,
-  escapeHtml,
-  messageComposerScopeNote,
-  recentMessageLinkWorkOrders,
-  statusLabel,
-  renderMessageThreadButton,
-  messageThreadScopeLabel,
-  renderMessageList,
-  renderWorkOrderNotifications,
-  renderListPagination,
-  canEditOperationalRecords,
-});
+let messageCenterDisplay = null;
+let messageLiveDisplay = null;
+let messageWorkflow = null;
+function renderMessageCenter() {
+  return messageCenterDisplay ? messageCenterDisplay.renderMessageCenter() : renderFeatureBundlePanel("messages", "Messages");
+}
+function bindMessageWorkflowEvents(root) { messageWorkflow?.bindMessageWorkflowEvents(root); }
+async function markMessageThreadRead(threadId, readAt) {
+  await ensureFeatureBundleLoaded("messages");
+  return messageWorkflow.markMessageThreadRead(threadId, readAt);
+}
+function initializeMessagesFeature() {
+  if (messageWorkflow) return messageWorkflow;
+  messageLiveDisplay = window.MaintainOpsMessageLiveDisplay.createMessageLiveDisplay({
+    documentRef: document,
+    getState: () => ({ activeMessageThreadId, messageThreads, messageHistory, messageQuotes, messageComposerOpen, messageView, messagesByThreadId }),
+    getActiveThreadId: () => activeMessageThreadId, getActiveSection: () => activeSection,
+    updateMessageNavBadges, totalUnreadMessages, isConversationArchived, filteredMessageThreads, LIST_ITEMS_PER_PAGE, workspaceUiState, renderMessageThreadButton, bindWorkspaceMessageThreadEvents, showNotice, setActiveMessageThreadIdState, setMessageComposerOpenState, loadActiveMessageThreadMessages, markMessageThreadRead, renderWorkspace, renderListPagination, bindWorkspaceFilterPaginationEvents, renderMessageList, bindMessageWorkflowEvents, setMessageQuote, unreadMessageCount, acknowledgeVisibleMessages,
+  });
+  messageDisplayHelpers = window.MaintainOpsMessageDisplay.createMessageDisplayHelpers({
+    icon: segmentIcon, canEditOperationalRecords, escapeHtml, getCurrentUserId: () => session?.user?.id,
+    teamMemberName, initials, formatMessageTime, formatMessageDay,
+    getReplyCount: id => Object.values(messagesByThreadId).flat().filter(row => row.parent_message_id === id && !row.deleted_at).length,
+  });
+  messageExperience = window.MaintainOpsMessageExperience.createMessageExperience({
+    documentRef: document, escapeHtml, icon: segmentIcon, client: () => supabaseClient,
+    getCompanyId: () => activeCompanyId, getUserId: () => session?.user.id, getActiveSection: () => activeSection,
+    canEdit: canEditOperationalRecords, getThreads: () => messageThreads, getMembers: () => companyMembers,
+    getThreadMembers: () => messageThreadMembers,
+    getMetadata: id => messagesByThreadId[id] || [], name: teamMemberName, time: formatMessageTime,
+    threadTitle: messageConversationTitle, optimizePhoto, notice: showNotice, render: renderWorkspace,
+    getMessage: id => Object.values(messageHistory).flatMap(history => history.rows).find(row => row.id === id),
+    renderBubble: (...args) => messageDisplayHelpers.renderMessageBubble(...args), bindWorkflow: bindMessageWorkflowEvents,
+    markRead: markMessageThreadRead, reload: async () => { await loadMessageCenter(true); renderLiveMessages(); },
+    openConversation: async id => {
+      setActiveMessageThreadIdState(id); setMessageComposerOpenState(false); messageView = "conversations";
+      await loadActiveMessageThreadMessages(id); renderWorkspace();
+    },
+  });
+  messageCenterDisplay = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
+    getWorkspaceLabel: () => [activeCompanyMembership()?.name, locations.find((location) => location.id === activeLocationId)?.name].filter(Boolean).join(" / "),
+    icon: segmentIcon,
+    renderMessageTools: key => messageExperience.renderTools(key),
+    getMessageSection: () => messageExperience.getSection(),
+    getMessageView: () => messageView,
+    getActivityCount: unreadWorkOrderNotificationCount,
+    getMessageConnection: () => messageConnection,
+    getReplyQuote: (id) => messageQuotes[id],
+    isConversationArchived,
+    threadTitle: messageConversationTitle,
+    getMessageLoadError: () => messageLoadError,
+    getMessageHistory: () => messageHistory,
+    getMessagesReady: () => messagesReady,
+    getMessageThreads: () => messageThreads,
+    getActiveMessageThreadId: () => activeMessageThreadId,
+    getMessagesByThreadId: () => messagesByThreadId,
+    getWorkOrders: () => workOrders,
+    getMessageComposerWorkOrderId: () => messageComposerWorkOrderId,
+    getMessageComposerOpen: () => messageComposerOpen,
+    getCompanyMembers: () => companyMembers,
+    getSession: () => session,
+    getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+    getMessageSearchQuery: () => messageSearchQuery,
+    getMessageThreadFilter: () => messageThreadFilter,
+    getMessageThreadsPage: () => workspaceUiState.getMessageThreadsPage(),
+    LIST_ITEMS_PER_PAGE,
+    filteredMessageThreads,
+    totalUnreadMessages,
+    teamMemberName,
+    escapeHtml,
+    messageComposerScopeNote,
+    recentMessageLinkWorkOrders,
+    statusLabel,
+    renderMessageThreadButton,
+    messageThreadScopeLabel,
+    renderMessageList,
+    renderWorkOrderNotifications,
+    renderListPagination,
+    canEditOperationalRecords,
+  });
 
-const {
-  bindMessageWorkflowEvents,
-  markMessageThreadRead,
-} = createMessageWorkflow({
-  documentRef: document,
-  FormDataCtor: FormData,
-  supabaseClient: () => supabaseClient,
-  withOperationTimeout,
-  isMissingColumnError,
-  messageCenterErrorState,
-  warn: console.warn,
-  confirmUser: (message) => window.confirm(message),
-  clearDraft: (key, submitted) => messageDrafts.clear(document, key, submitted),
-  getLatestReadTime: (threadId) => messageHistory[threadId]?.rows.at(-1)?.created_at,
-  getSession: () => session,
-  getActiveCompanyId: () => activeCompanyId,
-  getCompanyMembers: () => companyMembers,
-  getMessagesReady: () => messagesReady,
-  setMessagesReady: (value) => { messagesReady = value; },
-  getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
-  setMessageWorkOrderLinksReady: (value) => { messageWorkOrderLinksReady = value; },
-  activeLocationDatabaseId,
-  setActiveMessageThreadId: setActiveMessageThreadIdState,
-  setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
-  setMessageComposerOpen: setMessageComposerOpenState,
-  setMessageThreadRead: (threadId, readRow) => { messageReadsByThreadId[threadId] = readRow; },
-  showNotice: (message, tone = "info") => showNotice(message, tone),
-  render: async () => { await loadMessageCenter(); if (activeSection === "messages") renderWorkspace(); },
-});
+  messageWorkflow = window.MaintainOpsMessageWorkflow.createMessageWorkflow({
+    findDirectConversation,
+    getMessage: (id) => messageExperience.getMessage(id) || Object.values(messageHistory).flatMap((history) => history.rows).find((row) => row.id === id),
+    attachmentIds: key => messageExperience.fileList(key).map(file => file.id),
+    sendAttachments: args => messageExperience.sendAttachments(args),
+    clearReplyQuote: (threadId, quoteId) => { if (messageQuotes[threadId]?.id === quoteId) delete messageQuotes[threadId]; },
+    reloadConversation: async (id, messageId) => {
+      const companyId = activeCompanyId, userId = session?.user.id;
+      const rows = await fetchMessageRows(supabaseClient, companyId, id, [messageId]);
+      if (companyId !== activeCompanyId || userId !== session?.user.id) return;
+      const history = messageHistory[id];
+      if (history) history.rows = history.rows.flatMap((row) => row.id === messageId ? rows : [row]);
+      if (activeSection === "messages") renderLiveMessages();
+    },
+    reloadPreferences: async () => { await loadMessageCenter(true); if (activeSection === "messages") renderLiveMessages(); },
+    documentRef: document,
+    FormDataCtor: FormData,
+    supabaseClient: () => supabaseClient,
+    withOperationTimeout,
+    isMissingColumnError,
+    messageCenterErrorState,
+    warn: console.warn,
+    confirmUser: (message) => window.confirm(message),
+    clearDraft: (key, submitted) => messageDrafts.clear(document, key, submitted),
+    getLatestReadTime: (threadId) => messageHistory[threadId]?.rows.at(-1)?.created_at,
+    getReadTime: (threadId) => messageReadsByThreadId[threadId]?.last_read_at,
+    getSession: () => session,
+    getActiveCompanyId: () => activeCompanyId,
+    getCompanyMembers: () => companyMembers,
+    getMessagesReady: () => messagesReady,
+    setMessagesReady: (value) => { messagesReady = value; },
+    getMessageWorkOrderLinksReady: () => messageWorkOrderLinksReady,
+    setMessageWorkOrderLinksReady: (value) => { messageWorkOrderLinksReady = value; },
+    activeLocationDatabaseId,
+    setActiveMessageThreadId: setActiveMessageThreadIdState,
+    setMessageComposerWorkOrderId: setMessageComposerWorkOrderIdState,
+    setMessageComposerOpen: setMessageComposerOpenState,
+    setMessageThreadRead: (threadId, readRow) => { messageReadsByThreadId[threadId] = readRow; },
+    showNotice: (message, tone = "info") => showNotice(message, tone),
+    render: async () => { await loadMessageCenter(); if (activeSection === "messages") renderWorkspace(); },
+  });
+  return messageWorkflow;
+}
 const {
   markWorkOrderNotificationRead,
   markWorkOrderNotificationsReadForOrder,
@@ -5136,8 +5319,13 @@ const { updateWorkOrderQuickView } = createWorkOrderQuickUpdateWorkflow({
   render,
 });
 
-async function openStorageLinkedRecord(section, id, label = "") {
+async function openStorageLinkedRecord(section, id, label = "", options = {}) {
   if (!section) return;
+  const companyId = activeCompanyId;
+  const locationId = activeLocationId;
+  const sourceSection = activeSection;
+  const isCurrent = () => activeCompanyId === companyId && activeLocationId === locationId
+    && activeSection === sourceSection && options.isCurrent?.() !== false;
   setActiveWorkOrderIdState(null);
   setActiveAssetIdState(null);
   setActivePartIdState(null);
@@ -5147,8 +5335,13 @@ async function openStorageLinkedRecord(section, id, label = "") {
 
   if (section === "work" && id) {
     if (!workOrders.some((workOrder) => workOrder.id === id)) {
-      const response = await loadWorkspaceResponse("Storage linked work order", fetchWorkOrderById(supabaseClient, activeCompanyId, id, WORK_ORDER_RELATION_SELECT), 12000);
-      if (!response.error && response.data) workOrders = [response.data, ...workOrders];
+      const response = await loadWorkspaceResponse("Linked work order", fetchWorkOrderById(supabaseClient, companyId, id, WORK_ORDER_RELATION_SELECT), 12000);
+      if (!isCurrent()) return false;
+      if (response.error || !response.data) {
+        showNotice(`Could not open work order: ${response.error?.message || "Work order not found."}`, "warning");
+        return false;
+      }
+      workOrders = [response.data, ...workOrders];
     }
     await Promise.all([
       runWorkspaceLoader("Storage linked work photos", () => loadPhotosForWorkOrderIds([id])),
@@ -5157,10 +5350,12 @@ async function openStorageLinkedRecord(section, id, label = "") {
       runWorkspaceLoader("Storage linked checklist results", () => loadStepResultsForWorkOrderIds([id])),
       runWorkspaceLoader("Storage linked parts used", () => loadPartsUsedForWorkOrderIds([id])),
     ]);
+    if (!isCurrent()) return false;
     setActiveWorkOrderIdState(id);
     setActiveSectionState("work");
+    localStorage.setItem("maintainops.activeSection", "work");
     renderWorkspace();
-    return;
+    return true;
   }
 
   if (section === "assets" && id) {
@@ -5430,6 +5625,7 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceMessageThreadEvents({
+    renderLiveMessages,
     getActiveThreadId: () => activeMessageThreadId,
     getActiveSection: () => activeSection,
     showNotice,
@@ -5480,9 +5676,45 @@ function bindWorkspaceEvents() {
   bindMessageWorkflowEvents();
 
   bindWorkspaceMessageUiEvents({
+    openComposer: () => { messageView = "conversations"; setMessageComposerOpenState(true); renderWorkspace(); document.querySelector('#message-thread-form [name="direct_user_id"]')?.focus({ preventScroll: true }); },
+    closeComposer: () => { setMessageComposerOpenState(false); renderWorkspace(); },
+    exitMessages: () => { setActiveSectionState("mywork"); renderWorkspace(); },
+    setMessageView: (view) => { messageView = view; renderWorkspace(); },
+    quoteMessage: setMessageQuote,
+    jumpToLatest: jumpToLatestMessage,
+    onHistoryScroll: () => {
+      const list = document.querySelector(".message-list");
+      if (list && list.scrollHeight - list.scrollTop - list.clientHeight < 8 && unreadMessageCount(activeMessageThreadId) > 0 && !document.hidden) jumpToLatestMessage();
+    },
+    showExistingConversation: (userId) => {
+      const slot = document.querySelector("[data-existing-conversation]");
+      if (!slot) return;
+      slot.replaceChildren();
+      const thread = findDirectConversation(userId);
+      if (!userId || !thread) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "text-button";
+      button.textContent = `Open existing conversation with ${teamMemberName(userId)}`;
+      button.onclick = async () => {
+        const companyId = activeCompanyId;
+        const currentUserId = session?.user.id;
+        const stillActive = () => companyId === activeCompanyId && currentUserId === session?.user.id && activeSection === "messages" && activeMessageThreadId === thread.id;
+        setMessageComposerOpenState(false);
+        setActiveMessageThreadIdState(thread.id);
+        renderWorkspace();
+        try {
+          await loadActiveMessageThreadMessages(thread.id);
+          if (!stillActive()) return;
+          await markMessageThreadRead(thread.id);
+          if (stillActive()) renderWorkspace();
+        } catch { if (stillActive()) showNotice("Could not open conversation. Try again.", "warning"); }
+      };
+      slot.append(button);
+    },
     openLinkedWorkOrder: (id) => openWorkOrderNotification(null, id),
     backToMessages: () => { setActiveMessageThreadIdState(""); renderWorkspace(); },
-    retryMessages: async () => { await loadMessageCenter(); renderWorkspace(); },
+    retryMessages: async () => { messageLive.stop(); await loadMessageCenter(true); if (activeSection === "messages") renderWorkspace(); },
     loadOlderMessages: async () => {
       const threadId = activeMessageThreadId;
       const list = document.querySelector(".message-list");
@@ -5519,6 +5751,8 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceDetailNavigationEvents({
+    openLinkedWorkOrder: (id, options) => openStorageLinkedRecord("work", id, "", options),
+    showNotice,
     state: {
       getActiveSection: () => activeSection,
       setActiveAssetId: setActiveAssetIdState,
@@ -5880,6 +6114,20 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspacePartDetailEvents({
+    loadPartDetail: async (id, { isCurrent = () => true } = {}) => {
+      const companyId = activeCompanyId;
+      const locationId = activeLocationId;
+      const { data, error } = await withOperationTimeout(
+        supabaseClient.from("parts").select("*").eq("company_id", companyId).eq("id", id).maybeSingle(),
+        "Part loading timed out. Try opening it again.", 15000
+      );
+      if (!isCurrent() || activeCompanyId !== companyId || activeLocationId !== locationId || activeSection !== "parts") return false;
+      if (error) throw error;
+      if (!data || !matchesActiveLocation(data)) throw new Error("Part is no longer available in this location.");
+      parts = parts.map(part => part.id === id ? data : part);
+      return true;
+    },
+    showNotice,
     state: {
       getShowPartSourceManager: () => showPartSourceManager,
       setActivePartId: setActivePartIdState,
@@ -6215,13 +6463,16 @@ const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
 
 const { saveStepResult } = createProcedureChecklistWorkflow({
   blocksProcedureCompletion,
+  checklistProgress,
+  requiredChecklistProgress,
+  getProcedureTemplates: () => procedureTemplates,
+  getStepResultsByWorkOrder: () => stepResultsByWorkOrder,
   getActiveCompanyId: () => activeCompanyId,
   getSession: () => session,
   getWorkOrderActionWarningId: () => workOrderActionWarningId,
   getWorkOrders: () => workOrders,
   loadStepResults,
   recordWorkOrderEvent,
-  renderWorkspace,
   setWorkOrderActionWarning,
   showNotice,
   upsertStepResult: (payload) => supabaseClient.from("work_order_step_results").upsert(payload, { onConflict: "work_order_id,procedure_step_id" }),

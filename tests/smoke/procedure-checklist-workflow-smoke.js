@@ -6,7 +6,15 @@ const { createProcedureChecklistWorkflow } = require("../../src/workflows/proced
 
 const calls = [];
 const notices = [];
+const summary = { textContent: '' };
+const chip = { textContent: '' };
+const recorded = { textContent: '' };
+const completedAt = '2026-09-18T12:00:00.000Z';
 const field = {
+  isConnected: true,
+  closest: (selector) => selector === '.detail-stack'
+    ? { querySelector: (target) => target === '[data-checklist-summary]' ? summary : chip }
+    : { querySelector: () => recorded },
   checked: true,
   dataset: {
     stepResult: "step-1",
@@ -21,7 +29,11 @@ const workflow = createProcedureChecklistWorkflow({
   getActiveCompanyId: () => "company-1",
   getSession: () => ({ user: { id: "user-1" } }),
   getWorkOrderActionWarningId: () => "wo-1",
-  getWorkOrders: () => [{ id: "wo-1" }],
+  getWorkOrders: () => [{ id: "wo-1", procedure_template_id: 'procedure-1' }],
+  getProcedureTemplates: () => [{ id: 'procedure-1' }],
+  checklistProgress: () => ({ done: 2, total: 3 }),
+  requiredChecklistProgress: () => ({ done: 1, total: 1 }),
+  getStepResultsByWorkOrder: () => ({ 'wo-1': { 'step-1': { completed_at: completedAt } } }),
   loadStepResults: async () => {
     calls.push(["loadStepResults"]);
   },
@@ -51,7 +63,19 @@ const workflow = createProcedureChecklistWorkflow({
   assert.equal(calls.some((call) => call[0] === "recordWorkOrderEvent" && call[2] === "checklist_updated"), true);
   assert.equal(calls.some((call) => call[0] === "loadStepResults"), true);
   assert.deepEqual(calls.find((call) => call[0] === "setWorkOrderActionWarning"), ["setWorkOrderActionWarning", "", ""]);
-  assert.equal(calls.some((call) => call[0] === "renderWorkspace"), true);
+  assert.equal(calls.some((call) => call[0] === "renderWorkspace"), false, "Checklist save must not replace other unsaved forms");
+  assert.equal(field.disabled, false);
+  assert.equal(summary.textContent, '2 of 3 complete - required 1/1');
+  assert.equal(chip.textContent, '2/3');
+  assert.equal(recorded.textContent, `Recorded ${new Date(completedAt).toLocaleString()}`);
+  assert.deepEqual(notices, [], 'Connected checklist readout must not fail silently');
+
+  field.isConnected = false;
+  summary.textContent = 'A different screen';
+  await workflow.saveStepResult({ target: field });
+  assert.equal(summary.textContent, 'A different screen', 'A detached field must not update another screen');
+  assert.equal(calls.some((call) => call[0] === 'renderWorkspace'), false);
+  assert.deepEqual(notices, []);
 
   console.log("procedure checklist workflow smoke passed");
 })().catch((error) => {

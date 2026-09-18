@@ -499,7 +499,7 @@
       if (typeof deps.optimizePhotoOverride === "function") return deps.optimizePhotoOverride(file, options);
       const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
       const contentType = contentTypeForFile(file);
-      if (!imageTypes.includes(contentType)) {
+      if (!imageTypes.includes(contentType) && !(options.acceptAnyImage && contentType.startsWith("image/"))) {
         return {
           blob: file,
           fileName: deps.safeFileName(file.name || "photo"),

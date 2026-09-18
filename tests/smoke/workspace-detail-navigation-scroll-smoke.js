@@ -89,7 +89,8 @@ bindWorkspaceDetailNavigationEvents({
     ".asset-card": [financialAssetCard, assetCard],
     "[data-open-asset]": [openAssetButton],
     "[data-work-photo-jump]": [photoJumpButton],
-    "[data-asset-id]": [assetCard, keyboardAssetCard],
+    ".asset-card[data-asset-id]": [assetCard, keyboardAssetCard],
+    "[data-asset-id]": [assetCard, keyboardAssetCard, assetHistoryNext, completedHistoryNext, completedHistoryDetails],
     "[data-mini-work-order]": [miniWorkOrder],
     "[data-asset-relationship-section]": [completedHistoryDetails],
     "[data-asset-relation-page]": [completedHistoryNext],
@@ -162,6 +163,11 @@ assert.deepEqual(historyLoads, ["asset-1"]);
 assert.equal(renderCount, 4);
 assert.equal(scrollCount, 3);
 assert.deepEqual(scrollRestores, []);
+
+// Restoring an already-open disclosure must not start another load/render cycle.
+await completedHistoryDetails.dispatch("toggle");
+assert.deepEqual(historyLoads, ["asset-1"]);
+assert.equal(renderCount, 4);
 
 windowRef.scrollY = 900;
 await openAssetHistory.dispatch("click", { preventDefault() {}, stopPropagation() {} });

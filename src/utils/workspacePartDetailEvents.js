@@ -13,21 +13,32 @@
 
     if (!state || typeof renderWorkspace !== "function") return;
 
-    doc.querySelectorAll("[data-open-part]").forEach((button) => {
-      button.addEventListener("click", () => {
+    let openSequence = 0;
+    async function openPart(button) {
+      const sequence = ++openSequence;
+      const isCurrent = () => sequence === openSequence && button.isConnected !== false;
+      try {
+        if (options.loadPartDetail && await options.loadPartDetail(button.dataset.openPart, { isCurrent }) === false) return;
+        if (!isCurrent()) return;
         state.setActivePartId(button.dataset.openPart);
         renderWorkspace();
-      });
+      } catch (error) {
+        if (isCurrent()) options.showNotice?.(`Could not open part: ${error.message || error}`, "warning");
+      }
+    }
+
+    doc.querySelectorAll("[data-open-part]").forEach((button) => {
+      button.addEventListener("click", () => openPart(button));
       button.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
-        state.setActivePartId(button.dataset.openPart);
-        renderWorkspace();
+        void openPart(button);
       });
     });
 
     doc.querySelectorAll("[data-close-part-detail]").forEach((button) => {
       button.addEventListener("click", () => {
+        openSequence++;
         state.setActivePartId(null);
         state.setShowPartSourceManager(false);
         renderWorkspace();
@@ -36,6 +47,7 @@
 
     doc.querySelectorAll("[data-toggle-part-sources]").forEach((button) => {
       button.addEventListener("click", () => {
+        openSequence++;
         state.setShowPartSourceManager(!state.getShowPartSourceManager());
         renderWorkspace();
       });

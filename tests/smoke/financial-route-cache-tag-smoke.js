@@ -30,7 +30,6 @@ for (const file of [
   "requestDisplay",
   "maintenanceListDisplay",
   "workOrderDetailDisplay",
-  "messageCenterDisplay",
   "partsDisplay",
   "assetDetailDisplay",
   "mediaStorageWorkflow",
@@ -57,5 +56,10 @@ for (const file of ["workspaceFinancialNavigationEvents", "financialDisplay", "a
 
 assert.match(teamEntry, /['"]\.\.\/render\/teamMemberDisplay\.js['"]/);
 assert.doesNotMatch(runtimeEntry, /['"]\.\.\/render\/teamMemberDisplay\.js['"]/);
+const messageEntry = fs.readFileSync(path.join(root, "src", "bundles", "messageFeature.entry.js"), "utf8");
+for (const file of ["messageCenterDisplay", "messageDisplay", "messageLiveDisplay", "messageWorkflow"]) {
+  assert.match(messageEntry, new RegExp(`${file}\\.js`));
+  assert.doesNotMatch(runtimeEntry, new RegExp(`${file}\\.js`));
+}
 
 console.log("financial route cache tag smoke passed");
