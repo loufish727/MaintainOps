@@ -121,7 +121,7 @@ function createWorkflow(options = {}) {
       if (!text) throw new Error(`${label} is required.`);
       return text;
     },
-    isMissingColumnError: () => false,
+    isMissingColumnError: (error, column) => Boolean(options.missingColumn && options.missingColumn === column),
     isMissingTableError: () => false,
     isAssetHierarchySchemaError: () => false,
     databaseSetupRequiredMessage: (label) => `setup ${label}`,
@@ -150,6 +150,7 @@ function createWorkflow(options = {}) {
       name: "Pump 1",
       location_id: "",
       asset_code: "P-1",
+      asset_tag: "  0007-A  ",
       manufacturer: "Engel",
       model: "RF-42",
       location_existing: "Line 1",
@@ -167,6 +168,7 @@ function createWorkflow(options = {}) {
   assert.equal(create.calls.some((call) => call[0] === "assetEvent" && call[2] === "created"), true);
   assert.equal(create.calls.some((call) => call[0] === "notice" && call[1] === "Equipment added."), true);
   assert.equal(createForm.button.disabled, false);
+  assert.equal(create.calls.find(call => call[0] === "insert")[2].asset_tag, "0007-A");
   assert.equal(createForm.button.textContent, "Add Equipment");
 
   const continued = createWorkflow();
@@ -192,6 +194,7 @@ function createWorkflow(options = {}) {
   });
   assert.equal(continued.calls.some((call) => call[0] === "select" && call[1] === "assets" && call[2] === "id"), true);
   assert.equal(continued.calls.some((call) => call[0] === "single" && call[1] === "assets"), true);
+  assert.equal(continued.calls.find(call => call[0] === "insert")[2].asset_tag, null);
   assert.equal(continued.calls.some((call) => call[0] === "activeAssetId" && call[1] === "asset-new"), true);
   assert.equal(continued.calls.some((call) => call[0] === "notice" && call[1].includes("Equipment saved. Add PM")), true);
 
@@ -201,6 +204,7 @@ function createWorkflow(options = {}) {
     formValues: {
       name: "Pump 2",
       asset_code: "P-3",
+      asset_tag: "  0008-B  ",
       manufacturer: "Cincinnati",
       model: "CB-90",
       location_id: "location-2",
@@ -215,6 +219,18 @@ function createWorkflow(options = {}) {
   assert.equal(update.calls.some((call) => call[0] === "update" && call[1] === "assets" && call[2].location === "Line 2"), true);
   assert.equal(update.calls.some((call) => call[0] === "assetEvent" && call[2] === "updated" && call[3].includes("status")), true);
   assert.equal(update.calls.some((call) => call[0] === "eq" && call[2] === "id" && call[3] === "asset-1"), true);
+  assert.equal(update.calls.find(call => call[0] === "update")[2].asset_tag, "0008-B");
+  assert.equal(update.calls.some(call => call[0] === "assetEvent" && call[3].includes("asset tag")), true);
+  const cleared = createWorkflow();
+  await cleared.workflow.updateAsset({ preventDefault() {}, currentTarget: createElement({ formValues: { ...editForm.formValues, asset_tag: "   " } }) });
+  assert.equal(cleared.calls.find(call => call[0] === "update")[2].asset_tag, null);
+  for (const operation of ["createAsset", "updateAsset"]) {
+    const unavailable = createWorkflow({ missingColumn: "asset_tag", responses: { "insert:assets": { error: { message: "asset_tag column missing" } }, "update:assets": { error: { message: "asset_tag column missing" } } } });
+    await unavailable.workflow[operation]({ preventDefault() {}, currentTarget: editForm });
+    const selector = operation === "createAsset" ? "#asset-create-error" : "#asset-edit-error";
+    assert.match(unavailable.errors[selector].textContent, /asset tags need a database update/);
+    assert.equal(unavailable.calls.some(call => call[0] === "notice" || call[0] === "assetEvent"), false);
+  }
 
   const status = createWorkflow();
   const statusError = await status.workflow.updateAssetStatus("asset-1", "offline");

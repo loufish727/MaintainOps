@@ -17,6 +17,7 @@ const enabledHtml = renderAssetCard({
   id: "asset-1",
   name: "Roll former",
   asset_code: "SN-100",
+  asset_tag: '0007-<tag>"',
   manufacturer: "Engel",
   model: "RF-42",
   asset_type: "machine",
@@ -27,6 +28,7 @@ const enabledHtml = renderAssetCard({
 
 assert.match(enabledHtml, /class="chip asset-running">running<\/span>/);
 assert.match(enabledHtml, /SN-100/);
+assert.match(enabledHtml, /Asset tag: 0007-&lt;tag&gt;&quot;/);
 assert.match(enabledHtml, /Engel/);
 assert.match(enabledHtml, /RF-42/);
 assert.match(enabledHtml, /class="safety-check-note">safety devices identified<\/span>/);
@@ -42,5 +44,6 @@ const disabledHtml = renderAssetCard({
 });
 
 assert.match(disabledHtml, /class="safety-check-note disabled">no safety devices identified<\/span>/);
+assert.doesNotMatch(disabledHtml, /Asset tag:/);
 
 console.log("asset card display smoke passed");

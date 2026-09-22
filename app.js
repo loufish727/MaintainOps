@@ -4024,6 +4024,7 @@ function renderWorkspace() {
             ${canEditEquipmentRecords() ? `<form class="inline-form" id="create-asset-form">
               <input name="name" required placeholder="Machine or equipment name">
               <input name="asset_code" placeholder="Serial number">
+              <input name="asset_tag" aria-label="Asset tag" placeholder="Asset tag (optional)">
               <input name="manufacturer" placeholder="Manufacturer">
               <input name="model" placeholder="Model">
               <select name="location_existing" aria-label="Area / spot">

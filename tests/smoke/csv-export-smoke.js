@@ -60,6 +60,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
     name: "10\u2019 Press Brake",
     asset_type: "machine",
     asset_code: "SN-100",
+    asset_tag: "0007-A",
     manufacturer: "Engel",
     model: "RF-42",
     location_id: "loc-1",
@@ -127,6 +128,7 @@ const { exportActiveSectionCsv, downloadCsv } = createCsvExportHelpers({
     archived_asset_name: "Deleted Salem Brake",
     archived_asset_type: "machine",
     archived_asset_code: "DEL-1",
+    archived_asset_tag: "0008-B",
     archived_manufacturer: "Pacific",
     archived_model: "PX",
     archived_location_id: "loc-1",
@@ -166,9 +168,9 @@ activeSection = "assets";
 exportActiveSectionCsv();
 assert.equal(link.download, "equipment.csv");
 assert.equal(urls[1].parts[0].charCodeAt(0), 0xfeff);
-assert.match(urls[1].parts[0], /equipment_type,name,parent_equipment,serial_number,manufacturer,model,picture_id,picture_count,picture_status,facility,area_department,status/);
+assert.match(urls[1].parts[0], /equipment_type,name,parent_equipment,serial_number,asset_tag,manufacturer,model,picture_id,picture_count,picture_status,facility,area_department,status/);
 assert.match(urls[1].parts[0], /10\u2019 Press Brake/);
-assert.match(urls[1].parts[0], /"Primary","10\u2019 Press Brake","","SN-100","Engel","RF-42","rollformer-front\.jpg","1","attached","Salem, OR","Bay 1","running"/);
+assert.match(urls[1].parts[0], /"Primary","10\u2019 Press Brake","","SN-100","0007-A","Engel","RF-42","rollformer-front\.jpg","1","attached","Salem, OR","Bay 1","running"/);
 assert.doesNotMatch(urls[1].parts[0], /Auburn component/);
 assert.ok(urls[1].parts[0].indexOf("10\u2019 Press Brake") < urls[1].parts[0].indexOf("Brake Controls"));
 assert.ok(urls[1].parts[0].indexOf("Brake Controls") < urls[1].parts[0].indexOf("Back Gauge"));
@@ -179,6 +181,9 @@ assert.equal(link.download, "equipment-financial.csv");
 assert.equal(urls[2].parts[0].charCodeAt(0), 0xfeff);
 assert.match(urls[2].parts[0], /operational_status,equipment_type,name,parent_equipment,facility/);
 assert.match(urls[2].parts[0], /asset_tag,acquisition_date,acquisition_cost/);
+assert.match(urls[2].parts[0], /serial_number,equipment_asset_tag,manufacturer/);
+assert.match(urls[2].parts[0], /"SN-100","0007-A"/);
+assert.match(urls[2].parts[0], /"DEL-1","0008-B"/);
 assert.match(urls[2].parts[0], /"active","Primary","10\u2019 Press Brake","","Salem, OR","Bay 1"/);
 assert.doesNotMatch(urls[2].parts[0], /"loc-1","Bay 1"/);
 assert.ok(urls[2].parts[0].indexOf("Auburn component") < urls[2].parts[0].indexOf("10\u2019 Press Brake"));

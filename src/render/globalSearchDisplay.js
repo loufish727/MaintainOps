@@ -55,6 +55,7 @@
         <button class="global-result-item" data-search-asset="${asset.id}" type="button">
           <strong>${escapeHtml(asset.name)}</strong>
           <span>${escapeHtml(asset.asset_code || "No serial")} - ${escapeHtml(asset.status)} - ${escapeHtml(asset.location || activeLocationName())}</span>
+          ${asset.asset_tag ? `<span>Asset tag: ${escapeHtml(asset.asset_tag)}</span>` : ""}
         </button>
       `;
     }

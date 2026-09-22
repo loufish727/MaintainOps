@@ -108,6 +108,7 @@ const assets = [{
   name: "10\u2019 Press Brake",
   asset_type: "machine",
   asset_code: "PB-10",
+  asset_tag: "0007-A",
   manufacturer: "Cincinnati",
   model: "90CB",
   location: "Bay 1",
@@ -129,6 +130,7 @@ const financialRows = [{
   archived_asset_name: "Sold Press Brake",
   archived_asset_type: "machine",
   archived_asset_code: "SOLD-10",
+  archived_asset_tag: "0008-B",
   archived_manufacturer: "Pacific",
   archived_model: "PBX",
   archived_location_id: "loc-1",
@@ -157,6 +159,7 @@ assert.match(html, /Cincinnati/);
 assert.match(html, /90CB/);
 assert.match(html, /1 photo/);
 assert.match(html, /FA-100/);
+assert.match(html, /Equipment asset tag: 0007-A/);
 assert.match(html, /Salem Production/);
 assert.match(html, /Finance Lead/);
 assert.match(html, /data-financial-filter="missing"/);
@@ -175,6 +178,7 @@ assert.doesNotMatch(html, /Marion County/);
 
 const detailHtml = helpers.renderFinancialDetail("asset-1");
 assert.match(detailHtml, /Financial Details/);
+assert.match(detailHtml, /Equipment asset tag: 0007-A/);
 assert.match(detailHtml, /data-back-financial-list/);
 assert.match(detailHtml, /data-open-financial-equipment="asset-1"/);
 assert.match(detailHtml, /Open Equipment Page/);
@@ -209,6 +213,7 @@ assert.match(archivedDetailHtml, /data-financial-record="finance-archived"/);
 assert.match(archivedDetailHtml, /data-financial-archived="true"/);
 assert.match(archivedDetailHtml, /Save Financial Info/);
 assert.match(archivedDetailHtml, /FA-SOLD/);
+assert.match(archivedDetailHtml, /Equipment asset tag: 0008-B/);
 assert.match(archivedDetailHtml, /Sold at auction/);
 assert.doesNotMatch(archivedDetailHtml, /Open Equipment Page/);
 

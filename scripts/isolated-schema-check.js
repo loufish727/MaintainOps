@@ -717,6 +717,7 @@ async function main() {
     checks.push({ name: "accounting_operational_asset_writes_denied", verdict: "PASS" });
 
     checks.push(...await require('./isolated-appwide-check').verifyAppwide(database, ids, setAuthenticatedUser, resetRole));
+    checks.push(...await require('./isolated-equipment-tag-check').verifyEquipmentTags(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require("./isolated-messaging-check").verifyMessaging(database, ids, setAuthenticatedUser, resetRole));
     await resetRole(database);
     const report = {
