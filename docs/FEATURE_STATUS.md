@@ -41,6 +41,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Team invites and single-use join links.
 - Team-managed request email recipient routing.
 - Team role updates.
+- Team member cards show the saved default location by name and Team search includes it; missing defaults show "Not set" and unresolved locations show "Location unavailable". This is read-only membership information, not the viewer's current workspace. Desktop/mobile Chromium and WebKit coverage is in `team-sections-browser.spec.js` and `team-member-display-smoke.js`.
 - Team navigation groups members, profile, security, roles, notifications, invitations, and advanced tools into expandable sections; Team Members opens by default and open sections survive workspace rerenders.
 - Company logo upload.
 - Public request QR/link intake per location.

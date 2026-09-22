@@ -4778,6 +4778,10 @@ textarea {
   margin-top: 8px;
 }
 
+.member-default-location strong {
+  color: var(--ink);
+}
+
 .member-card-actions {
   display: grid;
   gap: 8px;
