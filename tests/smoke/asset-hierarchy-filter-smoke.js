@@ -9,9 +9,10 @@ const { createAssetHierarchyDisplayHelpers } = window.MaintainOpsAssetHierarchyD
 let statusFilter = "all";
 let typeFilter = "all";
 let areaFilter = "all";
+let search = "";
 
 const assets = [
-  { id: "machine-1", name: "MS200", asset_type: "machine", status: "running", location: "Salem" },
+  { id: "machine-1", name: "MS200", asset_tag: "0007-A", asset_type: "machine", status: "running", location: "Salem" },
   { id: "sub-1", name: "Shear", asset_type: "secondary_machine", status: "running", parent_asset_id: "machine-1", location: "Salem" },
   { id: "tool-1", name: "Roll setup", asset_type: "tooling", status: "watch", parent_asset_id: "machine-1", location: "Salem" },
   { id: "component-1", name: "Photoeye", asset_type: "component", status: "offline", parent_asset_id: "sub-1", location: "Salem" },
@@ -24,7 +25,7 @@ const { filteredAssets } = createAssetHierarchyDisplayHelpers({
   getAssetTypeFilter: () => typeFilter,
   getAssetAreaFilter: () => areaFilter,
   matchesActiveLocation: () => true,
-  matchesSearch: () => true,
+  matchesSearch: (values) => values.some(value => String(value || "").toLowerCase().includes(search)),
 });
 
 assert.equal(filteredAssets().length, 5);
@@ -51,5 +52,12 @@ statusFilter = "running";
 typeFilter = "secondary_machine";
 areaFilter = "all";
 assert.deepEqual(filteredAssets().map((asset) => asset.id), ["sub-1"]);
+
+statusFilter = "all";
+typeFilter = "all";
+search = "0007-a";
+assert.deepEqual(filteredAssets().map(asset => asset.id), ["machine-1"]);
+areaFilter = "Albany";
+assert.deepEqual(filteredAssets(), []);
 
 console.log("asset hierarchy filter smoke passed");

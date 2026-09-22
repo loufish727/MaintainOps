@@ -16,6 +16,7 @@
         .filter((asset) => deps.matchesQuery([
           asset.name,
           asset.asset_code,
+          asset.asset_tag,
           asset.manufacturer,
           asset.model,
           asset.location,
@@ -164,6 +165,7 @@
         .filter((asset) => deps.matchesQuery([
           asset.name,
           asset.asset_code,
+          asset.asset_tag,
           asset.manufacturer,
           asset.model,
           asset.location,

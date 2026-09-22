@@ -33,6 +33,13 @@ Repo source:
 
 ## Known Recently Applied
 
+### Equipment Asset Tag, 2026-09-22
+
+- `supabase/migrations/202609222255_equipment_asset_tag.sql`: applied to isolated QA project `fsxqrngpaseqdxijggcm`; production pending release checks.
+- Adds nullable operational `assets.asset_tag` and retained `asset_financials.archived_asset_tag`; existing serials, accounting fixed asset numbers, grants, and RLS remain unchanged. No backfill.
+- Rollback: revert the frontend only; retain the additive columns and archive support to avoid losing newly entered tags.
+- Verification: isolated PostgreSQL proves upgrade from the previous table shape, repeat application, unchanged existing identifiers, four operational writer roles, accounting read-only, cross-company denial, and retention with/without an existing finance row. Signed-in Chromium and WebKit prove create/edit/clear/reopen, history, tag search, CSV, accounting read-only UI/API, and retained Financials display. Each browser run removes only its disposable QA fixture.
+
 | SQL file | Live status | Evidence |
 |---|---|---|
 | `supabase/migrations/202608051200_production_ready_notifications.sql` | Applied | Applied to testing project `fsxqrngpaseqdxijggcm`, then production project `lbphkzznvvumemdkqoay` on 2026-08-05. Local Full Strict LFES passed before live application. The private signed-in lifecycle then created one disposable assigned order, completed its Production Action as the Production user, proved exactly one technician-scoped notification and Production Ready badge, opened the exact order from Messages, persisted `read_at`, preserved the order as open and assigned, observed zero email function/outbox requests, and removed the temporary order, events, and notification. Testing returned to 6 members, 8 work orders, 14 work-order events, and 0 notifications. Production preflight/postflight retained 21 members, 123 work orders, and 705 work-order events while adding an empty RLS table with two recipient-only policies, authenticated SELECT, `read_at`-only UPDATE, no authenticated INSERT/DELETE or other-column UPDATE, and a security-definer trigger function with pinned `search_path`. Both applications were recorded in `public.applied_migrations`; no operational rows were changed. |

@@ -12,6 +12,7 @@ const asset = {
   id: "asset-1",
   name: "Press 1",
   asset_code: "P-100",
+  asset_tag: '0007-<tag>"',
   manufacturer: "Engel",
   model: "RF-42",
   asset_type: "machine",
@@ -107,6 +108,8 @@ assert.match(html, /id="edit-asset-form"/);
 assert.match(html, /name="location_existing"/);
 assert.match(html, /Serial Number/);
 assert.match(html, /name="asset_code" value="P-100"/);
+assert.match(html, /name="asset_tag" value="0007-&lt;tag&gt;&quot;"/);
+assert.match(html, /Asset tag: 0007-&lt;tag&gt;&quot;/);
 assert.match(html, /name="manufacturer" value="Engel"/);
 assert.match(html, /name="model" value="RF-42"/);
 assert.match(html, /<option value="Bay 1" selected>Bay 1<\/option>/);

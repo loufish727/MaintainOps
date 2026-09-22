@@ -4,6 +4,16 @@ This file tracks what exists, what is considered stable enough for continued QA,
 
 ## Working Core
 
+### Equipment Asset Tags
+
+- Equipment create/edit supports an optional text asset tag alongside Serial Number. Leading zeros and letters are retained; blank values clear the tag.
+- Tags appear on equipment cards/details, global search, equipment CSV, and the read-only equipment identity in Financials. Related work-order/request search also recognizes tags.
+- Operational equipment tags do not overwrite Financials' separate asset tag / fixed asset number. Financial CSV names the operational value `equipment_asset_tag` and retains its existing accounting `asset_tag` column.
+- Deletion retains the operational tag with the financial equipment snapshot. Existing equipment permissions still apply; accounting cannot edit operational tags.
+- The additive database prerequisite is `supabase/migrations/202609222255_equipment_asset_tag.sql`. No existing identifier is backfilled or changed.
+
+### Core Workflows
+
 - Supabase email/password login and signup.
 - Company creation and company selection.
 - Multi-tenant data by `company_id`.

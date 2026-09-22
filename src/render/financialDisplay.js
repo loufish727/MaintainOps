@@ -76,6 +76,7 @@
         name: finance.archived_asset_name || "Deleted equipment",
         asset_type: finance.archived_asset_type || "machine",
         asset_code: finance.archived_asset_code || "",
+        asset_tag: finance.archived_asset_tag || "",
         manufacturer: finance.archived_manufacturer || "",
         model: finance.archived_model || "",
         location_id: finance.archived_location_id || "",
@@ -215,6 +216,7 @@
               <span class="chip">${escapeHtml(locationName(asset.location_id) || "Location unset")}</span>
               <span class="chip">${escapeHtml(asset.location || "Department unset")}</span>
               ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+              ${asset.asset_tag ? `<span class="chip">Equipment asset tag: ${escapeHtml(asset.asset_tag)}</span>` : ""}
               ${pictures.length ? `<span class="chip">${pictures.length} photo${pictures.length === 1 ? "" : "s"}</span>` : `<span class="chip">photo missing</span>`}
               ${missing ? `<span class="chip status-open">missing finance info</span>` : `<span class="chip status-completed">finance complete</span>`}
               ${finance.needs_review ? `<span class="chip status-blocked">needs review</span>` : ""}
@@ -310,6 +312,7 @@
           <div class="chip-row">
             <span class="chip">${escapeHtml(parent ? `Part of ${parent.name}` : "Top level equipment")}</span>
             ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
+            ${asset.asset_tag ? `<span class="chip">Equipment asset tag: ${escapeHtml(asset.asset_tag)}</span>` : ""}
             <span class="chip">${escapeHtml(asset.manufacturer || "Manufacturer blank")}</span>
             <span class="chip">${escapeHtml(asset.model || "Model blank")}</span>
             ${pictures.length ? `<span class="chip">${pictures.length} photo${pictures.length === 1 ? "" : "s"}</span>` : `<span class="chip">photo missing</span>`}

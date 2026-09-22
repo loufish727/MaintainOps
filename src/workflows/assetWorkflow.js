@@ -22,6 +22,7 @@
       const labels = {
         name: "name",
         asset_code: "serial number",
+        asset_tag: "asset tag",
         manufacturer: "manufacturer",
         model: "model",
         location_id: "location",
@@ -59,6 +60,7 @@
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
+          asset_tag: String(form.get("asset_tag") || "").trim() || null,
           manufacturer: String(form.get("manufacturer") || "").trim() || null,
           model: String(form.get("model") || "").trim() || null,
           location: areaSpotFromForm(form),
@@ -83,6 +85,9 @@
         }
         if (error && isMissingAuditFieldColumn(error)) {
           throw new Error("Run supabase/step-next-asset-audit-fields.sql before saving manufacturer/model.");
+        }
+        if (error && deps.isMissingColumnError(error, "asset_tag")) {
+          throw new Error("Equipment asset tags need a database update. Contact your administrator.");
         }
         if (error && deps.isAssetHierarchySchemaError(error)) {
           throw new Error(deps.equipmentSchemaMessage(error));
@@ -126,6 +131,7 @@
         const payload = {
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
+          asset_tag: String(form.get("asset_tag") || "").trim() || null,
           manufacturer: String(form.get("manufacturer") || "").trim() || null,
           model: String(form.get("model") || "").trim() || null,
           location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
@@ -150,6 +156,9 @@
         }
         if (error && isMissingAuditFieldColumn(error)) {
           throw new Error("Run supabase/step-next-asset-audit-fields.sql before saving manufacturer/model.");
+        }
+        if (error && deps.isMissingColumnError(error, "asset_tag")) {
+          throw new Error("Equipment asset tags need a database update. Contact your administrator.");
         }
         if (error && deps.isAssetHierarchySchemaError(error)) {
           throw new Error(deps.equipmentSchemaMessage(error));

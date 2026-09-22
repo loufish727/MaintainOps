@@ -31,6 +31,7 @@
         return deps.matchesSearch([
           asset.name,
           asset.asset_code,
+          asset.asset_tag,
           asset.manufacturer,
           asset.model,
           asset.location,
