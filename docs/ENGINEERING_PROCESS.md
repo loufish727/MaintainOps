@@ -55,7 +55,7 @@ LFES verification tiers:
 Unsaved form input must survive background system events:
 
 - Background auth/session events, cache refreshes, read-only reloads, and polling-style updates must not rebuild active create/edit forms unless the user explicitly navigated, submitted, or signed out.
-- Same-user token refresh should update session state without calling the full workspace render.
+- Same-user `TOKEN_REFRESHED`, `SIGNED_IN` (including tab refocus), and `INITIAL_SESSION` should update session state without calling the full workspace render. Actual identity changes still run the normal auth lifecycle.
 - Do not render an editable login form before the initial Supabase session lookup settles; a later startup render can erase credentials already being typed on slower browsers.
 - If a touched path can re-render while a user is typing in a work order, Quick Fix, request, PM, procedure, equipment, message, or part form, add a targeted smoke or policy check proving active input will not be wiped.
 

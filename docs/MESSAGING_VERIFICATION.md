@@ -31,6 +31,18 @@ work-order/body recovery, failed sends, quoted reply recovery, exact message
 counts and sign-out/account isolation. No production mutation test is needed.
 Browser engines are not proof of physical-phone OS memory-pressure behavior.
 
+Verified at clean code checkpoint `f6cb6ce`: Full Strict passed 13/13 stages,
+authenticated proof passed 7/7, the final Chromium recovery/account-switch run
+passed 2/2, and the final WebKit recovery/draft/voice suite passed 9/9. All
+disposable QA conversations were removed. No production data/schema changes or
+deployment were performed for this checkpoint.
+
+Recovery lives in the lazy Messages bundle. Initial runtime/shell/styles total
+176,125 gzip bytes versus 176,592 before this change; startup budgets are unchanged.
+The Messages script is 21,274 gzip bytes versus 19,612 before. Its on-demand budget
+alone was adjusted to cover recovery. No dependency, image, polling or refresh
+timer was added.
+
 ### Earlier Release Proof
 
 The combined 2026-09-18 app-wide candidate passed Full Strict and authenticated
