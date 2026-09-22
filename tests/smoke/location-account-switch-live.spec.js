@@ -80,10 +80,12 @@ test("same-browser account switching uses the user's own location, including leg
   try {
     const page = await open();
     await signIn(page, "ADMIN");
+    await page.locator(".sidebar-controls > summary").click();
     await selector(page).selectOption(other.id);
     // The select value changes before its work/request queue reloads replace the shell.
     await page.qaSettle();
     await expect(selector(page)).toHaveValue(other.id);
+    await expect(page.locator(".sidebar-controls")).toHaveAttribute("open", "");
     await signOut(page);
     await page.evaluate(({ user, company, other }) => {
       localStorage.setItem("maintainops.activeLocationId", other);

@@ -3558,6 +3558,7 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 });
 
 function renderWorkspace() {
+  const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
   messageDrafts.capture(document, `${session?.user.id || ""}:${activeCompanyId || ""}`);
   const navItems = visibleNavItems();
   if (!navItems.some(([id]) => id === activeSection)) {
@@ -3856,7 +3857,7 @@ function renderWorkspace() {
           <span class="brand-mark">MO</span>
           <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
-        <details class="sidebar-controls">
+        <details class="sidebar-controls" ${workspaceMenuOpen ? "open" : ""}>
           <summary>Workspace</summary>
           <label class="company-switcher">
             Company
