@@ -38,12 +38,9 @@ test("same-browser account switching uses the user's own location, including leg
   async function open() {
     const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
     contexts.push(context);
-    await context.route("**/*", route => {
-      if (route.request().url().includes("lbphkzznvvumemdkqoay")) {
-        errors.push("Production request blocked");
-        return route.abort();
-      }
-      return route.continue();
+    await context.route("https://lbphkzznvvumemdkqoay.supabase.co/**", route => {
+      errors.push("Production request blocked");
+      return route.abort();
     });
     await context.addInitScript(id => localStorage.setItem("maintainops.activeCompanyId", id), company);
     const page = await context.newPage();
@@ -66,6 +63,7 @@ test("same-browser account switching uses the user's own location, including leg
     await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
     await expect(page.locator("#company-select")).toHaveValue(company);
     await page.qaSettle();
+    await expect(page.locator("body")).not.toContainText("Could not load requests:");
   }
   async function signOut(page) {
     // Mobile's sign-out control lives inside the workspace menu.
