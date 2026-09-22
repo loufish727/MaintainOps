@@ -66,6 +66,8 @@
     const clearMessageWorkLink = doc.querySelector("[data-clear-message-work-link]");
     if (clearMessageWorkLink) {
       clearMessageWorkLink.addEventListener("click", () => {
+        const field = doc.querySelector('#message-thread-form [name="work_order_id"]');
+        if (field) field.value = "";
         state.setMessageComposerWorkOrderId("");
         storage.setItem("maintainops.messageComposerWorkOrderId", "");
         renderWorkspace();
@@ -132,6 +134,7 @@
           scopeNote.textContent = messageComposerScopeNote("direct");
         }
         if (subjectField) subjectField.focus();
+        directSelect?.dispatchEvent(new Event("change", { bubbles: true }));
       });
     });
 
@@ -142,6 +145,7 @@
         if (!field) return;
         const prefix = field.value.trim();
         field.value = prefix ? `${prefix}\n${button.dataset.quickReply}` : button.dataset.quickReply;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
         field.focus();
         if (typeof autoGrowTextarea === "function") autoGrowTextarea(field);
       });

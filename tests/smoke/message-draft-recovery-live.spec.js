@@ -1,0 +1,132 @@
+const { test, expect } = require("@playwright/test");
+const { randomUUID } = require("node:crypto");
+
+test("signed-in message recovery after background auth, reload, failure, send, and sign-out", async ({ browser, request }, testInfo) => {
+  test.skip(process.env.LFES_MESSAGING_MUTATIONS !== "1", "Explicit isolated-QA messaging run required");
+  test.setTimeout(240000);
+  const host = "https://fsxqrngpaseqdxijggcm.supabase.co";
+  const company = "0d6fd8f1-428d-4192-8176-48943e3ec119";
+  const baseURL = process.env.MAINTAINOPS_BASE_URL;
+  expect(process.env.LFES_SUPABASE_URL).toBe(host);
+  expect(process.env.LFES_QA_COMPANY_ID).toBe(company);
+  expect(new URL(baseURL).hostname).toBe("127.0.0.1");
+  const config = await (await request.get(`${baseURL}supabase-config.js`)).text();
+  expect(config).toContain(host);
+  expect(config).not.toContain("lbphkzznvvumemdkqoay");
+  const key = process.env.LFES_SUPABASE_ANON_KEY;
+  const login = await request.post(`${host}/auth/v1/token?grant_type=password`, {
+    headers: { apikey: key }, data: { email: process.env.LFES_ADMIN_EMAIL, password: process.env.LFES_ADMIN_PASSWORD },
+  });
+  expect(login.ok()).toBe(true);
+  const session = await login.json();
+  const headers = { apikey: key, Authorization: `Bearer ${session.access_token}` };
+  const title = `LFES draft recovery ${randomUUID()}`;
+  const errors = [], bootstrapCalls = [], messageWrites = [];
+  let threadId;
+  const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
+  await context.route("https://lbphkzznvvumemdkqoay.supabase.co/**", route => { errors.push("Production request blocked"); return route.abort(); });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("request", req => { if (req.url().includes("/rpc/get_my_companies")) bootstrapCalls.push(req.url()); });
+  page.on("request", req => { if (req.method() === "POST" && /\/rest\/v1\/(messages|message_threads)(\?|$)/.test(req.url())) messageWrites.push(req.url()); });
+  try {
+    await page.goto(baseURL);
+    await expect(page.getByRole("button", { name: "Log In", exact: true })).toBeVisible();
+    await page.evaluate(({ session, company }) => {
+      localStorage.setItem("sb-fsxqrngpaseqdxijggcm-auth-token", JSON.stringify(session));
+      localStorage.setItem("maintainops.activeCompanyId", company);
+      localStorage.setItem("maintainops.activeSection", "messages");
+    }, { session, company });
+    await page.reload();
+    await expect(page.locator('.message-center')).toBeVisible({ timeout: 45000 });
+    await page.getByRole("button", { name: "New message", exact: true }).first().click();
+    const form = page.locator('#message-thread-form');
+    await form.locator('[name="thread_type"]').selectOption("direct");
+    const recipient = await form.locator('[name="direct_user_id"] option').nth(1).getAttribute("value");
+    const workOrder = await form.locator('[name="work_order_id"] option').nth(1).getAttribute("value");
+    expect(recipient).toBeTruthy(); expect(workOrder).toBeTruthy();
+    await form.locator('[name="direct_user_id"]').selectOption(recipient);
+    await form.locator('[name="title"]').fill(title);
+    await form.locator('[name="work_order_id"]').selectOption(workOrder);
+    await form.locator('[name="body"]').fill("Detailed instructions\nRetain every field after switching tabs.");
+    const originalForm = await form.elementHandle();
+    const countBefore = bootstrapCalls.length;
+    const otherTab = await context.newPage();
+    await otherTab.goto("about:blank"); await otherTab.bringToFront(); await page.bringToFront();
+    // Supabase's real cross-tab channel invokes the same subscriber as refocus.
+    await page.evaluate(async () => {
+      const channel = new BroadcastChannel("sb-fsxqrngpaseqdxijggcm-auth-token");
+      channel.postMessage({ event: "SIGNED_IN", session: JSON.parse(localStorage.getItem("sb-fsxqrngpaseqdxijggcm-auth-token")) });
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      channel.close();
+    });
+    expect(await originalForm.evaluate(node => node.isConnected)).toBe(true);
+    expect(bootstrapCalls.length).toBe(countBefore);
+    await expect(form.locator('[name="body"]')).toHaveValue("Detailed instructions\nRetain every field after switching tabs.");
+    await otherTab.close();
+    await page.reload();
+    await expect(form).toBeVisible({ timeout: 45000 });
+    await expect(form.locator('[name="title"]')).toHaveValue(title);
+    await expect(form.locator('[name="direct_user_id"]')).toHaveValue(recipient);
+    await expect(form.locator('[name="work_order_id"]')).toHaveValue(workOrder);
+    await expect(form.locator('[name="body"]')).toHaveValue("Detailed instructions\nRetain every field after switching tabs.");
+    expect(messageWrites).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("recovered-message-mobile.png"), fullPage: true });
+    await page.route("**/rest/v1/message_threads*", route => route.request().method() === "POST"
+      ? route.fulfill({ status: 503, contentType: "application/json", body: '{"message":"Injected draft send failure"}' }) : route.continue());
+    await page.getByRole("button", { name: "Send message", exact: true }).click();
+    await expect(page.locator('#message-thread-error')).toContainText("Injected draft send failure");
+    await page.unroute("**/rest/v1/message_threads*");
+    await page.reload();
+    await expect(form.locator('[name="body"]')).toHaveValue("Detailed instructions\nRetain every field after switching tabs.", { timeout: 45000 });
+    await page.getByRole("button", { name: "Send message", exact: true }).click();
+    await expect(page.locator('.message-chat-header')).toContainText(title, { timeout: 30000 });
+    threadId = await page.locator('.message-center').getAttribute('data-thread-id');
+    await page.locator('.message-bubble summary[aria-label="Message actions"]').first().click();
+    await page.locator('[data-quote-message]').first().click();
+    const reply = page.getByRole("textbox", { name: "Reply", exact: true });
+    await reply.fill("Unsent reply after a reload");
+    await page.reload();
+    await expect(reply).toHaveValue("Unsent reply after a reload", { timeout: 45000 });
+    await expect(page.locator('.message-reply-context')).toContainText("Detailed instructions");
+    await page.getByRole("button", { name: "Send reply", exact: true }).click();
+    await expect(reply).toHaveValue("", { timeout: 30000 });
+    await page.reload();
+    await expect(reply).toHaveValue("", { timeout: 45000 });
+    await page.getByRole("button", { name: "Back to conversations" }).click();
+    await page.getByRole("button", { name: "New message", exact: true }).first().click();
+    await expect(form.locator('[name="body"]')).toHaveValue("");
+    await expect(form.locator('[name="title"]')).toHaveValue("");
+    await form.locator('[name="body"]').fill("Private draft must disappear at sign-out");
+    const stored = () => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith("maintainops.messageDrafts.v1:")));
+    expect((await stored()).length).toBeGreaterThan(0);
+    // Delete only this test's conversation before invalidating the admin token.
+    const sent = await request.get(`${host}/rest/v1/messages?thread_id=eq.${threadId}&company_id=eq.${company}&select=id,reply_to_id`, { headers });
+    expect(sent.ok()).toBe(true);
+    const rows = await sent.json();
+    expect(rows).toHaveLength(2);
+    expect(rows.filter(row => row.reply_to_id)).toHaveLength(1);
+    const cleanup = await request.delete(`${host}/rest/v1/message_threads?id=eq.${threadId}&company_id=eq.${company}`, { headers });
+    expect(cleanup.ok()).toBe(true); threadId = null;
+    await page.getByRole("button", { name: "Cancel new message" }).click();
+    await page.getByRole("button", { name: "Back to My Work", exact: true }).click();
+    if (!await page.locator('[data-sign-out]').filter({ visible: true }).count()) await page.locator('.sidebar-controls > summary').click();
+    await page.locator('[data-sign-out]').filter({ visible: true }).first().click();
+    await expect(page.getByRole("button", { name: "Log In", exact: true })).toBeVisible({ timeout: 20000 });
+    expect(await stored()).toEqual([]);
+    await page.getByLabel("Email", { exact: true }).fill(process.env.LFES_TECHNICIAN_EMAIL);
+    await page.getByLabel("Password", { exact: true }).fill(process.env.LFES_TECHNICIAN_PASSWORD);
+    await page.getByRole("button", { name: "Log In", exact: true }).click();
+    await page.locator('[data-section="messages"]').click({ timeout: 45000 });
+    await expect(page.locator('.message-center')).toBeVisible({ timeout: 45000 });
+    await page.getByRole("button", { name: "New message", exact: true }).first().click();
+    await expect(form.locator('[name="body"]')).toHaveValue("");
+    expect(errors).toEqual([]);
+  } finally {
+    // Title is unique, so this also catches a failure before the UI returned its ID.
+    const cleanup = await request.delete(`${host}/rest/v1/message_threads?title=eq.${encodeURIComponent(title)}&company_id=eq.${company}`, { headers });
+    expect(cleanup.ok(), "Disposable QA conversation cleanup").toBe(true);
+    await context.close();
+  }
+});

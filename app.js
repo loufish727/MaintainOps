@@ -1682,6 +1682,7 @@ async function init() {
   supabaseClient.auth.onAuthStateChange((eventName, nextSession) => {
     const previousSession = session;
     session = nextSession;
+    if (previousSession?.user.id !== nextSession?.user.id) messageDrafts.reset();
     if (!shouldRenderForAuthEvent(eventName, previousSession, nextSession)) return;
     setTimeout(() => {
       render().catch((error) => {
@@ -1789,6 +1790,7 @@ async function renderOnce(expectedSessionId) {
 }
 
 function renderWorkspaceLoading(message) {
+  messageDrafts.save(document);
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoading(message);
 }
@@ -1818,6 +1820,7 @@ function createShopReferenceFavoriteStore() {
 }
 
 function renderAuth(mode, initialError = "") {
+  messageDrafts.reset();
   messageLive.stop();
   messageExperience?.reset();
   document.body.classList.remove("messages-active");
@@ -3559,7 +3562,16 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 
 function renderWorkspace() {
   const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
-  messageDrafts.capture(document, `${session?.user.id || ""}:${activeCompanyId || ""}`);
+  const recoveredDraft = messageDrafts.capture(document, messageDraftScope());
+  if (recoveredDraft?.composerOpen) {
+    setMessageComposerOpenState(true);
+    messageView = "conversations";
+    setMessageComposerWorkOrderIdState(workOrders.some(order => order.id === recoveredDraft.workOrderId) ? recoveredDraft.workOrderId : "");
+  }
+  for (const [threadId, quoteId] of recoveredDraft?.quotes || []) {
+    const quote = messageHistory[threadId]?.rows.find(row => row.id === quoteId && !row.deleted_at);
+    if (quote) messageQuotes[threadId] = quote;
+  }
   const navItems = visibleNavItems();
   if (!navItems.some(([id]) => id === activeSection)) {
     setActiveSectionState(navItems[0]?.[0] || "mywork");
@@ -4853,6 +4865,7 @@ function initializeMessagesFeature() {
     getReplyCount: id => Object.values(messagesByThreadId).flat().filter(row => row.parent_message_id === id && !row.deleted_at).length,
   });
   messageExperience = window.MaintainOpsMessageExperience.createMessageExperience({
+    drafts: messageDrafts,
     documentRef: document, escapeHtml, icon: segmentIcon, client: () => supabaseClient,
     getCompanyId: () => activeCompanyId, getUserId: () => session?.user.id, getActiveSection: () => activeSection,
     canEdit: canEditOperationalRecords, getThreads: () => messageThreads, getMembers: () => companyMembers,
@@ -4932,7 +4945,7 @@ function initializeMessagesFeature() {
     messageCenterErrorState,
     warn: console.warn,
     confirmUser: (message) => window.confirm(message),
-    clearDraft: (key, submitted) => messageDrafts.clear(document, key, submitted),
+    clearDraft: (key, submitted, scope) => messageDrafts.clear(document, key, submitted, scope),
     getLatestReadTime: (threadId) => messageHistory[threadId]?.rows.at(-1)?.created_at,
     getReadTime: (threadId) => messageReadsByThreadId[threadId]?.last_read_at,
     getSession: () => session,
@@ -6920,4 +6933,8 @@ async function recordAssetEvent(assetId, eventType, summary) {
   }
 }
 
+function messageDraftScope() {
+  return session?.user.id && activeCompanyId ? `${session.user.id}:${activeCompanyId}:${activeLocationId || ""}` : "";
+}
+messageDrafts.bind(document, messageDraftScope);
 init();

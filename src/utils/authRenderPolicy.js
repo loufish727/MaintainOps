@@ -8,7 +8,8 @@
     if (!sessionUserId(previousSession) && !sessionUserId(nextSession)) {
       return false;
     }
-    if (event === "TOKEN_REFRESHED" && sessionUserId(previousSession) && sessionUserId(previousSession) === sessionUserId(nextSession)) {
+    // Supabase also emits SIGNED_IN when a background tab regains focus.
+    if (["TOKEN_REFRESHED", "SIGNED_IN", "INITIAL_SESSION"].includes(event) && sessionUserId(previousSession) && sessionUserId(previousSession) === sessionUserId(nextSession)) {
       return false;
     }
     return true;

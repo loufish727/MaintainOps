@@ -13,6 +13,26 @@ Physical-device checks remain separate. See `docs/APP_WIDE_VERIFICATION.md` and
 
 ## Current Contract
 
+### 2026-09-22 Draft Recovery Correction
+
+Same-user `SIGNED_IN`, `INITIAL_SESSION` and `TOKEN_REFRESHED` events no longer
+rebuild the workspace. Real sign-in, sign-out, account changes and user updates
+retain their existing lifecycle. This follows Supabase's documented behavior:
+`SIGNED_IN` can occur when a tab is refocused, not only at a new login.
+See [Supabase auth events](https://supabase.com/docs/reference/javascript/auth-onauthstatechange).
+
+`message-draft-recovery-browser.spec.js` covers reload, scope isolation, successful
+send cleanup, newer in-flight edits, expired/malformed/unavailable storage and
+reply-thread text. It is included in both Release Gate and Full Strict.
+The opt-in `message-draft-recovery-live.spec.js` requires the isolated testing
+platform and disposable conversations. It verifies real application reloads,
+same-user Supabase broadcast events without workspace rebuilds, recipient/subject/
+work-order/body recovery, failed sends, quoted reply recovery, exact message
+counts and sign-out/account isolation. No production mutation test is needed.
+Browser engines are not proof of physical-phone OS memory-pressure behavior.
+
+### Earlier Release Proof
+
 The combined 2026-09-18 app-wide candidate passed Full Strict and authenticated
 LFES at `24632a8`, followed by both signed-in messaging suites in Chromium and
 WebKit and 11 focused WebKit presentation/audio/confirmation cases. Its 33 generated
@@ -36,7 +56,7 @@ see `docs/APP_WIDE_VERIFICATION.md` for the wider proof.
 - Files use the private `message-files` bucket and authenticated downloads, never public or signed sharing links. Upload reservations are owner-only; an atomic RPC validates Storage metadata before publishing the message. Interrupted sends retain selected files and retry the same message ID. Own abandoned reservations older than 24 hours are cleaned on the next Messages visit. Soft-deleted message files are inaccessible to recipients; their original author retains access needed for cleanup. Deletion is not an automatic document-retention purge.
 - Storage totals, months and photo counts include message attachments. Managers outside a private conversation receive aggregate sizes but masked names/paths/titles and no conversation link. The storage mirror already discovers all buckets, including the new bucket; this change does not schedule that mirror.
 - Delete removes one's own message from visible conversation history. Accounting is read-only for conversations, enforced in both UI and database; Accounting may still mark messages read.
-- Drafts survive local filtering, paging and conversation changes in memory, scoped to user/company/conversation. They do not survive a browser reload and are not an offline queue.
+- Text drafts survive filtering, paging, backgrounding and reload in the same browser tab using sessionStorage, scoped to user/company/location and conversation. New-message subject, audience, recipient and available work-order selection are retained; reopening a reply-thread dialog recovers its text. Successful sends clear the submitted draft without clearing newer edits. Sign-out/account changes clear the tab's draft cache. Recovery expires after 24 hours and retains up to 30 drafts per workspace. Attachments/recordings are memory-only and must be reselected after a real reload. This is not an offline send queue or cross-device draft sync. If browser storage is blocked/full, in-memory retention still works but reload recovery is unavailable.
 - Sends retry the same generated ID after an ambiguous timeout. A secondary thread-timestamp failure does not turn a committed send into a failed send. Read-marker writes are serialized and deduplicated.
 
 ## Loading And Live Updates
@@ -169,8 +189,9 @@ closure report. Nothing was pushed, deployed, or migrated into production.
 Risk-scoped review included company/user scope cancellation, retry idempotence,
 private file authorization, bounded history/media loading, HTML escaping, draft
 and scroll retention, recorder disposal, lazy boundaries and additive rollback.
-Known limits remain: inbox metadata grows with message volume; drafts are
-memory-only; read markers and work-order Activity do not have cross-device live
+Known limits at that checkpoint included memory-only drafts (superseded by the
+2026-09-22 text recovery correction). Inbox metadata grows with message volume;
+read markers and work-order Activity do not have cross-device live
 subscriptions. Physical iOS/Android microphone, codec and virtual-keyboard behavior
 is not proven by simulated capture or desktop WebKit. Sampled contrast checks are
 not a complete accessibility certification. These results establish tested

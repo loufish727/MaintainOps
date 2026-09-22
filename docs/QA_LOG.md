@@ -13,6 +13,8 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 
 ## Recent Verification Notes
 
+- 2026-09-22: Message-draft loss on tab return traced to same-user auth reconfirmation rebuilding the workspace and memory-only draft storage. The auth regression failed before the correction. Text-only, per-tab recovery now covers user/company/location/conversation scope, reload, expiry, storage failure and successful-send cleanup. Focused Chromium/WebKit regressions and the signed-in isolated-QA lifecycle cover failed/successful sends and account isolation. No production company records or database policies were changed. See `docs/MESSAGING_VERIFICATION.md` for the recovery limits and opt-in live test.
+
 - 2026-09-22: Equipment asset tags have focused workflow, display/escaping, search, CSV, and isolated PostgreSQL upgrade/RLS/retention coverage. Signed-in Chromium and WebKit lifecycle tests passed at desktop and 390px mobile widths against the isolated QA backend, including real database persistence and exact fixture cleanup. Run `tests/smoke/equipment-asset-tag-live.spec.js` with QA credentials and `LFES_EQUIPMENT_TAG_MUTATIONS=1`; it rejects the production backend. Browser engines and responsive layouts do not constitute a physical-phone test.
 - Equipment-tag release checkpoint `5fa329a`: Full Strict LFES passed 13/13 with a clean worktree. Production migration postflight verified unchanged existing identifiers, row counts, and RLS policies; no production mutation tests were run.
 
