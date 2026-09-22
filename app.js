@@ -484,7 +484,7 @@ let companies = [];
 let activeCompanyId = localStorage.getItem("maintainops.activeCompanyId");
 let locations = [];
 let locationsReady = true;
-let activeLocationId = localStorage.getItem(ACTIVE_LOCATION_STORAGE_KEY) || "";
+let activeLocationId = "";
 let assets = [];
 let workOrders = [];
 let workOrderPageIds = [];
@@ -1632,7 +1632,6 @@ const {
   getSessionUserId: () => session?.user?.id,
   getCompanies: () => companies,
   getLocations: () => locations,
-  getActiveLocationId: () => activeLocationId,
 });
 
 document.addEventListener("click", (event) => {
@@ -2671,6 +2670,8 @@ const workspaceLoaderMap = {
 };
 
 async function loadCompanyData() {
+  const loadingUserId = currentRenderSessionId();
+  const loadingCompanyId = activeCompanyId;
   workspaceLoadWarnings = [];
   workspaceHydrationToken += 1;
   invalidatePlanningWorkOrders();
@@ -2683,6 +2684,7 @@ async function loadCompanyData() {
     listAppIssueReports,
     loadWorkspaceResponse,
   });
+  if (currentRenderSessionId() !== loadingUserId || activeCompanyId !== loadingCompanyId) return;
   const {
     locationResponse,
     assetResponse,
@@ -3556,6 +3558,7 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 });
 
 function renderWorkspace() {
+  const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
   messageDrafts.capture(document, `${session?.user.id || ""}:${activeCompanyId || ""}`);
   const navItems = visibleNavItems();
   if (!navItems.some(([id]) => id === activeSection)) {
@@ -3854,7 +3857,7 @@ function renderWorkspace() {
           <span class="brand-mark">MO</span>
           <span><strong>MaintainOps</strong><small>Maintenance work, clearly tracked.</small></span>
         </div>
-        <details class="sidebar-controls">
+        <details class="sidebar-controls" ${workspaceMenuOpen ? "open" : ""}>
           <summary>Workspace</summary>
           <label class="company-switcher">
             Company

@@ -59,12 +59,37 @@ assert.match(teamSection, /2 shown/);
 assert.match(teamSection, /Member content/);
 
 const member = helpers.renderMember({ user_id: "user-2", role: "technician" });
+assert.match(member, /Default location: <strong>Not set<\/strong>/);
 assert.match(member, /Taylor Tech/);
 assert.match(member, /technician role/);
 assert.match(member, /data-view-member-work="user-2"/);
 assert.match(member, /data-member-role="user-2"/);
 assert.match(member, /5 Completed/);
 assert.match(member, /4 Overdue/);
+
+for (const role of baseDeps.COMPANY_ROLES) {
+  const located = helpers.renderMember({ user_id: "user-2", role, default_location_id: "loc-1" });
+  assert.match(located, /Default location: <strong>QA Facility<\/strong>/);
+  assert.doesNotMatch(located, /name="default_location_id"/);
+}
+assert.match(helpers.renderMember({ user_id: "user-1", role: "admin", default_location_id: "loc-1" }), /Default location: <strong>QA Facility<\/strong>/);
+const unavailable = helpers.renderMember({ user_id: "user-2", role: "technician", default_location_id: "missing-location-id" });
+assert.match(unavailable, /Default location: <strong>Location unavailable<\/strong>/);
+assert.doesNotMatch(unavailable, /missing-location-id/);
+const escapedLocation = createTeamMemberDisplayHelpers({
+  ...baseDeps, getLocations: () => [{ id: "loc-1", name: "Salem <script>alert(1)</script>" }],
+}).renderMember({ user_id: "user-2", role: "technician", default_location_id: "loc-1" });
+assert.match(escapedLocation, /Salem &lt;script&gt;/);
+assert.doesNotMatch(escapedLocation, /<script>/);
+const locationSearch = createTeamMemberDisplayHelpers({
+  ...baseDeps,
+  getCompanyMembers: () => [
+    { user_id: "user-1", role: "admin" },
+    { user_id: "user-2", role: "technician", default_location_id: "loc-1" },
+  ],
+  matchesSearch: values => values.some(value => String(value || "").toLowerCase().includes("qa facility")),
+});
+assert.deepEqual(locationSearch.filteredMembers().map(item => item.user_id), ["user-2"]);
 
 const profile = helpers.renderMyProfileForm();
 assert.match(profile, /id="profile-form"/);

@@ -29,6 +29,7 @@ assert.match(securitySource, /entry\.isDirectory\(\).*listSqlFiles/);
 assert.match(boundarySource, /or=\(external_source\.is\.null,external_source\.neq\.public_location_qr\)&select=id/);
 assert.match(authenticatedSource, /MAINTAINOPS_SUPABASE_URL:\s*process\.env\.LFES_SUPABASE_URL/);
 assert.match(authenticatedSource, /MAINTAINOPS_SUPABASE_ANON_KEY:\s*process\.env\.LFES_SUPABASE_ANON_KEY/);
+assert.match(authenticatedSource, /location-account-switch-live\.spec\.js/);
 assert.match(releaseWorkflow, /name:\s*Release Gate/);
 assert.match(releaseWorkflow, /npm run test:release:gate/);
 assert.match(releaseWorkflow, /Documentation-only pull request/);

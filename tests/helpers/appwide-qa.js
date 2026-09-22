@@ -81,7 +81,7 @@ async function createQa(browser, request, testInfo) {
       localStorage.setItem('sb-fsxqrngpaseqdxijggcm-auth-token', JSON.stringify(session));
       localStorage.setItem('maintainops.activeCompanyId', company);
       localStorage.setItem('maintainops.activeLocationId', location);
-      localStorage.setItem(`maintainops.activeLocationId:${session.user.id}:${company}`, location);
+      localStorage.setItem(`maintainops.activeLocationId:v2:${session.user.id}:${company}`, location);
       localStorage.setItem('maintainops.activeSection', section);
     }, { session: sessions[role], company, location, section });
     const page = await context.newPage();

@@ -51,11 +51,18 @@
       return profile?.full_name || userId;
     }
 
+    function memberDefaultLocationLabel(member) {
+      if (!member.default_location_id) return "Not set";
+      const location = getLocations().find((item) => item.id === member.default_location_id);
+      return location?.name || "Location unavailable";
+    }
+
     function filteredMembers() {
       return getCompanyMembers().filter((member) => matchesSearch([
         member.user_id,
         member.role,
         getProfilesByUserId()[member.user_id]?.full_name,
+        memberDefaultLocationLabel(member),
       ]));
     }
 
@@ -82,6 +89,7 @@
         <article class="member-card">
           <div>
             <strong>${escapeHtml(profile?.full_name || (isCurrentUser ? currentUser.email : member.user_id))}</strong>
+            <p class="member-default-location">Default location: <strong>${escapeHtml(memberDefaultLocationLabel(member))}</strong></p>
             <p>${escapeHtml(roleDescription(member.role))}</p>
             <p>${isCurrentUser ? escapeHtml(currentUser.email || member.user_id) : escapeHtml(member.user_id)}</p>
             <div class="member-workload">

@@ -5,32 +5,25 @@ export function createCompanyLocationStateHelpers({
   getSessionUserId,
   getCompanies,
   getLocations,
-  getActiveLocationId,
 }) {
   function activeLocationStorageKey(companyId = getActiveCompanyId(), userId = getSessionUserId()) {
+    // Older preferences could be copied from another account by the shared fallback.
     return companyId && userId
-      ? `${activeLocationStorageKeyBase}:${userId}:${companyId}`
-      : activeLocationStorageKeyBase;
+      ? `${activeLocationStorageKeyBase}:v2:${userId}:${companyId}`
+      : "";
   }
 
   function readStoredActiveLocationId(companyId = getActiveCompanyId(), userId = getSessionUserId()) {
     const scopedKey = activeLocationStorageKey(companyId, userId);
-    if (scopedKey !== activeLocationStorageKeyBase) {
-      const scopedValue = storage.getItem(scopedKey);
-      if (scopedValue) return scopedValue;
-    }
-    return storage.getItem(activeLocationStorageKeyBase) || "";
+    return scopedKey ? storage.getItem(scopedKey) || "" : "";
   }
 
   function persistActiveLocationId(locationId, companyId = getActiveCompanyId(), userId = getSessionUserId()) {
     const value = locationId || "";
     const scopedKey = activeLocationStorageKey(companyId, userId);
-    if (scopedKey !== activeLocationStorageKeyBase) {
-      storage.setItem(scopedKey, value);
-      storage.removeItem(activeLocationStorageKeyBase);
-      return;
-    }
-    storage.setItem(activeLocationStorageKeyBase, value);
+    if (!scopedKey) return;
+    storage.setItem(scopedKey, value);
+    storage.removeItem(activeLocationStorageKeyBase);
   }
 
   function activeCompanyMembership() {
@@ -48,18 +41,9 @@ export function createCompanyLocationStateHelpers({
 
   function storedLocationForLoadedCompany() {
     const locations = getLocations();
-    const scopedKey = activeLocationStorageKey();
-    const scopedLocationId = scopedKey !== activeLocationStorageKeyBase ? storage.getItem(scopedKey) : "";
-    if (scopedLocationId && locations.some((location) => location.id === scopedLocationId)) {
-      return scopedLocationId;
-    }
     const storedLocationId = readStoredActiveLocationId();
     if (storedLocationId && locations.some((location) => location.id === storedLocationId)) {
       return storedLocationId;
-    }
-    const activeLocationId = getActiveLocationId();
-    if (activeLocationId && locations.some((location) => location.id === activeLocationId)) {
-      return activeLocationId;
     }
     const defaultLocationId = activeCompanyMembership()?.default_location_id || "";
     if (defaultLocationId && locations.some((location) => location.id === defaultLocationId)) {
