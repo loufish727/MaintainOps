@@ -12,7 +12,7 @@ for (const viewport of [{ width: 1300, height: 900 }, { width: 390, height: 844 
     await page.addScriptTag({ path: path.join(root, "src/render/messageCenterDisplay.js") });
     await page.addScriptTag({ path: path.join(root, "src/render/messageDisplay.js") });
     await page.addScriptTag({ path: path.join(root, "src/utils/workspaceMessageUiEvents.js") });
-    await page.addScriptTag({ content: fs.readFileSync(path.join(root, "src/utils/messageDrafts.mjs"), "utf8").replace("export function", "function") });
+    await page.addScriptTag({ content: fs.readFileSync(path.join(root, "src/utils/messageDrafts.mjs"), "utf8").replaceAll("export function", "function") });
     await page.evaluate(() => {
       const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
       const drafts = createMessageDrafts();

@@ -2,7 +2,16 @@
 const PREFIX = "maintainops.messageDrafts.v1:";
 const MAX_AGE = 24 * 60 * 60 * 1000;
 const FORMS = "#message-thread-form,#message-reply-form,.message-discussion-form";
-const FIELDS = new Set(["thread_type", "direct_user_id", "title", "body", "work_order_id", "reply_to_id"]);
+const FIELDS = /* @__PURE__ */ new Set(["thread_type", "direct_user_id", "title", "body", "work_order_id", "reply_to_id"]);
+export function clearStoredMessageDrafts(storage = () => globalThis.sessionStorage) {
+  try {
+    const store = storage();
+    for (let i = (store?.length || 0) - 1; i >= 0; i--) {
+      const key = store.key(i);
+      if (key?.startsWith(PREFIX)) store.removeItem(key);
+    }
+  } catch { /* Storage can be unavailable. */ }
+}
 export function createMessageDrafts({ storage = () => globalThis.sessionStorage, now = Date.now } = {}) {
   let scope = "";
   const drafts = new Map();
@@ -140,13 +149,7 @@ export function createMessageDrafts({ storage = () => globalThis.sessionStorage,
   }
   function reset() {
     scope = ""; drafts.clear(); inboxPositions.clear(); view = null; composerOpen = false;
-    try {
-      const store = storage();
-      for (let i = (store?.length || 0) - 1; i >= 0; i--) {
-        const key = store.key(i);
-        if (key?.startsWith(PREFIX)) store.removeItem(key);
-      }
-    } catch { /* Storage can be unavailable. */ }
+    clearStoredMessageDrafts(storage);
   }
   return { capture, restore, clear, bind, save, saveForm, restoreForm, reset };
 }

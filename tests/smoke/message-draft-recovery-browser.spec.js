@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 const fs = require("node:fs");
 const path = require("node:path");
-const source = fs.readFileSync(path.resolve(__dirname, "../../src/utils/messageDrafts.mjs"), "utf8").replace("export function", "function");
+const source = fs.readFileSync(path.resolve(__dirname, "../../src/utils/messageDrafts.mjs"), "utf8").replaceAll("export function", "function");
 
 async function fixture(page, storageFault = false) {
   await page.route("http://drafts.test/**", route => route.fulfill({ contentType: "text/html", body: `<!doctype html><main></main><script>${source}
