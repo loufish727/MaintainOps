@@ -47,6 +47,13 @@ test("same-browser account switching uses the user's own location, including leg
     });
     await context.addInitScript(id => localStorage.setItem("maintainops.activeCompanyId", id), company);
     const page = await context.newPage();
+    page.setDefaultTimeout(15000);
+    let pending = 0, changedAt = Date.now();
+    page.on("request", () => { pending++; changedAt = Date.now(); });
+    const finished = () => { pending = Math.max(0, pending - 1); changedAt = Date.now(); };
+    page.on("requestfinished", finished);
+    page.on("requestfailed", finished);
+    page.qaSettle = () => expect.poll(() => pending === 0 && Date.now() - changedAt >= 400, { timeout: 20000 }).toBe(true);
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(baseURL);
     await expect(page.getByRole("button", { name: "Log In", exact: true })).toBeVisible();
@@ -58,6 +65,7 @@ test("same-browser account switching uses the user's own location, including leg
     await page.getByRole("button", { name: "Log In", exact: true }).click();
     await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
     await expect(page.locator("#company-select")).toHaveValue(company);
+    await page.qaSettle();
   }
   async function signOut(page) {
     // Mobile's sign-out control lives inside the workspace menu.
@@ -73,6 +81,8 @@ test("same-browser account switching uses the user's own location, including leg
     const page = await open();
     await signIn(page, "ADMIN");
     await selector(page).selectOption(other.id);
+    // The select value changes before its work/request queue reloads replace the shell.
+    await page.qaSettle();
     await expect(selector(page)).toHaveValue(other.id);
     await signOut(page);
     await page.evaluate(({ user, company, other }) => {
