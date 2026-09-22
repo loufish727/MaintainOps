@@ -35,10 +35,11 @@ Repo source:
 
 ### Equipment Asset Tag, 2026-09-22
 
-- `supabase/migrations/202609222255_equipment_asset_tag.sql`: applied to isolated QA project `fsxqrngpaseqdxijggcm`; production pending release checks.
+- `supabase/migrations/202609222255_equipment_asset_tag.sql`: applied to isolated QA project `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay` on 2026-09-22 through Supabase `apply_migration`, after targeted browser proof and clean Full Strict LFES 13/13 at `5fa329a`.
 - Adds nullable operational `assets.asset_tag` and retained `asset_financials.archived_asset_tag`; existing serials, accounting fixed asset numbers, grants, and RLS remain unchanged. No backfill.
 - Rollback: revert the frontend only; retain the additive columns and archive support to avoid losing newly entered tags.
 - Verification: isolated PostgreSQL proves upgrade from the previous table shape, repeat application, unchanged existing identifiers, four operational writer roles, accounting read-only, cross-company denial, and retention with/without an existing finance row. Signed-in Chromium and WebKit prove create/edit/clear/reopen, history, tag search, CSV, accounting read-only UI/API, and retained Financials display. Each browser run removes only its disposable QA fixture.
+- Production postflight retained 141 equipment and 6 financial records, with identical serial/financial-identifier and RLS-policy fingerprints. Both new columns are nullable text, the retention trigger includes the tag, and no tags were backfilled. Application and verification are recorded in `public.applied_migrations` in both projects. SQL SHA256: `a316b935fed36749821145a858c171a7acde9af119208a100e7d2588613f835a`.
 
 | SQL file | Live status | Evidence |
 |---|---|---|
