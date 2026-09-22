@@ -9,6 +9,7 @@ function createElement({ dataset = {}, value = "", selectorMap = {} } = {}) {
     disabled: false,
     focused: false,
     selectionRange: null,
+    dispatchedEvents: [],
     classList: {
       values: new Set(),
       toggle(name, force) {
@@ -28,6 +29,11 @@ function createElement({ dataset = {}, value = "", selectorMap = {} } = {}) {
     },
     dispatch(type, event = {}) {
       (listeners[type] || []).forEach((handler) => handler(event));
+    },
+    dispatchEvent(event) {
+      this.dispatchedEvents.push({ type: event.type, bubbles: event.bubbles });
+      this.dispatch(event.type, event);
+      return true;
     },
     focus() {
       this.focused = true;
@@ -88,6 +94,7 @@ let autoGrowCount = 0;
 const filterButton = createElement({ dataset: { messageFilter: "unread" } });
 const linkedWorkButton = createElement({ dataset: { openLinkedWorkOrder: "wo-1" } });
 const clearWorkLinkButton = createElement();
+const workLinkField = createElement({ value: "wo-linked" });
 const searchInput = createElement({ value: "pump" });
 const directSelect = createElement();
 const directField = createElement({ selectorMap: { select: directSelect } });
@@ -116,6 +123,7 @@ const doc = createDocument({
   "[data-clear-message-work-link]": clearWorkLinkButton,
   "#message-search": searchInput,
   "#message-thread-form": threadForm,
+  '#message-thread-form [name="work_order_id"]': workLinkField,
   "#message-reply-form": replyForm,
   "[data-quick-reply]": [quickReplyButton],
   "[data-message-person]": [personButton],
@@ -163,6 +171,7 @@ assert.equal(storage.values["maintainops.activeSection"], "work");
 assert.equal(renderCount, 2);
 
 clearWorkLinkButton.dispatch("click");
+assert.equal(workLinkField.value, "");
 assert.equal(stateValues.messageComposerWorkOrderId, "");
 assert.equal(storage.values["maintainops.messageComposerWorkOrderId"], "");
 assert.equal(renderCount, 3);
@@ -183,6 +192,7 @@ assert.equal(directSelect.disabled, true);
 assert.equal(scopeNote.textContent, "scope:work_order");
 
 personButton.dispatch("click");
+assert.deepEqual(directSelect.dispatchedEvents, [{ type: "change", bubbles: true }]);
 assert.equal(composerDetails.open, true);
 assert.equal(typeSelect.value, "direct");
 assert.equal(directSelect.value, "user-2");
@@ -192,6 +202,7 @@ assert.equal(scopeNote.textContent, "scope:direct");
 assert.equal(subjectField.focused, true);
 
 quickReplyButton.dispatch("click");
+assert.deepEqual(replyField.dispatchedEvents, [{ type: "input", bubbles: true }]);
 assert.equal(replyField.value, "Existing\nOn it");
 assert.equal(replyField.focused, true);
 assert.equal(autoGrowCount, 1);

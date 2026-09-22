@@ -20,7 +20,8 @@ const budgets = {
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
   // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
   // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
-  messageFeature: { decoded: 61 * 1024, gzip: 20 * 1024 },
+  // Draft recovery moved out of appShell into this on-demand bundle; startup limits stay unchanged.
+  messageFeature: { decoded: 68 * 1024, gzip: 21 * 1024 },
   messageStyles: { decoded: 31 * 1024, gzip: 7 * 1024 },
 };
 

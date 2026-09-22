@@ -242,6 +242,7 @@ async function main() {
     "tests/smoke/work-order-resolution-scroll-browser.spec.js",
     "tests/smoke/workspace-search-stability-browser.spec.js",
     "tests/smoke/messaging-browser.spec.js",
+    "tests/smoke/message-draft-recovery-browser.spec.js",
     "tests/smoke/message-voice-confirm.spec.js",
     "tests/smoke/message-polish.spec.js",
     "tests/smoke/message-audio-player.spec.js",

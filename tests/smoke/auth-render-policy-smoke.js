@@ -13,7 +13,12 @@ assert.equal(shouldRenderForAuthEvent("TOKEN_REFRESHED", null, refreshedA), true
 assert.equal(shouldRenderForAuthEvent("TOKEN_REFRESHED", sessionA, sessionB), true);
 assert.equal(shouldRenderForAuthEvent("INITIAL_SESSION", null, null), false);
 assert.equal(shouldRenderForAuthEvent("SIGNED_OUT", null, null), false);
-assert.equal(shouldRenderForAuthEvent("SIGNED_IN", sessionA, refreshedA), true);
+assert.equal(shouldRenderForAuthEvent("SIGNED_IN", sessionA, refreshedA), false);
+assert.equal(shouldRenderForAuthEvent("INITIAL_SESSION", sessionA, refreshedA), false);
+assert.equal(shouldRenderForAuthEvent("SIGNED_IN", null, sessionA), true);
+assert.equal(shouldRenderForAuthEvent("SIGNED_IN", sessionA, sessionB), true);
+assert.equal(shouldRenderForAuthEvent("INITIAL_SESSION", null, sessionA), true);
+assert.equal(shouldRenderForAuthEvent("PASSWORD_RECOVERY", sessionA, refreshedA), true);
 assert.equal(shouldRenderForAuthEvent("SIGNED_OUT", sessionA, null), true);
 assert.equal(shouldRenderForAuthEvent("USER_UPDATED", sessionA, refreshedA), true);
 

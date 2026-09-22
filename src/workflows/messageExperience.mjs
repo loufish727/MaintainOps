@@ -30,6 +30,7 @@ export function createMessageExperience(deps) {
 
   function closeDialog() {
     cancelVoiceConfirmation?.();
+    if (discussion) deps.drafts?.saveForm(dialog?.querySelector('.message-discussion-form'));
     if (discussion) drafts.set(discussion.root, dialog?.querySelector('[name="body"]')?.value || '');
     if (recordKey?.startsWith('discussion:')) clearRecording();
     searchVersion++; discussionVersion++; discussion = null;
@@ -204,6 +205,8 @@ export function createMessageExperience(deps) {
     discussion = { root: messageId, thread: threadId, page: Math.max(0,Math.floor(position / 50)), rows: [], highlight, fromSearch };
     const body = dialog.querySelector('[name="body"]');
     if (body) body.value = drafts.get(messageId) || '';
+    const form = dialog.querySelector('.message-discussion-form');
+    if (form) deps.drafts?.restoreForm(form);
     dialog.querySelector('header')?.insertAdjacentElement('beforeend', Object.assign(doc.createElement('button'), { type: 'button', textContent: 'Open conversation', onclick: () => { const id = discussion.thread; closeDialog(); void deps.openConversation(id); } }));
     hydrate(); await loadDiscussion();
   }
@@ -245,7 +248,9 @@ export function createMessageExperience(deps) {
       }
       if (!current(saved)) return;
       state.sendId = null; state.sendSignature = '';
-      if (form.elements.body.value.trim() === body) form.elements.body.value = '';
+      const unchanged = form.elements.body.value.trim() === body;
+      deps.drafts?.clear(doc, key, { body }, form.dataset.draftScope);
+      if (unchanged) { form.elements.body.value = ''; drafts.delete(state.root); }
       await deps.reload();
       if (state === discussion) { state.page=0; await loadDiscussion(); }
     } catch (error) { form.querySelector('.error-text').textContent = errorText(error); }
