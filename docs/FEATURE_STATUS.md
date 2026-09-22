@@ -8,6 +8,7 @@ This file tracks what exists, what is considered stable enough for continued QA,
 - Company creation and company selection.
 - Multi-tenant data by `company_id`.
 - Location-scoped workspace by `location_id`.
+- Remembered workspace locations are isolated by signed-in user and company. Legacy browser selections reset once to the membership default (or first available location); subsequent explicit location selections are remembered. Account switching does not inherit another person's in-memory selection or change saved membership defaults.
 - Top-banner location switcher.
 - Mobile tech location lock.
 - Work order list with server paging.

@@ -149,6 +149,13 @@ async function main() {
     },
   }));
 
+  for (const browser of ["chromium", "webkit"]) {
+    await runStage(`${browser} signed-in account/location switching`, () => run(npxCommand, [
+      "playwright", "test", "tests/smoke/location-account-switch-live.spec.js",
+      `--browser=${browser}`, "--workers=1",
+    ], { label: `${browser} account/location isolation proof` }));
+  }
+
   writeSummary("PASS");
 }
 
