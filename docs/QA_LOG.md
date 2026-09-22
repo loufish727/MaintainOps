@@ -13,6 +13,8 @@ This public QA log intentionally stays high-level. Detailed phase logs, user-spe
 
 ## Recent Verification Notes
 
+- 2026-09-22: Team cards expose saved default locations, including unset/unavailable states and location-name search. Account-switching regressions reproduced the previous account's location taking precedence over the next user's default, both in the helper and through actual QA sign-out/sign-in. The fix ignores legacy preferences once, remembers future selections by user/company, and rejects stale core-location loads after an account/company change. Full Strict passed 13/13 at clean code checkpoint `68fa707`; focused Chromium and WebKit sign-in tests passed, including fresh contexts, contaminated legacy preferences, and same-user reloads. No production membership, default-location, or database-policy changes were made. This does not claim a signed-in production-account reproduction.
+
 - 2026-09-18 production rollout: PR #49 (`6ced496`) passed required Release Gate,
   Pages and hosted smoke after all five database prerequisites passed postflight.
   Signed-in Taylor browsing caught a further work-list/detail-cache isolation

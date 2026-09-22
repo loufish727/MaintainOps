@@ -45,11 +45,11 @@ test("same-browser account switching uses the user's own location, including leg
       }
       return route.continue();
     });
+    await context.addInitScript(id => localStorage.setItem("maintainops.activeCompanyId", id), company);
     const page = await context.newPage();
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(baseURL);
     await expect(page.getByRole("button", { name: "Log In", exact: true })).toBeVisible();
-    await page.evaluate(id => localStorage.setItem("maintainops.activeCompanyId", id), company);
     return page;
   }
   async function signIn(page, role) {
@@ -57,6 +57,7 @@ test("same-browser account switching uses the user's own location, including leg
     await page.getByLabel("Password", { exact: true }).fill(process.env[`LFES_${role}_PASSWORD`]);
     await page.getByRole("button", { name: "Log In", exact: true }).click();
     await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator("#company-select")).toHaveValue(company);
   }
   async function signOut(page) {
     // Mobile's sign-out control lives inside the workspace menu.
