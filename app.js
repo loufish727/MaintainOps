@@ -144,7 +144,6 @@ const { createRequestLifecycleWorkflow } = window.MaintainOpsRequestLifecycleWor
 const { createWorkOrderCreationWorkflow } = window.MaintainOpsWorkOrderCreationWorkflow;
 const { createWorkOrderDetailEditWorkflow } = window.MaintainOpsWorkOrderDetailEditWorkflow;
 const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
-const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
 const { createPartDeleteWorkflow } = window.MaintainOpsPartDeleteWorkflow;
 const { isChecklistStepAnswered } = window.MaintainOpsChecklistResponseValues;
@@ -416,6 +415,7 @@ const FEATURE_BUNDLE_PATHS = Object.freeze({
   setup: __MAINTAINOPS_SETUP_FEATURE_BUNDLE__,
   messages: __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__,
   maintenance: __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__,
+  attachments: __MAINTAINOPS_ATTACHMENT_FEATURE_BUNDLE__,
 });
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
@@ -1088,6 +1088,7 @@ function initializeManagerDashboardFeature() {
 }
 
 function initializeWorkspaceFeature(featureId) {
+  if (featureId === "attachments") return initializeAttachmentFeature();
   if (featureId === "manager") return initializeManagerDashboardFeature();
   if (featureId === "financial") return initializeFinancialFeature();
   if (featureId === "team") return initializeTeamFeature();
@@ -5853,13 +5854,18 @@ function bindWorkspaceEvents() {
   });
 
   createWorkspaceWorkOrderDeleteEvents({
+    removeWorkOrderDocuments: async (id) => {
+      const context = attachmentContext("work", id);
+      await ensureFeatureBundleLoaded("attachments");
+      return attachmentWorkflow.removeWorkDocuments(id, context);
+    },
     alertRef: alert,
     canDeleteWorkOrders,
     deleteWorkOrderRecord: (id) => supabaseClient
       .from("work_orders")
       .delete()
       .eq("id", id)
-      .eq("company_id", activeCompanyId),
+      .eq("company_id", activeCompanyId).select("id"),
     documentRef: document,
     friendlyWorkOrderSaveError,
     getPhotoPathsByWorkOrder: (id) => (photosByWorkOrder[id] || [])
@@ -5991,7 +5997,26 @@ function bindWorkspaceEvents() {
   });
 
   const photoForm = document.querySelector("#photo-form");
-  if (photoForm) photoForm.addEventListener("submit", uploadPhoto);
+  if (photoForm) photoForm.addEventListener("submit", (event) => openAttachmentPicker(event, "work", activeWorkOrderId, "photo"));
+  const documentPanel = document.querySelector("[data-work-order-documents]");
+  if (documentPanel) {
+    const context = attachmentContext("work", activeWorkOrderId);
+    const section = documentPanel.closest("details");
+    const load = async () => {
+      if (!section.open || documentPanel.dataset.loading) return;
+      documentPanel.dataset.loading = "true";
+      try {
+        await ensureFeatureBundleLoaded("attachments");
+        await attachmentWorkflow.mountDocuments(documentPanel, context);
+      } catch (error) {
+        documentPanel.textContent = `Could not load attachments: ${error.message}. Close and reopen this section to retry.`;
+        delete documentPanel.dataset.loading;
+      }
+    };
+    section.addEventListener("toggle", load);
+    load();
+  }
+  attachmentWorkflow?.cancelStale();
 
   const assetForm = document.querySelector("#create-asset-form");
   if (assetForm) assetForm.addEventListener("submit", createAsset);
@@ -6141,11 +6166,11 @@ function bindWorkspaceEvents() {
   });
 
   document.querySelectorAll("[data-part-document]").forEach((form) => {
-    form.addEventListener("submit", uploadPartDocument);
+    form.addEventListener("submit", (event) => openAttachmentPicker(event, "part", form.dataset.partDocument, "document"));
   });
 
   document.querySelectorAll("[data-asset-document]").forEach((form) => {
-    form.addEventListener("submit", uploadAssetDocument);
+    form.addEventListener("submit", (event) => openAttachmentPicker(event, "asset", form.dataset.assetDocument, "document"));
   });
 
   document.querySelectorAll("[data-delete-asset-document]").forEach((button) => {
@@ -6212,17 +6237,48 @@ async function createFollowUpWorkOrder(sourceId, dueInDays) {
   }
 }
 
-const {
-  addPhotoToMaintenanceRequest,
-  addPhotoToWorkOrder,
-  deleteAssetDocument,
-  deleteWorkOrderPhoto,
-  optimizePhoto,
-  removeUploadedObject,
-  uploadAssetDocument,
-  uploadPartDocument,
-  uploadPhoto,
-} = createMediaStorageWorkflow({
+let attachmentWorkflow = null;
+function attachmentScope() {
+  return JSON.stringify([session?.user.id, activeCompanyId, activeLocationId, activeSection, activeWorkOrderId, activeAssetId, activePartId]);
+}
+function attachmentContext(kind, recordId) {
+  return { kind, recordId, companyId: activeCompanyId, userId: session?.user.id, scope: attachmentScope() };
+}
+function initializeAttachmentFeature() {
+  initializeMediaStorage();
+  attachmentWorkflow ||= window.MaintainOpsAttachments.createAttachmentWorkflow({
+    getScope: attachmentScope, client: () => supabaseClient,
+    canEdit: kind => kind === "asset" ? canEditEquipmentRecords() : canEditOperationalRecords(),
+    canDeleteDocument: row => canEditOperationalRecords() && (row.uploaded_by === session?.user.id || canManageTeam()),
+    userName: id => profilesByUserId[id]?.full_name || "Team member",
+    safeFileName, optimizePhoto, withOperationTimeout, showNotice, render, confirm: message => window.confirm(message),
+  }, mediaStorageWorkflow);
+}
+async function openAttachmentPicker(event, kind, recordId, field) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (form.dataset.preparing) return;
+  const files = Array.from(form.querySelector(`[name="${field}"]`)?.files || []);
+  const context = attachmentContext(kind, recordId);
+  const button = form.querySelector("button[type=submit]");
+  form.dataset.preparing = "true";
+  if (button) button.disabled = true;
+  try {
+    await withOperationTimeout(ensureFeatureBundleLoaded("attachments"), "Attachment tools could not load. Please retry.", 15000);
+    await attachmentWorkflow.open(context, files);
+  } catch (error) { showNotice(error.message || "Could not prepare attachments.", "warning"); }
+  finally { delete form.dataset.preparing; if (button) button.disabled = false; }
+}
+
+let mediaStorageWorkflow = null;
+const { addPhotoToMaintenanceRequest, addPhotoToWorkOrder, deleteAssetDocument, deleteWorkOrderPhoto, optimizePhoto, removeUploadedObject } = Object.fromEntries(
+  ["addPhotoToMaintenanceRequest", "addPhotoToWorkOrder", "deleteAssetDocument", "deleteWorkOrderPhoto", "optimizePhoto", "removeUploadedObject"].map(name => [name, async (...args) => {
+    await ensureFeatureBundleLoaded("attachments");
+    return mediaStorageWorkflow[name](...args);
+  }])
+);
+function initializeMediaStorage() {
+  mediaStorageWorkflow ||= window.MaintainOpsMediaStorageWorkflow.createMediaStorageWorkflow({
   documentRef: document,
   FormDataCtor: FormData,
   cryptoRef: crypto,
@@ -6250,7 +6306,21 @@ const {
   getPageUrl: () => window.location.href,
   showNotice,
   render,
-});
+  });
+}
+
+async function reviewCreatedAttachments(id, files, companyId, userId) {
+  if (!files.length) return;
+  if (activeCompanyId !== companyId || session?.user.id !== userId || activeWorkOrderId !== id) {
+    showNotice("Work order saved. Reopen it to attach the selected files.", "warning");
+    return;
+  }
+  const context = attachmentContext("work", id);
+  try {
+    await withOperationTimeout(ensureFeatureBundleLoaded("attachments"), "Attachment tools could not load. Reopen the saved order to attach files.", 15000);
+    await attachmentWorkflow.open(context, files);
+  } catch (error) { showNotice(`Work order saved, but files are not attached: ${error.message}`, "warning"); }
+}
 
 const {
   renderPublicRequestError,
@@ -6313,6 +6383,7 @@ const {
 });
 
 const { createQuickFix } = createQuickFixWorkflow({
+  reviewCreatedAttachments,
   documentRef: document,
   FormDataCtor: FormData,
   withOperationTimeout,
@@ -6354,6 +6425,7 @@ const { createQuickFix } = createQuickFixWorkflow({
 });
 
 const { createWorkOrder } = createWorkOrderCreationWorkflow({
+  reviewCreatedAttachments,
   documentRef: document,
   FormDataCtor: FormData,
   alertRef: alert,

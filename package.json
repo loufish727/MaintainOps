@@ -38,6 +38,7 @@
     "supabase": "^2.104.0"
   },
   "dependencies": {
+    "@zip.js/zip.js": "2.17.0",
     "three": "0.166.1"
   }
 }

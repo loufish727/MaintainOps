@@ -1,5 +1,32 @@
 const { test, expect } = require('@playwright/test');
 const { createQa, nav, expandFor } = require('../helpers/appwide-qa');
+
+test('public request photos still optimize through the lazy media workflow', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    await qa.api('admin', 'POST', 'rpc/ensure_location_request_link', { target_location_id: qa.location });
+    const link = (await qa.api('admin', 'GET', `public_request_links?company_id=eq.${qa.company}&location_id=eq.${qa.location}&select=token`))[0];
+    const page = await qa.openPublic(link.token);
+    const form = page.locator('#public-request-form');
+    await form.locator('[name=title]').fill('QA Public Photo');
+    await form.locator('[name=requester_name]').fill('QA Operator');
+    await form.locator('[name=equipment_note]').fill('QA packing aisle');
+    await form.locator('[name=description]').fill('Test photo attached.');
+    const png = await page.evaluate(() => {
+      const canvas = document.createElement('canvas'); canvas.width = 2048; canvas.height = 1024;
+      canvas.getContext('2d').fillRect(0, 0, 2048, 1024);
+      return canvas.toDataURL('image/png').split(',')[1];
+    });
+    await form.locator('[name=photo]').setInputFiles({ name: 'intake.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+    await form.locator('button[type=submit]').click();
+    const records = () => qa.api('admin', 'GET', `maintenance_requests?company_id=eq.${qa.company}&select=photo_storage_path,photo_file_size_bytes,photo_content_type`);
+    await expect.poll(async () => (await records())[0]?.photo_storage_path, { timeout: 30000 }).toBeTruthy();
+    const row = (await records())[0];
+    expect(row.photo_content_type).toBe('image/jpeg');
+    expect(row.photo_file_size_bytes).toBeLessThan(256 * 1024);
+    await qa.shot(page, 'public-request-photo');
+  } finally { await qa.finish(); }
+});
 test.setTimeout(180000);
 
 test('work photos resize, display and delete with history; equipment files and history remain usable', async ({ browser, request }, testInfo) => {
@@ -20,6 +47,9 @@ test('work photos resize, display and delete with history; equipment files and h
     });
     await photo.locator('[name=photo]').setInputFiles({ name: 'qa-photo.png', mimeType: 'image/png', buffer: Buffer.from(generated, 'base64') });
     await photo.locator('button[type=submit]').click();
+    await page.getByRole('button', { name: 'Attach 1 file', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'All attached', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
     const photos = () => qa.api('admin', 'GET', `work_order_photos?company_id=eq.${qa.company}&work_order_id=eq.${work.id}&select=*`);
     await expect.poll(async () => (await photos()).length).toBe(1);
     const uploaded = (await photos())[0];
@@ -38,6 +68,9 @@ test('work photos resize, display and delete with history; equipment files and h
     await expandFor(document);
     await document.locator('[name=document]').setInputFiles({ name: 'qa-manual.txt', mimeType: 'text/plain', buffer: Buffer.from('QA maintenance manual. Not production equipment.') });
     await document.locator('button[type=submit]').click();
+    await page.getByRole('button', { name: 'Attach 1 file', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'All attached', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
     const files = () => qa.api('admin', 'GET', `asset_documents?company_id=eq.${qa.company}&asset_id=eq.${asset.id}&select=*`);
     await expect.poll(async () => (await files()).length).toBe(1);
     await expandFor(page.locator('[data-delete-asset-document]'));

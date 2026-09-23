@@ -41,6 +41,10 @@ const bundles = [
     baseName: "maintenanceFeature",
   },
   {
+    entry: "src/bundles/attachmentFeature.entry.js",
+    baseName: "attachmentFeature",
+  },
+  {
     entry: "app.js",
     baseName: "appShell",
   },
@@ -126,6 +130,7 @@ async function main() {
           __MAINTAINOPS_SETUP_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.setupFeature}`),
           __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.messageFeature}`),
           __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.maintenanceFeature}`),
+          __MAINTAINOPS_ATTACHMENT_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.attachmentFeature}`),
           __MAINTAINOPS_MESSAGE_STYLES__: JSON.stringify(`src/bundles/${manifest.messageStyles}`),
         }
       : undefined;

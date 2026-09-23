@@ -8,6 +8,7 @@ const bundlesDir = path.join(root, "src", "bundles");
 const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json"), "utf8"));
 
 const budgets = {
+  attachmentFeature: { decoded: 300 * 1024, gzip: 110 * 1024 },
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
   // Scoped draft/lazy-feature orchestration; the combined startup cap stays unchanged.
   appShell: { decoded: 170 * 1024, gzip: 48 * 1024 },

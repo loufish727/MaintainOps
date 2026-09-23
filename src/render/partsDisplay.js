@@ -235,10 +235,9 @@
               <span>${documents.length} file${documents.length === 1 ? "" : "s"}</span>
             </div>
             ${canEditOperational ? `<form class="part-document-form" data-part-document="${part.id}">
-              <label>File type<select name="document_type">${renderDocumentTypeOptions()}</select></label>
-              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Images are optimized near 1 MB. Non-image files over 25 MB are blocked.</small></label>
+              <label>Attach photos or files<input name="document" type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip"></label>
               <p class="error-text" data-part-document-error="${part.id}">${getPartDocumentsReady() ? "" : "Run supabase/step-next-part-documents.sql before attaching files."}</p>
-              <button class="secondary-button" type="submit" ${getPartDocumentsReady() ? "" : "disabled"}>Attach File</button>
+              <button class="secondary-button" type="submit" ${getPartDocumentsReady() ? "" : "disabled"}>Review Attachments</button>
             </form>` : ""}
             <div class="part-document-list">
               ${documents.length

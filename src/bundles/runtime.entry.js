@@ -82,7 +82,6 @@ import "../workflows/requestLifecycleWorkflow.js";
 import "../workflows/workOrderCreationWorkflow.js";
 import "../workflows/workOrderDetailEditWorkflow.js";
 import "../workflows/partUsageWorkflow.js";
-import "../workflows/mediaStorageWorkflow.js";
 import "../workflows/companyLogoWorkflow.js";
 import "../workflows/partDeleteWorkflow.js";
 import "../utils/checklistResponseValues.js";

@@ -124,7 +124,7 @@
                 </select>
               </label>
               <label>Quantity used<input name="quantity_used" type="number" min="1" step="1" value="1"></label>
-              <label>Photo<input name="photo" type="file" accept="image/*"><small>Optional image only. PDF quotes/documents are attached from equipment or parts. Photos are resized to 768px.</small></label>
+              <label>Photos or files<input name="photo" type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip"></label>
               <label>First comment<textarea name="initial_comment" rows="2" placeholder="Add the first update or note for the record."></textarea></label>
             </div>
           </details>

@@ -159,3 +159,10 @@ four operational roles. Production: NOT APPLIED. Applied to testing project
 postflight rejects Accounting, preserves quantity/history, and allows technician
 usage with the correct actor and stock deduction. Do not restore the membership-only
 check on rollback.
+# Automatic Attachments Candidate
+
+`supabase/migrations/20260923170451_automatic_work_order_attachments.sql` is a release candidate, NOT applied to production. It adds a private 25 MB work-order document bucket/table, role/tenant policies, atomic document history, ZIP MIME support for existing equipment/part file buckets, and document accounting in storage usage. Existing photos are unchanged.
+
+Applied to testing project `fsxqrngpaseqdxijggcm` on 2026-09-23, followed by the reviewed QA-only hardening delta. The consolidated production candidate SHA256 is `cf1fc41b6f119f71b49593248bc366d81de8a2e34385656408b22e3cf503147b`; the delta SHA256 is `0551c0524f00795e6860bd177d1d5568a7eebdf3992a3bffc03691a2e85bb703`. The delta is reproducible with `node tests/smoke/work-order-documents-sql-smoke.js --qa-delta`. Do not apply both to a fresh environment.
+
+Production requires the consolidated migration before the frontend. Rollback may restore the prior frontend while retaining the additive table/bucket and uploaded data. Never drop attachments or restore weaker policies as rollback. See `docs/AUTOMATIC_ATTACHMENTS.md` for scope, proof commands, and limitations.

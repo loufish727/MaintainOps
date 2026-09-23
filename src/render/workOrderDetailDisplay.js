@@ -76,7 +76,7 @@
         <section class="delete-zone">
           <div>
             <h3>Delete Work Order</h3>
-            <p>This removes the work order and its linked comments, history, parts used, and photo records.</p>
+            <p>This removes the work order and its linked comments, history, parts used, photos, and files.</p>
           </div>
           ${confirming ? `
             <div class="delete-warning-panel">
@@ -348,11 +348,11 @@
         </details>
   
         <details class="work-detail-section relationship-detail photo" id="work-order-photos-target">
-          <summary>Photos</summary>
+          <summary>Photos and Files</summary>
         ${canEditOperational ? `<form class="form-grid relationship-detail photo" id="photo-form">
-          <label>Upload photo<input name="photo" type="file" accept="image/*"><small>Images only. PDF quotes/documents are attached from equipment or parts. Photos are resized to 768px.</small></label>
+          <label>Attach photos or files<input name="photo" type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip"></label>
           <p class="error-text" id="photo-error"></p>
-          <button class="secondary-button" type="submit">Upload Photo</button>
+          <button class="secondary-button" type="submit">Review Attachments</button>
         </form>` : ""}
   
         <div>
@@ -371,6 +371,7 @@
             `).join("") || `<p class="muted">No photos uploaded yet.</p>`}
           </div>
         </div>
+          <div data-work-order-documents></div>
         </details>
   
         <details class="work-detail-section relationship-detail comment" id="work-order-comments-target">

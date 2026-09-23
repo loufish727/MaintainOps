@@ -2,6 +2,8 @@
 
 This file tracks what exists, what is considered stable enough for continued QA, and what still needs attention.
 
+Local/QA candidate (2026-09-23): automatic photo/document/ZIP attachments for work orders, Quick Fix, Equipment, and Parts. Not released; production migration pending. See `AUTOMATIC_ATTACHMENTS.md` for exact scope and proof commands.
+
 ## Working Core
 
 ### Equipment Asset Tags

@@ -7,8 +7,10 @@ const { createWorkOrderCreationWorkflow } = require("../../src/workflows/workOrd
 function fakeFormData(values) {
   return {
     get(name) {
-      return Object.prototype.hasOwnProperty.call(values, name) ? values[name] : "";
+      const value = Object.prototype.hasOwnProperty.call(values, name) ? values[name] : "";
+      return Array.isArray(value) ? value[0] : value;
     },
+    getAll(name) { return [values[name]].flat().filter(Boolean); },
   };
 }
 
@@ -49,6 +51,7 @@ function createWorkflow(overrides = {}) {
   };
 
   const { createWorkOrder } = createWorkOrderCreationWorkflow({
+    reviewCreatedAttachments: overrides.reviewAttachments ? async (...args) => calls.push(["review", ...args]) : undefined,
     documentRef: {
       querySelector(selector) {
         return selector === "#create-work-order-error" ? errorTarget : null;
@@ -150,6 +153,13 @@ function createWorkflow(overrides = {}) {
   assert.equal(withExtras.calls.some((call) => call[0] === "part" && call[3] === 2), true);
   assert.equal(withExtras.calls.some((call) => call[0] === "photo" && call[2] === "photo.jpg"), true);
   assert.equal(withExtras.calls.some((call) => call[0] === "comment" && call[2] === "Initial note"), true);
+
+  const files = [{ name: "photo.jpg" }, { name: "manual.pdf" }, { name: "slides.zip" }];
+  const reviewed = createWorkflow({ reviewAttachments: true, values: { photo: files } });
+  await reviewed.run();
+  assert.deepEqual(reviewed.calls.find(call => call[0] === "review"), ["review", "wo-1", files, "company-1", "user-1"]);
+  assert.equal(reviewed.calls.some(call => call[0] === "photo"), false);
+  assert.ok(reviewed.calls.findIndex(call => call[0] === "render") < reviewed.calls.findIndex(call => call[0] === "review"));
 
   const conflictingEquipment = createWorkflow({
     values: { asset_id: "asset-1", new_asset_name: "Duplicate pump" },
