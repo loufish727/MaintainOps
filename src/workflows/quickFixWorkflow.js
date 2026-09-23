@@ -148,7 +148,7 @@
         }
 
         const photo = form.get("photo");
-        if (photo && photo.name) {
+        if (photo && photo.name && !deps.reviewCreatedAttachments) {
           const photoError = await withOperationTimeout(
             addPhotoToWorkOrder(data.id, photo),
             "Photo upload timed out.",
@@ -220,6 +220,7 @@
         setQuickFixRequestId(null);
         showNotice(warnings.length ? `Quick Fix saved with warning: ${warnings[0]}` : "Quick Fix saved.", warnings.length ? "warning" : "success");
         await render();
+        if (deps.reviewCreatedAttachments) await deps.reviewCreatedAttachments(data.id, (form.getAll ? form.getAll("photo") : [photo]).filter(file => file?.name), currentActiveCompanyId, currentSession.user.id);
       } catch (error) {
         if (errorTarget) errorTarget.textContent = `Could not log quick fix: ${error.message || error}`;
         else alertUser(error.message || error);

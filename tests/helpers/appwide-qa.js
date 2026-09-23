@@ -139,7 +139,7 @@ async function createQa(browser, request, testInfo) {
       await context.tracing.stop({ path: path.join(directory, `${runId}-${index}-trace.zip`) }).catch(() => {});
       await context.close().catch(() => {});
     }
-    for (const bucket of ['work-order-photos', 'asset-documents', 'part-documents', 'maintenance-request-photos', 'company-logos']) {
+    for (const bucket of ['work-order-photos', 'work-order-documents', 'asset-documents', 'part-documents', 'maintenance-request-photos', 'company-logos']) {
       const pending = [company];
       let visited = 0;
       while (pending.length) {

@@ -288,21 +288,9 @@
               <span>${assetDocuments.length} file${assetDocuments.length === 1 ? "" : "s"}</span>
             </div>
             ${canEditEquipment ? `<form class="form-grid asset-photo-form relationship-detail photo" data-asset-document="${escapeHtml(asset.id)}">
-              <label>File type
-                <select name="document_type">
-                  <option value="machine_photo">Machine photo</option>
-                  <option value="schematic">Schematic / print</option>
-                  <option value="settings">Settings / parameters</option>
-                  <option value="manual">Manual / cut sheet</option>
-                  <option value="nameplate">Nameplate photo</option>
-                  <option value="inspection">Inspection reference</option>
-                  <option value="receipt">Receipt / invoice</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <label>Attach file<input name="document" type="file" accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx"><small>Images are optimized near 1 MB. Non-image files over 25 MB are blocked.</small></label>
+              <label>Attach photos or files<input name="document" type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip"></label>
               <p class="error-text" data-asset-document-error="${escapeHtml(asset.id)}">${assetDocumentsReady ? "" : "Run supabase/step-next-asset-documents.sql before uploading equipment files."}</p>
-              <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Attach Machine File</button>
+              <button class="secondary-button asset-action-button" type="submit" ${assetDocumentsReady ? "" : "disabled"}>Review Attachments</button>
             </form>` : `<p class="muted">Accounting can view machine files. Maintenance/admins attach or remove files.</p>`}
             <div class="asset-file-list">
               ${assetDocuments.map((document) => `

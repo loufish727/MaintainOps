@@ -87,7 +87,7 @@
         }
 
         const photo = form.get("photo");
-        if (photo && photo.name) {
+        if (photo && photo.name && !deps.reviewCreatedAttachments) {
           const photoError = await deps.addPhotoToWorkOrder(data.id, photo);
           if (photoError) warnings.push(`photo upload failed: ${photoError.message}`);
           else await deps.recordWorkOrderEvent(data.id, "photo_uploaded", `Photo uploaded: ${photo.name}.`);
@@ -104,6 +104,7 @@
         deps.setCreateWorkOrderMode(false);
         deps.showNotice(warnings.length ? `Work order created with warning: ${warnings[0]}` : "Work order created.", warnings.length ? "warning" : "success");
         await deps.render();
+        if (deps.reviewCreatedAttachments) await deps.reviewCreatedAttachments(data.id, (form.getAll ? form.getAll("photo") : [photo]).filter(file => file?.name), payload.company_id, payload.created_by);
       } catch (error) {
         if (errorTarget) errorTarget.textContent = `Could not create work order: ${error.message || error}`;
         else alertRef(error.message || error);

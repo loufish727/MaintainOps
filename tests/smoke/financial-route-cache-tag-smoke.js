@@ -31,7 +31,6 @@ for (const file of [
   "workOrderDetailDisplay",
   "partsDisplay",
   "assetDetailDisplay",
-  "mediaStorageWorkflow",
 ]) {
   assert.match(
     runtimeEntry,
@@ -39,6 +38,11 @@ for (const file of [
     `${file} must remain part of the eager runtime bundle`
   );
 }
+
+const attachmentEntry = fs.readFileSync(path.join(root, "src", "bundles", "attachmentFeature.entry.js"), "utf8");
+assert.match(attachmentEntry, /\.\.\/workflows\/mediaStorageWorkflow\.js/);
+assert.match(attachmentEntry, /\.\.\/workflows\/attachmentWorkflow\.mjs/);
+assert.doesNotMatch(runtimeEntry, /mediaStorageWorkflow\.js/);
 
 for (const file of ["workspaceFinancialNavigationEvents", "financialDisplay", "assetFinancialWorkflow"]) {
   assert.match(

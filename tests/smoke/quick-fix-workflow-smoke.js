@@ -7,16 +7,19 @@ const { createQuickFixWorkflow } = require("../../src/workflows/quickFixWorkflow
 function fakeFormData(values) {
   return {
     get(name) {
-      return Object.prototype.hasOwnProperty.call(values, name) ? values[name] : "";
+      const value = Object.prototype.hasOwnProperty.call(values, name) ? values[name] : "";
+      return Array.isArray(value) ? value[0] : value;
     },
+    getAll(name) { return [values[name]].flat().filter(Boolean); },
   };
 }
 
-function createWorkflow(formValues = {}) {
+function createWorkflow(formValues = {}, reviewAttachments = false) {
   const localCalls = [];
   const localErrorTarget = { textContent: "" };
   const localSubmitButton = { disabled: false, textContent: "Log Quick Fix", isConnected: true };
   const { createQuickFix } = createQuickFixWorkflow({
+  reviewCreatedAttachments: reviewAttachments ? async (...args) => localCalls.push(["review", ...args]) : undefined,
   documentRef: {
     querySelector(selector) {
       return selector === "#quick-fix-error" ? localErrorTarget : null;
@@ -96,6 +99,12 @@ function createWorkflow(formValues = {}) {
 }
 
 (async () => {
+  const files = [{ name: "photo.jpg" }, { name: "manual.pdf" }, { name: "slides.zip" }];
+  const reviewed = createWorkflow({ photo: files }, true);
+  await reviewed.createQuickFix({ preventDefault() {}, currentTarget: { querySelector() { return reviewed.submitButton; } } });
+  assert.deepEqual(reviewed.calls.find(call => call[0] === "review"), ["review", "wo-1", files, "company-1", "user-1"]);
+  assert.equal(reviewed.calls.some(call => call[0] === "event" && call[2] === "photo_uploaded"), false);
+  assert.ok(reviewed.calls.findIndex(call => call[0] === "render") < reviewed.calls.findIndex(call => call[0] === "review"));
   const defaultRun = createWorkflow();
   await defaultRun.createQuickFix({
     preventDefault: () => defaultRun.calls.push(["preventDefault"]),

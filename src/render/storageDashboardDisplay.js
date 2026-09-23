@@ -9,6 +9,7 @@
       "maintenance-request-photos": "Request photos",
       "part-documents": "Part files",
       "work-order-photos": "Work order photos",
+      "work-order-documents": "Work order documents",
       "message-files": "Message attachments",
     };
     const typeLabels = {
@@ -17,6 +18,7 @@
       part: "Part",
       request: "Request",
       work_order: "Work Order",
+      work_order_document: "Work Order",
       message: "Conversation",
     };
 
@@ -104,11 +106,16 @@
           cap: "Images are resized before upload",
           optimize: "Target near 1 MB; non-image part files over 25 MB are blocked",
         },
-        {
-          label: "Documents",
-          cap: "Non-image files over 25 MB are blocked",
-          optimize: "PDF, Word, Excel, CSV, and text files are stored as uploaded",
-        },
+          {
+            label: "Documents",
+            cap: "Non-image files over 25 MB are blocked",
+            optimize: "PDF, Word, Excel, CSV, and text files are stored as uploaded",
+          },
+          {
+            label: "ZIP Attachments",
+            cap: "Up to 25 MB per ZIP; 50 files and 100 MB expanded per batch",
+            optimize: "Unpacked for review; photos are resized and supported documents kept unchanged",
+          },
         {
           label: "Company Logos",
           cap: "JPG, PNG, WebP, GIF, HEIC, and HEIF images are accepted",

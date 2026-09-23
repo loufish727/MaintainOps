@@ -18,10 +18,11 @@ const scriptBundleKeys = [
   "teamFeature",
   "setupFeature",
   "messageFeature",
+  "attachmentFeature",
   "appShell",
   "platformSpatial",
 ];
-const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature", "messageFeature"]);
+const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature", "messageFeature", "attachmentFeature"]);
 for (const key of scriptBundleKeys) {
   assert.match(
     String(manifest[key] || ""),

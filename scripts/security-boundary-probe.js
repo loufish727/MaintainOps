@@ -133,6 +133,7 @@ async function run() {
     "work_orders",
     "work_order_comments",
     "work_order_photos",
+    "work_order_documents",
     "preventive_schedules",
     "parts",
     "work_order_parts",
@@ -443,7 +444,7 @@ async function run() {
     results.push(info("technician_role_mutation_probes_not_run", "Set MAINTAINOPS_PROBE_EMAIL/PASSWORD to a technician account to run manager/admin rejection probes."));
   }
 
-  const storageBuckets = ["work-order-photos", "part-documents", "company-logos", "maintenance-request-photos"];
+  const storageBuckets = ["work-order-photos", "work-order-documents", "part-documents", "company-logos", "maintenance-request-photos"];
   for (const bucket of storageBuckets) {
     const result = await requestStorage({
       ...config,
