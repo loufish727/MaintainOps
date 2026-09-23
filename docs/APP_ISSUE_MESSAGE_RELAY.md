@@ -96,3 +96,33 @@ cascades the routing row and leaves the company unconfigured.
 Initial gzip increases from 176,420 to 176,787 bytes (+367) within the unchanged
 179,200-byte budget. No new startup queries or eager feature bundles are added.
 The Messages bundle and CSS are unchanged.
+
+### Verified Candidate Results
+
+2026-09-23, implementation commit `7e585a4` plus fixture correction `2ef4e0e`:
+
+- Full automated Strict LFES: PASS, all 13 stages, clean worktree. Includes 197
+  Node smoke files, 81 targeted browser regressions, isolated schema/RLS,
+  security, bundle budgets/cleanliness, resource loading and desktop/mobile 3D.
+- Separate authenticated LFES: PASS, all 7 stages, five-role Chromium contracts,
+  WebKit admin contract, Production Action/notification lifecycles and account/
+  location switching in both engines. Startup requests were 30-35 against a 35
+  request budget in this QA dataset; these are not general network benchmarks.
+- New signed-in relay suite: 4/4 PASS across Chromium/WebKit at 1440px and 390px.
+  Mobile and desktop screenshots reviewed; no horizontal page overflow.
+- New SQL and retry suites: PASS, included in the full Node sweep.
+- `npm audit --omit=optional --audit-level=moderate`: zero vulnerabilities.
+- All eight disposable companies from test development/final runs removed after
+  exact ID/name/QA creator and zero-storage checks. Postflight found zero remaining
+  company, object or routing rows for those IDs. Auth proof removed its own
+  temporary request. No production writes, publication or recipient setup.
+
+The first full run identified a PM fixture missing the legacy issue-report
+baseline before applying all dated migrations. Its fixture was corrected;
+all 17 isolated PM lifecycle checks and the complete rerun passed. No PM runtime
+behavior was changed. Browser-test development also corrected a nonunique message
+locator, mobile startup navigation, exact status-copy matching and archive-save
+synchronization; none required changing Messages behavior.
+
+Private evidence is retained under `LFES/private/proof/issue-relay-*20260923`.
+Browser traces may contain QA session material and must not be committed or shared.
