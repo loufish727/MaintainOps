@@ -45,7 +45,12 @@ selector and explicitly asserts Home for each role. The broader opt-in messaging
 lifecycle/tools suites were updated to enter Conversations from Home; those two
 complete mutation suites were not rerun for this navigation-only change.
 
-Initial first-party gzip is 176,784 bytes (90 above the preceding candidate).
+The final cancellation guard at `1edea7b` clears a remembered selection when
+starting a new message from Home, so Cancel cannot reopen an unselected thread.
+Full Strict passed all 13 stages again at this checkpoint. The signed-in recovery
+case passed in both engines, and all four Home layout cases passed again in WebKit.
+
+Initial first-party gzip is 176,796 bytes (102 above the preceding candidate).
 Lazy Messages script/style gzip is 21,493 / 6,754 bytes. Existing compressed
 budgets pass. PR #63 combines this change with the approved in-scene Performance
 card restoration. GitHub/deployment proof is separate from the local results.
