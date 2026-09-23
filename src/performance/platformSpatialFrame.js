@@ -1,4 +1,5 @@
 import { createStorageWorld } from "./platformSpatialWorld.js";
+import { timelineActivity } from "./platformSpatialMotion.js";
 
 const parentOrigin = window.location.origin;
 const MEBI = 1024 * 1024;
@@ -229,6 +230,7 @@ function buildFrameData(snapshot) {
     buckets,
     files,
     months,
+    days: timelineActivity(timeline),
     rules: systems.map((system) => ({
       title: system.label,
       summary: system.value,
@@ -312,6 +314,10 @@ function getElements() {
     tooltip: document.querySelector("#world-tooltip"),
     exit: document.querySelector("[data-performance-exit]"),
     qualityButtons: [...document.querySelectorAll("[data-quality-tier]")],
+    motion: document.querySelector("#motion-button"),
+    inspector: document.querySelector(".spatial-inspector"),
+    timelineDays: document.querySelector(".timeline-days"),
+    timelineDetail: document.querySelector(".timeline-detail"),
     timelineConsoleDetail: document.querySelector(".timeline-console-head small"),
     timelineConsoleWindow: document.querySelector(".timeline-console-head > span"),
   };
@@ -319,6 +325,65 @@ function getElements() {
 
 let els = null;
 let activeBucketFilter = "all";
+let selectedDayKey = null;
+
+function renderTimeline(data) {
+  const focusedKey = document.activeElement?.dataset?.dayKey;
+  const days = data.days;
+  if (!days.some((day) => day.key === selectedDayKey)) selectedDayKey = days.at(-1)?.key ?? null;
+  els.timelineDays.replaceChildren();
+  els.timelineDays.style.setProperty("--day-count", Math.max(1, days.length));
+  days.forEach((day, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.timelineMonth = String(index);
+    button.dataset.dayKey = day.key;
+    button.setAttribute("aria-label", `${day.label}: ${day.requests} intake, ${day.orders} orders`);
+    const bars = document.createElement("span");
+    bars.className = "timeline-day-bars";
+    bars.setAttribute("aria-hidden", "true");
+    [day.requestScale, day.orderScale].forEach((scale) => {
+      const bar = document.createElement("i");
+      bar.style.setProperty("--activity-scale", scale);
+      bars.append(bar);
+    });
+    const label = document.createElement("span");
+    label.textContent = shortDay(day.label, index);
+    button.append(bars, label);
+    button.addEventListener("click", () => selectTimelineMonth(index));
+    els.timelineDays.append(button);
+  });
+  els.timelineMonths = [...els.timelineDays.querySelectorAll("button")];
+  selectTimelineMonth(days.findIndex((day) => day.key === selectedDayKey));
+  if (focusedKey) els.timelineMonths.find((button) => button.dataset.dayKey === focusedKey)?.focus({ preventScroll: true });
+}
+
+function showInspection(data) {
+  els.inspector.hidden = !data;
+  document.documentElement.classList.toggle("spatial-inspecting", Boolean(data));
+  if (!data) return;
+  els.inspector.querySelector(".inspector-eyebrow").textContent = data.eyebrow || "App performance";
+  els.inspector.querySelector("h2").textContent = data.title || data.name;
+  els.inspector.querySelector(".inspector-subtitle").textContent = data.subtitle || "";
+  const list = els.inspector.querySelector("dl");
+  list.replaceChildren();
+  (data.rows || []).forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    const detail = document.createElement("dd");
+    term.textContent = label;
+    detail.textContent = value;
+    list.append(term, detail);
+  });
+  els.inspector.querySelector("footer").textContent = `${data.status || "Collecting"} / Company sample`;
+}
+
+function updateMotionButton({ enabled, reduced }) {
+  document.documentElement.dataset.motion = enabled ? "on" : "off";
+  els.motion.textContent = reduced ? "Reduced motion" : enabled ? "Motion on" : "Motion off";
+  els.motion.setAttribute("aria-pressed", String(enabled));
+  els.motion.disabled = reduced;
+  els.motion.title = reduced ? "Following your device's reduced-motion preference" : enabled ? "Pause room animation" : "Resume room animation";
+}
 
 function updateStaticCopy(data) {
   const { summary, systems, months, sampling, health } = data;
@@ -546,7 +611,13 @@ function openFileDialog(file) {
 }
 
 function selectTimelineMonth(index) {
+  const day = frameState?.days[index];
+  selectedDayKey = day?.key ?? null;
+  els.timelineDetail.textContent = day ? `${day.label}: ${day.requests} intake / ${day.orders} orders / ${day.total} total` : "Awaiting activity sample";
   els.timelineMonths.forEach((button) => button.classList.toggle("active", Number(button.dataset.timelineMonth) === index));
+  els.timelineMonths.forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.timelineMonth) === index)));
+  els.timelineDays.style.setProperty("--selected-day", Math.max(0, index));
+  els.timelineDays.classList.toggle("has-days", Boolean(day));
   els.usageChart.querySelectorAll(".month-bar").forEach((bar) => bar.classList.toggle("active", Number(bar.dataset.monthIndex) === index));
 }
 
@@ -555,7 +626,7 @@ function openTimelineSource(index = null) {
   setActiveStageAction("timeline");
   els.zoneIndicator.textContent = "Viewing: Activity Runway";
   if (index !== null) selectTimelineMonth(index);
-  requestAnimationFrame(() => els.timelineSource.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestAnimationFrame(() => els.timelineSource.scrollIntoView({ behavior: document.documentElement.dataset.motion === "off" ? "instant" : "smooth", block: "start" }));
 }
 
 function setActiveStageAction(target) {
@@ -579,12 +650,7 @@ function renderFrame(snapshot) {
   const refreshLabel = els.refresh.querySelector("span:last-child");
   if (refreshLabel) refreshLabel.textContent = "Refresh";
   els.updated.textContent = `Sampled ${new Date(snapshot?.sampledAt || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  els.timelineMonths.forEach((button, index) => {
-    const month = frameState.months[index];
-    button.textContent = shortDay(month?.label, index);
-    button.dataset.timelineMonth = String(index);
-    button.hidden = !month;
-  });
+  renderTimeline(frameState);
   if (!world) {
     world = createStorageWorld({
       canvas: els.canvas,
@@ -595,6 +661,9 @@ function renderFrame(snapshot) {
       files: frameState.files,
       core: frameState.core,
       activity: frameState.recentActivity,
+      onInspection: showInspection,
+      onMotionChange: updateMotionButton,
+      motionPaused: localStorage.getItem("maintainops.performanceMotion") === "off",
       formatBytes: (value) => `${numberText(value / MEBI)} events`,
       onZoneChange: (zone) => {
         setActiveStageAction(zone.id);
@@ -628,7 +697,7 @@ function renderFrame(snapshot) {
         }, parentOrigin);
       },
     });
-  }
+  } else world.updateSnapshot(frameState);
 }
 
 function updateQualityButtons(preference, effective) {
@@ -675,6 +744,15 @@ function bindInteractions() {
     renderFiles(frameState);
   });
   els.refresh.addEventListener("click", requestRefresh);
+  els.motion.addEventListener("click", () => {
+    const paused = els.motion.getAttribute("aria-pressed") === "true";
+    localStorage.setItem("maintainops.performanceMotion", paused ? "off" : "on");
+    world?.setMotionPaused(paused);
+  });
+  els.inspector.querySelector(".inspector-close").addEventListener("click", () => {
+    world?.setView("overview");
+    els.stageActions[0]?.focus({ preventScroll: true });
+  });
   els.qualityButtons.forEach((button) => button.addEventListener("click", () => {
     const preference = button.dataset.qualityTier || "auto";
     localStorage.setItem("maintainops.performanceQuality", preference);
@@ -686,8 +764,12 @@ function bindInteractions() {
     if (target === "timeline") openTimelineSource();
     else world?.setView(target);
   }));
-  els.timelineMonths.forEach((button) => button.addEventListener("click", () => openTimelineSource(Number(button.dataset.timelineMonth))));
   window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.inspector.hidden) {
+      world?.setView("overview");
+      els.stageActions[0]?.focus({ preventScroll: true });
+      return;
+    }
     if (event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLInputElement) return;
     const targets = ["overview", "buckets", "timeline", "files", "vault"];
     const index = Number(event.key) - 1;

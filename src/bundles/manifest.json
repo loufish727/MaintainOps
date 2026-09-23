@@ -8,8 +8,8 @@
   "messageFeature": "messageFeature.db5f458606.js",
   "maintenanceFeature": "maintenanceFeature.a6af22ccf2.js",
   "attachmentFeature": "attachmentFeature.d720a40152.js",
-  "appShell": "appShell.b54ccc4060.js",
-  "platformSpatial": "platformSpatial.2cda393b3e.js",
+  "appShell": "appShell.3c58bb1ceb.js",
+  "platformSpatial": "platformSpatial.103e67aeb7.js",
   "appStyles": "appStyles.6561284a4b.css",
-  "platformSpatialStyles": "platformSpatialStyles.e0d514a3d3.css"
+  "platformSpatialStyles": "platformSpatialStyles.fdbc323126.css"
 }

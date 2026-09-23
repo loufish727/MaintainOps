@@ -46,9 +46,20 @@ The overall score is a transparent, unweighted average of the measured gauges: G
 - `Auto` selects an efficient profile for mobile, Save-Data, slow connections, or lower-memory/lower-core devices. Other devices use the balanced profile.
 - `Efficient` reduces render resolution, multisampling, bloom, shadow resolution, and target frame rate.
 - `Ultra` raises render resolution, multisampling, bloom, and shadow resolution for capable desktops.
-- Background tabs are heavily throttled. Mobile touch-target projection is also throttled while the scene is idle.
+- Hidden tabs do not render the room or advance its animation clock. Mobile touch-target projection is also throttled while the scene is idle.
 - Frame samples restart after every tab visibility change, so hidden time is not reported as low FPS.
 - The storage scene remains lazy-loaded, so its Three.js code and visual assets do not enter the normal app startup path.
+
+## Room Motion And Sampling
+
+- Segmented core rings and inset floor guide lights are ambient machinery, not claims of live network transfers. A brief brighter rail pass acknowledges a changed, current company snapshot.
+- Refresh requests a new company sample and updates object details in place. It does not reload the iframe, rebuild the room, or reset the selected view/camera.
+- The timeline shows the latest 12 sampled days with separate intake and order bars on a shared scale. Zero activity has zero-height bars; an absent timeline has no invented activity. Selecting a day displays exact counts. The Timeline command still opens the detailed activity source.
+- Silo doors open before a separate, scrollable inspection panel appears. Signal cubes gain a selection outline. Closing the panel or tapping empty space returns to Overview.
+- Motion on/off is remembered on the current browser. The device's reduced-motion preference takes precedence; camera travel and reveals settle immediately and ambient animation stops. A paused room renders only when state or interaction changes, and intentionally paused frames do not report low-FPS samples.
+- Selection-owned geometry, materials and texture clones are disposed on close. The room's shared assets are retained.
+
+Regression coverage: `platform-spatial-motion-smoke.js` exercises the motion clock and timeline arithmetic. `platform-performance-motion-browser.spec.js` checks real canvas output/movement, zero/count bars, in-place snapshot updates, selection retention, repeated-inspection resource use, motion pause, and reduced-motion interaction at desktop and mobile widths. Full Strict includes this browser suite; the signed-in role contract also checks that Refresh preserves the iframe and selected view. Browser emulation is not a physical-phone or battery-life measurement.
 
 ## Hosted Monitoring
 
