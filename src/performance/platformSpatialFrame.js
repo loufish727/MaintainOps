@@ -749,10 +749,6 @@ function bindInteractions() {
     localStorage.setItem("maintainops.performanceMotion", paused ? "off" : "on");
     world?.setMotionPaused(paused);
   });
-  els.inspector.querySelector(".inspector-close").addEventListener("click", () => {
-    world?.setView("overview");
-    els.stageActions[0]?.focus({ preventScroll: true });
-  });
   els.qualityButtons.forEach((button) => button.addEventListener("click", () => {
     const preference = button.dataset.qualityTier || "auto";
     localStorage.setItem("maintainops.performanceQuality", preference);

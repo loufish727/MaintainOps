@@ -21,6 +21,14 @@ for (const mobile of [false, true]) {
       await page.goto(`${baseURL}performance-spatial.html?lfes_canvas_probe=motion`, { waitUntil: "domcontentloaded" });
       await page.waitForFunction(() => window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY && window.__STORAGE_WORLD_DEBUG().travelT === 1, null, { timeout: 45000 });
       const debug = () => page.evaluate(() => window.__STORAGE_WORLD_DEBUG());
+      const expectCardFits = async () => {
+        const bounds = (await debug()).inspection.bounds;
+        const header = await page.locator(".page-header").boundingBox();
+        expect(bounds.left).toBeGreaterThanOrEqual(15);
+        expect(bounds.right).toBeLessThanOrEqual(page.viewportSize().width - 15);
+        expect(bounds.top).toBeGreaterThanOrEqual(header.y + header.height);
+        expect(bounds.bottom).toBeLessThan(page.viewportSize().height - 74);
+      };
       const post = (value) => page.evaluate((data) => window.postMessage({ type: "maintainops-platform-spatial-snapshot", snapshot: data }, location.origin), snapshot(value));
       expect((await debug()).renderer.pixels.nonBlack).toBeGreaterThan(100);
       await expect(page.locator(".timeline-days button")).toHaveCount(0);
@@ -46,6 +54,10 @@ for (const mobile of [false, true]) {
         await page.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1);
       }
       await selectBucket();
+      expect((await debug()).inspection.title).toBe("Process Flow");
+      expect((await debug()).inspection.opacity).toBe(1);
+      await expectCardFits();
+      expect(await page.locator(".spatial-inspector").evaluate((element) => getComputedStyle(element).clipPath)).toBe("inset(50%)");
       await page.screenshot({ path: testInfo.outputPath("inspection.png") });
       const selected = await debug();
       const fetched = resources.length;
@@ -53,8 +65,10 @@ for (const mobile of [false, true]) {
       await expect(page.locator(".spatial-inspector")).toContainText("26 records");
       expect((await debug()).selected).toEqual(selected.selected);
       expect((await debug()).cameraPos).toEqual(selected.cameraPos);
+      expect((await debug()).inspection.texture).not.toBe(selected.inspection.texture);
+      expect((await debug()).inspection.rows).toContainEqual(["Current measure", "26 records"]);
       expect(resources.length).toBe(fetched);
-      await page.getByRole("button", { name: "Close inspection" }).click();
+      await page.locator('[data-world-target="overview"]').click();
       await page.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1);
       // Freeze ambient motion so newly visible rotating meshes cannot skew the leak comparison.
       await page.locator("#motion-button").click();
@@ -63,7 +77,7 @@ for (const mobile of [false, true]) {
       const memory = (await debug()).renderer;
       for (let index = 0; index < 3; index += 1) {
         await selectBucket();
-        await page.getByRole("button", { name: "Close inspection" }).click();
+        await page.locator('[data-world-target="overview"]').click();
         await page.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1);
       }
       expect((await debug()).renderer.geometries).toBeLessThanOrEqual(memory.geometries + 1);
@@ -78,7 +92,7 @@ for (const mobile of [false, true]) {
       expect((await page.locator("#storage-world").screenshot()).equals(staticImage)).toBe(true);
       await selectBucket();
       expect((await debug()).travelT).toBe(1);
-      await page.getByRole("button", { name: "Close inspection" }).click();
+      await page.locator('[data-world-target="overview"]').click();
       await page.locator("#motion-button").click();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect(page.locator("#motion-button")).toHaveText("Reduced motion");
@@ -87,6 +101,17 @@ for (const mobile of [false, true]) {
       await selectBucket();
       expect((await debug()).travelT).toBe(1);
       await page.screenshot({ path: testInfo.outputPath("reduced-motion-inspection.png") });
+      for (const [type, index, title] of [["file", 5, "Platform Footprint"], ["vault", null, "App Health"]]) {
+        await page.keyboard.press("Escape");
+        await page.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1);
+        const target = (await debug()).targets.find((item) => item.type === type && (index === null || item.index === index));
+        if (mobile) await page.locator(`[data-spatial-type="${type}"]${index === null ? "" : `[data-spatial-index="${index}"]`}`).click({ timeout: 10000 });
+        else await page.mouse.click(target.x, target.y);
+        await expect.poll(async () => (await debug()).inspection?.title).toBe(title);
+        await page.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1 && window.__STORAGE_WORLD_DEBUG().inspection?.opacity === 1);
+        await expectCardFits();
+        await page.screenshot({ path: testInfo.outputPath(`${type}-inspection.png`) });
+      }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
       expect(overflow).toBe(false);
       expect(errors).toEqual([]);

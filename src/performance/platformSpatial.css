@@ -2815,19 +2815,11 @@ h2 span {
 .timeline-days button:hover { background: #14272d; }
 .timeline-detail { min-height: 15px; color: #c0d8df; font-size: 11px; letter-spacing: 0; padding-top: 3px; }
 .stage-timeline-console { min-height: 110px; max-height: none; }
-.spatial-inspector { position: fixed; z-index: 12; top: 24%; right: 24px; width: min(360px, 29vw); max-height: calc(76vh - 190px); overflow: auto; padding: 20px; border: 1px solid #497786; border-radius: 4px; background: rgba(3, 13, 19, 0.97); box-shadow: 0 12px 30px #0008, inset 3px 0 #6edcff; pointer-events: auto; animation: inspection-in 240ms 700ms both; }
+/* The canvas card has a matching text-only region for assistive technology. */
+.spatial-inspector { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .spatial-inspector[hidden] { display: none; }
-.inspector-close { float: right; min-width: 44px; min-height: 44px; margin: -10px -10px 0 8px; color: #d9f8ff; background: #142b34; border: 1px solid #40606c; font-size: 26px; }
-.inspector-eyebrow { color: #83c8da; font-size: 10px; letter-spacing: 0; }
-.spatial-inspector h2 { font-size: 22px; line-height: 1.2; margin: 10px 0; overflow-wrap: anywhere; letter-spacing: 0; }
-.inspector-subtitle { color: #abbfc6; font-size: 12px; margin: 0 0 12px; }
-.spatial-inspector dl { margin: 0; display: grid; gap: 4px; }
-.spatial-inspector dt { padding-top: 9px; border-top: 1px solid #29404a; color: #92afba; font-size: 11px; }
-.spatial-inspector dd { margin: 0 0 6px; color: #ecf8fc; font-size: 15px; overflow-wrap: anywhere; }
-.spatial-inspector footer { color: #89d9aa; font-size: 11px; margin-top: 10px; }
 .spatial-inspecting .stage-activity { visibility: hidden; }
 .spatial-inspecting .stage-telemetry { visibility: hidden; }
-@keyframes inspection-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
 html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 @media (max-width: 720px) {
   .motion-command { min-height: 44px; min-width: 100px; }
@@ -2845,11 +2837,6 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
   .timeline-console-head strong { font-size: 11px; letter-spacing: 0; }
   .timeline-console-head small { font-size: 9px; letter-spacing: 0; }
   .timeline-detail { font-size: 10px; }
-  .spatial-inspector { top: auto; bottom: 74px; left: 12px; right: 12px; width: auto; max-height: 29vh; padding: 14px; animation: inspection-in 200ms 700ms both; }
-  .spatial-inspector h2 { font-size: 19px; margin: 6px 0; }
-  .spatial-inspector dl { grid-template-columns: 36% minmax(0, 1fr); gap: 8px; }
-  .spatial-inspector dt { border: 0; padding: 0; }
-  .spatial-inspector dd { font-size: 13px; margin: 0; }
   .spatial-inspecting .stage-timeline-console { visibility: hidden; }
 }
 
