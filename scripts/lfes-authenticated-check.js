@@ -146,6 +146,7 @@ async function main() {
     label: "hosted authenticated WebKit admin proof",
     env: {
       MAINTAINOPS_BASE_URL: process.env.MAINTAINOPS_BASE_URL || "https://loufish727.github.io/MaintainOps/",
+      MAINTAINOPS_CHROMIUM_CHANNEL: "",
     },
   }));
 
@@ -153,7 +154,10 @@ async function main() {
     await runStage(`${browser} signed-in account/location switching`, () => run(npxCommand, [
       "playwright", "test", "tests/smoke/location-account-switch-live.spec.js",
       `--browser=${browser}`, "--workers=1",
-    ], { label: `${browser} account/location isolation proof` }));
+    ], {
+      label: `${browser} account/location isolation proof`,
+      env: { MAINTAINOPS_CHROMIUM_CHANNEL: browser === "chromium" ? process.env.MAINTAINOPS_CHROMIUM_CHANNEL || "" : "" },
+    }));
   }
 
   writeSummary("PASS");
