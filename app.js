@@ -4885,6 +4885,7 @@ function initializeMessagesFeature() {
   messageCenterDisplay = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
     getWorkspaceLabel: () => [activeCompanyMembership()?.name, locations.find((location) => location.id === activeLocationId)?.name].filter(Boolean).join(" / "),
     icon: segmentIcon,
+    navIcon,
     renderMessageTools: key => messageExperience.renderTools(key),
     getMessageSection: () => messageExperience.getSection(),
     getMessageView: () => messageView,

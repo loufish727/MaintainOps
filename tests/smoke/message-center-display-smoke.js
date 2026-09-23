@@ -1,8 +1,12 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 global.window = {};
 
 const { createMessageCenterDisplayHelpers } = require("../../src/render/messageCenterDisplay.js");
+require("../../src/render/iconDisplay.js");
+const { navIcon, segmentIcon } = window.MaintainOpsIconDisplay;
 
 const threads = Array.from({ length: 13 }, (_, index) => ({
   id: `thread-${index + 1}`,
@@ -15,6 +19,8 @@ let composing = true;
 let view = "conversations";
 
 const { renderMessageCenter } = createMessageCenterDisplayHelpers({
+  navIcon,
+  icon: segmentIcon,
   getMessagesReady: () => true,
   getMessageThreads: () => threads,
   getActiveMessageThreadId: () => "thread-1",
@@ -79,6 +85,11 @@ const { renderMessageCenter: renderReadOnlyMessageCenter } = createMessageCenter
 });
 
 const html = renderMessageCenter();
+const headingIcon = html.match(/<span class="message-heading-icon" aria-hidden="true">([\s\S]*?)<\/span>/)?.[1];
+assert.equal(headingIcon, navIcon("messages"));
+assert.notEqual(headingIcon, segmentIcon("reply"));
+const appSource = fs.readFileSync(path.join(__dirname, "../../app.js"), "utf8");
+assert.match(appSource, /createMessageCenterDisplayHelpers\(\{[^]*?icon: segmentIcon,\s*navIcon,/);
 
 assert.match(html, /has-composer/);
 assert.match(html, /id="message-thread-form"/);
@@ -112,6 +123,8 @@ assert.match(conversation, /aria-label="Conversation history"/);
 assert.match(conversation, /id="message-reply-form"/);
 assert.match(conversation, /data-thread-id="thread-1"/);
 assert.match(conversation, /data-quick-reply="On it"/);
+assert.ok(conversation.includes(segmentIcon("reply")), "Reply controls retain the reply icon");
+assert.ok(conversation.includes(segmentIcon("back")), "Back controls retain the back arrow");
 assert.doesNotMatch(conversation, /id="message-thread-form"|Hide conversation/);
 view = "activity";
 const activity = renderMessageCenter();
