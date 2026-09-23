@@ -40,7 +40,9 @@ const miniHelpers = createMiniWorkOrderDisplayHelpers({
 });
 
 const signedAssetDocumentRequests = [];
+let workHistory;
 const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
+  getAssetWorkHistory: () => workHistory,
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
   getAssets: () => [
     asset,
@@ -292,5 +294,24 @@ const missingRenderer = createAssetDetailDisplayHelpers({
   renderCreateWorkOrder: () => "<section>Create fallback</section>",
 }).renderAssetDetail;
 assert.equal(missingRenderer(), "<section>Create fallback</section>");
+
+workHistory = { countsStatus: 'loading', historyStatus: 'idle', rows: [] };
+assert.match(renderAssetDetail(), /data-work-count-kind="completed">Loading\.\.\./);
+assert.doesNotMatch(renderAssetDetail(), /No completed work yet/);
+workHistory.countsStatus = 'error';
+assert.match(renderAssetDetail(), /data-work-count-kind="completed">Unavailable/);
+workHistory = { countsStatus: 'ready', counts: { open: 0, completed: 2 }, historyStatus: 'idle', rows: [] };
+assert.match(renderAssetDetail(), /data-work-count-kind="completed">2/);
+assert.match(renderAssetDetail(), /Loading work history/);
+assert.doesNotMatch(renderAssetDetail(), /Older Done/);
+workHistory.historyStatus = 'ready';
+workHistory.rows = Array.from({ length: 13 }, (_, index) => ({ id: `history-${index}`, asset_id: asset.id, title: `History item ${index}`, status: 'completed' }));
+workHistory.counts.completed = 13;
+assert.match(renderAssetDetail(), /Showing 1-12 of 13 - Page 1 of 2/);
+assert.doesNotMatch(renderAssetDetail(), /History item 12/);
+assert.doesNotMatch(renderAssetDetail(), /Older Done/);
+workHistory.rows = []; workHistory.counts.completed = 0;
+assert.match(renderAssetDetail(), /data-work-count-kind="completed">0/);
+assert.match(renderAssetDetail(), /No completed work yet/);
 
 console.log("asset detail display smoke passed");

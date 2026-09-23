@@ -21,6 +21,7 @@ import { createMessageLive } from "./src/services/messageLive.mjs";
 import { createMessageReloadQueue } from "./src/services/messageReloadQueue.mjs";
 import { clearStoredMessageDrafts } from "./src/utils/messageDrafts.mjs";
 import { trackMessageViewport } from "./src/utils/messageViewport.mjs";
+import { createAssetWorkHistoryState } from "./src/services/assetWorkHistoryState.mjs";
 
 const app = document.querySelector("#app");
 const runRenderSingleFlight = createKeyedSingleFlight();
@@ -233,6 +234,7 @@ const {
   countWorkOrdersQuery,
   fetchWorkOrderById,
   fetchWorkOrdersByAsset,
+  fetchAssetWorkOrderCounts,
   fetchWorkOrdersByIds,
   scopedWorkOrderSearchQuery: buildScopedWorkOrderSearchQuery,
   scopedTeamWorkloadQuery: buildScopedTeamWorkloadQuery,
@@ -620,6 +622,7 @@ function setActiveWorkOrderIdState(value) {
 }
 let activeAssetId = workspaceUiState.getActiveAssetId();
 function setActiveAssetIdState(value) {
+  if (value && value !== activeAssetId) assetWorkHistory.invalidate(value);
   activeAssetId = value;
   workspaceUiState.setActiveAssetId(value);
 }
@@ -2305,18 +2308,34 @@ function setActiveFinancialAssetIdState(value) {
   activeFinancialAssetId = value || null;
 }
 
+const assetWorkHistory = createAssetWorkHistoryState({
+  getContext: () => ({
+    key: [currentRenderSessionId(), activeCompanyId, activeLocationId, workspaceHydrationToken].join(":"),
+    companyId: activeCompanyId,
+  }),
+  fetchCounts: ({ companyId }, assetId) => withOperationTimeout(
+    fetchAssetWorkOrderCounts(supabaseClient, companyId, assetId), "Equipment work counts timed out.", 12000),
+  fetchHistory: ({ companyId }, assetId) => withOperationTimeout(
+    fetchWorkOrdersByAsset(supabaseClient, companyId, assetId, WORK_ORDER_RELATION_SELECT), "Equipment work history timed out.", 12000),
+  onChange: (assetId, snapshot) => {
+    document.querySelectorAll("[data-asset-work-count]").forEach((node) => {
+      if (node.dataset.assetWorkCount !== assetId) return;
+      node.textContent = snapshot.countsStatus === "ready" ? snapshot.counts[node.dataset.workCountKind]
+        : snapshot.countsStatus === "error" ? "Unavailable" : "Loading...";
+      node.closest(".command-card")?.classList.toggle("empty", snapshot.countsStatus === "ready" && snapshot.counts.open === 0);
+    });
+  },
+});
+
 async function loadAssetWorkOrderHistory(assetId) {
-  if (!assetId || !activeCompanyId) return;
-  const response = await withOperationTimeout(
-    fetchWorkOrdersByAsset(supabaseClient, activeCompanyId, assetId, WORK_ORDER_RELATION_SELECT),
-    "Equipment work history timed out.",
-    12000
-  );
+  const response = await assetWorkHistory.loadHistory(assetId);
+  if (!response) return;
   if (response.error) {
     showNotice(`Could not load equipment work history: ${response.error.message}`, "warning");
     return;
   }
   const rows = response.data || [];
+  if (assetWorkHistory.get(assetId).rows !== rows) return;
   mergeWorkOrdersById(rows);
   const ids = rows.map((row) => row.id);
   await Promise.all([
@@ -4370,6 +4389,7 @@ function renderWorkspace() {
   `;
 
   bindWorkspaceEvents();
+  if (activeAssetId && document.querySelector("[data-asset-work-count]")) void assetWorkHistory.ensureCounts(activeAssetId);
   messageDrafts?.restore(document);
   messageExperience?.hydrate();
   updateMessageViewport();
@@ -4554,6 +4574,7 @@ const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplay
   getAssets: () => assets,
   getActiveAssetId: () => activeAssetId,
   getWorkOrders: () => workOrders,
+  getAssetWorkHistory: (assetId) => assetWorkHistory.get(assetId),
   getPreventiveSchedules: () => preventiveSchedules,
   getParts: () => parts,
   getAssetParts: () => assetParts,
@@ -5824,6 +5845,7 @@ function bindWorkspaceEvents() {
     getAssetRelationshipPage,
     loadAssetEventsForAssetIds,
     loadAssetWorkOrderHistory,
+    getAssetWorkHistory: (assetId) => assetWorkHistory.get(assetId),
     renderWorkspace,
     setActiveAssetHistoryId,
     setAssetRelationshipOpen,

@@ -184,6 +184,8 @@
         }
         if (!details.open) return;
         if (sectionNeedsAssetWorkHistory(section)) {
+          const list = details.querySelector?.(".mini-list");
+          if (list) list.textContent = "Loading work history...";
           await loadAssetHistory(assetId);
         } else if (section === "asset-history") {
           await loadAssetEventHistory(assetId);
@@ -193,6 +195,12 @@
         if (details.isConnected === false || !details.open) return;
         renderWorkspaceWithoutScrollControl();
       });
+      if (details.open && sectionNeedsAssetWorkHistory(details.dataset.assetRelationshipSection)
+        && options.getAssetWorkHistory?.(details.dataset.assetId)?.historyStatus === "idle") {
+        void loadAssetHistory(details.dataset.assetId).then(() => {
+          if (details.isConnected !== false && details.open) renderWorkspaceWithoutScrollControl();
+        });
+      }
     });
 
     doc.querySelectorAll("[data-asset-relation-page]").forEach((button) => {
