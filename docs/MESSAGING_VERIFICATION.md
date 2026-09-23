@@ -13,6 +13,31 @@ Physical-device checks remain separate. See `docs/APP_WIDE_VERIFICATION.md` and
 
 ## Current Contract
 
+### 2026-09-23 Work Activity Visibility
+
+Work Activity shows the notification list directly, including when every item is
+read. The redundant collapsed disclosure is removed, and each notification has
+an explicit Open work order action. Viewing the list does not mark anything read;
+opening the corresponding work order retains the existing recipient read update.
+The existing newest-12 display limit is unchanged.
+
+Production Action completion creates an in-app alert for the assigned member
+(excluding the completing user). If no eligible assignee exists, the existing
+trigger falls back to the creator and company admins/managers, excluding the
+actor. It does not send email or change work-order status or assignment. Alerts
+load at startup and relevant workspace navigation; they do not currently have a
+Realtime subscription or browser/phone push delivery. This correction does not
+change that delivery contract or introduce polling.
+
+Local Chrome and WebKit checks cover 1100/390/320px notification layouts, read and
+unread visibility, keyboard/touch targets, scrolling, escaped content, long text,
+the 12-item bound and empty state. Home navigation/draft checks also pass in both
+engines. The signed-in Production Ready lifecycle passes in both engines against
+the isolated QA company, including return to the read notification without an
+expander and exactly one read update. Disposable orders/events/alerts were removed.
+Initial first-party gzip is 176,843 bytes (+47); existing budgets pass unchanged.
+No production data or database/schema changes are part of this correction.
+
 ### 2026-09-23 Messages Home
 
 Messages starts on a neutral Home view with New message (write-capable roles),

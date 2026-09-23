@@ -44,11 +44,24 @@ assert.match(html, /1 new/);
 assert.match(html, /data-open-work-notification="notification-1"/);
 assert.match(html, /data-work-order-id="work-1"/);
 assert.match(html, /Production Ready/);
+assert.match(html, /Open work order/);
+assert.doesNotMatch(html, /<details|<summary/);
 assert.match(html, /Justin &lt;Production&gt;/);
 assert.doesNotMatch(html, /Justin <Production>/);
 
 notifications = notifications.map((notification) => ({ ...notification, read_at: "2026-08-05T13:00:00Z" }));
 assert.equal(helpers.unreadWorkOrderNotificationCount(), 0);
 assert.equal(helpers.hasUnreadProductionReady("work-1"), false);
+const readHtml = helpers.renderWorkOrderNotifications();
+assert.match(readHtml, /Recent/);
+assert.match(readHtml, /data-open-work-notification="notification-1"/);
+assert.doesNotMatch(readHtml, /<details|<summary|\shidden[\s>]/);
+
+notifications = Array.from({ length: 13 }, (_, index) => ({ ...notifications[0], id: `notification-${index}` }));
+const limitedHtml = helpers.renderWorkOrderNotifications();
+assert.equal((limitedHtml.match(/data-open-work-notification=/g) || []).length, 12);
+assert.match(limitedHtml, /Showing the 12 most recent notifications/);
+notifications = [];
+assert.equal(helpers.renderWorkOrderNotifications(), "");
 
 console.log("work order notification display smoke passed");

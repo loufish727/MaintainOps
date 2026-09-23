@@ -206,6 +206,8 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
       await expect(notificationButton).toBeVisible();
       await expect(notificationButton).toHaveClass(/unread/);
       await expect(notificationButton).toContainText(marker);
+      await expect(notificationButton).toContainText("Open work order");
+      expect(notificationUpdates).toEqual([]);
       await notificationButton.click();
 
       await expect(technicianPage.getByRole("heading", { name: "Work Order Detail", exact: true, level: 2 })).toBeVisible();
@@ -224,6 +226,13 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
         );
         return readNotifications[0]?.read_at || "";
       }).not.toBe("");
+
+      await technicianPage.locator('[data-section="messages"]').click();
+      await technicianPage.locator('.message-view-tabs [data-message-view="activity"]').click();
+      await expect(notificationButton).toBeVisible();
+      await expect(notificationButton).toHaveClass(/\bread\b/);
+      await expect(technicianPage.locator('.work-notification-panel details, details.work-notification-panel')).toHaveCount(0);
+      expect(notificationUpdates).toHaveLength(1);
     } finally {
       await productionContext?.close();
       await technicianContext?.close();

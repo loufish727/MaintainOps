@@ -4881,19 +4881,24 @@ textarea {
   overflow: hidden;
 }
 
-.work-notification-panel summary {
+.work-notification-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   min-height: 42px;
   align-items: center;
-  cursor: pointer;
   color: var(--ink);
   padding: 8px 10px;
   font-weight: 680;
 }
 
-.work-notification-panel summary span:last-child {
+.work-notification-header h3 {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.work-notification-header > span {
   color: #73e6c8;
   font-size: 0.74rem;
 }
@@ -4937,21 +4942,28 @@ textarea {
 
 .work-notification-heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
   align-items: center;
 }
 
 .work-notification-heading time,
-.work-notification-item > span:last-child,
+.work-notification-body,
 .work-notification-limit {
   color: var(--muted);
   font-size: 0.72rem;
 }
 
 .work-notification-item strong,
-.work-notification-item > span:last-child {
+.work-notification-body {
   overflow-wrap: anywhere;
+}
+
+.work-notification-action {
+  justify-self: end;
+  font-size: 0.8rem;
+  font-weight: 650;
 }
 
 .work-notification-limit {
