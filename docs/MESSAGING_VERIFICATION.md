@@ -30,7 +30,25 @@ from 31 to 33 KiB; its 7 KiB gzip cap and all startup budgets remain unchanged.
 desktop, tablet and 320/390px phone widths, Home navigation, explicit thread links,
 draft continuity, read-only/empty states and live counts without automatic reads.
 The signed-in draft recovery test also checks Home on reload before opening a reply.
-Release and final test evidence for this candidate are recorded after verification.
+At application checkpoint `600da86`, Full Strict passed all 13 stages, including
+198 Node checks, 85 targeted browser cases and four Performance cases. Fourteen
+focused presentation/navigation/draft cases passed separately in Chromium and
+WebKit. The signed-in reload, draft, failure, send and account-switch case passed
+in both engines, including no automatic read writes on Home and return through
+the main menu. Its disposable conversations were removed.
+
+Authenticated proof passed all seven stages at `513e78e`: five Chromium roles,
+WebKit admin, tenant/storage boundaries, Production Action/Ready lifecycles and
+both account/location switching paths. The first authenticated run stopped on an
+ambiguous Activity selector (Home adds another route); the rerun uses the tab
+selector and explicitly asserts Home for each role. The broader opt-in messaging
+lifecycle/tools suites were updated to enter Conversations from Home; those two
+complete mutation suites were not rerun for this navigation-only change.
+
+Initial first-party gzip is 176,784 bytes (90 above the preceding candidate).
+Lazy Messages script/style gzip is 21,493 / 6,754 bytes. Existing compressed
+budgets pass. PR #63 combines this change with the approved in-scene Performance
+card restoration. GitHub/deployment proof is separate from the local results.
 
 ### 2026-09-22 Draft Recovery Correction
 
