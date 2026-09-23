@@ -77,9 +77,72 @@ protection and must not be treated as equivalent to the new generation RPC.
 
 ## Evidence
 
-Verification is in progress. Final command results and tested commit are recorded
-below after the complete candidate passes. Individual checks must not be presented
-as Full Strict or as a production deployment.
+Verification completed 2026-09-22 Pacific (2026-09-23 UTC). Full Strict and the
+separate authenticated proof ran at clean commit `fe2ac58`. Subsequent evidence
+documentation does not change the tested executable candidate.
+
+| Proof | Result | Scope / tested commit |
+| --- | --- | --- |
+| Required GitHub Release Gate | NOT RUN | Branch has not been pushed; its local stages passed within Full Strict |
+| Full Strict local proof | PASS, 13/13 stages | `fe2ac58`; 191 Node smoke files, 81 targeted browser cases, resource checks, and desktop/mobile Performance interaction |
+| Authenticated testing-platform proof | PASS, 7/7 stages | `fe2ac58`; five Chromium roles, WebKit admin, both engines' account/location switching, Production Action and notification lifecycles |
+| Authenticated database/storage boundary probes | PASS | 46 PASS, 5 informational results, 0 FAIL; authenticated proof required |
+| PM signed-in Chromium suite | PASS, 4/4 cases | `252cc8d`; desktop 1440px, phone 390px, pagination, and real PostgreSQL concurrency |
+| PM signed-in WebKit suite | PASS, 4/4 cases | `a4a58c3`; same scenario set, final application bytes also used by `fe2ac58` |
+| Isolated PostgreSQL PM checks | PASS, 17 groups | Fresh schema/migrations, transaction rollback, occurrence reuse, answer validation, ownership, and history/delete constraints |
+| LFES Gold risk review | Findings recorded | Scope, code paths, persisted-state proof, failure recovery, cleanup, deployment order, rollback, and limits below; not an external certification |
+
+The differences after the Chromium run were optional safety-note presentation,
+settled-reload test synchronization, and migration filename tooling. The WebKit
+run covers the final application bytes; Full Strict covers the final tooling.
+All eight PM browser-suite cases ran without retries or skipped cases.
+
+### Lifecycle Coverage
+
+| Area | Evidence |
+| --- | --- |
+| PM/procedure/step creation | Signed-in desktop/phone entry, rerender, navigation, same-tab reload, failed save and retry; only successful saves clear the submitted draft |
+| Generation and connectivity | Menu and equipment PM generation; persisted equipment, location, procedure, source occurrence, due-date advance and creation event |
+| Concurrent generation | Real authenticated HTTP requests against QA PostgreSQL; one occurrence/order and one date advance, including retry after schedule deletion |
+| Required answers | Checkbox, text, number including zero, and pass/fail; pending/failed answers block completion; failed text restored and successfully retried |
+| Completion and reopening | Complete, reopen, inspect retained answers/equipment link, complete again; persisted status/timestamps and both completion history entries checked |
+| Counts and history | Equipment open/completed counts and PM source history checked before/after transitions; exact procedure links include retained answers and inactive schedules |
+| Deletion | Linked procedure deletion denied; schedule deletion retains work/source snapshot; work deletion updates counts; unlinked procedure can then be deleted |
+| Pagination | PM and Procedure menus, equipment PM, PM source history, and equipment completed history move forward/back at 12 items |
+| Other PM surfaces | Focused render/date tests cover Planning, dashboard and Manager due/unavailable states; five-role proof covers navigation/permissions, not every mutation on those screens |
+| Scope and navigation races | Mocked delayed/out-of-order reads and writes, 44 linked-navigation cases, detached/replaced DOM, changed accounts/locations, and newer user edits |
+
+### Weight And Startup
+
+The measured initial bundle total is 772,942 decoded bytes / 178,481 gzip bytes,
+versus 784,739 / 179,118 at the base. The deferred maintenance chunk is 36,695 /
+11,073 bytes. The existing total initial gzip cap remains 175 KiB; this is a
+weight comparison, not proof of a production speed improvement.
+
+Signed-in QA workspace samples used 30-35 Supabase requests against the unchanged
+35-request budget. Admin, Manager and Accounting used 31, Production 30, and
+Technician 35; WebKit Admin used 31. Initial My Work loaded zero optional feature
+bundles for every role. Workspace visibility was 1,855-2,020 ms in these six
+samples. Those timings are local-preview/QA observations, not a field SLA.
+
+### Reproduction And Artifacts
+
+The local credential-loading wrapper points only to testing project
+`fsxqrngpaseqdxijggcm`, QA company `0d6fd8f1-428d-4192-8176-48943e3ec119`, and
+`http://127.0.0.1:4203/`. With the guarded testing environment configured, run:
+
+```sh
+npm run test:lfes:strict
+npm run test:lfes:authenticated
+npx playwright test tests/smoke/pm-lifecycle-live.spec.js tests/smoke/pm-lifecycle-concurrency-live.spec.js --workers=1
+npx playwright test tests/smoke/pm-lifecycle-live.spec.js tests/smoke/pm-lifecycle-concurrency-live.spec.js --browser=webkit --workers=1
+```
+
+Run authenticated suites serially and archive `lfes-evidence` before another
+LFES command replaces it. Credentials remain private and are not part of this
+report. Local archives are `LFES/private/pm-strict-fe2ac58`,
+`LFES/private/pm-authenticated-fe2ac58`, `LFES/private/pm-chromium-252cc8d`, and
+`LFES/private/pm-webkit-a4a58c3`. Command logs are under `LFES/private/pm-*.log`.
 
 Focused suites include `pm-procedure-lifecycle-smoke`, `pm-completion-state-smoke`,
 `pm-dates-surfaces-smoke`, `checklist-results-state-smoke`,
@@ -101,6 +164,20 @@ cleanup. Its exact run IDs were inspected and removed on the testing project;
 postflight confirmed zero remaining assets, templates, steps, schedules, orders,
 answers, events, comments, and financial snapshots for that run. The pagination
 helper now checks for absent controls without waiting; action timeouts are bounded.
+
+An earlier WebKit run reported access-control/network console errors around
+repeated reloads. The fixture now waits for outstanding QA reads to settle before
+an intentional reload; the complete rerun passed without ignoring those errors.
+This proves settled reloads, not abrupt mid-request interruption or offline use.
+An initial Full Strict run also rejected the Supabase CLI's 14-digit migration
+timestamp. The checker/apply helper now accept that format and legacy 12-digit
+names, with malformed-name and timestamp-collision regression tests. The complete
+gate was rerun, not waived.
+
+Final read-only QA postflight found zero `LFES PM` assets, templates, schedules,
+or work orders in the QA company. Per-case cleanup also verifies owned child
+answers, steps, events, comments, and financial snapshots. The authenticated
+proof's disposable delete-denial request was removed and its absence verified.
 
 ## Limits And Follow-Up
 
