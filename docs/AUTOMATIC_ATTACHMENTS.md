@@ -1,6 +1,6 @@
 # Automatic Attachments
 
-Candidate date: 2026-09-23. Local frontend and isolated QA only; not released.
+Release authorized 2026-09-23. Isolated QA verification passed and the production database prerequisite is applied. Frontend publication follows the required GitHub Release Gate; rollout evidence is in `APPLIED_MIGRATIONS.md` and `AUTOMATIC_ATTACHMENTS_VERIFICATION.md`.
 
 ## Behavior
 

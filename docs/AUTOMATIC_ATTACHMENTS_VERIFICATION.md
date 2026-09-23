@@ -3,7 +3,7 @@
 Verified 2026-09-23 against executable commit
 `dd790795917f687e94d33b5454450fb74e19d6dd` on
 `codex/automatic-attachments-20260923`. Local preview and isolated QA only.
-Nothing in this packet has been pushed or applied to production.
+At that verification checkpoint, nothing had been pushed or applied to production.
 
 ## Results
 
@@ -43,9 +43,25 @@ was also removed. Existing business companies and production files were not
 modified. QA security-advisor counts are unchanged from the pre-change
 baseline; this does not mean that baseline has no warnings.
 
-Production release still requires the consolidated migration documented in
-`APPLIED_MIGRATIONS.md` before publishing the frontend. GitHub CI and hosted
-production verification have not run for this unpushed branch.
+The production prerequisite was subsequently applied after user authorization;
+see the rollout checkpoint below. GitHub CI and hosted verification are separate
+from these local/QA results and are recorded on the release pull request.
+
+## Production Prerequisite Checkpoint
+
+On 2026-09-23 the user authorized release. The branch was rebased onto current
+`main` to account for the already-squashed PM release. `git diff 0d2554b HEAD`
+was empty immediately after rebase: the verified candidate files were unchanged.
+Subsequent changes only document rollout evidence.
+
+The exact consolidated migration was applied to production at 18:01:49 UTC.
+Pre/postflight fingerprints and counts matched across 22 business tables plus
+`storage.objects`. The 278 existing objects were not modified. The new table is
+RLS-protected and initially empty; its bucket is private with a 25 MiB limit.
+Table/storage policies, columns, constraints, indexes, and column grants match
+QA. Both function bodies match; QA has one extra preexisting service-role grant
+on the dashboard RPC, which was not added to production. Advisor findings are
+unchanged. Details and rollback constraints are in `APPLIED_MIGRATIONS.md`.
 
 ## Limits of Proof
 
