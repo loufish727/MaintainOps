@@ -3,6 +3,37 @@
     const documentRef = deps.documentRef || document;
     const FormDataCtor = deps.FormDataCtor || FormData;
     const cssRef = deps.CSSRef || CSS;
+    const pendingGenerations = new Map();
+    const pendingWrites = new Set();
+
+    function captureScope() {
+      const companyId = deps.getActiveCompanyId();
+      const userId = deps.getSession()?.user?.id;
+      const scope = deps.getScope?.();
+      return {
+        companyId, userId, client: deps.supabaseClient(),
+        isCurrent: () => deps.getActiveCompanyId() === companyId &&
+          deps.getSession()?.user?.id === userId && deps.getScope?.() === scope,
+      };
+    }
+
+    function requireEditor(context) {
+      if (!context.companyId || !context.userId || deps.canEditOperationalRecords?.() !== true) {
+        throw new Error("You do not have permission to edit PM schedules.");
+      }
+    }
+
+    function requireDeleteAccess(context) {
+      requireEditor(context);
+      if (!deps.canDeleteOperationalRecords()) throw new Error("Only company admins and managers can delete PM schedules.");
+    }
+
+    function restoreButton(button, context, label) {
+      if (button && button.isConnected !== false && context.isCurrent()) {
+        button.disabled = false;
+        button.textContent = label;
+      }
+    }
 
     function bindPreventiveMaintenanceWorkflowEvents() {
       const forms = Array.from(documentRef.querySelectorAll?.("[data-create-pm-form]") || []);
@@ -14,6 +45,10 @@
     async function createPreventiveSchedule(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
+      const context = captureScope();
+      const key = `${context.companyId}:create`;
+      if (pendingWrites.has(key)) return;
+      pendingWrites.add(key);
       const submitButton = formElement.querySelector("button[type='submit']");
       const errorElement = formElement.querySelector("[data-pm-error]") || documentRef.querySelector("#pm-error");
       if (errorElement) errorElement.textContent = "";
@@ -23,11 +58,14 @@
       }
 
       try {
+        requireEditor(context);
+        const draft = deps.captureCreateDraft?.(formElement);
         const form = new FormDataCtor(formElement);
+        deps.nextDueDate(String(form.get("next_due_at") || ""), String(form.get("frequency") || ""));
         if (!deps.confirmAssetLocationRouting(form.get("asset_id") || null, "this PM schedule", errorElement)) return;
         const { error } = await deps.withOperationTimeout(
           deps.insertWithOptionalProcedure("preventive_schedules", {
-            company_id: deps.getActiveCompanyId(),
+            company_id: context.companyId,
             location_id: deps.locationIdForAsset(form.get("asset_id")),
             asset_id: form.get("asset_id"),
             title: deps.requiredText(form.get("title"), "PM title"),
@@ -35,43 +73,46 @@
             next_due_at: form.get("next_due_at"),
             ...deps.procedureColumn(form.get("procedure_template_id")),
             active: true,
-            created_by: deps.getSession().user.id,
+            created_by: context.userId,
           }),
           "PM schedule save timed out. Check your connection and try again.",
           15000
         );
         if (error) throw error;
+        if (draft) deps.clearCreateDraft?.(draft);
+        if (!context.isCurrent()) return;
         deps.showNotice("PM schedule added.");
         await deps.render();
       } catch (error) {
+        if (!context.isCurrent()) return;
         if (errorElement) errorElement.textContent = error.message || "Could not add PM schedule.";
         else deps.alertUser(error.message || error);
       } finally {
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.textContent = "Add Schedule";
-        }
+        pendingWrites.delete(key);
+        restoreButton(submitButton, context, "Add Schedule");
       }
     }
 
     function requestDeletePreventiveSchedule(id) {
-      if (!deps.canDeleteOperationalRecords()) {
-        deps.alertUser("Only company admins and managers can delete PM schedules.");
-        return;
+      const context = captureScope();
+      try {
+        requireDeleteAccess(context);
+        if (pendingWrites.has(`${context.companyId}:delete:${id}`)) return;
+        if (!deps.getPreventiveSchedules().some((schedule) => schedule.id === id && schedule.company_id === context.companyId)) return;
+        deps.setPendingDeleteScheduleId(id);
+        deps.renderWorkspace();
+      } catch (error) {
+        deps.alertUser(error.message);
       }
-      if (!deps.getPreventiveSchedules().some((schedule) => schedule.id === id)) return;
-      deps.setPendingDeleteScheduleId(id);
-      deps.renderWorkspace();
     }
 
     async function deletePreventiveSchedule(id) {
-      if (!deps.canDeleteOperationalRecords()) {
-        deps.alertUser("Only company admins and managers can delete PM schedules.");
-        return;
-      }
-
-      const schedule = deps.getPreventiveSchedules().find((item) => item.id === id);
+      const context = captureScope();
+      const key = `${context.companyId}:delete:${id}`;
+      if (pendingWrites.has(key)) return;
+      const schedule = deps.getPreventiveSchedules().find((item) => item.id === id && item.company_id === context.companyId);
       if (!schedule) return;
+      pendingWrites.add(key);
       const button = documentRef.querySelector(`[data-confirm-delete-schedule="${cssRef.escape(id)}"]`);
       if (button) {
         button.disabled = true;
@@ -79,31 +120,34 @@
       }
 
       try {
+        requireDeleteAccess(context);
         const { data, error } = await deps.withOperationTimeout(
-          deps.supabaseClient()
+          context.client
             .from("preventive_schedules")
             .delete()
             .eq("id", id)
-            .eq("company_id", deps.getActiveCompanyId())
+            .eq("company_id", context.companyId)
             .select("id"),
           "PM schedule delete timed out. Check your connection and try again.",
           15000
         );
+        if (!context.isCurrent()) return;
         if (error) throw error;
-        if (!data?.length) {
-          throw new Error("PM schedule was not deleted. Run supabase/step-next-cleanup-delete-paths.sql, then try again.");
+        if (!Array.isArray(data) || !data.some((row) => row.id === id)) {
+          throw new Error("PM schedule was not deleted. Refresh and check your access before retrying.");
         }
 
         const verification = await deps.withOperationTimeout(
-          deps.supabaseClient()
+          context.client
             .from("preventive_schedules")
             .select("id")
             .eq("id", id)
-            .eq("company_id", deps.getActiveCompanyId())
+            .eq("company_id", context.companyId)
             .maybeSingle(),
           "PM schedule delete verification timed out. Refresh and check the PM list.",
           15000
         );
+        if (!context.isCurrent()) return;
         if (verification.error) throw new Error(`PM schedule delete verification failed: ${verification.error.message}`);
         if (verification.data) throw new Error("PM schedule delete did not persist in Supabase.");
 
@@ -111,16 +155,24 @@
         deps.showNotice("PM schedule deleted.");
         await deps.render();
       } catch (error) {
+        if (!context.isCurrent()) return;
         deps.showNotice(error.message || "Could not delete PM schedule.", "warning");
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Permanently Delete";
-        }
+      } finally {
+        pendingWrites.delete(key);
+        restoreButton(button, context, "Permanently Delete");
       }
     }
 
-    async function generatePreventiveWorkOrder(scheduleId) {
-      const schedule = deps.getPreventiveSchedules().find((item) => item.id === scheduleId);
+    function generatePreventiveWorkOrder(scheduleId) {
+      const key = `${deps.getActiveCompanyId()}:${scheduleId}`;
+      if (pendingGenerations.has(key)) return pendingGenerations.get(key);
+      const promise = generateOnce(scheduleId).finally(() => pendingGenerations.delete(key));
+      pendingGenerations.set(key, promise);
+      return promise;
+    }
+    async function generateOnce(scheduleId) {
+      const context = captureScope();
+      const schedule = deps.getPreventiveSchedules().find((item) => item.id === scheduleId && item.company_id === context.companyId);
       if (!schedule) return;
       const button = documentRef.querySelector(`[data-generate-pm="${cssRef.escape(scheduleId)}"]`);
       if (button) {
@@ -129,55 +181,26 @@
       }
 
       try {
-        const payload = {
-          company_id: deps.getActiveCompanyId(),
-          location_id: deps.locationIdForAsset(schedule.asset_id),
-          asset_id: schedule.asset_id,
-          title: schedule.title,
-          description: `Generated from preventive schedule: ${schedule.frequency}.`,
-          priority: "medium",
-          type: "preventive",
-          status: "open",
-          due_at: schedule.next_due_at,
-          ...deps.procedureColumn(schedule.procedure_template_id),
-          created_by: deps.getSession().user.id,
-        };
-        deps.applySafetyRequirementPayload(payload);
-        deps.applySafetyCheckPayload(payload, false);
+        requireEditor(context);
+        if (schedule.active === false) throw new Error("This PM schedule cannot generate work.");
+        deps.nextDueDate(schedule.next_due_at, schedule.frequency);
         const { data, error } = await deps.withOperationTimeout(
-          deps.insertWithOptionalProcedure("work_orders", payload, { returnSingle: true }),
-          "PM work order generation timed out."
+          context.client.rpc("generate_preventive_work_order", {
+            p_company_id: context.companyId, p_schedule_id: schedule.id, p_expected_due_at: schedule.next_due_at,
+          }),
+          "PM work order generation timed out. Retry this schedule to check the same occurrence."
         );
-
         if (error) throw error;
-
-        deps.setActiveWorkOrderId(data.id);
+        if (!data?.work_order_id) throw new Error("PM generation did not return a work order.");
+        if (!context.isCurrent()) return;
+        deps.setActiveWorkOrderId(data.work_order_id);
         deps.setActiveSection("work");
-        let scheduleWarning = "";
-        try {
-          const scheduleUpdate = await deps.withOperationTimeout(
-            deps.supabaseClient()
-              .from("preventive_schedules")
-              .update({ next_due_at: deps.nextDueDate(schedule.next_due_at, schedule.frequency) })
-              .eq("id", schedule.id)
-              .eq("company_id", deps.getActiveCompanyId()),
-            "PM next due date update timed out."
-          );
-          if (scheduleUpdate.error) scheduleWarning = scheduleUpdate.error.message;
-        } catch (updateError) {
-          scheduleWarning = updateError.message || String(updateError);
-        }
-        deps.showNotice(
-          scheduleWarning ? `PM work generated, but next due date did not update: ${scheduleWarning}` : "PM work order generated.",
-          scheduleWarning ? "warning" : "success"
-        );
+        deps.showNotice(data.reused ? "Opened the work order already generated for this PM occurrence." : "PM work order generated.");
         await deps.render();
       } catch (error) {
-        deps.showNotice(`Could not generate PM work: ${error.message || error}`, "warning");
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Generate Work";
-        }
+        if (context.isCurrent()) deps.showNotice(`Could not generate PM work: ${error.message || error}`, "warning");
+      } finally {
+        restoreButton(button, context, "Generate Work");
       }
     }
 

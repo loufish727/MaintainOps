@@ -9,8 +9,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json
 
 const budgets = {
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
-  // Bounded stream-before-snapshot startup is 47,230 gzip bytes; total startup cap stays unchanged.
-  appShell: { decoded: 170 * 1024, gzip: 47 * 1024 },
+  // Scoped draft/lazy-feature orchestration; the combined startup cap stays unchanged.
+  appShell: { decoded: 170 * 1024, gzip: 48 * 1024 },
   appStyles: { decoded: 185 * 1024, gzip: 33 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
@@ -18,6 +18,8 @@ const budgets = {
   financialFeature: { decoded: 28 * 1024, gzip: 8 * 1024 },
   teamFeature: { decoded: 22 * 1024, gzip: 6 * 1024 },
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
+  // PM/procedure rendering, workflows and linked-history reads load on demand.
+  maintenanceFeature: { decoded: 40 * 1024, gzip: 12 * 1024 },
   // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
   // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
   // Draft recovery moved out of appShell into this on-demand bundle; startup limits stay unchanged.

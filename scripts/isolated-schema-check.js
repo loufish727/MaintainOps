@@ -61,6 +61,10 @@ async function main() {
     await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-maintenance-requests.sql'), 'utf8'));
     checks.push({ name: 'request_baseline:maintenance-requests', verdict: 'PASS' });
 
+    // Procedures predate dated migrations, which must restore the modern role helpers last.
+    await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-procedures.sql'), 'utf8'));
+    checks.push({ name: 'pm_baseline:procedures', verdict: 'PASS' });
+
     // Messaging predates dated migrations; exercise its real legacy baseline too.
     for (const name of ["message-center", "message-soft-delete-and-thread-scope", "message-thread-soft-delete", "message-work-order-links"]) {
       await database.exec(fs.readFileSync(path.join(root, "supabase", `step-next-${name}.sql`), "utf8"));

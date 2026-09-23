@@ -7,20 +7,23 @@ export async function loadWorkspaceCoreData({
   listAppIssueReports,
   loadWorkspaceResponse,
 }) {
+  const { loadCompleteWorkspaceRows, validateProcedureSteps } = window.MaintainOpsMaintenanceWorkspaceRows;
   const [locationResponse, assetResponse, scheduleResponse, partsResponse, procedureResponse, issueReportResponse] = await Promise.all([
     loadWorkspaceResponse("Locations", listLocations(supabaseClient, activeCompanyId)),
     loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
-    loadWorkspaceResponse("PM schedules", supabaseClient
+    loadWorkspaceResponse("PM schedules", loadCompleteWorkspaceRows("PM schedules", () => supabaseClient
       .from("preventive_schedules")
-      .select("*, assets(name, location_id)")
+      .select("*, assets(name, location_id)", { count: "exact" })
       .eq("company_id", activeCompanyId)
-      .order("next_due_at", { ascending: true })),
+      .order("next_due_at", { ascending: true })
+      .order("id", { ascending: true }))),
     loadWorkspaceResponse("Parts", listParts(supabaseClient, activeCompanyId)),
-    loadWorkspaceResponse("Procedure checklists", supabaseClient
+    loadWorkspaceResponse("Procedure checklists", loadCompleteWorkspaceRows("Procedure checklists", () => supabaseClient
       .from("procedure_templates")
-      .select("*, procedure_steps(*)")
+      .select("*, procedure_steps(*), procedure_step_count:procedure_steps(count)", { count: "exact" })
       .eq("company_id", activeCompanyId)
-      .order("name")),
+      .order("name", { ascending: true })
+      .order("id", { ascending: true }), validateProcedureSteps)),
     loadWorkspaceResponse("App issue reports", listAppIssueReports(supabaseClient, activeCompanyId)),
   ]);
 

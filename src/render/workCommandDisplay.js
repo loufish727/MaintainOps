@@ -5,6 +5,7 @@
     assignmentLabel,
     isVendorAssigned,
     hasCompletedSafetyDeviceCheck,
+    requiresSafetyDeviceCheck = workOrder => Boolean(workOrder.asset_id),
     renderEmailHelperCommandCard,
     getMessageThreads,
     getPartsUsedByWorkOrder,
@@ -12,8 +13,8 @@
     function renderWorkOrderCommandSummary(workOrder) {
       const linkedMessages = getMessageThreads().filter((thread) => thread.work_order_id === workOrder.id).length;
       const partsCount = (getPartsUsedByWorkOrder()[workOrder.id] || []).reduce((sum, row) => sum + (Number(row.quantity_used) || 0), 0);
-      const safetyState = !workOrder.asset_id
-        ? ["General", "No equipment safety check required", "neutral"]
+      const safetyState = !requiresSafetyDeviceCheck(workOrder)
+        ? [workOrder.asset_id ? "Not Required" : "General", "No equipment safety check required", "neutral"]
         : hasCompletedSafetyDeviceCheck(workOrder)
           ? ["Checked", "Safety devices confirmed", "safe"]
           : ["Required", "Check E-stops, sensors, guards, and interlocks before completion", "danger"];

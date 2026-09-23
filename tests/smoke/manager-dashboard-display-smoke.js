@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 global.window = {};
+require("../../src/utils/maintenanceScheduleDates.js");
 require("../../src/render/managerDashboardDisplay.js");
 
 const { createManagerDashboardDisplayHelpers } = window.MaintainOpsManagerDashboardDisplay;

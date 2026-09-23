@@ -81,7 +81,9 @@
     }
 
     function preventiveRows() {
-      return (typeof deps.getPreventiveSchedules === "function" ? deps.getPreventiveSchedules() : []).filter(deps.matchesActiveLocation);
+      return (typeof deps.getPreventiveSchedules === "function" ? deps.getPreventiveSchedules() : [])
+        .filter((schedule) => schedule.active !== false)
+        .filter(deps.matchesActiveLocation);
     }
 
     function assignedOpenWork(userId) {
@@ -112,18 +114,14 @@
       return userId ? deps.teamMemberName(userId) : "Converter not recorded";
     }
 
-    function dateOnly(value) {
-      if (!value) return null;
-      const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
-      return Number.isFinite(date.getTime()) ? date : null;
-    }
-
     function scheduleDueState(schedule) {
-      const due = dateOnly(schedule.next_due_at || schedule.due_at);
+      const due = window.MaintainOpsMaintenanceScheduleDates.localDateOnly(schedule.next_due_at || schedule.due_at);
       if (!due) return "unscheduled";
-      const days = Math.round((due.getTime() - todayStart().getTime()) / dayMs);
-      if (days < 0) return "overdue";
-      if (days <= 7) return "due_soon";
+      const today = todayStart();
+      const soon = new Date(today);
+      soon.setDate(soon.getDate() + 7);
+      if (due < today) return "overdue";
+      if (due <= soon) return "due_soon";
       return "planned";
     }
 
@@ -547,6 +545,7 @@
     function renderOperationsIntelligenceBoard() {
       const equipment = equipmentHealthSummary();
       const pm = preventiveSummary();
+      const pmReady = deps.getSchedulesReady?.() !== false;
       const funnel = requestFunnel();
       const aging = workAgeBuckets();
       const downEquipmentNames = equipment.down.map((asset) => asset.name || "Unnamed equipment");
@@ -562,14 +561,14 @@
           </div>
           <div class="manager-intel-grid">
             ${renderIntelligenceCard("Equipment Risk", equipment.down.length + equipment.degraded.length, `${equipment.down.length} down, ${equipment.degraded.length} degraded, ${equipment.watch.length} watch`, equipment.down.length ? "danger" : equipment.degraded.length ? "watch" : "normal")}
-            ${renderIntelligenceCard("PM Risk", pm.overdue.length + pm.dueSoon.length, `${pm.overdue.length} overdue, ${pm.dueSoon.length} due in 7 days`, pm.overdue.length ? "danger" : pm.dueSoon.length ? "watch" : "normal")}
+            ${pmReady ? renderIntelligenceCard("PM Risk", pm.overdue.length + pm.dueSoon.length, `${pm.overdue.length} overdue, ${pm.dueSoon.length} due in 7 days`, pm.overdue.length ? "danger" : pm.dueSoon.length ? "watch" : "normal") : renderIntelligenceCard("PM Risk", "Unavailable", "PM schedules could not be loaded.", "watch")}
             ${renderIntelligenceCard("Request Flow", `${funnel.converted}/${funnel.submitted + funnel.converted}`, `${funnel.submitted} new, ${funnel.converted} converted, ${funnel.stale} stale`, funnel.stale ? "watch" : "normal")}
             ${renderIntelligenceCard("Aging Load", aging.stale + aging.old, `${aging.fresh} fresh, ${aging.watch} 3-7d, ${aging.stale} 8-14d, ${aging.old} 15d+`, aging.old ? "danger" : aging.stale ? "watch" : "normal")}
           </div>
           <div class="manager-signal-grid">
             ${renderMiniSignalList("Down Equipment", downEquipmentNames, "No equipment marked offline/down.")}
             ${renderMiniSignalList("Degraded Equipment", degradedNames, "No equipment marked degraded.")}
-            ${renderMiniSignalList("PM To Watch", duePmNames, "No PM schedules due soon.")}
+            ${renderMiniSignalList("PM To Watch", pmReady ? duePmNames : [], pmReady ? "No PM schedules due soon." : "PM schedules unavailable.")}
           </div>
         </section>
       `;

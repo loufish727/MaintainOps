@@ -37,6 +37,10 @@ const bundles = [
     baseName: "messageFeature",
   },
   {
+    entry: "src/bundles/maintenanceFeature.entry.js",
+    baseName: "maintenanceFeature",
+  },
+  {
     entry: "app.js",
     baseName: "appShell",
   },
@@ -121,6 +125,7 @@ async function main() {
           __MAINTAINOPS_TEAM_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.teamFeature}`),
           __MAINTAINOPS_SETUP_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.setupFeature}`),
           __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.messageFeature}`),
+          __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.maintenanceFeature}`),
           __MAINTAINOPS_MESSAGE_STYLES__: JSON.stringify(`src/bundles/${manifest.messageStyles}`),
         }
       : undefined;

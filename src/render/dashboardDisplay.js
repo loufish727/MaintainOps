@@ -120,8 +120,9 @@
     const soon = new Date(today);
     soon.setDate(soon.getDate() + 7);
     return deps.getPreventiveSchedules().filter((schedule) => {
-      const due = new Date(`${schedule.next_due_at}T00:00:00`);
-      return due >= today && due <= soon;
+      if (schedule.active === false) return false;
+      const due = window.MaintainOpsMaintenanceScheduleDates.localDateOnly(schedule.next_due_at);
+      return due && due >= today && due <= soon;
     });
   }
 

@@ -8,6 +8,7 @@
     statusLabel,
     renderRelationshipChips,
     canEditOperationalRecords = () => true,
+    getSchedulesReady = () => true,
   }) {
     function renderPlanningGroup(title, items, chipClass, pageKind, options = {}) {
       const pageSize = LIST_ITEMS_PER_PAGE || 12;
@@ -65,7 +66,7 @@
           `)}
           ${renderPlanningLane("Upcoming", "Near-term maintenance and preventive work.", `
             ${renderPlanningGroup("Next 7 Days", groups.soon, "in_progress", "soon")}
-            ${renderPlanningGroup("PM Due Soon", groups.pm, "open", "pm")}
+            ${getSchedulesReady() ? renderPlanningGroup("PM Due Soon", groups.pm, "open", "pm") : `<p class="error-text" role="alert">PM schedules unavailable.</p>`}
           `)}
         </div>
       `;
@@ -98,7 +99,7 @@
               <strong>${escapeHtml(item.title)}</strong>
               <p>${escapeHtml(item.assetName)} - due ${escapeHtml(item.dueAt)}</p>
             </div>
-            <button class="secondary-button" data-generate-pm="${item.id}" type="button">Generate Work</button>
+            ${canEditOperationalRecords() ? `<button class="secondary-button" data-generate-pm="${escapeHtml(item.id)}" type="button">Generate Work</button>` : ""}
           </article>
         `;
       }

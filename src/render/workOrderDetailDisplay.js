@@ -132,6 +132,7 @@
             <span class="chip ${workOrder.status}">${statusLabel(workOrder.status)}</span>
           </div>
           <h2>${escapeHtml(workOrder.title)}</h2>
+          ${workOrder.preventive_source_id ? `<p class="completion-note" data-pm-source>PM: ${escapeHtml(workOrder.preventive_source_title || "Preventive schedule")} - Scheduled ${escapeHtml(workOrder.preventive_due_at || "unset")}${workOrder.preventive_schedule_id ? ` <button class="text-button" data-search-section="pm" type="button">PM Schedules</button>` : " - Schedule deleted"}</p>` : ""}
           <p>${escapeHtml(cleanWorkOrderDescription(workOrder.description) || "No description.")}</p>
           ${renderRelationshipChips(workOrder)}
           ${workOrder.completed_at ? `<p class="completion-note">Completed ${new Date(workOrder.completed_at).toLocaleString()} Â· ${workOrder.actual_minutes || 0} min</p>` : ""}
@@ -215,7 +216,7 @@
             <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
             ${requiresSafetyDeviceCheck(workOrder) ? (
               `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices identified before completion: E-stops, sensors, guards, and interlocks</label>`
-            ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>No machine / equipment selected, so no equipment safety check is required.</span></div>`}
+            ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>${workOrder.asset_id ? "This equipment does not require the equipment safety check." : "No machine / equipment selected, so no equipment safety check is required."}</span></div>`}
             <p class="error-text" id="quick-update-error"></p>
             <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
           </form>
@@ -285,7 +286,7 @@
               <span data-checklist-summary>${progress.done} of ${progress.total} complete - required ${requiredProgress.done}/${requiredProgress.total}</span>
             </div>
             <div class="checklist-list">
-              ${procedure.procedure_steps.map((step) => canEditOperational ? renderChecklistStep(workOrder, step) : `
+              ${canEditOperational && deps.checklistToolsReady?.() === false ? deps.renderChecklistLoading() : procedure.procedure_steps.map((step) => canEditOperational ? renderChecklistStep(workOrder, step) : `
                 <div class="checklist-step relationship-detail procedure">
                   <span>${step.position}. ${escapeHtml(step.prompt)} ${step.required ? `<small class="required-mark">Required</small>` : ""}</span>
                   <small>${escapeHtml(deps.getStepResultsByWorkOrder()[workOrder.id]?.[step.id]?.value || "Not recorded")}</small>

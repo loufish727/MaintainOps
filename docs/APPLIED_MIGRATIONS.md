@@ -75,6 +75,18 @@ Every new SQL run should record:
 - who/what applied it
 - verification performed
 - rollback note if applicable
+
+## PM Lifecycle Candidate, 2026-09-23 UTC
+
+`supabase/migrations/20260923051845_pm_lifecycle_integrity.sql` was applied by
+Codex through the Supabase migration tool to testing project
+`fsxqrngpaseqdxijggcm` during the 2026-09-22 Pacific audit. Production project
+`lbphkzznvvumemdkqoay`: **NOT APPLIED**. No production PM records were rewritten.
+Isolated PostgreSQL schema/RLS and PM lifecycle checks pass; both new public RPCs
+were verified as security invoker. Signed-in and concurrency evidence, deployment
+order, rollback cautions, and existing advisor findings are recorded in
+`PM_LIFECYCLE_VERIFICATION.md`. Apply and verify the database prerequisite before
+publishing the associated frontend in a separately authorized release.
 ## Production Rollout, 2026-09-18
 
 All five migrations below were applied in order to production project

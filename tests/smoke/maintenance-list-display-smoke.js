@@ -27,6 +27,7 @@ const helpers = createMaintenanceListDisplayHelpers({
   ],
   getPendingDeleteScheduleId: () => state.pendingDeleteScheduleId,
   getPendingDeleteProcedureId: () => state.pendingDeleteProcedureId,
+  getProcedureLinkCounts: () => ({ status: "ready", work_order_count: 1, schedule_count: 1 }),
   matchesActiveLocation: (record) => record.asset_id !== "asset-2",
   matchesSearch: (values) => values.some((value) => String(value || "").includes("Monthly") || String(value || "").includes("Inspect")),
   escapeHtml: (value) => String(value ?? "").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),

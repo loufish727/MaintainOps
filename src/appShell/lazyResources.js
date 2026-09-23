@@ -58,6 +58,7 @@ export function createLazyResourceHelpers({
   initializeFeature = () => {},
   loadScriptResource = defaultLoadScriptResource,
   getActiveSection,
+  needsChecklistTools = () => false,
   getPublicRequestLinks,
   canManageTeam,
   requestWorkspaceRender,
@@ -70,6 +71,7 @@ export function createLazyResourceHelpers({
   let platformPerformanceDisplayHelpers = null;
   let qrLibraryPromise = null;
   const featureStates = new Map();
+  const featureForSection = section => (["pm", "procedures", "assets"].includes(section) || ["work", "mywork"].includes(section) && needsChecklistTools()) && featureBundlePaths.maintenance ? "maintenance" : section;
 
   function featureState(featureId) {
     if (!featureStates.has(featureId)) {
@@ -127,15 +129,16 @@ export function createLazyResourceHelpers({
   }
 
   function scheduleFeatureBundleLoad(featureId = getActiveSection()) {
+    featureId = featureForSection(featureId);
     if (!featureBundlePaths[featureId]) return;
     const state = featureState(featureId);
     if (state.ready || state.promise) return;
     ensureFeatureBundleLoaded(featureId)
       .then(() => {
-        if (getActiveSection() === featureId) requestWorkspaceRender();
+        if (featureForSection(getActiveSection()) === featureId) requestWorkspaceRender();
       })
       .catch(() => {
-        if (getActiveSection() === featureId) requestWorkspaceRender();
+        if (featureForSection(getActiveSection()) === featureId) requestWorkspaceRender();
       });
   }
 

@@ -41,6 +41,9 @@ const miniHelpers = createMiniWorkOrderDisplayHelpers({
 
 const signedAssetDocumentRequests = [];
 let workHistory;
+let preventiveSchedules = [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }];
+let pmPage = 1;
+let equipmentEditable = true;
 const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
   getAssetWorkHistory: () => workHistory,
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
@@ -55,7 +58,7 @@ const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplay
     { id: "wo-2", title: "Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-04T16:00:00Z", completed_by: "user-1" },
     { id: "wo-3", title: "Older Done", status: "completed", asset_id: "asset-1", completed_at: "2026-06-03T16:00:00Z", assigned_to: "user-1" },
   ],
-  getPreventiveSchedules: () => [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }],
+  getPreventiveSchedules: () => preventiveSchedules,
   getParts: () => [
     { id: "part-1", name: "Guard Bolt", sku: "GB-1" },
     { id: "part-2", name: "Drive Belt", sku: "B-42" },
@@ -94,11 +97,11 @@ const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplay
   renderAssetMiniWorkOrder: miniHelpers.renderAssetMiniWorkOrder,
   assetDeleteBlockerMessage: () => "",
   canDeleteEquipment: () => true,
-  canEditEquipmentRecords: () => true,
+  canEditEquipmentRecords: () => equipmentEditable,
   renderEquipmentStructureGuide,
   renderProcedureOptions: () => '<option value="">No procedure checklist</option><option value="procedure-1">Press checklist</option>',
   getAssetRelationshipOpen: () => true,
-  getAssetRelationshipPage: () => 1,
+  getAssetRelationshipPage: (assetId, section) => section === "pm-schedules" ? pmPage : 1,
   LIST_ITEMS_PER_PAGE: 12,
 });
 
@@ -313,5 +316,44 @@ assert.doesNotMatch(renderAssetDetail(), /Older Done/);
 workHistory.rows = []; workHistory.counts.completed = 0;
 assert.match(renderAssetDetail(), /data-work-count-kind="completed">0/);
 assert.match(renderAssetDetail(), /No completed work yet/);
+
+const pmSection = () => renderAssetDetail().match(/<section[^>]+data-asset-pm-schedules="asset-1"[\s\S]*?<\/section>/)[0];
+preventiveSchedules = Array.from({ length: 13 }, (_, index) => ({
+  id: `pm-${index + 1}`, asset_id: "asset-1", title: `PM row ${index + 1}`,
+  frequency: index === 0 ? 'monthly <script>"unsafe"</script>' : "weekly",
+  next_due_at: index === 0 ? '2031-01-15 <img src=x>' : "2031-01-15",
+  active: index !== 12,
+}));
+preventiveSchedules.push({ id: "other-pm", asset_id: "asset-2", title: "Other equipment PM" });
+let pmHtml = pmSection();
+assert.equal((pmHtml.match(/<article>/g) || []).length, 12);
+assert.match(pmHtml, /13 schedules/);
+assert.match(pmHtml, /Showing 1-12 of 13 - Page 1 of 2/);
+assert.match(pmHtml, /data-asset-relation-section="pm-schedules"/);
+assert.match(pmHtml, /monthly &lt;script&gt;&quot;unsafe&quot;&lt;\/script&gt;/);
+assert.match(pmHtml, /2031-01-15 &lt;img src=x&gt;/);
+assert.doesNotMatch(pmHtml, /<script>|<img src=x>|PM row 13|Other equipment PM/);
+assert.doesNotMatch(pmHtml, /Inactive/);
+pmPage = 2;
+pmHtml = pmSection();
+assert.equal((pmHtml.match(/<article>/g) || []).length, 1);
+assert.match(pmHtml, /PM row 13/);
+assert.match(pmHtml, /Inactive/);
+assert.match(pmHtml, /Showing 13-13 of 13 - Page 2 of 2/);
+assert.match(pmHtml, /data-asset-relation-page="next"[^>]*data-asset-relation-section="pm-schedules"[^>]*disabled/);
+pmPage = 99;
+assert.match(pmSection(), /Showing 13-13 of 13 - Page 2 of 2/, "Stale page state must clamp after deletions");
+equipmentEditable = false;
+pmHtml = pmSection();
+assert.match(pmHtml, /PM row 13/);
+assert.match(pmHtml, /data-asset-relation-page="prev"/);
+assert.doesNotMatch(pmHtml, /data-create-pm-form/, "Read-only equipment still gets paged PM rows, but no create form");
+equipmentEditable = true;
+preventiveSchedules = preventiveSchedules.slice(0, 12);
+assert.equal((pmSection().match(/<article>/g) || []).length, 12);
+assert.doesNotMatch(pmSection(), /data-asset-relation-page=/, "Exactly 12 schedules need no pagination controls");
+preventiveSchedules = [];
+assert.match(pmSection(), /No PM schedules for this equipment/);
+assert.doesNotMatch(pmSection(), /data-asset-relation-page=/);
 
 console.log("asset detail display smoke passed");

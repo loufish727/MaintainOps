@@ -46,7 +46,8 @@
         };
         deps.applySafetyRequirementPayload(payload);
         const safetyChecked = form.get("safety_devices_checked") === "on";
-        if (payload.status === "completed" && previous?.status !== "completed") {
+        const procedureChanged = (previous?.procedure_template_id || "") !== (payload.procedure_template_id || "");
+        if (payload.status === "completed" && (previous?.status !== "completed" || procedureChanged)) {
           const productionActionMessage = deps.productionActionCompletionMessage?.(previous) || "";
           if (productionActionMessage) {
             deps.setWorkOrderActionWarning(deps.getActiveWorkOrderId(), productionActionMessage);
@@ -70,7 +71,7 @@
             if (errorTarget) errorTarget.textContent = "Check safety devices before completing work tied to equipment.";
             return;
           }
-          payload.completed_at = new Date().toISOString();
+          if (previous?.status !== "completed") payload.completed_at = new Date().toISOString();
         }
         if (payload.status !== "completed") {
           payload.completed_at = null;
