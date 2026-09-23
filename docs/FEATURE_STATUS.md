@@ -84,10 +84,11 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
-- Local/testing PM lifecycle candidate: scoped PM/procedure/answer draft recovery,
+- PM lifecycle release candidate (PR #59): scoped PM/procedure/answer draft recovery,
   atomic generation/retry with retained source history, exact relationship counts,
   12-item equipment PM/history paging, and typed required-answer enforcement.
-  Production rollout is pending; see `PM_LIFECYCLE_VERIFICATION.md` for migration,
+  Production database prerequisite is verified; frontend rollout remains gated.
+  See `PM_LIFECYCLE_VERIFICATION.md` for migration,
   proof status, and limits. This is not yet a deployed feature claim.
 
 - The lazy App Performance workspace now separates real-user browser health, company storage capacity, operational workload, and synthetic hosted checks. Objective Good/Watch/Poor gauges show targets, basis, and sample counts; missing evidence remains Collecting. The 3D scene has Auto, Efficient, and Ultra quality modes with device-aware rendering, while a daily read-only GitHub monitor records deployed resource status, latency, and payload size.

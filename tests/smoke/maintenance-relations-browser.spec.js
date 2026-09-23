@@ -11,6 +11,7 @@ async function fixture(page, ids = ["linked"]) {
   await page.setContent('<!doctype html><main><input aria-label="Unsaved draft"><div id="relations"></div></main>');
   await page.addScriptTag({ path: path.join(root, "src/render/maintenanceListDisplay.js") });
   await page.addScriptTag({ type: "module", content: `${serviceSource}\nwindow.createMaintenanceRelations = createMaintenanceRelations;` });
+  await page.waitForFunction(() => typeof window.createMaintenanceRelations === "function", null, { timeout: 5000 });
   await page.evaluate(ids => {
     let scope = "user:company:north:1", companyId = "company";
     const calls = { rpc: [], history: [], timeouts: [] }, opened = [];

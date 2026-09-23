@@ -3,8 +3,10 @@
 ## Candidate Scope
 
 Audit started 2026-09-22 Pacific on `codex/pm-lifecycle-audit-20260922`, based on
-`c05144667902248fbaee2a6cbf2fadf07f98fce5`. This candidate is local/testing only.
-No Taylor production records were edited and no PM release has been pushed.
+`c05144667902248fbaee2a6cbf2fadf07f98fce5`. The user authorized release on
+2026-09-23. The branch is pushed as PR #59; production database prerequisites
+have been applied and verified. The frontend remains gated until merge/deployment.
+No existing Taylor business-record contents were edited by the migration.
 
 The regression classes checked were lost form input, relationship counts that
 disagree with opened history, and work-order equipment/procedure connectivity.
@@ -59,15 +61,20 @@ Manager, work-order detail, completion, reopening, and deletion.
 
 ## Database Prerequisite
 
-`supabase/migrations/20260923051845_pm_lifecycle_integrity.sql` was applied only
-to testing project `fsxqrngpaseqdxijggcm`. Both public RPCs are security invoker,
+`supabase/migrations/20260923051845_pm_lifecycle_integrity.sql` was applied first
+to testing project `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay`
+on 2026-09-23 after release authorization. Both public RPCs are security invoker,
 authenticated-only, and company/role checked. The isolated schema test now loads
 the historical procedures baseline before dated migrations, so these tables,
 foreign keys, and triggers are actually exercised.
 
-Before a separately authorized production release: inspect production constraints
-and existing cross-company references, apply the migration, verify RPC grants and
-constraints, then publish the frontend. Do not publish this frontend first.
+Production preflight inspected existing constraints and found zero cross-company
+reference mismatches. Postflight verified grants, all five integrity triggers,
+three RESTRICT foreign keys, and the unique occurrence index. The six new function
+definitions and permissions match QA. Row digests and counts remained unchanged
+for 216 work orders, 1 schedule, 2 templates, 4 steps, and 32 answers. Existing
+security advisor findings were unchanged. The frontend must follow this verified
+database prerequisite, not precede it.
 There is no inferred backfill of old schedule-to-order associations.
 
 Rollback is a separate reviewed operation. Prefer a frontend rollback while
@@ -83,7 +90,7 @@ documentation does not change the tested executable candidate.
 
 | Proof | Result | Scope / tested commit |
 | --- | --- | --- |
-| Required GitHub Release Gate | NOT RUN | Branch has not been pushed; its local stages passed within Full Strict |
+| Required GitHub Release Gate | Release in progress | PR #59; initial run exposed the fixture readiness race below, corrected before rerun/merge |
 | Full Strict local proof | PASS, 13/13 stages | `fe2ac58`; 191 Node smoke files, 81 targeted browser cases, resource checks, and desktop/mobile Performance interaction |
 | Authenticated testing-platform proof | PASS, 7/7 stages | `fe2ac58`; five Chromium roles, WebKit admin, both engines' account/location switching, Production Action and notification lifecycles |
 | Authenticated database/storage boundary probes | PASS | 46 PASS, 5 informational results, 0 FAIL; authenticated proof required |
@@ -173,6 +180,12 @@ An initial Full Strict run also rejected the Supabase CLI's 14-digit migration
 timestamp. The checker/apply helper now accept that format and legacy 12-digit
 names, with malformed-name and timestamp-collision regression tests. The complete
 gate was rerun, not waived.
+
+The first GitHub Release Gate run (`35865546254`) passed 80 browser cases but
+failed one because its test-only inline ES module had not finished executing
+before fixture setup used its export. The fixture now explicitly awaits module
+readiness with a bounded timeout. No application code or assertions were relaxed;
+the required gate must pass on the corrected commit before merge.
 
 Final read-only QA postflight found zero `LFES PM` assets, templates, schedules,
 or work orders in the QA company. Per-case cleanup also verifies owned child

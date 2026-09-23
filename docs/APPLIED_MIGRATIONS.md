@@ -76,17 +76,25 @@ Every new SQL run should record:
 - verification performed
 - rollback note if applicable
 
-## PM Lifecycle Candidate, 2026-09-23 UTC
+## PM Lifecycle Integrity, 2026-09-23 UTC
 
 `supabase/migrations/20260923051845_pm_lifecycle_integrity.sql` was applied by
 Codex through the Supabase migration tool to testing project
-`fsxqrngpaseqdxijggcm` during the 2026-09-22 Pacific audit. Production project
-`lbphkzznvvumemdkqoay`: **NOT APPLIED**. No production PM records were rewritten.
+`fsxqrngpaseqdxijggcm` during the 2026-09-22 Pacific audit, then to production
+`lbphkzznvvumemdkqoay` on 2026-09-23 after the user authorized release. No existing
+production record contents were rewritten: row digests and counts remained identical
+for 216 work orders, 1 schedule, 2 templates, 4 steps, and 32 answers. No backfill.
+Six function definitions/privileges match QA, both public RPCs are authenticated-only
+security invoker, five integrity triggers are enabled, the occurrence index is valid,
+and all three RESTRICT foreign keys are validated. Preflight found zero cross-company
+reference mismatches; existing security advisor findings were unchanged. The migration
+is recorded in production `public.applied_migrations` at 13:15:47 UTC.
+Source SQL SHA256: `6e6b48df4efc0cc0b198b98086bb91034378527f31361cffb7c793e2a28d36ed`.
 Isolated PostgreSQL schema/RLS and PM lifecycle checks pass; both new public RPCs
 were verified as security invoker. Signed-in and concurrency evidence, deployment
 order, rollback cautions, and existing advisor findings are recorded in
-`PM_LIFECYCLE_VERIFICATION.md`. Apply and verify the database prerequisite before
-publishing the associated frontend in a separately authorized release.
+`PM_LIFECYCLE_VERIFICATION.md`. The production database prerequisite is verified;
+the frontend release is tracked by PR #59 and the required Release Gate.
 ## Production Rollout, 2026-09-18
 
 All five migrations below were applied in order to production project
