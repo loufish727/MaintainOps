@@ -72,6 +72,7 @@ const html = renderWorkOrderDetail();
 const noSafetyHtml = createWorkOrderDetailDisplayHelpers({ ...workOrderDetailDeps, requiresSafetyDeviceCheck: () => false }).renderWorkOrderDetail();
 assert.match(noSafetyHtml, /This equipment does not require the equipment safety check/);
 assert.doesNotMatch(noSafetyHtml, /No machine \/ equipment selected/);
+assert.match(noSafetyHtml, /class="safety-pending-note" id="quick-update-safety-field"/);
 
 assert.match(html, /Hydraulic Leak/);
 assert.match(html, /Corrective/);

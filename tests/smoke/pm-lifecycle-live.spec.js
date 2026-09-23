@@ -43,6 +43,7 @@ async function fixture({ browser, request }, width) {
     .map(table => [table, new Set()]));
   const names = { procedure_templates: new Set(), preventive_schedules: new Set() };
   const contexts = [], errors = [], suppressed = [];
+  const readSettlers = new WeakMap();
   let failNextTable = '';
   const rows = data => Array.isArray(data) ? data : [data];
   const ownName = name => typeof name === 'string' && name.startsWith(prefix);
@@ -171,6 +172,18 @@ async function fixture({ browser, request }, width) {
     const page = await context.newPage();
     page.setDefaultTimeout(15000);
     page.setDefaultNavigationTimeout(30000);
+    const reads = new Set();
+    let lastRead = 0;
+    page.on('request', req => {
+      if (req.url().startsWith(`${QA_HOST}/rest/v1/`) && ['GET', 'HEAD'].includes(req.method())) {
+        reads.add(req); lastRead = Date.now();
+      }
+    });
+    const finished = req => { if (reads.delete(req)) lastRead = Date.now(); };
+    page.on('requestfinished', finished);
+    page.on('requestfailed', finished);
+    readSettlers.set(page, () => expect.poll(() => reads.size === 0 && Date.now() - lastRead >= 350,
+      { timeout: 30000, message: 'Settle background reads before deliberate reload' }).toBe(true));
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base.href);
     await expect(page.locator('[data-section="procedures"]').first()).toBeVisible({ timeout: 45000 });
@@ -205,7 +218,11 @@ async function fixture({ browser, request }, width) {
     });
     expect(failures, 'Exact-fixture cleanup must complete; failures need manual follow-up before rerun').toEqual([]);
   }
-  return { prefix, location, session, ids, names, errors, suppressed, api, select, byId, named, seed, generate, open, cleanup,
+  async function reload(page) {
+    await readSettlers.get(page)();
+    await page.reload();
+  }
+  return { prefix, location, session, ids, names, errors, suppressed, api, select, byId, named, seed, generate, open, cleanup, reload,
     failOnce: table => { failNextTable = table; } };
 }
 
@@ -326,13 +343,13 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
     await section(page, 'pm');
     await section(page, 'procedures');
     await fields(procedureForm, procedureValues);
-    await page.reload();
+    await h.reload(page);
     await fields(procedureForm, procedureValues);
     await procedureForm.getByRole('button', { name: 'Add Checklist', exact: true }).click();
     await expect.poll(async () => (await h.named('procedure_templates', procedureName)).length).toBe(1);
     const procedure = (await h.named('procedure_templates', procedureName))[0];
     await expect(procedureForm.locator('[name="name"]')).toHaveValue('');
-    await page.reload();
+    await h.reload(page);
     await expect(procedureForm.locator('[name="name"]')).toHaveValue('');
     await expect(procedureForm.locator('[name="description"]')).toHaveValue('');
     await search(page, h.prefix);
@@ -347,7 +364,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
       await section(page, 'pm');
       await section(page, 'procedures');
       await fields(form, values);
-      await page.reload();
+      await h.reload(page);
       await search(page, h.prefix);
       await fields(form, values);
       await form.getByRole('button', { name: 'Add Step', exact: true }).click();
@@ -357,7 +374,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
       h.ids.procedure_steps.add(step.id);
       steps[type] = step.id;
       await expect(form.locator('[name="prompt"]')).toHaveValue('');
-      await page.reload();
+      await h.reload(page);
       await search(page, h.prefix);
       await expect(form.locator('[name="prompt"]')).toHaveValue('');
       await expect(form.locator('[name="response_type"]')).toHaveValue('checkbox');
@@ -381,7 +398,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
       if (fromEquipment) await equipment(page, h, targetAsset);
       else await section(page, 'pm');
       await fields(form, expected);
-      await page.reload();
+      await h.reload(page);
       if (fromEquipment) await equipment(page, h, targetAsset);
       await fields(form, expected);
       expect(await h.named('preventive_schedules', title)).toEqual([]);
@@ -396,7 +413,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
       expect(schedule).toMatchObject({ title, asset_id: targetAsset, procedure_template_id: procedure.id, next_due_at: due });
       schedules.push(schedule);
       await expect(form.locator('[name="title"]')).toHaveValue('');
-      await page.reload();
+      await h.reload(page);
       if (fromEquipment) await equipment(page, h, targetAsset);
       await expect(form.locator('[name="title"]')).toHaveValue('');
       await expect(form.locator('[name="procedure_template_id"]')).toHaveValue('');
@@ -476,7 +493,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
     await section(page, 'procedures');
     await workOrder(page, h, assetId, order.id, 'open');
     await expect(responseField('text')).toHaveValue(draftNote);
-    await page.reload();
+    await h.reload(page);
     await workOrder(page, h, assetId, order.id, 'open');
     await expect(responseField('text')).toHaveValue(draftNote);
     await page.getByRole('button', { name: 'Save answer', exact: true }).click();
@@ -488,7 +505,7 @@ for (const width of [1440, 390]) test(`PM drafts, generation and full lifecycle 
     await h.api('PATCH', `work_order_step_results?company_id=eq.${QA_COMPANY}&work_order_id=eq.${order.id}&procedure_step_id=eq.${steps.text}`, {
       value: refreshedNote, completed_by: h.session.user.id, completed_at: new Date().toISOString(),
     });
-    await page.reload();
+    await h.reload(page);
     await workOrder(page, h, assetId, order.id, 'open');
     await expect(responseField('text')).toHaveValue(refreshedNote);
     await blockedCompletion();

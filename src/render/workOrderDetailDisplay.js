@@ -216,7 +216,7 @@
             <label class="check-row"><input name="machine_down" type="checkbox" ${workOrder.assets?.status === "offline" ? "checked" : ""}> Machine is down</label>
             ${requiresSafetyDeviceCheck(workOrder) ? (
               `<label class="check-row safety-check-row" id="quick-update-safety-field"><input name="safety_devices_checked" type="checkbox" ${workOrder.safety_devices_checked ? "checked" : ""}> Safety devices identified before completion: E-stops, sensors, guards, and interlocks</label>`
-            ) : `<div class="safety-check-row safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>${workOrder.asset_id ? "This equipment does not require the equipment safety check." : "No machine / equipment selected, so no equipment safety check is required."}</span></div>`}
+            ) : `<div class="safety-pending-note" id="quick-update-safety-field"><strong>Safety devices</strong><span>${workOrder.asset_id ? "This equipment does not require the equipment safety check." : "No machine / equipment selected, so no equipment safety check is required."}</span></div>`}
             <p class="error-text" id="quick-update-error"></p>
             <button class="primary-button quick-fix-submit" type="submit">Save Quick Update</button>
           </form>
