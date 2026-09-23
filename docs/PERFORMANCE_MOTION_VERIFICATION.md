@@ -10,7 +10,14 @@ width to the viewport and retains a nonvisual text equivalent. The original
 release evidence below is historical, not proof of the follow-up candidate.
 The follow-up must be visually approved before another push.
 
-## Scope
+Local candidate `5e32792` passed all 13 Full Strict stages and all seven
+authenticated testing-platform stages. The updated scene-card cases also passed
+in Chromium and WebKit at desktop and phone widths, checking the rendered card
+bounds, refreshed texture/data, camera retention and repeated-selection resource
+use. Disposable QA fixtures were removed. No hosted verification or push was
+performed for this follow-up; the published app is unchanged.
+
+## Original Release Scope
 
 The September 23, 2026 update retains the existing room artwork, models, access
 rules and telemetry definitions. It adds illuminated core-ring segments, inset
