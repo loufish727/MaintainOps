@@ -80,6 +80,7 @@ for (const width of [1440, 768, 390, 320]) {
         unreadMessageCount:id=>id==='1'?2:0, getMessagesByThreadId:()=>({}),getActiveMessageThreadId:()=>active,
       });
       const renderer = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
+        navIcon: window.MaintainOpsIconDisplay.navIcon,
         ...options,getMessagesReady:()=>true,getMessageThreads:()=>threads,getActiveMessageThreadId:()=>active,
         getMessageComposerOpen:()=>composing,getMessageHistory:()=>({0:{rows,hasOlder:false}}),getMessagesByThreadId:()=>({0:rows}),
         getWorkOrders:()=>orders,getMessageComposerWorkOrderId:()=>'',getCompanyMembers:()=>[],getSession:()=>({user:{id:'me'}}),
@@ -112,6 +113,15 @@ for (const width of [1440, 768, 390, 320]) {
       proof.finish=()=>{const canvas=document.createElement('canvas');canvas.width=120;canvas.height=90;const ctx=canvas.getContext('2d');ctx.fillStyle='#7ec3ac';ctx.fillRect(0,0,120,90);canvas.toBlob(blob=>proof.resolve.splice(0).forEach(resolve=>resolve({data:blob})),'image/png');};
       render();
     });
+    expect(await page.locator('.message-heading-icon').innerHTML()).toBe(
+      await page.evaluate(() => window.MaintainOpsIconDisplay.navIcon('messages')));
+    if (width > 920) {
+      const headingIcon = page.locator('.message-heading-icon > svg');
+      await expect(headingIcon).toBeVisible();
+      const dimensions = await headingIcon.boundingBox();
+      expect(dimensions.width).toBe(17);
+      expect(dimensions.height).toBe(17);
+    }
     const history = page.locator('.message-list');
     const palette = await page.evaluate(() => {
       const css = selector => getComputedStyle(document.querySelector(selector));

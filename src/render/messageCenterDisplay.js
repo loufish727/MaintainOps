@@ -30,7 +30,7 @@
       return `<section class="message-center ${active && !composing && view === "conversations" ? "has-active-thread" : ""} ${composing && view === "conversations" ? "has-composer" : ""}" data-inbox-view="${escape(`${deps.getMessageThreadFilter()}:${deps.getMessageSearchQuery()}:${page}`)}" data-thread-id="${escape(composing ? "" : active?.id || "")}">
         <header class="message-toolbar">
           <button class="message-mobile-exit" data-message-exit type="button" aria-label="Back to My Work" title="Back to My Work">${icon("back")}</button>
-          <div class="message-toolbar-title"><span class="message-heading-icon" aria-hidden="true">${icon("reply")}</span><div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}<span class="message-inbox-count">${unread} unread</span></div></div></div>
+          <div class="message-toolbar-title"><span class="message-heading-icon" aria-hidden="true">${deps.navIcon?.("messages") || ""}</span><div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}<span class="message-inbox-count">${unread} unread</span></div></div></div>
           <div class="message-toolbar-actions"><span class="message-connection" data-message-connection role="status">${escape(deps.getMessageConnection?.() || "")}</span>
           <button class="message-icon-button" data-search-messages="" type="button" aria-label="Search message content" title="Search message content">${icon("search")}</button>
           <button class="message-connection-retry" data-retry-messages type="button" ${["Live updates unavailable", "Update failed"].includes(deps.getMessageConnection?.()) ? "" : "hidden"}>Retry connection</button>
