@@ -6,6 +6,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { createSpatialMotionState } from "./platformSpatialMotion.js";
 
 const COLORS = {
   blue: 0x78a9ff,
@@ -54,6 +55,9 @@ export function createStorageWorld(options) {
     onPerformanceSample = () => {},
     onQualityChange = () => {},
     onFirstRender = () => {},
+    onInspection = () => {},
+    onMotionChange = () => {},
+    motionPaused: initiallyPaused = false,
   } = options;
   const coreRows = Array.isArray(core.rows) ? core.rows : [];
   const healthScoreRow = coreRows.find(([label]) => label === "Health score");
@@ -105,7 +109,7 @@ export function createStorageWorld(options) {
 
   let assetsReady = false;
   const loadingManager = new THREE.LoadingManager();
-  loadingManager.onLoad = () => { assetsReady = true; };
+  loadingManager.onLoad = () => { assetsReady = true; invalidate(); };
   new RGBELoader(loadingManager).load("assets/performance-spatial/hdri/studio_small_01_1k.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
@@ -208,6 +212,7 @@ export function createStorageWorld(options) {
       keyLight.shadow.needsUpdate = true;
     }
     applyViewportTuning();
+    invalidate();
     onQualityChange({ ...qualityState });
     return { ...qualityState };
   }
@@ -215,7 +220,15 @@ export function createStorageWorld(options) {
   const interactive = [];
   const animated = [];
   const zoneLabels = [];
-  const clock = new THREE.Clock();
+  const clock = { elapsedTime: 0 };
+  const motionClock = createSpatialMotionState();
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let motionPaused = initiallyPaused;
+  const motionEnabled = () => !motionPaused && !reducedMotion.matches;
+  let renderedFrames = 0;
+  let snapshotUpdates = 0;
+  let samplePulseAt = -100;
+  const invalidate = () => motionClock.invalidate();
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2(10, 10);
   const pointerClient = { x: 0, y: 0, overCanvas: false };
@@ -251,6 +264,7 @@ export function createStorageWorld(options) {
   }
 
   function travelTo(pos, look, duration = 1.7) {
+    invalidate();
     rig.fromPos.copy(rig.basePos);
     rig.fromLook.copy(rig.baseLook);
     rig.toLook.copy(look);
@@ -1283,6 +1297,13 @@ export function createStorageWorld(options) {
       gyro.userData.kind = "coreGyro";
       gyro.userData.speed = speed;
       gyro.userData.phase = index;
+      // Unequal illuminated arcs make rotation legible against a circular rail.
+      [0, Math.PI * 0.92].forEach((angle, arcIndex) => {
+        const marker = addMesh(gyro,
+          new THREE.TorusGeometry(radius, bandTube * 1.25, 6, 28, arcIndex ? 0.18 : 0.48),
+          glow(arcIndex ? COLORS.amber : color, 1.3), [0, 0, 0], { shadow: false });
+        marker.rotation.z = angle;
+      });
       animated.push(gyro);
     });
 
@@ -1539,6 +1560,35 @@ export function createStorageWorld(options) {
     });
   }
 
+  // Inset guide rails are ambient machinery, not simulated network traffic.
+  // A short brighter pass is reserved for a changed company snapshot.
+  const railPaths = bucketAnchors.map((anchor, index) => {
+    const x = anchor.parent.position.x;
+    const z = -4.0 + index * 0.19;
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-8.3, 0.055, -4.3),
+      new THREE.Vector3(-6.0, 0.055, z),
+      new THREE.Vector3(x - 0.45, 0.055, z),
+      new THREE.Vector3(x, 0.055, -6.9),
+    ]);
+  });
+  railPaths.forEach((path, index) => {
+    const rail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(path.getPoints(64)),
+      new THREE.LineBasicMaterial({ color: bucketColors[index], transparent: true, opacity: 0.24 }));
+    root.add(rail);
+  });
+  const railMarkers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.32, 0.018, 0.055),
+    new THREE.MeshBasicMaterial({ color: COLORS.cyan, transparent: true, opacity: 0.64, toneMapped: false }), railPaths.length * 3);
+  railMarkers.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  railMarkers.frustumCulled = false;
+  root.add(railMarkers);
+  const railMatrix = new THREE.Matrix4();
+  const railPosition = new THREE.Vector3();
+  const railTangent = new THREE.Vector3();
+  const railQuaternion = new THREE.Quaternion();
+  const railScale = new THREE.Vector3(1, 1, 1);
+  const railAxis = new THREE.Vector3(1, 0, 0);
+
   // ---------------------------------------------------------------------------
   // Legacy 3D month blocks are retired. The expandable timeline source below
   // the scene is now the single month-over-month interaction surface.
@@ -1732,6 +1782,10 @@ export function createStorageWorld(options) {
         ringY: 0.16,
         tooltip: [file.equipment, `${file.name} · ${file.valueLabel || formatBytes(file.size)}`],
       });
+      const outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(width + 0.49, 1.19, 0.72)),
+        new THREE.LineBasicMaterial({ color: COLORS.mint, transparent: true, opacity: 0, toneMapped: false }));
+      shard.add(outline);
+      shard.userData.selectionOutline = outline;
 
       const faceZ = 0.38;
       const backZ = -0.38;
@@ -1963,7 +2017,22 @@ export function createStorageWorld(options) {
         materialState.material.depthWrite = materialState.depthWrite;
       });
     });
-    activeReveal.traverse((object) => removeAnimatedObject(object));
+    const geometries = new Set();
+    const materials = new Set();
+    const textures = new Set();
+    activeReveal.traverse((object) => {
+      removeAnimatedObject(object);
+      if (object.geometry) geometries.add(object.geometry);
+      captureMaterials(object).forEach(({ material }) => {
+        materials.add(material);
+        if (material.map) textures.add(material.map);
+        if (material.emissiveMap) textures.add(material.emissiveMap);
+      });
+    });
+    // Reveal resources belong to this selection; the underlying room stays put.
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
+    textures.forEach((texture) => texture.dispose());
     root.remove(activeReveal);
     activeReveal = null;
   }
@@ -2138,12 +2207,12 @@ export function createStorageWorld(options) {
       markRevealObject(door, "bucketRevealDoor", {
         born,
         startX: side * 0.36,
-        targetX: side * 0.58,
+        targetX: side * 1.05,
         targetRotZ: side * 0.045,
         baseOpacity: 0,
         targetOpacity: 1,
         startRotY: 0,
-        targetRotY: -side * 0.08,
+        targetRotY: -side * 0.35,
         phase: side,
       });
 
@@ -2225,7 +2294,7 @@ export function createStorageWorld(options) {
     );
     markRevealObject(energySlit, "bucketRevealPanel", { born, baseOpacity: 0, targetOpacity: 0.48, delay: 0.12 });
 
-    const card = makeHudPanel({
+    onInspection({
       eyebrow: bucket.eyebrow || `Major app systems / ${String(payload.index + 1).padStart(2, "0")} of ${String(buckets.length).padStart(2, "0")}`,
       title: bucket.title,
       subtitle: bucket.subtitle || "Platform operating system",
@@ -2243,17 +2312,6 @@ export function createStorageWorld(options) {
       height: 310,
       scale: 0.74,
     });
-    card.position.set(0, height + 1.34, 1.72);
-    card.material.opacity = 0;
-    card.material.depthTest = false;
-    card.renderOrder = 80;
-    markRevealObject(card, "bucketRevealCard", {
-      born,
-      baseY: card.position.y,
-      targetY: height + 2.04,
-      targetScale: card.scale.clone(),
-    });
-    group.add(card);
 
     for (let i = 0; i < 12; i += 1) {
       const angle = (i / 12) * Math.PI * 2;
@@ -2319,7 +2377,7 @@ export function createStorageWorld(options) {
     aperture.rotation.x = Math.PI / 2;
     markRevealObject(aperture, "revealAperture", { born, baseScale: 0.35, targetScale: 1.45 });
 
-    const card = makeHudPanel({
+    onInspection({
       eyebrow,
       title,
       subtitle,
@@ -2332,17 +2390,6 @@ export function createStorageWorld(options) {
       height: cardHeight,
       scale: cardScale,
     });
-    card.position.set(0, cardY - 0.65, cardZ);
-    card.material.opacity = 0;
-    card.material.depthTest = false;
-    card.renderOrder = 80;
-    markRevealObject(card, "bucketRevealCard", {
-      born,
-      baseY: card.position.y,
-      targetY: cardY,
-      targetScale: card.scale.clone(),
-    });
-    group.add(card);
     revealParticleBurst(group, color, 0.42, cardY - 0.35, 10);
   }
 
@@ -2418,7 +2465,7 @@ export function createStorageWorld(options) {
       currentZone = "buckets";
       const revealHeight = payload.revealHeight ?? 2.5;
       const lookY = Math.max(1.9, revealHeight * 0.65 + 0.9);
-      travelTo(worldPos.clone().add(new THREE.Vector3(0.7, lookY + 2.8, 12.4)), worldPos.clone().add(new THREE.Vector3(0, lookY, 0.35)), 1.5);
+      travelTo(worldPos.clone().add(new THREE.Vector3(0.7, lookY + 2.8, 12.4)), worldPos.clone().add(new THREE.Vector3(0, 0.35, 0.35)), 1.5);
       showBucketReveal(mesh, payload);
       onZoneChange(ZONES.buckets);
       if (!silent) onBucketSelected(payload.bucket, payload.index);
@@ -2430,7 +2477,7 @@ export function createStorageWorld(options) {
       if (!silent) onMonthSelected(payload.month, payload.index);
     } else if (payload.type === "file") {
       currentZone = "files";
-      travelTo(worldPos.clone().add(new THREE.Vector3(0.35, 3.65, 9.0)), worldPos.clone().add(new THREE.Vector3(0, 1.5, 0)), 1.5);
+      travelTo(worldPos.clone().add(new THREE.Vector3(0.35, 3.65, 9.0)), worldPos.clone().add(new THREE.Vector3(0, 0.15, 0)), 1.5);
       showFileReveal(mesh, payload);
       onZoneChange(ZONES.files);
       if (!silent) onFileSelected(payload.file, payload.index);
@@ -2445,6 +2492,7 @@ export function createStorageWorld(options) {
 
   function clearSelection() {
     selected = null;
+    onInspection(null);
     focusRing.visible = false;
     clearReveal();
   }
@@ -2739,6 +2787,8 @@ export function createStorageWorld(options) {
   }
 
   window.__STORAGE_WORLD_DEBUG = () => ({
+    motion: { enabled: motionEnabled(), reduced: reducedMotion.matches, elapsed: clock.elapsedTime, renderedFrames, snapshotUpdates },
+    data: { buckets: buckets.map((item) => item.valueLabel), files: files.map((item) => item.valueLabel), core: core.badge },
     zone: currentZone,
     selected: selected?.userData?.payload
       ? { type: selected.userData.payload.type, index: selected.userData.payload.index ?? null }
@@ -2791,17 +2841,31 @@ export function createStorageWorld(options) {
 
   document.addEventListener("visibilitychange", () => {
     resetPerformanceSampleWindow();
+    motionClock.reset();
   });
+  function updateMotion() {
+    motionClock.reset();
+    resetPerformanceSampleWindow();
+    onMotionChange({ enabled: motionEnabled(), reduced: reducedMotion.matches });
+  }
+  reducedMotion.addEventListener("change", updateMotion);
+  ["pointermove", "pointerdown", "pointerup", "pointercancel", "wheel", "resize", "keydown"].forEach((type) => window.addEventListener(type, invalidate, { passive: true }));
+  updateMotion();
 
   function animate(timestamp = performance.now()) {
     requestAnimationFrame(animate);
-    const targetFps = document.hidden ? 4 : qualitySettings.targetFps;
+    const moving = motionEnabled();
+    if (!assetsReady) invalidate();
+    const frame = motionClock.tick(timestamp, { hidden: document.hidden, enabled: moving, fps: qualitySettings.targetFps });
+    if (!frame) return;
+    const targetFps = qualitySettings.targetFps;
     const targetInterval = 1000 / targetFps;
-    if (lastRenderAt && timestamp - lastRenderAt < targetInterval - 1) return;
-    const observedFrameTime = lastRenderAt ? timestamp - lastRenderAt : targetInterval;
+    const observedFrameTime = frame.frameMs;
     lastRenderAt = timestamp;
-    const dt = Math.min(clock.getDelta(), 0.12);
-    const elapsed = clock.elapsedTime;
+    const dt = frame.delta;
+    const elapsed = clock.elapsedTime = frame.elapsed;
+    const revealProgress = (object, duration, delay = 0) => moving
+      ? easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born - delay) / duration, 0, 1)) : 1;
 
     // Hover raycast (only when the pointer is actually over open canvas)
     let hit = null;
@@ -2880,6 +2944,10 @@ export function createStorageWorld(options) {
         return;
       }
       if (object.userData.kind === "dataPacket") {
+        if (object.userData.lifespan) {
+          object.visible = moving && elapsed - object.userData.born < object.userData.lifespan;
+          if (!object.visible) return;
+        }
         const k = (elapsed * (object.userData.speed ?? 0.1) + object.userData.phase) % 1;
         object.position.lerpVectors(object.userData.from, object.userData.to, k);
         object.material.opacity = 0.18 + Math.sin(k * Math.PI) * 0.74;
@@ -2893,7 +2961,7 @@ export function createStorageWorld(options) {
         return;
       }
       if (object.userData.kind === "bucketRevealDoor") {
-        const k = easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born) / 0.72, 0, 1));
+        const k = revealProgress(object, 0.9, 0.12);
         object.position.x = THREE.MathUtils.lerp(object.userData.startX, object.userData.targetX, k);
         object.rotation.z = THREE.MathUtils.lerp(0, object.userData.targetRotZ, k);
         object.rotation.y = THREE.MathUtils.lerp(object.userData.startRotY ?? 0, object.userData.targetRotY ?? 0, k);
@@ -2902,21 +2970,21 @@ export function createStorageWorld(options) {
         return;
       }
       if (object.userData.kind === "bucketRevealPanel") {
-        const k = easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born - (object.userData.delay ?? 0)) / 0.52, 0, 1));
+        const k = revealProgress(object, 0.52, object.userData.delay ?? 0);
         setObjectOpacity(object, THREE.MathUtils.lerp(object.userData.baseOpacity ?? 0, object.userData.targetOpacity ?? 1, k));
         setObjectEmissive(object, 0.12 + k * 0.18);
         object.scale.setScalar(0.96 + k * 0.04);
         return;
       }
       if (object.userData.kind === "bucketRevealCard") {
-        const k = easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born - 0.12) / 0.86, 0, 1));
+        const k = revealProgress(object, 0.86, 0.12);
         object.position.y = THREE.MathUtils.lerp(object.userData.baseY, object.userData.targetY, k);
         object.material.opacity = k;
         object.scale.copy(object.userData.targetScale).multiplyScalar(0.86 + k * 0.14);
         return;
       }
       if (object.userData.kind === "bucketRevealChip") {
-        const k = easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born - object.userData.delay) / 0.7, 0, 1));
+        const k = revealProgress(object, 0.7, object.userData.delay);
         object.position.x = THREE.MathUtils.lerp(0, object.userData.targetX, k);
         object.position.y = THREE.MathUtils.lerp(object.position.y, object.userData.targetY + Math.sin(elapsed * 1.4 + object.id) * 0.035, 0.16);
         object.position.z = THREE.MathUtils.lerp(object.position.z, object.userData.targetZ, 0.14);
@@ -2924,7 +2992,7 @@ export function createStorageWorld(options) {
         return;
       }
       if (object.userData.kind === "revealAperture") {
-        const k = easeInOutCubic(THREE.MathUtils.clamp((elapsed - object.userData.born) / 0.62, 0, 1));
+        const k = revealProgress(object, 0.62);
         const scale = THREE.MathUtils.lerp(object.userData.baseScale, object.userData.targetScale, k);
         object.scale.set(scale, scale, 1);
         object.rotation.z += dt * 0.9;
@@ -2933,16 +3001,32 @@ export function createStorageWorld(options) {
       }
       if (!object.userData.payload) return;
       const isHot = object === hovered || object === selected;
+      if (object.userData.selectionOutline) object.userData.selectionOutline.material.opacity = isHot ? 0.85 : 0.05;
       const target = object.userData.baseScale.clone().multiplyScalar(isHot ? 1.05 : 1);
-      object.scale.lerp(target, 0.14);
+      object.scale.lerp(target, moving ? 0.14 : 1);
       const bob = (object.userData.bob ?? 0) * Math.sin(elapsed * 1.1 + object.id * 0.7);
       const lift = isHot ? 0.1 : 0;
-      object.position.y += (object.userData.baseY + bob + lift - object.position.y) * 0.12;
+      object.position.y += (object.userData.baseY + bob + lift - object.position.y) * (moving ? 0.12 : 1);
       if (object.material.emissive) {
         const base = object.userData.baseEmissive;
         object.material.emissiveIntensity += ((isHot ? base + 0.7 : base) - object.material.emissiveIntensity) * 0.14;
       }
     });
+
+    const sampleBoost = moving ? Math.max(0, 1 - (elapsed - samplePulseAt) / 2.5) : 0;
+    railMarkers.material.opacity = 0.48 + sampleBoost * 0.5;
+    railPaths.forEach((path, index) => {
+      for (let segment = 0; segment < 3; segment += 1) {
+        const position = (elapsed * 0.065 + index * 0.14 + segment * 0.023) % 1;
+        path.getPoint(position, railPosition);
+        path.getTangent(position, railTangent);
+        railQuaternion.setFromUnitVectors(railAxis, railTangent);
+        railScale.set(1 + sampleBoost, 1, 1);
+        railMatrix.compose(railPosition, railQuaternion, railScale);
+        railMarkers.setMatrixAt(index * 3 + segment, railMatrix);
+      }
+    });
+    railMarkers.instanceMatrix.needsUpdate = true;
 
     zoneLabels.forEach(({ sprite, zone }) => {
       const compact = camera.aspect < 0.75;
@@ -2960,7 +3044,7 @@ export function createStorageWorld(options) {
 
     // Camera travel + manual orbit
     if (rig.t < 1) {
-      rig.t = Math.min(1, rig.t + dt / rig.duration);
+      rig.t = moving ? Math.min(1, rig.t + dt / rig.duration) : 1;
       const k = easeInOutCubic(rig.t);
       rig.basePos.lerpVectors(rig.fromPos, rig.toPos, k);
       rig.baseLook.lerpVectors(rig.fromLook, rig.toLook, k);
@@ -2969,15 +3053,16 @@ export function createStorageWorld(options) {
     }
     tmpOffset.subVectors(rig.basePos, rig.baseLook);
     tmpSpherical.setFromVector3(tmpOffset);
-    tmpSpherical.theta += rig.yaw + (drag.active ? 0 : Math.sin(elapsed * 0.12) * 0.006);
+    tmpSpherical.theta += rig.yaw;
     tmpSpherical.phi = THREE.MathUtils.clamp(tmpSpherical.phi - rig.pitch, 0.8, 1.24);
     tmpOffset.setFromSpherical(tmpSpherical);
     camera.position.copy(rig.baseLook).add(tmpOffset);
     camera.lookAt(rig.baseLook);
-    updateTouchTargets();
+    updateTouchTargets(!moving);
 
     renderer.info.reset();
     composer.render();
+    renderedFrames += 1;
     if (pixelProbeEnabled && assetsReady && !pixelSampleReported) {
       samplePresentedPixels();
       pixelSampleReported = true;
@@ -2986,7 +3071,7 @@ export function createStorageWorld(options) {
       firstRenderReported = true;
       onFirstRender({ qualityTier: qualityState.effective });
     }
-    if (!document.hidden) {
+    if (!document.hidden && moving) {
       sampledFrames += 1;
       sampledFrameTime += observedFrameTime;
       if (observedFrameTime > targetInterval * 1.5) sampledSlowFrames += 1;
@@ -3014,6 +3099,43 @@ export function createStorageWorld(options) {
   animate();
 
   return {
+    setMotionPaused(paused) {
+      motionPaused = Boolean(paused);
+      updateMotion();
+    },
+    updateSnapshot(next) {
+      const changed = JSON.stringify(buckets.map((item) => item.valueLabel)) !== JSON.stringify(next.buckets.map((item) => item.valueLabel));
+      buckets.splice(0, buckets.length, ...next.buckets);
+      files.splice(0, files.length, ...next.files);
+      months.splice(0, months.length, ...next.months);
+      Object.assign(core, next.core);
+      bucketAnchors.forEach((anchor, index) => {
+        anchor.parent.visible = Boolean(buckets[index]);
+        if (buckets[index]) Object.assign(anchor.userData.payload, { bucket: buckets[index], tooltip: [buckets[index].title, buckets[index].valueLabel] });
+      });
+      fileAnchors.forEach((anchor, index) => {
+        anchor.visible = Boolean(files[index]);
+        if (files[index]) Object.assign(anchor.userData.payload, { file: files[index], tooltip: [files[index].name, files[index].valueLabel] });
+      });
+      const vault = interactive.find((object) => object.userData.payload.type === "vault");
+      if (vault) vault.userData.payload.tooltip = [core.title, core.tooltip];
+      touchTargetEntries.forEach(({ button, object }) => button.setAttribute("aria-label", touchTargetLabel(object.userData.payload)));
+      const score = core.rows?.find(([label]) => label === "Health score")?.[1] || "APP";
+      const nextLabel = makeLabel([score, "HEALTH"], { accent: "#dff4ff", scale: 0.52 });
+      dialLabel.material.map.dispose();
+      dialLabel.material.map = nextLabel.material.map;
+      dialLabel.scale.copy(nextLabel.scale);
+      nextLabel.material.dispose();
+      if (selected) {
+        const payload = selected.userData.payload;
+        const data = payload.type === "bucket" ? buckets[payload.index] : payload.type === "file" ? files[payload.index] : core;
+        if (data) onInspection(data);
+        else clearSelection();
+      }
+      if (changed && next.sampling.status === "current") samplePulseAt = clock.elapsedTime;
+      snapshotUpdates += 1;
+      invalidate();
+    },
     quality() {
       return { ...qualityState };
     },

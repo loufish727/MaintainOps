@@ -253,6 +253,15 @@ test.describe("MaintainOps authenticated role proof", () => {
         await page.locator('[data-section="performance"]').click();
         const performanceFrame = page.frameLocator('iframe[data-platform-spatial-frame]');
         await expect(performanceFrame.locator(".quality-control")).toBeVisible({ timeout: 120000 });
+        const room = page.frames().find((frame) => frame.url().includes("performance-spatial.html"));
+        await room.waitForFunction(() => window.__MAINTAIN_OPS_PLATFORM_SPATIAL_READY, null, { timeout: 60000 });
+        await performanceFrame.locator('[data-world-target="buckets"]').click();
+        await room.waitForFunction(() => window.__STORAGE_WORLD_DEBUG().travelT === 1);
+        const beforeSample = await room.evaluate(() => ({ origin: performance.timeOrigin, debug: window.__STORAGE_WORLD_DEBUG() }));
+        await performanceFrame.locator("#refresh-button").click();
+        await expect.poll(() => room.evaluate(() => window.__STORAGE_WORLD_DEBUG().motion.snapshotUpdates), { timeout: 60000 }).toBeGreaterThan(beforeSample.debug.motion.snapshotUpdates);
+        expect(await room.evaluate(() => performance.timeOrigin)).toBe(beforeSample.origin);
+        expect(await room.evaluate(() => window.__STORAGE_WORLD_DEBUG().zone)).toBe("buckets");
         const healthSummary = performanceFrame.locator(".summary-source > summary");
         await expect(healthSummary).toBeVisible();
         await healthSummary.click();

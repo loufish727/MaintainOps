@@ -2673,12 +2673,7 @@ window.addEventListener("message", (event) => {
     return;
   }
   if (event.data?.type === "maintainops-platform-spatial-refresh") {
-    platformSpatialFrameRendered = false;
-    platformPerformanceTimedOut = false;
-    platformSpatialLoadStartedAt = performance.now();
-    clearPlatformSpatialFrameWatchdog();
-    armPlatformSpatialFrameWatchdog();
-    void loadPlatformPerformance({ force: true }).then(reloadPlatformSpatialFrame);
+    void loadPlatformPerformance({ force: true });
   }
 });
 

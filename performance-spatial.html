@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maintain Ops App Performance</title>
-    <link rel="stylesheet" href="src/bundles/platformSpatialStyles.e0d514a3d3.css" />
-    <script defer src="src/bundles/platformSpatial.2cda393b3e.js"></script>
+    <link rel="stylesheet" href="src/bundles/platformSpatialStyles.fdbc323126.css" />
+    <script defer src="src/bundles/platformSpatial.103e67aeb7.js"></script>
   </head>
   <body>
     <canvas id="storage-world" aria-label="Interactive 3D Maintain Ops app performance model"></canvas>
@@ -33,6 +33,7 @@
             <button data-quality-tier="performance" type="button" aria-pressed="false">Efficient</button>
             <button data-quality-tier="cinematic" type="button" aria-pressed="false">Ultra</button>
           </div>
+          <button id="motion-button" class="button motion-command" type="button" aria-pressed="true" title="Pause room animation">Motion on</button>
           <label class="search-box">
             <span>Search</span>
             <input id="file-search" type="search" placeholder="Search systems..." autocomplete="off" />
@@ -100,20 +101,8 @@
             </div>
             <span>Recent Days</span>
           </div>
-          <div class="timeline-console-track" aria-hidden="true">
-            <i style="left:8%"></i>
-            <i style="left:18%"></i>
-            <i style="left:28%"><b style="height:18px"></b><b style="height:10px"></b></i>
-            <i style="left:38%"><b style="height:20px"></b><b style="height:12px"></b></i>
-            <i style="left:48%"></i>
-            <i class="active" style="left:58%"></i>
-            <i style="left:68%"><b style="height:42px"></b><b style="height:26px"></b></i>
-            <i style="left:78%"></i>
-            <i style="left:88%"></i>
-          </div>
-          <div class="timeline-console-labels" aria-label="Select a day in the activity timeline">
-            <button data-timeline-month="0" type="button">Aug</button><button data-timeline-month="1" type="button">Sep</button><button data-timeline-month="2" type="button">Oct</button><button data-timeline-month="3" type="button">Nov</button><button data-timeline-month="4" type="button">Dec</button><button data-timeline-month="5" type="button">Jan</button><button data-timeline-month="6" type="button">Feb</button><button data-timeline-month="7" type="button">Mar</button><button data-timeline-month="8" type="button">Apr</button><button data-timeline-month="9" type="button">May</button><button data-timeline-month="10" type="button">Jun</button><button data-timeline-month="11" type="button">Jul</button>
-          </div>
+          <div class="timeline-days" role="group" aria-label="Daily intake and orders"></div>
+          <div class="timeline-detail" role="status">Awaiting activity sample</div>
         </aside>
         <div class="stage-actions" aria-label="Spatial model views">
           <button class="stage-action active" data-world-target="overview" type="button" aria-pressed="true">Overview</button>
@@ -234,6 +223,15 @@
       </details>
       </aside>
     </main>
+
+    <aside class="spatial-inspector" aria-label="Selected performance object" hidden>
+      <button class="inspector-close" type="button" aria-label="Close inspection" title="Close inspection">&#215;</button>
+      <small class="inspector-eyebrow"></small>
+      <h2></h2>
+      <p class="inspector-subtitle"></p>
+      <dl></dl>
+      <footer></footer>
+    </aside>
 
     <div id="world-tooltip" class="world-tooltip" hidden></div>
 

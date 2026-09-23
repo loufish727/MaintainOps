@@ -269,6 +269,7 @@ async function main() {
         "test",
         "tests/smoke/platform-performance-mobile-browser.spec.js",
         "tests/smoke/platform-performance-desktop-browser.spec.js",
+        "tests/smoke/platform-performance-motion-browser.spec.js",
         "--workers=1",
       ], {
         label: "desktop and mobile Performance controls smoke",
