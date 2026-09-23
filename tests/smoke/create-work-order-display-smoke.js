@@ -43,7 +43,7 @@ assert.match(html, /name="photo"/);
 assert.match(html, /Photos or files/);
 assert.match(html, /name="photo" type="file" multiple accept="[^"]*\.pdf[^"]*\.zip"/);
 assert.doesNotMatch(html, /name="document_type"/);
-assert.match(html, /PDF quotes\/documents are attached from equipment or parts/);
+assert.doesNotMatch(html, /PDF quotes\/documents are attached from equipment or parts/);
 assert.doesNotMatch(html, /capture="environment"/);
 assert.match(html, /name="initial_comment"/);
 assert.match(html, /id="create-work-order-error"/);
