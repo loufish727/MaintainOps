@@ -277,7 +277,11 @@ function createQueryResponse(table, companyRows, calls) {
   assert.match(appSource, /appTelemetry\?\.beginWorkspaceLoad\?\.\(\)/);
   assert.match(appSource, /platformSpatialLoadStartedAt = performance\.now\(\)/);
   assert.match(appSource, /readyMs: performance\.now\(\) - platformSpatialLoadStartedAt/);
-  assert.match(appSource, /loadPlatformPerformance\(\{ force: true \}\)\.then\(reloadPlatformSpatialFrame\)/);
+  const refreshHandler = appSource.split('if (event.data?.type === "maintainops-platform-spatial-refresh")')[1]?.split("\n  }")[0];
+  assert.ok(refreshHandler, "the spatial data refresh handler must remain available");
+  assert.match(refreshHandler, /void loadPlatformPerformance\(\{ force: true \}\)/);
+  assert.doesNotMatch(refreshHandler, /reloadPlatformSpatialFrame|\.src\s*=/, "data refresh must preserve the current room and camera");
+  assert.match(frameSource, /world\.updateSnapshot\(frameState\)/);
   assert.match(appSource, /function exitPlatformPerformance\(\)/);
   assert.match(appSource, /maintainops-platform-spatial-exit/);
 
