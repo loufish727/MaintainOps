@@ -98,9 +98,10 @@ export function createAttachmentWorkflow(deps, media = {}) {
     const photo = item.type.startsWith('image/');
     const target = kind === 'work' && photo ? { table: 'work_order_photos', bucket: 'work-order-photos', key: 'work_order_id' } : targets[kind];
     if (!item.upload) {
-      const optimized = photo ? await timed(deps.optimizePhoto(item.file, kind === 'work' ? {
-        targetBytes: 256 * 1024, passes: [{ maxDimension: 768, quality: 0.78 }, { maxDimension: 768, quality: 0.74 }, { maxDimension: 768, quality: 0.70 }],
-      } : {}), 'Photo processing') : { blob: item.file, fileName: item.file.name, contentType: item.type };
+      const image = photo ? new File([item.file], item.file.name, { type: item.type, lastModified: item.file.lastModified }) : null;
+      const optimized = photo ? await timed(deps.optimizePhoto(image, kind === 'work' ? {
+        acceptAnyImage: true, targetBytes: 256 * 1024, passes: [{ maxDimension: 768, quality: 0.78 }, { maxDimension: 768, quality: 0.74 }, { maxDimension: 768, quality: 0.70 }],
+      } : { acceptAnyImage: true }), 'Photo processing') : { blob: item.file, fileName: item.file.name, contentType: item.type };
       assertScope(scope);
       const limit = kind === 'work' && photo ? 5 * 1024 * 1024 : ATTACHMENT_LIMITS.file;
       if (optimized.blob.size > limit) throw new Error('File is still too large after processing.');

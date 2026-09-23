@@ -146,6 +146,19 @@ function seed(h, count, ctx = context()) {
     await h.close(); assert.equal(h.db.objects.size, 2);
   });
 
+  test('generic-MIME photos and GIFs reach the optimizer as detected images', async () => {
+    const calls = [];
+    const h = create({ optimizePhoto: async (file, options) => {
+      calls.push({ type: file.type, options });
+      return { blob: file, fileName: file.name, contentType: 'image/jpeg' };
+    } });
+    await h.open([new File([new Uint8Array([255,216,255,0])], 'photo.jpg', {type:'application/octet-stream'}), new File(['GIF89a'], 'diagram.gif')]);
+    await h.submit();
+    assert.deepEqual(calls.map(call => call.type), ['image/jpeg', 'image/gif']);
+    assert.ok(calls.every(call => call.options.acceptAnyImage && call.options.passes[0].maxDimension === 768));
+    await h.close();
+  });
+
   test('timed-out upload blocks retry and cleanup until the actual request settles', async () => {
     const h = create(), gate = deferred(); let commit;
     h.db.once(call => call.action === 'upload', (_call, execute) => { commit = execute; return gate.promise; });

@@ -74,7 +74,7 @@ for (const width of [1440, 390]) test(`automatic attachments and ZIP lifecycle a
     await nav(page,'assets'); await page.locator(`[data-asset-id="${asset.id}"]`).click();
     const assetForm = page.locator(`[data-asset-document="${asset.id}"]`); await expandFor(assetForm);
     await expect(assetForm.locator('[name=document_type]')).toHaveCount(0);
-    await assetForm.locator('[name=document]').setInputFiles([{name:'manual.pdf',mimeType:'',buffer:Buffer.from('%PDF-1.4\nQA manual')},{name:'front.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')}]);
+    await assetForm.locator('[name=document]').setInputFiles([{name:'manual.pdf',mimeType:'',buffer:Buffer.from('%PDF-1.4\nQA manual')},{name:'front.png',mimeType:'application/octet-stream',buffer:Buffer.from(png,'base64')}]);
     await assetForm.locator('button[type=submit]').click();
     await page.getByRole('button',{name:'Attach 2 files',exact:true}).click();
     await expect(page.getByRole('dialog').getByRole('status')).toHaveText('2 of 2 attached.',{timeout:30000});

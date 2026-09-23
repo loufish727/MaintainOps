@@ -5,7 +5,7 @@ Candidate date: 2026-09-23. Local frontend and isolated QA only; not released.
 ## Behavior
 
 - Work-order detail, new work orders, Quick Fix, Equipment, and Parts use one multiple-file picker. Equipment/Part uploads no longer require a document-type selection.
-- ZIPs unpack locally into a review list. JPEG, PNG, WebP, GIF, HEIC/HEIF, PDF, Word, Excel, CSV, and text are recognized. Browser image decoding must succeed before a photo can upload.
+- ZIPs unpack locally into a review list. JPEG, PNG, WebP, GIF, HEIC/HEIF, PDF, Word, Excel, CSV, and text are recognized. Image conversion depends on browser decoding support; the existing bounded original-image fallback is retained when decoding fails.
 - Photos use the existing optimization: work-order photos up to 768px with a target near 256 KB; Equipment/Part images target near 1 MB. Documents retain their bytes. Existing stored files are not resized or reclassified.
 - A new work order is saved before attachment review. Cancelling that review does not cancel the saved work order.
 - Corrupt/encrypted ZIPs may offer an explicit original-archive attachment when bounded inspection permits it. Unsafe archives are not silently accepted. Unsupported/nested files are reported and omissions require acknowledgment.
