@@ -24,6 +24,7 @@ import { trackMessageViewport } from "./src/utils/messageViewport.mjs";
 import { createAssetWorkHistoryState } from "./src/services/assetWorkHistoryState.mjs";
 
 const app = document.querySelector("#app");
+const equipmentDrafts = window.MaintainOpsEquipmentCreateDrafts.createEquipmentCreateDrafts({ getScope: messageDraftScope });
 const runRenderSingleFlight = createKeyedSingleFlight();
 const loadCachedCompanyLogoUrls = createCompanyLogoUrlLoader();
 let messageDrafts = null;
@@ -1685,7 +1686,7 @@ async function init() {
   supabaseClient.auth.onAuthStateChange((eventName, nextSession) => {
     const previousSession = session;
     session = nextSession;
-    if (previousSession?.user.id !== nextSession?.user.id) resetMessageDrafts();
+    if (previousSession?.user.id !== nextSession?.user.id) { resetMessageDrafts(); equipmentDrafts.reset(); }
     if (!shouldRenderForAuthEvent(eventName, previousSession, nextSession)) return;
     setTimeout(() => {
       render().catch((error) => {
@@ -1793,6 +1794,7 @@ async function renderOnce(expectedSessionId) {
 }
 
 function renderWorkspaceLoading(message) {
+  equipmentDrafts.capture();
   messageDrafts?.save(document);
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoading(message);
@@ -1823,6 +1825,7 @@ function createShopReferenceFavoriteStore() {
 }
 
 function renderAuth(mode, initialError = "") {
+  equipmentDrafts.reset();
   resetMessageDrafts();
   messageLive.stop();
   messageExperience?.reset();
@@ -3580,6 +3583,7 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 });
 
 function renderWorkspace() {
+  equipmentDrafts.capture();
   const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
   const recoveredDraft = messageDrafts?.capture(document, messageDraftScope());
   if (recoveredDraft?.composerOpen) {
@@ -4052,32 +4056,7 @@ function renderWorkspace() {
               ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
-            ${canEditEquipmentRecords() ? `<form class="inline-form" id="create-asset-form">
-              <input name="name" required placeholder="Machine or equipment name">
-              <input name="asset_code" placeholder="Serial number">
-              <input name="asset_tag" aria-label="Asset tag" placeholder="Asset tag (optional)">
-              <input name="manufacturer" placeholder="Manufacturer">
-              <input name="model" placeholder="Model">
-              <select name="location_existing" aria-label="Area / spot">
-                <option value="">Area / spot unset</option>
-                ${renderAssetAreaOptions()}
-              </select>
-              <input name="location_new" placeholder="New area / spot">
-              <select name="asset_type" aria-label="Equipment type">
-                ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}
-              </select>
-              <select name="parent_asset_id" aria-label="Part of equipment">
-                <option value="">Top level equipment</option>
-                ${renderParentAssetOptions()}
-              </select>
-              <select name="location_id" ${locations.length ? "required" : "disabled"}>
-                ${renderLocationOptions()}
-              </select>
-              <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety device identification</label>
-              <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
-              <button class="secondary-button asset-action-button" data-asset-continue="true" type="submit">Save Equipment and Continue</button>
-            </form>
-            <p class="error-text" id="asset-create-error"></p>` : `<p class="muted">Accounting can view equipment here. Maintenance and admins manage operational equipment changes.</p>`}
+            ${renderCreateAssetForm()}
             ${renderEquipmentStructureGuide()}
             <section class="equipment-status-guide" aria-label="Equipment status guide">
               <div><strong>Watch</strong><span>Monitor for a possible issue.</span></div>
@@ -4388,6 +4367,7 @@ function renderWorkspace() {
     </div>
   `;
 
+  equipmentDrafts.restore();
   bindWorkspaceEvents();
   if (activeAssetId && document.querySelector("[data-asset-work-count]")) void assetWorkHistory.ensureCounts(activeAssetId);
   messageDrafts?.restore(document);
@@ -4569,7 +4549,7 @@ function scrollWorkspaceTopIntoView() {
   });
 }
 
-const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
+const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = createAssetDetailDisplayHelpers({
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
   getActiveAssetId: () => activeAssetId,
@@ -4620,6 +4600,8 @@ const {
   updateAsset,
   updateAssetStatus,
 } = createAssetWorkflow({
+  captureCreateDraft: equipmentDrafts.snapshot,
+  clearCreateDraft: equipmentDrafts.clear,
   documentRef: document,
   FormDataCtor: FormData,
   alertRef: alert,

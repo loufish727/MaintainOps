@@ -1,6 +1,6 @@
 ﻿(function () {
   /*
-   * Module contract: renders Equipment Detail markup and existing data-* contracts only.
+   * Module contract: renders Equipment creation/detail markup and existing data-* contracts only.
    * Dependencies are injected from app.js so this module does not own app state,
    * bind events, mutate records, call Supabase, touch auth/session startup, storage,
    * public QR submit, SQL, or RLS.
@@ -28,6 +28,26 @@
       const now = new Date();
       const local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
       return local.toISOString().slice(0, 10);
+    }
+
+    function renderCreateAssetForm() {
+      if (!canEditEquipmentRecords()) return `<p class="muted">Accounting can view equipment here. Maintenance and admins manage operational equipment changes.</p>`;
+      return `<form class="inline-form" id="create-asset-form">
+        <input name="name" required placeholder="Machine or equipment name">
+        <input name="asset_code" placeholder="Serial number">
+        <input name="asset_tag" aria-label="Asset tag" placeholder="Asset tag (optional)">
+        <input name="manufacturer" placeholder="Manufacturer">
+        <input name="model" placeholder="Model">
+        <select name="location_existing" aria-label="Area / spot"><option value="">Area / spot unset</option>${renderAssetAreaOptions()}</select>
+        <input name="location_new" placeholder="New area / spot">
+        <select name="asset_type" aria-label="Equipment type">${deps.ASSET_TYPE_OPTIONS.map(type => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}</select>
+        <select name="parent_asset_id" aria-label="Part of equipment"><option value="">Top level equipment</option>${renderParentAssetOptions()}</select>
+        <select name="location_id" ${deps.getLocations().length ? "required" : "disabled"}>${renderLocationOptions()}</select>
+        <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety device identification</label>
+        <button class="secondary-button asset-action-button" type="submit">Add Equipment</button>
+        <button class="secondary-button asset-action-button" data-asset-continue="true" type="submit">Save Equipment and Continue</button>
+        <button class="secondary-button" type="reset">Clear Form</button>
+      </form><p class="error-text" id="asset-create-error"></p>`;
     }
 
     function assetHistoryFor(asset, assetEvents, profilesByUserId) {
@@ -528,7 +548,7 @@
     }
 
 
-    return { renderAssetDetail, renderAssetHistoryScreen };
+    return { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm };
   }
 
   window.MaintainOpsAssetDetailDisplay = {

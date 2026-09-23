@@ -44,6 +44,7 @@
     async function createAsset(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
+      const submittedDraft = deps.captureCreateDraft?.(formElement);
       const errorElement = documentRef.querySelector("#asset-create-error");
       if (errorElement) errorElement.textContent = "";
       const submitButton = formElement.querySelector("button[type='submit']");
@@ -93,6 +94,7 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
+        deps.clearCreateDraft?.(submittedDraft);
         if (data?.id && typeof deps.recordAssetEvent === "function") {
           await deps.recordAssetEvent(data.id, "created", `Created ${payload.name}.`);
         }

@@ -233,6 +233,7 @@ async function main() {
     "tests/smoke/equipment-choice-browser.spec.js",
     "tests/smoke/equipment-structure-guide-browser.spec.js",
     "tests/smoke/equipment-history-scroll-browser.spec.js",
+    "tests/smoke/equipment-create-draft-browser.spec.js",
     "tests/smoke/financial-archived-edit-browser.spec.js",
     "tests/smoke/planning-layout-browser.spec.js",
     "tests/smoke/production-action-contrast-browser.spec.js",

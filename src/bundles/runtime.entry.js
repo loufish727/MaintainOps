@@ -1,4 +1,6 @@
 import "../utils/authRedirects.js";
+import { createEquipmentCreateDrafts } from "../utils/equipmentCreateDrafts.mjs";
+window.MaintainOpsEquipmentCreateDrafts = { createEquipmentCreateDrafts };
 import "../utils/constants.js";
 import "../utils/dom.js";
 import "../utils/formatting.js";
