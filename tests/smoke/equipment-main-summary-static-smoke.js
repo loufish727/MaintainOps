@@ -6,7 +6,7 @@ const appSource = fs.readFileSync(path.join(__dirname, "..", "..", "app.js"), "u
 
 assert.match(appSource, /label:\s*"Primary"/);
 assert.match(appSource, /typeFilter:\s*"machine"/);
-assert.match(appSource, /label:\s*"Forklifts"/);
+assert.match(appSource, /label:\s*"Forklifts \/ Mobile Lifts"/);
 assert.match(appSource, /typeFilter:\s*"forklift"/);
 assert.match(appSource, /label:\s*"Sub Equipment"/);
 assert.match(appSource, /typeFilter:\s*"secondary_machine"/);

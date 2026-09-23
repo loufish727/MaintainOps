@@ -5,46 +5,48 @@
         <section class="equipment-structure-guide" aria-label="Equipment structure guide">
           <div class="guide-header">
             <span class="guide-kicker">Structure Guide</span>
-            <strong>How to model primary equipment, sub equipment, tooling, components, parts, and shop items</strong>
+            <strong>How to model primary equipment, mobile lifts, sub equipment, tooling, components, parts, and shop items</strong>
           </div>
           <div class="equipment-structure-grid">
             <article>
               <span>Primary</span>
-              <strong>Main equipment record</strong>
-              <p>Use for the progressive roll former, ASC line, folder, press, or main equipment people open work against.</p>
+              <strong>Main machine or production line</strong>
+              <p>Use for the main equipment that maintenance work is tied to, such as a roll former, ASC line, folder, or press.</p>
             </article>
             <article>
-              <span>Forklift</span>
-              <strong>Mobile equipment record</strong>
-              <p>Use for lift trucks that need repairs, inspections, battery/propane notes, attachments, PM, or recurring issue history.</p>
+              <span>Forklift / Mobile Lift</span>
+              <strong>Mobile lifting equipment</strong>
+              <p>Use for forklifts, piggybacks, scissor lifts, Combi, and other mobile lift equipment that need maintenance or service history.</p>
             </article>
             <article>
               <span>Sub Equipment</span>
-              <strong>Major section under a primary</strong>
-              <p>Use for uncoiler, forming section, shear, HPU, controls cabinet, conveyor, or another major section under a primary record.</p>
+              <strong>Major machine section or system</strong>
+              <p>Use for major sections such as an uncoiler, shear, conveyor, hydraulic system or HPU, controls cabinet, or machine controller.</p>
+              <p><strong>Sub equipment can belong to a primary machine OR to another sub-equipment record. It is not limited to one level.</strong></p>
             </article>
             <article>
               <span>Tooling / Setup</span>
-              <strong>Swappable profile or station setup</strong>
-              <p>Use for roll tooling sets, die sets, profile setups, or station tooling worth tracking separately.</p>
+              <strong>Changeable machine setup</strong>
+              <p>Use for roll form tooling, die sets, profiles, shear guides, or other setups that are changed between jobs.</p>
             </article>
             <article>
               <span>Component</span>
-              <strong>Tracked piece of equipment</strong>
-              <p>Use when a piece of equipment needs its own repairs, PM, adjustments, serial, or recurring issue history.</p>
+              <strong>Maintainable device or assembly within equipment</strong>
+              <p>Use for motors, pumps, cylinders, gearboxes, valve blocks, PLCs, or VFDs that need their own maintenance history.</p>
             </article>
             <article>
               <span>Part</span>
-              <strong>Inventory item</strong>
-              <p>Use for stocked, purchased, or consumed items like bearings, belts, sensors, fuses, filters, bolts, seals, and common spares.</p>
+              <strong>Replaceable or stocked item</strong>
+              <p>Use for hoses, bearings, belts, sensors, fuses, filters, seals, bolts, and other replacement parts. Track these in Parts and link them to equipment; they are not another equipment level.</p>
             </article>
             <article>
               <span>Shop Item</span>
-              <strong>Standalone support asset</strong>
-              <p>Use for tools or support equipment worth tracking, like welders, test meters, portable pumps, ladders, and tool carts.</p>
+              <strong>Standalone tool or support equipment</strong>
+              <p>Use for saws, nail guns, drills, welding units, banders, banding carts, and other standalone shop equipment worth tracking.</p>
             </article>
           </div>
-          <p class="guide-note"><strong>Quick rule:</strong> Primary = main equipment. Sub Equipment = major section. Component = tracked piece. Part = inventory. Shop Item = standalone support asset.</p>
+          <p class="guide-note"><strong>Example hierarchy:</strong> Roll Former (Primary) &rarr; Decoiler (Sub Equipment) &rarr; Hydraulic System (Sub Equipment) &rarr; Hydraulic Pump (Component). Related part: Hydraulic Hose, linked to the pump in Parts.</p>
+          <p class="guide-note"><strong>Quick rule:</strong> Primary = main machine. Forklift / Mobile Lift = mobile lifting equipment. Sub Equipment = major machine section or system. Tooling / Setup = changeable setup. Component = maintainable device or assembly. Part = replaceable or stocked item. Shop Item = standalone shop tool or support equipment.</p>
           <p class="guide-note"><strong>Roll former rule:</strong> station = position on the machine. Track it separately only if it needs its own maintenance history.</p>
         </section>
       `;

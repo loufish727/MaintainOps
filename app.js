@@ -3725,12 +3725,12 @@ function renderWorkspace() {
     },
     {
       type: "forklift",
-      label: "Forklifts",
+      label: "Forklifts / Mobile Lifts",
       count: assetTypeCounts.forklift || 0,
       tone: "command-equipment",
       typeFilter: "forklift",
       detail: "Lift trucks and mobile equipment with repair or inspection history.",
-      empty: "No forklifts yet.",
+      empty: "No forklifts or mobile lifts yet.",
     },
     {
       type: "secondary_machine",
