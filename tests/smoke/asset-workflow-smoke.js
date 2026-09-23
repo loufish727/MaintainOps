@@ -95,6 +95,8 @@ function createWorkflow(options = {}) {
     '[data-confirm-delete-asset="asset-1"]': { disabled: false, textContent: "Permanently Delete" },
   };
   const workflow = createAssetWorkflow({
+    captureCreateDraft: (form) => ({ fields: { ...form.formValues } }),
+    clearCreateDraft: (draft) => calls.push(["clearCreateDraft", draft]),
     documentRef: createDocument(errors),
     FormDataCtor: FakeFormData,
     alertRef: (message) => calls.push(["alert", message]),
@@ -170,6 +172,7 @@ function createWorkflow(options = {}) {
   assert.equal(createForm.button.disabled, false);
   assert.equal(create.calls.find(call => call[0] === "insert")[2].asset_tag, "0007-A");
   assert.equal(createForm.button.textContent, "Add Equipment");
+  assert.deepEqual(create.calls.find(call => call[0] === "clearCreateDraft")[1].fields, createForm.formValues);
 
   const continued = createWorkflow();
   const continueForm = createElement({
@@ -197,6 +200,7 @@ function createWorkflow(options = {}) {
   assert.equal(continued.calls.find(call => call[0] === "insert")[2].asset_tag, null);
   assert.equal(continued.calls.some((call) => call[0] === "activeAssetId" && call[1] === "asset-new"), true);
   assert.equal(continued.calls.some((call) => call[0] === "notice" && call[1].includes("Equipment saved. Add PM")), true);
+  assert.deepEqual(continued.calls.find(call => call[0] === "clearCreateDraft")[1].fields, continueForm.formValues);
 
   const update = createWorkflow();
   const editForm = createElement({
@@ -230,6 +234,7 @@ function createWorkflow(options = {}) {
     const selector = operation === "createAsset" ? "#asset-create-error" : "#asset-edit-error";
     assert.match(unavailable.errors[selector].textContent, /asset tags need a database update/);
     assert.equal(unavailable.calls.some(call => call[0] === "notice" || call[0] === "assetEvent"), false);
+    assert.equal(unavailable.calls.some(call => call[0] === "clearCreateDraft"), false);
   }
 
   const status = createWorkflow();
