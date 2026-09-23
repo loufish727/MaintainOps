@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, "..");
 const migrationsDir = path.join(root, "supabase", "migrations");
 const projectRefPath = path.join(root, "supabase", ".temp", "project-ref");
 const supabaseCliPath = require.resolve("supabase/dist/supabase.js");
-const datedMigrationPattern = /^\d{12}_[a-z0-9][a-z0-9_]*\.sql$/;
+const datedMigrationPattern = /^\d{12}(?:\d{2})?_[a-z0-9][a-z0-9_]*\.sql$/;
 
 function fail(message) {
   console.error(message);
@@ -29,7 +29,7 @@ function resolveMigrationArg(rawValue) {
   if (!rawValue) fail("Pass a dated migration file name from supabase/migrations.");
   const fileName = path.basename(rawValue);
   if (!datedMigrationPattern.test(fileName)) {
-    fail(`Invalid migration file name: ${fileName}. Use YYYYMMDDHHMM_description.sql.`);
+    fail(`Invalid migration file name: ${fileName}. Use YYYYMMDDHHMMSS_description.sql (legacy minute timestamps are supported).`);
   }
   const filePath = path.join(migrationsDir, fileName);
   if (!fs.existsSync(filePath)) {
