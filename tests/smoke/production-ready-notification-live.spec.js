@@ -201,7 +201,7 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
 
       await technicianPage.locator('[data-section="messages"]').click();
       await expect(technicianPage.locator(".message-center")).toBeVisible();
-      await technicianPage.locator('[data-message-view="activity"]').click();
+      await technicianPage.locator('.message-view-tabs [data-message-view="activity"]').click();
       const notificationButton = technicianPage.locator(`[data-open-work-notification="${notifications[0].id}"]`);
       await expect(notificationButton).toBeVisible();
       await expect(notificationButton).toHaveClass(/unread/);
