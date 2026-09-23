@@ -24,6 +24,7 @@
         if (!options.visibleNavItems().some(([id]) => id === nextSection)) return;
 
         state.setActiveSection(nextSection);
+        if (nextSection === "messages") options.openMessageHome?.();
         state.setActiveWorkOrderId(null);
         state.setActiveAssetId(null);
         state.setActivePartId(null);

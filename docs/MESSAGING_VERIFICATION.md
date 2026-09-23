@@ -13,6 +13,48 @@ Physical-device checks remain separate. See `docs/APP_WIDE_VERIFICATION.md` and
 
 ## Current Contract
 
+### 2026-09-23 Messages Home
+
+Messages starts on a neutral Home view with New message (write-capable roles),
+Conversations and Work activity. The main menu and Home tab clear the visible
+conversation; opening Conversations from Home does not select a thread. Explicit
+work-order conversation links still open that thread. A recovered unsent new-message
+form is the intentional exception on reload. Reply drafts remain saved and recover
+when the conversation is selected again. Home does not mark conversations read;
+live updates change the unread count without replacing the screen or moving focus.
+
+The Home layout uses existing icons and the lazy Messages stylesheet, no new
+dependencies, images, requests or refresh timers. The readable CSS budget increases
+from 31 to 33 KiB; its 7 KiB gzip cap and all startup budgets remain unchanged.
+`message-home.spec.js` is part of both Release Gate and Full Strict and covers
+desktop, tablet and 320/390px phone widths, Home navigation, explicit thread links,
+draft continuity, read-only/empty states and live counts without automatic reads.
+The signed-in draft recovery test also checks Home on reload before opening a reply.
+At application checkpoint `600da86`, Full Strict passed all 13 stages, including
+198 Node checks, 85 targeted browser cases and four Performance cases. Fourteen
+focused presentation/navigation/draft cases passed separately in Chromium and
+WebKit. The signed-in reload, draft, failure, send and account-switch case passed
+in both engines, including no automatic read writes on Home and return through
+the main menu. Its disposable conversations were removed.
+
+Authenticated proof passed all seven stages at `513e78e`: five Chromium roles,
+WebKit admin, tenant/storage boundaries, Production Action/Ready lifecycles and
+both account/location switching paths. The first authenticated run stopped on an
+ambiguous Activity selector (Home adds another route); the rerun uses the tab
+selector and explicitly asserts Home for each role. The broader opt-in messaging
+lifecycle/tools suites were updated to enter Conversations from Home; those two
+complete mutation suites were not rerun for this navigation-only change.
+
+The final cancellation guard at `1edea7b` clears a remembered selection when
+starting a new message from Home, so Cancel cannot reopen an unselected thread.
+Full Strict passed all 13 stages again at this checkpoint. The signed-in recovery
+case passed in both engines, and all four Home layout cases passed again in WebKit.
+
+Initial first-party gzip is 176,796 bytes (102 above the preceding candidate).
+Lazy Messages script/style gzip is 21,493 / 6,754 bytes. Existing compressed
+budgets pass. PR #63 combines this change with the approved in-scene Performance
+card restoration. GitHub/deployment proof is separate from the local results.
+
 ### 2026-09-22 Draft Recovery Correction
 
 Same-user `SIGNED_IN`, `INITIAL_SESSION` and `TOKEN_REFRESHED` events no longer

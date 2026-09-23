@@ -21,7 +21,7 @@ test("signed-in message recovery after background auth, reload, failure, send, a
   const session = await login.json();
   const headers = { apikey: key, Authorization: `Bearer ${session.access_token}` };
   const title = `LFES draft recovery ${randomUUID()}`;
-  const errors = [], bootstrapCalls = [], messageWrites = [];
+  const errors = [], bootstrapCalls = [], messageWrites = [], readWrites = [];
   let threadId;
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
   await context.route("https://lbphkzznvvumemdkqoay.supabase.co/**", route => { errors.push("Production request blocked"); return route.abort(); });
@@ -30,6 +30,7 @@ test("signed-in message recovery after background auth, reload, failure, send, a
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", req => { if (req.url().includes("/rpc/get_my_companies")) bootstrapCalls.push(req.url()); });
   page.on("request", req => { if (req.method() === "POST" && /\/rest\/v1\/(messages|message_threads)(\?|$)/.test(req.url())) messageWrites.push(req.url()); });
+  page.on("request", req => { if (req.method() === "POST" && /\/rest\/v1\/message_reads(\?|$)/.test(req.url())) readWrites.push(req.url()); });
   try {
     await page.goto(baseURL);
     await expect(page.getByRole("button", { name: "Log In", exact: true })).toBeVisible();
@@ -40,6 +41,9 @@ test("signed-in message recovery after background auth, reload, failure, send, a
     }, { session, company });
     await page.reload();
     await expect(page.locator('.message-center')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('.message-home')).toBeVisible();
+    await expect(page.locator('.message-list')).toHaveCount(0);
+    expect(readWrites).toEqual([]);
     await page.getByRole("button", { name: "New message", exact: true }).first().click();
     const form = page.locator('#message-thread-form');
     await form.locator('[name="thread_type"]').selectOption("direct");
@@ -87,14 +91,29 @@ test("signed-in message recovery after background auth, reload, failure, send, a
     await page.locator('[data-quote-message]').first().click();
     const reply = page.getByRole("textbox", { name: "Reply", exact: true });
     await reply.fill("Unsent reply after a reload");
+    const readsBeforeReload = readWrites.length;
     await page.reload();
+    await expect(page.locator('.message-home')).toBeVisible({ timeout: 45000 });
+    expect(readWrites.length).toBe(readsBeforeReload);
+    await page.getByRole('button', { name: 'New message', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Cancel new message' }).click();
+    await expect(page.locator('.message-list')).toHaveCount(0);
+    await page.locator('.message-view-tabs [data-message-view="conversations"]').click();
+    await expect(page.locator('.message-list')).toHaveCount(0);
+    await page.locator(`[data-message-thread="${threadId}"]`).click();
     await expect(reply).toHaveValue("Unsent reply after a reload", { timeout: 45000 });
     await expect(page.locator('.message-reply-context')).toContainText("Detailed instructions");
     await page.getByRole("button", { name: "Send reply", exact: true }).click();
     await expect(reply).toHaveValue("", { timeout: 30000 });
     await page.reload();
+    await expect(page.locator('.message-home')).toBeVisible({ timeout: 45000 });
+    await page.locator('.message-view-tabs [data-message-view="conversations"]').click();
+    await page.locator(`[data-message-thread="${threadId}"]`).click();
     await expect(reply).toHaveValue("", { timeout: 45000 });
     await page.getByRole("button", { name: "Back to conversations" }).click();
+    await page.getByRole("button", { name: "Back to My Work", exact: true }).click();
+    await page.locator('[data-section="messages"]').click();
+    await expect(page.locator('.message-home')).toBeVisible({ timeout: 45000 });
     await page.getByRole("button", { name: "New message", exact: true }).first().click();
     await expect(form.locator('[name="body"]')).toHaveValue("");
     await expect(form.locator('[name="title"]')).toHaveValue("");

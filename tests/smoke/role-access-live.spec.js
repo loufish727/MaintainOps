@@ -173,7 +173,9 @@ test.describe("MaintainOps authenticated role proof", () => {
 
       await page.locator('[data-section="messages"]').click();
       await expect(page.locator(".message-center")).toBeVisible();
-      await expect(page.locator('[data-message-view="activity"]')).toBeVisible();
+      await expect(page.locator('.message-home')).toBeVisible();
+      await expect(page.locator('.message-list')).toHaveCount(0);
+      await expect(page.locator('.message-view-tabs [data-message-view="activity"]')).toBeVisible();
       await expect(page.locator('[data-message-connection]')).toHaveText("Connected", { timeout: 20000 });
       const messageLoads = (await workspaceRenderEvidence(page)).featureBundles;
       expect(messageLoads.some((name) => name.startsWith("messageFeature."))).toBe(true);

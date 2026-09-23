@@ -1,6 +1,26 @@
 # Performance Motion Verification
 
-## Scope
+## Scene-Card Follow-Up
+
+The side inspection panel introduced by this release was rejected in visual
+review. A local follow-up restores the original scene-attached HUD cards and
+camera framing for silos, signals and the health core, while retaining the new
+motion, timeline, resource cleanup and in-place refresh. It also constrains card
+width to the viewport and retains a nonvisual text equivalent. The original
+release evidence below is historical, not proof of the follow-up candidate.
+The user subsequently authorized pushing this fix together with Messages Home
+in PR #63. The combined application checkpoint `600da86` again passed all 13
+Full Strict stages; authenticated proof passed all seven stages at `513e78e`.
+
+Local candidate `5e32792` passed all 13 Full Strict stages and all seven
+authenticated testing-platform stages. The updated scene-card cases also passed
+in Chromium and WebKit at desktop and phone widths, checking the rendered card
+bounds, refreshed texture/data, camera retention and repeated-selection resource
+use. Disposable QA fixtures were removed. No hosted verification or push was
+performed at that original local checkpoint. PR #63 deployment and hosted-byte
+verification are separate from those local results.
+
+## Original Release Scope
 
 The September 23, 2026 update retains the existing room artwork, models, access
 rules and telemetry definitions. It adds illuminated core-ring segments, inset

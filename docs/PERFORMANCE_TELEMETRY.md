@@ -55,7 +55,7 @@ The overall score is a transparent, unweighted average of the measured gauges: G
 - Segmented core rings and inset floor guide lights are ambient machinery, not claims of live network transfers. A brief brighter rail pass acknowledges a changed, current company snapshot.
 - Refresh requests a new company sample and updates object details in place. It does not reload the iframe, rebuild the room, or reset the selected view/camera.
 - The timeline shows the latest 12 sampled days with separate intake and order bars on a shared scale. Zero activity has zero-height bars; an absent timeline has no invented activity. Selecting a day displays exact counts. The Timeline command still opens the detailed activity source.
-- Silo doors open before a separate, scrollable inspection panel appears. Signal cubes gain a selection outline. Closing the panel or tapping empty space returns to Overview.
+- Silo, signal and core details appear as floating panels inside the room, using the original HUD styling and camera framing. Card width stays inside the viewport; matching text is available to assistive technology. Overview, Escape, or tapping empty space closes the selection. Signal cubes retain their selection outline.
 - Motion on/off is remembered on the current browser. The device's reduced-motion preference takes precedence; camera travel and reveals settle immediately and ambient animation stops. A paused room renders only when state or interaction changes, and intentionally paused frames do not report low-FPS samples.
 - Selection-owned geometry, materials and texture clones are disposed on close. The room's shared assets are retained.
 

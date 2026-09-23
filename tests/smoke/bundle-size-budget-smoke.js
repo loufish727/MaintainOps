@@ -25,7 +25,8 @@ const budgets = {
   // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
   // Draft recovery moved out of appShell into this on-demand bundle; startup limits stay unchanged.
   messageFeature: { decoded: 68 * 1024, gzip: 21 * 1024 },
-  messageStyles: { decoded: 31 * 1024, gzip: 7 * 1024 },
+  // Home navigation adds ~2 KB of readable CSS; compressed and startup caps are unchanged.
+  messageStyles: { decoded: 33 * 1024, gzip: 7 * 1024 },
 };
 
 const initialKeys = ["runtime", "appShell", "appStyles"];

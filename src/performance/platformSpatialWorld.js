@@ -2022,7 +2022,8 @@ export function createStorageWorld(options) {
     const textures = new Set();
     activeReveal.traverse((object) => {
       removeAnimatedObject(object);
-      if (object.geometry) geometries.add(object.geometry);
+      // Sprite geometry is shared with the room's other labels.
+      if (object.geometry && !object.isSprite) geometries.add(object.geometry);
       captureMaterials(object).forEach(({ material }) => {
         materials.add(material);
         if (material.map) textures.add(material.map);
@@ -2035,6 +2036,47 @@ export function createStorageWorld(options) {
     textures.forEach((texture) => texture.dispose());
     root.remove(activeReveal);
     activeReveal = null;
+  }
+
+  function addRevealCard(group, data, baseY, targetY, z) {
+    const card = makeHudPanel(data);
+    card.position.set(0, baseY, z);
+    card.material.opacity = 0;
+    card.renderOrder = 80;
+    markRevealObject(card, "bucketRevealCard", {
+      born: clock.elapsedTime, baseY, targetY, targetScale: card.scale.clone(),
+    });
+    group.add(card);
+    group.userData.card = card;
+    group.userData.cardData = data;
+    onInspection(data);
+  }
+
+  function updateRevealCard(data) {
+    const card = activeReveal?.userData.card;
+    if (!card) return;
+    const nextData = { ...activeReveal.userData.cardData, ...data, title: data.title || data.name };
+    const replacement = makeHudPanel(nextData);
+    card.material.map.dispose();
+    card.material.map = replacement.material.map;
+    replacement.material.dispose();
+    activeReveal.userData.cardData = nextData;
+    onInspection(nextData);
+  }
+
+  function revealCardBounds() {
+    const card = activeReveal?.userData.card;
+    if (!card) return null;
+    const position = card.getWorldPosition(new THREE.Vector3());
+    const depth = -position.clone().applyMatrix4(camera.matrixWorldInverse).z;
+    if (depth <= 0) return null;
+    position.project(camera);
+    const pixelsPerUnit = window.innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * depth);
+    const x = (position.x + 1) * window.innerWidth / 2;
+    const y = (1 - position.y) * window.innerHeight / 2;
+    const width = card.scale.x * pixelsPerUnit;
+    const height = card.scale.y * pixelsPerUnit;
+    return { x, y, width, height, left: x - width / 2, right: x + width / 2, top: y - height / 2, bottom: y + height / 2 };
   }
 
   function captureMaterials(object) {
@@ -2294,7 +2336,7 @@ export function createStorageWorld(options) {
     );
     markRevealObject(energySlit, "bucketRevealPanel", { born, baseOpacity: 0, targetOpacity: 0.48, delay: 0.12 });
 
-    onInspection({
+    addRevealCard(group, {
       eyebrow: bucket.eyebrow || `Major app systems / ${String(payload.index + 1).padStart(2, "0")} of ${String(buckets.length).padStart(2, "0")}`,
       title: bucket.title,
       subtitle: bucket.subtitle || "Platform operating system",
@@ -2311,7 +2353,7 @@ export function createStorageWorld(options) {
       width: 520,
       height: 310,
       scale: 0.74,
-    });
+    }, height + 1.34, height + 2.04, 1.72);
 
     for (let i = 0; i < 12; i += 1) {
       const angle = (i / 12) * Math.PI * 2;
@@ -2377,7 +2419,7 @@ export function createStorageWorld(options) {
     aperture.rotation.x = Math.PI / 2;
     markRevealObject(aperture, "revealAperture", { born, baseScale: 0.35, targetScale: 1.45 });
 
-    onInspection({
+    addRevealCard(group, {
       eyebrow,
       title,
       subtitle,
@@ -2389,7 +2431,7 @@ export function createStorageWorld(options) {
       width: cardWidth,
       height: cardHeight,
       scale: cardScale,
-    });
+    }, cardY - 0.65, cardY, cardZ);
     revealParticleBurst(group, color, 0.42, cardY - 0.35, 10);
   }
 
@@ -2465,7 +2507,7 @@ export function createStorageWorld(options) {
       currentZone = "buckets";
       const revealHeight = payload.revealHeight ?? 2.5;
       const lookY = Math.max(1.9, revealHeight * 0.65 + 0.9);
-      travelTo(worldPos.clone().add(new THREE.Vector3(0.7, lookY + 2.8, 12.4)), worldPos.clone().add(new THREE.Vector3(0, 0.35, 0.35)), 1.5);
+      travelTo(worldPos.clone().add(new THREE.Vector3(0.7, lookY + 2.8, 12.4)), worldPos.clone().add(new THREE.Vector3(0, lookY, 0.35)), 1.5);
       showBucketReveal(mesh, payload);
       onZoneChange(ZONES.buckets);
       if (!silent) onBucketSelected(payload.bucket, payload.index);
@@ -2477,7 +2519,7 @@ export function createStorageWorld(options) {
       if (!silent) onMonthSelected(payload.month, payload.index);
     } else if (payload.type === "file") {
       currentZone = "files";
-      travelTo(worldPos.clone().add(new THREE.Vector3(0.35, 3.65, 9.0)), worldPos.clone().add(new THREE.Vector3(0, 0.15, 0)), 1.5);
+      travelTo(worldPos.clone().add(new THREE.Vector3(0.35, 3.65, 9.0)), worldPos.clone().add(new THREE.Vector3(0, 1.5, 0)), 1.5);
       showFileReveal(mesh, payload);
       onZoneChange(ZONES.files);
       if (!silent) onFileSelected(payload.file, payload.index);
@@ -2787,6 +2829,13 @@ export function createStorageWorld(options) {
   }
 
   window.__STORAGE_WORLD_DEBUG = () => ({
+    inspection: activeReveal?.userData.card ? {
+      title: activeReveal.userData.cardData.title,
+      rows: activeReveal.userData.cardData.rows,
+      texture: activeReveal.userData.card.material.map.uuid,
+      opacity: activeReveal.userData.card.material.opacity,
+      bounds: revealCardBounds(),
+    } : null,
     motion: { enabled: motionEnabled(), reduced: reducedMotion.matches, elapsed: clock.elapsedTime, renderedFrames, snapshotUpdates },
     data: { buckets: buckets.map((item) => item.valueLabel), files: files.map((item) => item.valueLabel), core: core.badge },
     zone: currentZone,
@@ -3058,6 +3107,12 @@ export function createStorageWorld(options) {
     tmpOffset.setFromSpherical(tmpSpherical);
     camera.position.copy(rig.baseLook).add(tmpOffset);
     camera.lookAt(rig.baseLook);
+    camera.updateMatrixWorld();
+    const cardBounds = revealCardBounds();
+    if (cardBounds) {
+      const availableWidth = Math.max(1, 2 * Math.min(cardBounds.x - 16, window.innerWidth - 16 - cardBounds.x));
+      activeReveal.userData.card.scale.multiplyScalar(Math.min(1, availableWidth / cardBounds.width));
+    }
     updateTouchTargets(!moving);
 
     renderer.info.reset();
@@ -3129,7 +3184,7 @@ export function createStorageWorld(options) {
       if (selected) {
         const payload = selected.userData.payload;
         const data = payload.type === "bucket" ? buckets[payload.index] : payload.type === "file" ? files[payload.index] : core;
-        if (data) onInspection(data);
+        if (data) updateRevealCard(data);
         else clearSelection();
       }
       if (changed && next.sampling.status === "current") samplePulseAt = clock.elapsedTime;

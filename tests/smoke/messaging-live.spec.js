@@ -60,6 +60,8 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
     });
     await page.goto(process.env.MAINTAINOPS_BASE_URL, { waitUntil: "load" });
     await expect(page.locator(".message-center")).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('.message-home')).toBeVisible();
+    await page.locator('.message-view-tabs [data-message-view="conversations"]').click();
     await expect(page.locator("[data-message-thread]").first()).toBeVisible({ timeout: 30000 });
     return { context, page };
   }

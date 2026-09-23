@@ -10,6 +10,8 @@
       const count = root.querySelector(".message-inbox-count");
       const unread = totalUnreadMessages();
       if (count) count.textContent = `${unread} unread conversation${unread === 1 ? "" : "s"}`;
+      const homeUnread = root.querySelector("[data-message-home-unread]");
+      if (homeUnread) homeUnread.textContent = String(unread);
       const active = messageThreads.find((thread) => thread.id === activeMessageThreadId);
       if (active) {
         const archived = isConversationArchived(active);

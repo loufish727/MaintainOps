@@ -38,6 +38,8 @@ test('message tools: search, organization, discussions, private files and voice 
   },{session:tech,company});
   try {
     await page.goto(process.env.MAINTAINOPS_BASE_URL);
+    await expect(page.locator('.message-home')).toBeVisible({timeout:45000});
+    await page.locator('.message-view-tabs [data-message-view="conversations"]').click();
     await expect(page.locator('#message-search')).toBeVisible({timeout:45000});
     await page.locator('#message-search').fill(prefix);await page.locator(`[data-message-thread="${thread}"]`).click();
     await expect(page.locator('.message-bubble')).toHaveCount(1);await expect(page.getByRole('button',{name:'51 replies',exact:true})).toBeVisible();
