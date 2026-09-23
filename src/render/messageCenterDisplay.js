@@ -27,7 +27,7 @@
       const tone = Math.abs([...String(title)].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) | 0, 0)) % 6;
       const unread = deps.totalUnreadMessages();
       const sections = [...new Set(threads.map(thread => thread.preferences?.section_name).filter(Boolean))].sort();
-      return `<section class="message-center ${active && !composing && view === "conversations" ? "has-active-thread" : ""} ${composing && view === "conversations" ? "has-composer" : ""}" data-inbox-view="${escape(`${deps.getMessageThreadFilter()}:${deps.getMessageSearchQuery()}:${page}`)}" data-thread-id="${escape(composing ? "" : active?.id || "")}">
+      return `<section class="message-center ${active && !composing && view === "conversations" ? "has-active-thread" : ""} ${composing && view === "conversations" ? "has-composer" : ""}" data-inbox-view="${escape(`${deps.getMessageThreadFilter()}:${deps.getMessageSearchQuery()}:${page}`)}" data-thread-id="${escape(composing || view !== "conversations" ? "" : active?.id || "")}">
         <header class="message-toolbar">
           <button class="message-mobile-exit" data-message-exit type="button" aria-label="Back to My Work" title="Back to My Work">${icon("back")}</button>
           <div class="message-toolbar-title"><span class="message-heading-icon" aria-hidden="true">${deps.navIcon?.("messages") || ""}</span><div><h2>Messages</h2><div class="message-workspace-label">${escape(deps.getWorkspaceLabel?.() || "")}<span class="message-inbox-count">${unread} unread</span></div></div></div>
@@ -38,10 +38,18 @@
         </header>
         ${deps.getMessageLoadError?.() ? `<p class="error-text" role="alert">${escape(deps.getMessageLoadError())} <button data-retry-messages type="button">Try again</button></p>` : ""}
         <div class="message-view-tabs" aria-label="Message views">
+          <button data-message-view="home" type="button" aria-pressed="${view === "home"}">Home</button>
           <button data-message-view="conversations" type="button" aria-pressed="${view === "conversations"}">Conversations</button>
           <button data-message-view="activity" type="button" aria-pressed="${view === "activity"}">Activity${deps.getActivityCount?.() ? ` <span class="message-unread-pill">${deps.getActivityCount()}</span>` : ""}</button>
         </div>
-        ${view === "activity" ? `<section class="message-activity">${deps.renderWorkOrderNotifications?.() || '<p class="message-empty">No work notifications.</p>'}</section>` : `
+        ${view === "home" ? `<section class="message-home" aria-labelledby="message-home-title">
+          <div class="message-home-heading"><span class="message-home-emblem" aria-hidden="true">${deps.navIcon?.("messages") || ""}</span><div><h3 id="message-home-title">Your inbox</h3><p><span data-message-home-unread>${unread}</span> unread conversations</p></div></div>
+          <div class="message-home-choices">
+            ${canEdit() ? `<button data-message-compose type="button">${icon("compose")}<span><strong>New message</strong><small>Direct or team message</small></span></button>` : ""}
+            <button data-message-view="conversations" type="button">${icon("all")}<span><strong>Conversations</strong><small>Inbox, favorites and archived</small></span>${icon("back")}</button>
+            <button data-message-view="activity" type="button">${icon("active")}<span><strong>Work activity</strong><small>Work order updates</small></span>${icon("back")}</button>
+          </div>
+        </section>` : view === "activity" ? `<section class="message-activity">${deps.renderWorkOrderNotifications?.() || '<p class="message-empty">No work notifications.</p>'}</section>` : `
         <div class="message-layout">
           <aside class="message-thread-rail" aria-label="Conversations">
             <label class="message-search">${icon("search")}<input id="message-search" type="search" aria-label="Search subjects or people" value="${escape(deps.getMessageSearchQuery())}" placeholder="Search conversations"></label>
@@ -97,7 +105,7 @@
                 <div class="message-composer-footer">${deps.renderMessageTools?.(active.id) || ""}<details class="message-quick-menu"><summary aria-label="Quick replies" title="Quick replies">${icon('reply')}<span>Quick replies</span></summary><div class="message-quick-replies">${["On it", "Need more info", "Waiting on parts", "My part is done"].map((reply) => `<button data-quick-reply="${escape(reply)}" type="button">${reply}</button>`).join("")}</div></details><span class="message-send-state" role="status"></span></div>
                 <p class="error-text" id="message-reply-error" role="alert"></p>
               </form>` : !loading ? '<p class="message-readonly">Read-only conversation</p>' : ""}
-            ` : `<div class="message-empty-state">${icon("reply")}<h3>Your conversations</h3><p>No conversation selected.</p>${canEdit() ? '<button data-message-compose type="button">New message</button>' : ""}</div>`}
+            ` : `<div class="message-empty-state"><span class="message-home-emblem" aria-hidden="true">${deps.navIcon?.("messages") || ""}</span><h3>Your conversations</h3><p>No conversation selected.</p><button data-message-view="home" type="button">Back to Home</button></div>`}
           </section>
         </div>`}
       </section>`;

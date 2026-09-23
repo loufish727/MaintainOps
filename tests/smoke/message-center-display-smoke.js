@@ -130,6 +130,17 @@ view = "activity";
 const activity = renderMessageCenter();
 assert.match(activity, /class="message-activity"/);
 assert.doesNotMatch(activity, /has-active-thread|id="message-reply-form"/);
+view = "home";
+const home = renderMessageCenter();
+assert.match(home, /aria-labelledby="message-home-title"/);
+assert.match(home, /data-message-view="home" type="button" aria-pressed="true"/);
+assert.match(home, /data-message-home-unread>2</);
+assert.match(home, /Work activity/);
+assert.match(home, /data-thread-id=""/);
+assert.doesNotMatch(home, /has-active-thread|message-list|id="message-reply-form"|data-open-message-thread/);
+assert.match(appSource, /let messageView = "home"/);
+assert.match(appSource, /function setActiveMessageThreadIdState\(value\) \{\s*if \(value\) messageView = "conversations"/);
+assert.match(appSource, /openMessageHome: \(\) => \{ messageView = "home"; setActiveMessageThreadIdState\(""\); setMessageComposerOpenState\(false\)/);
 
 const readOnlyHtml = renderReadOnlyMessageCenter();
 assert.match(readOnlyHtml, /class="message-center has-active-thread/);

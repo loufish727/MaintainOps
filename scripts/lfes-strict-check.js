@@ -250,6 +250,7 @@ async function main() {
     "tests/smoke/message-draft-recovery-browser.spec.js",
     "tests/smoke/message-voice-confirm.spec.js",
     "tests/smoke/message-polish.spec.js",
+    "tests/smoke/message-home.spec.js",
     "tests/smoke/message-audio-player.spec.js",
   ], {
     label: "targeted browser regression smokes",

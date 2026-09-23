@@ -37,7 +37,7 @@ const loadMessageCenter = createMessageReloadQueue(performMessageCenterLoad);
 let messageLoadError = "";
 let messageLoadVersion = 0;
 let messageDataScope = "";
-let messageView = "conversations";
+let messageView = "home";
 let messageConnection = "Connecting...";
 let messageQuotes = {};
 const messageLive = createMessageLive({
@@ -558,6 +558,7 @@ const appTelemetry = window.MaintainOpsAppTelemetry;
 let reportIssueMode = false;
 let activeMessageThreadId = workspaceUiState.getActiveMessageThreadId();
 function setActiveMessageThreadIdState(value) {
+  if (value) messageView = "conversations";
   activeMessageThreadId = value;
   workspaceUiState.setActiveMessageThreadId(value);
 }
@@ -3022,7 +3023,7 @@ async function performMessageCenterLoad(preserveHistory = false) {
     messageLive.stop();
     messageExperience?.reset();
     messageQuotes = {};
-    messageView = "conversations";
+    messageView = "home";
     messageDataScope = `${userId}:${companyId}`;
     messageThreads = [];
     messageThreadMembers = [];
@@ -5444,6 +5445,7 @@ function bindWorkspaceEvents() {
   });
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   bindWorkspaceSectionNavigationEvents({
+    openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
@@ -5672,7 +5674,11 @@ function bindWorkspaceEvents() {
     openComposer: () => { messageView = "conversations"; setMessageComposerOpenState(true); renderWorkspace(); document.querySelector('#message-thread-form [name="direct_user_id"]')?.focus({ preventScroll: true }); },
     closeComposer: () => { setMessageComposerOpenState(false); renderWorkspace(); },
     exitMessages: () => { setActiveSectionState("mywork"); return returnToWorkOrderQueue(); },
-    setMessageView: (view) => { messageView = view; renderWorkspace(); },
+    setMessageView: (view) => {
+      if (view === "home" || messageView === "home") { setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); }
+      messageView = view;
+      renderWorkspace();
+    },
     quoteMessage: setMessageQuote,
     jumpToLatest: jumpToLatestMessage,
     onHistoryScroll: () => {

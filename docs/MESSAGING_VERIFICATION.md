@@ -13,6 +13,25 @@ Physical-device checks remain separate. See `docs/APP_WIDE_VERIFICATION.md` and
 
 ## Current Contract
 
+### 2026-09-23 Messages Home
+
+Messages starts on a neutral Home view with New message (write-capable roles),
+Conversations and Work activity. The main menu and Home tab clear the visible
+conversation; opening Conversations from Home does not select a thread. Explicit
+work-order conversation links still open that thread. A recovered unsent new-message
+form is the intentional exception on reload. Reply drafts remain saved and recover
+when the conversation is selected again. Home does not mark conversations read;
+live updates change the unread count without replacing the screen or moving focus.
+
+The Home layout uses existing icons and the lazy Messages stylesheet, no new
+dependencies, images, requests or refresh timers. The readable CSS budget increases
+from 31 to 33 KiB; its 7 KiB gzip cap and all startup budgets remain unchanged.
+`message-home.spec.js` is part of both Release Gate and Full Strict and covers
+desktop, tablet and 320/390px phone widths, Home navigation, explicit thread links,
+draft continuity, read-only/empty states and live counts without automatic reads.
+The signed-in draft recovery test also checks Home on reload before opening a reply.
+Release and final test evidence for this candidate are recorded after verification.
+
 ### 2026-09-22 Draft Recovery Correction
 
 Same-user `SIGNED_IN`, `INITIAL_SESSION` and `TOKEN_REFRESHED` events no longer
