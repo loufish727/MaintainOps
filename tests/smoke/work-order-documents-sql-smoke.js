@@ -39,7 +39,7 @@ async function main() {
     await db.exec(read('supabase/schema.sql'));
     for (const name of ['maintenance-requests', 'maintenance-request-photos', 'asset-documents',
       'procedures', 'admin-delete-work-orders', 'message-center', 'message-soft-delete-and-thread-scope',
-      'message-thread-soft-delete', 'message-work-order-links']) {
+      'message-thread-soft-delete', 'message-work-order-links', 'app-issue-reports']) {
       await db.exec(read(`supabase/step-next-${name}.sql`));
     }
     const oldPhotoBucket = await scalar("select * from storage.buckets where id='work-order-photos'");

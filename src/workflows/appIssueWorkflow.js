@@ -4,6 +4,8 @@
     const windowRef = deps.windowRef || window;
     const FormDataCtor = deps.FormDataCtor || FormData;
     const confirmUser = deps.confirmUser || ((message) => windowRef.confirm(message));
+    const pendingReports = new Map();
+    const sendingReports = new Set();
 
     function bindAppIssueWorkflowEvents() {
       const appIssueReportForm = documentRef.querySelector("#app-issue-report-form");
@@ -19,11 +21,14 @@
     }
 
     async function reloadAppIssueReports() {
+      const companyId = deps.getActiveCompanyId();
+      const userId = deps.getSession()?.user?.id;
       const { data, error } = await deps.withOperationTimeout(
-        deps.listAppIssueReports(deps.supabaseClient(), deps.getActiveCompanyId()),
+        deps.listAppIssueReports(deps.supabaseClient(), companyId),
         "App issue report load timed out. Check your connection and try again.",
         12000
       );
+      if (companyId !== deps.getActiveCompanyId() || userId !== deps.getSession()?.user?.id) return;
       deps.setAppIssueReportsReady(!error);
       deps.setAppIssueReports(error ? [] : (data || []));
       if (error) throw error;
@@ -41,6 +46,14 @@
       const errorElement = documentRef.querySelector("#app-issue-report-error");
       const submitButton = formElement.querySelector("button[type='submit']");
       const form = new FormDataCtor(formElement);
+      const companyId = deps.getActiveCompanyId();
+      const userId = deps.getSession()?.user?.id;
+      const scope = `${userId}:${companyId}`;
+      if (sendingReports.has(scope)) return;
+      const current = () => companyId === deps.getActiveCompanyId() && userId === deps.getSession()?.user?.id;
+      let key;
+      let saved = false;
+      sendingReports.add(scope);
       if (errorElement) errorElement.textContent = "";
       if (submitButton) {
         submitButton.disabled = true;
@@ -49,9 +62,9 @@
 
       try {
         const payload = {
-          company_id: deps.getActiveCompanyId(),
+          company_id: companyId,
           location_id: deps.activeLocationDatabaseId(),
-          reporter_id: deps.getSession().user.id,
+          reporter_id: userId,
           screen: String(form.get("screen") || deps.getActiveSection() || "workspace").slice(0, 80),
           page_url: windowRef.location.href,
           severity: String(form.get("severity") || "normal"),
@@ -59,6 +72,9 @@
           details: deps.requiredText(form.get("details"), "Details"),
           status: "open",
         };
+        key = JSON.stringify(payload);
+        if (!pendingReports.has(key)) pendingReports.set(key, crypto.randomUUID());
+        payload.id = pendingReports.get(key);
 
         const { error } = await deps.withOperationTimeout(
           deps.createAppIssueReportRecord(deps.supabaseClient(), payload),
@@ -66,14 +82,21 @@
           15000
         );
         if (error) throw error;
-
+        saved = true;
+        if (!current()) return;
         deps.setReportIssueMode(false);
         deps.showNotice("Issue report sent.");
         await reloadAppIssueReports();
-        deps.renderWorkspace();
+        if (current()) deps.renderWorkspace();
       } catch (error) {
-        if (errorElement) errorElement.textContent = appIssueReportError(error);
+        if (!current()) return;
+        if (saved) {
+          deps.showNotice("Issue report sent, but the report list could not reload.", "warning");
+          deps.renderWorkspace();
+        } else if (errorElement) errorElement.textContent = appIssueReportError(error);
       } finally {
+        sendingReports.delete(scope);
+        if (saved) pendingReports.delete(key);
         if (submitButton?.isConnected) {
           submitButton.disabled = false;
           submitButton.textContent = "Send Report";

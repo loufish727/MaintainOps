@@ -2,6 +2,8 @@
 
 This file tracks what exists, what is considered stable enough for continued QA, and what still needs attention.
 
+Issue-message relay candidate (2026-09-23): new app issue reports can be relayed as ordinary direct messages from the reporter to one configured company admin/manager. No Messages UI changes or old-report backfill. Local/testing platform only; production migration, recipient setup and publication are pending. See `APP_ISSUE_MESSAGE_RELAY.md`.
+
 Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachments for work orders, Quick Fix, Equipment, and Parts. Isolated QA verification passed; production database prerequisite applied. Frontend publication follows the required GitHub Release Gate. See `AUTOMATIC_ATTACHMENTS.md` for exact scope and proof commands.
 
 ## Working Core
