@@ -1,8 +1,9 @@
 # Reported Issues to Messages
 
-Candidate: 2026-09-23. Local frontend and isolated testing platform only. Not
-published or enabled in production. This is app-problem reporting, not the
-maintenance Requests workflow.
+Release: 2026-09-23. Production migration and Taylor Metal routing were enabled
+after the user's release authorization. The frontend is published through the
+required GitHub Release Gate and Pages deployment. This is app-problem reporting,
+not the maintenance Requests workflow.
 
 ## Behavior
 
@@ -126,3 +127,24 @@ synchronization; none required changing Messages behavior.
 
 Private evidence is retained under `LFES/private/proof/issue-relay-*20260923`.
 Browser traces may contain QA session material and must not be committed or shared.
+
+### Production Database Checkpoint
+
+Applied to production `lbphkzznvvumemdkqoay` at 18:42 UTC on 2026-09-23, then
+configured at 18:43 UTC for Louie Fisher's verified admin membership in the active
+Taylor Metal Products company. All five facilities are covered. No duplicate
+companies, existing reports or conversations were altered; no production test
+message was sent. The authorized backend setup wrote only the guarded private
+routing row; browser configuration still requires the admin-only RPC.
+
+Both function bodies, function privileges, pinned search paths, trigger, routing
+RLS and routing policies/grants match the tested QA catalog. Before/after hashes
+and counts match across 25 existing business/storage relations, including 220
+work orders, 136 assets, 13 messages, 10 reports and 278 stored-object metadata
+rows. Existing messaging policies are identical.
+
+Production advisors add the expected authenticated-callable setter warning
+(28 to 29); the 3 existing no-policy INFO findings, 5 anonymous-callable warnings
+and disabled leaked-password protection are unchanged. These remain documented
+risks, not a claim that every advisor finding is resolved. Frontend publication
+and hosted-resource verification are recorded with the GitHub release evidence.
