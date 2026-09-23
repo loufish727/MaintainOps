@@ -231,6 +231,7 @@ async function main() {
     "playwright",
     "test",
     "tests/smoke/equipment-choice-browser.spec.js",
+    "tests/smoke/equipment-structure-guide-browser.spec.js",
     "tests/smoke/equipment-history-scroll-browser.spec.js",
     "tests/smoke/financial-archived-edit-browser.spec.js",
     "tests/smoke/planning-layout-browser.spec.js",
