@@ -88,6 +88,22 @@ reproduction requirements and explicit exclusions. A tab opening is not proof
 of all its mutations. Browser viewport emulation is not physical-device proof,
 and a passing finite suite is not a claim that every possible flow was tested.
 
+## PM Lifecycle Proof
+
+The local PM candidate completed Full Strict (13 stages) and authenticated proof
+(7 stages) at clean commit `fe2ac58` on 2026-09-22 Pacific. Separate opt-in PM
+mutation suites passed four cases each in Chromium and WebKit, covering desktop,
+phone, 12-item paging, and real PostgreSQL concurrency. They use only the isolated
+testing project and run-owned fixtures. Release was authorized on 2026-09-23:
+PR #59 is pushed and its production PM integrity migration is applied and verified,
+with existing business-record contents unchanged. Frontend merge/deployment still
+requires the GitHub Release Gate on the final candidate.
+
+See `docs/PM_LIFECYCLE_VERIFICATION.md` for the tested commit matrix, exact
+scenario coverage, cleanup evidence, deployment prerequisite, and remaining
+historical-template-versioning and interrupted-network limitations. Local proof
+is not a passing GitHub check or a production validation.
+
 ## LFES Gold
 
 LFES Gold remains the human, risk-scoped engineering audit. It uses the automated evidence but also covers scope, architecture, live behavior, rollback, operational impact, and findings that cannot be established by one command.

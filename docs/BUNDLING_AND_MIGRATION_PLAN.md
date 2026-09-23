@@ -28,7 +28,7 @@ Next bundling work should be evidence-driven. Add another lazy boundary only whe
 ## SQL Migration Phases
 
 1. Keep existing `supabase/step-next-*.sql` files as historical checkpoints.
-2. Put new database changes in `supabase/migrations/YYYYMMDDHHMM_description.sql`.
+2. Generate new database files with `supabase migration new <description>` in `supabase/migrations/YYYYMMDDHHMMSS_description.sql`. Existing minute-based names remain supported; do not rename applied history.
 3. Use `npm run migration:apply -- <file>` for review and linked-project execution of dated migrations.
 4. Record applied production migrations in `docs/APPLIED_MIGRATIONS.md`.
 5. Run `npm run test:migrations:static` before release to catch migration naming and tracking drift.

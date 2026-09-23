@@ -24,7 +24,8 @@ import { trackMessageViewport } from "./src/utils/messageViewport.mjs";
 import { createAssetWorkHistoryState } from "./src/services/assetWorkHistoryState.mjs";
 
 const app = document.querySelector("#app");
-const equipmentDrafts = window.MaintainOpsEquipmentCreateDrafts.createEquipmentCreateDrafts({ getScope: messageDraftScope });
+const equipmentDrafts = window.MaintainOpsEquipmentCreateDrafts.createMaintenanceCreateDrafts({ getScope: messageDraftScope });
+let checklistDrafts;
 const runRenderSingleFlight = createKeyedSingleFlight();
 const loadCachedCompanyLogoUrls = createCompanyLogoUrlLoader();
 let messageDrafts = null;
@@ -132,8 +133,6 @@ const { withSetupError } = window.MaintainOpsOperationResults;
 const { withOperationTimeout } = window.MaintainOpsOperationTimeout;
 const { createAuthSessionFlow } = window.MaintainOpsAuthSessionFlow;
 const { shouldRenderForAuthEvent } = window.MaintainOpsAuthRenderPolicy;
-const { createPreventiveMaintenanceWorkflow } = window.MaintainOpsPreventiveMaintenanceWorkflow;
-const { createProcedureWorkflow } = window.MaintainOpsProcedureWorkflow;
 const { createTeamWorkflow } = window.MaintainOpsTeamWorkflow;
 const { createCompanySettingsWorkflow } = window.MaintainOpsCompanySettingsWorkflow;
 const { createAppIssueWorkflow } = window.MaintainOpsAppIssueWorkflow;
@@ -148,7 +147,7 @@ const { createPartUsageWorkflow } = window.MaintainOpsPartUsageWorkflow;
 const { createMediaStorageWorkflow } = window.MaintainOpsMediaStorageWorkflow;
 const { createCompanyLogoWorkflow } = window.MaintainOpsCompanyLogoWorkflow;
 const { createPartDeleteWorkflow } = window.MaintainOpsPartDeleteWorkflow;
-const { createProcedureChecklistWorkflow } = window.MaintainOpsProcedureChecklistWorkflow;
+const { isChecklistStepAnswered } = window.MaintainOpsChecklistResponseValues;
 const { createPublicRequestIntakeWorkflow } = window.MaintainOpsPublicRequestIntakeWorkflow;
 const { createCompanySetupWorkflow } = window.MaintainOpsCompanySetupWorkflow;
 const { createWorkOrderStatusWorkflow } = window.MaintainOpsWorkOrderStatusWorkflow;
@@ -316,7 +315,6 @@ const { createPartUsageDisplayHelpers } = window.MaintainOpsPartUsageDisplay;
 const { createRequestQueueDisplayHelpers } = window.MaintainOpsRequestQueueDisplay;
 const { createDeleteBlockerDisplayHelpers } = window.MaintainOpsDeleteBlockerDisplay;
 const { createAssetHierarchyDisplayHelpers } = window.MaintainOpsAssetHierarchyDisplay;
-const { createMaintenanceListDisplayHelpers } = window.MaintainOpsMaintenanceListDisplay;
 const { createSearchFilterDisplayHelpers } = window.MaintainOpsSearchFilterDisplay;
 const { createWorkOrderSortDisplayHelpers } = window.MaintainOpsWorkOrderSortDisplay;
 const { createLocationFilterDisplayHelpers } = window.MaintainOpsLocationFilterDisplay;
@@ -417,6 +415,7 @@ const FEATURE_BUNDLE_PATHS = Object.freeze({
   team: __MAINTAINOPS_TEAM_FEATURE_BUNDLE__,
   setup: __MAINTAINOPS_SETUP_FEATURE_BUNDLE__,
   messages: __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__,
+  maintenance: __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__,
 });
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
@@ -458,6 +457,7 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__ },
   initializeFeature: initializeWorkspaceFeature,
   getActiveSection: () => activeSection,
+  needsChecklistTools: () => Boolean(workOrders.find(row => row.id === activeWorkOrderId)?.procedure_template_id),
   getPublicRequestLinks: () => publicRequestLinks,
   canManageTeam,
   requestWorkspaceRender: () => renderWorkspace(),
@@ -616,13 +616,17 @@ let stepResultsByWorkOrder = {};
 let profilesByUserId = {};
 let commentsError = "";
 let requestPhotosReady = true;
+let detailNavigationRevision = 0;
+let linkedRecordOpenSequence = 0;
 let activeWorkOrderId = workspaceUiState.getActiveWorkOrderId();
 function setActiveWorkOrderIdState(value) {
+  if (value !== activeWorkOrderId) detailNavigationRevision += 1;
   activeWorkOrderId = value;
   workspaceUiState.setActiveWorkOrderId(value);
 }
 let activeAssetId = workspaceUiState.getActiveAssetId();
 function setActiveAssetIdState(value) {
+  if (value !== activeAssetId) detailNavigationRevision += 1;
   if (value && value !== activeAssetId) assetWorkHistory.invalidate(value);
   activeAssetId = value;
   workspaceUiState.setActiveAssetId(value);
@@ -631,6 +635,7 @@ let activeAssetHistoryId = null;
 let activeFinancialAssetId = null;
 let activePartId = workspaceUiState.getActivePartId();
 function setActivePartIdState(value) {
+  if (value !== activePartId) detailNavigationRevision += 1;
   activePartId = value;
   workspaceUiState.setActivePartId(value);
 }
@@ -684,6 +689,7 @@ const {
 });
 let activeSection = workspaceUiState.getActiveSection();
 function setActiveSectionState(value) {
+  if (value !== activeSection) detailNavigationRevision += 1;
   activeSection = value;
   workspaceUiState.setActiveSection(value);
 }
@@ -985,17 +991,13 @@ const {
   matchesActiveLocation,
   matchesSearch,
 });
-const {
-  filteredPreventiveSchedules,
-  filteredProcedureTemplates,
-  renderPreventiveSchedule,
-  renderProcedureTemplate,
-} = createMaintenanceListDisplayHelpers({
+function createMaintenanceDisplay() { return window.MaintainOpsMaintenanceListDisplay.createMaintenanceListDisplayHelpers({
   getPreventiveSchedules: () => preventiveSchedules,
   getProcedureTemplates: () => procedureTemplates,
-  getWorkOrders: () => workOrders,
   getPendingDeleteScheduleId: () => pendingDeleteScheduleId,
   getPendingDeleteProcedureId: () => pendingDeleteProcedureId,
+  getProcedureLinkCounts: id => maintenanceRelations?.getProcedureCounts(id),
+  canUseMaintenanceTools: () => isFeatureBundleReady("maintenance"),
   matchesActiveLocation,
   matchesSearch,
   escapeHtml,
@@ -1003,7 +1005,7 @@ const {
   procedureDeleteBlockerMessage,
   canDeleteOperationalRecords,
   canEditOperationalRecords,
-});
+}); }
 const relationshipDisplayHelpers = createRelationshipDisplayHelpers({
   escapeHtml,
   photoMetaText,
@@ -1054,6 +1056,7 @@ function initializeManagerDashboardFeature() {
   const events = window.MaintainOpsWorkspaceManagerDashboardEvents;
   if (!service || !display || !events) throw new Error("Manager feature did not initialize.");
   const { renderManagerDashboard } = display.createManagerDashboardDisplayHelpers({
+    getSchedulesReady: () => schedulesReady,
     getAssets: () => assets,
     getPreventiveSchedules: () => preventiveSchedules,
     getWorkOrders: () => workOrders,
@@ -1090,6 +1093,7 @@ function initializeWorkspaceFeature(featureId) {
   if (featureId === "team") return initializeTeamFeature();
   if (featureId === "setup") return initializeSetupFeature();
   if (featureId === "messages") return initializeMessagesFeature();
+  if (featureId === "maintenance") return initializeMaintenanceFeature();
   throw new Error(`Unknown workspace feature: ${featureId}`);
 }
 const emptyStateTextHelpers = createEmptyStateTextHelpers({
@@ -1237,6 +1241,7 @@ const {
   renderPlanningBoard,
   renderPlanningItem,
 } = createPlanningDisplayHelpers({
+  getSchedulesReady: () => schedulesReady,
   escapeHtml,
   LIST_ITEMS_PER_PAGE,
   getPlanningPage: (kind) => workspaceUiState.getPlanningPage(kind),
@@ -1341,6 +1346,7 @@ const {
   assignmentLabel,
   isVendorAssigned,
   hasCompletedSafetyDeviceCheck,
+  requiresSafetyDeviceCheck,
   renderEmailHelperCommandCard,
   getMessageThreads: () => messageThreads,
   getPartsUsedByWorkOrder: () => partsUsedByWorkOrder,
@@ -1686,7 +1692,7 @@ async function init() {
   supabaseClient.auth.onAuthStateChange((eventName, nextSession) => {
     const previousSession = session;
     session = nextSession;
-    if (previousSession?.user.id !== nextSession?.user.id) { resetMessageDrafts(); equipmentDrafts.reset(); }
+    if (previousSession?.user.id !== nextSession?.user.id) { resetMessageDrafts(); equipmentDrafts.reset(); checklistDrafts?.reset(); }
     if (!shouldRenderForAuthEvent(eventName, previousSession, nextSession)) return;
     setTimeout(() => {
       render().catch((error) => {
@@ -1826,6 +1832,7 @@ function createShopReferenceFavoriteStore() {
 
 function renderAuth(mode, initialError = "") {
   equipmentDrafts.reset();
+  checklistDrafts?.reset();
   resetMessageDrafts();
   messageLive.stop();
   messageExperience?.reset();
@@ -3509,30 +3516,15 @@ async function loadStepResults() {
     return;
   }
 
-  const ids = workOrders.map((workOrder) => workOrder.id);
-  const { data } = await supabaseClient
-    .from("work_order_step_results")
-    .select("*")
-    .eq("company_id", activeCompanyId)
-    .in("work_order_id", ids);
-
-  stepResultsByWorkOrder = (data || []).reduce((groups, result) => {
-    groups[result.work_order_id] ||= {};
-    groups[result.work_order_id][result.procedure_step_id] = result;
-    return groups;
-  }, {});
+  await loadStepResultsForWorkOrderIds(workOrders.map(workOrder => workOrder.id));
 }
 
+const checklistResults = window.MaintainOpsChecklistResults.createChecklistResultsState({
+  getScope: () => `${messageDraftScope()}:${workspaceHydrationToken}`, getCompanyId: () => activeCompanyId,
+  client: () => supabaseClient, applyResults: (ids, rows) => { stepResultsByWorkOrder = replaceStepResultGroupsForIds(stepResultsByWorkOrder, ids, rows); },
+});
 async function loadStepResultsForWorkOrderIds(ids = []) {
-  if (!ids.length) return;
-
-  const { data } = await supabaseClient
-    .from("work_order_step_results")
-    .select("*")
-    .eq("company_id", activeCompanyId)
-    .in("work_order_id", ids);
-
-  stepResultsByWorkOrder = replaceStepResultGroupsForIds(stepResultsByWorkOrder, ids, data || []);
+  return checklistResults.load(ids);
 }
 
 async function addSignedPhotoUrls() {
@@ -3584,6 +3576,7 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 
 function renderWorkspace() {
   equipmentDrafts.capture();
+  checklistDrafts?.capture();
   const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
   const recoveredDraft = messageDrafts?.capture(document, messageDraftScope());
   if (recoveredDraft?.composerOpen) {
@@ -3672,8 +3665,8 @@ function renderWorkspace() {
   }
   const activeAssetAreaFilter = workspaceUiState.getAssetAreaFilter();
   const visibleAssets = activeSection === "assets" && !showGlobalSearch ? filteredAssets() : [];
-  const visibleSchedules = activeSection === "pm" && !showGlobalSearch ? filteredPreventiveSchedules() : [];
-  const visibleProcedures = activeSection === "procedures" && !showGlobalSearch ? filteredProcedureTemplates() : [];
+  const visibleSchedules = activeSection === "pm" && !showGlobalSearch ? maintenanceDisplay?.filteredPreventiveSchedules() || [] : [];
+  const visibleProcedures = activeSection === "procedures" && !showGlobalSearch ? maintenanceDisplay?.filteredProcedureTemplates() || [] : [];
   const visibleParts = activeSection === "parts" && !showGlobalSearch ? filteredParts() : [];
   const globalResults = showGlobalSearch ? globalSearchResults() : null;
   const totalPartsPages = activeSection === "parts" ? Math.max(1, Math.ceil(visibleParts.length / PARTS_PER_PAGE)) : 1;
@@ -4089,62 +4082,15 @@ function renderWorkspace() {
           </section>
           ` : ""}
 
-          ${activeSection === "pm" ? `
-          <section class="panel full-width">
-            <div class="panel-header">
-              <h2>Preventive Maintenance</h2>
-              <span>${visibleSchedules.length} shown</span>
-            </div>
-            ${canEditOperations ? `<form class="inline-form pm-form" id="create-pm-form" data-create-pm-form>
-              <input name="title" required placeholder="Monthly compressor PM">
-              <select name="asset_id" required data-location-sensitive-asset>
-                <option value="">Machine / equipment</option>
-                ${renderAssetOptions()}
-              </select>
-              <p class="error-text" data-asset-location-warning></p>
-              <select name="frequency">
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-              </select>
-              <select name="procedure_template_id">
-                ${renderProcedureOptions()}
-              </select>
-              <span class="date-picker-row inline-date-picker" data-date-picker-field>
-                <input name="next_due_at" type="date" value="${isoDate(startOfToday())}" required>
-                <button class="secondary-button date-picker-button" data-open-date-picker type="button">Calendar</button>
-              </span>
-              <p class="error-text" id="pm-error"></p>
-              <button class="secondary-button" type="submit">Add Schedule</button>
-            </form>` : ""}
-            <div class="pm-list">
-              ${pagedSchedules.map(renderPreventiveSchedule).join("") || `<p class="muted">No schedules match this search.</p>`}
-            </div>
-            ${renderListPagination("schedules", visibleSchedules.length, schedulesPage, totalSchedulePages)}
-          </section>
-          ` : ""}
-
-          ${activeSection === "procedures" ? `
-          <section class="panel full-width">
-            <div class="panel-header">
-              <h2>Procedure Checklists</h2>
-              <span>${visibleProcedures.length} shown</span>
-            </div>
-            ${proceduresReady ? `
-            ${canEditOperations ? `<form class="form-grid procedure-form relationship-detail procedure" id="create-procedure-form">
-              <label>Procedure checklist name<input name="name" required placeholder="Monthly compressor inspection"></label>
-              <label>Description<textarea name="description" rows="3" placeholder="Use this checklist when creating repeat work."></textarea></label>
-              <p class="error-text" id="procedure-error"></p>
-              <button class="secondary-button" type="submit">Add Checklist</button>
-            </form>
-            <button class="text-button" id="seed-sample-procedure" type="button">Add sample inspection checklist</button>` : ""}
-            <div class="procedure-list">
-              ${pagedProcedures.map(renderProcedureTemplate).join("") || `<p class="muted">No procedure checklists match this search.</p>`}
-            </div>
-            ${renderListPagination("procedures", visibleProcedures.length, proceduresPage, totalProcedurePages)}
-            ` : `<p class="muted">Run supabase/step-next-procedures.sql to turn on procedure checklists.</p>`}
-          </section>
-          ` : ""}
+          ${activeSection === "pm" ? isFeatureBundleReady("maintenance") ? maintenanceDisplay.renderPanel("pm", {
+            count: visibleSchedules.length, rows: pagedSchedules, ready: schedulesReady,
+            assetOptions: renderAssetOptions(), procedureOptions: renderProcedureOptions(), date: isoDate(startOfToday()),
+            pagination: renderListPagination("schedules", visibleSchedules.length, schedulesPage, totalSchedulePages),
+          }) : renderFeatureBundlePanel("maintenance", "Preventive Maintenance") : ""}
+          ${activeSection === "procedures" ? isFeatureBundleReady("maintenance") ? maintenanceDisplay.renderPanel("procedures", {
+            count: visibleProcedures.length, rows: pagedProcedures, ready: proceduresReady,
+            pagination: renderListPagination("procedures", visibleProcedures.length, proceduresPage, totalProcedurePages),
+          }) : renderFeatureBundlePanel("maintenance", "Procedure Checklists") : ""}
 
           ${activeSection === "messages" ? `
           <section class="full-width" id="message-workspace">
@@ -4368,7 +4314,9 @@ function renderWorkspace() {
   `;
 
   equipmentDrafts.restore();
+  checklistDrafts?.restore();
   bindWorkspaceEvents();
+  maintenanceRelations?.bind();
   if (activeAssetId && document.querySelector("[data-asset-work-count]")) void assetWorkHistory.ensureCounts(activeAssetId);
   messageDrafts?.restore(document);
   messageExperience?.hydrate();
@@ -4550,6 +4498,7 @@ function scrollWorkspaceTopIntoView() {
 }
 
 const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = createAssetDetailDisplayHelpers({
+  getSchedulesReady: () => schedulesReady,
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
   getActiveAssetId: () => activeAssetId,
@@ -4583,6 +4532,8 @@ const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = c
   assetDeleteBlockerMessage,
   canDeleteEquipment,
   canEditEquipmentRecords,
+  canCreatePreventiveSchedule: () => isFeatureBundleReady("maintenance"),
+  renderMaintenanceLoading: () => renderFeatureBundlePanel("maintenance", "PM tools"),
   renderEquipmentStructureGuide,
   renderProcedureOptions,
   getAssetRelationshipOpen,
@@ -4642,6 +4593,7 @@ const {
 });
 
 function procedureColumn(value) {
+  if (value && !proceduresReady) throw new Error("Procedure checklists unavailable. Retry before saving.");
   return proceduresReady ? { procedure_template_id: value || null } : {};
 }
 
@@ -4655,10 +4607,7 @@ function workOrderDateValue(value) {
   const trimmed = String(value || "").trim();
   if (!trimmed) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const parsed = new Date(`${trimmed}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) throw new Error("Enter a real expected back up / due date as YYYY-MM-DD.");
-    const parsedIso = parsed.toISOString().slice(0, 10);
-    if (parsedIso === trimmed) return trimmed;
+    if (window.MaintainOpsMaintenanceScheduleDates.localDateOnly(trimmed)) return trimmed;
     throw new Error("Enter a real expected back up / due date as YYYY-MM-DD.");
   }
   const parsed = new Date(trimmed);
@@ -4815,14 +4764,14 @@ const { savePlanningDueDate } = createPlanningDueDateWorkflow({
 function checklistProgress(workOrder, procedure) {
   const steps = procedure.procedure_steps || [];
   const results = stepResultsByWorkOrder[workOrder.id] || {};
-  const done = steps.filter((step) => Boolean(results[step.id]?.value)).length;
+  const done = steps.filter((step) => isChecklistStepAnswered(step, results[step.id]?.value)).length;
   return { done, total: steps.length };
 }
 
 function requiredChecklistProgress(workOrder, procedure) {
   const steps = (procedure?.procedure_steps || []).filter((step) => step.required);
   const results = stepResultsByWorkOrder[workOrder.id] || {};
-  const done = steps.filter((step) => Boolean(results[step.id]?.value)).length;
+  const done = steps.filter((step) => isChecklistStepAnswered(step, results[step.id]?.value)).length;
   return { done, total: steps.length };
 }
 
@@ -4834,6 +4783,11 @@ function requiredChecklistProgressFor(workOrder, procedureTemplateId = workOrder
 }
 
 function requiredChecklistCompletionMessage(workOrder, procedureTemplateId = workOrder?.procedure_template_id) {
+  if (procedureTemplateId && !isFeatureBundleReady("maintenance")) return "Checklist tools are loading. Try completion again shortly.";
+  if (checklistDrafts?.hasDraft(workOrder?.id)) return "Save pending checklist answers before completing.";
+  if (procedureTemplateId && (checklistResults.hasError(workOrder?.id) || !procedureTemplates.some(template => template.id === procedureTemplateId))) {
+    return "The procedure checklist could not be verified. Open this work order again and retry.";
+  }
   const progress = requiredChecklistProgressFor(workOrder, procedureTemplateId);
   if (progress.done >= progress.total) return "";
   return `Complete required procedure checklist steps first (${progress.done}/${progress.total}).`;
@@ -5014,59 +4968,46 @@ async function openWorkOrderNotification(notificationId, workOrderId) {
   renderWorkspace();
   scrollWorkspaceTopIntoView();
 }
-const {
-  bindPreventiveMaintenanceWorkflowEvents,
-  requestDeletePreventiveSchedule,
-  deletePreventiveSchedule,
-  generatePreventiveWorkOrder,
-} = createPreventiveMaintenanceWorkflow({
-  documentRef: document,
-  FormDataCtor: FormData,
-  CSSRef: CSS,
-  supabaseClient: () => supabaseClient,
-  withOperationTimeout,
-  insertWithOptionalProcedure,
-  confirmAssetLocationRouting,
-  locationIdForAsset,
-  requiredText,
-  procedureColumn,
-  canDeleteOperationalRecords,
-  applySafetyRequirementPayload,
-  applySafetyCheckPayload,
-  nextDueDate,
-  alertUser: (message) => alert(message),
-  getSession: () => session,
-  getActiveCompanyId: () => activeCompanyId,
-  getPreventiveSchedules: () => preventiveSchedules,
-  setPendingDeleteScheduleId: (value) => { pendingDeleteScheduleId = value; },
-  setActiveWorkOrderId: setActiveWorkOrderIdState,
-  setActiveSection: setActiveSectionState,
-  showNotice,
-  render: () => render(),
-  renderWorkspace,
-});
-const {
-  bindProcedureWorkflowEvents,
-  requestDeleteProcedureTemplate,
-  deleteProcedureTemplate,
-} = createProcedureWorkflow({
-  documentRef: document,
-  FormDataCtor: FormData,
-  CSSRef: CSS,
-  supabaseClient: () => supabaseClient,
-  withOperationTimeout,
-  requiredText,
-  canDeleteOperationalRecords,
-  procedureDeleteBlockerMessage,
-  alertUser: (message) => alert(message),
-  getSession: () => session,
-  getActiveCompanyId: () => activeCompanyId,
-  getProcedureTemplates: () => procedureTemplates,
-  setPendingDeleteProcedureId: (value) => { pendingDeleteProcedureId = value; },
-  showNotice,
-  render: () => render(),
-  renderWorkspace,
-});
+let preventiveWorkflow, procedureWorkflow, maintenanceRelations, maintenanceDisplay;
+function bindPreventiveMaintenanceWorkflowEvents() { preventiveWorkflow?.bindPreventiveMaintenanceWorkflowEvents(); }
+function bindProcedureWorkflowEvents() { procedureWorkflow?.bindProcedureWorkflowEvents(); }
+async function maintenanceCommand(workflow, command, id) {
+  try { await ensureFeatureBundleLoaded("maintenance"); return await (workflow === "pm" ? preventiveWorkflow : procedureWorkflow)[command](id); }
+  catch (error) { showNotice(error.message || "PM tools could not load. Try again.", "warning"); }
+}
+const requestDeletePreventiveSchedule = id => maintenanceCommand("pm", "requestDeletePreventiveSchedule", id);
+const deletePreventiveSchedule = id => maintenanceCommand("pm", "deletePreventiveSchedule", id);
+const generatePreventiveWorkOrder = id => maintenanceCommand("pm", "generatePreventiveWorkOrder", id);
+const requestDeleteProcedureTemplate = id => maintenanceCommand("procedure", "requestDeleteProcedureTemplate", id);
+const deleteProcedureTemplate = id => maintenanceCommand("procedure", "deleteProcedureTemplate", id);
+function initializeMaintenanceFeature() {
+  if (preventiveWorkflow) return;
+  checklistDrafts = window.MaintainOpsChecklistResponseDrafts.createChecklistResponseDrafts({ getScope: messageDraftScope });
+  maintenanceDisplay = createMaintenanceDisplay();
+  const shared = {
+    captureCreateDraft: equipmentDrafts.snapshot, clearCreateDraft: equipmentDrafts.clear,
+    documentRef: document, FormDataCtor: FormData, CSSRef: CSS,
+    supabaseClient: () => supabaseClient, withOperationTimeout, requiredText,
+    canDeleteOperationalRecords, canEditOperationalRecords, alertUser: message => alert(message),
+    getSession: () => session, getActiveCompanyId: () => activeCompanyId,
+    getScope: messageDraftScope, showNotice, render, renderWorkspace,
+  };
+  preventiveWorkflow = window.MaintainOpsPreventiveMaintenanceWorkflow.createPreventiveMaintenanceWorkflow({
+    ...shared, insertWithOptionalProcedure, confirmAssetLocationRouting, locationIdForAsset, procedureColumn, nextDueDate,
+    getPreventiveSchedules: () => preventiveSchedules,
+    setPendingDeleteScheduleId: value => { pendingDeleteScheduleId = value; },
+    setActiveWorkOrderId: setActiveWorkOrderIdState, setActiveSection: setActiveSectionState,
+  });
+  procedureWorkflow = window.MaintainOpsProcedureWorkflow.createProcedureWorkflow({
+    ...shared, procedureDeleteBlockerMessage, getProcedureTemplates: () => procedureTemplates,
+    setPendingDeleteProcedureId: value => { pendingDeleteProcedureId = value; },
+  });
+  maintenanceRelations = window.MaintainOpsMaintenanceRelations.createMaintenanceRelations({
+    documentRef: document, getScope: () => `${messageDraftScope()}:${workspaceHydrationToken}`,
+    getCompanyId: () => activeCompanyId, client: () => supabaseClient, withOperationTimeout,
+    openWorkOrder: id => openWorkOrderNotification(null, id),
+  });
+}
 const {
   bindTeamWorkflowEvents,
   cancelTeamInvite,
@@ -5230,6 +5171,8 @@ const { renderQuickFixForm } = createQuickFixDisplayHelpers({
 });
 
 const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
+  checklistToolsReady: () => isFeatureBundleReady("maintenance"),
+  renderChecklistLoading: () => renderFeatureBundlePanel("maintenance", "Checklist tools"),
   STATUS_OPTIONS,
   TYPE_OPTIONS,
   getActiveWorkOrderId: () => activeWorkOrderId,
@@ -5369,14 +5312,20 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
   const companyId = activeCompanyId;
   const locationId = activeLocationId;
   const sourceSection = activeSection;
+  const userId = session?.user.id;
+  const revision = detailNavigationRevision;
+  const sequence = ++linkedRecordOpenSequence;
   const isCurrent = () => activeCompanyId === companyId && activeLocationId === locationId
-    && activeSection === sourceSection && options.isCurrent?.() !== false;
-  setActiveWorkOrderIdState(null);
-  setActiveAssetIdState(null);
-  setActivePartIdState(null);
-  createWorkOrderMode = false;
-  quickFixMode = false;
-  reportIssueMode = false;
+    && session?.user.id === userId && detailNavigationRevision === revision
+    && sequence === linkedRecordOpenSequence && activeSection === sourceSection && options.isCurrent?.() !== false;
+  const clearSource = () => {
+    setActiveWorkOrderIdState(null);
+    setActiveAssetIdState(null);
+    setActivePartIdState(null);
+    createWorkOrderMode = false;
+    quickFixMode = false;
+    reportIssueMode = false;
+  };
 
   if (section === "work" && id) {
     if (!workOrders.some((workOrder) => workOrder.id === id)) {
@@ -5396,6 +5345,7 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
       runWorkspaceLoader("Storage linked parts used", () => loadPartsUsedForWorkOrderIds([id])),
     ]);
     if (!isCurrent()) return false;
+    clearSource();
     setActiveWorkOrderIdState(id);
     setActiveSectionState("work");
     localStorage.setItem("maintainops.activeSection", "work");
@@ -5403,6 +5353,7 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
     return true;
   }
 
+  clearSource();
   if (section === "assets" && id) {
     await Promise.all([
       runWorkspaceLoader("Storage linked equipment files", loadAssetDocuments),
@@ -5437,6 +5388,7 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
   renderWorkspace();
 }
 
+let completionEvents;
 function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     activeCompanyId = event.target.value;
@@ -6008,7 +5960,9 @@ function bindWorkspaceEvents() {
     updateWorkOrderQuickView,
   });
 
-  createWorkspaceWorkOrderCompletionEvents({
+  completionEvents ||= createWorkspaceWorkOrderCompletionEvents({
+    getScope: messageDraftScope,
+    blocksProcedureCompletion,
     alertRef: alert,
     applySafetyCheckPayload,
     applySafetyRequirementPayload,
@@ -6027,7 +5981,8 @@ function bindWorkspaceEvents() {
     showNotice,
     updateWorkOrderSafely,
     withOperationTimeout,
-  }).bindWorkspaceWorkOrderCompletionEvents();
+  });
+  completionEvents.bindWorkspaceWorkOrderCompletionEvents();
 
   bindWorkspaceWorkOrderDetailStatusEvents({ updateWorkOrderStatus });
 
@@ -6508,7 +6463,14 @@ const { updateWorkOrderDetails } = createWorkOrderDetailEditWorkflow({
   render,
 });
 
-const { saveStepResult } = createProcedureChecklistWorkflow({
+let checklistWorkflow;
+function saveStepResult(event) {
+  checklistWorkflow ||= initializeChecklistWorkflow();
+  return checklistWorkflow.saveStepResult(event);
+}
+function initializeChecklistWorkflow() { return window.MaintainOpsProcedureChecklistWorkflow.createProcedureChecklistWorkflow({
+  captureResponseDraft: field => checklistDrafts.snapshot(field),
+  clearResponseDraft: token => checklistDrafts.clear(token),
   blocksProcedureCompletion,
   checklistProgress,
   requiredChecklistProgress,
@@ -6516,6 +6478,7 @@ const { saveStepResult } = createProcedureChecklistWorkflow({
   getStepResultsByWorkOrder: () => stepResultsByWorkOrder,
   getActiveCompanyId: () => activeCompanyId,
   getSession: () => session,
+  getScope: messageDraftScope,
   getWorkOrderActionWarningId: () => workOrderActionWarningId,
   getWorkOrders: () => workOrders,
   loadStepResults,
@@ -6524,12 +6487,13 @@ const { saveStepResult } = createProcedureChecklistWorkflow({
   showNotice,
   upsertStepResult: (payload) => supabaseClient.from("work_order_step_results").upsert(payload, { onConflict: "work_order_id,procedure_step_id" }),
   withOperationTimeout,
-});
+}); }
 
 const {
   setWorkOrderStatus,
   updateWorkOrderStatus,
 } = createWorkOrderStatusWorkflow({
+  getScope: messageDraftScope,
   applySafetyCheckPayload,
   applySafetyRequirementPayload,
   blocksProcedureCompletion,
@@ -6906,7 +6870,7 @@ async function copyTextToClipboard(text) {
 
 async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   try {
-    await withOperationTimeout(
+    const { error } = await withOperationTimeout(
       supabaseClient.from("work_order_events").insert({
         company_id: activeCompanyId,
         work_order_id: workOrderId,
@@ -6917,8 +6881,10 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
       "Activity log timed out.",
       8000
     );
+    if (error) return { error, message: error.message };
   } catch (error) {
     console.warn("Could not record work order event", error);
+    return { error, message: error.message };
   }
 }
 

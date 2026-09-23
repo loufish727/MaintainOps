@@ -8,7 +8,7 @@ const supabaseDir = path.join(root, "supabase");
 const migrationsDir = path.join(supabaseDir, "migrations");
 const appliedDocPath = path.join(root, "docs", "APPLIED_MIGRATIONS.md");
 
-const datedMigrationPattern = /^\d{12}_[a-z0-9][a-z0-9_]*\.sql$/;
+const datedMigrationPattern = /^\d{12}(?:\d{2})?_[a-z0-9][a-z0-9_]*\.sql$/;
 const allowedLegacyRootPatterns = [
   /^schema\.sql$/,
   /^audit-[a-z0-9-]+-\d{4}-\d{2}-\d{2}\.sql$/,
@@ -38,7 +38,7 @@ function main() {
 
   for (const fileName of rootSqlFiles) {
     if (!allowedLegacyRootPatterns.some((pattern) => pattern.test(fileName))) {
-      errors.push(`Unexpected root SQL file name: supabase/${fileName}. New migrations belong in supabase/migrations/YYYYMMDDHHMM_description.sql.`);
+      errors.push(`Unexpected root SQL file name: supabase/${fileName}. New migrations belong in supabase/migrations/YYYYMMDDHHMMSS_description.sql.`);
     }
   }
 
@@ -47,9 +47,9 @@ function main() {
     const filePath = path.join(migrationsDir, fileName);
     const text = fs.readFileSync(filePath, "utf8");
     if (!datedMigrationPattern.test(fileName)) {
-      errors.push(`Invalid migration file name: supabase/migrations/${fileName}. Use YYYYMMDDHHMM_description.sql.`);
+      errors.push(`Invalid migration file name: supabase/migrations/${fileName}. Use YYYYMMDDHHMMSS_description.sql (legacy minute timestamps are supported).`);
     }
-    const prefix = fileName.slice(0, 12);
+    const prefix = fileName.split("_", 1)[0].padEnd(14, "0");
     if (seenPrefixes.has(prefix)) errors.push(`Duplicate migration timestamp prefix: ${prefix}.`);
     seenPrefixes.add(prefix);
     if (!text.trim()) errors.push(`Empty migration file: supabase/migrations/${fileName}.`);

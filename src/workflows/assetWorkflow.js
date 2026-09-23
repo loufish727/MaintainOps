@@ -317,7 +317,10 @@
         15000
       );
       if (error) throw new Error(`Could not verify linked ${tableName.replaceAll("_", " ")} before deleting equipment: ${error.message}`);
-      return count || 0;
+      if (!Number.isSafeInteger(count) || count < 0) {
+        throw new Error(`Could not verify linked ${tableName.replaceAll("_", " ")} before deleting equipment. Try again.`);
+      }
+      return count;
     }
 
     async function requestDeleteAsset(id) {

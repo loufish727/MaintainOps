@@ -160,6 +160,23 @@ function createWorkflow(overrides = {}) {
   assert.equal(blockedButton.disabled, false);
   assert.equal(blockedButton.textContent, "Save Quick Update");
 
+  const completedProcedureChanged = createWorkflow({
+    workOrders: [{ id: "wo-1", status: "completed", procedure_template_id: "old-procedure", completed_at: "2026-01-01T10:00:00Z" }],
+    values: { status: "completed", procedure_template_id: "new-procedure" },
+    procedureBlockMessage: "Complete new checklist first.",
+  });
+  await completedProcedureChanged.run();
+  assert.equal(completedProcedureChanged.errorTarget.textContent, "Complete new checklist first.");
+  assert.equal(completedProcedureChanged.calls.some(call => call[0] === "update"), false);
+
+  const completedSameProcedure = createWorkflow({
+    workOrders: [{ id: "wo-1", status: "completed", procedure_template_id: "proc-1", completed_at: "2026-01-01T10:00:00Z" }],
+    values: { status: "completed", procedure_template_id: "proc-1" },
+  });
+  await completedSameProcedure.run();
+  assert.equal(completedSameProcedure.calls.some(call => call[0] === "blocksProcedureCompletion"), false);
+  assert.equal(completedSameProcedure.calls.find(call => call[0] === "update")[2].completed_at, undefined);
+
   const productionBlocked = createWorkflow({
     values: { status: "completed" },
     productionActionBlockMessage: "Complete Production Action first.",

@@ -84,6 +84,13 @@ These have been exercised repeatedly, including desktop/mobile smoke passes:
 
 ## Recently Added Or Changed
 
+- PM lifecycle release candidate (PR #59): scoped PM/procedure/answer draft recovery,
+  atomic generation/retry with retained source history, exact relationship counts,
+  12-item equipment PM/history paging, and typed required-answer enforcement.
+  Production database prerequisite is verified; frontend rollout remains gated.
+  See `PM_LIFECYCLE_VERIFICATION.md` for migration,
+  proof status, and limits. This is not yet a deployed feature claim.
+
 - The lazy App Performance workspace now separates real-user browser health, company storage capacity, operational workload, and synthetic hosted checks. Objective Good/Watch/Poor gauges show targets, basis, and sample counts; missing evidence remains Collecting. The 3D scene has Auto, Efficient, and Ultra quality modes with device-aware rendering, while a daily read-only GitHub monitor records deployed resource status, latency, and payload size.
 - Conversions tab added with collapsible length, area, weight, temperature, volume, pressure, torque, expanded common inch thread reference, wrench/head-size reference, and a calibrated screen-fit bolt gauge with selectable Thread / Nut ID and Head / Wrench modes. The sizing circle is green, the calibration bar is red, and calibration can be locked per device.
 - Work order cards now include a created-date stamp alongside existing due-date/context metadata.

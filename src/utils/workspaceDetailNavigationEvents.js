@@ -151,7 +151,8 @@
       item.addEventListener("click", async () => {
         if (typeof options.openLinkedWorkOrder === "function") {
           const sequence = ++miniOpenSequence;
-          const isCurrent = () => sequence === miniOpenSequence && item.isConnected !== false;
+          // The app guards route/scope changes; an unrelated redraw may replace this node.
+          const isCurrent = () => sequence === miniOpenSequence;
           closeAssetHistoryScreen();
           try {
             if (await options.openLinkedWorkOrder(item.dataset.miniWorkOrder, { isCurrent })) scrollToDetailTop();

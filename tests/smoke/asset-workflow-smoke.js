@@ -279,6 +279,15 @@ function createWorkflow(options = {}) {
   assert.equal(deleted.calls.some((call) => call[0] === "activeAssetId" && call[1] === null), true);
   assert.equal(deleted.calls.some((call) => call[0] === "activeSection" && call[1] === "assets"), true);
 
+  for (const count of [null, undefined, -1, NaN, false, "0", 1]) {
+    const pmLinked = createWorkflow({ assetDocumentPaths: ["company-1/asset-1/photo.jpg"],
+      responses: { "select:preventive_schedules": { count, error: null } } });
+    await pmLinked.workflow.requestDeleteAsset("asset-1");
+    await pmLinked.workflow.deleteAsset("asset-1");
+    assert.equal(pmLinked.calls.some(call => ["delete", "storageRemove", "pendingDeleteAssetId"].includes(call[0])), false);
+    assert.match(pmLinked.errors["#asset-delete-error"].textContent, count === 1 ? /linked records/ : /Could not verify linked preventive schedules/);
+  }
+
   const quickFix = createWorkflow();
   const response = await quickFix.workflow.createQuickFixAsset("New machine", "running");
   assert.equal(response.error, null);

@@ -133,6 +133,7 @@ function createQuery(table, calls) {
   };
   const schedules = [{
     id: "schedule-1",
+    company_id: "company-1",
     asset_id: "asset-1",
     title: "Monthly PM",
     frequency: "monthly",
@@ -144,7 +145,9 @@ function createQuery(table, calls) {
     documentRef,
     FormDataCtor: FakeFormData,
     CSSRef: { escape: (value) => value },
-    supabaseClient: () => ({ from: (table) => createQuery(table, calls) }),
+    supabaseClient: () => ({ from: (table) => createQuery(table, calls), rpc: async (name, args) => {
+      calls.push(["rpc", name, args]); return { data: { work_order_id: "work-1", next_due_at: "2026-07-01", reused: false }, error: null };
+    } }),
     withOperationTimeout: (value) => value,
     insertWithOptionalProcedure: async (table, payload, options = {}) => {
       calls.push(["insertWithOptionalProcedure", table, payload, options]);
@@ -155,12 +158,14 @@ function createQuery(table, calls) {
     requiredText: (value) => String(value || "").trim(),
     procedureColumn: (id) => ({ procedure_template_id: id || null }),
     canDeleteOperationalRecords: () => true,
+    canEditOperationalRecords: () => true,
     applySafetyRequirementPayload: (payload) => { payload.requires_safety_check = true; },
     applySafetyCheckPayload: (payload, checked) => { payload.safety_devices_checked = checked; },
     nextDueDate: () => "2026-07-01",
     alertUser: (message) => { throw new Error(message); },
     getSession: () => ({ user: { id: "user-1" } }),
     getActiveCompanyId: () => "company-1",
+    getScope: () => "company-1:location-1",
     getPreventiveSchedules: () => schedules,
     setPendingDeleteScheduleId: (value) => { state.pendingDeleteScheduleId = value; },
     setActiveWorkOrderId: (value) => { state.activeWorkOrderId = value; },
@@ -191,7 +196,8 @@ function createQuery(table, calls) {
   assert.equal(state.activeWorkOrderId, "work-1");
   assert.equal(state.activeSection, "work");
   assert.equal(state.notices.at(-1)[0], "PM work order generated.");
-  assert.ok(calls.some((call) => call[0] === "update" && call[1] === "preventive_schedules"));
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "generate_preventive_work_order" && call[2].p_expected_due_at === "2026-06-01"));
+  assert.ok(!calls.some((call) => call[0] === "update" && call[1] === "preventive_schedules"));
 
   console.log("preventive maintenance workflow smoke passed");
 })();

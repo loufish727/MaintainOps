@@ -412,15 +412,16 @@
             ${assetEventsReady ? `<p class="muted">Review who created or changed this equipment on its own history screen.</p>` : `<p class="error-text">Run supabase/step-next-asset-events.sql to show equipment history notes.</p>`}
           </section>
 
-          <section class="asset-relationship-panel relationship-detail procedure">
+          <section class="asset-relationship-panel relationship-detail procedure" data-asset-pm-schedules="${escapeHtml(asset.id)}">
             <div class="panel-header compact">
               <h3>PM Schedules</h3>
               <div class="panel-header-actions">
-                <span>${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}</span>
+                <span>${deps.getSchedulesReady?.() === false ? "Unavailable" : `${assetSchedules.length} schedule${assetSchedules.length === 1 ? "" : "s"}`}</span>
                 ${canEditEquipment ? `<button class="secondary-button asset-action-button" data-section="pm" type="button">Go to PM</button>` : ""}
               </div>
             </div>
-            ${canEditEquipment ? `<form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
+            ${canEditEquipment && deps.canCreatePreventiveSchedule?.() === false ? deps.renderMaintenanceLoading() : ""}
+            ${canEditEquipment && deps.canCreatePreventiveSchedule?.() !== false ? `<form class="inline-form pm-form relationship-detail maintenance" data-create-pm-form data-equipment-pm-form="${escapeHtml(asset.id)}">
               <input name="title" required placeholder="PM for ${escapeHtml(asset.name)}">
               <input name="asset_id" type="hidden" value="${escapeHtml(asset.id)}">
               <select name="frequency">
@@ -437,10 +438,12 @@
               </span>
               <p class="error-text" data-pm-error></p>
               <button class="secondary-button asset-action-button" type="submit">Add Schedule</button>
+              <button class="secondary-button" type="reset">Clear Form</button>
             </form>` : ""}
             <div class="mini-list">
-              ${assetSchedules.map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${schedule.frequency} - next due ${schedule.next_due_at}</span></article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
+              ${deps.getSchedulesReady?.() === false ? `<p class="error-text" role="alert">PM schedules could not be loaded.</p>` : pageRows(assetSchedules, "pm-schedules").map((schedule) => `<article><strong>${escapeHtml(schedule.title)}</strong><span>${escapeHtml(schedule.frequency || "")} - next due ${escapeHtml(schedule.next_due_at || "")}</span>${schedule.active === false ? `<span class="chip">Inactive</span>` : ""}</article>`).join("") || `<p class="muted">No PM schedules for this equipment.</p>`}
             </div>
+            ${relationPagination("pm-schedules", assetSchedules.length)}
           </section>
 
           <details class="asset-relationship-panel relationship-detail parts" id="asset-linked-parts-target" data-asset-relationship-section="linked-parts" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("linked-parts") ? "open" : ""}>

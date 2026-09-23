@@ -110,10 +110,11 @@
       soon.setDate(soon.getDate() + 7);
 
       return state("preventiveSchedules")
+        .filter((schedule) => schedule.active !== false)
         .filter(deps.matchesActiveLocation)
         .filter((schedule) => {
-          const due = new Date(`${schedule.next_due_at}T00:00:00`);
-          return due >= today && due <= soon;
+          const due = window.MaintainOpsMaintenanceScheduleDates.localDateOnly(schedule.next_due_at);
+          return due && due >= today && due <= soon;
         })
         .filter((schedule) => deps.matchesSearch([
           schedule.title,
@@ -127,7 +128,7 @@
           title: schedule.title,
           assetName: schedule.assets?.name || "No equipment",
           dueAt: schedule.next_due_at,
-          due: new Date(`${schedule.next_due_at}T00:00:00`),
+          due: window.MaintainOpsMaintenanceScheduleDates.localDateOnly(schedule.next_due_at),
         }))
         .sort((a, b) => a.due - b.due);
     }

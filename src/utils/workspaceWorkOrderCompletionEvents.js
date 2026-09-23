@@ -10,6 +10,7 @@
   function createWorkspaceWorkOrderCompletionEvents(options = {}) {
     const doc = options.documentRef || document;
     const FormDataRef = options.FormDataRef || FormData;
+    const pending = new Set();
 
     function currentSafetyCheckboxCheckedForWorkOrder(id) {
       if (options.getActiveWorkOrderId() !== id) return false;
@@ -30,6 +31,14 @@
       const errorTarget = doc.querySelector("#completion-error");
       const activeWorkOrderId = options.getActiveWorkOrderId();
       const workOrder = options.getWorkOrderById(activeWorkOrderId);
+      const scope = options.getScope?.();
+      const current = () => options.getScope?.() === scope;
+      if (!workOrder || pending.has(activeWorkOrderId)) return;
+      const checklistError = options.blocksProcedureCompletion?.(workOrder);
+      if (checklistError) {
+        if (errorTarget) errorTarget.textContent = checklistError;
+        return;
+      }
       const procedure = options.getProcedureById(workOrder?.procedure_template_id);
       const requiredProgress = procedure ? options.requiredChecklistProgress(workOrder, procedure) : { done: 0, total: 0 };
 
@@ -56,9 +65,11 @@
       }
 
       submitButton.disabled = true;
+      pending.add(activeWorkOrderId);
       submitButton.textContent = "Completing...";
       if (errorTarget) errorTarget.textContent = "";
 
+      let saved = false;
       try {
         const payload = {
           status: "completed",
@@ -79,23 +90,36 @@
           "Complete work save timed out. Check your connection and try again.",
           20000
         );
+        if (!current()) return;
         if (error) {
           if (errorTarget) errorTarget.textContent = `Could not complete work order: ${options.friendlyWorkOrderSaveError(error)}`;
           return;
         }
+        saved = true;
 
-        const logError = await options.withOperationTimeout(
-          options.recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed."),
-          "Activity log timed out.",
-          8000
-        ).catch((error) => error);
+        let logError;
+        try {
+          const result = await options.withOperationTimeout(
+            options.recordWorkOrderEvent(activeWorkOrderId, "completed", form.get("resolution_summary") || form.get("completion_notes") || "Work order completed."),
+            "Activity log timed out.",
+            8000
+          );
+          logError = result?.error || (result instanceof Error ? result : null);
+        } catch (error) {
+          logError = error;
+        }
+        if (!current()) return;
         options.setWorkOrderActionWarning("", "");
-        options.showNotice(logError ? `Work order completed, but history did not update: ${logError.message}` : "Work order completed.", logError ? "warning" : "success");
+        options.showNotice(logError ? `Work order completed, but history did not update: ${logError.message || logError}` : "Work order completed.", logError ? "warning" : "success");
         await options.render();
       } catch (error) {
-        if (errorTarget) errorTarget.textContent = `Could not complete work order: ${error.message || error}`;
-        else options.alertRef(error.message || error);
+        if (current()) {
+          if (saved) options.showNotice(`Work order completed, but the screen could not update: ${error.message || error}`, "warning");
+          else if (errorTarget) errorTarget.textContent = `Could not complete work order: ${error.message || error}`;
+          else options.alertRef(error.message || error);
+        }
       } finally {
+        pending.delete(activeWorkOrderId);
         submitButton.disabled = false;
         submitButton.textContent = "Complete Work Order";
       }

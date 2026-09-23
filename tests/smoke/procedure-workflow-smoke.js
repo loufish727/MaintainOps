@@ -60,6 +60,7 @@ function createQuery(table, calls) {
       return this;
     },
     delete() {
+      this.deleting = true;
       calls.push(["delete", table]);
       return this;
     },
@@ -72,15 +73,17 @@ function createQuery(table, calls) {
       calls.push(["eq", table, column, value]);
       return this;
     },
+    ilike() {
+      return this;
+    },
     single() {
-      return Promise.resolve({ data: { id: "template-new" }, error: null });
+      return Promise.resolve({ data: { id: "template-new", ...this.payload }, error: null });
     },
     maybeSingle() {
       return Promise.resolve({ data: null, error: null });
     },
     then(resolve) {
-      if (this.countMode) resolve({ count: 0, error: null });
-      else resolve({ data: [{ id: "template-1" }], error: null });
+      resolve({ data: this.deleting ? [{ id: "template-1" }] : [], error: null });
     },
     catch() {
       return Promise.resolve({ error: null });
@@ -117,22 +120,31 @@ function createQuery(table, calls) {
   };
   const templates = [{
     id: "template-1",
+    company_id: "company-1",
     name: "Inspection",
-    procedure_steps: [{ id: "step-1" }],
+    procedure_steps: [{ id: "step-1", position: 4 }],
   }];
 
   const workflow = createProcedureWorkflow({
     documentRef,
     FormDataCtor: FakeFormData,
     CSSRef: { escape: (value) => value },
-    supabaseClient: () => ({ from: (table) => createQuery(table, calls) }),
+    supabaseClient: () => ({
+      from: (table) => createQuery(table, calls),
+      rpc: async (name, args) => {
+        calls.push(["rpc", name, args]);
+        return { data: [{ procedure_template_id: args.p_template_ids[0], work_order_count: 0, schedule_count: 0 }], error: null };
+      },
+    }),
     withOperationTimeout: (value) => value,
     requiredText: (value) => String(value || "").trim(),
     canDeleteOperationalRecords: () => true,
+    canEditOperationalRecords: () => true,
     procedureDeleteBlockerMessage: () => "",
     alertUser: (message) => { throw new Error(message); },
     getSession: () => ({ user: { id: "user-1" } }),
     getActiveCompanyId: () => "company-1",
+    getScope: () => "company-1:location-1",
     getProcedureTemplates: () => templates,
     setPendingDeleteProcedureId: (value) => { state.pendingDeleteProcedureId = value; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
@@ -150,9 +162,10 @@ function createQuery(table, calls) {
   assert.equal(state.notices.at(-1)[0], "Sample procedure checklist added.");
   assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "procedure_steps"));
 
-  templates.push({ id: "template-1", name: "Inspection", procedure_steps: [{ id: "step-1" }] });
+  templates.push({ id: "template-1", company_id: "company-1", name: "Inspection", procedure_steps: [{ id: "step-1", position: 4 }] });
   await stepForm.dispatch("submit");
   assert.equal(state.notices.at(-1)[0], "Procedure checklist step added.");
+  assert.ok(calls.some((call) => call[0] === "insert" && call[1] === "procedure_steps" && call[2].position === 5));
 
   await workflow.requestDeleteProcedureTemplate("template-1");
   assert.equal(state.pendingDeleteProcedureId, "template-1");
@@ -161,6 +174,8 @@ function createQuery(table, calls) {
   await workflow.deleteProcedureTemplate("template-1");
   assert.equal(state.pendingDeleteProcedureId, null);
   assert.equal(state.notices.at(-1)[0], "Procedure checklist deleted.");
+  assert.ok(calls.some((call) => call[0] === "rpc" && call[1] === "get_procedure_link_counts"));
+  assert.ok(!calls.some((call) => call[0] === "select" && call[2].count));
 
   console.log("procedure workflow smoke passed");
 })();

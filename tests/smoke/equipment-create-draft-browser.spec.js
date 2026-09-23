@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
-const source = fs.readFileSync(path.resolve(__dirname, '../../src/utils/equipmentCreateDrafts.mjs'), 'utf8').replace('export function', 'function');
+const source = fs.readFileSync(path.resolve(__dirname, '../../src/utils/equipmentCreateDrafts.mjs'), 'utf8').replaceAll('export function', 'function');
 const key = 'maintainops.equipmentCreateDraft.v1:person:company:north';
 
 async function fixture(page, storageFault = false) {

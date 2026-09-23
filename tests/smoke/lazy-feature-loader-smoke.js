@@ -164,6 +164,29 @@ async function importLazyResources() {
 
   activeSection = "work";
   assert.equal(renderCount, 0);
+  for (const section of ['pm', 'procedures', 'assets', 'work', 'mywork']) {
+    const maintenanceHarness = createDocumentHarness();
+    let detail = false, renders = 0;
+    const maintenance = createLazyResourceHelpers({
+      windowRef: {}, documentRef: maintenanceHarness.documentRef, escapeHtml: String,
+      featureBundlePaths: { maintenance: 'maintenance.test.js' }, getActiveSection: () => section,
+      needsChecklistTools: () => detail, initializeFeature: id => assert.equal(id, 'maintenance'),
+      requestWorkspaceRender: () => { renders++; },
+    });
+    maintenance.scheduleFeatureBundleLoad();
+    if (['work', 'mywork'].includes(section)) {
+      assert.equal(maintenanceHarness.scripts.length, 0, 'Work queues must not download checklist tools');
+      detail = true;
+      maintenance.scheduleFeatureBundleLoad();
+    }
+    assert.equal(maintenanceHarness.scripts.length, 1);
+    maintenanceHarness.scripts[0].onload();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(maintenance.isFeatureBundleReady('maintenance'), true);
+    assert.equal(renders, 1);
+    maintenance.scheduleFeatureBundleLoad();
+    assert.equal(maintenanceHarness.scripts.length, 1);
+  }
   console.log("lazy feature loader smoke passed");
 })().catch((error) => {
   console.error(error);
