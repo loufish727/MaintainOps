@@ -56,7 +56,7 @@ for (const width of [1440, 768, 390, 320]) {
         document.querySelector('.message-center').style.height = '100dvh';
         window.MaintainOpsWorkspaceMessageUiEvents.bindWorkspaceMessageUiEvents({
           state: {}, storage: { setItem() {} }, renderWorkspace: render, setMessageView: setView,
-          openComposer: () => { view = 'conversations'; composing = true; render(); },
+          openComposer: () => { if (view === 'home') active = ''; view = 'conversations'; composing = true; render(); },
           closeComposer: () => { composing = false; render(); }, backToMessages: () => { active = ''; render(); },
         });
         window.MaintainOpsWorkspaceMessageThreadEvents.bindWorkspaceMessageThreadEvents(threadEvents);
@@ -99,6 +99,10 @@ for (const width of [1440, 768, 390, 320]) {
       expect(box.x + box.width).toBeLessThanOrEqual(width);
     }
     await page.screenshot({ path: testInfo.outputPath(`message-home-${width}.png`) });
+    await home.locator('[data-message-compose]').click();
+    await page.getByRole('button', { name: 'Cancel new message' }).click();
+    await expect(page.locator('.message-list')).toHaveCount(0);
+    await page.locator('.message-view-tabs [data-message-view="home"]').click();
     await home.locator('[data-message-view="conversations"]').click();
     await expect(page.locator('.message-list')).toHaveCount(0);
     await page.locator('[data-message-thread="one"]').click();

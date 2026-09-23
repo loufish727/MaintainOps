@@ -95,6 +95,9 @@ test("signed-in message recovery after background auth, reload, failure, send, a
     await page.reload();
     await expect(page.locator('.message-home')).toBeVisible({ timeout: 45000 });
     expect(readWrites.length).toBe(readsBeforeReload);
+    await page.getByRole('button', { name: 'New message', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Cancel new message' }).click();
+    await expect(page.locator('.message-list')).toHaveCount(0);
     await page.locator('.message-view-tabs [data-message-view="conversations"]').click();
     await expect(page.locator('.message-list')).toHaveCount(0);
     await page.locator(`[data-message-thread="${threadId}"]`).click();

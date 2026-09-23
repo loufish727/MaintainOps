@@ -5671,7 +5671,7 @@ function bindWorkspaceEvents() {
   bindMessageWorkflowEvents();
 
   bindWorkspaceMessageUiEvents({
-    openComposer: () => { messageView = "conversations"; setMessageComposerOpenState(true); renderWorkspace(); document.querySelector('#message-thread-form [name="direct_user_id"]')?.focus({ preventScroll: true }); },
+    openComposer: () => { if (messageView === "home") setActiveMessageThreadIdState(""); messageView = "conversations"; setMessageComposerOpenState(true); renderWorkspace(); document.querySelector('#message-thread-form [name="direct_user_id"]')?.focus({ preventScroll: true }); },
     closeComposer: () => { setMessageComposerOpenState(false); renderWorkspace(); },
     exitMessages: () => { setActiveSectionState("mywork"); return returnToWorkOrderQueue(); },
     setMessageView: (view) => {
