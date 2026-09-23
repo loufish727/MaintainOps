@@ -20,14 +20,40 @@
       .maybeSingle();
   }
 
-  function fetchWorkOrdersByAsset(supabaseClient, companyId, assetId, selectClause) {
-    return supabaseClient
-      .from("work_orders")
-      .select(selectClause)
-      .eq("company_id", companyId)
-      .eq("asset_id", assetId)
-      .order("completed_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
+  async function fetchAssetWorkOrderCounts(supabaseClient, companyId, assetId) {
+    const query = () => countWorkOrdersQuery(supabaseClient).eq("company_id", companyId).eq("asset_id", assetId);
+    const [open, completed] = await Promise.all([
+      query().neq("status", "completed"),
+      query().eq("status", "completed"),
+    ]);
+    const error = open.error || completed.error;
+    if (error) return { error };
+    if (![open.count, completed.count].every((count) => Number.isInteger(count) && count >= 0)) {
+      return { error: new Error("Equipment work counts are unavailable.") };
+    }
+    return { data: { open: open.count, completed: completed.count }, error: null };
+  }
+
+  async function fetchWorkOrdersByAsset(supabaseClient, companyId, assetId, selectClause) {
+    const rows = [];
+    // Do not mistake the API's row limit for the equipment's complete history.
+    while (true) {
+      const response = await supabaseClient
+        .from("work_orders")
+        .select(selectClause, { count: "exact" })
+        .eq("company_id", companyId)
+        .eq("asset_id", assetId)
+        .order("completed_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(rows.length, rows.length + 999);
+      if (response.error) return response;
+      const page = response.data || [];
+      rows.push(...page);
+      if (!page.length || (Number.isInteger(response.count) ? rows.length >= response.count : page.length < 1000)) {
+        return { data: rows, error: null };
+      }
+    }
   }
 
   async function fetchWorkOrdersByIds(supabaseClient, params) {
@@ -89,6 +115,7 @@
     countWorkOrdersQuery,
     fetchWorkOrderById,
     fetchWorkOrdersByAsset,
+    fetchAssetWorkOrderCounts,
     fetchWorkOrdersByIds,
     scopedWorkOrderSearchQuery,
     scopedTeamWorkloadQuery,

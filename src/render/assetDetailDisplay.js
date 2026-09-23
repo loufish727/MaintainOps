@@ -124,10 +124,16 @@
       const parent = parentAssetFor(asset);
       const children = childAssetsFor(asset.id);
       const assetWorkOrders = workOrders.filter((workOrder) => workOrder.asset_id === asset.id);
-      const openWork = assetWorkOrders
+      const workHistory = deps.getAssetWorkHistory?.(asset.id);
+      const historyReady = !workHistory || workHistory.historyStatus === "ready";
+      const historyWorkOrders = workHistory ? workHistory.rows : assetWorkOrders;
+      const historyMessage = workHistory?.historyStatus === "error"
+        ? `<p class="error-text" role="alert">Could not load work history.</p>`
+        : `<p class="muted" role="status">Loading work history...</p>`;
+      const openWork = historyWorkOrders
         .filter((workOrder) => workOrder.status !== "completed")
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      const completedWork = assetWorkOrders
+      const completedWork = historyWorkOrders
         .filter((workOrder) => workOrder.status === "completed")
         .sort((a, b) => new Date(b.completed_at || b.created_at || 0) - new Date(a.completed_at || a.created_at || 0));
       const assetSchedules = preventiveSchedules.filter((schedule) => schedule.asset_id === asset.id);
@@ -140,6 +146,10 @@
       const assetEvents = (deps.getAssetEventsByAssetId?.()[asset.id] || [])
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       const { equipmentHistory } = assetHistoryFor(asset, assetEvents, profilesByUserId);
+      const workCount = (kind, fallback) => workHistory
+        ? (workHistory.countsStatus === "ready" ? workHistory.counts[kind] : workHistory.countsStatus === "error" ? "Unavailable" : "Loading...")
+        : fallback;
+      const countAttrs = (kind) => `data-asset-work-count="${escapeHtml(asset.id)}" data-work-count-kind="${kind}"`;
       const pageSize = deps.LIST_ITEMS_PER_PAGE || 12;
       const relationOpen = (section) => deps.getAssetRelationshipOpen?.(asset.id, section) || false;
       const relationPage = (section, total) => Math.min(
@@ -174,7 +184,7 @@
           : asset.status === "watch"
             ? "status-in_progress"
             : "status-completed";
-      const degradedWithoutOpenWork = asset.status === "degraded" && openWork.length === 0;
+      const degradedWithoutOpenWork = asset.status === "degraded" && workCount("open", openWork.length) === 0;
       const canEditEquipment = canEditEquipmentRecords();
 
       return `
@@ -220,10 +230,10 @@
               <strong>${linkedParts.length}</strong>
               <small>${linkedParts.length ? "Recommended/common parts linked" : "No linked parts yet"}</small>
             </button>
-            <button class="command-card status-open ${openWork.length ? "" : "empty"}" data-jump-work-section="asset-open-work-target" type="button">
+            <button class="command-card status-open ${workCount("open", openWork.length) === 0 ? "empty" : ""}" data-jump-work-section="asset-open-work-target" type="button">
               <span>Open Work</span>
-              <strong>${openWork.length}</strong>
-              <small>${openWork.length ? "Active work tied to this equipment" : "No open work"}</small>
+              <strong ${countAttrs("open")}>${workCount("open", openWork.length)}</strong>
+              <small>Active work tied to this equipment</small>
             </button>
             <button class="command-card command-photo ${assetDocuments.length ? "" : "empty"}" data-jump-work-section="asset-documents-target" type="button">
               <span>Files</span>
@@ -352,23 +362,23 @@
           </section>
 
           <details ${relationshipDetailsAttrs("open-work")} id="asset-open-work-target">
-            <summary>Open Work <span>${openWork.length}</span></summary>
+            <summary>Open Work <span ${countAttrs("open")}>${workCount("open", openWork.length)}</span></summary>
             <div class="mini-list">
               ${relationOpen("open-work")
-                ? pageRows(openWork, "open-work").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>`
+                ? (historyReady ? pageRows(openWork, "open-work").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No open work for this equipment.</p>` : historyMessage)
                 : `<p class="muted">Open this section to load and review active work for this equipment.</p>`}
             </div>
-            ${relationOpen("open-work") ? relationPagination("open-work", openWork.length) : ""}
+            ${relationOpen("open-work") && historyReady ? relationPagination("open-work", openWork.length) : ""}
           </details>
 
           <details ${relationshipDetailsAttrs("completed-history")}>
-            <summary>Completed History <span>${completedWork.length}</span></summary>
+            <summary>Completed History <span ${countAttrs("completed")}>${workCount("completed", completedWork.length)}</span></summary>
             <div class="mini-list">
               ${relationOpen("completed-history")
-                ? pageRows(completedWork, "completed-history").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>`
+                ? (historyReady ? pageRows(completedWork, "completed-history").map(renderAssetMiniWorkOrder).join("") || `<p class="muted">No completed work yet.</p>` : historyMessage)
                 : `<p class="muted">Open this section to load completed work history for this equipment.</p>`}
             </div>
-            ${relationOpen("completed-history") ? relationPagination("completed-history", completedWork.length) : ""}
+            ${relationOpen("completed-history") && historyReady ? relationPagination("completed-history", completedWork.length) : ""}
           </details>
 
           <section class="asset-relationship-panel relationship-detail comment">
@@ -443,13 +453,13 @@
           </details>
 
           <details class="asset-relationship-panel relationship-detail parts" data-asset-relationship-section="parts-used" data-asset-id="${escapeHtml(asset.id)}" ${relationOpen("parts-used") ? "open" : ""}>
-            <summary>Parts Used History <span>${usedParts.length}</span></summary>
+            <summary>Parts Used History <span>${historyReady ? usedParts.length : "Not loaded"}</span></summary>
             <div class="mini-list">
               ${relationOpen("parts-used")
-                ? pageRows(usedParts, "parts-used").map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>`
+                ? (historyReady ? pageRows(usedParts, "parts-used").map((row) => `<article><strong>${escapeHtml(row.parts?.name || "Part")}</strong><span>${row.quantity_used} used</span></article>`).join("") || `<p class="muted">No parts history yet.</p>` : historyMessage)
                 : `<p class="muted">Open this section to load parts used history for this equipment.</p>`}
             </div>
-            ${relationOpen("parts-used") ? relationPagination("parts-used", usedParts.length) : ""}
+            ${relationOpen("parts-used") && historyReady ? relationPagination("parts-used", usedParts.length) : ""}
           </details>
 
           ${canEditEquipment ? renderAssetDangerZone(asset) : ""}
