@@ -27,6 +27,7 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
   expect(locations.length).toBeGreaterThan(1);
   const [from,to]=locations, token=randomUUID(), name=`000LFES Travel ${token}`;
   const assetIds=Array.from({length:13},()=>randomUUID()), workId=randomUUID(), scheduleId=randomUUID();
+  require('node:fs').writeFileSync(testInfo.outputPath('fixture.json'),JSON.stringify({company,name,assets:assetIds,work:workId,schedule:scheduleId},null,2));
   const contexts=[], errors=[];
   async function open(session) {
     const context=await browser.newContext({baseURL,viewport:{width,height:900},isMobile:width<500,hasTouch:width<500});
@@ -218,11 +219,11 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     expect(denied.status()).toBe(403);
     expect(errors).toEqual([]);
   } finally {
+    try {
     await api('DELETE',`work_orders?company_id=eq.${company}&asset_id=in.(${assetIds.join(',')})`);
     await api('DELETE',`preventive_schedules?company_id=eq.${company}&id=eq.${scheduleId}`);
-    await api('DELETE',`assets?company_id=eq.${company}&id=in.(${assetIds.join(',')})`);
-    await api('DELETE',`asset_financials?company_id=eq.${company}&archived_asset_id=in.(${assetIds.join(',')})`);
+    await api('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:assetIds,p_prefix:name});
     expect(await api('GET',`assets?company_id=eq.${company}&id=in.(${assetIds.join(',')})&select=id`)).toEqual([]);
-    for(const context of contexts) await context.close().catch(()=>{});
+    } finally { for(const context of contexts) await context.close(); }
   }
 });

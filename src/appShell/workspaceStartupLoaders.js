@@ -13,8 +13,9 @@ export async function loadWorkspaceCoreData({
     loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
     loadWorkspaceResponse("PM schedules", loadCompleteWorkspaceRows("PM schedules", () => supabaseClient
       .from("preventive_schedules")
-      .select("*, assets(name, location_id, asset_type)", { count: "exact" })
+      .select("*, assets!inner(name, location_id, asset_type, archived_at)", { count: "exact" })
       .eq("company_id", activeCompanyId)
+      .is("assets.archived_at", null)
       .order("next_due_at", { ascending: true })
       .order("id", { ascending: true }))),
     loadWorkspaceResponse("Parts", listParts(supabaseClient, activeCompanyId)),

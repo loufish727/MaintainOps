@@ -66,6 +66,7 @@
     function financialAssetRows() {
       return [
         ...deps.getAssets(),
+        ...(deps.getAssetFinancials?.() || []).filter(f => f.assets && !deps.getAssets().some(a => a.id === f.asset_id)).map(f => ({ ...f.assets, financialRecord: f })),
         ...(deps.getAssetFinancials?.() || []).filter((financial) => !financial.asset_id).map(archivedFinancialAsset),
       ];
     }
@@ -111,7 +112,7 @@
         .map((asset) => {
           const financial = asset.financialRecord || financialsByAssetId[asset.id] || {};
           return {
-            operational_status: asset.financialRecord ? "deleted" : "active",
+            operational_status: asset.archived_at ? "archived" : asset.financialRecord && !asset.financialRecord.asset_id ? "deleted" : "active",
             equipment_type: assetTypeLabel(asset.asset_type),
             name: asset.name,
             parent_equipment: parentAssetName(asset, assetsById),
@@ -139,6 +140,8 @@
             needs_review: Boolean(financial.needs_review),
             last_reviewed_at: financial.last_reviewed_at || "",
             reviewed_by: profileName(financial.reviewed_by),
+            archive_reason: asset.archive_reason || "",
+            archived_at: asset.archived_at || "",
           };
         });
     }

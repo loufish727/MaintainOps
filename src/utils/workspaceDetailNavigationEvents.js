@@ -113,6 +113,7 @@
     doc.querySelectorAll("[data-open-asset]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (options.openUnavailableAsset?.(button.dataset.openAsset)) return;
         state.setActiveAssetId(button.dataset.openAsset);
         state.setActiveWorkOrderId(null);
         closeAssetHistoryScreen();

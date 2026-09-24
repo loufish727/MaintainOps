@@ -35,12 +35,12 @@
 
     function renderMaintenanceRequest(request) {
       const converted = isConvertedRequest(request);
-      const canEditOperational = canEditOperationalRecords();
+      const canEditOperational = canEditOperationalRecords() && !request.assets?.archived_at;
       const confirming = getPendingDeleteRequestId() === request.id;
       const profilesByUserId = getProfilesByUserId();
       const requestedAt = request.created_at ? new Date(request.created_at) : null;
       const requestedAtLabel = requestedAt && !Number.isNaN(requestedAt.getTime()) ? requestedAt.toLocaleString() : "date unavailable";
-      const equipmentLabel = request.assets?.name || request.locations?.name || "No equipment";
+      const equipmentLabel = (request.assets?.name || request.locations?.name || "No equipment") + (request.assets?.archived_at ? ' (Archived equipment)' : '');
       const requesterLabel = request.requested_by_name || profilesByUserId[request.requested_by]?.full_name || "Requester";
       const converterId = request.converted_by || request.reviewed_by || "";
       const converterLabel = profilesByUserId[converterId]?.full_name || "";

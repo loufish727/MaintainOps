@@ -66,6 +66,10 @@ async function main() {
     // Procedures predate dated migrations, which must restore the modern role helpers last.
     await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-procedures.sql'), 'utf8'));
     checks.push({ name: 'pm_baseline:procedures', verdict: 'PASS' });
+    for (const name of ['asset-parts', 'asset-documents']) {
+      await database.exec(fs.readFileSync(path.join(root, 'supabase', `step-next-${name}.sql`), 'utf8'));
+      checks.push({ name: `equipment_baseline:${name}`, verdict: 'PASS' });
+    }
 
     // Messaging predates dated migrations; exercise its real legacy baseline too.
     for (const name of ["message-center", "message-soft-delete-and-thread-scope", "message-thread-soft-delete", "message-work-order-links"]) {
@@ -725,6 +729,7 @@ async function main() {
     checks.push(...await require('./isolated-appwide-check').verifyAppwide(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require('./isolated-equipment-tag-check').verifyEquipmentTags(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require("./isolated-messaging-check").verifyMessaging(database, ids, setAuthenticatedUser, resetRole));
+    checks.push(...await require('./isolated-equipment-archive-check').verifyEquipmentArchive(database, ids, setAuthenticatedUser, resetRole));
     await resetRole(database);
     const report = {
       status: "PASS",
@@ -747,6 +752,7 @@ main().catch((error) => {
     scope: "Isolated PostgreSQL compile, migration apply, catalog security checks, and seeded RLS role checks",
     completedAt: new Date().toISOString(),
     error: error.message,
+    stack: error.stack,
   };
   writeEvidence("isolated-schema.json", report);
   console.error(JSON.stringify(report, null, 2));

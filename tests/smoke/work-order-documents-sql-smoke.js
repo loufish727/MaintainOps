@@ -37,7 +37,7 @@ async function main() {
     await db.exec(`alter table storage.objects add column created_at timestamptz not null default now();
       create unique index objects_bucket_name_key on storage.objects(bucket_id, name);`);
     await db.exec(read('supabase/schema.sql'));
-    for (const name of ['maintenance-requests', 'maintenance-request-photos', 'asset-documents',
+    for (const name of ['maintenance-requests', 'maintenance-request-photos', 'asset-documents', 'asset-parts',
       'procedures', 'admin-delete-work-orders', 'message-center', 'message-soft-delete-and-thread-scope',
       'message-thread-soft-delete', 'message-work-order-links', 'app-issue-reports']) {
       await db.exec(read(`supabase/step-next-${name}.sql`));

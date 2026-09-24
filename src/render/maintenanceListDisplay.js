@@ -72,12 +72,14 @@
             <div class="chip-row">
               <span class="chip">${escapeHtml(schedule.frequency)}</span>
               ${schedule.active === false ? `<span class="chip">Inactive</span>` : ""}
+              ${schedule.equipment_archive_paused ? '<span class="chip">Equipment restored / PM needs review</span>' : ''}
               ${dueState ? `<span class="chip ${dueState.className}">${dueState.label}</span>` : ""}
             </div>
             <h3>${escapeHtml(schedule.title)}</h3>
             <p>${escapeHtml(schedule.assets?.name || "No equipment")} - Next due ${escapeHtml(schedule.next_due_at)}</p>
           </div>
           ${canEditOperational ? `<div class="request-actions">
+            ${schedule.equipment_archive_paused && deps.canManageEquipmentArchive?.() ? `<button class="primary-button" data-resume-equipment-pm="${escapeHtml(schedule.id)}" type="button">Review / Resume PM</button>` : ''}
             <button class="secondary-button" data-generate-pm="${escapeHtml(schedule.id)}" type="button" ${schedule.active === false ? "disabled" : ""}>Generate Work</button>
             ${canDeleteOperationalRecords() ? confirming ? `
               <button class="secondary-button" data-cancel-delete-schedule type="button">Cancel</button>

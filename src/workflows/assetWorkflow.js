@@ -387,95 +387,12 @@
         alertRef("Only company admins and managers can delete equipment.");
         return;
       }
-      const errorElement = documentRef.querySelector("#asset-delete-error");
-      if (errorElement) errorElement.textContent = "";
-      try {
-        const blockers = await loadAssetDeleteBlockers(id);
-        const message = deps.assetDeleteBlockerMessage(blockers);
-        if (message) {
-          if (errorElement) errorElement.textContent = message;
-          return;
-        }
-        deps.setPendingDeleteAssetId(id);
-        deps.renderWorkspace();
-      } catch (error) {
-        if (errorElement) errorElement.textContent = error.message || "Could not verify equipment links before delete.";
-        else deps.showNotice(error.message || "Could not verify equipment links before delete.", "warning");
-      }
+      if (deps.openEquipmentArchive) await deps.openEquipmentArchive(id);
+      else deps.showNotice('Open Archive / Delete Equipment to review retained records.', 'warning');
     }
 
     async function deleteAsset(id) {
-      if (!deps.canDeleteEquipment()) {
-        alertRef("Only company admins and managers can delete equipment.");
-        return;
-      }
-      const errorElement = documentRef.querySelector("#asset-delete-error");
-      if (errorElement) errorElement.textContent = "";
-      const confirmButton = documentRef.querySelector(`[data-confirm-delete-asset="${CSSRef.escape(id)}"]`);
-      const companyId = deps.getActiveCompanyId();
-      const deletionContext = deps.getDeletionContext?.();
-      const actorId = currentUserId();
-      const stillCurrent = () => deps.getActiveCompanyId() === companyId && currentUserId() === actorId
-        && deps.getActiveAssetId() === id && deps.getDeletionContext?.() === deletionContext;
-      if (confirmButton) {
-        confirmButton.disabled = true;
-        confirmButton.textContent = "Deleting...";
-      }
-
-      try {
-        const blockers = await loadAssetDeleteBlockers(id);
-        const blockerMessage = deps.assetDeleteBlockerMessage(blockers);
-        if (blockerMessage) throw new Error(blockerMessage);
-
-        const documentPaths = deps.getAssetDocumentStoragePaths?.(id) || [];
-        if (!stillCurrent()) throw new Error("Workspace changed. Reopen the equipment before deleting.");
-        const { data, error } = await deps.withOperationTimeout(
-          deps.supabaseClient()
-            .from("assets")
-            .delete()
-            .eq("id", id)
-            .eq("company_id", companyId)
-            .select("id"),
-          "Equipment delete timed out. Check your connection and try again.",
-          15000
-        );
-        if (error) {
-          throw new Error(error.message.includes("violates foreign key constraint")
-            ? "This equipment is linked to records and cannot be deleted."
-            : error.message);
-        }
-        if (!Array.isArray(data) || data.length !== 1 || data[0].id !== id) {
-          throw new Error("Equipment deletion was not confirmed. Files were left unchanged; reopen the equipment before trying again.");
-        }
-        // Storage is not transactional with the database. Never remove files first.
-        let cleanupPending = false;
-        if (documentPaths.length) {
-          try {
-            const storageDelete = await deps.withOperationTimeout(
-              deps.removeAssetDocumentStorage(documentPaths),
-              "Equipment file cleanup timed out.",
-              15000
-            );
-            if (storageDelete.error) throw storageDelete.error;
-          } catch (_) {
-            cleanupPending = true;
-          }
-        }
-        if (!stillCurrent()) return;
-        deps.setActiveAssetId(null);
-        deps.setPendingDeleteAssetId(null);
-        deps.setActiveSection("assets");
-        deps.showNotice(cleanupPending
-          ? "Equipment deleted. Some files may remain in storage; ask an admin to review file cleanup."
-          : "Equipment deleted.", cleanupPending ? "warning" : "success");
-        await deps.render();
-      } catch (error) {
-        if (errorElement) errorElement.textContent = error.message || "Could not delete equipment.";
-        if (confirmButton) {
-          confirmButton.disabled = false;
-          confirmButton.textContent = "Permanently Delete";
-        }
-      }
+      await requestDeleteAsset(id);
     }
 
     async function createQuickFixAsset(name, status = "running") {

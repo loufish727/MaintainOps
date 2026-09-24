@@ -37,6 +37,10 @@ polling, transit state, planned destination or logistics workflow is added.
 
 ## Integrity
 
+The local archive replacement supersedes the permanent-deletion behavior described
+below once its prerequisite is deployed. It is currently QA-only; see
+`EQUIPMENT_ARCHIVE.md`. Relocation itself is unchanged.
+
 - Invoker-only RPCs, pinned search paths, live membership checks and existing RLS.
 - Review token includes hierarchy, condition, facility, classification and revision.
 - Stale reviews, invalid branches, foreign facilities, loops and mixed-facility

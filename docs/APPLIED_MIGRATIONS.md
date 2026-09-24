@@ -33,6 +33,22 @@ Repo source:
 
 ## Known Recently Applied
 
+### Equipment Archive / Restore, 2026-09-24 (QA Only)
+
+- `supabase/migrations/20260924202304_equipment_archive_restore.sql`: applied
+  through Supabase `apply_migration` to isolated QA `fsxqrngpaseqdxijggcm`.
+  Production `lbphkzznvvumemdkqoay` has NOT received this migration.
+- Adds retained archive metadata, manager/admin review/archive/restore/list and PM
+  resume RPCs, stale-client reference/history/Storage safeguards, and authenticated
+  asset DELETE revocation. No existing equipment is automatically archived.
+- Signed-in QA archive/restore retained work, file bytes, finance and parts, with
+  role denials and exactly one event from competing submissions. See
+  `EQUIPMENT_ARCHIVE.md` for release requirements, tests and rollback limits.
+- This status must change only after explicit production application and postflight.
+- QA alone also received `qa_equipment_fixture_cleanup`, sourced from
+  `tests/fixtures/qa-equipment-cleanup.sql`, for bounded test-owned relocation and
+  traveling fixtures. This is not an application migration or a production grant.
+
 ### Equipment Asset Tag, 2026-09-22
 
 - `supabase/migrations/202609222255_equipment_asset_tag.sql`: applied to isolated QA project `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay` on 2026-09-22 through Supabase `apply_migration`, after targeted browser proof and clean Full Strict LFES 13/13 at `5fa329a`.

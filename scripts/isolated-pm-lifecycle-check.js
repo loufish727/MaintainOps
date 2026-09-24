@@ -36,7 +36,7 @@ async function checkPmLifecycle() {
   try {
     await db.exec(read("tests/fixtures/supabase-postgres-prelude.sql"));
     await db.exec(read("supabase/schema.sql"));
-    for (const name of ["maintenance-requests", "maintenance-request-photos", "procedures", "cleanup-delete-paths",
+    for (const name of ["maintenance-requests", "maintenance-request-photos", "asset-parts", "asset-documents", "procedures", "cleanup-delete-paths",
       "admin-delete-work-orders", "message-center", "message-soft-delete-and-thread-scope", "message-thread-soft-delete", "message-work-order-links", "app-issue-reports"]) {
       await db.exec(read(`supabase/step-next-${name}.sql`));
     }
@@ -156,12 +156,12 @@ async function checkPmLifecycle() {
     await denied("update public.preventive_schedules set procedure_template_id=$1 where id=$2", [foreignTemplate, source], /company/);
     await denied("update public.procedure_steps set procedure_template_id=$1 where id=$2", [foreignTemplate, step], /parent/);
     await denied("insert into public.work_order_step_results(company_id,work_order_id,procedure_step_id,value) values ($1,$2,$3,'checked')", [company, work.id, otherStep], /current work order procedure/);
-    await denied("insert into public.work_order_step_results(company_id,work_order_id,procedure_step_id,value) values ($1,$2,$3,'checked')", [other, work.id, step], /company/);
+    await denied("insert into public.work_order_step_results(company_id,work_order_id,procedure_step_id,value) values ($1,$2,$3,'checked')", [other, work.id, step], /company|Work history is not available/);
     await denied("update public.work_orders set status='completed',completed_at=now(),safety_devices_checked=true where id=$1", [work.id], /required procedure/);
     const result = (await row("insert into public.work_order_step_results(company_id,work_order_id,procedure_step_id,value,completed_by,completed_at) values ($1,$2,$3,'checked',$4,now()) returning id", [company, work.id, step, users.admin])).id;
     await denied("update public.work_order_step_results set procedure_step_id=$1 where id=$2", [otherStep, result], /parent/);
     await denied("update public.work_order_step_results set work_order_id=$1 where id=$2", [legacy, result], /parent/);
-    await denied("update public.work_order_step_results set company_id=$1 where id=$2", [other, result], /parent/);
+    await denied("update public.work_order_step_results set company_id=$1 where id=$2", [other, result], /parent|cannot change company/);
     await denied("insert into public.work_order_step_results(company_id,work_order_id,procedure_step_id,value) values ($1,$2,$3,'')", [company, legacy, step], /Reopen/);
     await asUser(users.accounting);
     assert.equal((await query("update public.work_order_step_results set value='' where id=$1 returning id", [result])).rows.length, 0);

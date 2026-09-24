@@ -11021,6 +11021,9 @@ body.spatial-performance-active {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.archive-retained-banner { display: grid; gap: 6px; background: #391e26; border-left: 4px solid #ef8b98; padding: 12px; color: #ffccd3; margin-bottom: 16px; overflow-wrap: anywhere; }
+.archive-retained-banner p { margin: 0; }
+
 .asset-move > :is(h3, p) {
   grid-column: 1 / -1;
   margin: 0;

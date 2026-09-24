@@ -16,6 +16,7 @@ test('isolated QA relocation: signed-in UI, retained links, permissions and conc
   const locations=await api('GET',`locations?company_id=eq.${company}&select=id,name&order=name`),[from,to]=locations;
   const ids=Array.from({length:9},()=>randomUUID()),[parent,machine,moving,pump,stay,motor,a,b,c]=ids;
   const name='000LFES Relocate '+randomUUID(),work=randomUUID(),schedule=randomUUID();const contexts=[],errors=[];
+  require('node:fs').writeFileSync(info.outputPath('fixture.json'),JSON.stringify({company,name,assets:ids,work,schedule},null,2));
   const review=async(id=machine)=>(await api('POST','rpc/equipment_relocation_review',{p_company_id:company,p_asset_id:id}));
   const args=(r,id=machine,dest=to.id,branches=[moving])=>({p_company_id:company,p_asset_id:id,p_location_id:dest,p_move_branch_ids:branches,p_review_token:r.token});
   const rows=async()=>api('GET',`assets?company_id=eq.${company}&id=in.(${ids.join(',')})&select=*&order=id`);
@@ -35,6 +36,11 @@ test('isolated QA relocation: signed-in UI, retained links, permissions and conc
     await api('POST','work_orders',{id:work,company_id:company,location_id:from.id,asset_id:machine,title:name,created_by:admin.user.id,assigned_to:tech.user.id});
     await api('POST','preventive_schedules',{id:schedule,company_id:company,location_id:from.id,asset_id:machine,title:name,frequency:'monthly',next_due_at:'2099-01-01',created_by:admin.user.id});
     await api('POST','asset_financials',{company_id:company,asset_id:machine,acquisition_cost:1250});
+    expect((await raw('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:ids,p_prefix:name},manager)).status()).toBe(403);
+    const prematureCleanup=await raw('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:ids,p_prefix:name});
+    expect(prematureCleanup.ok()).toBe(false);expect(await prematureCleanup.text()).toContain('connected records');
+    expect((await raw('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:ids,p_prefix:'Not a test fixture'})).ok()).toBe(false);
+    expect(await rows()).toHaveLength(9);
     const originalWork=await api('GET',`work_orders?id=eq.${work}&select=*`),originalPm=await api('GET',`preventive_schedules?id=eq.${schedule}&select=*`);
     const page=await open(manager);await page.locator(`.asset-card[data-asset-id="${machine}"]`).click();
     await expect(page.locator('#edit-asset-form')).toBeVisible();await expect(page.locator('#edit-asset-form [name=location_id]')).toBeDisabled();
@@ -95,11 +101,11 @@ test('isolated QA relocation: signed-in UI, retained links, permissions and conc
     expect(errors).toEqual([]);
     console.log('Signed-in relocation: manager/admin, technician/accounting denials, partial move, detach history, retained WO/PM/financial, future PM destination, cold equipment link and competing relocation passed.');
   }finally{
+    try {
     await api('DELETE',`work_orders?company_id=eq.${company}&asset_id=in.(${ids.join(',')})`);
     await api('DELETE',`preventive_schedules?company_id=eq.${company}&id=eq.${schedule}`);
-    await api('DELETE',`assets?company_id=eq.${company}&id=in.(${ids.join(',')})`);
-    await api('DELETE',`asset_financials?company_id=eq.${company}&archived_asset_id=in.(${ids.join(',')})`);
+    await api('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:ids,p_prefix:name});
     expect(await api('GET',`assets?company_id=eq.${company}&id=in.(${ids.join(',')})&select=id`)).toEqual([]);
-    for(const c of contexts)await c.close();
+    } finally { for(const c of contexts)await c.close(); }
   }
 });

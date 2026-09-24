@@ -202,8 +202,9 @@ assert.match(html, /Drive Belt - B-42/);
 assert.match(html, /recommended qty 4/);
 assert.match(html, /Parts Used History/);
 assert.match(html, /data-asset-relationship-section="parts-used"/);
-assert.match(html, /data-cancel-delete-asset/);
-assert.match(html, /data-confirm-delete-asset="asset-1"/);
+assert.match(html, /data-archive-equipment="asset-1"/);
+assert.match(html, /Archive \/ Delete Equipment/);
+assert.doesNotMatch(html, /data-confirm-delete-asset|Permanently Delete/);
 assert.doesNotMatch(html, /Degraded needs a reason/);
 
 for (const location of [null, ""]) {

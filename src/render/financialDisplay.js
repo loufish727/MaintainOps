@@ -91,7 +91,8 @@
       const archivedRows = (getAssetFinancials?.() || [])
         .filter((finance) => !finance.asset_id)
         .map(archivedFinancialAsset);
-      return [...liveAssets, ...archivedRows];
+      const retainedRows = (getAssetFinancials?.() || []).filter(finance => finance.assets && !liveAssets.some(a => a.id === finance.asset_id)).map(finance => ({ ...finance.assets, financialRecord: finance }));
+      return [...liveAssets, ...retainedRows, ...archivedRows];
     }
 
     function financialAssets() {
@@ -211,6 +212,7 @@
       return `
         <article class="asset-card asset-state-${escapeHtml(asset.status || "running")} financial-asset-card ${archived ? "financial-asset-deleted" : ""}" data-open-financial-asset="${escapeHtml(asset.id)}" tabindex="0" role="button" aria-label="Open financial details for ${escapeHtml(asset.name || "equipment")}">
           <div class="part-card-main">
+            ${asset.archived_at ? `<div class="financial-deleted-banner">Equipment archived / ${escapeHtml(asset.archive_reason)} / ${escapeHtml(new Date(asset.archived_at).toLocaleDateString())}</div>` : ""}
             ${archived ? `<div class="financial-deleted-banner">Operational equipment deleted${finance.operational_deleted_at ? ` ${escapeHtml(new Date(finance.operational_deleted_at).toLocaleDateString())}` : ""}${finance.operational_deleted_by ? ` by ${escapeHtml(deletedByName(finance))}` : ""}</div>` : ""}
             <div class="chip-row">
               <span class="chip">${escapeHtml(assetTypeLabel(asset.asset_type))}</span>
@@ -298,9 +300,10 @@
           </div>
           <div class="team-actions">
             <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
-            ${archived ? "" : `<button class="secondary-button asset-action-button" data-open-financial-equipment="${escapeHtml(asset.id)}" type="button">Open Equipment Page</button>`}
+            ${archived || asset.archived_at ? "" : `<button class="secondary-button asset-action-button" data-open-financial-equipment="${escapeHtml(asset.id)}" type="button">Open Equipment Page</button>`}
           </div>
         </div>
+        ${asset.archived_at ? `<div class="financial-deleted-banner">Equipment archived / ${escapeHtml(asset.archive_reason)}. Financial information is retained.</div>` : ""}
         ${archived ? `
           <section class="relationship-detail asset financial-deleted-detail">
             <div class="financial-deleted-banner">Operational equipment deleted${finance.operational_deleted_at ? ` ${escapeHtml(new Date(finance.operational_deleted_at).toLocaleDateString())}` : ""}${finance.operational_deleted_by ? ` by ${escapeHtml(deletedByName(finance))}` : ""}</div>
