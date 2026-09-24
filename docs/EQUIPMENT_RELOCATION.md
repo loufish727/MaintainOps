@@ -69,3 +69,29 @@ polling, transit state, planned destination or logistics workflow is added.
 
 Browser emulation is not a physical iPhone test. Automated LFES is evidence for the
 listed cases, not a claim of every possible workload or recovery scenario.
+
+### Verified Preview
+
+Full Strict LFES passed 13/13 stages on clean code commit `dad9323`, including
+104 targeted browser regressions. Authenticated LFES passed 11/11 stages on
+`c7ff2ec` on 2026-09-24 UTC. The only difference is a test readiness wait before
+mobile geometry probes; application code and schema are identical. The first
+authenticated run exposed a detached-element test race during lazy loading; the
+complete rerun passed without removing any mobile tap assertions.
+
+Chromium and WebKit both passed signed-in relocation, traveling lifecycle and
+account/location switching. Separate controlled native transactions passed
+competing relocation, structural contention/retry, cycle refusal and queued
+old-facility child-insertion refusal. Temporary helpers were removed. Full-row
+fingerprints for all eleven tracked QA relations match the original baseline
+after the final authenticated run. No production migration, test move or push
+was performed. A read-only peer review has no remaining safeguard blocker.
+
+Startup JS/CSS measured 742,182 decoded bytes / 172,653 gzip bytes, down from
+770,295 / 179,055. Equipment details and relocation share the on-demand maintenance
+bundle; initial budgets remain unchanged. QA security advisors are unchanged:
+five no-policy INFO findings, five anonymous-callable and 31 authenticated-callable
+definer warnings, plus disabled leaked-password protection. This change introduces
+no security definer. Existing findings remain separate work; see
+[RPC guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+and [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
