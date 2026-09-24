@@ -63,9 +63,9 @@ The broader Strict LFES command includes the Node tests, bundle budgets, isolate
 
 ## Deployment
 
-Verified release candidate: Full Strict LFES (13 stages) and authenticated LFES (9 stages) passed on 2026-09-23 local time. The latter includes desktop/mobile traveling lifecycle checks in both Chromium and WebKit. Production schema and the three requested initial records have been applied; see `APPLIED_MIGRATIONS.md` for the fingerprint comparison. GitHub's required Release Gate governs frontend publication.
+Verified board release candidate: Full Strict LFES (13 stages) and authenticated LFES (9 stages) passed on clean code commit `b92debd` on 2026-09-23 local time. The latter includes desktop/mobile traveling lifecycle and account/location checks in both Chromium and WebKit. Production board schema has been applied without changing the existing business records; the three requested units were created in the earlier release and were not recreated. See `APPLIED_MIGRATIONS.md` for the fingerprint comparison. GitHub's required Release Gate governs frontend publication.
 
-Database prerequisite: `supabase/migrations/20260924025115_traveling_primary_equipment.sql`.
+Database prerequisites: `supabase/migrations/20260924025115_traveling_primary_equipment.sql`, then `supabase/migrations/20260924050141_traveling_units_board.sql`.
 Apply and verify on QA before production. The migration changes no existing business rows and introduces no security-definer function or new public table. Record production application separately in `APPLIED_MIGRATIONS.md`.
 
 The requested Taylor units start in Salem pending the user's location verification:
