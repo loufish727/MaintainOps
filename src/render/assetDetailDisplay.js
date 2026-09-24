@@ -41,6 +41,7 @@
         <select name="location_existing" aria-label="Area / spot"><option value="">No area / spot set</option>${renderAssetAreaOptions()}</select>
         <input name="location_new" placeholder="New area / spot">
         <select name="asset_type" aria-label="Equipment type">${deps.ASSET_TYPE_OPTIONS.map(type => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}</select>
+        <p class="muted">Traveling Equipment is routinely shared between facilities. For a one-time move, keep the normal type and use Relocate Equipment.</p>
         <select name="parent_asset_id" aria-label="Part of equipment"><option value="">Top level equipment</option>${renderParentAssetOptions()}</select>
         <select name="location_id" ${deps.getLocations().length ? "required" : "disabled"}>${renderLocationOptions()}</select>
         <label class="check-row compact-check"><input name="safety_devices_required" type="checkbox" checked> Safety device identification</label>
@@ -281,6 +282,7 @@
 
           ${canEditEquipment ? `<div class="quick-actions detail-quick-actions">
             <button class="assign-action" data-quick-fix-asset="${asset.id}" type="button">Quick Fix for this equipment</button>
+            ${!traveling && deps.canRelocateEquipment?.() ? `<details class="equipment-actions"><summary>Actions</summary><button class="secondary-button" data-relocate-equipment="${escapeHtml(asset.id)}" type="button">Relocate Equipment</button></details>` : ""}
           </div>` : ""}
 
           <section class="relationship-detail photo asset-photo-panel" id="asset-documents-target">
@@ -337,9 +339,10 @@
             <label>Manufacturer<input name="manufacturer" value="${escapeHtml(asset.manufacturer || "")}"></label>
             <label>Model<input name="model" value="${escapeHtml(asset.model || "")}"></label>
             <label>Type
-              <select name="asset_type">
-                ${ASSET_TYPE_OPTIONS.map((type) => `<option value="${type}" ${type === (asset.asset_type || "machine") ? "selected" : ""}>${assetTypeLabel(type)}</option>`).join("")}
+              <select name="asset_type" ${traveling && !deps.canRelocateEquipment?.() ? "disabled" : ""}>
+                ${ASSET_TYPE_OPTIONS.filter(type => type !== "traveling_machine" || traveling || deps.canRelocateEquipment?.()).map((type) => `<option value="${type}" ${type === (asset.asset_type || "machine") ? "selected" : ""}>${assetTypeLabel(type)}</option>`).join("")}
               </select>
+              <span class="muted">Traveling Equipment is for routine sharing, not a one-time relocation.</span>
             </label>
             <label id="edit-asset-parent-field">Part of
               <select name="parent_asset_id" ${traveling ? "disabled" : ""}>
@@ -348,10 +351,10 @@
               </select>
             </label>
             <label id="edit-asset-location-field">Location
-              <select name="location_id" ${locations.length && !traveling ? "" : "disabled"}>
+              <select name="location_id" disabled>
                 ${renderLocationOptions(asset.location_id || activeLocationId)}
               </select>
-              ${traveling ? `<span class="muted">Use Change current facility above.</span>` : ""}
+              <span class="muted">${traveling ? "Use Change current facility above." : deps.canRelocateEquipment?.() ? "Actions: Relocate Equipment." : "A manager or admin can relocate this equipment."}</span>
             </label>
             <label>Area / spot
               <select name="location_existing">

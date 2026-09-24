@@ -14,9 +14,9 @@
               <p>Use for the main equipment that maintenance work is tied to, such as a roll former, ASC line, folder, or press.</p>
             </article>
             <article>
-              <span>Traveling Primary</span>
-              <strong>Shared machine that moves between facilities</strong>
-              <p>For standalone curving units and similar machines. One permanent record retains its work, parts and history wherever it goes. No parent or sub equipment; no automatic stock transfers.</p>
+              <span>Traveling Equipment</span>
+              <strong>Routinely shared between facilities</strong>
+              <p>For standalone curving units and similar machines. One permanent record retains its work, parts and history wherever it goes. No parent or sub equipment; no automatic stock transfers. A one-time move does not change equipment type: use Relocate Equipment.</p>
             </article>
             <article>
               <span>Forklift / Mobile Lift</span>

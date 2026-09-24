@@ -34,6 +34,12 @@ async function main() {
   response={error:null}; await workflow.moveTravelingAsset(event); assert.equal(notice.filter(x=>x==='render').length,1);
   response={data:[{id:'asset'}],error:null}; await workflow.updateAsset(event);
   const update=calls.find(call=>call.table==='assets'); assert.ok(update); assert.equal(Object.hasOwn(update.payload,'location_id'),false);
+  assert.equal(Object.hasOwn(update.payload,'asset_type'),false,'unchanged type must not take the structural gate');
+  assert.equal(Object.hasOwn(update.payload,'parent_asset_id'),false,'unchanged parent must not take the structural gate');
+  delete values.asset_type;
+  await workflow.updateAsset(event);
+  assert.equal(Object.hasOwn(calls.filter(call=>call.table==='assets').at(-1).payload,'asset_type'),false,'disabled type select preserves traveling classification');
+  values.asset_type='traveling_machine';
   assert.ok(calls.some(call=>call.column==='location_id' && call.value==='north'));
   assert.ok(calls.some(call=>call.column==='traveling_revision' && call.value===0));
   response={data:[],error:null}; await workflow.updateAsset(event); assert.match(errors.textContent,/moved, changed condition, or is no longer editable/);

@@ -30,3 +30,20 @@
 .travel-board button, .travel-dialog button { touch-action: manipulation; }
 .travel-board button:focus-visible, .travel-dialog button:focus-visible, .travel-dialog select:focus-visible { outline: 2px solid #8ecbff; outline-offset: 3px; }
 @media (max-width: 600px) { .travel-heading { flex-direction: column; } .travel-pagination { gap: 8px; } .travel-dialog { padding: 18px; } }
+.equipment-actions { position: relative; align-self: start; }
+.equipment-actions summary { min-height: 48px; padding: 12px; cursor: pointer; }
+.equipment-actions button { min-height: 48px; margin-top: 8px; }
+.relocation-dialog { width: min(720px, calc(100% - 24px)); }
+.relocation-dialog .travel-dialog-actions { flex-wrap: wrap; margin-top: 20px; }
+.relocation-dialog .travel-dialog-actions button { flex: 1 1 130px; }
+.relocation-dialog .relocation-branches { border: 0; padding: 0; margin: 20px 0 0; min-width: 0; }
+.relocation-branches legend { font-size: 16px; font-weight: 650; }
+.relocation-branch { border-bottom: 1px solid #435158; padding: 8px 0; }
+.relocation-dialog label.relocation-choice { display: flex; align-items: center; gap: 12px; min-height: 48px; margin: 0; cursor: pointer; }
+.relocation-choice input { flex: 0 0 24px; width: 24px; height: 24px; }
+.relocation-choice span { min-width: 0; overflow-wrap: anywhere; }
+.relocation-choice small { display: block; color: #c4d1d6; margin-top: 4px; }
+.relocation-branch summary { padding: 12px 0; min-height: 48px; cursor: pointer; color: #a9d6ff; }
+.relocation-names { margin: 8px 0; padding-left: 22px; max-height: 220px; overflow-y: auto; overflow-wrap: anywhere; }
+.relocation-names li { margin-bottom: 8px; line-height: 1.5; }
+.relocation-impact { color: #f2d08b; font-size: 14px; overflow-wrap: anywhere; }

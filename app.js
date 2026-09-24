@@ -324,7 +324,6 @@ const { createMyWorkQueueDisplayHelpers } = window.MaintainOpsMyWorkQueueDisplay
 const { createMessageCenterErrorDisplayHelpers } = window.MaintainOpsMessageCenterErrorDisplay;
 const { createAppIssueErrorDisplayHelpers } = window.MaintainOpsAppIssueErrorDisplay;
 const { createWorkOrderDetailDisplayHelpers } = window.MaintainOpsWorkOrderDetailDisplay;
-const { createAssetDetailDisplayHelpers } = window.MaintainOpsAssetDetailDisplay;
 const { createEquipmentStructureGuideDisplayHelpers } = window.MaintainOpsEquipmentStructureGuideDisplay;
 const { createCreateWorkOrderDisplayHelpers } = window.MaintainOpsCreateWorkOrderDisplay;
 const { createQuickFixDisplayHelpers } = window.MaintainOpsQuickFixDisplay;
@@ -455,10 +454,11 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   shopReferenceChartsEnabled: SHOP_REFERENCE_CHARTS_ENABLED,
   platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
   featureBundlePaths: FEATURE_BUNDLE_PATHS,
-  featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__, traveling: __MAINTAINOPS_TRAVELING_STYLES__ },
+  featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__, traveling: __MAINTAINOPS_TRAVELING_STYLES__, maintenance: __MAINTAINOPS_TRAVELING_STYLES__ },
   initializeFeature: initializeWorkspaceFeature,
   getActiveSection: () => activeSection,
   isTravelingView: () => travelingBoardOpen && !activeAssetId,
+  needsEquipmentTools: () => Boolean(activeAssetId),
   needsChecklistTools: () => Boolean(workOrders.find(row => row.id === activeWorkOrderId)?.procedure_template_id),
   getPublicRequestLinks: () => publicRequestLinks,
   canManageTeam,
@@ -1092,20 +1092,21 @@ function initializeManagerDashboardFeature() {
   return managerDashboardFeature;
 }
 
+function replaceLocalEquipment(row) {
+  const index = assets.findIndex(a => a.id === row.id); if (index < 0) assets.push(row); else assets[index] = row;
+  for (const schedule of preventiveSchedules) if (schedule.asset_id === row.id) {
+    schedule.location_id = row.location_id;
+    if (schedule.assets) schedule.assets = { ...schedule.assets, location_id: row.location_id };
+  }
+  assetWorkHistory.invalidate(row.id);
+}
 function initializeWorkspaceFeature(featureId) {
   if (featureId === "traveling") return travelingUnits ||= window.MaintainOpsTravelingUnits.createTravelingUnits({
     escapeHtml, documentRef: document, client: () => supabaseClient, timeout: withOperationTimeout,
     getContext: () => ({ companyId: activeCompanyId, userId: session?.user?.id }),
     getLocations: () => locations, canEdit: canEditOperationalRecords,
     isVisible: () => activeSection === "assets" && travelingBoardOpen && !activeAssetId && !workspaceUiState.getSearchQuery(),
-    replaceAsset: (row) => {
-      const index = assets.findIndex(a => a.id === row.id); if (index < 0) assets.push(row); else assets[index] = row;
-      for (const schedule of preventiveSchedules) if (schedule.asset_id === row.id) {
-        schedule.location_id = row.location_id;
-        if (schedule.assets) schedule.assets = { ...schedule.assets, location_id: row.location_id };
-      }
-      assetWorkHistory.invalidate(row.id);
-    },
+    replaceAsset: replaceLocalEquipment,
     renderWorkspace, showNotice,
     openDetails: (id) => { setActiveAssetIdState(id); renderWorkspace(); scrollEquipmentDetailToActions(); },
     closeBoard: () => { travelingBoardOpen = false; renderWorkspace(); },
@@ -1856,6 +1857,7 @@ function createShopReferenceFavoriteStore() {
 
 function renderAuth(mode, initialError = "") {
   travelingUnits?.dispose(); travelingBoardOpen = false;
+  equipmentRelocation?.dispose();
   equipmentDrafts.reset();
   checklistDrafts?.reset();
   resetMessageDrafts();
@@ -3757,7 +3759,7 @@ function renderWorkspace() {
           <div class="topbar-actions">
             ${canEditOperations ? `<button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>` : ""}
             ${canEditOperations ? `<button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>` : ""}
-            <button class="secondary-button" data-traveling-units type="button">Traveling Units</button>
+            <button class="secondary-button" data-traveling-units type="button">Traveling Equipment</button>
             <details class="topbar-more">
               <summary>More</summary>
               <div>
@@ -3942,10 +3944,10 @@ function renderWorkspace() {
 
           ${activeSection === "assets" ? `
           <section class="panel full-width">
-            ${travelingBoardOpen && !activeAssetId ? (isFeatureBundleReady("traveling") ? travelingUnits.render() : renderFeatureBundlePanel("traveling", "Traveling Units")) : `
+            ${travelingBoardOpen && !activeAssetId ? (isFeatureBundleReady("traveling") ? travelingUnits.render() : renderFeatureBundlePanel("traveling", "Traveling Equipment")) : `
             <div class="panel-header">
               <h2>${activeAssetHistoryId ? "Equipment History" : activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
-              ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to ${travelingBoardOpen ? "Traveling Units" : "Equipment"}</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
+              ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to ${travelingBoardOpen ? "Traveling Equipment" : "Equipment"}</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
             ${renderCreateAssetForm()}
@@ -4396,7 +4398,12 @@ function scrollWorkspaceTopIntoView() {
   });
 }
 
-const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = createAssetDetailDisplayHelpers({
+let assetDetailDisplay, equipmentRelocation;
+const renderAssetDetail = () => assetDetailDisplay?.renderAssetDetail() || renderFeatureBundlePanel("maintenance", "Equipment details");
+const renderAssetHistoryScreen = () => assetDetailDisplay?.renderAssetHistoryScreen() || renderFeatureBundlePanel("maintenance", "Equipment history");
+const renderCreateAssetForm = () => assetDetailDisplay?.renderCreateAssetForm() || renderFeatureBundlePanel("maintenance", "Equipment tools");
+function initializeEquipmentDetails() {
+  assetDetailDisplay = window.MaintainOpsAssetDetailDisplay.createAssetDetailDisplayHelpers({
   getSchedulesReady: () => schedulesReady,
   ASSET_TYPE_OPTIONS,
   getAssets: () => assets,
@@ -4431,6 +4438,7 @@ const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = c
   assetDeleteBlockerMessage,
   canDeleteEquipment,
   canEditEquipmentRecords,
+  canRelocateEquipment: canManageTeam,
   canCreatePreventiveSchedule: () => isFeatureBundleReady("maintenance"),
   renderMaintenanceLoading: () => renderFeatureBundlePanel("maintenance", "PM tools"),
   renderEquipmentStructureGuide,
@@ -4439,6 +4447,17 @@ const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = c
   getAssetRelationshipPage,
   LIST_ITEMS_PER_PAGE,
 });
+  equipmentRelocation = window.MaintainOpsEquipmentRelocation.createEquipmentRelocation({
+    documentRef: document, escapeHtml, client: () => supabaseClient, timeout: withOperationTimeout,
+    getContext: () => `${session?.user?.id}:${activeCompanyId}:${activeSection}:${activeAssetId}`,
+    getCompanyId: () => activeCompanyId, getLocations: () => locations, canRelocate: canManageTeam, showNotice,
+    onSaved: ({ assets: rows, events }) => {
+      rows.forEach(replaceLocalEquipment);
+      for (const event of events) assetEventsByAssetId[event.asset_id] = [event, ...(assetEventsByAssetId[event.asset_id] || []).filter(e => e.id !== event.id)];
+      renderWorkspace();
+    },
+  });
+}
 
 const {
   attachAssetPart,
@@ -4453,6 +4472,7 @@ const {
 } = createAssetWorkflow({
   captureCreateDraft: equipmentDrafts.snapshot,
   clearCreateDraft: equipmentDrafts.clear,
+  getDeletionContext: () => [session?.user.id, activeCompanyId, activeLocationId, activeSection, activeAssetId, activeAssetHistoryId, detailNavigationRevision].join(":"),
   documentRef: document,
   FormDataCtor: FormData,
   alertRef: alert,
@@ -4882,6 +4902,7 @@ const requestDeleteProcedureTemplate = id => maintenanceCommand("procedure", "re
 const deleteProcedureTemplate = id => maintenanceCommand("procedure", "deleteProcedureTemplate", id);
 function initializeMaintenanceFeature() {
   if (preventiveWorkflow) return;
+  initializeEquipmentDetails();
   checklistDrafts = window.MaintainOpsChecklistResponseDrafts.createChecklistResponseDrafts({ getScope: messageDraftScope });
   maintenanceDisplay = createMaintenanceDisplay();
   const shared = {
@@ -5349,6 +5370,15 @@ function bindWorkspaceEvents() {
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   bindWorkspaceSectionNavigationEvents({
     openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
+    openEquipmentHome: () => {
+      travelingBoardOpen = false;
+      activeAssetHistoryId = null;
+      workspaceUiState.setSearchQuery("");
+      workspaceUiState.setAssetTypeFilter("all");
+      workspaceUiState.setAssetStatusFilter("all");
+      workspaceUiState.setAssetAreaFilter("all");
+      resetAssetsPage();
+    },
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
@@ -5953,6 +5983,7 @@ function bindWorkspaceEvents() {
   const editAssetForm = document.querySelector("#edit-asset-form");
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);
   document.querySelector("#move-traveling-asset-form")?.addEventListener("submit", moveTravelingAsset);
+  equipmentRelocation?.bind();
 
   document.querySelectorAll("[data-attach-asset-part]").forEach((form) => {
     form.addEventListener("submit", attachAssetPart);

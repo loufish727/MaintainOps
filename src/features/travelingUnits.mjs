@@ -23,7 +23,7 @@ export function createTravelingUnits(deps) {
     syncScope();
     const ready = key === selectionKey() && !pending && !error;
     return `<div class="travel-board" data-travel-board>
-      <div class="travel-heading"><div><h2>Traveling Units</h2><p class="muted">All company facilities${total === null ? '' : ` / ${total} units`}</p></div>
+      <div class="travel-heading"><div><h2>Traveling Equipment</h2><p class="muted">All company facilities${total === null ? '' : ` / ${total} units`}</p></div>
         <button type="button" class="secondary-button back-action-button" data-travel-back>Back to Equipment</button></div>
       ${error ? `<p role="alert">${esc(error)} <button type="button" class="secondary-button" data-travel-retry>Try again</button></p>` : ''}
       <div class="travel-grid" aria-busy="${!ready}">${ready ? rows.map(row => {

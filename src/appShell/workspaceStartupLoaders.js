@@ -27,9 +27,9 @@ export async function loadWorkspaceCoreData({
     loadWorkspaceResponse("App issue reports", listAppIssueReports(supabaseClient, activeCompanyId)),
   ]);
 
-  // Schedule ownership follows traveling equipment in the UI; stored history is unchanged.
+  // Schedule ownership follows equipment's current facility; stored history is unchanged.
   if (scheduleResponse.data) scheduleResponse.data = scheduleResponse.data.map((schedule) =>
-    schedule.assets?.asset_type === "traveling_machine" ? { ...schedule, location_id: schedule.assets.location_id } : schedule);
+    schedule.assets?.location_id ? { ...schedule, location_id: schedule.assets.location_id } : schedule);
   return {
     assetResponse,
     issueReportResponse,

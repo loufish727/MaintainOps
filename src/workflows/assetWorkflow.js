@@ -139,20 +139,20 @@
           asset_tag: String(form.get("asset_tag") || "").trim() || null,
           manufacturer: String(form.get("manufacturer") || "").trim() || null,
           model: String(form.get("model") || "").trim() || null,
-          location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
-          asset_type: form.get("asset_type") || "machine",
+          asset_type: form.get("asset_type") || previous.asset_type || "machine",
           safety_devices_required: form.get("safety_devices_required") === "on",
           status: form.get("status"),
         };
-        // A stale edit form must never move traveling equipment back to an old facility.
-        const travelingEdit = previous?.asset_type === "traveling_machine";
-        if (travelingEdit) delete payload.location_id;
+        // Facility changes belong to the reviewed relocation/update-location flows.
+        // Leave unchanged hierarchy columns out so routine edits do not take the structural gate.
+        if (payload.parent_asset_id === (previous.parent_asset_id || null)) delete payload.parent_asset_id;
+        if (payload.asset_type === (previous.asset_type || "machine")) delete payload.asset_type;
         let query = deps.supabaseClient().from("assets").update(payload)
-          .eq("id", assetId).eq("company_id", companyId).eq("asset_type", previous.asset_type || "machine");
-        if (travelingEdit) query = query.eq("location_id", previous.location_id)
+          .eq("id", assetId).eq("company_id", companyId).eq("asset_type", previous.asset_type || "machine")
           .eq("traveling_revision", Number(formElement.dataset?.travelRevision ?? previous.traveling_revision ?? 0));
+        if (previous.location_id) query = query.eq("location_id", previous.location_id);
         query = query.select("id");
         const { data, error } = await deps.withOperationTimeout(
           query,
@@ -412,6 +412,11 @@
       const errorElement = documentRef.querySelector("#asset-delete-error");
       if (errorElement) errorElement.textContent = "";
       const confirmButton = documentRef.querySelector(`[data-confirm-delete-asset="${CSSRef.escape(id)}"]`);
+      const companyId = deps.getActiveCompanyId();
+      const deletionContext = deps.getDeletionContext?.();
+      const actorId = currentUserId();
+      const stillCurrent = () => deps.getActiveCompanyId() === companyId && currentUserId() === actorId
+        && deps.getActiveAssetId() === id && deps.getDeletionContext?.() === deletionContext;
       if (confirmButton) {
         confirmButton.disabled = true;
         confirmButton.textContent = "Deleting...";
@@ -423,23 +428,14 @@
         if (blockerMessage) throw new Error(blockerMessage);
 
         const documentPaths = deps.getAssetDocumentStoragePaths?.(id) || [];
-        if (documentPaths.length) {
-          const storageDelete = await deps.withOperationTimeout(
-            deps.removeAssetDocumentStorage(documentPaths),
-            "Equipment file cleanup timed out.",
-            15000
-          );
-          if (storageDelete.error) {
-            throw new Error(`Could not remove equipment files: ${storageDelete.error.message}`);
-          }
-        }
-
-        const { error } = await deps.withOperationTimeout(
+        if (!stillCurrent()) throw new Error("Workspace changed. Reopen the equipment before deleting.");
+        const { data, error } = await deps.withOperationTimeout(
           deps.supabaseClient()
             .from("assets")
             .delete()
             .eq("id", id)
-            .eq("company_id", deps.getActiveCompanyId()),
+            .eq("company_id", companyId)
+            .select("id"),
           "Equipment delete timed out. Check your connection and try again.",
           15000
         );
@@ -448,10 +444,30 @@
             ? "This equipment is linked to records and cannot be deleted."
             : error.message);
         }
+        if (!Array.isArray(data) || data.length !== 1 || data[0].id !== id) {
+          throw new Error("Equipment deletion was not confirmed. Files were left unchanged; reopen the equipment before trying again.");
+        }
+        // Storage is not transactional with the database. Never remove files first.
+        let cleanupPending = false;
+        if (documentPaths.length) {
+          try {
+            const storageDelete = await deps.withOperationTimeout(
+              deps.removeAssetDocumentStorage(documentPaths),
+              "Equipment file cleanup timed out.",
+              15000
+            );
+            if (storageDelete.error) throw storageDelete.error;
+          } catch (_) {
+            cleanupPending = true;
+          }
+        }
+        if (!stillCurrent()) return;
         deps.setActiveAssetId(null);
         deps.setPendingDeleteAssetId(null);
         deps.setActiveSection("assets");
-        deps.showNotice("Equipment deleted.");
+        deps.showNotice(cleanupPending
+          ? "Equipment deleted. Some files may remain in storage; ask an admin to review file cleanup."
+          : "Equipment deleted.", cleanupPending ? "warning" : "success");
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = error.message || "Could not delete equipment.";

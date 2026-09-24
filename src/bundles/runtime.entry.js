@@ -166,7 +166,6 @@ import "../render/messageCenterErrorDisplay.js";
 import "../render/appIssueErrorDisplay.js";
 import "../render/workOrderDetailDisplay.js";
 import "../render/equipmentStructureGuideDisplay.js";
-import "../render/assetDetailDisplay.js";
 import "../render/createWorkOrderDisplay.js";
 import "../render/quickFixDisplay.js";
 import "../render/authDisplay.js";

@@ -40,6 +40,8 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     },{session,company,location:from.id});
     const page=await context.newPage(); page.setDefaultTimeout(15000); page.on('pageerror',error=>{errors.push(error.message);console.log('Browser error:',error.message);});
     await page.goto(baseURL); await expect(page.locator('[data-asset-type-filter=traveling_machine]')).toBeVisible({timeout:45000});
+    // Geometry probes start after the lazy equipment renderer replaces its loading panel.
+    await expect(page.locator('.feature-resource-loading')).toHaveCount(0);
     const filter = page.locator('[data-asset-type-filter=traveling_machine]');
     if (width < 500) {
       let selected = false;
@@ -82,6 +84,27 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     expect(await page.locator('[data-travel-board]').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
     await page.locator('[data-travel-page=next]').click(); await expect(page.locator('.travel-unit')).toHaveCount(1);
     await page.locator('[data-travel-page=prev]').click(); await expect(page.locator('.travel-unit')).toHaveCount(12);
+    // Main Equipment navigation is a home action, not a return to the traveling view.
+    async function expectEquipmentHome() {
+      await page.locator('[data-section=assets]:visible').click();
+      await expect(page.locator('[data-travel-board]')).toHaveCount(0);
+      await expect(page.locator('.asset-master-summary')).toBeVisible();
+      await expect(page.locator('[data-asset-type-filter=traveling_machine]')).toHaveAttribute('aria-pressed','false');
+      await expect(page.locator('#edit-asset-form')).toHaveCount(0);
+      expect(await page.evaluate(()=>localStorage.getItem('maintainops.assetTypeFilter'))).toBe('all');
+    }
+    await expectEquipmentHome();
+    await page.locator('[data-asset-type-filter=traveling_machine]').click();
+    await expectEquipmentHome();
+    await page.locator('[data-traveling-units]:visible').click();
+    await unit.getByRole('button',{name:'Equipment Details'}).click();
+    await expect(page.locator('#edit-asset-form')).toBeVisible();
+    await expectEquipmentHome();
+    await page.locator('[data-traveling-units]:visible').click();
+    await page.locator('[data-section=mywork]:visible').click();
+    await expectEquipmentHome();
+    await page.locator('[data-traveling-units]:visible').click();
+    await expect(unit).toBeVisible();
     await unit.getByRole('button',{name:'Update Condition'}).click();
     const dialog=page.locator('.travel-dialog');
     await expect(dialog).toBeVisible();
@@ -120,9 +143,10 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     await dialog.getByRole('button',{name:'Save Location'}).click();
     await expect(unit.locator('.travel-current')).toContainText(from.name);
     await unit.getByRole('button',{name:'Equipment Details'}).click();
-    await page.getByRole('button',{name:'Back to Traveling Units',exact:true}).click();
+    await page.getByRole('button',{name:'Back to Traveling Equipment',exact:true}).click();
     await expect(page.locator('.travel-unit')).toHaveCount(12);
     await page.getByRole('button',{name:'Back to Equipment',exact:true}).click();
+    await page.locator('[data-asset-type-filter=traveling_machine]').click();
     expect(bootstraps).toBe(0);
     await page.locator('.asset-master-summary').screenshot({path:testInfo.outputPath(`travel-filters-${width}.png`)});
     console.log('Travel proof: technician loaded');

@@ -29,6 +29,6 @@ assert.match(options.renderAssetOptions('travel-s'),/value="travel-s" selected/)
 const card=window.MaintainOpsAssetCardDisplay.createAssetCardDisplayHelpers({escapeHtml,
   assetTypeLabel:window.MaintainOpsEquipmentLabels.assetTypeLabel,getWorkOrders:()=>[],getActiveAssetId:()=>'',
   getLocations:()=>[{id:'south',name:'South <Plant>'}],...hierarchy}).renderAssetCard(assets[3]);
-assert.match(card,/Current facility: South &lt;Plant>/); assert.match(card,/Traveling Primary/);
+assert.match(card,/Current facility: South &lt;Plant>/); assert.match(card,/Traveling Equipment/);
 assert.match(card,/<strong class="asset-facility">Current facility:/);
 console.log('Traveling equipment display smoke passed');

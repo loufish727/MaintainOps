@@ -22,7 +22,8 @@ const budgets = {
   teamFeature: { decoded: 22 * 1024, gzip: 6 * 1024 },
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
   // PM/procedure rendering, workflows and linked-history reads load on demand.
-  maintenanceFeature: { decoded: 40 * 1024, gzip: 12 * 1024 },
+  // Equipment detail rendering moved here from startup; relocation also stays on demand.
+  maintenanceFeature: { decoded: 80 * 1024, gzip: 20 * 1024 },
   // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
   // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
   // Draft recovery moved out of appShell into this on-demand bundle; startup limits stay unchanged.

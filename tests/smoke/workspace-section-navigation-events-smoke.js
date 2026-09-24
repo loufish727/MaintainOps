@@ -32,7 +32,7 @@ const { bindWorkspaceSectionNavigationEvents } = window.MaintainOpsWorkspaceSect
 const workButton = createButton("work");
 const myWorkButton = createButton("mywork");
 const requestsButton = createButton("requests");
-const equipmentButton = createButton("equipment");
+const equipmentButton = createButton("assets");
 const managerButton = createButton("manager");
 const setupButton = createButton("setup");
 const performanceButton = createButton("performance");
@@ -68,6 +68,7 @@ let setupStorageLoadCount = 0;
 let performanceLoadCount = 0;
 let teamWorkloadReloadCount = 0;
 let planningReloadCount = 0;
+let equipmentHomeCount = 0;
 
 (async () => {
   bindWorkspaceSectionNavigationEvents({
@@ -85,7 +86,8 @@ let planningReloadCount = 0;
       setReportIssueMode: (value) => { stateValues.reportIssueMode = value; },
       setShowPartSourceManager: (value) => { stateValues.showPartSourceManager = value; },
     },
-    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["equipment"], ["manager"], ["setup"], ["performance"], ["team"], ["planning"]],
+    visibleNavItems: () => [["work"], ["mywork"], ["requests"], ["assets"], ["manager"], ["setup"], ["performance"], ["team"], ["planning"]],
+    openEquipmentHome: () => { equipmentHomeCount += 1; assert.equal(stateValues.activeSection, "assets"); },
     setWorkOrderSearchMode: (value) => { workSearchModeCalls.push(value); },
     resetWorkOrderPage: () => { resetCount += 1; },
     renderWorkspace: () => { renderCount += 1; },
@@ -155,9 +157,10 @@ let planningReloadCount = 0;
   assert.equal(setupStorageLoadCount, 1);
 
   await equipmentButton.dispatch("click");
-  assert.equal(stateValues.activeSection, "equipment");
+  assert.equal(stateValues.activeSection, "assets");
+  assert.equal(equipmentHomeCount, 1);
   assert.deepEqual(workSearchModeCalls, [false, false, false, false, false]);
-  assert.equal(storage.values["maintainops.activeSection"], "equipment");
+  assert.equal(storage.values["maintainops.activeSection"], "assets");
   assert.equal(resetCount, 6);
   assert.equal(renderCount, 8);
   assert.equal(scrollCount, 6);
@@ -165,7 +168,7 @@ let planningReloadCount = 0;
   assert.equal(requestReloadCount, 1);
 
   await blockedButton.dispatch("click");
-  assert.equal(stateValues.activeSection, "equipment");
+  assert.equal(stateValues.activeSection, "assets");
   assert.equal(renderCount, 8);
   assert.equal(scrollCount, 6);
   assert.equal(workReloadCount, 2);
@@ -193,6 +196,10 @@ let planningReloadCount = 0;
   assert.equal(renderCount, 13);
   assert.equal(scrollCount, 9);
   assert.equal(performanceLoadCount, 1);
+  assert.equal(equipmentHomeCount, 1, "other sections must not reset equipment filters");
+  await equipmentButton.dispatch("click");
+  await equipmentButton.dispatch("click");
+  assert.equal(equipmentHomeCount, 3, "reselecting Equipment must also return home");
 
   bindWorkspaceSectionNavigationEvents({
     documentRef: createDocument([workButton]),

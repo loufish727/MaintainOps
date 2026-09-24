@@ -151,6 +151,13 @@ async function main() {
   }));
 
   for (const browser of ["chromium", "webkit"]) {
+    await runStage(`${browser} equipment relocation lifecycle`, () => run(npxCommand, [
+      "playwright", "test", "tests/smoke/equipment-relocation-live.spec.js",
+      `--browser=${browser}`, "--workers=1",
+    ], {
+      label: `${browser} equipment relocation lifecycle proof`,
+      env: { LFES_TRAVEL_MUTATIONS: "1", MAINTAINOPS_CHROMIUM_CHANNEL: browser === "chromium" ? process.env.MAINTAINOPS_CHROMIUM_CHANNEL || "" : "" },
+    }));
     await runStage(`${browser} traveling equipment lifecycle`, () => run(npxCommand, [
       "playwright", "test", "tests/smoke/traveling-equipment-live.spec.js",
       `--browser=${browser}`, "--workers=1",
