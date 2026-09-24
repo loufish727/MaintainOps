@@ -48,7 +48,12 @@ function verdict(name, status, detail) {
   return { name, status, detail };
 }
 
-const files = listSqlFiles(supabaseDir, supabaseDir);
+const qaCleanupFile = "tests/fixtures/qa-equipment-cleanup.sql";
+const files = [...listSqlFiles(supabaseDir, supabaseDir), {
+  file: qaCleanupFile,
+  absolutePath: path.join(rootDir, qaCleanupFile),
+  text: fs.readFileSync(path.join(rootDir, qaCleanupFile), "utf8"),
+}];
 const migrationFiles = listSqlFiles(migrationsDir, supabaseDir);
 const allFunctions = files.flatMap(({ file, text }) => extractFunctions(file, text));
 const allGrants = files.flatMap(({ file, text }) => topLevelGrantStatements(file, text));
