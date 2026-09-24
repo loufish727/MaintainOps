@@ -32,6 +32,7 @@
     teamInviteSignupUrl,
     teamJoinUrl,
   }) {
+    const canViewRoles = canManageTeam || (() => false);
     const canGrantRoles = canAdministerTeamRoles || (() => false);
     const roleOptionsForActor = teamRoleOptionsForActor || (() => COMPANY_ROLES);
     const canAdministerRequestNotificationRecipients = canAdministerTeamRoles || (() => false);
@@ -58,9 +59,10 @@
     }
 
     function filteredMembers() {
+      const showRoles = canViewRoles();
       return getCompanyMembers().filter((member) => matchesSearch([
         member.user_id,
-        member.role,
+        showRoles ? member.role : "",
         getProfilesByUserId()[member.user_id]?.full_name,
         memberDefaultLocationLabel(member),
       ]));
@@ -82,15 +84,16 @@
       const profile = getProfilesByUserId()[member.user_id];
       const currentUser = getSession().user;
       const isCurrentUser = member.user_id === currentUser.id;
+      const showRole = canViewRoles();
       const editableRoleOptions = roleOptionsForActor(member.role);
-      const canEditRole = canGrantRoles() && !isCurrentUser && editableRoleOptions.length > 1;
+      const canEditRole = showRole && canGrantRoles() && !isCurrentUser && editableRoleOptions.length > 1;
       const workload = teamMemberWorkload(member.user_id);
       return `
         <article class="member-card">
           <div>
             <strong>${escapeHtml(profile?.full_name || (isCurrentUser ? currentUser.email : member.user_id))}</strong>
             <p class="member-default-location">Default location: <strong>${escapeHtml(memberDefaultLocationLabel(member))}</strong></p>
-            <p>${escapeHtml(roleDescription(member.role))}</p>
+            ${showRole ? `<p class="member-role-description">${escapeHtml(roleDescription(member.role))}</p>` : ""}
             <p>${isCurrentUser ? escapeHtml(currentUser.email || member.user_id) : escapeHtml(member.user_id)}</p>
             <div class="member-workload">
               <span class="chip open">${workload.newWork} New</span>
@@ -109,7 +112,7 @@
                 </select>
                 <button class="secondary-button" type="submit">Save Role</button>
               </form>
-            ` : `<span class="chip">${escapeHtml(roleLabel(member.role))}</span>`}
+            ` : showRole ? `<span class="chip member-role-badge">${escapeHtml(roleLabel(member.role))}</span>` : ""}
           </div>
         </article>
       `;
