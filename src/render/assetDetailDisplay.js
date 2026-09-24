@@ -319,10 +319,10 @@
             </div>
           </section>
 
-          ${traveling && canEditEquipment ? `<form class="form-grid relationship-detail asset" id="move-traveling-asset-form"
+          ${traveling && canEditEquipment ? `<form class="form-grid relationship-detail asset asset-move" id="move-traveling-asset-form"
             data-asset-id="${escapeHtml(asset.id)}" data-company-id="${escapeHtml(asset.company_id)}" data-from-location="${escapeHtml(asset.location_id || "")}">
             <h3>Change current facility</h3>
-            <p>Currently at ${escapeHtml(locationName)}. Existing work keeps its original facility. History, parts links, files and financials stay with this machine; stock does not move.</p>
+            <p>Currently at ${escapeHtml(locationName)}. All work history, part links, files and financials stay with this machine. Existing orders keep their original facility and assigned person. Warehouse stock stays at its current facility.</p>
             <label>New facility<select name="destination_id" required>
               <option value="">Choose facility</option>
               ${locations.filter((location) => location.id !== asset.location_id).map((location) => `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join("")}

@@ -1,6 +1,6 @@
 {
   "messageStyles": "messageStyles.acfc12b1fd.css",
-  "runtime": "runtime.cbc76c4d0d.js",
+  "runtime": "runtime.6c147d5c42.js",
   "managerFeature": "managerFeature.df8d38c83b.js",
   "financialFeature": "financialFeature.4521cb8336.js",
   "teamFeature": "teamFeature.538c85f244.js",
@@ -10,6 +10,6 @@
   "attachmentFeature": "attachmentFeature.d720a40152.js",
   "appShell": "appShell.43898b8aa7.js",
   "platformSpatial": "platformSpatial.601eb72bcb.js",
-  "appStyles": "appStyles.de74b766d1.css",
+  "appStyles": "appStyles.8115e55b6f.css",
   "platformSpatialStyles": "platformSpatialStyles.81fce98a91.css"
 }
