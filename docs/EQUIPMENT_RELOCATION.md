@@ -103,7 +103,7 @@ It retains the active company and facility. Back to Traveling Equipment remains
 a separate contextual return action. Signed-in traveling tests cover board,
 detail, type-filter and cross-tab returns at 1440/390/430px in both browser engines.
 
-Startup JS/CSS measured 742,182 decoded bytes / 172,653 gzip bytes, down from
+Release candidate startup JS/CSS measured 742,939 decoded bytes / 172,939 gzip bytes, down from
 770,295 / 179,055. Equipment details and relocation share the on-demand maintenance
 bundle; initial budgets remain unchanged. QA security advisors are unchanged:
 five no-policy INFO findings, five anonymous-callable and 31 authenticated-callable
@@ -111,3 +111,19 @@ definer warnings, plus disabled leaked-password protection. This change introduc
 no security definer. Existing findings remain separate work; see
 [RPC guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 and [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+### Release Verification
+
+Full Strict LFES passed 13/13 stages on clean `d2ced2e`, including the final
+Equipment-home navigation, rejected-deletion file preservation, stale-manager-form
+denial and delayed-delete navigation guard. The preceding authenticated run passed
+11/11 stages; a complete rerun against `d2ced2e` is required before merge. The final
+authenticated result, required GitHub gate and deployment result are recorded in
+[PR #70](https://github.com/loufish727/MaintainOps/pull/70).
+
+Production's read-only authenticated relocation review returned successfully.
+The migration did not rewrite any of the 25 fingerprinted business/storage
+relations. All eight migration functions match QA, with no new definer or changed
+RLS policies. Source-level peer review has no remaining targeted findings. No
+production equipment moves/deletes were used for verification. Browser WebKit
+evidence remains emulation, not a physical iPhone/Safari certification.
