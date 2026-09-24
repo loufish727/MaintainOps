@@ -72,7 +72,7 @@ function createSupabase(calls, responses = {}) {
       },
       then(resolve) {
         const key = `${state.action}:${table}`;
-        resolve(responses[key] || { data: { id: "asset-new" }, count: 0, error: null });
+        resolve(responses[key] || { data: state.action === 'update' ? [{ id: 'asset-1' }] : { id: "asset-new" }, count: 0, error: null });
       },
     };
     return api;

@@ -187,6 +187,24 @@ async function importLazyResources() {
     maintenance.scheduleFeatureBundleLoad();
     assert.equal(maintenanceHarness.scripts.length, 1);
   }
+  const travelHarness = createDocumentHarness();
+  let travelSection = 'mywork', travelView = false;
+  const travel = createLazyResourceHelpers({
+    windowRef: {}, documentRef: travelHarness.documentRef, escapeHtml: String,
+    featureBundlePaths: { traveling: 'traveling.test.js', maintenance: 'maintenance.test.js' },
+    getActiveSection: () => travelSection, isTravelingView: () => travelView,
+    initializeFeature: () => {}, requestWorkspaceRender: () => {},
+  });
+  travel.scheduleFeatureBundleLoad();
+  assert.equal(travelHarness.scripts.length, 0, 'Traveling board adds no startup resource');
+  travelSection = 'assets'; travelView = true; travel.scheduleFeatureBundleLoad();
+  assert.equal(travelHarness.scripts[0].src, 'traveling.test.js');
+  travelHarness.scripts[0].onload();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  travelView = false; travel.scheduleFeatureBundleLoad();
+  assert.equal(travelHarness.scripts[1].src, 'maintenance.test.js', 'Equipment details still load their checklist tools');
+  travelHarness.scripts[1].onload();
+  await new Promise(resolve => setTimeout(resolve, 0));
   console.log("lazy feature loader smoke passed");
 })().catch((error) => {
   console.error(error);

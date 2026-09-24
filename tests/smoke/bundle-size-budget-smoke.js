@@ -8,6 +8,8 @@ const bundlesDir = path.join(root, "src", "bundles");
 const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json"), "utf8"));
 
 const budgets = {
+  travelingFeature: { decoded: 14 * 1024, gzip: 5 * 1024 },
+  travelingStyles: { decoded: 4 * 1024, gzip: 2 * 1024 },
   attachmentFeature: { decoded: 300 * 1024, gzip: 110 * 1024 },
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
   // Scoped draft/lazy-feature orchestration; the combined startup cap stays unchanged.

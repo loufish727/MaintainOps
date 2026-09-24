@@ -1,6 +1,7 @@
 {
   "messageStyles": "messageStyles.acfc12b1fd.css",
-  "runtime": "runtime.35ad2f603d.js",
+  "travelingStyles": "travelingStyles.04e83ceabe.css",
+  "runtime": "runtime.576fb55643.js",
   "managerFeature": "managerFeature.df8d38c83b.js",
   "financialFeature": "financialFeature.4521cb8336.js",
   "teamFeature": "teamFeature.538c85f244.js",
@@ -8,7 +9,8 @@
   "messageFeature": "messageFeature.93a1c63cbd.js",
   "maintenanceFeature": "maintenanceFeature.a6af22ccf2.js",
   "attachmentFeature": "attachmentFeature.d720a40152.js",
-  "appShell": "appShell.43898b8aa7.js",
+  "travelingFeature": "travelingFeature.5684613594.js",
+  "appShell": "appShell.20432b4768.js",
   "platformSpatial": "platformSpatial.601eb72bcb.js",
   "appStyles": "appStyles.1466994b88.css",
   "platformSpatialStyles": "platformSpatialStyles.81fce98a91.css"

@@ -19,10 +19,11 @@ const scriptBundleKeys = [
   "setupFeature",
   "messageFeature",
   "attachmentFeature",
+  "travelingFeature",
   "appShell",
   "platformSpatial",
 ];
-const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature", "messageFeature", "attachmentFeature"]);
+const lazyFeatureKeys = new Set(["managerFeature", "financialFeature", "teamFeature", "setupFeature", "messageFeature", "attachmentFeature", "travelingFeature"]);
 for (const key of scriptBundleKeys) {
   assert.match(
     String(manifest[key] || ""),
@@ -155,3 +156,8 @@ assert.ok(fs.readFileSync(path.join(bundlesDir, manifest.appShell), "utf8").incl
 assert.ok(!indexHtml.includes(manifest.messageStyles), "Messages CSS must remain off the initial load path");
 
 console.log("bundle manifest smoke passed");
+assert.match(manifest.travelingStyles, /^travelingStyles\.[a-f0-9]{10}\.css$/);
+assert.ok(fs.existsSync(path.join(bundlesDir, manifest.travelingStyles)));
+assert.ok(fs.readFileSync(path.join(bundlesDir, manifest.appShell), 'utf8').includes(manifest.travelingStyles));
+assert.ok(!indexHtml.includes(manifest.travelingStyles));
+assert.ok(!indexHtml.includes(manifest.travelingFeature));

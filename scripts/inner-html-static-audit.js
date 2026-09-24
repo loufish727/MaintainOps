@@ -5,6 +5,12 @@ const root = path.resolve(__dirname, "..");
 
 const approvals = [
   {
+    file: "src/features/travelingUnits.mjs",
+    line: /^dialog\.innerHTML = /,
+    maxOccurrences: 1,
+    reason: "Traveling-unit dialog: escaped equipment/facility names and option values; fixed labels; feedback via textContent.",
+  },
+  {
     file: "src/workflows/messageExperience.mjs",
     line: /^function html\(node, markup\) \{ if \(node\) node\.innerHTML = markup; \}$/,
     maxOccurrences: 1,

@@ -119,6 +119,8 @@
     async function updateAsset(event) {
       event.preventDefault();
       const formElement = event.currentTarget;
+      const assetId = deps.getActiveAssetId(), companyId = deps.getActiveCompanyId(), actorId = currentUserId();
+      const isCurrent = () => assetId === deps.getActiveAssetId() && companyId === deps.getActiveCompanyId() && actorId === currentUserId();
       const errorElement = documentRef.querySelector("#asset-edit-error");
       if (errorElement) errorElement.textContent = "";
       const submitButton = formElement.querySelector("button[type='submit']");
@@ -129,7 +131,8 @@
       }
       try {
         const form = new FormDataCtor(formElement);
-        const previous = assetById(deps.getActiveAssetId());
+        const previous = assetById(assetId);
+        if (!previous) throw new Error("Equipment details are not loaded. Reopen the equipment before saving.");
         const payload = {
           name: deps.requiredText(form.get("name"), "Equipment name"),
           asset_code: String(form.get("asset_code") || "").trim() || null,
@@ -147,8 +150,10 @@
         const travelingEdit = previous?.asset_type === "traveling_machine";
         if (travelingEdit) delete payload.location_id;
         let query = deps.supabaseClient().from("assets").update(payload)
-          .eq("id", deps.getActiveAssetId()).eq("company_id", deps.getActiveCompanyId());
-        if (travelingEdit) query = query.eq("location_id", previous.location_id).select("id");
+          .eq("id", assetId).eq("company_id", companyId).eq("asset_type", previous.asset_type || "machine");
+        if (travelingEdit) query = query.eq("location_id", previous.location_id)
+          .eq("traveling_revision", Number(formElement.dataset?.travelRevision ?? previous.traveling_revision ?? 0));
+        query = query.select("id");
         const { data, error } = await deps.withOperationTimeout(
           query,
           "Equipment save timed out. Check your connection and try again.",
@@ -168,14 +173,16 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
-        if (travelingEdit && !data?.length) throw new Error("This equipment moved or is no longer editable. Reopen its details before saving.");
+        if (!data?.length) throw new Error("This equipment moved, changed condition, or is no longer editable. Reopen its details before saving.");
         const changed = changedFieldLabels(previous, { ...previous, ...payload });
         if (changed.length && typeof deps.recordAssetEvent === "function") {
-          await deps.recordAssetEvent(deps.getActiveAssetId(), "updated", `Updated ${changed.join(", ")}.`);
+          await deps.recordAssetEvent(assetId, "updated", `Updated ${changed.join(", ")}.`, { companyId, actorId });
         }
+        if (!isCurrent()) return;
         deps.showNotice("Equipment saved.");
         await deps.render();
       } catch (error) {
+        if (!isCurrent()) return;
         if (errorElement) errorElement.textContent = error.message;
         else alertRef(error.message);
       } finally {
@@ -204,9 +211,10 @@
       if (errorElement) errorElement.textContent = "";
       if (button) button.disabled = true;
       try {
-        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("move_traveling_equipment", {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("update_traveling_equipment_location", {
           p_company_id: companyId, p_asset_id: assetId, p_location_id: destination,
           p_expected_location_id: element.dataset.fromLocation || null,
+          p_expected_revision: Number(element.dataset.travelRevision || 0),
         }), "Location change timed out. Reopen the equipment to check its current facility before retrying.", 15000);
         if (error) throw error;
         if (current()) {
@@ -221,17 +229,31 @@
     }
 
     async function updateAssetStatus(assetId, status) {
-      const { error } = await deps.withOperationTimeout(
+      const asset = assetById(assetId);
+      if (!asset) return new Error("Equipment details are not loaded. Reopen the equipment before changing condition.");
+      const companyId = deps.getActiveCompanyId(), actorId = currentUserId();
+      if (asset?.asset_type === "traveling_machine") {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("update_traveling_equipment_condition", {
+          p_company_id: deps.getActiveCompanyId(), p_asset_id: assetId, p_status: status,
+          p_expected_status: asset.status, p_expected_location_id: asset.location_id, p_expected_revision: asset.traveling_revision || 0,
+        }), "Equipment condition save timed out. Reopen its details before retrying.", 12000);
+        return error || null;
+      }
+      const { data, error } = await deps.withOperationTimeout(
         deps.supabaseClient()
           .from("assets")
           .update({ status })
           .eq("id", assetId)
-          .eq("company_id", deps.getActiveCompanyId()),
+          .eq("company_id", companyId)
+          .eq("asset_type", asset.asset_type || "machine")
+          .eq("status", asset.status)
+          .eq("traveling_revision", asset.traveling_revision || 0).select("id"),
         "Equipment status save timed out. Check your connection and try again.",
         12000
       );
+      if (!error && !data?.length) return new Error("Equipment changed or is no longer editable. Reopen it before changing condition.");
       if (!error && typeof deps.recordAssetEvent === "function") {
-        await deps.recordAssetEvent(assetId, "status_changed", `Status changed to ${status}.`);
+        await deps.recordAssetEvent(assetId, "status_changed", `Status changed to ${status}.`, { companyId, actorId });
       }
       return error || null;
     }

@@ -416,6 +416,7 @@ const FEATURE_BUNDLE_PATHS = Object.freeze({
   messages: __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__,
   maintenance: __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__,
   attachments: __MAINTAINOPS_ATTACHMENT_FEATURE_BUNDLE__,
+  traveling: __MAINTAINOPS_TRAVELING_FEATURE_BUNDLE__,
 });
 let workspaceHydrationToken = 0;
 let workspaceHydrationPromise = null;
@@ -454,9 +455,10 @@ const lazyResourceHelpers = createLazyResourceHelpers({
   shopReferenceChartsEnabled: SHOP_REFERENCE_CHARTS_ENABLED,
   platformPerformanceResourcePaths: PLATFORM_PERFORMANCE_RESOURCE_PATHS,
   featureBundlePaths: FEATURE_BUNDLE_PATHS,
-  featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__ },
+  featureStylePaths: { messages: __MAINTAINOPS_MESSAGE_STYLES__, traveling: __MAINTAINOPS_TRAVELING_STYLES__ },
   initializeFeature: initializeWorkspaceFeature,
   getActiveSection: () => activeSection,
+  isTravelingView: () => travelingBoardOpen && !activeAssetId,
   needsChecklistTools: () => Boolean(workOrders.find(row => row.id === activeWorkOrderId)?.procedure_template_id),
   getPublicRequestLinks: () => publicRequestLinks,
   canManageTeam,
@@ -633,6 +635,8 @@ function setActiveAssetIdState(value) {
   workspaceUiState.setActiveAssetId(value);
 }
 let activeAssetHistoryId = null;
+let travelingBoardOpen = false;
+let travelingUnits = null;
 let activeFinancialAssetId = null;
 let activePartId = workspaceUiState.getActivePartId();
 function setActivePartIdState(value) {
@@ -1089,6 +1093,23 @@ function initializeManagerDashboardFeature() {
 }
 
 function initializeWorkspaceFeature(featureId) {
+  if (featureId === "traveling") return travelingUnits ||= window.MaintainOpsTravelingUnits.createTravelingUnits({
+    escapeHtml, documentRef: document, client: () => supabaseClient, timeout: withOperationTimeout,
+    getContext: () => ({ companyId: activeCompanyId, userId: session?.user?.id }),
+    getLocations: () => locations, canEdit: canEditOperationalRecords,
+    isVisible: () => activeSection === "assets" && travelingBoardOpen && !activeAssetId && !workspaceUiState.getSearchQuery(),
+    replaceAsset: (row) => {
+      const index = assets.findIndex(a => a.id === row.id); if (index < 0) assets.push(row); else assets[index] = row;
+      for (const schedule of preventiveSchedules) if (schedule.asset_id === row.id) {
+        schedule.location_id = row.location_id;
+        if (schedule.assets) schedule.assets = { ...schedule.assets, location_id: row.location_id };
+      }
+      assetWorkHistory.invalidate(row.id);
+    },
+    renderWorkspace, showNotice,
+    openDetails: (id) => { setActiveAssetIdState(id); renderWorkspace(); scrollEquipmentDetailToActions(); },
+    closeBoard: () => { travelingBoardOpen = false; renderWorkspace(); },
+  });
   if (featureId === "attachments") return initializeAttachmentFeature();
   if (featureId === "manager") return initializeManagerDashboardFeature();
   if (featureId === "financial") return initializeFinancialFeature();
@@ -1834,6 +1855,7 @@ function createShopReferenceFavoriteStore() {
 }
 
 function renderAuth(mode, initialError = "") {
+  travelingUnits?.dispose(); travelingBoardOpen = false;
   equipmentDrafts.reset();
   checklistDrafts?.reset();
   resetMessageDrafts();
@@ -3735,6 +3757,7 @@ function renderWorkspace() {
           <div class="topbar-actions">
             ${canEditOperations ? `<button class="primary-button quick-fix-button" id="show-quick-fix${suffix}" data-command-action="quick-fix" type="button">Quick Fix</button>` : ""}
             ${canEditOperations ? `<button class="secondary-button report-issue-button" id="show-report-issue${suffix}" data-command-action="report-issue" type="button">Report Issue</button>` : ""}
+            <button class="secondary-button" data-traveling-units type="button">Traveling Units</button>
             <details class="topbar-more">
               <summary>More</summary>
               <div>
@@ -3919,9 +3942,10 @@ function renderWorkspace() {
 
           ${activeSection === "assets" ? `
           <section class="panel full-width">
+            ${travelingBoardOpen && !activeAssetId ? (isFeatureBundleReady("traveling") ? travelingUnits.render() : renderFeatureBundlePanel("traveling", "Traveling Units")) : `
             <div class="panel-header">
               <h2>${activeAssetHistoryId ? "Equipment History" : activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
-              ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to Equipment</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
+              ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to ${travelingBoardOpen ? "Traveling Units" : "Equipment"}</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
             ${renderCreateAssetForm()}
@@ -3936,6 +3960,7 @@ function renderWorkspace() {
               ${pagedAssets.map(renderAssetCard).join("") || `<p class="muted">${assetEmptyStateText()}</p>`}
             </div>
             ${renderAssetsPagination(visibleAssets.length, totalAssetPages)}
+            `}
             `}
           </section>
           ` : ""}
@@ -5533,6 +5558,14 @@ function bindWorkspaceEvents() {
     });
   });
   scheduleFeatureBundleLoad();
+  document.querySelectorAll("[data-traveling-units]").forEach(button => button.addEventListener("click", () => {
+    equipmentDrafts.snapshot();
+    setActiveSectionState("assets"); setActiveAssetIdState(null); activeAssetHistoryId = null;
+    setActiveWorkOrderIdState(null); reportIssueMode = false;
+    workspaceUiState.setSearchQuery(""); travelingBoardOpen = true; travelingUnits?.invalidate();
+    renderWorkspace(); document.querySelector("[data-travel-board], .feature-resource-loading")?.scrollIntoView({ block: "start" });
+  }));
+  travelingUnits?.bind();
 
   bindWorkSectionJumpEvents();
 
@@ -6840,13 +6873,13 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   }
 }
 
-async function recordAssetEvent(assetId, eventType, summary) {
+async function recordAssetEvent(assetId, eventType, summary, scope = { companyId: activeCompanyId, actorId: session?.user.id }) {
   try {
     await withOperationTimeout(
       supabaseClient.from("asset_events").insert({
-        company_id: activeCompanyId,
+        company_id: scope.companyId,
         asset_id: assetId,
-        actor_id: session.user.id,
+        actor_id: scope.actorId,
         event_type: eventType,
         summary,
       }),
