@@ -95,6 +95,7 @@ function createWorkflow(options = {}) {
     '[data-confirm-delete-asset="asset-1"]': { disabled: false, textContent: "Permanently Delete" },
   };
   const workflow = createAssetWorkflow({
+    getDeletionContext: () => options.getDeletionContext?.() || 'initial',
     captureCreateDraft: (form) => ({ fields: { ...form.formValues } }),
     clearCreateDraft: (draft) => calls.push(["clearCreateDraft", draft]),
     documentRef: createDocument(errors),
@@ -114,6 +115,7 @@ function createWorkflow(options = {}) {
     getAssetDocumentStoragePaths: () => options.assetDocumentPaths || [],
     removeAssetDocumentStorage: async (paths) => {
       calls.push(["storageRemove", "asset-documents", paths]);
+      if (options.cleanupWait) await options.cleanupWait;
       return { error: options.storageError || null };
     },
     activeLocationDatabaseId: () => "location-1",
@@ -289,6 +291,16 @@ function createWorkflow(options = {}) {
   const cleanupFailed = createWorkflow({assetDocumentPaths:['company-1/asset-1/photo.jpg'],storageError:{message:'Unavailable'}});
   await cleanupFailed.workflow.deleteAsset('asset-1');
   assert.ok(cleanupFailed.calls.some(call => call[0] === 'notice' && /Equipment deleted.*may remain/.test(call[1]) && call[2] === 'warning'));
+  let releaseCleanup;
+  let navigation = 'asset-A';
+  const cleanupWait = new Promise(resolve => { releaseCleanup = resolve; });
+  const navigated = createWorkflow({assetDocumentPaths:['company-1/asset-1/photo.jpg'],cleanupWait,getDeletionContext:()=>navigation});
+  const pendingDelete = navigated.workflow.deleteAsset('asset-1');
+  while (!navigated.calls.some(call => call[0] === 'storageRemove')) await new Promise(resolve => setImmediate(resolve));
+  navigation = 'asset-B';
+  releaseCleanup();
+  await pendingDelete;
+  assert.equal(navigated.calls.some(call => ['render','activeAssetId','activeSection','notice'].includes(call[0])),false,'late cleanup must not close a different equipment editor');
 
   for (const count of [null, undefined, -1, NaN, false, "0", 1]) {
     const pmLinked = createWorkflow({ assetDocumentPaths: ["company-1/asset-1/photo.jpg"],

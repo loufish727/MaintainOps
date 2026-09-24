@@ -1,9 +1,9 @@
 # Traveling Primary Equipment
 
-Preview terminology now uses **Traveling Equipment** in the category and board.
+Terminology now uses **Traveling Equipment** in the category and board.
 Normal equipment has a separate manager/admin relocation action; it does not need
 reclassification to move. Existing traveling reclassification is manager/admin only
-in this preview. These additions are QA/local only; see `EQUIPMENT_RELOCATION.md`.
+in this release. See `EQUIPMENT_RELOCATION.md` for release and verification evidence.
 
 ## Contract
 

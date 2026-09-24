@@ -4472,6 +4472,7 @@ const {
 } = createAssetWorkflow({
   captureCreateDraft: equipmentDrafts.snapshot,
   clearCreateDraft: equipmentDrafts.clear,
+  getDeletionContext: () => [session?.user.id, activeCompanyId, activeLocationId, activeSection, activeAssetId, activeAssetHistoryId, detailNavigationRevision].join(":"),
   documentRef: document,
   FormDataCtor: FormData,
   alertRef: alert,

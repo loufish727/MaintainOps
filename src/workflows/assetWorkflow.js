@@ -413,6 +413,10 @@
       if (errorElement) errorElement.textContent = "";
       const confirmButton = documentRef.querySelector(`[data-confirm-delete-asset="${CSSRef.escape(id)}"]`);
       const companyId = deps.getActiveCompanyId();
+      const deletionContext = deps.getDeletionContext?.();
+      const actorId = currentUserId();
+      const stillCurrent = () => deps.getActiveCompanyId() === companyId && currentUserId() === actorId
+        && deps.getActiveAssetId() === id && deps.getDeletionContext?.() === deletionContext;
       if (confirmButton) {
         confirmButton.disabled = true;
         confirmButton.textContent = "Deleting...";
@@ -424,7 +428,7 @@
         if (blockerMessage) throw new Error(blockerMessage);
 
         const documentPaths = deps.getAssetDocumentStoragePaths?.(id) || [];
-        if (deps.getActiveCompanyId() !== companyId) throw new Error("Company changed. Reopen the equipment before deleting.");
+        if (!stillCurrent()) throw new Error("Workspace changed. Reopen the equipment before deleting.");
         const { data, error } = await deps.withOperationTimeout(
           deps.supabaseClient()
             .from("assets")
@@ -457,7 +461,7 @@
             cleanupPending = true;
           }
         }
-        if (deps.getActiveCompanyId() !== companyId) return;
+        if (!stillCurrent()) return;
         deps.setActiveAssetId(null);
         deps.setPendingDeleteAssetId(null);
         deps.setActiveSection("assets");

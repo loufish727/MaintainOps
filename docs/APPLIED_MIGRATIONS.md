@@ -188,14 +188,20 @@ Production advisors are unchanged: 3 no-policy INFO findings, 5 anonymous-callab
 
 # Traveling Units Board, 2026-09-23
 
-Relocation preview follow-up: `supabase/migrations/20260924054238_equipment_relocation.sql`
-is applied only to isolated QA `fsxqrngpaseqdxijggcm` (2026-09-24 UTC). **Not applied
-to production.** The initial QA draft and lock-order correction are consolidated
-in this source migration. Temporary invoker-only concurrency helpers were installed
-on QA and removed after proof. Counts and full-row fingerprints across assets,
-asset events, work/orders/events, PM, parts, part links, asset documents, financials,
-members and locations match the pre-migration baseline after fixture cleanup.
-See `EQUIPMENT_RELOCATION.md`; no company equipment was moved by the migration.
+Relocation follow-up: `supabase/migrations/20260924054238_equipment_relocation.sql`
+applied to isolated QA `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay`
+on 2026-09-24 UTC after user release authorization. SHA256:
+`2373049c24b9425e1904994366c2e2fe0fe047fa035cee2bc8a407423c8f0706`.
+The source consolidates the QA draft, lock-order and stale-client corrections.
+Production pre/postflight counts and full-row digests match across 25 business/storage
+relations, including 141 assets, 224 orders and 277 stored objects. No backfill or
+production test move. RLS policy fingerprints and security advisors are unchanged.
+All eight migration function definitions, config and privileges match QA; all four
+new triggers are enabled. QA additionally has its pre-existing generic asset audit
+trigger, absent in production; this migration does not change that difference.
+Temporary QA concurrency helpers were removed. Rollback may revert frontend while
+retaining safeguards/history; old forms cannot move normal equipment directly.
+See `EQUIPMENT_RELOCATION.md` and the private production release proof.
 
 `supabase/migrations/20260924050141_traveling_units_board.sql` (UTC filename) was applied to isolated QA `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay` on 2026-09-23 local time. Adds bounded company-wide discovery/counts, structured database-only movement history, protected equipment revision tokens, and atomic quick condition/location RPCs. Existing records are not backfilled or relocated. All new functions use security invoker and pinned empty search paths; public/anonymous execution is revoked. Frontend rollback may retain additive schema and stricter safeguards. Do not delete history or equipment as rollback.
 

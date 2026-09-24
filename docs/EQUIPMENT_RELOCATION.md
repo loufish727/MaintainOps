@@ -1,9 +1,9 @@
 # Equipment Relocation
 
-## Preview Scope
+## Scope
 
-This change is local and on the isolated testing platform only. Production data and
-hosting have not been changed for relocation. Migration prerequisite:
+Migration applied to isolated QA and production on 2026-09-24 UTC. Release is
+tracked in PR #70; merge/deployment checks determine frontend availability. Prerequisite:
 `supabase/migrations/20260924054238_equipment_relocation.sql`.
 
 Traveling Equipment is for routinely shared standalone machines. A one-time move
@@ -48,6 +48,13 @@ polling, transit state, planned destination or logistics workflow is added.
 - Structural statements use a nonblocking advisory gate before row locks. Contenders
   receive HTTP 409 and must review/retry. Routine detail saves omit unchanged parent
   and type columns. Older clients that still send these columns can take this gate.
+- Normal facility writes require the reviewed RPC, including manager/admin writes.
+  Older open forms cannot silently restore a previous facility after relocation.
+- Equipment deletion confirms the database returned the deleted ID before Storage
+  cleanup. Rejected or uncertain deletion leaves files alone. Cleanup is not a
+  cross-service transaction: failure warns that files may remain for admin cleanup;
+  no durable automatic cleanup queue is included. Late completion cannot close a
+  different equipment editor or replace a changed account/navigation context.
 - Arbitrary external transactions can still cause row/table deadlocks or lock timeouts;
   PostgreSQL rolls back the affected transaction. A lost client response is not proof
   of rollback. There is no automatic replay of an uncertain relocation.
@@ -85,7 +92,16 @@ competing relocation, structural contention/retry, cycle refusal and queued
 old-facility child-insertion refusal. Temporary helpers were removed. Full-row
 fingerprints for all eleven tracked QA relations match the original baseline
 after the final authenticated run. No production migration, test move or push
-was performed. A read-only peer review has no remaining safeguard blocker.
+was performed during that preview. A read-only peer review has no remaining
+safeguard blocker after the release corrections described above.
+
+### Equipment Home Navigation
+
+The main Equipment tab returns to the overview, clearing the traveling board,
+selected detail/history, search, equipment type/condition/area filters and paging.
+It retains the active company and facility. Back to Traveling Equipment remains
+a separate contextual return action. Signed-in traveling tests cover board,
+detail, type-filter and cross-tab returns at 1440/390/430px in both browser engines.
 
 Startup JS/CSS measured 742,182 decoded bytes / 172,653 gzip bytes, down from
 770,295 / 179,055. Equipment details and relocation share the on-demand maintenance
