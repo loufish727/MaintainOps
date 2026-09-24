@@ -25,7 +25,9 @@ assert.match(html, /Sub equipment can belong to a primary machine OR to another 
 assert.match(html, /Roll Former \(Primary\) &rarr; Decoiler \(Sub Equipment\) &rarr; Hydraulic System \(Sub Equipment\) &rarr; Hydraulic Pump \(Component\)/);
 assert.match(html, /Related part: Hydraulic Hose, linked to the pump in Parts/);
 assert.match(html, /they are not another equipment level/);
-assert.equal((html.match(/<article>/g) || []).length, 7);
+assert.equal((html.match(/<article>/g) || []).length, 8);
+assert.match(html, /Traveling Primary/);
+assert.match(html, /No parent or sub equipment/);
 assert.doesNotMatch(html, /Major section under a primary|tracked piece|Standalone support asset/);
 assert.match(html, /Roll former rule/);
 assert.match(html, /station = position on the machine/);
