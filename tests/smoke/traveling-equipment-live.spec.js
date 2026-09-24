@@ -120,7 +120,7 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     await dialog.getByRole('button',{name:'Save Location'}).click();
     await expect(unit.locator('.travel-current')).toContainText(from.name);
     await unit.getByRole('button',{name:'Equipment Details'}).click();
-    await page.getByRole('button',{name:'Back to Traveling Units',exact:true}).click();
+    await page.getByRole('button',{name:'Back to Traveling Equipment',exact:true}).click();
     await expect(page.locator('.travel-unit')).toHaveCount(12);
     await page.getByRole('button',{name:'Back to Equipment',exact:true}).click();
     expect(bootstraps).toBe(0);

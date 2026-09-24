@@ -10,7 +10,7 @@ const { assetStatusLabel, assetTypeLabel } = global.window.MaintainOpsEquipmentL
 assert.equal(assetStatusLabel("offline"), "Offline / Down");
 assert.equal(assetStatusLabel("running"), "Running");
 assert.equal(assetTypeLabel("machine"), "Primary");
-assert.equal(assetTypeLabel("traveling_machine"), "Traveling Primary");
+assert.equal(assetTypeLabel("traveling_machine"), "Traveling Equipment");
 assert.equal(assetTypeLabel("forklift"), "Forklift / Mobile Lift");
 assert.equal(assetTypeLabel("secondary_machine"), "Sub Equipment");
 assert.deepEqual(window.MaintainOpsConstants.ASSET_TYPE_OPTIONS, [

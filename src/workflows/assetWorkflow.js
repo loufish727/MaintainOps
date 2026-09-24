@@ -139,20 +139,20 @@
           asset_tag: String(form.get("asset_tag") || "").trim() || null,
           manufacturer: String(form.get("manufacturer") || "").trim() || null,
           model: String(form.get("model") || "").trim() || null,
-          location_id: form.get("location_id") || deps.activeLocationDatabaseId(),
           location: areaSpotFromForm(form),
           parent_asset_id: form.get("parent_asset_id") || null,
-          asset_type: form.get("asset_type") || "machine",
+          asset_type: form.get("asset_type") || previous.asset_type || "machine",
           safety_devices_required: form.get("safety_devices_required") === "on",
           status: form.get("status"),
         };
-        // A stale edit form must never move traveling equipment back to an old facility.
-        const travelingEdit = previous?.asset_type === "traveling_machine";
-        if (travelingEdit) delete payload.location_id;
+        // Facility changes belong to the reviewed relocation/update-location flows.
+        // Leave unchanged hierarchy columns out so routine edits do not take the structural gate.
+        if (payload.parent_asset_id === (previous.parent_asset_id || null)) delete payload.parent_asset_id;
+        if (payload.asset_type === (previous.asset_type || "machine")) delete payload.asset_type;
         let query = deps.supabaseClient().from("assets").update(payload)
-          .eq("id", assetId).eq("company_id", companyId).eq("asset_type", previous.asset_type || "machine");
-        if (travelingEdit) query = query.eq("location_id", previous.location_id)
+          .eq("id", assetId).eq("company_id", companyId).eq("asset_type", previous.asset_type || "machine")
           .eq("traveling_revision", Number(formElement.dataset?.travelRevision ?? previous.traveling_revision ?? 0));
+        if (previous.location_id) query = query.eq("location_id", previous.location_id);
         query = query.select("id");
         const { data, error } = await deps.withOperationTimeout(
           query,

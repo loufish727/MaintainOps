@@ -8,6 +8,11 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 
 ## Working Core
 
+### Equipment Relocation Preview
+
+- Local/isolated-QA only, not published or migrated to production. Manager/admin equipment Actions provide a reviewed move with selected attached branches and recorded detachments for equipment left behind.
+- Normal equipment keeps its type. Traveling Equipment remains the routinely shared standalone category. See `EQUIPMENT_RELOCATION.md` for retained-record rules, permissions, verification and deployment limits.
+
 ### Traveling Primary Equipment
 
 - Company-wide Traveling Equipment view within Equipment, current-facility labels and 12-item paging.

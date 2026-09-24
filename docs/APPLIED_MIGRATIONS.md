@@ -188,6 +188,15 @@ Production advisors are unchanged: 3 no-policy INFO findings, 5 anonymous-callab
 
 # Traveling Units Board, 2026-09-23
 
+Relocation preview follow-up: `supabase/migrations/20260924054238_equipment_relocation.sql`
+is applied only to isolated QA `fsxqrngpaseqdxijggcm` (2026-09-24 UTC). **Not applied
+to production.** The initial QA draft and lock-order correction are consolidated
+in this source migration. Temporary invoker-only concurrency helpers were installed
+on QA and removed after proof. Counts and full-row fingerprints across assets,
+asset events, work/orders/events, PM, parts, part links, asset documents, financials,
+members and locations match the pre-migration baseline after fixture cleanup.
+See `EQUIPMENT_RELOCATION.md`; no company equipment was moved by the migration.
+
 `supabase/migrations/20260924050141_traveling_units_board.sql` (UTC filename) was applied to isolated QA `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay` on 2026-09-23 local time. Adds bounded company-wide discovery/counts, structured database-only movement history, protected equipment revision tokens, and atomic quick condition/location RPCs. Existing records are not backfilled or relocated. All new functions use security invoker and pinned empty search paths; public/anonymous execution is revoked. Frontend rollback may retain additive schema and stricter safeguards. Do not delete history or equipment as rollback.
 
 Full Strict LFES passed all 13 stages on clean commit `b92debd`; authenticated LFES passed all 9 stages, including desktop/mobile traveling lifecycle and account/location switching in Chromium and WebKit. The separate board UI suite passed five WebKit tests and is included in the Chromium Release Gate. Isolated SQL tests cover counts beyond 1,000 orders, 12-item discovery pages, forged-history rejection, revision/ABA conflicts, permissions and atomic rollback. The final QA conflict response uses HTTP 409; the intermediate QA-only function correction is consolidated in the production migration.

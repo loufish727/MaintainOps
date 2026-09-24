@@ -187,6 +187,20 @@ async function importLazyResources() {
     maintenance.scheduleFeatureBundleLoad();
     assert.equal(maintenanceHarness.scripts.length, 1);
   }
+  for (const section of ['work', 'mywork', 'financial']) {
+    const equipmentHarness = createDocumentHarness();
+    const equipment = createLazyResourceHelpers({
+      windowRef: {}, documentRef: equipmentHarness.documentRef, escapeHtml: String,
+      featureBundlePaths: { maintenance: 'maintenance.test.js' }, getActiveSection: () => section,
+      needsEquipmentTools: () => true, needsChecklistTools: () => false,
+      initializeFeature: id => assert.equal(id, 'maintenance'), requestWorkspaceRender: () => {},
+    });
+    equipment.scheduleFeatureBundleLoad();
+    assert.equal(equipmentHarness.scripts.length, 1, 'Cold equipment detail links must load without visiting Equipment first');
+    equipmentHarness.scripts[0].onload();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(equipment.isFeatureBundleReady('maintenance'), true);
+  }
   const travelHarness = createDocumentHarness();
   let travelSection = 'mywork', travelView = false;
   const travel = createLazyResourceHelpers({

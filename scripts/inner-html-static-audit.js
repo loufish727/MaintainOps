@@ -5,6 +5,12 @@ const root = path.resolve(__dirname, "..");
 
 const approvals = [
   {
+    file: "src/features/equipmentRelocation.mjs",
+    line: /^active\.innerHTML = /,
+    maxOccurrences: 1,
+    reason: "Manager relocation dialog: all equipment/facility/parent names, IDs and errors escaped; numeric counts and fixed labels; feedback via textContent.",
+  },
+  {
     file: "src/features/travelingUnits.mjs",
     line: /^dialog\.innerHTML = /,
     maxOccurrences: 1,
