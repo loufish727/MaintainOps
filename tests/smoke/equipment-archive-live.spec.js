@@ -29,6 +29,7 @@ test('isolated QA archive/restore: real UI, storage retention, roles and competi
   }
   const work=randomUUID(),schedule=randomUUID(),part=randomUUID(),name='000LFES Archive '+randomUUID();
   const assetFile=`${company}/${root}/${randomUUID()}-proof.png`,workFile=`${company}/${work}/${randomUUID()}-proof.png`;
+  fs.mkdirSync('LFES/private',{recursive:true});
   fs.writeFileSync('LFES/private/archive-live-fixture.json',JSON.stringify({company,name,assets:ids,work,schedule,part,assetFile,workFile},null,2));
   const contexts=[],errors=[];
   const review=async(id=root)=>api('POST','rpc/equipment_archive_review',{p_company_id:company,p_asset_id:id},manager);
