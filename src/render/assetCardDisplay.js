@@ -24,7 +24,7 @@
               ${asset.safety_devices_required === false ? `<span class="safety-check-note disabled">no safety devices identified</span>` : `<span class="safety-check-note">safety devices identified</span>`}
             </div>
             <h3>${escapeHtml(asset.name)}</h3>
-            <p>${escapeHtml(asset.location || "No location set")}</p>
+            <p>${escapeHtml(asset.location || "No area / spot set")}</p>
             ${parent ? `<p>Part of ${escapeHtml(parent.name)}</p>` : ""}
             ${children.length ? `<p>${children.length} linked item${children.length === 1 ? "" : "s"}</p>` : ""}
           </div>

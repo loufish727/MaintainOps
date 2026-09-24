@@ -38,7 +38,7 @@
         <input name="asset_tag" aria-label="Asset tag" placeholder="Asset tag (optional)">
         <input name="manufacturer" placeholder="Manufacturer">
         <input name="model" placeholder="Model">
-        <select name="location_existing" aria-label="Area / spot"><option value="">Area / spot unset</option>${renderAssetAreaOptions()}</select>
+        <select name="location_existing" aria-label="Area / spot"><option value="">No area / spot set</option>${renderAssetAreaOptions()}</select>
         <input name="location_new" placeholder="New area / spot">
         <select name="asset_type" aria-label="Equipment type">${deps.ASSET_TYPE_OPTIONS.map(type => `<option value="${type}">${assetTypeLabel(type)}</option>`).join("")}</select>
         <select name="parent_asset_id" aria-label="Part of equipment"><option value="">Top level equipment</option>${renderParentAssetOptions()}</select>
@@ -220,7 +220,7 @@
               ${asset.safety_devices_required === false ? `<span class="safety-check-note disabled">no safety devices identified</span>` : `<span class="safety-check-note">safety devices identified</span>`}
             </div>
             <h2>${escapeHtml(asset.name)}</h2>
-            <p>${escapeHtml(asset.location || "No location set")}</p>
+            <p>${escapeHtml(asset.location || "No area / spot set")}</p>
             ${parent ? `<p>Part of <button class="text-button inline-link-button" data-open-asset="${escapeHtml(parent.id)}" type="button">${escapeHtml(parent.name)}</button></p>` : ""}
           </div>
 
@@ -233,7 +233,7 @@
             <button class="command-card command-equipment" data-jump-work-section="edit-asset-location-field" type="button">
               <span>Location</span>
               <strong>${escapeHtml(locationName)}</strong>
-              <small>${asset.location ? escapeHtml(asset.location) : "Area / spot unset"}</small>
+              <small>${asset.location ? escapeHtml(asset.location) : "No area / spot set"}</small>
             </button>
             <button class="command-card command-owner" data-jump-work-section="edit-asset-parent-field" type="button">
               <span>Primary</span>
@@ -342,7 +342,7 @@
             </label>
             <label>Area / spot
               <select name="location_existing">
-                <option value="">Area / spot unset</option>
+                <option value="">No area / spot set</option>
                 ${renderAssetAreaOptions(asset.location || "")}
               </select>
             </label>

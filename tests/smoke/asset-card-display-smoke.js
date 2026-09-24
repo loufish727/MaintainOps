@@ -46,4 +46,11 @@ const disabledHtml = renderAssetCard({
 assert.match(disabledHtml, /class="safety-check-note disabled">no safety devices identified<\/span>/);
 assert.doesNotMatch(disabledHtml, /Asset tag:/);
 
+for (const location of [null, ""]) {
+  const withoutArea = renderAssetCard({ id: "riverside-equipment", name: "Roll former", status: "running", asset_type: "machine", location_id: "riverside", location });
+  assert.match(withoutArea, /<p>No area \/ spot set<\/p>/);
+  assert.doesNotMatch(withoutArea, /No location set/);
+}
+assert.match(enabledHtml, /<p>Bay 1<\/p>/);
+
 console.log("asset card display smoke passed");
