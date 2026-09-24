@@ -230,3 +230,28 @@ Full Strict LFES passed all 13 stages on clean commit `b92debd`; authenticated L
 Production counts and original-field row fingerprints are identical across 25 business/storage relations before and after application, including 141 equipment records, 222 work orders and 278 stored objects. The two new columns, two triggers, and all six function definitions, search paths and privileges were verified against QA. A read-only authenticated Taylor summary returned the three existing units and correctly recovered Unit #3's previous Salem facility from its existing movement to Sacramento. No production test moves or condition changes were performed. Both projects record application in `public.applied_migrations`. SQL SHA256: `99442073a3106176a5e04bb39607360b8cdd57cd25188055c6201ed0cd7c4ce2`.
 
 Security advisors are unchanged: 3 no-policy INFO findings, 5 anonymous-callable and 29 authenticated-callable security-definer warnings, and disabled leaked-password protection. This migration adds no definer. Existing findings are not an all-clear; see the provider's [RPC guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) and [password-protection guidance](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). Exact catalog/fingerprint evidence remains in the private LFES packet.
+
+# Equipment Archive / Delete, 2026-09-24
+
+`supabase/migrations/20260924202304_equipment_archive_restore.sql` was applied to
+isolated QA `fsxqrngpaseqdxijggcm`, then production `lbphkzznvvumemdkqoay` through
+the migration tool at 21:32:57 UTC after user release authorization. The public
+tracking entry was recorded at 21:34:16 UTC. Source SHA256:
+`b33cd07f306d667e3dd4d04db173dd2c899f4d7a96447aeebc0a81f589a15f63`.
+
+Full Strict LFES 13/13 and authenticated QA 13/13 passed, including Chromium and
+WebKit archive/restore retention. Production original-field fingerprints match
+across 25 relations: 151 assets, 226 orders and 277 stored objects are retained.
+All 15 function bodies/config match QA; production omits QA's additional
+service-role grants on six public functions. New columns, triggers, policies,
+constraints and index match QA. No equipment was archived, no PM paused, and
+no membership/default facility was changed. Authenticated hard DELETE is denied;
+the separate QA cleanup helper was not deployed.
+
+Production advisors retain 3 no-policy INFO findings, 5 anonymous-callable RPC
+warnings and disabled leaked-password protection. Authenticated-callable definer
+warnings increase from 29 to 32 for guarded archive/restore/resume RPCs; see
+[RPC guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+Frontend publication follows PR #72 and the required Release Gate. Retain schema,
+files, history and retention guards on rollback; use a frontend rollback or forward
+fix, never restore hard deletion. See `EQUIPMENT_ARCHIVE.md` for scope and limits.

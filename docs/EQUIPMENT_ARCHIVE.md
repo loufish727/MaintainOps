@@ -2,11 +2,12 @@
 
 ## Release State
 
-Implemented locally on `codex/equipment-archive-20260924`. The prerequisite
-`supabase/migrations/20260924202304_equipment_archive_restore.sql` was applied to
-the isolated testing platform (`fsxqrngpaseqdxijggcm`) on 2026-09-24 UTC.
-Production (`lbphkzznvvumemdkqoay`) is unchanged. This feature is not yet pushed
-or released. Apply and verify the database prerequisite before publishing the UI.
+The prerequisite `supabase/migrations/20260924202304_equipment_archive_restore.sql`
+was applied to isolated QA (`fsxqrngpaseqdxijggcm`), then production
+(`lbphkzznvvumemdkqoay`) at 2026-09-24 21:32:57 UTC after user release authorization.
+Production postflight passed; frontend publication is tracked by PR #72 and the
+required GitHub Release Gate. No equipment or teammate default was changed by
+the migration. Never deploy the separate QA cleanup helper to production.
 
 ## User Contract
 
@@ -138,5 +139,24 @@ Verified 2026-09-24 UTC:
 The independent review covered permissions, retained references, lifecycle-event
 forgery, stale revisions, lock order and asynchronous company/navigation changes.
 These are risk-scoped checks, not a claim that automated tests replace LFES Gold.
-Production deployment, production postflight and physical iPhone verification are
-not included in these results.
+These QA results do not include physical iPhone verification.
+
+### Production Database Postflight
+
+Applied source SHA256: `b33cd07f306d667e3dd4d04db173dd2c899f4d7a96447aeebc0a81f589a15f63`.
+Original-field fingerprints match before/after across 25 business/storage relations,
+including 151 equipment records, 226 work orders and 277 stored objects. Zero
+equipment was archived, zero PM was paused, and company memberships are unchanged.
+All 15 function bodies/configuration match tested QA. Production retains narrower
+grants: six public functions omit QA's additional service-role EXECUTE permission.
+No migration function is anonymous-callable. All six columns, fourteen triggers,
+eight restrictive Storage policies, archive constraints and index match QA.
+Authenticated hard DELETE is denied; the QA cleanup function is absent.
+
+Production advisors retain three no-policy INFO findings, five anonymous-callable
+RPC warnings and disabled leaked-password protection. Authenticated-callable
+definer warnings increase from 29 to 32 for the three explicitly role-checked
+archive/restore/resume RPCs. This is not a zero-warning security claim.
+Exact evidence is retained in `LFES/private/archive-production-release-proof.json`.
+The local Release Gate passed all twelve stages on `9d98e4a`; GitHub's executable
+Release Gate also passed before the production evidence documentation update.
