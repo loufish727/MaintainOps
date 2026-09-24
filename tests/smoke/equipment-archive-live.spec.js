@@ -115,9 +115,27 @@ test('isolated QA archive/restore: real UI, storage retention, roles and competi
     expect(errors).toEqual([]);
     console.log('QA archive/restore, retained bytes and links, role denials, financial edit, PM resume, traveling exclusion and duplicate-request race passed.');
   } finally {
-    // API hard deletion is intentionally unavailable. The runner keeps the exact fixture manifest
-    // for privileged, company/name-verified cleanup outside the application permission boundary.
-    for(const context of contexts) await context.close();
+    try {
+      // Restore only this run's records before removing disposable attachments. Physical
+      // fixture cleanup uses the QA-only helper, never normal application DELETE grants.
+      for(const id of ids){
+        const current=await api('GET',`assets?company_id=eq.${company}&id=eq.${id}&select=archived_at`);
+        if(current[0]?.archived_at)await api('POST','rpc/restore_equipment',{p_company_id:company,p_asset_id:id,p_review_token:(await review(id)).token,p_notes:'Remove disposable QA fixture after proof'},manager);
+      }
+      for(const [bucket,file] of [['asset-documents',assetFile],['work-order-photos',workFile]]){
+        const removed=await request.delete(`${host}/storage/v1/object/${bucket}`,{headers:headers(admin),data:{prefixes:[file]}});expect(removed.ok()).toBe(true);
+        const missing=await request.get(`${host}/storage/v1/object/authenticated/${bucket}/${file}`,{headers:headers(admin)});expect(missing.ok()).toBe(false);
+        const body=await missing.json();expect(`${body.statusCode} ${body.error} ${body.message}`).toMatch(/404|not found/i);
+      }
+      await api('DELETE',`work_orders?company_id=eq.${company}&asset_id=in.(${ids.join(',')})`);
+      await api('DELETE',`preventive_schedules?company_id=eq.${company}&id=eq.${schedule}`);
+      await api('DELETE',`asset_documents?company_id=eq.${company}&asset_id=in.(${ids.join(',')})`);
+      await api('DELETE',`asset_parts?company_id=eq.${company}&asset_id=in.(${ids.join(',')})`);
+      await api('DELETE',`parts?company_id=eq.${company}&id=eq.${part}`);
+      await api('POST','rpc/qa_cleanup_equipment_fixture',{p_ids:ids,p_prefix:name});
+      expect(await api('GET',`assets?company_id=eq.${company}&id=in.(${ids.join(',')})&select=id`)).toEqual([]);
+      console.log('All run-owned equipment fixtures and stored objects removed; normal asset DELETE remains revoked.');
+    } finally { for(const context of contexts) await context.close(); }
   }
 });
 

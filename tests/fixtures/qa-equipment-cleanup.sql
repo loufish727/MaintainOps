@@ -10,7 +10,7 @@ begin
   if u is null or not exists (select 1 from public.company_members where company_id=c and user_id=u and role='admin') then
     raise exception 'QA administrator required' using errcode='42501';
   end if;
-  if p_prefix is null or p_prefix !~ '^000LFES (Relocate|Travel) [a-f0-9-]{36}$'
+  if p_prefix is null or p_prefix !~ '^000LFES (Relocate|Travel|Archive) [a-f0-9-]{36}$'
      or coalesce(cardinality(p_ids),0) not between 1 and 32
      or exists(select 1 from unnest(p_ids) id where id is null)
      or (select count(distinct id) from unnest(p_ids) id) <> cardinality(p_ids) then

@@ -77,15 +77,17 @@ unchanged 175 KiB aggregate budget (173,518 bytes measured locally).
   requests producing exactly one audit event. Final lifecycle run passed 2026-09-24.
 - Run-owned fixture IDs are written to `LFES/private/archive-live-fixture.json`.
   A new run refuses to overwrite an existing fixture. Cleanup validates exact
-  company/IDs/names; Storage objects are removed through Storage API, then only
-  owned disposable rows are removed through privileged QA cleanup. Never use this
+  company/IDs/names; fixtures are restored, Storage objects removed through Storage
+  API, then only owned disposable rows removed through guarded QA cleanup. Never use this
   cleanup against production or restore authenticated hard-delete permissions.
-- Existing relocation/travel lifecycle tests use the separate
+- Archive and existing relocation/travel lifecycle tests use the separate
   `tests/fixtures/qa-equipment-cleanup.sql` helper installed in QA only. It requires
   the fixed QA company's admin, a validated random fixture prefix, owned asset IDs,
   and no remaining work, PM, requests, part links or files. Tests assert manager
   denial, invalid-prefix denial and connected-record denial. Never include this
-  helper in a production deployment. Run manifests are attached to test results.
+  helper in a production deployment. Relocation/travel manifests are attached to
+  test results; the archive manifest remains private. Archive retention runs in
+  both Chromium and WebKit as part of the authenticated LFES command.
 - Full Strict LFES and the separate five-role authenticated proof remain release
   requirements; results are recorded in the verification section below.
 
