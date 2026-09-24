@@ -51,6 +51,8 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
           : target === 'top-left' ? {x:box.x+8,y:box.y+8}
           : target === 'bottom-right' ? {x:box.x+box.width-8,y:box.y+box.height-8}
           : {x:box.x+box.width/2,y:box.y+box.height/2};
+        expect(await filter.evaluate(node => getComputedStyle(node).transform)).toBe('none');
+        expect(await filter.evaluate((node, point) => document.elementFromPoint(point.x,point.y) === node, point)).toBe(true);
         await page.touchscreen.tap(point.x,point.y);
         selected = !selected;
         await expect(filter, `Touch ${target}`).toHaveAttribute('aria-pressed',String(selected));

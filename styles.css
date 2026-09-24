@@ -3713,7 +3713,6 @@ textarea {
 }
 
 .asset-master-summary > button {
-  cursor: pointer;
   touch-action: manipulation;
 }
 
@@ -3723,7 +3722,7 @@ textarea {
 }
 
 @media (hover: none), (pointer: coarse) {
-  .asset-master-summary > button {
+  .asset-master-summary .command-card {
     transform: none;
   }
 }
