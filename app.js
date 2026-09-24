@@ -5369,6 +5369,15 @@ function bindWorkspaceEvents() {
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   bindWorkspaceSectionNavigationEvents({
     openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
+    openEquipmentHome: () => {
+      travelingBoardOpen = false;
+      activeAssetHistoryId = null;
+      workspaceUiState.setSearchQuery("");
+      workspaceUiState.setAssetTypeFilter("all");
+      workspaceUiState.setAssetStatusFilter("all");
+      workspaceUiState.setAssetAreaFilter("all");
+      resetAssetsPage();
+    },
     state: {
       setActiveAssetId: setActiveAssetIdState,
       setActivePartId: setActivePartIdState,
