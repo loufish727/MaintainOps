@@ -412,6 +412,7 @@
       const errorElement = documentRef.querySelector("#asset-delete-error");
       if (errorElement) errorElement.textContent = "";
       const confirmButton = documentRef.querySelector(`[data-confirm-delete-asset="${CSSRef.escape(id)}"]`);
+      const companyId = deps.getActiveCompanyId();
       if (confirmButton) {
         confirmButton.disabled = true;
         confirmButton.textContent = "Deleting...";
@@ -423,23 +424,14 @@
         if (blockerMessage) throw new Error(blockerMessage);
 
         const documentPaths = deps.getAssetDocumentStoragePaths?.(id) || [];
-        if (documentPaths.length) {
-          const storageDelete = await deps.withOperationTimeout(
-            deps.removeAssetDocumentStorage(documentPaths),
-            "Equipment file cleanup timed out.",
-            15000
-          );
-          if (storageDelete.error) {
-            throw new Error(`Could not remove equipment files: ${storageDelete.error.message}`);
-          }
-        }
-
-        const { error } = await deps.withOperationTimeout(
+        if (deps.getActiveCompanyId() !== companyId) throw new Error("Company changed. Reopen the equipment before deleting.");
+        const { data, error } = await deps.withOperationTimeout(
           deps.supabaseClient()
             .from("assets")
             .delete()
             .eq("id", id)
-            .eq("company_id", deps.getActiveCompanyId()),
+            .eq("company_id", companyId)
+            .select("id"),
           "Equipment delete timed out. Check your connection and try again.",
           15000
         );
@@ -448,10 +440,30 @@
             ? "This equipment is linked to records and cannot be deleted."
             : error.message);
         }
+        if (!Array.isArray(data) || data.length !== 1 || data[0].id !== id) {
+          throw new Error("Equipment deletion was not confirmed. Files were left unchanged; reopen the equipment before trying again.");
+        }
+        // Storage is not transactional with the database. Never remove files first.
+        let cleanupPending = false;
+        if (documentPaths.length) {
+          try {
+            const storageDelete = await deps.withOperationTimeout(
+              deps.removeAssetDocumentStorage(documentPaths),
+              "Equipment file cleanup timed out.",
+              15000
+            );
+            if (storageDelete.error) throw storageDelete.error;
+          } catch (_) {
+            cleanupPending = true;
+          }
+        }
+        if (deps.getActiveCompanyId() !== companyId) return;
         deps.setActiveAssetId(null);
         deps.setPendingDeleteAssetId(null);
         deps.setActiveSection("assets");
-        deps.showNotice("Equipment deleted.");
+        deps.showNotice(cleanupPending
+          ? "Equipment deleted. Some files may remain in storage; ask an admin to review file cleanup."
+          : "Equipment deleted.", cleanupPending ? "warning" : "success");
         await deps.render();
       } catch (error) {
         if (errorElement) errorElement.textContent = error.message || "Could not delete equipment.";

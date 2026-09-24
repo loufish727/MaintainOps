@@ -86,6 +86,9 @@ begin
       where company_id=old.company_id and user_id=auth.uid() and role in ('admin','manager')) then
       raise exception 'Only managers and admins can relocate normal equipment.' using errcode = '42501';
     end if;
+    if current_setting('maintainops.reviewed_equipment_relocation',true) is distinct from 'on' then
+      raise exception 'Use Actions > Relocate Equipment to review this move. Reopen the app if this is an older equipment form.' using errcode = 'PT409';
+    end if;
     if new.location_id is null or not private.location_belongs_to_company(new.company_id,new.location_id) then
       raise exception 'Choose a facility in this company.' using errcode = '22023';
     end if;
@@ -193,7 +196,7 @@ create or replace function public.relocate_equipment(
   p_company_id uuid,p_asset_id uuid,p_location_id uuid,p_move_branch_ids uuid[],p_review_token text
 ) returns jsonb language plpgsql security invoker set search_path = '' set lock_timeout = '3s' as $$
 declare review jsonb; equipment public.assets; moving uuid[]; staying uuid[]; changed uuid[];
-  destination text; old_parent uuid; item record;
+  destination text; old_parent uuid; item record; previous_review_setting text;
 begin
   if auth.uid() is null or not exists (select 1 from public.company_members
     where company_id=p_company_id and user_id=auth.uid() and role in ('admin','manager')) then
@@ -230,7 +233,10 @@ begin
   end loop;
   update public.assets set parent_asset_id=null,updated_at=clock_timestamp()
     where company_id=p_company_id and (id=p_asset_id or id=any(staying)) and parent_asset_id is not null;
+  previous_review_setting := current_setting('maintainops.reviewed_equipment_relocation',true);
+  perform set_config('maintainops.reviewed_equipment_relocation','on',true);
   update public.assets set location_id=p_location_id where company_id=p_company_id and id=any(moving);
+  perform set_config('maintainops.reviewed_equipment_relocation',coalesce(previous_review_setting,''),true);
   -- Surface any final relationship failure before returning a success payload.
   set constraints public.check_equipment_facility_links immediate;
   return jsonb_build_object('assets',(select jsonb_agg(to_jsonb(a) order by a.id) from public.assets a where a.company_id=p_company_id and a.id=any(changed)),

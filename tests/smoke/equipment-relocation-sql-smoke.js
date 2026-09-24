@@ -78,7 +78,8 @@ async function main() {
     assert.ok(detaches.every(e=>e.actor_id===users.manager && /Unlinked|unlinked/.test(e.summary)));
     await assert.rejects(relocate(initial),/changed since this review/);
     assert.equal((await q("update public.assets set location='Stale area',parent_asset_id=$1 where id=$2 and traveling_revision=0 returning id",[ancestor.id,machine.id])).rows.length,0);
-    await assert.rejects(q('update public.assets set location_id=$1 where id=$2',[sites[0],machine.id]),/Linked equipment must share/);
+    await assert.rejects(q('update public.assets set location_id=$1 where id=$2',[sites[0],machine.id]),/Use Actions > Relocate Equipment/);
+    await assert.rejects(q('update public.assets set location_id=$1 where id=$2',[sites[1],leaf.id]),/Use Actions > Relocate Equipment/);
     await assert.rejects(q('update public.assets set parent_asset_id=$1 where id=$2',[child.id,machine.id]),/own ancestor/);
     await assert.rejects(q('update public.assets set parent_asset_id=$1 where id=$2',[stay.id,child.id]),/Linked equipment must share/);
     // Moving just a leaf retains its type and identity without becoming traveling.

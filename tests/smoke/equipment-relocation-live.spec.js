@@ -72,6 +72,10 @@ test('isolated QA relocation: signed-in UI, retained links, permissions and conc
     // Two independent HTTP transactions try the same reviewed move.
     const r=await review(a);const responses=await Promise.all([raw('POST','rpc/relocate_equipment',args(r,a,to.id,[])),raw('POST','rpc/relocate_equipment',args(r,a,to.id,[]))]);
     expect(responses.map(r=>r.status()).sort()).toEqual([200,409]);
+    const retained = await rows();
+    const staleForm = await raw('PATCH',`assets?id=eq.${a}&company_id=eq.${company}`,{location_id:from.id},manager);
+    expect(staleForm.status()).toBe(409); expect(await staleForm.text()).toContain('Relocate Equipment');
+    expect(await rows()).toEqual(retained);
     if(process.env.LFES_RELOCATION_CONCURRENCY==='1'){
       const hold=(id,mode,parentId=null,reviewToken=null,location=null,branches=[])=>raw('POST','rpc/qa_relocation_hold',{p_id:id,p_mode:mode,p_parent:parentId,p_token:reviewToken,p_location:location,p_branches:branches});
       const busy=()=>api('POST','rpc/qa_relocation_busy',{});
