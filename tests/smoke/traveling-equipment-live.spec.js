@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
-for (const width of [1440,390]) test(`traveling equipment moves safely and remains discoverable at ${width}px`, async ({ browser, request }, testInfo) => {
+for (const width of [1440,390,430]) test(`traveling equipment moves safely and remains discoverable at ${width}px`, async ({ browser, request }, testInfo) => {
   test.setTimeout(180000);
   const host='https://fsxqrngpaseqdxijggcm.supabase.co', company=process.env.LFES_QA_COMPANY_ID;
   expect(process.env.LFES_TRAVEL_MUTATIONS).toBe('1');
@@ -68,6 +68,7 @@ for (const width of [1440,390]) test(`traveling equipment moves safely and remai
     await api('POST','asset_financials',{company_id:company,asset_id:assetIds[0],acquisition_cost:1234});
     const originalWork=await api('GET',`work_orders?id=eq.${workId}&select=*`);
     const page=await open(tech);
+    await page.locator('.asset-master-summary').screenshot({path:testInfo.outputPath(`travel-filters-${width}.png`)});
     console.log('Travel proof: technician loaded');
     await expect(page.locator('.asset-list .asset-card')).toHaveCount(12);
     await expect(page.locator(`.asset-card[data-asset-id="${assetIds[1]}"]`)).toContainText(to.name);

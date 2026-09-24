@@ -7,7 +7,7 @@ const styles = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const scripts = ['src/render/assetInventoryDisplay.js', 'src/utils/workspaceInventoryFilterEvents.js']
   .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
 
-for (const width of [390, 768, 1440]) test(`equipment filter activates across its full surface at ${width}px`, async ({ browser }, testInfo) => {
+for (const width of [390, 430, 768, 1440]) test(`equipment filter activates across its full surface at ${width}px`, async ({ browser }, testInfo) => {
   const touch = width < 1000;
   const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: touch, isMobile: touch });
   const page = await context.newPage();
@@ -30,6 +30,7 @@ for (const width of [390, 768, 1440]) test(`equipment filter activates across it
       window.filterTest = { values: () => ({type,status,resets}) };
       render();</script>` }));
     await page.goto('http://equipment-filter.test/');
+    if (width < 500) expect(await page.locator('.asset-master-summary').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(width <= 420 ? 1 : 2);
     const button = page.locator('[data-asset-type-filter=traveling_machine]');
     let expected = false, resets = 0;
     for (const target of ['span', 'strong', 'small', 'top-left', 'bottom-right', 'center']) {
