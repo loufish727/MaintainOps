@@ -47,3 +47,23 @@
 .relocation-names { margin: 8px 0; padding-left: 22px; max-height: 220px; overflow-y: auto; overflow-wrap: anywhere; }
 .relocation-names li { margin-bottom: 8px; line-height: 1.5; }
 .relocation-impact { color: #f2d08b; font-size: 14px; overflow-wrap: anywhere; }
+.equipment-archive { min-width: 0; }
+.archive-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: start; }
+.archive-card { border: 1px solid #78515a; border-radius: 8px; padding: 16px; background: #202629; min-width: 0; }
+.archive-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.archive-filters label { display: grid; gap: 6px; flex: 1 1 200px; min-width: 0; }
+.archive-metadata { display: flex; flex-wrap: wrap; gap: 20px; }
+.archive-metadata div { min-width: 0; }
+.archive-metadata dt { color: #b9c9c5; font-size: 13px; }
+.archive-metadata dd { margin: 4px 0; overflow-wrap: anywhere; }
+.archive-sections { margin: 20px 0; }
+.archive-sections [aria-selected=true] { border-color: #80d5b8; background: #183c30; color: #d4ffec; }
+.archive-history-row, .archive-history-link { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; border-bottom: 1px solid #4b5a55; overflow-wrap: anywhere; }
+.archive-history-row strong, .archive-history-link strong { flex: 1 1 200px; min-width: 0; }
+.archive-history-row p { flex-basis: 100%; margin: 0; }
+.archive-history-link { width: 100%; text-align: left; margin: 8px 0; padding: 14px; }
+.equipment-archive :is(button, input, select), .equipment-archive-dialog :is(button, select, input:not([type=checkbox])) { min-height: 48px; }
+.equipment-archive-dialog label { font-size: 15px; }
+.equipment-archive-dialog :is(textarea, input[type=date]) { width: 100%; box-sizing: border-box; color: #eef3f5; background: #26343b; border: 1px solid #70828a; padding: 10px; font-size: 16px; }
+.equipment-archive-dialog textarea { min-height: 100px; resize: vertical; }
+.equipment-archive :is(button, h3, span, p) { overflow-wrap: anywhere; }

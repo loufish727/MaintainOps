@@ -8,6 +8,16 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 
 ## Working Core
 
+### Equipment Archive / Delete (Testing Platform Only)
+
+- Reversible manager/admin Archive / Delete Equipment, with Sold / Scrapped /
+  Delete / Other reasons and twelve-item Archived Equipment pages.
+- Retains work/history/files/parts/financials; unresolved work blocks removal.
+  Attached branches are explicitly retained or archived; PM pauses and requires
+  date review after restore. Application hard deletion is removed.
+- Database prerequisite is applied to isolated QA only. Production and deployment
+  are pending; see `EQUIPMENT_ARCHIVE.md` for the exact contract and evidence.
+
 ### Equipment Relocation
 
 - Manager/admin equipment Actions provide a reviewed move with selected attached branches and recorded detachments for equipment left behind. Production migration applied 2026-09-24 UTC; frontend release tracked in PR #70.
@@ -55,7 +65,8 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 - Collapsible conversions reference tab for common shop measurements, square footage, expanded common inch thread lookup, wrench/head-size lookup, and a screen-fit bolt gauge.
 - Equipment hierarchy.
 - Equipment can classify tooling/setup records separately from machines, sub-assemblies, components, and shop items.
-- Equipment deletion for manager/admin.
+- Equipment removal for manager/admin; reversible archive replacement is in QA
+  (see `EQUIPMENT_ARCHIVE.md`).
 - Preventive maintenance schedules.
 - PM-generated work orders.
 - Procedure checklist templates and checklist steps.

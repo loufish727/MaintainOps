@@ -5,6 +5,8 @@ import "../render/maintenanceListDisplay.js";
 import "../render/assetDetailDisplay.js";
 import { createEquipmentRelocation } from "../features/equipmentRelocation.mjs";
 window.MaintainOpsEquipmentRelocation = { createEquipmentRelocation };
+import { createEquipmentArchive, loadEquipmentArchiveChanges } from "../features/equipmentArchive.mjs";
+window.MaintainOpsEquipmentArchive = { createEquipmentArchive, loadEquipmentArchiveChanges };
 import { createMaintenanceRelations } from "../services/maintenanceRelations.mjs";
 window.MaintainOpsMaintenanceRelations = { createMaintenanceRelations };
 import { createChecklistResponseDrafts } from "../utils/checklistResponseDrafts.mjs";

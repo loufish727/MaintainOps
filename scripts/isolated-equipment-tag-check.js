@@ -34,6 +34,9 @@ async function verifyEquipmentTags(db, ids, asUser, resetRole) {
   assert.equal((await db.query('select asset_tag from public.assets where id=$1', [asset])).rows[0].asset_tag, null);
   await db.query("update public.assets set asset_tag='0007-final' where id=$1", [asset]);
   await asUser(db, ids.manager);
+  await assert.rejects(db.query('delete from public.assets where id=$1', [asset]), /permission denied|Archive/);
+  // Retain proof for the legacy snapshot trigger using privileged fixture cleanup only.
+  await resetRole(db);
   await db.query('delete from public.assets where id=$1', [asset]);
   const retained = (await db.query('select asset_id,asset_tag,archived_asset_tag,archived_asset_code from public.asset_financials where id=$1', [finance])).rows[0];
   assert.deepEqual(retained, { asset_id: null, asset_tag: 'FIXED-99', archived_asset_tag: '0007-final', archived_asset_code: 'SERIAL-1' });

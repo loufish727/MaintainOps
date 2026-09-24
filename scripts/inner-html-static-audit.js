@@ -5,6 +5,12 @@ const root = path.resolve(__dirname, "..");
 
 const approvals = [
   {
+    file: "src/features/equipmentArchive.mjs",
+    line: /^active\.innerHTML = /,
+    maxOccurrences: 2,
+    reason: "Archive/restore and PM review dialogs: escaped record names, IDs, notes and errors; fixed labels and numeric counts; validation feedback uses textContent.",
+  },
+  {
     file: "src/features/equipmentRelocation.mjs",
     line: /^active\.innerHTML = /,
     maxOccurrences: 1,

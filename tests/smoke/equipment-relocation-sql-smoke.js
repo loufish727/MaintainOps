@@ -60,7 +60,10 @@ async function main() {
     await assert.rejects(relocate(initial,[branch.id],sites[0]),/different facility/);
     const phantom=await add('New attachment',machine.id);
     await assert.rejects(relocate(initial),/changed since this review/);
-    await as(users.admin); await q('delete from public.assets where id=$1',[phantom.id]);
+    await as(users.admin);
+    await assert.rejects(q('delete from public.assets where id=$1',[phantom.id]), /permission denied/);
+    await db.exec('reset role'); // Privileged disposable-fixture cleanup; application deletes remain prohibited.
+    await q('delete from public.assets where id=$1',[phantom.id]);
     await q('delete from public.asset_financials where archived_asset_id=$1',[phantom.id]);
     await as(users.manager);
     const result=(await relocate(await preview())).r;

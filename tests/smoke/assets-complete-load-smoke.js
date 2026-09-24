@@ -7,6 +7,7 @@ const assert=require('node:assert/strict');
     const client={from(table){assert.equal(table,'assets');const call={order:[]};return{
       select(columns,options){assert.equal(columns,'*');assert.deepEqual(options,{count:'exact'});return this;},
       eq(column,value){assert.equal(column,'company_id');assert.equal(value,'company');return this;},
+      is(column,value){assert.equal(column,'archived_at');assert.equal(value,null);return this;},
       order(column){call.order.push(column);return this;},
       async range(from,to){calls.push({...call,from,to});return{data:rows.slice(from,to+1),count,error:null};}
     };}};

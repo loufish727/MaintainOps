@@ -121,10 +121,11 @@
     const procedure = procedureTemplates.find((template) => template.id === workOrder.procedure_template_id);
     const progress = procedure ? checklistProgress(workOrder, procedure) : null;
     const requiredProgress = procedure ? requiredChecklistProgress(workOrder, procedure) : null;
-    const canEditOperational = canEditOperationalRecords();
+    const canEditOperational = canEditOperationalRecords() && !workOrder.assets?.archived_at;
   
     return `
       <div class="detail-stack">
+        ${workOrder.assets?.archived_at ? '<div class="archive-retained-banner">Archived equipment. Work history is retained and read-only until the equipment is restored.</div>' : ''}
         <div>
           <div class="chip-row">
             <span class="chip ${workOrder.priority}">${workOrder.priority}</span>

@@ -9,12 +9,15 @@ const manifest = JSON.parse(fs.readFileSync(path.join(bundlesDir, "manifest.json
 
 const budgets = {
   travelingFeature: { decoded: 14 * 1024, gzip: 5 * 1024 },
-  travelingStyles: { decoded: 4 * 1024, gzip: 2 * 1024 },
+  // Shared relocation/archive screens, loaded only with equipment tools.
+  travelingStyles: { decoded: 7 * 1024, gzip: 3 * 1024 },
   attachmentFeature: { decoded: 300 * 1024, gzip: 110 * 1024 },
   runtime: { decoded: 430 * 1024, gzip: 100 * 1024 },
   // Scoped draft/lazy-feature orchestration; the combined startup cap stays unchanged.
-  appShell: { decoded: 170 * 1024, gzip: 48 * 1024 },
-  appStyles: { decoded: 185 * 1024, gzip: 33 * 1024 },
+  // Archive navigation/state bridge adds <2 KB compressed; total startup cap is unchanged.
+  appShell: { decoded: 172 * 1024, gzip: 49 * 1024 },
+  // Small retained-history notice is shared with work history; archive layout stays lazy.
+  appStyles: { decoded: 186 * 1024, gzip: 33 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
   managerFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },
@@ -23,7 +26,8 @@ const budgets = {
   setupFeature: { decoded: 20 * 1024, gzip: 6 * 1024 },
   // PM/procedure rendering, workflows and linked-history reads load on demand.
   // Equipment detail rendering moved here from startup; relocation also stays on demand.
-  maintenanceFeature: { decoded: 80 * 1024, gzip: 20 * 1024 },
+  // Reversible archive review and paged retained records also load only with equipment/PM tools.
+  maintenanceFeature: { decoded: 96 * 1024, gzip: 27 * 1024 },
   // Loaded only when Messages opens, including search, media and recording. Initial budgets stay unchanged.
   // Bounded local waveform player and material styling add ~2 KB gzip, never to startup.
   // Draft recovery moved out of appShell into this on-demand bundle; startup limits stay unchanged.

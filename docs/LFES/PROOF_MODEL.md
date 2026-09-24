@@ -42,6 +42,11 @@ The separate `Hosted App Smoke` workflow runs the resource-load browser smoke af
 - each Chromium role completes initial workspace loading within 35 Supabase requests, with core loaders and the scoped work-order count RPC exactly once
 - a signed-in Production user can assign, receive, complete, and remove a Production Action without changing work-order ownership; the work order remains blocked from completion while the action is open
 - the admin candidate path, including its request budget, also passes in WebKit
+- Chromium and WebKit run the reversible equipment archive/restore lifecycle,
+  including retained photo bytes, five-role denials, finance editing, paused PM,
+  duplicate submissions and complete disposable-fixture cleanup. The narrowly
+  scoped QA-only cleanup helper is required; it never grants application users
+  equipment DELETE. See `docs/EQUIPMENT_ARCHIVE.md` for setup and evidence.
 - Chromium and WebKit sign out an admin who selected a different location, sign in a technician in the same page, and verify the technician's assigned default; legacy preference recovery, fresh-browser behavior, and the admin's own remembered selection after reload are also checked without editing memberships
 - a signed-in browser opens App Performance and renders measured gauges through the lazy 3D frame
 

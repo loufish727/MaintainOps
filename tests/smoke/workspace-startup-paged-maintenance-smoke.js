@@ -28,6 +28,7 @@ const procedureRows = (count) => Array.from({ length: count }, (_, index) => ({
         return {
           select(columns, options) { call.columns = columns; call.options = options; return this; },
           eq(column, value) { call.filters.push([column, value]); return this; },
+          is(column, value) { call.filters.push([column, value]); return this; },
           order(column, options) { call.orders.push([column, options]); return this; },
           async range(from, to) {
             call.range = [from, to];
@@ -53,7 +54,7 @@ const procedureRows = (count) => Array.from({ length: count }, (_, index) => ({
     });
     for (const call of calls) {
       assert.deepEqual(call.options, { count: "exact" }, "Count travels with the data, never a separate HEAD probe");
-      assert.deepEqual(call.filters, [["company_id", "company-1"]]);
+      assert.deepEqual(call.filters, [["company_id", "company-1"], ...(call.table === 'preventive_schedules' ? [['assets.archived_at', null]] : [])]);
       assert.deepEqual(call.orders, [
         [call.table === "preventive_schedules" ? "next_due_at" : "name", { ascending: true }],
         ["id", { ascending: true }],

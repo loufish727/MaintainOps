@@ -132,6 +132,7 @@ function createWorkflow(options = {}) {
     equipmentSchemaMessage: () => "equipment schema missing",
     assetDeleteBlockerMessage: (blockers) => Object.values(blockers).some(Boolean) ? "Equipment has linked records." : "",
     canDeleteEquipment: () => options.canDeleteEquipment !== false,
+    openEquipmentArchive: async id => calls.push(['openArchive', id]),
     setAssetPartsReady: (value) => calls.push(["assetPartsReady", value]),
     setLocationsReady: (value) => calls.push(["locationsReady", value]),
     setPendingDeleteAssetId: (value) => calls.push(["pendingDeleteAssetId", value]),
@@ -271,45 +272,17 @@ function createWorkflow(options = {}) {
 
   const requested = createWorkflow();
   await requested.workflow.requestDeleteAsset("asset-1");
-  assert.deepEqual(requested.calls.filter((call) => call[0] === "pendingDeleteAssetId"), [["pendingDeleteAssetId", "asset-1"]]);
-  assert.equal(requested.calls.some((call) => call[0] === "renderWorkspace"), true);
+  assert.deepEqual(requested.calls.filter((call) => call[0] === "openArchive"), [["openArchive", "asset-1"]]);
+  assert.equal(requested.calls.some(call => ['delete', 'storageRemove', 'pendingDeleteAssetId'].includes(call[0])), false);
 
   const deleted = createWorkflow({ assetDocumentPaths: ["company-1/asset-1/photo.jpg", "company-1/asset-1/settings.pdf"] });
   await deleted.workflow.deleteAsset("asset-1");
-  assert.equal(deleted.calls.some((call) => call[0] === "storageRemove" && call[1] === "asset-documents" && call[2].length === 2), true);
-  assert.equal(deleted.calls.some((call) => call[0] === "delete" && call[1] === "assets"), true);
-  assert.equal(deleted.calls.some((call) => call[0] === "activeAssetId" && call[1] === null), true);
-  assert.equal(deleted.calls.some((call) => call[0] === "activeSection" && call[1] === "assets"), true);
-  assert.ok(deleted.calls.findIndex(call => call[0] === 'delete') < deleted.calls.findIndex(call => call[0] === 'storageRemove'));
-  for (const response of [{error:{message:'Another equipment structure update is saving.',code:'PT409'}},
-    {error:{message:'violates foreign key constraint'}}, {data:[],error:null}]) {
-    const rejected = createWorkflow({assetDocumentPaths:['company-1/asset-1/photo.jpg'],responses:{'delete:assets':response}});
-    await rejected.workflow.deleteAsset('asset-1');
-    assert.equal(rejected.calls.some(call => call[0] === 'storageRemove'),false);
-    assert.ok(rejected.errors['#asset-delete-error'].textContent);
-  }
-  const cleanupFailed = createWorkflow({assetDocumentPaths:['company-1/asset-1/photo.jpg'],storageError:{message:'Unavailable'}});
-  await cleanupFailed.workflow.deleteAsset('asset-1');
-  assert.ok(cleanupFailed.calls.some(call => call[0] === 'notice' && /Equipment deleted.*may remain/.test(call[1]) && call[2] === 'warning'));
-  let releaseCleanup;
-  let navigation = 'asset-A';
-  const cleanupWait = new Promise(resolve => { releaseCleanup = resolve; });
-  const navigated = createWorkflow({assetDocumentPaths:['company-1/asset-1/photo.jpg'],cleanupWait,getDeletionContext:()=>navigation});
-  const pendingDelete = navigated.workflow.deleteAsset('asset-1');
-  while (!navigated.calls.some(call => call[0] === 'storageRemove')) await new Promise(resolve => setImmediate(resolve));
-  navigation = 'asset-B';
-  releaseCleanup();
-  await pendingDelete;
-  assert.equal(navigated.calls.some(call => ['render','activeAssetId','activeSection','notice'].includes(call[0])),false,'late cleanup must not close a different equipment editor');
-
-  for (const count of [null, undefined, -1, NaN, false, "0", 1]) {
-    const pmLinked = createWorkflow({ assetDocumentPaths: ["company-1/asset-1/photo.jpg"],
-      responses: { "select:preventive_schedules": { count, error: null } } });
-    await pmLinked.workflow.requestDeleteAsset("asset-1");
-    await pmLinked.workflow.deleteAsset("asset-1");
-    assert.equal(pmLinked.calls.some(call => ["delete", "storageRemove", "pendingDeleteAssetId"].includes(call[0])), false);
-    assert.match(pmLinked.errors["#asset-delete-error"].textContent, count === 1 ? /linked records/ : /Could not verify linked preventive schedules/);
-  }
+  assert.deepEqual(deleted.calls.filter(call => call[0] === 'openArchive'), [['openArchive','asset-1']]);
+  assert.equal(deleted.calls.some(call => ['delete','storageRemove','activeAssetId','activeSection'].includes(call[0])), false, 'Legacy delete entry points must never erase records or files');
+  const denied = createWorkflow({ canDeleteEquipment: false });
+  await denied.workflow.deleteAsset('asset-1');
+  await denied.workflow.requestDeleteAsset('asset-1');
+  assert.equal(denied.calls.some(call => ['openArchive','delete','storageRemove'].includes(call[0])), false);
 
   const quickFix = createWorkflow();
   const response = await quickFix.workflow.createQuickFixAsset("New machine", "running");

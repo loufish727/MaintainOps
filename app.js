@@ -636,6 +636,7 @@ function setActiveAssetIdState(value) {
 }
 let activeAssetHistoryId = null;
 let travelingBoardOpen = false;
+let equipmentArchiveOpen = false;
 let travelingUnits = null;
 let activeFinancialAssetId = null;
 let activePartId = workspaceUiState.getActivePartId();
@@ -997,6 +998,7 @@ const {
   matchesSearch,
 });
 function createMaintenanceDisplay() { return window.MaintainOpsMaintenanceListDisplay.createMaintenanceListDisplayHelpers({
+  canManageEquipmentArchive: canManageTeam,
   getPreventiveSchedules: () => preventiveSchedules,
   getProcedureTemplates: () => procedureTemplates,
   getPendingDeleteScheduleId: () => pendingDeleteScheduleId,
@@ -1857,6 +1859,7 @@ function createShopReferenceFavoriteStore() {
 
 function renderAuth(mode, initialError = "") {
   travelingUnits?.dispose(); travelingBoardOpen = false;
+  equipmentArchive?.reset(); equipmentArchiveOpen = false;
   equipmentRelocation?.dispose();
   equipmentDrafts.reset();
   checklistDrafts?.reset();
@@ -2197,8 +2200,8 @@ async function seedStarterAssets() {
   );
 }
 
-const WORK_ORDER_RELATION_SELECT = "*, assets(name, location_id), locations!work_orders_company_location_fkey(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
-const WORK_ORDER_FALLBACK_SELECT = "*, assets(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
+const WORK_ORDER_RELATION_SELECT = "*, assets(name, location_id, archived_at), locations!work_orders_company_location_fkey(name), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
+const WORK_ORDER_FALLBACK_SELECT = "*, assets(name, archived_at), assigned_profile:profiles!work_orders_company_assigned_profile_fkey(full_name)";
 
 function workOrderQueueMatchesGaugeScope(section) {
   if (workspaceUiState.getSearchQuery().trim()) return false;
@@ -2419,8 +2422,8 @@ async function loadManagerDashboardCompletedWork() {
   if (response.error) showNotice(`Could not load manager completed work: ${response.error.message}`, "warning");
 }
 
-const REQUEST_RELATION_SELECT = "*, assets(name, location_id), locations(name)";
-const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name)";
+const REQUEST_RELATION_SELECT = "*, assets(name, location_id, archived_at), locations(name)";
+const REQUEST_ASSET_FALLBACK_SELECT = "*, assets(name, archived_at)";
 const REQUEST_FALLBACK_SELECT = "*";
 
 const {
@@ -3360,19 +3363,21 @@ async function loadAssetParts() {
 }
 
 async function loadAssetDocuments() {
-  if (!activeCompanyId || !assets.length) {
+  const companyId = activeCompanyId, userId = session?.user?.id;
+  const ids = [...new Set([...assets.map(asset => asset.id), ...assetFinancials.filter(f => f.assets?.archived_at).map(f => f.asset_id)])];
+  if (!companyId || !ids.length) {
     assetDocumentsByAssetId = {};
     assetDocumentsReady = true;
     return;
   }
 
-  const ids = assets.map((asset) => asset.id);
   const { data, error } = await supabaseClient
     .from("asset_documents")
     .select("*")
-    .eq("company_id", activeCompanyId)
+    .eq("company_id", companyId)
     .in("asset_id", ids)
     .order("created_at", { ascending: false });
+  if (activeCompanyId !== companyId || session?.user?.id !== userId) return;
 
   if (error) {
     assetDocumentsReady = false;
@@ -3461,6 +3466,7 @@ async function loadWorkOrderEventsForWorkOrderIds(ids = []) {
 }
 
 async function loadAssetFinancials() {
+  const companyId = activeCompanyId, userId = session?.user?.id;
   if (!activeCompanyId || !canUseFinancialMenu()) {
     assetFinancials = [];
     assetFinancialsByAssetId = {};
@@ -3468,7 +3474,8 @@ async function loadAssetFinancials() {
     return;
   }
 
-  const { data, error } = await listAssetFinancials(supabaseClient, activeCompanyId);
+  const { data, error } = await listAssetFinancials(supabaseClient, companyId);
+  if (activeCompanyId !== companyId || session?.user?.id !== userId) return;
   if (error) {
     assetFinancials = [];
     assetFinancialsByAssetId = {};
@@ -3944,9 +3951,10 @@ function renderWorkspace() {
 
           ${activeSection === "assets" ? `
           <section class="panel full-width">
-            ${travelingBoardOpen && !activeAssetId ? (isFeatureBundleReady("traveling") ? travelingUnits.render() : renderFeatureBundlePanel("traveling", "Traveling Equipment")) : `
+            ${equipmentArchiveOpen && canManageTeam() ? (equipmentArchive?.render() || renderFeatureBundlePanel("maintenance", "Archived Equipment")) : travelingBoardOpen && !activeAssetId ? (isFeatureBundleReady("traveling") ? travelingUnits.render() : renderFeatureBundlePanel("traveling", "Traveling Equipment")) : `
             <div class="panel-header">
               <h2>${activeAssetHistoryId ? "Equipment History" : activeAssetId ? "Equipment Detail" : "Equipment"}</h2>
+              ${!activeAssetId && canManageTeam() ? '<button class="secondary-button" data-open-equipment-archive type="button">Archived Equipment</button>' : ''}
               ${activeAssetId && !activeAssetHistoryId ? `<button class="secondary-button back-action-button" id="back-to-equipment" type="button">Back to ${travelingBoardOpen ? "Traveling Equipment" : "Equipment"}</button>` : !activeAssetId ? `<span>${visibleAssets.length} shown</span>` : ""}
             </div>
             ${activeAssetId ? (activeAssetHistoryId === activeAssetId ? renderAssetHistoryScreen() : renderAssetDetail()) : `
@@ -4398,11 +4406,39 @@ function scrollWorkspaceTopIntoView() {
   });
 }
 
-let assetDetailDisplay, equipmentRelocation;
+let assetDetailDisplay, equipmentRelocation, equipmentArchive;
 const renderAssetDetail = () => assetDetailDisplay?.renderAssetDetail() || renderFeatureBundlePanel("maintenance", "Equipment details");
 const renderAssetHistoryScreen = () => assetDetailDisplay?.renderAssetHistoryScreen() || renderFeatureBundlePanel("maintenance", "Equipment history");
 const renderCreateAssetForm = () => assetDetailDisplay?.renderCreateAssetForm() || renderFeatureBundlePanel("maintenance", "Equipment tools");
 function initializeEquipmentDetails() {
+  equipmentArchive = window.MaintainOpsEquipmentArchive.createEquipmentArchive({
+    documentRef: document, escapeHtml, client: () => supabaseClient, timeout: withOperationTimeout,
+    getContext: () => `${session?.user?.id}:${activeCompanyId}:${activeSection}:${activeAssetId}:${activeLocationId}:${detailNavigationRevision}`,
+    getCompanyId: () => activeCompanyId, getLocations: () => locations, canManage: canManageTeam, showNotice,
+    getMemberName: id => profilesByUserId[id]?.full_name || 'Former team member',
+    isVisible: () => activeSection === 'assets' && equipmentArchiveOpen,
+    enter: () => { setActiveAssetIdState(null); activeAssetHistoryId = null; travelingBoardOpen = false; equipmentArchiveOpen = true; setActiveSectionState('assets'); },
+    leave: () => { equipmentArchiveOpen = false; renderWorkspace(); }, redraw: renderWorkspace,
+    openWork: id => openStorageLinkedRecord('work', id),
+    openFinancial: async id => {
+      const scope = [activeCompanyId, session?.user?.id, detailNavigationRevision].join(':');
+      try { await ensureFeatureBundleLoaded('financial'); await loadAssetFinancials(); }
+      catch (error) { showNotice(error.message, 'warning'); return; }
+      if (scope !== [activeCompanyId, session?.user?.id, detailNavigationRevision].join(':') || activeSection !== 'assets') return;
+      activeFinancialAssetId = id; setActiveSectionState('financial'); renderWorkspace();
+    },
+    getCompanyContext: () => `${session?.user?.id}:${activeCompanyId}`,
+    getData: () => ({ assets, workOrders, preventiveSchedules, assetFinancials }),
+    setData: data => {
+      ({ assets, workOrders, preventiveSchedules, assetFinancials } = data);
+      assetFinancialsByAssetId = Object.fromEntries(assetFinancials.filter(f => f.asset_id).map(f => [f.asset_id, f]));
+    },
+    onChanged: removed => {
+      if (removed.has(activeAssetId)) { setActiveAssetIdState(null); activeAssetHistoryId = null; }
+      travelingUnits?.invalidate();
+      renderWorkspace();
+    },
+  });
   assetDetailDisplay = window.MaintainOpsAssetDetailDisplay.createAssetDetailDisplayHelpers({
   getSchedulesReady: () => schedulesReady,
   ASSET_TYPE_OPTIONS,
@@ -4501,6 +4537,7 @@ const {
   equipmentSchemaMessage,
   assetDeleteBlockerMessage,
   canDeleteEquipment,
+  openEquipmentArchive: id => equipmentArchive?.openAction(id),
   setAssetPartsReady: (value) => { assetPartsReady = value; },
   setLocationsReady: (value) => { locationsReady = value; },
   setPendingDeleteAssetId: (value) => { pendingDeleteAssetId = value; },
@@ -5274,19 +5311,28 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
     return true;
   }
 
-  clearSource();
   if (section === "assets" && id) {
+    if (!assets.some(asset => asset.id === id)) {
+      if (!canManageTeam()) { showNotice('Equipment is unavailable in this workspace. Its existing work history is retained.', 'warning'); return false; }
+      await ensureFeatureBundleLoaded('maintenance');
+      if (!isCurrent()) return false;
+      await equipmentArchive.openRecord(id);
+      return true;
+    }
     await Promise.all([
       runWorkspaceLoader("Storage linked equipment files", loadAssetDocuments),
       runWorkspaceLoader("Storage linked equipment history", () => loadAssetEventsForAssetIds([id])),
       runWorkspaceLoader("Storage linked equipment work", () => loadAssetWorkOrderHistory(id)),
     ]);
+    if (!isCurrent()) return false;
+    clearSource();
     setActiveAssetIdState(id);
     setActiveSectionState("assets");
     renderWorkspace();
     return;
   }
 
+  clearSource();
   if (section === "parts" && id) {
     await runWorkspaceLoader("Storage linked part files", loadPartDocuments);
     setActivePartIdState(id);
@@ -5312,6 +5358,7 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
 let completionEvents;
 function bindWorkspaceEvents() {
   document.querySelector("#company-select").addEventListener("change", async (event) => {
+    equipmentArchive?.reset(); equipmentArchiveOpen = false;
     activeCompanyId = event.target.value;
     activeLocationId = "";
     platformPerformance = null;
@@ -5372,6 +5419,7 @@ function bindWorkspaceEvents() {
     openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
     openEquipmentHome: () => {
       travelingBoardOpen = false;
+      equipmentArchiveOpen = false; equipmentArchive?.dispose();
       activeAssetHistoryId = null;
       workspaceUiState.setSearchQuery("");
       workspaceUiState.setAssetTypeFilter("all");
@@ -5592,7 +5640,7 @@ function bindWorkspaceEvents() {
     equipmentDrafts.snapshot();
     setActiveSectionState("assets"); setActiveAssetIdState(null); activeAssetHistoryId = null;
     setActiveWorkOrderIdState(null); reportIssueMode = false;
-    workspaceUiState.setSearchQuery(""); travelingBoardOpen = true; travelingUnits?.invalidate();
+    workspaceUiState.setSearchQuery(""); travelingBoardOpen = true; equipmentArchiveOpen = false; travelingUnits?.invalidate();
     renderWorkspace(); document.querySelector("[data-travel-board], .feature-resource-loading")?.scrollIntoView({ block: "start" });
   }));
   travelingUnits?.bind();
@@ -5691,6 +5739,12 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceDetailNavigationEvents({
+    openUnavailableAsset: id => {
+      if (assets.some(a => a.id === id)) return false;
+      if (!canManageTeam()) showNotice('This equipment is no longer in active workflow. Its work history is retained.', 'warning');
+      else ensureFeatureBundleLoaded('maintenance').then(() => equipmentArchive.openRecord(id)).catch(error => showNotice(error.message, 'warning'));
+      return true;
+    },
     returnToWorkOrderQueue,
     openLinkedWorkOrder: (id, options) => openStorageLinkedRecord("work", id, "", options),
     showNotice,
@@ -5984,6 +6038,7 @@ function bindWorkspaceEvents() {
   if (editAssetForm) editAssetForm.addEventListener("submit", updateAsset);
   document.querySelector("#move-traveling-asset-form")?.addEventListener("submit", moveTravelingAsset);
   equipmentRelocation?.bind();
+  equipmentArchive?.bind();
 
   document.querySelectorAll("[data-attach-asset-part]").forEach((form) => {
     form.addEventListener("submit", attachAssetPart);
