@@ -44,7 +44,7 @@ let workHistory;
 let preventiveSchedules = [{ id: "pm-1", asset_id: "asset-1", title: "Monthly PM", frequency: "monthly", next_due_at: "2026-06-01" }];
 let pmPage = 1;
 let equipmentEditable = true;
-const { renderAssetDetail, renderAssetHistoryScreen } = createAssetDetailDisplayHelpers({
+const { renderAssetDetail, renderAssetHistoryScreen, renderCreateAssetForm } = createAssetDetailDisplayHelpers({
   getAssetWorkHistory: () => workHistory,
   ASSET_TYPE_OPTIONS: ["machine", "forklift", "secondary_machine", "tooling", "component"],
   getAssets: () => [
@@ -205,6 +205,21 @@ assert.match(html, /data-asset-relationship-section="parts-used"/);
 assert.match(html, /data-cancel-delete-asset/);
 assert.match(html, /data-confirm-delete-asset="asset-1"/);
 assert.doesNotMatch(html, /Degraded needs a reason/);
+
+for (const location of [null, ""]) {
+  asset.location = location;
+  const withoutArea = renderAssetDetail();
+  assert.match(withoutArea, /<p>No area \/ spot set<\/p>/);
+  assert.match(withoutArea, /<strong>Plant 1<\/strong>/);
+  assert.match(withoutArea, /<small>No area \/ spot set<\/small>/);
+  assert.doesNotMatch(withoutArea, /No location set/);
+}
+asset.location_id = null;
+assert.match(renderAssetDetail(), /<strong>No location set<\/strong>/, "A genuinely missing facility remains distinct from an empty area");
+asset.location_id = "loc-1";
+asset.location = "Bay 1";
+assert.match(renderCreateAssetForm(), /<option value="">No area \/ spot set<\/option>/);
+assert.match(html, /<p>Bay 1<\/p>/);
 
 const historyHtml = renderAssetHistoryScreen();
 assert.match(historyHtml, /Equipment History/);
