@@ -124,7 +124,7 @@ test('isolated QA archive/restore: real UI, storage retention, roles and competi
       }
       for(const [bucket,file] of [['asset-documents',assetFile],['work-order-photos',workFile]]){
         const removed=await request.delete(`${host}/storage/v1/object/${bucket}`,{headers:headers(admin),data:{prefixes:[file]}});expect(removed.ok()).toBe(true);
-        const missing=await request.get(`${host}/storage/v1/object/authenticated/${bucket}/${file}`,{headers:headers(admin)});expect(missing.ok()).toBe(false);
+        const missing=await request.get(`${host}/storage/v1/object/authenticated/${bucket}/${file}?lfes_cleanup=${randomUUID()}`,{headers:headers(admin)});expect(missing.ok()).toBe(false);
         const body=await missing.json();expect(`${body.statusCode} ${body.error} ${body.message}`).toMatch(/404|not found/i);
       }
       await api('DELETE',`work_orders?company_id=eq.${company}&asset_id=in.(${ids.join(',')})`);
@@ -155,7 +155,7 @@ test('explicit isolated QA storage cleanup uses the Storage API',async({request}
   for(const [bucket,file,parent] of [['asset-documents',fixture.assetFile,fixture.assets[0]],['work-order-photos',fixture.workFile,fixture.work]]){
     expect(file.startsWith(`${company}/${parent}/`)).toBe(true);
     const removed=await request.delete(`${host}/storage/v1/object/${bucket}`,{headers,data:{prefixes:[file]}});expect(removed.ok(),await removed.text()).toBe(true);
-    const missing=await request.get(`${host}/storage/v1/object/authenticated/${bucket}/${file}`,{headers});expect(missing.ok()).toBe(false);
+    const missing=await request.get(`${host}/storage/v1/object/authenticated/${bucket}/${file}?lfes_cleanup=${randomUUID()}`,{headers});expect(missing.ok()).toBe(false);
     const body=await missing.json();expect(`${body.statusCode} ${body.error} ${body.message}`).toMatch(/404|not found/i);
   }
   console.log('Only the two manifest-owned QA storage objects were removed through Storage API.');
