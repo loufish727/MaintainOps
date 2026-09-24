@@ -65,6 +65,7 @@
           ? "all"
           : button.dataset.assetTypeFilter;
         state.setAssetTypeFilter(nextFilter);
+        if (state.setAssetAreaFilter) state.setAssetAreaFilter("all");
         if (state.setAssetStatusFilter) state.setAssetStatusFilter("all");
         options.resetAssetsPage();
         renderWorkspacePreservingScroll();

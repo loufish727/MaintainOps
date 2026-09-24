@@ -76,6 +76,17 @@ const procedureRows = (count) => Array.from({ length: count }, (_, index) => ({
     }
   });
 
+  test("traveling PM visibility follows current equipment without rewriting schedule data", async () => {
+    const schedules = [
+      { id: "travel", location_id: "old", assets: { location_id: "new", asset_type: "traveling_machine" } },
+      { id: "fixed", location_id: "old", assets: { location_id: "new", asset_type: "machine" } },
+    ];
+    const result = await load({ schedules });
+    assert.equal(result.scheduleResponse.data[0].location_id, "new");
+    assert.equal(result.scheduleResponse.data[1].location_id, "old");
+    assert.equal(schedules[0].location_id, "old");
+  });
+
   test("all pages are loaded without an empty trailing probe", async () => {
     const schedules = scheduleRows(2000), procedures = procedureRows(2001);
     const result = await load({ schedules, procedures });

@@ -24,7 +24,7 @@
 
     function filteredAssets() {
       return deps.getAssets().filter((asset) => {
-        if (!deps.matchesActiveLocation(asset)) return false;
+        if (deps.getAssetTypeFilter?.() !== "traveling_machine" && !deps.matchesActiveLocation(asset)) return false;
         if (deps.getAssetStatusFilter() !== "all" && asset.status !== deps.getAssetStatusFilter()) return false;
         if (deps.getAssetTypeFilter && deps.getAssetTypeFilter() !== "all" && (asset.asset_type || "machine") !== deps.getAssetTypeFilter()) return false;
         if (deps.getAssetAreaFilter && deps.getAssetAreaFilter() !== "all" && (asset.location || "") !== deps.getAssetAreaFilter()) return false;

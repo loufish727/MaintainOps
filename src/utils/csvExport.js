@@ -9,6 +9,7 @@
     const workOrderTypeLabel = typeof deps.workOrderTypeLabel === "function" ? deps.workOrderTypeLabel : (type) => String(type || "corrective").replaceAll("_", " ");
     const assetTypeOrder = {
       machine: 10,
+      traveling_machine: 15,
       forklift: 20,
       secondary_machine: 30,
       tooling: 40,

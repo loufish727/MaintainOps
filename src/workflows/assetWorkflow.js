@@ -143,12 +143,14 @@
           safety_devices_required: form.get("safety_devices_required") === "on",
           status: form.get("status"),
         };
-        const { error } = await deps.withOperationTimeout(
-          deps.supabaseClient()
-            .from("assets")
-            .update(payload)
-            .eq("id", deps.getActiveAssetId())
-            .eq("company_id", deps.getActiveCompanyId()),
+        // A stale edit form must never move traveling equipment back to an old facility.
+        const travelingEdit = previous?.asset_type === "traveling_machine";
+        if (travelingEdit) delete payload.location_id;
+        let query = deps.supabaseClient().from("assets").update(payload)
+          .eq("id", deps.getActiveAssetId()).eq("company_id", deps.getActiveCompanyId());
+        if (travelingEdit) query = query.eq("location_id", previous.location_id).select("id");
+        const { data, error } = await deps.withOperationTimeout(
+          query,
           "Equipment save timed out. Check your connection and try again.",
           15000
         );
@@ -166,7 +168,8 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
-        const changed = changedFieldLabels(previous, payload);
+        if (travelingEdit && !data?.length) throw new Error("This equipment moved or is no longer editable. Reopen its details before saving.");
+        const changed = changedFieldLabels(previous, { ...previous, ...payload });
         if (changed.length && typeof deps.recordAssetEvent === "function") {
           await deps.recordAssetEvent(deps.getActiveAssetId(), "updated", `Updated ${changed.join(", ")}.`);
         }
@@ -180,6 +183,40 @@
           submitButton.disabled = false;
           submitButton.textContent = originalButtonText;
         }
+      }
+    }
+
+    async function moveTravelingAsset(event) {
+      event.preventDefault();
+      const element = event.currentTarget;
+      const button = element.querySelector("button[type='submit']");
+      if (button?.disabled) return;
+      const errorElement = element.querySelector("[data-transfer-error]");
+      const companyId = element.dataset.companyId;
+      const assetId = element.dataset.assetId;
+      const userId = currentUserId();
+      const form = new FormDataCtor(element);
+      const destination = form.get("destination_id");
+      const current = () => companyId === deps.getActiveCompanyId() && userId === currentUserId() && assetId === deps.getActiveAssetId();
+      if (!current() || !destination) return;
+      const destinationName = element.querySelector("[name='destination_id'] option:checked")?.textContent || "the selected facility";
+      if (!(deps.confirmRef || confirm)(`Move ${assetById(assetId)?.name || "this machine"} to ${destinationName}? Existing work and stock will not move. Unsaved equipment edits will not be saved.`)) return;
+      if (errorElement) errorElement.textContent = "";
+      if (button) button.disabled = true;
+      try {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("move_traveling_equipment", {
+          p_company_id: companyId, p_asset_id: assetId, p_location_id: destination,
+          p_expected_location_id: element.dataset.fromLocation || null,
+        }), "Location change timed out. Reopen the equipment to check its current facility before retrying.", 15000);
+        if (error) throw error;
+        if (current()) {
+          deps.showNotice("Equipment location changed. Its records remain attached.");
+          await deps.render();
+        }
+      } catch (error) {
+        if (current() && errorElement) errorElement.textContent = error.message;
+      } finally {
+        if (button) button.disabled = false;
       }
     }
 
@@ -450,6 +487,7 @@
       removeAssetPart,
       requestDeleteAsset,
       updateAsset,
+      moveTravelingAsset,
       updateAssetStatus,
     };
   }

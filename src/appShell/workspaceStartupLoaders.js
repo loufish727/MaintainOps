@@ -13,7 +13,7 @@ export async function loadWorkspaceCoreData({
     loadWorkspaceResponse("Equipment", listAssets(supabaseClient, activeCompanyId)),
     loadWorkspaceResponse("PM schedules", loadCompleteWorkspaceRows("PM schedules", () => supabaseClient
       .from("preventive_schedules")
-      .select("*, assets(name, location_id)", { count: "exact" })
+      .select("*, assets(name, location_id, asset_type)", { count: "exact" })
       .eq("company_id", activeCompanyId)
       .order("next_due_at", { ascending: true })
       .order("id", { ascending: true }))),
@@ -27,6 +27,9 @@ export async function loadWorkspaceCoreData({
     loadWorkspaceResponse("App issue reports", listAppIssueReports(supabaseClient, activeCompanyId)),
   ]);
 
+  // Schedule ownership follows traveling equipment in the UI; stored history is unchanged.
+  if (scheduleResponse.data) scheduleResponse.data = scheduleResponse.data.map((schedule) =>
+    schedule.assets?.asset_type === "traveling_machine" ? { ...schedule, location_id: schedule.assets.location_id } : schedule);
   return {
     assetResponse,
     issueReportResponse,

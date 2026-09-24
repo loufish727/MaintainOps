@@ -206,6 +206,7 @@
             : "status-completed";
       const degradedWithoutOpenWork = asset.status === "degraded" && workCount("open", openWork.length) === 0;
       const canEditEquipment = canEditEquipmentRecords();
+      const traveling = asset.asset_type === "traveling_machine";
 
       return `
         <div class="detail-stack">
@@ -318,6 +319,17 @@
             </div>
           </section>
 
+          ${traveling && canEditEquipment ? `<form class="form-grid relationship-detail asset" id="move-traveling-asset-form"
+            data-asset-id="${escapeHtml(asset.id)}" data-company-id="${escapeHtml(asset.company_id)}" data-from-location="${escapeHtml(asset.location_id || "")}">
+            <h3>Change current facility</h3>
+            <p>Currently at ${escapeHtml(locationName)}. Existing work keeps its original facility. History, parts links, files and financials stay with this machine; stock does not move.</p>
+            <label>New facility<select name="destination_id" required>
+              <option value="">Choose facility</option>
+              ${locations.filter((location) => location.id !== asset.location_id).map((location) => `<option value="${escapeHtml(location.id)}">${escapeHtml(location.name)}</option>`).join("")}
+            </select></label>
+            <button class="secondary-button" type="submit">Change location</button>
+            <p class="error-text" role="alert" data-transfer-error></p>
+          </form>` : ""}
           ${canEditEquipment ? `<form class="form-grid" id="edit-asset-form">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
             <label>Serial Number<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
@@ -330,15 +342,16 @@
               </select>
             </label>
             <label id="edit-asset-parent-field">Part of
-              <select name="parent_asset_id">
+              <select name="parent_asset_id" ${traveling ? "disabled" : ""}>
                 <option value="">Top level equipment</option>
                 ${renderParentAssetOptions(asset.parent_asset_id || "", asset.id)}
               </select>
             </label>
             <label id="edit-asset-location-field">Location
-              <select name="location_id" ${locations.length ? "" : "disabled"}>
+              <select name="location_id" ${locations.length && !traveling ? "" : "disabled"}>
                 ${renderLocationOptions(asset.location_id || activeLocationId)}
               </select>
+              ${traveling ? `<span class="muted">Use Change current facility above.</span>` : ""}
             </label>
             <label>Area / spot
               <select name="location_existing">

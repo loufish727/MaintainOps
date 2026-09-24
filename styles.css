@@ -11008,3 +11008,21 @@ body.spatial-performance-active {
 .attachment-dialog button, .attachment-document-row button { min-height: 44px; }
 .attachment-review-notes { color: #ffdaa2; overflow: auto; max-height: 25dvh; flex-shrink: 0; }
 .attachment-review-actions { flex-shrink: 0; }
+#move-traveling-asset-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#move-traveling-asset-form > h3,
+#move-traveling-asset-form > p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+#move-traveling-asset-form > button {
+  align-self: end;
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  #move-traveling-asset-form { grid-template-columns: minmax(0, 1fr); }
+}
