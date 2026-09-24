@@ -25,6 +25,8 @@ The broader Strict LFES command includes the Node tests, bundle budgets, isolate
 
 ## Deployment
 
+Verified release candidate: Full Strict LFES (13 stages) and authenticated LFES (9 stages) passed on 2026-09-23 local time. The latter includes desktop/mobile traveling lifecycle checks in both Chromium and WebKit. Production schema and the three requested initial records have been applied; see `APPLIED_MIGRATIONS.md` for the fingerprint comparison. GitHub's required Release Gate governs frontend publication.
+
 Database prerequisite: `supabase/migrations/20260924025115_traveling_primary_equipment.sql`.
 Apply and verify on QA before production. The migration changes no existing business rows and introduces no security-definer function or new public table. Record production application separately in `APPLIED_MIGRATIONS.md`.
 
