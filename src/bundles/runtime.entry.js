@@ -154,6 +154,7 @@ import "../render/partUsageDisplay.js";
 import "../render/requestQueueDisplay.js";
 import "../render/deleteBlockerDisplay.js";
 import "../render/assetHierarchyDisplay.js";
+import "../render/assetInventoryDisplay.js";
 import "../render/searchFilterDisplay.js";
 import "../render/workOrderSortDisplay.js";
 import "../render/locationFilterDisplay.js";

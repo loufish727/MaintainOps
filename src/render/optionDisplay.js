@@ -30,6 +30,7 @@
 
     function renderParentAssetOptions(selectedId = "", currentAssetId = "") {
       return getAssets()
+        .filter((asset) => asset.asset_type !== "traveling_machine")
         .filter(matchesActiveLocation)
         .filter((asset) => asset.id !== currentAssetId && !isAssetDescendantOf(asset.id, currentAssetId))
         .sort((a, b) => assetOptionLabel(a).localeCompare(assetOptionLabel(b)))

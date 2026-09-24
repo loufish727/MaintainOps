@@ -26,6 +26,7 @@
     const requiredFinancialFields = ["asset_tag", "acquisition_date", "acquisition_cost", "depreciation_method", "useful_life_years", "current_book_value", "tax_jurisdiction", "ownership_status", "in_service_date", "gl_account_code", "cost_center"];
     const assetTypeOrder = {
       machine: 10,
+      traveling_machine: 15,
       forklift: 20,
       secondary_machine: 30,
       tooling: 40,

@@ -2,7 +2,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const appSource = fs.readFileSync(path.join(__dirname, "..", "..", "app.js"), "utf8");
+const appSource = fs.readFileSync(path.join(__dirname, "..", "..", "src/render/assetInventoryDisplay.js"), "utf8");
+assert.match(fs.readFileSync(path.join(__dirname, "..", "..", "app.js"), "utf8"), /MaintainOpsAssetInventoryDisplay\.renderAssetInventoryControls/);
+assert.match(appSource, /label:\s*"Traveling Equipment"/);
+assert.match(appSource, /typeFilter:\s*"traveling_machine"/);
 
 assert.match(appSource, /label:\s*"Primary"/);
 assert.match(appSource, /typeFilter:\s*"machine"/);

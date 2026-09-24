@@ -2,6 +2,7 @@
   function assetTypeLabel(type) {
     const labels = {
       machine: "Primary",
+      traveling_machine: "Traveling Primary",
       forklift: "Forklift / Mobile Lift",
       secondary_machine: "Sub Equipment",
       tooling: "Tooling / Setup",

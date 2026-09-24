@@ -14,6 +14,11 @@
               <p>Use for the main equipment that maintenance work is tied to, such as a roll former, ASC line, folder, or press.</p>
             </article>
             <article>
+              <span>Traveling Primary</span>
+              <strong>Shared machine that moves between facilities</strong>
+              <p>For standalone curving units and similar machines. One permanent record retains its work, parts and history wherever it goes. No parent or sub equipment; no automatic stock transfers.</p>
+            </article>
+            <article>
               <span>Forklift / Mobile Lift</span>
               <strong>Mobile lifting equipment</strong>
               <p>Use for forklifts, piggybacks, scissor lifts, Combi, and other mobile lift equipment that need maintenance or service history.</p>

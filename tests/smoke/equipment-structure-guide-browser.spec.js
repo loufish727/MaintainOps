@@ -21,7 +21,8 @@ for (const width of [320, 390, 768, 1440]) {
     });
 
     const guide = page.getByRole("region", { name: "Equipment structure guide" });
-    await expect(guide.locator("article")).toHaveCount(7);
+    await expect(guide.locator("article")).toHaveCount(8);
+    await expect(guide.getByText("Traveling Primary", { exact: true })).toBeVisible();
     await expect(guide.getByText("Sub equipment can belong to a primary machine OR to another sub-equipment record. It is not limited to one level.", { exact: true })).toBeVisible();
     await expect(guide.getByText(/Related part: Hydraulic Hose, linked to the pump in Parts/)).toBeVisible();
     await page.getByLabel("Equipment type").selectOption({ label: "Forklift / Mobile Lift" });

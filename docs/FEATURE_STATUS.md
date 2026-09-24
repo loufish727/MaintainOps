@@ -8,6 +8,12 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 
 ## Working Core
 
+### Traveling Primary Equipment
+
+- Company-wide Traveling Equipment view within Equipment, current-facility labels and 12-item paging.
+- Guarded location changes retain the permanent equipment record and atomically record actor/from/to history. Existing work stays at its original facility; no stock or child-equipment cascade.
+- PM visibility follows the unit; new generated work uses its current facility. Accounting remains operationally read-only. See `TRAVELING_EQUIPMENT.md` for scope and verification.
+
 ### Equipment Asset Tags
 
 - Equipment create/edit supports an optional text asset tag alongside Serial Number. Leading zeros and letters are retained; blank values clear the tag.
