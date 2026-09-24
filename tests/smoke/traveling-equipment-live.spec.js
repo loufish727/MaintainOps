@@ -40,6 +40,8 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     },{session,company,location:from.id});
     const page=await context.newPage(); page.setDefaultTimeout(15000); page.on('pageerror',error=>{errors.push(error.message);console.log('Browser error:',error.message);});
     await page.goto(baseURL); await expect(page.locator('[data-asset-type-filter=traveling_machine]')).toBeVisible({timeout:45000});
+    // Geometry probes start after the lazy equipment renderer replaces its loading panel.
+    await expect(page.locator('.feature-resource-loading')).toHaveCount(0);
     const filter = page.locator('[data-asset-type-filter=traveling_machine]');
     if (width < 500) {
       let selected = false;
