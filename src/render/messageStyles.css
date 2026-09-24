@@ -147,7 +147,7 @@ body.messages-active .command-stack { display: none; }
 .message-activity .work-notification-item { background: #262c32; border-color: var(--message-line); color: var(--message-ink); }
 .message-activity .work-notification-item.unread { background: #2a4036; border-color: #5b826a; }
 .message-activity .work-notification-item:hover { background: #354b3d; }
-.message-activity :is(.work-notification-heading time,.work-notification-item > span:last-child,.work-notification-limit) { color: var(--message-muted); }
+.message-activity :is(.work-notification-heading time,.work-notification-body,.work-notification-limit) { color: var(--message-muted); }
 .message-center .message-linked-draft { background: #2b3e37; border-color: #5d7e64; color: var(--message-ink); }
 .message-center .message-linked-draft :is(span,.text-button) { color: #bddfc7; }
 .message-mobile-exit { display: none; }

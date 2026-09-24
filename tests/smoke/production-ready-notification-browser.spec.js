@@ -1,78 +1,94 @@
 const path = require("node:path");
 const { test, expect } = require("@playwright/test");
 
-const stylesPath = path.resolve(__dirname, "../../styles.css");
+const root = path.resolve(__dirname, "../..");
 
-for (const viewport of [
-  { name: "desktop", width: 1100, height: 760 },
-  { name: "mobile", width: 390, height: 844 },
-]) {
-  test(`Production Ready notifications remain readable and contained on ${viewport.name}`, async ({ page }) => {
-    await page.setViewportSize(viewport);
-    await page.setContent(`
-      <main class="workspace">
-        <div class="work-list">
-          <article class="work-card">
-            <div class="work-card-header">
-              <div class="chip-row">
-                <span class="chip medium">medium</span>
-                <span class="chip">Corrective</span>
-                <span class="chip open">New</span>
-                <span class="chip production-ready">Production Ready</span>
-              </div>
-            </div>
-            <div class="work-card-body"><h3>Guard repair</h3><p>Repair the press guard.</p></div>
-          </article>
-        </div>
-        <section class="message-center">
-          <div class="message-layout">
-            <aside class="message-thread-rail">
-              <div class="message-rail-header"><div><h3>Messages</h3><p>1 unread</p></div></div>
-              <details class="work-notification-panel" open>
-                <summary><span>Work notifications</span><span>1 new</span></summary>
-                <div class="work-notification-list">
-                  <button class="work-notification-item unread" type="button">
-                    <span class="work-notification-heading"><span class="chip production-ready">Production Ready</span><time>12:00 PM</time></span>
-                    <strong>Production ready: Guard repair</strong>
-                    <span>Production Action completed by Justin Werber. This work order is ready for Maintenance.</span>
-                  </button>
-                </div>
-              </details>
-              <div class="message-people-strip"><button class="message-person-card" type="button"><span class="message-person-avatar">JW</span><span class="message-person-name">Justin</span></button></div>
-              <form class="message-thread-form"><details><summary>New message</summary></details></form>
-              <label class="message-search"><input type="search" placeholder="Search messages"></label>
-              <div class="message-filter-bar"><button class="active" type="button">All</button><button type="button">Unread</button></div>
-              <div class="message-thread-list"><button class="message-thread-button" type="button"><strong>Maintenance update</strong><span>Recent message</span></button></div>
-              <div class="pagination-bar"><span>1 of 1</span></div>
-            </aside>
-            <section class="message-thread-detail"><p>Choose a thread.</p></section>
-          </div>
-        </section>
-      </main>
-    `);
-    await page.addStyleTag({ path: stylesPath });
-
-    const layout = await page.evaluate(() => {
-      const rail = document.querySelector(".message-thread-rail").getBoundingClientRect();
-      const panel = document.querySelector(".work-notification-panel").getBoundingClientRect();
-      const notification = document.querySelector(".work-notification-item").getBoundingClientRect();
-      const pagination = document.querySelector(".pagination-bar").getBoundingClientRect();
-      const chipStyle = getComputedStyle(document.querySelector(".chip.production-ready"));
-      return {
-        rail,
-        panel,
-        notification,
-        pagination,
-        chipBackground: chipStyle.backgroundImage,
-        chipColor: chipStyle.color,
-      };
+for (const width of [1100, 390, 320]) {
+  test(`Work Activity shows read and unread updates without disclosure at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 760 });
+    await page.setContent('<main id="message-workspace"></main>');
+    for (const file of ["styles.css", "src/render/messageStyles.css"]) {
+      await page.addStyleTag({ path: path.join(root, file) });
+    }
+    for (const file of ["render/iconDisplay", "render/messageCenterDisplay", "render/workOrderNotificationDisplay", "utils/workspaceWorkOrderNotificationEvents"]) {
+      await page.addScriptTag({ path: path.join(root, `src/${file}.js`) });
+    }
+    await page.evaluate(() => {
+      document.body.style.margin = "0";
+      document.body.classList.add("messages-active");
+      const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+      let notifications = Array.from({ length: 13 }, (_, index) => ({
+        id: `notification-${index}`, work_order_id: `work-${index}`, kind: "production_action_completed",
+        title: `Production ready: Guard repair ${index}`,
+        body: "Production Action completed by Justin <Production>. This work order is ready for Maintenance.",
+        created_at: "2026-09-23T12:00:00Z", read_at: index ? "2026-09-23T13:00:00Z" : null,
+      }));
+      const proof = window.activityProof = { opened: [] };
+      const notificationsDisplay = window.MaintainOpsWorkOrderNotificationDisplay.createWorkOrderNotificationDisplayHelpers({
+        getNotifications: () => notifications, getReady: () => true, escapeHtml, formatMessageTime: () => "12:00 PM",
+      });
+      const display = window.MaintainOpsMessageCenterDisplay.createMessageCenterDisplayHelpers({
+        escapeHtml, icon: window.MaintainOpsIconDisplay.segmentIcon, navIcon: window.MaintainOpsIconDisplay.navIcon,
+        getMessagesReady: () => true, getMessageThreads: () => [], getActiveMessageThreadId: () => "",
+        getMessageComposerOpen: () => false, getMessageView: () => "activity", getMessageThreadsPage: () => 1,
+        filteredMessageThreads: () => [], LIST_ITEMS_PER_PAGE: 12, getCompanyMembers: () => [],
+        getWorkOrders: () => [], getMessageComposerWorkOrderId: () => "", totalUnreadMessages: () => 0,
+        getMessageThreadFilter: () => "all", getMessageSearchQuery: () => "",
+        getWorkspaceLabel: () => "Taylor Metal Products / Salem, OR",
+        getActivityCount: notificationsDisplay.unreadWorkOrderNotificationCount,
+        renderWorkOrderNotifications: notificationsDisplay.renderWorkOrderNotifications,
+      });
+      function render() {
+        document.querySelector("main").innerHTML = display.renderMessageCenter();
+        document.querySelector(".message-center").style.height = "100dvh";
+        window.MaintainOpsWorkspaceWorkOrderNotificationEvents.bindWorkspaceWorkOrderNotificationEvents({
+          openWorkOrderNotification: async (notificationId, workOrderId) => proof.opened.push({ notificationId, workOrderId }),
+        });
+      }
+      proof.readAll = () => { notifications = notifications.map(row => ({ ...row, read_at: "2026-09-23T13:00:00Z" })); render(); };
+      proof.empty = () => { notifications = []; render(); };
+      proof.longText = () => { notifications[0].title = "WorkOrder".repeat(25); notifications[0].body = "LongEquipmentName".repeat(50); render(); };
+      render();
     });
 
-    expect(layout.notification.height).toBeGreaterThanOrEqual(48);
-    expect(layout.panel.left).toBeGreaterThanOrEqual(layout.rail.left - 1);
-    expect(layout.panel.right).toBeLessThanOrEqual(layout.rail.right + 1);
-    expect(layout.pagination.bottom).toBeLessThanOrEqual(layout.rail.bottom + 1);
-    expect(layout.chipBackground).not.toBe("none");
-    expect(layout.chipColor).not.toBe("rgb(255, 255, 255)");
+    const items = page.locator(".work-notification-item");
+    const first = items.first();
+    await expect(items).toHaveCount(12);
+    await expect(first).toBeVisible();
+    await expect(first).toHaveClass(/unread/);
+    await expect(first).toContainText("Justin <Production>");
+    await expect(first).toContainText("Open work order");
+    await expect(page.locator(".work-notification-header")).toContainText("1 new");
+    await expect(page.locator(".message-activity details,.message-activity summary")).toHaveCount(0);
+    expect(await page.evaluate(() => activityProof.opened)).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("work-activity.png") });
+
+    for (const item of await items.all()) {
+      const box = await item.boundingBox();
+      expect(box.height).toBeGreaterThanOrEqual(48);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    await items.last().scrollIntoViewIfNeeded();
+    await expect(items.last()).toBeInViewport();
+    expect(await page.locator(".message-activity").evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    await first.focus();
+    await page.keyboard.press("Enter");
+    expect(await page.evaluate(() => activityProof.opened)).toEqual([{ notificationId: "notification-0", workOrderId: "work-0" }]);
+
+    await page.evaluate(() => activityProof.readAll());
+    await expect(first).toBeVisible();
+    await expect(first).toHaveClass(/\bread\b/);
+    await expect(page.locator(".work-notification-header")).toContainText("Recent");
+    await expect(page.locator('.message-view-tabs [data-message-view="activity"] .message-unread-pill')).toHaveCount(0);
+    await first.click();
+    expect(await page.evaluate(() => activityProof.opened)).toHaveLength(2);
+
+    await page.evaluate(() => activityProof.longText());
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await first.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.evaluate(() => activityProof.empty());
+    await expect(page.getByText("No work notifications.", { exact: true })).toBeVisible();
+    await expect(items).toHaveCount(0);
   });
 }

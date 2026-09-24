@@ -24,11 +24,11 @@
       const unreadCount = unreadWorkOrderNotificationCount();
       const visibleNotifications = notifications.slice(0, visibleLimit);
       return `
-        <details class="work-notification-panel" ${unreadCount ? "open" : ""}>
-          <summary>
-            <span>Work notifications</span>
+        <section class="work-notification-panel" aria-label="Work notifications">
+          <header class="work-notification-header">
+            <h3>Work notifications</h3>
             <span>${unreadCount ? `${unreadCount} new` : "Recent"}</span>
-          </summary>
+          </header>
           <div class="work-notification-list">
             ${visibleNotifications.map((notification) => `
               <button
@@ -42,12 +42,13 @@
                   <time>${escapeHtml(formatMessageTime(notification.created_at))}</time>
                 </span>
                 <strong>${escapeHtml(notification.title)}</strong>
-                <span>${escapeHtml(notification.body)}</span>
+                <span class="work-notification-body">${escapeHtml(notification.body)}</span>
+                <span class="work-notification-action">Open work order</span>
               </button>
             `).join("")}
           </div>
           ${notifications.length > visibleLimit ? `<p class="work-notification-limit">Showing the ${visibleLimit} most recent notifications.</p>` : ""}
-        </details>
+        </section>
       `;
     }
 
