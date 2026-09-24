@@ -107,4 +107,36 @@ the database must remain authoritative.
 
 ### Verification Record
 
-Final Full Strict LFES, authenticated proof and cleanup results: pending final run.
+Verified 2026-09-24 UTC:
+
+- Full Strict LFES: **13/13 PASS**, clean worktree at `039a2bb`. Evidence:
+  `LFES/private/archive-final-strict-evidence/lfes-strict-summary.json`.
+- Isolated PostgreSQL: **85/85 PASS**, including ten archive groups and 28
+  additional denied-write assertions from the independent review. All 22 dated
+  migrations compiled. Recursive SQL audit inspected 123 application/QA SQL files,
+  145 function declarations and 101 security definers with pinned search paths.
+- Authenticated LFES: **13/13 PASS**, completed `2026-09-24T21:16:11Z` against
+  localhost and isolated QA. Includes five roles, Chromium/WebKit archive retention,
+  relocation, traveling equipment, production notifications and account switching.
+  Evidence: `LFES/private/archive-final-auth-evidence/lfes-authenticated-summary.json`.
+- Focused archive UI: **8/8 Chromium and 8/8 WebKit PASS**. One earlier Windows
+  WebKit invocation passed its cases but timed out during runner teardown; the
+  clean rerun completed in 9.9 seconds. This is not physical-device certification.
+- Signed-in startup: 30-35 requests against the existing 35-request ceiling;
+  core workspace loaders ran once. No archive feature bundle loaded on startup.
+- Cleanup postflight: zero run-owned equipment, work, PM, financial snapshots or
+  parts remain. Uploaded proof files were removed through Storage API and checked
+  using uncached reads. A cached-photo cleanup assertion and the old tests' direct
+  DELETE cleanup were corrected without weakening application permissions.
+- QA advisors report no missing-search-path/RLS-disabled findings. The expected
+  [authenticated security-definer warning](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+  remains for guarded RPCs, including the QA cleanup helper. Pre-existing anonymous
+  RPC notices and
+  [disabled leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+  remain outside this feature; this is not a zero-warning security claim.
+
+The independent review covered permissions, retained references, lifecycle-event
+forgery, stale revisions, lock order and asynchronous company/navigation changes.
+These are risk-scoped checks, not a claim that automated tests replace LFES Gold.
+Production deployment, production postflight and physical iPhone verification are
+not included in these results.

@@ -48,6 +48,10 @@ Repo source:
 - QA alone also received `qa_equipment_fixture_cleanup`, sourced from
   `tests/fixtures/qa-equipment-cleanup.sql`, for bounded test-owned relocation and
   traveling fixtures. This is not an application migration or a production grant.
+- QA follow-up `qa_archive_fixture_cleanup` extends that helper to archive test
+  fixtures. Final Full Strict LFES and expanded authenticated proof both passed
+  13/13 stages on 2026-09-24; fixture cleanup postflight is recorded in
+  `EQUIPMENT_ARCHIVE.md`. Production remains pending.
 
 ### Equipment Asset Tag, 2026-09-22
 
