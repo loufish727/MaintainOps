@@ -33,6 +33,7 @@ assert.match(enabledHtml, /Engel/);
 assert.match(enabledHtml, /RF-42/);
 assert.match(enabledHtml, /class="safety-check-note">safety devices identified<\/span>/);
 assert.doesNotMatch(enabledHtml, /chip overdue">safety check/);
+assert.doesNotMatch(enabledHtml, /asset-facility/);
 
 const disabledHtml = renderAssetCard({
   id: "asset-2",

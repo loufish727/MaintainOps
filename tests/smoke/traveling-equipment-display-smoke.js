@@ -30,4 +30,5 @@ const card=window.MaintainOpsAssetCardDisplay.createAssetCardDisplayHelpers({esc
   assetTypeLabel:window.MaintainOpsEquipmentLabels.assetTypeLabel,getWorkOrders:()=>[],getActiveAssetId:()=>'',
   getLocations:()=>[{id:'south',name:'South <Plant>'}],...hierarchy}).renderAssetCard(assets[3]);
 assert.match(card,/Current facility: South &lt;Plant>/); assert.match(card,/Traveling Primary/);
+assert.match(card,/<strong class="asset-facility">Current facility:/);
 console.log('Traveling equipment display smoke passed');
