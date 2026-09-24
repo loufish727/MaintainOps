@@ -148,7 +148,8 @@
         if (travelingEdit) delete payload.location_id;
         let query = deps.supabaseClient().from("assets").update(payload)
           .eq("id", deps.getActiveAssetId()).eq("company_id", deps.getActiveCompanyId());
-        if (travelingEdit) query = query.eq("location_id", previous.location_id).select("id");
+        if (travelingEdit) query = query.eq("location_id", previous.location_id)
+          .eq("traveling_revision", Number(formElement.dataset?.travelRevision ?? previous.traveling_revision ?? 0)).select("id");
         const { data, error } = await deps.withOperationTimeout(
           query,
           "Equipment save timed out. Check your connection and try again.",
@@ -168,7 +169,7 @@
           throw new Error(deps.equipmentSchemaMessage(error));
         }
         if (error) throw error;
-        if (travelingEdit && !data?.length) throw new Error("This equipment moved or is no longer editable. Reopen its details before saving.");
+        if (travelingEdit && !data?.length) throw new Error("This equipment moved, changed condition, or is no longer editable. Reopen its details before saving.");
         const changed = changedFieldLabels(previous, { ...previous, ...payload });
         if (changed.length && typeof deps.recordAssetEvent === "function") {
           await deps.recordAssetEvent(deps.getActiveAssetId(), "updated", `Updated ${changed.join(", ")}.`);
@@ -204,9 +205,10 @@
       if (errorElement) errorElement.textContent = "";
       if (button) button.disabled = true;
       try {
-        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("move_traveling_equipment", {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("update_traveling_equipment_location", {
           p_company_id: companyId, p_asset_id: assetId, p_location_id: destination,
           p_expected_location_id: element.dataset.fromLocation || null,
+          p_expected_revision: Number(element.dataset.travelRevision || 0),
         }), "Location change timed out. Reopen the equipment to check its current facility before retrying.", 15000);
         if (error) throw error;
         if (current()) {
@@ -221,6 +223,14 @@
     }
 
     async function updateAssetStatus(assetId, status) {
+      const asset = assetById(assetId);
+      if (asset?.asset_type === "traveling_machine") {
+        const { error } = await deps.withOperationTimeout(deps.supabaseClient().rpc("update_traveling_equipment_condition", {
+          p_company_id: deps.getActiveCompanyId(), p_asset_id: assetId, p_status: status,
+          p_expected_status: asset.status, p_expected_location_id: asset.location_id, p_expected_revision: asset.traveling_revision || 0,
+        }), "Equipment condition save timed out. Reopen its details before retrying.", 12000);
+        return error || null;
+      }
       const { error } = await deps.withOperationTimeout(
         deps.supabaseClient()
           .from("assets")

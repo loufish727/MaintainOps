@@ -26,7 +26,7 @@ async function main() {
   confirm=true; pending=new Promise(resolve=>{pendingResolve=resolve;});
   const operation=workflow.moveTravelingAsset(event);
   await workflow.moveTravelingAsset(event); assert.equal(calls.length,1); assert.equal(button.disabled,true);
-  assert.deepEqual(calls[0],{name:'move_traveling_equipment',args:{p_company_id:'company',p_asset_id:'asset',p_location_id:'south',p_expected_location_id:'north'}});
+  assert.deepEqual(calls[0],{name:'update_traveling_equipment_location',args:{p_company_id:'company',p_asset_id:'asset',p_location_id:'south',p_expected_location_id:'north',p_expected_revision:0}});
   company='elsewhere'; pendingResolve({error:null}); await operation;
   assert.deepEqual(notice,[]); assert.equal(button.disabled,false);
   company='company'; pending=null; response={error:{message:'This machine has already moved.'}};
@@ -35,7 +35,12 @@ async function main() {
   response={data:[{id:'asset'}],error:null}; await workflow.updateAsset(event);
   const update=calls.find(call=>call.table==='assets'); assert.ok(update); assert.equal(Object.hasOwn(update.payload,'location_id'),false);
   assert.ok(calls.some(call=>call.column==='location_id' && call.value==='north'));
-  response={data:[],error:null}; await workflow.updateAsset(event); assert.match(errors.textContent,/moved or is no longer editable/);
+  assert.ok(calls.some(call=>call.column==='traveling_revision' && call.value===0));
+  response={data:[],error:null}; await workflow.updateAsset(event); assert.match(errors.textContent,/moved, changed condition, or is no longer editable/);
+  asset.status='running'; asset.traveling_revision=5;
+  response={error:{message:'changed since you opened'}};
+  assert.equal((await workflow.updateAssetStatus('asset','offline')).message,'changed since you opened');
+  assert.deepEqual(calls.at(-1),{name:'update_traveling_equipment_condition',args:{p_company_id:'company',p_asset_id:'asset',p_status:'offline',p_expected_status:'running',p_expected_location_id:'north',p_expected_revision:5}});
   console.log('Traveling workflow passed: confirmation, duplicate submit, scope race, failure and stale edit');
 }
 let pendingResolve;

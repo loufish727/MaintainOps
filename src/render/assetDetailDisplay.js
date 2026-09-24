@@ -320,7 +320,7 @@
           </section>
 
           ${traveling && canEditEquipment ? `<form class="form-grid relationship-detail asset asset-move" id="move-traveling-asset-form"
-            data-asset-id="${escapeHtml(asset.id)}" data-company-id="${escapeHtml(asset.company_id)}" data-from-location="${escapeHtml(asset.location_id || "")}">
+            data-asset-id="${escapeHtml(asset.id)}" data-company-id="${escapeHtml(asset.company_id)}" data-from-location="${escapeHtml(asset.location_id || "")}" data-travel-revision="${Number(asset.traveling_revision || 0)}">
             <h3>Change current facility</h3>
             <p>Currently at ${escapeHtml(locationName)}. All work history, part links, files and financials stay with this machine. Existing orders keep their original facility and assigned person. Warehouse stock stays at its current facility.</p>
             <label>New facility<select name="destination_id" required>
@@ -330,7 +330,7 @@
             <button class="secondary-button" type="submit">Change location</button>
             <p class="error-text" role="alert" data-transfer-error></p>
           </form>` : ""}
-          ${canEditEquipment ? `<form class="form-grid" id="edit-asset-form">
+          ${canEditEquipment ? `<form class="form-grid" id="edit-asset-form" data-travel-revision="${Number(asset.traveling_revision || 0)}">
             <label>Equipment name<input name="name" required value="${escapeHtml(asset.name)}"></label>
             <label>Serial Number<input name="asset_code" value="${escapeHtml(asset.asset_code || "")}"></label>
             <label>Asset Tag<input name="asset_tag" value="${escapeHtml(asset.asset_tag || "")}"></label>

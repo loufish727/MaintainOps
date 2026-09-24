@@ -113,6 +113,67 @@ async function main() {
     assert.equal(privileges.length,3);
     for (const p of privileges) { assert.equal(p.prosecdef,false); assert.equal(p.anon,false); assert.deepEqual(p.proconfig,['search_path=""']); }
     check.push('invoker-only functions, pinned search paths and no anonymous execute');
+    const summary = async (tenant=company,page=1) => (await one('select public.traveling_units_summary($1,$2) as result',[tenant,page])).result;
+    let board = await summary();
+    assert.equal(board.total,1); assert.equal(board.page,1);
+    assert.equal(board.units[0].asset.id,asset); assert.equal(board.units[0].current_facility,'Spokane');
+    assert.equal(board.units[0].open_work_count,1); assert.equal(board.units[0].moved_by,'admin');
+    assert.equal(board.units[0].previous_facility,'Salem');
+    let live = board.units[0].asset;
+    const condition = (status,expected=live) => q('select public.update_traveling_equipment_condition($1,$2,$3,$4,$5,$6)',[company,asset,status,expected.status,expected.location_id,expected.traveling_revision]);
+    const guardedMove = (to,expected=live) => q('select public.update_traveling_equipment_location($1,$2,$3,$4,$5)',[company,asset,to,expected.location_id,expected.traveling_revision]);
+    await assert.rejects(q("insert into public.asset_events(company_id,asset_id,actor_id,event_type,summary,created_at) values ($1,$2,$3,'location_changed','forged','2099-01-01')",[company,asset,users.admin]),/recorded by equipment updates only/);
+    await assert.rejects(q("insert into public.asset_events(company_id,asset_id,actor_id,event_type,summary,location_change) values ($1,$2,$3,'updated','forged','{}')",[company,asset,users.admin]),/recorded by equipment updates only/);
+    await q('update public.assets set traveling_revision=999 where id=$1',[asset]);
+    assert.equal((await one('select traveling_revision from public.assets where id=$1',[asset])).traveling_revision,live.traveling_revision);
+    await condition('offline');
+    await condition('offline');
+    assert.equal(Number((await one("select count(*) n from public.asset_events where asset_id=$1 and event_type='status_updated'",[asset])).n),1);
+    await assert.rejects(condition('watch'),/changed since/);
+    await assert.rejects(guardedMove(locations[0]),/changed since/);
+    // A stale full Equipment edit cannot overwrite a condition changed on the board.
+    assert.equal((await q("update public.assets set status='running' where id=$1 and traveling_revision=$2 returning id",[asset,live.traveling_revision])).rows.length,0);
+    live=(await summary()).units[0].asset;
+    await guardedMove(locations[0]);
+    let latest=(await summary()).units[0];
+    assert.equal(latest.asset.status,'offline'); assert.equal(latest.previous_facility,'Spokane');
+    await guardedMove(locations[2],latest.asset);
+    await assert.rejects(guardedMove(locations[1]),/changed since/);
+    live=(await summary()).units[0].asset;
+    await db.exec('reset role; create policy travel_test_deny_condition on public.asset_events as restrictive for insert to authenticated with check (false)');
+    await as(users.admin); await assert.rejects(condition('degraded'),/row-level security/);
+    assert.equal((await summary()).units[0].asset.status,'offline');
+    await db.exec('reset role; drop policy travel_test_deny_condition on public.asset_events');
+    for (const role of ['admin','manager','technician','production']) {
+      await as(users[role]); live=(await summary()).units[0].asset;
+      await condition(live.status==='watch'?'running':'watch');
+    }
+    for (const role of ['accounting','outsider']) {
+      await as(users[role]); await assert.rejects(condition('degraded'),/permission required/);
+      await assert.rejects(guardedMove(locations[0]),/permission required/);
+    }
+    await as(users.outsider); await assert.rejects(summary(),/membership required/);
+    await as(users.accounting); assert.equal((await summary()).total,1);
+    await as(null); await assert.rejects(summary(),/membership required/);
+    await as(null,'anon'); await assert.rejects(summary(),/permission denied/);
+    await as(users.admin);
+    // Discovery is paged in SQL, not filtered from a capped startup asset response.
+    await q("insert into public.assets(company_id,location_id,name,asset_type) select $1,$2,'Unit '||s,'traveling_machine' from generate_series(1,25) s",[company,locations[1]]);
+    board=await summary(); assert.equal(board.total,26); assert.equal(board.units.length,12);
+    assert.equal((await summary(company,2)).units.length,12);
+    assert.equal((await summary(company,3)).units.length,2);
+    assert.equal((await summary(company,999)).page,3);
+    await assert.rejects(summary(company,0),/valid page/);
+    await q("insert into public.work_orders(company_id,location_id,asset_id,title,created_by) select $1,$2,$3,'Count '||s,$4 from generate_series(1,1005) s",[company,locations[0],asset,users.admin]);
+    board=await summary(); assert.equal(board.units.find(row=>row.asset.id===asset).open_work_count,1006);
+    await q("update public.work_orders set status='completed',completed_at=now(),safety_devices_checked=true where id=$1",[work]);
+    assert.equal((await summary()).units.find(row=>row.asset.id===asset).open_work_count,1005);
+    await q("update public.work_orders set status='open',completed_at=null,safety_devices_checked=false where id=$1",[work]);
+    assert.equal((await summary()).units.find(row=>row.asset.id===asset).open_work_count,1006);
+    const boardPrivileges=(await q("select p.prosecdef,p.proconfig,has_function_privilege('anon',p.oid,'EXECUTE') as anon from pg_proc p where p.proname in ('traveling_units_summary','update_traveling_equipment_location','update_traveling_equipment_condition','stamp_traveling_revision','guard_traveling_location_event')")).rows;
+    assert.equal(boardPrivileges.length,5);
+    for(const p of boardPrivileges) { assert.equal(p.prosecdef,false); assert.equal(p.anon,false); assert.deepEqual(p.proconfig,['search_path=""']); }
+    check.push('board paging, counts beyond API cap, all roles, immutable move history, revision/ABA/stale edit guards, independent and atomic condition changes');
     console.log(`Traveling equipment SQL passed (${check.length} proof groups):\n${check.join('\n')}`);
   } finally { await db.close(); }
 }

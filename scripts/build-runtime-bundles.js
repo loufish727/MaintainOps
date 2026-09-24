@@ -45,6 +45,10 @@ const bundles = [
     baseName: "attachmentFeature",
   },
   {
+    entry: "src/bundles/travelingFeature.entry.js",
+    baseName: "travelingFeature",
+  },
+  {
     entry: "app.js",
     baseName: "appShell",
   },
@@ -121,6 +125,14 @@ async function main() {
   fs.writeFileSync(path.join(bundlesDir, messageStylesName), `${messageStyles.code.trimEnd()}\n/*# sourceMappingURL=${messageStylesName}.map */\n`);
   fs.writeFileSync(path.join(bundlesDir, `${messageStylesName}.map`), messageStyles.map);
   manifest.messageStyles = messageStylesName;
+  const travelingStyles = await esbuild.transform(fs.readFileSync(path.join(root, "src/render/travelingStyles.css"), "utf8"), {
+    loader: "css", minify: true, sourcefile: "src/render/travelingStyles.css", sourcemap: "external", sourcesContent: false,
+  });
+  const travelingStylesName = `travelingStyles.${bundleHash(travelingStyles.code)}.css`;
+  removeOldBundleFiles("travelingStyles");
+  fs.writeFileSync(path.join(bundlesDir, travelingStylesName), `${travelingStyles.code.trimEnd()}\n/*# sourceMappingURL=${travelingStylesName}.map */\n`);
+  fs.writeFileSync(path.join(bundlesDir, `${travelingStylesName}.map`), travelingStyles.map);
+  manifest.travelingStyles = travelingStylesName;
   for (const bundle of bundles) {
     const featureDefines = bundle.baseName === "appShell"
       ? {
@@ -131,6 +143,8 @@ async function main() {
           __MAINTAINOPS_MESSAGE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.messageFeature}`),
           __MAINTAINOPS_MAINTENANCE_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.maintenanceFeature}`),
           __MAINTAINOPS_ATTACHMENT_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.attachmentFeature}`),
+          __MAINTAINOPS_TRAVELING_FEATURE_BUNDLE__: JSON.stringify(`src/bundles/${manifest.travelingFeature}`),
+          __MAINTAINOPS_TRAVELING_STYLES__: JSON.stringify(`src/bundles/${manifest.travelingStyles}`),
           __MAINTAINOPS_MESSAGE_STYLES__: JSON.stringify(`src/bundles/${manifest.messageStyles}`),
         }
       : undefined;
