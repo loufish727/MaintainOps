@@ -235,6 +235,7 @@ async function main() {
     "tests/smoke/equipment-history-scroll-browser.spec.js",
     "tests/smoke/equipment-create-draft-browser.spec.js",
     "tests/smoke/equipment-filter-touch-browser.spec.js",
+    "tests/smoke/traveling-facility-text-browser.spec.js",
     "tests/smoke/maintenance-create-draft-browser.spec.js",
     "tests/smoke/maintenance-relations-browser.spec.js",
     "tests/smoke/checklist-response-draft-browser.spec.js",
