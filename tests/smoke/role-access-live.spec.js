@@ -231,6 +231,24 @@ test.describe("MaintainOps authenticated role proof", () => {
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ In Progress/);
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ Blocked/);
       await expect(memberCards.first().locator(".member-workload")).toContainText(/\d+ Completed/);
+      const roster = page.locator('[data-team-section="members"]');
+      const rosterCount = await roster.locator(".member-card").count();
+      expect(rosterCount).toBeGreaterThan(0);
+      await expect(roster.locator(".member-default-location")).toHaveCount(rosterCount);
+      await expect(roster.locator("[data-view-member-work]")).toHaveCount(rosterCount);
+      if (["admin", "manager"].includes(role.name)) {
+        await expect(roster.locator(".member-role-description")).toHaveCount(rosterCount);
+        if (role.name === "manager") {
+          await expect(roster.locator(".member-role-badge")).toHaveCount(rosterCount);
+          await expect(roster.locator("[data-member-role]")).toHaveCount(0);
+        } else {
+          await expect(roster.locator("[data-member-role]").first()).toBeVisible();
+        }
+      } else {
+        await expect(roster.locator(".member-role-description, .member-role-badge, [data-member-role]")).toHaveCount(0);
+        await expect(roster.locator(".member-card > div:first-child > p")).toHaveCount(rosterCount * 2);
+        await expect(roster.locator(".member-card-actions .chip")).toHaveCount(0);
+      }
       const teamLoads = (await workspaceRenderEvidence(page)).featureBundles;
       expect(teamLoads.some((name) => name.startsWith("teamFeature."))).toBe(true);
 

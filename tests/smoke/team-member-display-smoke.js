@@ -154,6 +154,51 @@ assert.match(managerInviteForm, /name="default_location_id" type="hidden" value=
 assert.doesNotMatch(managerInviteForm, /<select name="default_location_id"/);
 const managerMember = managerHelpers.renderMember({ user_id: "user-2", role: "technician" });
 assert.doesNotMatch(managerMember, /data-member-role="user-2"/);
+assert.match(managerMember, /member-role-description">technician role/);
+assert.match(managerMember, /member-role-badge">TECHNICIAN/);
+for (const viewerRole of baseDeps.COMPANY_ROLES) {
+  const canViewRoles = ["admin", "manager"].includes(viewerRole);
+  const roleHelpers = createTeamMemberDisplayHelpers({
+    ...baseDeps,
+    canManageTeam: () => canViewRoles,
+    canAdministerTeamRoles: () => viewerRole === "admin",
+  });
+  for (const memberRole of baseDeps.COMPANY_ROLES) {
+    for (const userId of ["user-1", "user-2"]) {
+      const html = roleHelpers.renderMember({ user_id: userId, role: memberRole, default_location_id: "loc-1" });
+      assert.match(html, /Default location: <strong>QA Facility<\/strong>/);
+      assert.match(html, /5 Completed/);
+      assert.match(html, /View Work/);
+      assert.equal(html.includes("member-role-description"), canViewRoles, `${viewerRole} viewing ${memberRole}`);
+      assert.equal(html.includes("data-member-role="), viewerRole === "admin" && userId !== "user-1");
+      assert.equal(html.includes("member-role-badge"), canViewRoles && (viewerRole !== "admin" || userId === "user-1"));
+      if (!canViewRoles) {
+        assert.doesNotMatch(html, /technician|production|accounting|manager|admin/i);
+      }
+    }
+  }
+}
+
+let viewerCanManageTeam = true;
+let search = "manager";
+const changingViewer = createTeamMemberDisplayHelpers({
+  ...baseDeps,
+  canManageTeam: () => viewerCanManageTeam,
+  canAdministerTeamRoles: () => false,
+  getCompanyMembers: () => [{ user_id: "user-2", role: "manager", default_location_id: "loc-1" }],
+  matchesSearch: values => values.some(value => String(value || "").toLowerCase().includes(search)),
+});
+assert.equal(changingViewer.filteredMembers().length, 1, "Managers can search roles");
+assert.match(changingViewer.renderMember({ user_id: "user-2", role: "manager" }), /MANAGER/);
+viewerCanManageTeam = false;
+assert.equal(changingViewer.filteredMembers().length, 0, "Role search must not reveal hidden roles after switching viewer");
+assert.doesNotMatch(changingViewer.renderMember({ user_id: "user-2", role: "manager" }), /manager/i);
+for (const visibleSearch of ["taylor", "qa facility"]) {
+  search = visibleSearch;
+  assert.equal(changingViewer.filteredMembers().length, 1, "Names and locations remain searchable");
+}
+const missingVisibility = createTeamMemberDisplayHelpers({ ...baseDeps, canManageTeam: undefined });
+assert.doesNotMatch(missingVisibility.renderMember({ user_id: "user-2", role: "manager" }), /manager|data-member-role/i);
 const managerRequestRecipients = managerHelpers.renderRequestNotificationRecipients("loc-1");
 assert.match(managerRequestRecipients, /Only admins can change request email routing/);
 assert.doesNotMatch(managerRequestRecipients, /id="request-notification-recipient-form"/);

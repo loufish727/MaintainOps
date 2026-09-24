@@ -67,6 +67,7 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 - Team invites and single-use join links.
 - Team-managed request email recipient routing.
 - Team role updates.
+- Team member role labels, descriptions, and role-based search are visible only to admins and managers. Technicians, production, and accounting users still see names, default locations, workloads, and View Work. Only admins retain role-edit controls. This is a Team presentation rule, not a change to database permissions or API role-data visibility. Coverage: `team-member-display-smoke.js`, `team-sections-browser.spec.js`, and signed-in `role-access-live.spec.js`.
 - Team member cards show the saved default location by name and Team search includes it; missing defaults show "Not set" and unresolved locations show "Location unavailable". This is read-only membership information, not the viewer's current workspace. Desktop/mobile Chromium and WebKit coverage is in `team-sections-browser.spec.js` and `team-member-display-smoke.js`.
 - Team navigation groups members, profile, security, roles, notifications, invitations, and advanced tools into expandable sections; Team Members opens by default and open sections survive workspace rerenders.
 - Company logo upload.
