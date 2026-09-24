@@ -200,7 +200,7 @@
       const current = () => companyId === deps.getActiveCompanyId() && userId === currentUserId() && assetId === deps.getActiveAssetId();
       if (!current() || !destination) return;
       const destinationName = element.querySelector("[name='destination_id'] option:checked")?.textContent || "the selected facility";
-      if (!(deps.confirmRef || confirm)(`Move ${assetById(assetId)?.name || "this machine"} to ${destinationName}? Existing work and stock will not move. Unsaved equipment edits will not be saved.`)) return;
+      if (!(deps.confirmRef || confirm)(`Move ${assetById(assetId)?.name || "this machine"} to ${destinationName}?\n\nAll work history stays linked to this machine. Existing work orders keep their original facility and assigned person. Warehouse stock stays at its current facility.\n\nSave any equipment edits before moving; unsaved edits will be lost.`)) return;
       if (errorElement) errorElement.textContent = "";
       if (button) button.disabled = true;
       try {

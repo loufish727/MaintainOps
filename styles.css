@@ -3367,13 +3367,10 @@ textarea {
   align-content: start;
   text-align: left;
   gap: 4px;
-  min-height: 104px;
   border: 1px solid var(--line);
-  border-radius: 10px;
   background:
     linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.022)),
     var(--surface-2);
-  padding: 10px;
 }
 
 .command-card:hover,
@@ -3392,13 +3389,11 @@ textarea {
 
 .command-card strong {
   color: var(--ink);
-  font-size: 1rem;
   font-weight: 560;
 }
 
 .command-card small {
   color: var(--muted);
-  line-height: 1.35;
 }
 
 .command-card.status-open,
@@ -3715,6 +3710,22 @@ textarea {
 
 .asset-master-summary {
   margin-top: 14px;
+}
+
+.asset-master-summary > button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Keep the whole filter card as one touch target, including its text. */
+.asset-master-summary > button > * {
+  pointer-events: none;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .asset-master-summary > button {
+    transform: none;
+  }
 }
 
 .asset-area-filter {
@@ -9200,10 +9211,6 @@ textarea:focus {
     justify-self: stretch;
   }
 
-  .command-card {
-    min-height: 0;
-  }
-
   .layout-grid,
   .layout-grid.single-column,
   .global-search-grid,
@@ -11008,21 +11015,20 @@ body.spatial-performance-active {
 .attachment-dialog button, .attachment-document-row button { min-height: 44px; }
 .attachment-review-notes { color: #ffdaa2; overflow: auto; max-height: 25dvh; flex-shrink: 0; }
 .attachment-review-actions { flex-shrink: 0; }
-#move-traveling-asset-form {
+.asset-move {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-#move-traveling-asset-form > h3,
-#move-traveling-asset-form > p {
+.asset-move > :is(h3, p) {
   grid-column: 1 / -1;
   margin: 0;
 }
 
-#move-traveling-asset-form > button {
+.asset-move > button {
   align-self: end;
   min-height: 44px;
 }
 
 @media (max-width: 640px) {
-  #move-traveling-asset-form { grid-template-columns: minmax(0, 1fr); }
+  .asset-move { grid-template-columns: minmax(0, 1fr); }
 }

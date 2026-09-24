@@ -40,7 +40,22 @@ for (const width of [1440,390]) test(`traveling equipment moves safely and remai
     },{session,company,location:from.id});
     const page=await context.newPage(); page.setDefaultTimeout(15000); page.on('pageerror',error=>errors.push(error.message));
     await page.goto(baseURL); await expect(page.locator('[data-asset-type-filter=traveling_machine]')).toBeVisible({timeout:45000});
-    await page.locator('[data-asset-type-filter=traveling_machine]').click();
+    const filter = page.locator('[data-asset-type-filter=traveling_machine]');
+    if (width < 500) {
+      let selected = false;
+      for (const target of ['span', 'strong', 'small', 'top-left', 'bottom-right', 'center', 'span']) {
+        await filter.scrollIntoViewIfNeeded();
+        const box = await filter.boundingBox();
+        const child = ['span','strong','small'].includes(target) ? await filter.locator(target).boundingBox() : null;
+        const point = child ? {x:child.x+child.width/2,y:child.y+child.height/2}
+          : target === 'top-left' ? {x:box.x+8,y:box.y+8}
+          : target === 'bottom-right' ? {x:box.x+box.width-8,y:box.y+box.height-8}
+          : {x:box.x+box.width/2,y:box.y+box.height/2};
+        await page.touchscreen.tap(point.x,point.y);
+        selected = !selected;
+        await expect(filter, `Touch ${target}`).toHaveAttribute('aria-pressed',String(selected));
+      }
+    } else await filter.click();
     return page;
   }
   try {
@@ -62,6 +77,8 @@ for (const width of [1440,390]) test(`traveling equipment moves safely and remai
     await page.locator(`.asset-card[data-asset-id="${assetIds[0]}"]`).click();
     const form=page.locator('#move-traveling-asset-form');
     await expect(form).toBeVisible();
+    await expect(form).toContainText('All work history, part links, files and financials stay with this machine.');
+    await expect(form).toContainText('Existing orders keep their original facility and assigned person.');
     await form.screenshot({path:testInfo.outputPath(`travel-form-${width}.png`)});
     await expect(page.locator('#edit-asset-form [name=location_id]')).toBeDisabled();
     await expect(page.locator('#edit-asset-form [name=parent_asset_id]')).toBeDisabled();
