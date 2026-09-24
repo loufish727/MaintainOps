@@ -1,10 +1,11 @@
 (function () {
   function listAssets(supabaseClient, companyId) {
-    return supabaseClient
+    return window.MaintainOpsMaintenanceWorkspaceRows.loadCompleteWorkspaceRows("Equipment", () => supabaseClient
       .from("assets")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("company_id", companyId)
-      .order("name");
+      .order("name")
+      .order("id"));
   }
 
   function listAssetFinancials(supabaseClient, companyId) {

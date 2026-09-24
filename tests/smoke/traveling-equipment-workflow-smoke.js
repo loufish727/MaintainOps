@@ -3,18 +3,18 @@ global.window={};
 const {createAssetWorkflow}=require('../../src/workflows/assetWorkflow.js');
 async function main() {
   let company='company',activeAsset='asset',confirm=true,response={error:null},pending;
-  const calls=[],notice=[],confirmations=[],errors={textContent:''},button={disabled:false};
+  const calls=[],notice=[],confirmations=[],audit=[],errors={textContent:''},button={disabled:false};
   const asset={id:'asset',company_id:company,location_id:'north',name:'Curver',asset_type:'traveling_machine'};
   const values={destination_id:'south',name:'Curver',asset_type:'traveling_machine',status:'running',location_id:'north'};
   const element={dataset:{companyId:company,assetId:'asset',fromLocation:'north'},values,
     querySelector:s=>s==="button[type='submit']" ? button : s==='[data-transfer-error]' ? errors : {textContent:'South'}};
   const client={rpc:(name,args)=>{calls.push({name,args});return pending || Promise.resolve(response);},
-    from:table=>({update(payload){calls.push({table,payload});return this;},eq(column,value){calls.push({column,value});return this;},select(){return this;},then(resolve){resolve(response);}})};
+    from:table=>({update(payload){calls.push({table,payload});return this;},eq(column,value){calls.push({column,value});return this;},select(){return this;},then(resolve){return Promise.resolve(pending||response).then(resolve);}})};
   const workflow=createAssetWorkflow({documentRef:{querySelector:()=>errors},CSSRef:{},alertRef:()=>{},
     FormDataCtor:class{constructor(form){this.values=form.values;}get(name){return this.values[name];}},
     getAssets:()=>[asset],getActiveCompanyId:()=>company,getActiveAssetId:()=>activeAsset,getSession:()=>({user:{id:'tech'}}),
     supabaseClient:()=>client,withOperationTimeout:p=>p,confirmRef:text=>{confirmations.push(text);return confirm;},showNotice:text=>notice.push(text),
-    render:async()=>notice.push('render'),requiredText:value=>value,activeLocationDatabaseId:()=> 'north',
+    render:async()=>notice.push('render'),recordAssetEvent:async(...args)=>audit.push(args),requiredText:value=>value,activeLocationDatabaseId:()=> 'north',
     isMissingColumnError:()=>false,isAssetHierarchySchemaError:()=>false});
   const event={preventDefault(){},currentTarget:element};
   confirm=false; await workflow.moveTravelingAsset(event); assert.equal(calls.length,0);
@@ -41,6 +41,18 @@ async function main() {
   response={error:{message:'changed since you opened'}};
   assert.equal((await workflow.updateAssetStatus('asset','offline')).message,'changed since you opened');
   assert.deepEqual(calls.at(-1),{name:'update_traveling_equipment_condition',args:{p_company_id:'company',p_asset_id:'asset',p_status:'offline',p_expected_status:'running',p_expected_location_id:'north',p_expected_revision:5}});
+  const count=calls.length;
+  assert.match((await workflow.updateAssetStatus('missing','offline')).message,/not loaded/);
+  assert.equal(calls.length,count,'missing cache entry must never permit an unguarded PATCH');
+  asset.asset_type='machine'; response={data:[],error:null};
+  assert.match((await workflow.updateAssetStatus('asset','offline')).message,/no longer editable/);
+  assert.ok(calls.some(c=>c.column==='asset_type'&&c.value==='machine'));
+  notice.length=0; audit.length=0;
+  pending=new Promise(resolve=>{pendingResolve=resolve;}); values.name='Changed';
+  const saving=workflow.updateAsset(event); activeAsset='other'; company='another-company';
+  pendingResolve({data:[{id:'asset'}],error:null}); await saving;
+  assert.equal(audit[0][0],'asset'); assert.deepEqual(audit[0][3],{companyId:'company',actorId:'tech'});
+  assert.deepEqual(notice,[],'late save cannot rerender another asset or company');
   console.log('Traveling workflow passed: confirmation, duplicate submit, scope race, failure and stale edit');
 }
 let pendingResolve;

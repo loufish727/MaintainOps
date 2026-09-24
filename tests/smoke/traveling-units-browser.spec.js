@@ -51,7 +51,9 @@ for(const width of [320,390,430,1440]) test(`traveling board is legible and tap-
     expect(errors).toEqual([]);
   }finally{await context.close();}
 });
-test('late save cannot update another company; accounting has no edit controls',async({page})=>{
+test('late save cannot update another company; accounting has no edit controls',async({browser})=>{
+  const context=await browser.newContext(); const page=await context.newPage();
+  try {
   await setup(page); await page.evaluate(()=>{delay=true;});
   await page.locator('[data-travel-location]').click(); await page.locator('.travel-dialog select').selectOption('river');
   await page.getByRole('button',{name:'Save Location'}).click();
@@ -63,4 +65,5 @@ test('late save cannot update another company; accounting has no edit controls',
   await page.evaluate(()=>{visible=true;render();});
   await expect(page.locator('.travel-unit')).toHaveCount(1);
   await expect(page.locator('[data-travel-condition], [data-travel-location]')).toHaveCount(0);
+  } finally { await context.close(); }
 });

@@ -6873,13 +6873,13 @@ async function recordWorkOrderEvent(workOrderId, eventType, summary) {
   }
 }
 
-async function recordAssetEvent(assetId, eventType, summary) {
+async function recordAssetEvent(assetId, eventType, summary, scope = { companyId: activeCompanyId, actorId: session?.user.id }) {
   try {
     await withOperationTimeout(
       supabaseClient.from("asset_events").insert({
-        company_id: activeCompanyId,
+        company_id: scope.companyId,
         asset_id: assetId,
-        actor_id: session.user.id,
+        actor_id: scope.actorId,
         event_type: eventType,
         summary,
       }),
