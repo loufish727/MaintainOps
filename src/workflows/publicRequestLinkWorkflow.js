@@ -71,7 +71,14 @@
         if (errorElement) errorElement.textContent = "Only admins can replace posted QR request links.";
         return;
       }
-      const confirmed = windowRef.confirm("Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
+      const confirmed = windowRef.confirm([
+        "WARNING: THIS WILL BREAK THE CURRENT QR CODE FOR THIS LOCATION.",
+        "Every printed sign, saved QR image, and shared link using the current code will stop working immediately. People scanning those copies will no longer be able to submit maintenance requests.",
+        "You must print the NEW QR code, replace EVERY posted copy, and update shared links.",
+        "Existing requests are not deleted. Other locations' QR codes are not affected.",
+        "Only need another copy? Select Cancel, then Print QR Code.",
+        "Select OK only if you intend to replace the current code.",
+      ].join("\n\n"));
       if (!confirmed) return;
 
       await updatePublicRequestLink(

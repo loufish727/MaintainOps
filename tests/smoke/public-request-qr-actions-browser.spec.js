@@ -80,3 +80,54 @@ for (const width of [320, 390, 1440]) {
     await expect(page.getByRole("link", { name: "See Request Form", exact: true })).toHaveAttribute("href", "https://example.test/?request=active");
   });
 }
+
+test("replacement warning blocks writes until confirmed through the QR button", async ({ page }) => {
+  await page.setContent('<p id="public-request-link-error"></p><button data-regenerate-public-request-link="link-1">Regenerate/Replace QR Code</button>');
+  for (const file of ["src/workflows/publicRequestLinkWorkflow.js", "src/utils/workspacePublicRequestLinkAdminEvents.js"]) {
+    await page.addScriptTag({ path: path.join(root, file) });
+  }
+  await page.evaluate(() => {
+    window.qrWarningState = { tokens: 0, writes: [], notices: [], filters: [] };
+    const query = {
+      update(patch) { window.qrWarningState.writes.push(patch); return this; },
+      eq(column, value) { window.qrWarningState.filters.push([column, value]); return this; },
+      async select() { return { data: [{ id: "link-1" }], error: null }; },
+    };
+    const workflow = window.MaintainOpsPublicRequestLinkWorkflow.createPublicRequestLinkWorkflow({
+      documentRef: document, windowRef: window,
+      canAdministerPublicRequestLinks: () => true,
+      getActiveCompanyId: () => "company-1",
+      generatePublicRequestToken: () => { window.qrWarningState.tokens += 1; return "replacement-token"; },
+      supabaseClient: () => ({ from: () => query }),
+      withOperationTimeout: (result) => result,
+      showNotice: (message) => window.qrWarningState.notices.push(message),
+      render: async () => {},
+    });
+    window.MaintainOpsWorkspacePublicRequestLinkAdminEvents.bindWorkspacePublicRequestLinkAdminEvents({
+      documentRef: document,
+      regeneratePublicRequestLink: workflow.regeneratePublicRequestLink,
+    });
+  });
+  const button = page.getByRole("button", { name: "Regenerate/Replace QR Code", exact: true });
+  const cancelledDialog = page.waitForEvent("dialog");
+  const cancelledClick = button.click();
+  const warning = await cancelledDialog;
+  expect(warning.type()).toBe("confirm");
+  expect(warning.message()).toContain("WARNING: THIS WILL BREAK THE CURRENT QR CODE FOR THIS LOCATION.");
+  expect(warning.message()).toContain("replace EVERY posted copy");
+  expect(warning.message()).toContain("Select Cancel, then Print QR Code");
+  await warning.dismiss();
+  await cancelledClick;
+  expect(await page.evaluate(() => window.qrWarningState)).toEqual({ tokens: 0, writes: [], notices: [], filters: [] });
+
+  const confirmedDialog = page.waitForEvent("dialog");
+  const confirmedClick = button.click();
+  await (await confirmedDialog).accept();
+  await confirmedClick;
+  await expect.poll(() => page.evaluate(() => window.qrWarningState.notices)).toEqual(["Request QR regenerated."]);
+  const result = await page.evaluate(() => window.qrWarningState);
+  expect(result.tokens).toBe(1);
+  expect(result.writes).toHaveLength(1);
+  expect(result.writes[0]).toMatchObject({ token: "replacement-token", is_active: true });
+  expect(result.filters).toEqual([["id", "link-1"], ["company_id", "company-1"]]);
+});
