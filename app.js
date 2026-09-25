@@ -5936,6 +5936,22 @@ function bindWorkspaceEvents() {
     regeneratePublicRequestLink,
   });
 
+  const qrHistoryRoot = activeSection === "settings" && canManageTeam() ? document.querySelector(".public-request-links") : null;
+  if (qrHistoryRoot) {
+    const scope = `${session?.user?.id}:${activeCompanyId}:${activeSection}`;
+    ensureFeatureBundleLoaded("setup").then(() => {
+      if (!qrHistoryRoot.isConnected || scope !== `${session?.user?.id}:${activeCompanyId}:${activeSection}`) return;
+      window.MaintainOpsQrHistory.bindQrHistory(qrHistoryRoot, {
+        client: () => supabaseClient, withTimeout: withOperationTimeout,
+        getCompanyId: () => activeCompanyId,
+        getScope: () => `${session?.user?.id}:${activeCompanyId}:${activeSection}`,
+        canRead: canManageTeam, showNotice,
+      });
+    }).catch(() => {
+      if (qrHistoryRoot.isConnected) qrHistoryRoot.querySelectorAll("[data-qr-last-replaced]").forEach((node) => { node.textContent = "Replacement history unavailable. Reopen Settings to retry."; });
+    });
+  }
+
   bindWorkspacePublicRequestLinkCopyEvents({
     copyTextToClipboard,
   });

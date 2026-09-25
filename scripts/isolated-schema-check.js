@@ -60,6 +60,9 @@ async function main() {
 
     await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-maintenance-requests.sql'), 'utf8'));
     checks.push({ name: 'request_baseline:maintenance-requests', verdict: 'PASS' });
+    await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-locations.sql'), 'utf8'));
+    await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-public-request-links.sql'), 'utf8'));
+    checks.push({ name: 'request_baseline:public-request-links', verdict: 'PASS' });
     await database.exec(fs.readFileSync(path.join(root, 'supabase/step-next-app-issue-reports.sql'), 'utf8'));
     checks.push({ name: 'issue_baseline:app-issue-reports', verdict: 'PASS' });
 
@@ -730,6 +733,7 @@ async function main() {
     checks.push(...await require('./isolated-equipment-tag-check').verifyEquipmentTags(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require("./isolated-messaging-check").verifyMessaging(database, ids, setAuthenticatedUser, resetRole));
     checks.push(...await require('./isolated-equipment-archive-check').verifyEquipmentArchive(database, ids, setAuthenticatedUser, resetRole));
+    checks.push(...await require('./isolated-qr-history-check').verifyQrHistory(database, ids, setAuthenticatedUser, resetRole));
     await resetRole(database);
     const report = {
       status: "PASS",

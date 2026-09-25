@@ -84,6 +84,7 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 - Company logo upload.
 - Public request QR/link intake per location.
 - QR replacement uses a red in-app warning with caution symbols, the affected facility, and explicit print-replacement consequences. Cancel is focused by default; Cancel, Escape, or backdrop dismissal makes no change. The workflow rechecks account/company/access before writing and ignores duplicate clicks. Desktop/mobile layout and mocked confirmation/cancellation/failure paths are covered in Chromium, Firefox, and WebKit by `public-request-qr-actions-browser.spec.js`; these tests do not replace production QR codes.
+- Each location QR card shows the last recorded replacement's actor and time, plus read-only replacement history (12 per page). Names/facilities are captured by a database trigger, without saving QR tokens; managers/admins can read their company's records and no app role can edit/delete them. Prior replacements are not backfilled. History code loads only for Settings, full history only when opened. The broader audit-log foundation is separate and unchanged.
 - Location-scoped search.
 - Work order cards show due date and created date at a glance.
 - Work order types use one operational taxonomy everywhere: Corrective, Preventive, and Fabrication. Legacy Reactive and Request values map to Corrective; Inspection maps to Preventive; Fabrication is selected manually.

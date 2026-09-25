@@ -7610,6 +7610,10 @@ textarea {
 }
 
 .qr-warning-symbol { font-size: 30px; line-height: 1; }
+.qr-history-summary { display: grid; gap: 10px; overflow-wrap: anywhere; }
+.qr-history-dialog :is(h3, p, strong) { overflow-wrap: anywhere; min-width: 0; }
+.qr-history-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.qr-history-row p { margin: 4px 0; }
 .qr-warning-facility { margin: 0 0 18px; text-align: center; overflow-wrap: anywhere; }
 .qr-replacement-dialog .qr-warning-impact { color: #ff9299; font-size: 19px; font-weight: 750; line-height: 1.35; }
 .qr-warning-details { font-size: 15px; line-height: 1.5; }
