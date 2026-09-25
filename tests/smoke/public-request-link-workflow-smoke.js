@@ -54,6 +54,8 @@ function createQuery(calls) {
     renders: 0,
     confirms: [],
     confirmResult: true,
+    canAdminister: true,
+    tokensGenerated: 0,
   };
 
   const workflow = createPublicRequestLinkWorkflow({
@@ -76,8 +78,8 @@ function createQuery(calls) {
       },
     }),
     withOperationTimeout: (value) => value,
-    generatePublicRequestToken: () => "token-new",
-    canAdministerPublicRequestLinks: () => true,
+    generatePublicRequestToken: () => { state.tokensGenerated += 1; return "token-new"; },
+    canAdministerPublicRequestLinks: () => state.canAdminister,
     getActiveCompanyId: () => "company-1",
     setPublicRequestLinksReady: (value) => { state.publicRequestLinksReady = value; },
     showNotice: (message, tone = "success") => { state.notices.push([message, tone]); },
@@ -98,7 +100,15 @@ function createQuery(calls) {
   assert.ok(calls.some((call) => call[0] === "update" && call[1].is_active === true));
 
   await workflow.regeneratePublicRequestLink("link-1");
-  assert.equal(state.confirms.at(-1), "Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
+  const warning = state.confirms.at(-1);
+  assert.match(warning, /^WARNING: THIS WILL BREAK THE CURRENT QR CODE FOR THIS LOCATION\./);
+  assert.match(warning, /stop working immediately/);
+  assert.match(warning, /replace EVERY posted copy/);
+  assert.match(warning, /Existing requests are not deleted/);
+  assert.match(warning, /Other locations' QR codes are not affected/);
+  assert.match(warning, /Select Cancel, then Print QR Code/);
+  assert.match(warning, /Select OK only if you intend to replace the current code/);
+  assert.equal(warning.split("\n\n").length, 6);
   assert.equal(state.notices.at(-1)[0], "Request QR regenerated.");
   assert.ok(calls.some((call) => call[0] === "update" && call[1].token === "token-new"));
 
@@ -108,6 +118,16 @@ function createQuery(calls) {
   await workflow.regeneratePublicRequestLink("link-1");
   assert.equal(calls.length, callsBeforeCancel, "Cancelling replacement must not write to the database");
   assert.equal(state.notices.length, noticesBeforeCancel);
+  assert.equal(state.tokensGenerated, 1, "Cancelling must not even generate a replacement token");
   assert.equal(state.renders, 4);
+
+  state.canAdminister = false;
+  state.confirmResult = true;
+  const confirmsBeforeDenied = state.confirms.length;
+  await workflow.regeneratePublicRequestLink("link-1");
+  assert.equal(state.confirms.length, confirmsBeforeDenied);
+  assert.equal(calls.length, callsBeforeCancel);
+  assert.equal(state.tokensGenerated, 1);
+  assert.match(errorElement.textContent, /Only admins can replace/);
   console.log("public request link workflow smoke passed");
 })();
