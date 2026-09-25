@@ -72,6 +72,7 @@ test('team roles, profile, password validation, invites, company settings and QR
     await expect(qrCard.getByRole('link', { name: 'See Request Form', exact: true })).toHaveAttribute('href', new RegExp(`request=${qr.token}`));
     await expect(qrCard.locator('[data-copy-public-request-link], [data-disable-public-request-link]')).toHaveCount(0);
     await qrCard.getByRole('button', { name: 'Regenerate/Replace QR Code', exact: true }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Replace QR Code', exact: true }).click();
     await expect.poll(async () => (await qrLinks())[0].token).not.toBe(qr.token);
     const replaced = (await qrLinks())[0];
     expect(replaced.is_active).toBe(true);
