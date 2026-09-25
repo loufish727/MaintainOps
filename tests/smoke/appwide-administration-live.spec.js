@@ -68,10 +68,21 @@ test('team roles, profile, password validation, invites, company settings and QR
     const qrLinks = () => qa.api('admin', 'GET', `public_request_links?company_id=eq.${qa.company}&location_id=eq.${qa.location}&select=*`);
     await expect.poll(async () => (await qrLinks()).length).toBe(1);
     const qr = (await qrLinks())[0];
-    await page.locator(`[data-disable-public-request-link="${qr.id}"]`).click();
-    await expect(page.locator(`[data-enable-public-request-link="${qr.id}"]`)).toBeVisible();
-    await page.locator(`[data-enable-public-request-link="${qr.id}"]`).click();
-    await expect(page.locator(`[data-disable-public-request-link="${qr.id}"]`)).toBeVisible();
+    const qrCard = page.locator('.public-request-link-card').filter({ has: page.locator(`[data-regenerate-public-request-link="${qr.id}"]`) });
+    await expect(qrCard.getByRole('link', { name: 'See Request Form', exact: true })).toHaveAttribute('href', new RegExp(`request=${qr.token}`));
+    await expect(qrCard.locator('[data-copy-public-request-link], [data-disable-public-request-link]')).toHaveCount(0);
+    await qrCard.getByRole('button', { name: 'Regenerate/Replace QR Code', exact: true }).click();
+    await expect.poll(async () => (await qrLinks())[0].token).not.toBe(qr.token);
+    const replaced = (await qrLinks())[0];
+    expect(replaced.is_active).toBe(true);
+
+    // Seed an older disabled link to retain coverage of same-code recovery.
+    await qa.api('admin', 'PATCH', `public_request_links?company_id=eq.${qa.company}&id=eq.${qr.id}`, { is_active: false });
+    const disabledQrPage = await qa.open('admin', 'settings');
+    await disabledQrPage.locator(`[data-enable-public-request-link="${qr.id}"]`).click();
+    await expect.poll(async () => (await qrLinks())[0].is_active).toBe(true);
+    expect((await qrLinks())[0].token).toBe(replaced.token);
+    await expect(disabledQrPage.locator(`[data-regenerate-public-request-link="${qr.id}"]`)).toBeVisible();
     await nav(page, 'setup');
     await expect(page.getByRole('heading', { name: 'Admin Setup', exact: true })).toBeVisible();
     await expect(page.locator('.setup-list')).not.toBeEmpty();

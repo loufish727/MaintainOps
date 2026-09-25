@@ -7572,12 +7572,15 @@ textarea {
 }
 
 .danger-action-button.qr-replace-button {
-  background: var(--red);
+  --qr-replace-bg: #8f242b;
+  --qr-replace-ink: #fff;
+  background: var(--qr-replace-bg);
+  color: var(--qr-replace-ink);
 }
 
 .danger-action-button.qr-replace-button:hover {
-  background: color-mix(in srgb, var(--red) 85%, white);
-  color: var(--on-light-highlight);
+  background: color-mix(in srgb, var(--qr-replace-bg) 85%, white);
+  color: var(--qr-replace-ink);
 }
 
 .qr-preview {

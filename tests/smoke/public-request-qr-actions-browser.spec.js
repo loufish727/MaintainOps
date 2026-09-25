@@ -31,21 +31,25 @@ for (const width of [320, 390, 1440]) {
     const print = page.getByRole("link", { name: "Print QR Code", exact: true });
     const replace = page.getByRole("button", { name: "Regenerate/Replace QR Code", exact: true });
     await expect(print).toHaveAttribute("href", "https://example.test/?qr=active");
+    await expect(page.getByRole("link", { name: "See Request Form", exact: true })).toHaveAttribute("href", "https://example.test/?request=active");
+    await expect(page.locator("[data-copy-public-request-link], [data-disable-public-request-link]")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Test Form", exact: true })).toHaveCount(0);
+    await expect(page.locator(".public-request-link-card").first().locator(".button-row > a, .button-row > button")).toHaveCount(3);
     await expect(replace).toHaveCount(2);
 
-    async function checkColor(control, variable) {
+    async function checkColor(control, variable, textVariable = "--on-light-highlight") {
       await expect(control).toBeVisible();
-      const colors = await control.evaluate((element, token) => {
+      const colors = await control.evaluate((element, { token, textToken }) => {
         const style = getComputedStyle(element);
         const probe = document.createElement("span");
         element.append(probe);
         probe.style.color = `var(${token})`;
         const expectedBackground = getComputedStyle(probe).color;
-        probe.style.color = "var(--on-light-highlight)";
+        probe.style.color = `var(${textToken})`;
         const expectedText = getComputedStyle(probe).color;
         probe.remove();
         return { background: style.backgroundColor, text: style.color, expectedBackground, expectedText };
-      }, variable);
+      }, { token: variable, textToken: textVariable });
       expect(colors.background).toBe(colors.expectedBackground);
       expect(colors.text).toBe(colors.expectedText);
       await control.hover();
@@ -54,7 +58,7 @@ for (const width of [320, 390, 1440]) {
     }
 
     await checkColor(print, "--green");
-    for (const button of await replace.all()) await checkColor(button, "--red");
+    for (const button of await replace.all()) await checkColor(button, "--qr-replace-bg", "--qr-replace-ink");
     const layout = await page.locator(".qr-print-button, .qr-replace-button").evaluateAll((buttons) => buttons.map((button) => {
       const bounds = button.getBoundingClientRect();
       const range = document.createRange();
@@ -73,5 +77,6 @@ for (const width of [320, 390, 1440]) {
       document.querySelector("#qr-test").innerHTML = window.qrTestHelpers.publicRequestQrPage({ location_name: "Active facility", company_name: "QA" }, "https://example.test/?request=active");
     });
     await checkColor(page.getByRole("button", { name: "Print QR Code", exact: true }), "--green");
+    await expect(page.getByRole("link", { name: "See Request Form", exact: true })).toHaveAttribute("href", "https://example.test/?request=active");
   });
 }
