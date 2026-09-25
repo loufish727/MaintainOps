@@ -36,7 +36,7 @@ async function checkPmLifecycle() {
   try {
     await db.exec(read("tests/fixtures/supabase-postgres-prelude.sql"));
     await db.exec(read("supabase/schema.sql"));
-    for (const name of ["maintenance-requests", "maintenance-request-photos", "asset-parts", "asset-documents", "procedures", "cleanup-delete-paths",
+    for (const name of ["maintenance-requests", "maintenance-request-photos", "locations", "public-request-links", "asset-parts", "asset-documents", "procedures", "cleanup-delete-paths",
       "admin-delete-work-orders", "message-center", "message-soft-delete-and-thread-scope", "message-thread-soft-delete", "message-work-order-links", "app-issue-reports"]) {
       await db.exec(read(`supabase/step-next-${name}.sql`));
     }

@@ -13,7 +13,7 @@ async function main() {
   const as = async (id,role='authenticated') => { assert.ok(['authenticated','anon'].includes(role)); await db.exec(`reset role; set role ${role}`); await q("select set_config('request.jwt.claim.sub',$1,false)",[id || '']); };
   try {
     await db.exec(read('tests/fixtures/supabase-postgres-prelude.sql')); await db.exec(read('supabase/schema.sql'));
-    for(const name of ['maintenance-requests','maintenance-request-photos','asset-documents','asset-parts','procedures','cleanup-delete-paths','admin-delete-work-orders','message-center','message-soft-delete-and-thread-scope','message-thread-soft-delete','message-work-order-links','app-issue-reports']) await db.exec(read(`supabase/step-next-${name}.sql`));
+    for(const name of ['maintenance-requests','maintenance-request-photos','locations','public-request-links','asset-documents','asset-parts','procedures','cleanup-delete-paths','admin-delete-work-orders','message-center','message-soft-delete-and-thread-scope','message-thread-soft-delete','message-work-order-links','app-issue-reports']) await db.exec(read(`supabase/step-next-${name}.sql`));
     for(const name of fs.readdirSync(path.join(root,'supabase/migrations')).filter(n=>n.endsWith('.sql')).sort()) await db.exec(read(`supabase/migrations/${name}`));
     const users=Object.fromEntries(['admin','manager','technician','production','accounting','outsider'].map(r=>[r,randomUUID()]));
     for(const id of Object.values(users)) await q('insert into auth.users(id) values ($1)',[id]);
