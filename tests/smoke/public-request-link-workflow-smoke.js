@@ -53,6 +53,7 @@ function createQuery(calls) {
     notices: [],
     renders: 0,
     confirms: [],
+    confirmResult: true,
   };
 
   const workflow = createPublicRequestLinkWorkflow({
@@ -60,7 +61,7 @@ function createQuery(calls) {
     windowRef: {
       confirm(message) {
         state.confirms.push(message);
-        return true;
+        return state.confirmResult;
       },
     },
     CSSRef: { escape: (value) => value },
@@ -97,9 +98,16 @@ function createQuery(calls) {
   assert.ok(calls.some((call) => call[0] === "update" && call[1].is_active === true));
 
   await workflow.regeneratePublicRequestLink("link-1");
+  assert.equal(state.confirms.at(-1), "Regenerate this QR code? Any QR codes already printed or shared for this location will stop working.");
   assert.equal(state.notices.at(-1)[0], "Request QR regenerated.");
   assert.ok(calls.some((call) => call[0] === "update" && call[1].token === "token-new"));
 
+  state.confirmResult = false;
+  const callsBeforeCancel = calls.length;
+  const noticesBeforeCancel = state.notices.length;
+  await workflow.regeneratePublicRequestLink("link-1");
+  assert.equal(calls.length, callsBeforeCancel, "Cancelling replacement must not write to the database");
+  assert.equal(state.notices.length, noticesBeforeCancel);
   assert.equal(state.renders, 4);
   console.log("public request link workflow smoke passed");
 })();

@@ -47,7 +47,7 @@
             </div>
             <p class="public-qr-url">${escapeHtml(requestUrl)}</p>
             <div class="button-row no-print">
-              <button class="primary-button request-action-button" id="print-public-qr" type="button">Print / Save PDF</button>
+              <button class="primary-button qr-print-button" id="print-public-qr" type="button">Print QR Code</button>
               <a class="secondary-button" href="${escapeHtml(requestUrl)}" target="_blank" rel="noreferrer">Test Form</a>
             </div>
           </article>
@@ -184,11 +184,11 @@
             <div class="qr-preview">${hasUsableUrl ? qrSvgFor(requestUrl) : `<div class="qr-fallback">Set URL</div>`}</div>
             <input class="copy-field" value="${escapeHtml(qrUrl || "Set the public MaintainOps URL first")}" readonly>
             <div class="button-row">
-              <a class="primary-button request-action-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Open QR Code</a>
+              <a class="primary-button qr-print-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Print QR Code</a>
               <button class="secondary-button request-action-button" data-copy-public-request-link="${escapeHtml(qrUrl)}" type="button" ${hasUsableUrl ? "" : "disabled"}>Copy QR Link</button>
               <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">Test Form</a>
               ${canAdministerLinks ? `
-                <button class="secondary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+                <button class="danger-action-button qr-replace-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate/Replace QR Code</button>
                 <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
               ` : `<span class="muted">Only admins can replace or disable posted QR codes.</span>`}
             </div>
@@ -197,7 +197,7 @@
             <div class="button-row">
               ${canAdministerLinks ? `
                 <button class="secondary-button request-action-button" data-enable-public-request-link="${escapeHtml(link.id)}" type="button">Reactivate Same QR</button>
-                <button class="primary-button request-action-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate QR</button>
+                <button class="danger-action-button qr-replace-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate/Replace QR Code</button>
               ` : `<span class="muted">Only admins can reactivate or replace this QR code.</span>`}
             </div>
           ` : `

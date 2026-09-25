@@ -37,7 +37,7 @@ assert.match(helpers.loadingRequestForm(), /Loading request form/);
 const qrPage = helpers.publicRequestQrPage(intake, "https://example.test/?request=abc");
 assert.match(qrPage, /Line &lt;One&gt;/);
 assert.match(qrPage, /Acme &amp; Co/);
-assert.match(qrPage, /Print \/ Save PDF/);
+assert.match(qrPage, /id="print-public-qr" type="button">Print QR Code<\/button>/);
 assert.match(qrPage, /data-cell-size="8"/);
 
 const form = helpers.publicRequestForm(intake);
@@ -71,5 +71,10 @@ assert.match(manager, /data-regenerate-public-request-link="link-1"/);
 assert.match(manager, /data-disable-public-request-link="link-1"/);
 assert.match(manager, /data-create-public-request-link="loc-2"/);
 assert.match(manager, /data-enable-public-request-link="link-3"/);
+assert.match(manager, /href="https:\/\/example\.com\/MaintainOps\/\?qr=token-1"[^>]*>Print QR Code<\/a>/);
+for (const id of ["link-1", "link-3"]) {
+  assert.ok(manager.includes(`data-regenerate-public-request-link="${id}" type="button">Regenerate/Replace QR Code</button>`));
+}
+assert.doesNotMatch(manager, />Open QR Code<|>Regenerate QR</);
 
 console.log("public request display smoke passed");

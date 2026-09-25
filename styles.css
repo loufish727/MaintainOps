@@ -7549,6 +7549,37 @@ textarea {
   border-left: 4px solid var(--accent);
 }
 
+.primary-button.qr-print-button,
+.danger-action-button.qr-replace-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid transparent;
+  color: var(--on-light-highlight);
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+}
+
+.primary-button.qr-print-button {
+  background: var(--green);
+}
+
+.primary-button.qr-print-button:hover {
+  background: color-mix(in srgb, var(--green) 85%, white);
+}
+
+.danger-action-button.qr-replace-button {
+  background: var(--red);
+}
+
+.danger-action-button.qr-replace-button:hover {
+  background: color-mix(in srgb, var(--red) 85%, white);
+  color: var(--on-light-highlight);
+}
+
 .qr-preview {
   display: grid;
   place-items: center;
