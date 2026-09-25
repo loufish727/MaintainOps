@@ -14,6 +14,8 @@ $$;
 
 create schema if not exists auth;
 create schema if not exists storage;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists auth.users (
   id uuid primary key,

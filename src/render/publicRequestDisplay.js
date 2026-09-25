@@ -200,6 +200,12 @@
           ` : `
             <button class="secondary-button request-action-button" data-create-public-request-link="${escapeHtml(location.id)}" type="button" ${getPublicRequestLinksReady() ? "" : "disabled"}>Create QR Link</button>
           `}
+          ${link && canManageTeam() ? `
+            <div class="qr-history-summary">
+              <span data-qr-last-replaced="${escapeHtml(link.id)}">Loading replacement history...</span>
+              <button class="secondary-button request-action-button" data-qr-history="${escapeHtml(link.id)}" data-location-name="${escapeHtml(location.name)}" type="button">Replacement History</button>
+            </div>
+          ` : ""}
         </article>
       `;
     }

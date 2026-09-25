@@ -247,6 +247,7 @@ async function main() {
     "tests/smoke/production-action-contrast-browser.spec.js",
     "tests/smoke/production-ready-notification-browser.spec.js",
     "tests/smoke/public-request-qr-actions-browser.spec.js",
+    "tests/smoke/qr-replacement-history-browser.spec.js",
     "tests/smoke/quick-fix-date-field-browser.spec.js",
     "tests/smoke/team-sections-browser.spec.js",
     "tests/smoke/work-order-filter-toolbar-browser.spec.js",

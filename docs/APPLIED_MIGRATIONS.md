@@ -33,6 +33,27 @@ Repo source:
 
 ## Known Recently Applied
 
+### QR Replacement History, 2026-09-25 (QA Verified)
+
+- `supabase/migrations/20260925202019_qr_replacement_history.sql` adds QR-only,
+  server-recorded replacement history and an RLS-respecting summary RPC. The
+  broad `audit_log` script is not applied or changed by this migration.
+- No existing QR tokens are changed, and older replacements are not backfilled.
+  Actor/facility names are snapshots; the ledger contains no old or new tokens.
+  Managers/admins can read their company's history; app clients cannot write it.
+- Rollback: revert the frontend if needed and retain the additive history table
+  and capture trigger. Do not delete replacement evidence to roll back a UI change.
+- Applied to isolated QA `fsxqrngpaseqdxijggcm`. Isolated SQL verification and
+  69 focused browser checks passed in Chromium, Firefox and WebKit. Signed-in
+  disposable-company lifecycle checks passed in Chromium and WebKit, including
+  cancellation, name snapshots, 12-item paging, reopening Settings and role limits.
+  All three disposable companies were removed after verification. The first
+  WebKit worker stalled after its passing test; a bounded rerun exited cleanly.
+- No advisor findings reference the new QR objects. Existing QA security and
+  performance findings remain outside this change. Production is not yet applied.
+- Shared CSS grew 51 gzip bytes; its individual allowance grew 128 bytes.
+  Combined startup budget is unchanged (actual 749,649 decoded / 175,113 gzip).
+
 ### Equipment Archive / Restore, 2026-09-24 (QA Only)
 
 - `supabase/migrations/20260924202304_equipment_archive_restore.sql`: applied
