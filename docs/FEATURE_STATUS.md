@@ -83,6 +83,7 @@ Automatic attachments release (2026-09-23): automatic photo/document/ZIP attachm
 - Team navigation groups members, profile, security, roles, notifications, invitations, and advanced tools into expandable sections; Team Members opens by default and open sections survive workspace rerenders.
 - Company logo upload.
 - Public request QR/link intake per location.
+- QR replacement uses a red in-app warning with caution symbols, the affected facility, and explicit print-replacement consequences. Cancel is focused by default; Cancel, Escape, or backdrop dismissal makes no change. The workflow rechecks account/company/access before writing and ignores duplicate clicks. Desktop/mobile layout and mocked confirmation/cancellation/failure paths are covered in Chromium, Firefox, and WebKit by `public-request-qr-actions-browser.spec.js`; these tests do not replace production QR codes.
 - Location-scoped search.
 - Work order cards show due date and created date at a glance.
 - Work order types use one operational taxonomy everywhere: Corrective, Preventive, and Fabrication. Legacy Reactive and Request values map to Corrective; Inspection maps to Preventive; Fabrication is selected manually.

@@ -17,7 +17,8 @@ const budgets = {
   // Archive navigation/state bridge adds <2 KB compressed; total startup cap is unchanged.
   appShell: { decoded: 172 * 1024, gzip: 49 * 1024 },
   // Small retained-history notice is shared with work history; archive layout stays lazy.
-  appStyles: { decoded: 186 * 1024, gzip: 33 * 1024 },
+  // Accessible QR warning adds 1,227 decoded / 279 gzip bytes; gzip and total startup caps stay fixed.
+  appStyles: { decoded: 188 * 1024, gzip: 33 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
   managerFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },

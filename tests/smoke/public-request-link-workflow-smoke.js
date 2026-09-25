@@ -53,6 +53,7 @@ function createQuery(calls) {
     notices: [],
     renders: 0,
     confirms: [],
+    replacementPrompts: [],
     confirmResult: true,
     canAdminister: true,
     tokensGenerated: 0,
@@ -67,6 +68,12 @@ function createQuery(calls) {
       },
     },
     CSSRef: { escape: (value) => value },
+    confirmReplacement: async (locationName) => {
+      state.replacementPrompts.push(locationName);
+      return state.confirmResult;
+    },
+    getPublicRequestLinks: () => [{ id: "link-1", location_id: "loc-1" }],
+    getLocations: () => [{ id: "loc-1", name: "QA facility" }],
     supabaseClient: () => ({
       rpc: (name, payload) => {
         calls.push(["rpc", name, payload]);
@@ -100,15 +107,7 @@ function createQuery(calls) {
   assert.ok(calls.some((call) => call[0] === "update" && call[1].is_active === true));
 
   await workflow.regeneratePublicRequestLink("link-1");
-  const warning = state.confirms.at(-1);
-  assert.match(warning, /^WARNING: THIS WILL BREAK THE CURRENT QR CODE FOR THIS LOCATION\./);
-  assert.match(warning, /stop working immediately/);
-  assert.match(warning, /replace EVERY posted copy/);
-  assert.match(warning, /Existing requests are not deleted/);
-  assert.match(warning, /Other locations' QR codes are not affected/);
-  assert.match(warning, /Select Cancel, then Print QR Code/);
-  assert.match(warning, /Select OK only if you intend to replace the current code/);
-  assert.equal(warning.split("\n\n").length, 6);
+  assert.deepEqual(state.replacementPrompts, ["QA facility"]);
   assert.equal(state.notices.at(-1)[0], "Request QR regenerated.");
   assert.ok(calls.some((call) => call[0] === "update" && call[1].token === "token-new"));
 
@@ -123,9 +122,9 @@ function createQuery(calls) {
 
   state.canAdminister = false;
   state.confirmResult = true;
-  const confirmsBeforeDenied = state.confirms.length;
+  const confirmsBeforeDenied = state.replacementPrompts.length;
   await workflow.regeneratePublicRequestLink("link-1");
-  assert.equal(state.confirms.length, confirmsBeforeDenied);
+  assert.equal(state.replacementPrompts.length, confirmsBeforeDenied);
   assert.equal(calls.length, callsBeforeCancel);
   assert.equal(state.tokensGenerated, 1);
   assert.match(errorElement.textContent, /Only admins can replace/);
