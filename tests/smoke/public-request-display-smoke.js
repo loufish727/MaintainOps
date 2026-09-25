@@ -38,6 +38,8 @@ const qrPage = helpers.publicRequestQrPage(intake, "https://example.test/?reques
 assert.match(qrPage, /Line &lt;One&gt;/);
 assert.match(qrPage, /Acme &amp; Co/);
 assert.match(qrPage, /id="print-public-qr" type="button">Print QR Code<\/button>/);
+assert.match(qrPage, /href="https:\/\/example\.test\/\?request=abc"[^>]*>See Request Form<\/a>/);
+assert.doesNotMatch(qrPage, /Test Form/);
 assert.match(qrPage, /data-cell-size="8"/);
 
 const form = helpers.publicRequestForm(intake);
@@ -66,15 +68,16 @@ const manager = helpers.publicRequestLinkManager();
 assert.match(manager, /Location Request QR Links/);
 assert.match(manager, /QA &lt;Facility&gt;/);
 assert.match(manager, /https:\/\/example\.com\/MaintainOps\/\?qr=token-1/);
-assert.match(manager, /data-copy-public-request-link/);
+assert.doesNotMatch(manager, /data-copy-public-request-link|Copy QR Link|class="copy-field"/);
 assert.match(manager, /data-regenerate-public-request-link="link-1"/);
-assert.match(manager, /data-disable-public-request-link="link-1"/);
+assert.doesNotMatch(manager, /data-disable-public-request-link|Disable Link/);
 assert.match(manager, /data-create-public-request-link="loc-2"/);
 assert.match(manager, /data-enable-public-request-link="link-3"/);
 assert.match(manager, /href="https:\/\/example\.com\/MaintainOps\/\?qr=token-1"[^>]*>Print QR Code<\/a>/);
+assert.match(manager, /href="https:\/\/example\.com\/MaintainOps\/\?request=token-1"[^>]*>See Request Form<\/a>/);
 for (const id of ["link-1", "link-3"]) {
   assert.ok(manager.includes(`data-regenerate-public-request-link="${id}" type="button">Regenerate/Replace QR Code</button>`));
 }
-assert.doesNotMatch(manager, />Open QR Code<|>Regenerate QR</);
+assert.doesNotMatch(manager, />Open QR Code<|>Regenerate QR<|Test Form/);
 
 console.log("public request display smoke passed");

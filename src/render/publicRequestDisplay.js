@@ -48,7 +48,7 @@
             <p class="public-qr-url">${escapeHtml(requestUrl)}</p>
             <div class="button-row no-print">
               <button class="primary-button qr-print-button" id="print-public-qr" type="button">Print QR Code</button>
-              <a class="secondary-button" href="${escapeHtml(requestUrl)}" target="_blank" rel="noreferrer">Test Form</a>
+              <a class="secondary-button" href="${escapeHtml(requestUrl)}" target="_blank" rel="noreferrer">See Request Form</a>
             </div>
           </article>
         </section>
@@ -157,7 +157,7 @@
             <button class="secondary-button request-action-button" type="submit">Save URL</button>
           </form>
           <p class="muted">Use the exact GitHub Pages URL where MaintainOps opens. Do not use the root URL if that opens another app.</p>
-          ${publicBaseUrl ? `<p class="muted">QR codes will point to ${escapeHtml(publicBaseUrl)}</p>` : `<p class="warning-text">Set the public MaintainOps URL before copying or printing QR codes from this local app.</p>`}
+          ${publicBaseUrl ? `<p class="muted">QR codes will point to ${escapeHtml(publicBaseUrl)}</p>` : `<p class="warning-text">Set the public MaintainOps URL before printing QR codes from this local app.</p>`}
           <p class="error-text" id="public-request-link-error">${publicRequestLinksReady ? "" : "Run supabase/step-next-public-request-links.sql before creating QR request links."}</p>
           <div class="public-request-link-grid">
             ${locations.map(publicRequestLocationCard).join("") || `<article><strong>No locations yet</strong><span>Add a location before creating request QR codes.</span></article>`}
@@ -182,15 +182,12 @@
           </div>
           ${linkActive ? `
             <div class="qr-preview">${hasUsableUrl ? qrSvgFor(requestUrl) : `<div class="qr-fallback">Set URL</div>`}</div>
-            <input class="copy-field" value="${escapeHtml(qrUrl || "Set the public MaintainOps URL first")}" readonly>
             <div class="button-row">
               <a class="primary-button qr-print-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(qrUrl || "#")}" target="_blank" rel="noreferrer">Print QR Code</a>
-              <button class="secondary-button request-action-button" data-copy-public-request-link="${escapeHtml(qrUrl)}" type="button" ${hasUsableUrl ? "" : "disabled"}>Copy QR Link</button>
-              <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">Test Form</a>
+              <a class="secondary-button ${hasUsableUrl ? "" : "disabled-link"}" href="${escapeHtml(requestUrl || "#")}" target="_blank" rel="noreferrer">See Request Form</a>
               ${canAdministerLinks ? `
                 <button class="danger-action-button qr-replace-button" data-regenerate-public-request-link="${escapeHtml(link.id)}" type="button">Regenerate/Replace QR Code</button>
-                <button class="secondary-button danger-link" data-disable-public-request-link="${escapeHtml(link.id)}" type="button">Disable Link</button>
-              ` : `<span class="muted">Only admins can replace or disable posted QR codes.</span>`}
+              ` : `<span class="muted">Only admins can replace posted QR codes.</span>`}
             </div>
           ` : link ? `
             <div class="qr-preview inactive-qr-preview"><div class="qr-fallback">Off</div></div>
