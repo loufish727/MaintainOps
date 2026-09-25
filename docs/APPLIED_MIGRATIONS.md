@@ -33,7 +33,7 @@ Repo source:
 
 ## Known Recently Applied
 
-### QR Replacement History, 2026-09-25 (QA Verified)
+### QR Replacement History, 2026-09-25
 
 - `supabase/migrations/20260925202019_qr_replacement_history.sql` adds QR-only,
   server-recorded replacement history and an RLS-respecting summary RPC. The
@@ -49,8 +49,24 @@ Repo source:
   cancellation, name snapshots, 12-item paging, reopening Settings and role limits.
   All three disposable companies were removed after verification. The first
   WebKit worker stalled after its passing test; a bounded rerun exited cleanly.
-- No advisor findings reference the new QR objects. Existing QA security and
-  performance findings remain outside this change. Production is not yet applied.
+- Applied to production `lbphkzznvvumemdkqoay` at approximately 20:43 UTC and
+  recorded in both projects' `public.applied_migrations`. Source SHA256:
+  `b20e2c0dacb0be01bfb6ade807a3a51ce9f0d21e29f182062a7d936abe22470b`.
+  All eight existing QR rows retain identical full-row and identity/token
+  fingerprints. The new ledger is empty; no production replacement was performed.
+  Columns, function bodies/config, trigger, RLS and app grants match tested QA.
+  Production `public.audit_log` remains absent.
+- Full Strict LFES passed 13/13 on clean commit `5a676ec`, including 145 browser
+  regressions and four Performance interactions. An earlier desktop 3D timeout
+  in bundled headless Chromium was retained as evidence; the unchanged full suite
+  passed with installed Chrome. Four SQL fixtures were updated to include their
+  required legacy QR baseline; no application checks or thresholds were relaxed.
+- Security advisors are unchanged (3 no-policy INFO findings, 5 anonymous-callable
+  and 32 authenticated-callable definer warnings, disabled leaked-password
+  protection). The new, empty ledger's index is initially reported as unused;
+  it supports ordered per-link reads and is retained. See
+  [index advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
+  Other pre-existing advisor findings are outside this QR-only change.
 - Shared CSS grew 51 gzip bytes; its individual allowance grew 128 bytes.
   Combined startup budget is unchanged (actual 749,649 decoded / 175,113 gzip).
 
