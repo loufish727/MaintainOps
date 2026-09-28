@@ -33,6 +33,16 @@ for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`groupe
   await mount(page);
   await expect(page.locator('nav > *')).toHaveCount(6);
   await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
+  for (const root of await page.locator('nav > button, nav > details > summary').all()) {
+    await expect(root).toHaveCSS('border-radius', '18px');
+    expect(await root.evaluate(node => getComputedStyle(node, '::before').clipPath)).toBe('none');
+    expect(await root.evaluate(node => getComputedStyle(node, '::before').borderRadius)).toBe('18px');
+  }
+  for (const roundControl of await page.locator('.nav-emblem, .nav-disclosure').all()) {
+    await expect(roundControl).toHaveCSS('border-radius', '50%');
+    const box = await roundControl.boundingBox();
+    expect(box.width).toBe(box.height);
+  }
   for (const groupId of ['team', 'settings', 'assets', 'work']) {
     const group = page.locator(`[data-nav-group="${groupId}"]`), summary = group.locator('summary');
     const box = await summary.boundingBox();
@@ -151,7 +161,7 @@ test('custom material is bounded and navigation works when it cannot load', asyn
   expect(await team.evaluate(node => getComputedStyle(node, '::before').backgroundColor)).toBe('rgb(35, 44, 50)');
 });
 
-test('faceted surfaces retain full tap targets and visible unread badges on a narrow phone', async ({ browser }) => {
+test('rounded surfaces retain full tap targets and visible unread badges on a narrow phone', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 320, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
   const page = await context.newPage();
   try {
@@ -170,8 +180,9 @@ test('faceted surfaces retain full tap targets and visible unread badges on a na
     expect(boxes[2].right).toBeLessThanOrEqual(boxes[3].left);
     expect(boxes[3].right).toBeLessThan(boxes[0].right);
     await team.scrollIntoViewIfNeeded();
-    let rect = await team.boundingBox();
-    await page.touchscreen.tap(rect.x + 2, rect.y + rect.height - 2);
+    const rect = await team.boundingBox();
+    // Tap inside the visible rounded edge, not the empty square corner outside it.
+    await page.touchscreen.tap(rect.x + 12, rect.y + rect.height - 6);
     await expect(team).toHaveAttribute('aria-expanded', 'true');
     await expect(badge).toBeHidden();
     await expect(page.locator('button.nav-messages .nav-badge')).toBeVisible();

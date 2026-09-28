@@ -34,9 +34,9 @@ Manager retain their existing role contracts. Nothing changes in database access
   widths, expanded groups occupy a full row and their children use two columns
   (one below 360px). Tablet navigation uses three columns instead of squeezing
   six headings into a horizontal strip. Children keep their section colors.
-- Group headings use faceted, textured metal faces, illuminated icon housings and
-  recessed plus/minus controls. Child destinations remain connected rows. The
-  surface treatment never clips the actual hit area or focus outline. Plus/minus
+- Group headings use rounded, satin-metal faces, circular illuminated icon housings
+  and round plus/minus controls. Child destinations remain connected rows. The
+  entire visible face responds to taps and the focus outline follows its contour. Plus/minus
   transitions respect reduced motion and never animate layout height.
 
 ## Ownership And Verification
@@ -46,9 +46,9 @@ Manager retain their existing role contracts. Nothing changes in database access
 is in the existing runtime bundle, with no new dependency or script request.
 
 Compared with the section-color baseline, grouped navigation and visual polish add
-8,991 decoded / 2,112 gzip bytes across runtime, app shell and shared CSS. The total
+8,930 decoded / 2,045 gzip bytes across runtime, app shell and shared CSS. The total
 JS/CSS startup budget remains 780 KiB decoded / 175 KiB gzip; actual startup is
-759,324 / 177,492 bytes. The CSS allowance is 195 KiB decoded / 35 KiB gzip.
+759,263 / 177,425 bytes. The CSS allowance is 195 KiB decoded / 35 KiB gzip.
 The shared material is a separate 4,904-byte WebP, bounded below 6 KiB in browser
 tests. It is referenced only by visible top-level navigation, with a plain dark
 fallback if unavailable. Text, icons, focus outlines and hit areas are real UI,

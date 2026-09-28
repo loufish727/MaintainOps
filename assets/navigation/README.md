@@ -5,7 +5,7 @@ Generated with the built-in image generation tool on 2026-09-28; optimized with
 Sharp to 384 x 384 WebP, quality 42, effort 6. Final size: 4,904 bytes.
 The original generated PNG is not shipped. No new runtime dependency is needed.
 
-The material contains no labels, icons or controls. CSS provides the faceted
+The material contains no labels, icons or controls. CSS provides the rounded
 surface, lighting, state colors and fallback; all controls remain native HTML.
 The same image is reused by every root button. It must remain below 6 KiB.
 

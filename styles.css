@@ -11002,15 +11002,15 @@ body.spatial-performance-active {
   align-items: center;
   isolation: isolate;
   gap: 10px;
-  min-height: 76px;
+  min-height: 72px;
   padding: 12px 11px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 18px;
   color: #f0f3f5;
   background: none;
-  box-shadow: 0 4px 0 #070b0e, 0 6px 10px #0005;
+  box-shadow: 0 3px 9px #0004;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 650;
   text-shadow: 0 1px 2px #000;
   line-height: 1.3;
   cursor: pointer;
@@ -11020,24 +11020,23 @@ body.spatial-performance-active {
 .grouped-nav summary::-webkit-details-marker { display: none; }
 .grouped-nav summary::before, .grouped-nav > button::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-  border: 1px solid #64717b;
+  border-radius: inherit;
+  border: 1px solid #596670;
   background: linear-gradient(135deg, #ffffff16, #0000 42%), linear-gradient(var(--nav-shade), var(--nav-shade)), url("assets/navigation/graphite-v1.webp") center / cover, #232c32;
-  box-shadow: inset 0 1px #ffffff30, inset 0 -3px #05080b, inset 0 -4px #ffffff14;
+  box-shadow: inset 0 1px #ffffff26, inset 0 -1px #0005;
 }
 .grouped-nav summary::after, .grouped-nav > button::after {
-  content: ""; position: absolute; left: 70px; right: 32px; bottom: 8px; height: 2px; pointer-events: none;
+  content: ""; position: absolute; left: 70px; right: 32px; bottom: 8px; height: 2px; border-radius: 2px; pointer-events: none;
   background: linear-gradient(90deg, var(--nav-ink), color-mix(in srgb, var(--nav-ink) 10%, transparent));
   box-shadow: 0 1px 5px color-mix(in srgb, var(--nav-ink) 30%, transparent);
 }
 .grouped-nav .nav-emblem {
   display: grid; place-items: center; position: relative; flex: 0 0 44px; width: 44px; height: 44px;
-  color: var(--nav-ink); background: linear-gradient(135deg, #b6c6ce, #29333b 30%, #12191f 65%, #81949e);
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  color: var(--nav-ink); border-radius: 50%; background: linear-gradient(145deg, #91a1ab, #354149 40%, #182129 70%, #647984);
 }
 .grouped-nav .nav-emblem::before {
   content: ""; position: absolute; inset: 2px; pointer-events: none;
-  clip-path: inherit; border-bottom: 2px solid var(--nav-ink);
+  border-radius: inherit; box-shadow: inset 0 -1px color-mix(in srgb, var(--nav-ink) 65%, transparent);
   background: linear-gradient(145deg, color-mix(in srgb, var(--nav-ink) 25%, #273139), #0b1217 72%);
 }
 .grouped-nav .nav-emblem .nav-icon {
@@ -11046,12 +11045,12 @@ body.spatial-performance-active {
 }
 .grouped-nav .nav-group-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .grouped-nav .nav-disclosure {
-  position: relative; width: 22px; height: 26px; flex: 0 0 22px; border-radius: 3px;
+  position: relative; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
   color: var(--nav-ink); background: linear-gradient(#34414b, #121a20);
-  border: 1px solid #65747f; box-shadow: inset 0 1px #ffffff26, 0 2px #03070a;
+  border: 1px solid #65747f; box-shadow: inset 0 1px #ffffff26, 0 1px 3px #0005;
 }
 .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after {
-  content: ""; position: absolute; inset: 11px 5px; border-radius: 1px; background: currentColor;
+  content: ""; position: absolute; top: calc(50% - 1px); left: 5px; right: 5px; height: 2px; border-radius: 1px; background: currentColor;
 }
 .grouped-nav .nav-disclosure::after { transform: rotate(90deg); transition: transform 160ms ease; }
 .grouped-nav details[open] > summary .nav-disclosure { background: #0b151c; box-shadow: inset 0 2px 3px #0009; border-color: color-mix(in srgb, var(--nav-ink) 60%, #65747f); }
@@ -11059,15 +11058,15 @@ body.spatial-performance-active {
 .grouped-nav summary.contains-current, .grouped-nav > button.active {
   --nav-shade: color-mix(in srgb, var(--nav-ink) 15%, #152029c9);
   background: none;
-  box-shadow: 0 4px 0 #070b0e, 0 0 10px color-mix(in srgb, var(--nav-ink) 14%, transparent);
+  box-shadow: 0 3px 9px #0004, 0 0 10px color-mix(in srgb, var(--nav-ink) 12%, transparent);
 }
 .grouped-nav summary.contains-current::before, .grouped-nav > button.active::before { border-color: var(--nav-ink); }
 .grouped-nav :is(summary, button):active::before { translate: 0 1px; }
 .grouped-nav :is(summary, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
 .grouped-nav .nav-children { display: grid; gap: 2px; margin: 5px 0 1px 26px; padding-left: 13px; border-left: 1px solid #424c52; }
-.grouped-nav button { border-radius: 4px; transform: none; white-space: normal; overflow-wrap: anywhere; }
+.grouped-nav button { transform: none; white-space: normal; overflow-wrap: anywhere; }
 .grouped-nav .nav-children button {
-  min-height: 48px; min-width: 0; gap: 9px; padding: 9px 10px; border: 1px solid transparent;
+  min-height: 48px; min-width: 0; gap: 9px; padding: 9px 10px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; box-shadow: none; color: #bfc9cf; font-size: 0.86rem; font-weight: 500;
 }
 .grouped-nav .nav-children button::before { content: ""; position: absolute; left: -14px; width: 8px; height: 1px; background: #424c52; }
@@ -11100,19 +11099,19 @@ body.spatial-performance-active {
   .grouped-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); background: none; gap: 8px; }
   .grouped-nav .nav-children { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-left: 25px; padding-left: 10px; }
   .grouped-nav summary, .grouped-nav > button { font-size: 0.88rem; gap: 7px; padding: 10px 8px; min-height: 72px; }
-  .grouped-nav .nav-emblem { width: 38px; height: 40px; flex-basis: 38px; }
+  .grouped-nav .nav-emblem { width: 38px; height: 38px; flex-basis: 38px; }
   .grouped-nav summary::after, .grouped-nav > button::after { left: 53px; bottom: 9px; right: 27px; }
   .grouped-nav .nav-children button { padding: 8px; }
   .grouped-nav .nav-children button::before { display: none; }
-  .grouped-nav .nav-disclosure { width: 18px; flex-basis: 18px; }
+  .grouped-nav .nav-disclosure { width: 18px; height: 18px; flex-basis: 18px; }
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 4px; right: 4px; }
 }
 @media (max-width: 360px) {
   .grouped-nav summary, .grouped-nav > button { font-size: 0.82rem; gap: 5px; padding: 9px 7px; }
-  .grouped-nav .nav-emblem { width: 30px; height: 36px; flex-basis: 30px; }
+  .grouped-nav .nav-emblem { width: 30px; height: 30px; flex-basis: 30px; }
   .grouped-nav .nav-emblem .nav-icon { width: 21px; height: 21px; min-width: 21px; min-height: 21px; max-width: 21px; max-height: 21px; }
   .grouped-nav summary::after, .grouped-nav > button::after { left: 42px; right: 24px; }
-  .grouped-nav .nav-disclosure { width: 16px; flex-basis: 16px; }
+  .grouped-nav .nav-disclosure { width: 16px; height: 16px; flex-basis: 16px; }
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 3px; right: 3px; }
   .grouped-nav .nav-children { grid-template-columns: minmax(0, 1fr); }
 }
