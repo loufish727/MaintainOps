@@ -11092,12 +11092,14 @@ body.spatial-performance-active {
 @media (max-width: 920px) {
   .grouped-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
   .grouped-nav details[open] { grid-column: 1 / -1; }
-  .grouped-nav .nav-children { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grouped-nav .nav-children { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .grouped-nav .nav-children button { border-color: #64727d; background: #172127; }
+  .grouped-nav .nav-children button.active { border-color: var(--nav-ink); }
   .grouped-nav > button { min-width: 0; }
 }
 @media (max-width: 760px) {
   .grouped-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); background: none; gap: 8px; }
-  .grouped-nav .nav-children { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-left: 25px; padding-left: 10px; }
+  .grouped-nav .nav-children { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-left: 25px; padding-left: 10px; }
   .grouped-nav summary, .grouped-nav > button { font-size: 0.88rem; gap: 7px; padding: 10px 8px; min-height: 72px; }
   .grouped-nav .nav-emblem { width: 38px; height: 38px; flex-basis: 38px; }
   .grouped-nav summary::after, .grouped-nav > button::after { left: 53px; bottom: 9px; right: 27px; }
