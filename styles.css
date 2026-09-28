@@ -10992,56 +10992,80 @@ body.spatial-performance-active {
 .attachment-dialog button, .attachment-document-row button { min-height: 44px; }
 .attachment-review-notes { color: #ffdaa2; overflow: auto; max-height: 25dvh; flex-shrink: 0; }
 .attachment-review-actions { flex-shrink: 0; }
-.grouped-nav { align-items: start; gap: 10px; letter-spacing: 0; }
+.grouped-nav { align-items: start; gap: 12px; letter-spacing: 0; }
 .grouped-nav .nav-group { min-width: 0; margin: 0; padding: 0; border: 0; background: none; }
 .grouped-nav summary, .grouped-nav > button {
   --nav-ink: var(--section-ink);
+  --nav-shade: #10161bd9;
   display: flex;
   position: relative;
   align-items: center;
-  gap: 11px;
-  min-height: 62px;
-  padding: 10px;
-  border: 1px solid #3a4246;
-  border-radius: 8px;
-  color: #e9edef;
-  background: linear-gradient(160deg, #252c30, #151a1d);
-  box-shadow: inset 0 1px 0 #ffffff0d, 0 2px 4px #0003;
-  font-size: 0.94rem;
-  font-weight: 650;
+  isolation: isolate;
+  gap: 10px;
+  min-height: 76px;
+  padding: 12px 11px;
+  border: 0;
+  border-radius: 4px;
+  color: #f0f3f5;
+  background: none;
+  box-shadow: 0 4px 0 #070b0e, 0 6px 10px #0005;
+  font-size: 1rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
   line-height: 1.3;
   cursor: pointer;
   list-style: none;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: box-shadow 160ms ease;
 }
 .grouped-nav summary::-webkit-details-marker { display: none; }
-.grouped-nav summary .nav-icon, .grouped-nav > button .nav-icon {
-  width: 34px; height: 34px; min-width: 34px; min-height: 34px; max-width: 34px; max-height: 34px; flex: 0 0 34px;
-  padding: 7px; border-radius: 7px; color: var(--nav-ink);
-  border: 1px solid color-mix(in srgb, var(--nav-ink) 28%, transparent);
-  background: color-mix(in srgb, var(--nav-ink) 9%, #111719);
-  box-shadow: inset 0 1px 2px #0004;
+.grouped-nav summary::before, .grouped-nav > button::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border: 1px solid #64717b;
+  background: linear-gradient(135deg, #ffffff16, #0000 42%), linear-gradient(var(--nav-shade), var(--nav-shade)), url("assets/navigation/graphite-v1.webp") center / cover, #232c32;
+  box-shadow: inset 0 1px #ffffff30, inset 0 -3px #05080b, inset 0 -4px #ffffff14;
+}
+.grouped-nav summary::after, .grouped-nav > button::after {
+  content: ""; position: absolute; left: 70px; right: 32px; bottom: 8px; height: 2px; pointer-events: none;
+  background: linear-gradient(90deg, var(--nav-ink), color-mix(in srgb, var(--nav-ink) 10%, transparent));
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--nav-ink) 30%, transparent);
+}
+.grouped-nav .nav-emblem {
+  display: grid; place-items: center; position: relative; flex: 0 0 44px; width: 44px; height: 44px;
+  color: var(--nav-ink); background: linear-gradient(135deg, #b6c6ce, #29333b 30%, #12191f 65%, #81949e);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.grouped-nav .nav-emblem::before {
+  content: ""; position: absolute; inset: 2px; pointer-events: none;
+  clip-path: inherit; border-bottom: 2px solid var(--nav-ink);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--nav-ink) 25%, #273139), #0b1217 72%);
+}
+.grouped-nav .nav-emblem .nav-icon {
+  position: relative; width: 25px; height: 25px; min-width: 25px; min-height: 25px; max-width: 25px; max-height: 25px;
+  color: var(--nav-ink); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--nav-ink) 38%, transparent));
 }
 .grouped-nav .nav-group-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .grouped-nav .nav-disclosure {
-  position: relative; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 5px;
-  color: #b5c1c7; background: #ffffff08;
+  position: relative; width: 22px; height: 26px; flex: 0 0 22px; border-radius: 3px;
+  color: var(--nav-ink); background: linear-gradient(#34414b, #121a20);
+  border: 1px solid #65747f; box-shadow: inset 0 1px #ffffff26, 0 2px #03070a;
 }
 .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after {
-  content: ""; position: absolute; inset: 10px 6px; border-radius: 1px; background: currentColor;
+  content: ""; position: absolute; inset: 11px 5px; border-radius: 1px; background: currentColor;
 }
 .grouped-nav .nav-disclosure::after { transform: rotate(90deg); transition: transform 160ms ease; }
-.grouped-nav details[open] > summary .nav-disclosure { color: var(--nav-ink); background: #ffffff0d; }
+.grouped-nav details[open] > summary .nav-disclosure { background: #0b151c; box-shadow: inset 0 2px 3px #0009; border-color: color-mix(in srgb, var(--nav-ink) 60%, #65747f); }
 .grouped-nav details[open] > summary .nav-disclosure::after { transform: rotate(0); }
 .grouped-nav summary.contains-current, .grouped-nav > button.active {
-  border-color: color-mix(in srgb, var(--nav-ink) 52%, #3a4246);
-  background: linear-gradient(110deg, color-mix(in srgb, var(--nav-ink) 12%, #22292d), #1a2023);
-  box-shadow: inset 2px 0 var(--nav-ink), inset 0 1px 0 #ffffff0d, 0 2px 4px #0003;
+  --nav-shade: color-mix(in srgb, var(--nav-ink) 15%, #152029c9);
+  background: none;
+  box-shadow: 0 4px 0 #070b0e, 0 0 10px color-mix(in srgb, var(--nav-ink) 14%, transparent);
 }
-.grouped-nav details[open] > summary { border-bottom-color: color-mix(in srgb, var(--nav-ink) 42%, #3a4246); }
+.grouped-nav summary.contains-current::before, .grouped-nav > button.active::before { border-color: var(--nav-ink); }
+.grouped-nav :is(summary, button):active::before { translate: 0 1px; }
 .grouped-nav :is(summary, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
 .grouped-nav .nav-children { display: grid; gap: 2px; margin: 5px 0 1px 26px; padding-left: 13px; border-left: 1px solid #424c52; }
-.grouped-nav button { border-radius: 8px; transform: none; white-space: normal; overflow-wrap: anywhere; }
+.grouped-nav button { border-radius: 4px; transform: none; white-space: normal; overflow-wrap: anywhere; }
 .grouped-nav .nav-children button {
   min-height: 48px; min-width: 0; gap: 9px; padding: 9px 10px; border: 1px solid transparent;
   background: transparent; box-shadow: none; color: #bfc9cf; font-size: 0.86rem; font-weight: 500;
@@ -11060,7 +11084,8 @@ body.spatial-performance-active {
 .grouped-nav summary .nav-disclosure { order: 2; }
 .grouped-nav details[open] > summary .nav-badge { display: none; }
 @media (hover: hover) {
-  .grouped-nav :is(summary, button):hover { border-color: color-mix(in srgb, var(--nav-ink) 50%, #3a4246); background: color-mix(in srgb, var(--nav-ink) 8%, #252c30); color: #fff; }
+  .grouped-nav summary:hover, .grouped-nav > button:hover { --nav-shade: #18232ba8; background: none; color: #fff; }
+  .grouped-nav .nav-children button:hover { border-color: color-mix(in srgb, var(--nav-ink) 50%, #3a4246); background: color-mix(in srgb, var(--nav-ink) 8%, #252c30); color: #fff; }
 }
 @media (prefers-reduced-motion: reduce) {
   .grouped-nav summary, .grouped-nav > button, .grouped-nav .nav-disclosure::after { transition: none; }
@@ -11074,15 +11099,19 @@ body.spatial-performance-active {
 @media (max-width: 760px) {
   .grouped-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); background: none; gap: 8px; }
   .grouped-nav .nav-children { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin-left: 25px; padding-left: 10px; }
-  .grouped-nav summary, .grouped-nav > button { font-size: 0.86rem; gap: 8px; padding: 9px 8px; }
+  .grouped-nav summary, .grouped-nav > button { font-size: 0.88rem; gap: 7px; padding: 10px 8px; min-height: 72px; }
+  .grouped-nav .nav-emblem { width: 38px; height: 40px; flex-basis: 38px; }
+  .grouped-nav summary::after, .grouped-nav > button::after { left: 53px; bottom: 9px; right: 27px; }
   .grouped-nav .nav-children button { padding: 8px; }
   .grouped-nav .nav-children button::before { display: none; }
   .grouped-nav .nav-disclosure { width: 18px; flex-basis: 18px; }
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 4px; right: 4px; }
 }
 @media (max-width: 360px) {
-  .grouped-nav summary, .grouped-nav > button { font-size: 0.82rem; gap: 6px; padding: 8px 7px; }
-  .grouped-nav summary .nav-icon, .grouped-nav > button .nav-icon { width: 28px; height: 28px; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; flex-basis: 28px; padding: 5px; }
+  .grouped-nav summary, .grouped-nav > button { font-size: 0.82rem; gap: 5px; padding: 9px 7px; }
+  .grouped-nav .nav-emblem { width: 30px; height: 36px; flex-basis: 30px; }
+  .grouped-nav .nav-emblem .nav-icon { width: 21px; height: 21px; min-width: 21px; min-height: 21px; max-width: 21px; max-height: 21px; }
+  .grouped-nav summary::after, .grouped-nav > button::after { left: 42px; right: 24px; }
   .grouped-nav .nav-disclosure { width: 16px; flex-basis: 16px; }
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 3px; right: 3px; }
   .grouped-nav .nav-children { grid-template-columns: minmax(0, 1fr); }

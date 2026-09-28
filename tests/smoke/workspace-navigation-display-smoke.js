@@ -17,6 +17,7 @@ for (const role of ['technician', 'production', 'accounting', 'manager', 'admin'
   const html = create().render(options(ids));
   assert.deepEqual([...html.matchAll(/data-section="([^"]+)"/g)].map(match => match[1]).sort(), ids.sort(), role);
   assert.equal((html.match(/aria-current="page"/g) || []).length, 1);
+  assert.equal((html.match(/class="nav-emblem" aria-hidden="true"/g) || []).length, 6);
   assert.match(html, /data-nav-group="settings"/);
   assert.match(html, /data-nav-messages/);
   assert.equal((html.match(/2 unread/g) || []).length, 2);

@@ -1,13 +1,16 @@
 const { test, expect } = require('@playwright/test');
 const path = require('node:path');
+const fs = require('node:fs');
 const root = path.resolve(__dirname, '../..');
 const { revealSection, navigateSection } = require('../helpers/workspace-navigation');
 const items = [['mywork', 'My Work'], ['work', 'Work Orders'], ['planning', 'Planning'], ['requests', 'Requests'],
   ['assets', 'Equipment'], ['pm', 'PM'], ['procedures', 'Procedure Checklist'], ['financial', 'Financial'], ['parts', 'Parts'],
   ['team', 'Team'], ['messages', 'Messages'], ['conversions', 'Conversions'], ['manager', 'Manager'], ['settings', 'Settings'], ['setup', 'Admin Setup'], ['performance', 'App Performance']];
 
-async function mount(page) {
-  await page.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body data-ui-section="mywork"><div class="app-shell"><aside class="sidebar"><nav class="section-nav grouped-nav" aria-label="Workspace sections"></nav></aside><main class="workspace"><h1>My Work</h1><label>Unsaved note<input id="draft"></label></main></div></body></html>');
+async function mount(page, texture = true) {
+  await page.route('https://nav.preview.test/assets/navigation/graphite-v1.webp', route => texture
+    ? route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(path.join(root, 'assets/navigation/graphite-v1.webp')) }) : route.abort());
+  await page.setContent('<!doctype html><html><head><base href="https://nav.preview.test/"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body data-ui-section="mywork"><div class="app-shell"><aside class="sidebar"><nav class="section-nav grouped-nav" aria-label="Workspace sections"></nav></aside><main class="workspace"><h1>My Work</h1><label>Unsaved note<input id="draft"></label></main></div></body></html>');
   await page.addStyleTag({ path: path.join(root, 'styles.css') });
   for (const file of ['iconDisplay.js', 'workspaceNavigationDisplay.js']) await page.addScriptTag({ path: path.join(root, 'src/render', file) });
   await page.evaluate(items => {
@@ -19,6 +22,10 @@ async function mount(page) {
     };
     window.drawNav();
   }, items);
+  if (texture) expect(await page.evaluate(() => new Promise(resolve => {
+    const image = new Image(); image.onload = () => resolve(image.naturalWidth); image.onerror = () => resolve(0);
+    image.src = 'assets/navigation/graphite-v1.webp';
+  }))).toBe(384);
 }
 
 for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`grouped menu layout, colors and complete tap targets at ${width}px`, async ({ page }, testInfo) => {
@@ -131,4 +138,47 @@ test('menu affordances stay distinct and respect reduced motion', async ({ page 
   await expect(child).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(child).toHaveCSS('box-shadow', 'none');
   await expect(page.locator('button.nav-mywork')).toHaveAttribute('aria-current', 'page');
+});
+
+test('custom material is bounded and navigation works when it cannot load', async ({ page }) => {
+  expect(fs.statSync(path.join(root, 'assets/navigation/graphite-v1.webp')).size).toBeLessThan(6 * 1024);
+  await mount(page, false);
+  const team = page.locator('[data-nav-group="team"] > summary');
+  await team.click();
+  await expect(page.locator('button.nav-messages')).toBeVisible();
+  await team.click();
+  await expect(team.locator('.nav-badge')).toBeVisible();
+  expect(await team.evaluate(node => getComputedStyle(node, '::before').backgroundColor)).toBe('rgb(35, 44, 50)');
+});
+
+test('faceted surfaces retain full tap targets and visible unread badges on a narrow phone', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  try {
+    await mount(page);
+    await page.evaluate(() => {
+      window.navOptions.renderBadge = id => id === 'messages' ? '<b class="nav-badge nav-message-badge">128</b>' : '';
+      window.drawNav();
+    });
+    const team = page.locator('[data-nav-group="team"] > summary');
+    const badge = team.locator('.nav-badge');
+    await expect(badge).toBeVisible();
+    const boxes = await team.evaluate(node => [node, node.querySelector('.nav-group-label'), node.querySelector('.nav-badge'), node.querySelector('.nav-disclosure')].map(n => {
+      const r = n.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+    }));
+    expect(boxes[1].right).toBeLessThanOrEqual(boxes[2].left);
+    expect(boxes[2].right).toBeLessThanOrEqual(boxes[3].left);
+    expect(boxes[3].right).toBeLessThan(boxes[0].right);
+    await team.scrollIntoViewIfNeeded();
+    let rect = await team.boundingBox();
+    await page.touchscreen.tap(rect.x + 2, rect.y + rect.height - 2);
+    await expect(team).toHaveAttribute('aria-expanded', 'true');
+    await expect(badge).toBeHidden();
+    await expect(page.locator('button.nav-messages .nav-badge')).toBeVisible();
+    await team.locator('.nav-emblem').tap();
+    await expect(team).toHaveAttribute('aria-expanded', 'false');
+    await expect(badge).toBeVisible();
+    await team.locator('.nav-group-label').tap();
+    await expect(team).toHaveAttribute('aria-expanded', 'true');
+  } finally { await context.close(); }
 });

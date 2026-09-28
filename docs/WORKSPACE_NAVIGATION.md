@@ -34,21 +34,25 @@ Manager retain their existing role contracts. Nothing changes in database access
   widths, expanded groups occupy a full row and their children use two columns
   (one below 360px). Tablet navigation uses three columns instead of squeezing
   six headings into a horizontal strip. Children keep their section colors.
-- Group headings use inset colored icons and restrained surface highlights;
-  child destinations are connected rows, with a stronger selected-page treatment.
-  Plus/minus transitions respect reduced motion and never animate layout height.
+- Group headings use faceted, textured metal faces, illuminated icon housings and
+  recessed plus/minus controls. Child destinations remain connected rows. The
+  surface treatment never clips the actual hit area or focus outline. Plus/minus
+  transitions respect reduced motion and never animate layout height.
 
 ## Ownership And Verification
 
 `src/render/workspaceNavigationDisplay.js` owns presentation and disclosure state;
 `workspaceSectionNavigationEvents.js` still owns destination actions. The new module
-is in the existing runtime bundle, with no new dependency or network request.
+is in the existing runtime bundle, with no new dependency or script request.
 
 Compared with the section-color baseline, grouped navigation and visual polish add
-7,169 decoded / 1,594 gzip bytes across runtime, app shell and shared CSS. The visual
-polish alone adds 3,135 / 545 bytes and changes no runtime JavaScript. The total
-startup budget remains 780 KiB decoded / 175 KiB gzip; actual startup is 757,502 /
-176,974 bytes. The CSS component allowance is 193 KiB decoded / 34 KiB + 256 gzip.
+8,991 decoded / 2,112 gzip bytes across runtime, app shell and shared CSS. The total
+JS/CSS startup budget remains 780 KiB decoded / 175 KiB gzip; actual startup is
+759,324 / 177,492 bytes. The CSS allowance is 195 KiB decoded / 35 KiB gzip.
+The shared material is a separate 4,904-byte WebP, bounded below 6 KiB in browser
+tests. It is referenced only by visible top-level navigation, with a plain dark
+fallback if unavailable. Text, icons, focus outlines and hit areas are real UI,
+not baked into the image. No new dependency or rendering engine is introduced.
 
 Node and browser navigation tests cover permissions-filtered destinations, active
 state, escaping, nine viewport widths, keyboard, touch, draft preservation, and
