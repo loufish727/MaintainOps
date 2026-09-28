@@ -48,6 +48,14 @@ for (const width of [1440, 390]) test(`unfinished equipment survives scrolling, 
     for (const [field, value] of Object.entries(values)) await form.locator(`[name=${field}]`).fill(value);
     await form.locator('[name=asset_type]').selectOption('shop_item');
     await form.locator('[name=safety_devices_required]').uncheck();
+    const originalField = await form.locator('[name=name]').elementHandle();
+    for (const group of ['work', 'team', 'settings', 'assets']) {
+      await page.locator(`[data-nav-group="${group}"] > summary`).click();
+      await expect(page.locator(`[data-nav-group="${group}"] > summary`)).toHaveAttribute('aria-expanded', 'true');
+      await fieldsIntact();
+      expect(await originalField.evaluate(node => node === document.querySelector('#create-asset-form [name=name]'))).toBe(true);
+      await expect(page.locator('body')).toHaveAttribute('data-ui-section', 'assets');
+    }
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     await page.evaluate(() => scrollTo(0, 0));
     await fieldsIntact();

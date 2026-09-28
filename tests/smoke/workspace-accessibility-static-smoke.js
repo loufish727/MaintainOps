@@ -4,12 +4,16 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "../..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
+const navSource = fs.readFileSync(path.join(root, "src/render/workspaceNavigationDisplay.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
 assert.doesNotMatch(appSource, /Authenticated Multi-Tenant MVP/);
 assert.match(appSource, /class="skip-link" href="#workspace-main"/);
 assert.match(appSource, /id="workspace-main" tabindex="-1"/);
-assert.match(appSource, /aria-current="page"/);
+assert.match(appSource, /MaintainOpsWorkspaceNavigation\.render\(/);
+assert.match(navSource, /aria-current="page"/);
+assert.match(navSource, /aria-controls="nav-children-/);
+assert.match(navSource, /aria-expanded=/);
 assert.match(appSource, /class="visually-hidden".*MaintainOps workspace/);
 assert.match(appSource, /id="app-notice-slot"[^>]*role="status"[^>]*aria-live="polite"/);
 assert.equal((appSource.match(/<h1 class="visually-hidden"/g) || []).length, 1);
