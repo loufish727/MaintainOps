@@ -30,6 +30,8 @@ Performance room are unchanged.
 - Global shortcuts keep their destination color rather than the active page's.
 - Lazy feature styles consume these tokens. No new image, script, dependency,
   data request, or feature-loading trigger is introduced by the palette.
+- Superseded button colors are removed. The stylesheet's compressed allowance
+  increases by 256 bytes; its decoded cap and the combined startup caps are unchanged.
 
 ## Semantic Exceptions
 

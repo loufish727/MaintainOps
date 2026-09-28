@@ -1927,60 +1927,10 @@ textarea {
 
 .primary-button {
   border: 0;
-  background: var(--accent);
-  color: #fff;
-}
-
-.primary-button:hover { background: var(--accent-dark); }
-
-.quick-fix-button {
-  background: var(--rel-comment-ink);
-}
-
-.quick-fix-button:hover {
-  background: var(--accent-dark);
-}
-
-.work-action-button {
-  background: var(--accent);
-  color: #fff;
-}
-
-.request-action-button {
-  border-color: var(--rel-comment-ink);
-  background: var(--rel-comment-bg);
-  color: var(--rel-comment-ink);
-}
-
-.report-issue-button {
-  border-color: color-mix(in srgb, var(--yellow) 62%, var(--line));
-  background: color-mix(in srgb, var(--yellow) 16%, var(--control-bg));
-  color: var(--yellow);
-}
-
-.report-issue-button:hover {
-  background: color-mix(in srgb, var(--yellow) 26%, var(--control-bg));
-  color: var(--ink);
-}
-
-.asset-action-button {
-  border-color: var(--section-ink);
-  background: color-mix(in srgb, var(--section-ink) 12%, #171b1f);
-  color: var(--section-ink);
-}
-
-.export-action-button,
-.page-action-button,
-.back-action-button {
-  border-color: var(--line);
-  background: var(--control-bg);
-  color: var(--muted);
 }
 
 .secondary-button {
   border: 1px solid var(--line);
-  background: var(--control-bg);
-  color: var(--ink);
 }
 
 .save-work-button {
@@ -2229,18 +2179,6 @@ textarea {
   stroke-linejoin: round;
   stroke-width: 2;
   flex: 0 0 auto;
-}
-
-.segment:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 70%, #ffffff);
-  color: var(--on-light-highlight);
-}
-
-.segment.active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 76%, #ffffff);
-  color: var(--on-light-highlight);
 }
 
 .status-segment.status-open {
@@ -8680,39 +8618,15 @@ textarea:focus {
   background: color-mix(in srgb, var(--section-ink) 85%, white);
 }
 
-.secondary-button,
-.text-button {
-  border-color: rgba(255,255,255,0.14);
-}
-
 .quick-fix-button {
   background: var(--section-ink);
   color: #05070a;
-}
-
-.work-action-button {
-  background: var(--section-ink);
-  color: #080a0c;
 }
 
 .request-action-button {
   border-color: var(--section-requests);
   background: color-mix(in srgb, var(--section-requests) 12%, #171b1f);
   color: var(--section-requests);
-}
-
-.asset-action-button {
-  border-color: var(--section-ink);
-  background: color-mix(in srgb, var(--section-ink) 12%, #171b1f);
-  color: var(--section-ink);
-}
-
-.export-action-button,
-.page-action-button,
-.back-action-button {
-  border-color: rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.045);
-  color: var(--muted);
 }
 
 .app-notice {
