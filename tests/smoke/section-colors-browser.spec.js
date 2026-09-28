@@ -18,6 +18,7 @@ async function mount(page, section) {
     <body data-ui-section="${section}"><div class="app-shell"><aside class="sidebar"><div class="brand"><strong>MaintainOps</strong></div>
     <nav class="section-nav" aria-label="Workspace sections">${Object.entries(sections).map(([id, [label]]) =>
       `<button class="nav-${id} ${id === section ? 'active' : ''}" data-section="${id}"><span class="nav-icon">+</span><span>${label}</span></button>`).join('')}</nav>
+    <label class="topbar-location-switcher">Location<select><option>Salem, OR</option></select></label>
     <div class="topbar-actions"><button class="secondary-button" data-traveling-units>Traveling Equipment</button><button class="secondary-button report-issue-button">Report Issue</button></div></aside>
     <main class="workspace"><section class="panel"><div class="panel-header"><h2>${sections[section][0]}</h2><span>Salem, OR</span></div>
     <div class="segmented-control"><button class="segment active">All records</button><button class="segment">Needs review</button></div>
@@ -65,6 +66,7 @@ for (const width of [390, 1440]) test(`all section identities and dialog states 
     expect(await color(page.locator('#part'))).toBe(rgb('#f0bc63'));
     expect(await color(page.locator('[data-traveling-units]'))).toBe(rgb('#77d7ff'));
     expect(await color(page.locator('.report-issue-button'))).toBe(rgb('#c1cbd2'));
+    await expect(page.locator('.topbar-location-switcher select')).toHaveCSS('color-scheme', 'dark');
     for (const selector of ['#save', '#edit', '.segment.active', '.panel-header h2', '.error-text']) {
       expect(await contrast(page.locator(selector)), `${label} ${selector} text contrast`).toBeGreaterThanOrEqual(4.5);
     }

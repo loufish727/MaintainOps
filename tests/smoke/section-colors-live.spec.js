@@ -40,6 +40,7 @@ test('isolated QA: section colors follow real navigation, details and phone layo
       await expect(page.locator('[data-retry-feature]')).toHaveCount(0);
       await expect(page.locator('[data-traveling-units]').first()).toHaveCSS('color', 'rgb(119, 215, 255)');
       await expect(page.locator('.report-issue-button').first()).toHaveCSS('color', 'rgb(193, 203, 210)');
+      await expect(page.locator('.topbar-location-switcher select').first()).toHaveCSS('color-scheme', 'dark');
       const heading = page.locator('#workspace-main .panel-header h2').first();
       if (await heading.count()) {
         const values = await heading.evaluate(node => {

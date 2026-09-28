@@ -482,6 +482,7 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 }
 
 .topbar-location-switcher select {
+  color-scheme: dark;
   min-height: 36px;
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
   background:

@@ -22,7 +22,7 @@
 .travel-dialog h2 { font-size: 20px; margin: 0 0 12px; color: var(--section-ink); }
 .travel-dialog h3 { font-size: 17px; overflow-wrap: anywhere; }
 .travel-dialog label { display: block; margin: 20px 0 8px; }
-.travel-dialog select { width: 100%; min-height: 48px; color: var(--ink); background: var(--dialog-field); border: 1px solid var(--field-line); border-radius: 6px; padding: 8px; font-size: 16px; }
+.travel-dialog select { color-scheme: dark; width: 100%; min-height: 48px; color: var(--ink); background: var(--dialog-field); border: 1px solid var(--field-line); border-radius: 6px; padding: 8px; font-size: 16px; }
 .travel-dialog .muted { color: #c4d1d6; font-size: 14px; line-height: 1.5; }
 .travel-dialog [role=alert] { color: #ffbdc3; font-size: 14px; }
 .travel-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
