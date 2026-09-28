@@ -3137,7 +3137,7 @@ function setMessageQuote(id) {
 
 function updateMessageNavBadges() {
   const count = totalUnreadMessages() + unreadWorkOrderNotificationCount();
-  document.querySelectorAll('[data-section="messages"]').forEach((button) => {
+  document.querySelectorAll('[data-section="messages"], [data-nav-messages]').forEach((button) => {
     button.querySelectorAll(".nav-badge").forEach((badge) => badge.remove());
     if (!count) return;
     const badge = document.createElement("b");
@@ -3814,8 +3814,8 @@ function renderWorkspace() {
         </details>
         <button class="text-button inverse desktop-sign-out" data-sign-out type="button">Sign out</button>
         ${renderCommandStack("mobile")}
-        <nav class="section-nav" aria-label="Workspace sections">
-          ${navItems.map(([id, label]) => `<button class="nav-${id} ${activeSection === id ? "active" : ""}" data-section="${id}" type="button" ${activeSection === id ? `aria-current="page"` : ""}>${navIcon(id)}<span>${label}</span>${renderSectionNavBadge(id)}</button>`).join("")}
+        <nav class="section-nav grouped-nav" aria-label="Workspace sections">
+          ${window.MaintainOpsWorkspaceNavigation.render({ items: navItems, activeSection, scope: `${session.user.id}:${activeCompanyId}`, escapeHtml, navIcon, renderBadge: renderSectionNavBadge })}
         </nav>
       </aside>
 
@@ -5419,6 +5419,7 @@ function bindWorkspaceEvents() {
     button.addEventListener("click", () => supabaseClient.auth.signOut());
   });
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
+  window.MaintainOpsWorkspaceNavigation.bind();
   bindWorkspaceSectionNavigationEvents({
     openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
     openEquipmentHome: () => {

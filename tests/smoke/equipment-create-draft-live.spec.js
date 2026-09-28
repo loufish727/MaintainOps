@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
@@ -53,8 +54,8 @@ for (const width of [1440, 390]) test(`unfinished equipment survives scrolling, 
     // Inventory filtering rebuilds the same equipment page without submitting its form.
     await page.locator('[data-asset-status-filter]').first().click();
     await fieldsIntact();
-    await page.locator('[data-section=mywork]').click();
-    await page.locator('[data-section=assets]').click();
+    await navigateSection(page, 'mywork');
+    await navigateSection(page, 'assets');
     await fieldsIntact();
     await page.reload();
     await fieldsIntact();

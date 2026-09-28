@@ -10992,6 +10992,48 @@ body.spatial-performance-active {
 .attachment-dialog button, .attachment-document-row button { min-height: 44px; }
 .attachment-review-notes { color: #ffdaa2; overflow: auto; max-height: 25dvh; flex-shrink: 0; }
 .attachment-review-actions { flex-shrink: 0; }
+.grouped-nav { align-items: start; }
+.grouped-nav .nav-group { min-width: 0; margin: 0; padding: 0; border: 0; background: none; }
+.grouped-nav summary {
+  --nav-ink: var(--section-ink);
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--nav-ink) 35%, var(--line));
+  border-left: 4px solid var(--nav-ink);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--surface-2);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.grouped-nav summary::-webkit-details-marker { display: none; }
+.grouped-nav summary .nav-icon { color: var(--nav-ink); }
+.grouped-nav .nav-group-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.grouped-nav .nav-disclosure { width: 16px; flex: 0 0 16px; text-align: center; color: var(--nav-ink); }
+.grouped-nav .nav-disclosure::before { content: "+"; font-size: 20px; line-height: 1; }
+.grouped-nav details[open] > summary .nav-disclosure::before { content: "\2212"; }
+.grouped-nav summary.contains-current { background: color-mix(in srgb, var(--nav-ink) 14%, var(--surface-2)); }
+.grouped-nav summary:focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
+.grouped-nav .nav-children { display: grid; gap: 5px; margin: 6px 0 2px 12px; padding-left: 8px; border-left: 1px solid var(--line); }
+.grouped-nav button { min-height: 48px; border-radius: 8px; transform: none; white-space: normal; overflow-wrap: anywhere; }
+.grouped-nav .nav-badge { position: static; flex-shrink: 0; margin-left: auto; }
+.grouped-nav summary .nav-badge { order: 1; margin-left: 0; }
+.grouped-nav summary .nav-disclosure { order: 2; }
+.grouped-nav details[open] > summary .nav-badge { display: none; }
+@media (max-width: 760px) {
+  .grouped-nav details[open] { grid-column: 1 / -1; }
+  .grouped-nav .nav-children { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grouped-nav button, .grouped-nav summary { font-size: 0.88rem; padding: 10px; }
+}
+@media (max-width: 360px) {
+  .grouped-nav .nav-children { grid-template-columns: minmax(0, 1fr); }
+}
+
 .asset-move {
   grid-template-columns: minmax(0, 1fr) auto;
 }

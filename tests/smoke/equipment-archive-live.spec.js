@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const {test,expect}=require('@playwright/test');
 const {randomUUID}=require('node:crypto');
 const fs=require('node:fs');
@@ -101,11 +102,11 @@ test('isolated QA archive/restore: real UI, storage retention, roles and competi
     const financePage=await open(accounting,'financial',1440);await financePage.locator(`[data-open-financial-asset="${root}"]`).click();
     await expect(financePage.getByText(/Equipment archived \/ delete/).first()).toBeVisible();
     await expect(financePage.locator('[data-open-financial-equipment]')).toHaveCount(0);
-    await page.locator('[data-section=assets]').click();await page.locator('[data-open-equipment-archive]').click();
+    await navigateSection(page, 'assets');await page.locator('[data-open-equipment-archive]').click();
     await page.locator(`[data-restore-equipment="${root}"]`).click();await page.getByLabel('Restoration note').fill('Inspected, same condition');
     await page.getByRole('button',{name:'Review Restoration'}).click();await page.locator('[data-action-save]').click();await expect(page.locator('dialog')).toHaveCount(0,{timeout:30000});
     const restored=await api('GET',`assets?id=eq.${root}&select=archived_at,status,location_id`);expect(restored[0]).toEqual({archived_at:null,status:'degraded',location_id:site.id});
-    await page.locator('[data-section=pm]').click();await page.locator(`[data-resume-equipment-pm="${schedule}"]`).click();
+    await navigateSection(page, 'pm');await page.locator(`[data-resume-equipment-pm="${schedule}"]`).click();
     await page.getByLabel('Reviewed next due date').fill('2099-02-01');await page.getByRole('button',{name:'Resume PM',exact:true}).click();await expect(page.locator('dialog')).toHaveCount(0,{timeout:30000});
     expect((await api('GET',`preventive_schedules?id=eq.${schedule}&select=active,next_due_at`))[0]).toEqual({active:true,next_due_at:'2099-02-01'});
     const r=await review(race);const raced=await Promise.all([raw('POST','rpc/archive_equipment',args(r,race),manager),raw('POST','rpc/archive_equipment',args(r,race),manager)]);

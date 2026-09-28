@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { expect, test } = require("@playwright/test");
 
 const email = process.env.MAINTAINOPS_TEST_EMAIL || "";
@@ -17,7 +18,7 @@ test.describe("MaintainOps manager/request/equipment live smoke", () => {
     }
 
     await expect(page.getByRole("button", { name: /Manager/i })).toBeVisible({ timeout: 30000 });
-    await page.locator('[data-section="manager"]').click();
+    await navigateSection(page, 'manager');
     await expect(page.getByText("Manager Beta Dashboard")).toBeVisible({ timeout: 30000 });
     await expect(page.getByRole("heading", { name: "Manager Attention" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Technician Workload" })).toBeVisible();
@@ -35,15 +36,15 @@ test.describe("MaintainOps manager/request/equipment live smoke", () => {
       await requestJumpRows.first().click();
       await expect(page.getByRole("heading", { name: "Requests" })).toBeVisible();
       await expect(page.locator(".request-list")).toBeVisible();
-      await page.locator('[data-section="manager"]').click();
+      await navigateSection(page, 'manager');
       await expect(page.getByText("Manager Beta Dashboard")).toBeVisible();
     }
 
-    await page.locator('[data-section="requests"]').click();
+    await navigateSection(page, 'requests');
     await expect(page.getByRole("heading", { name: "Requests" })).toBeVisible();
     await expect(page.locator(".request-list")).toBeVisible();
 
-    await page.locator('[data-section="assets"]').click();
+    await navigateSection(page, 'assets');
     await expect(page.getByRole("heading", { name: /Equipment/i })).toBeVisible();
     const assetCards = page.locator("[data-asset-id]");
     await expect(assetCards.first()).toBeVisible();

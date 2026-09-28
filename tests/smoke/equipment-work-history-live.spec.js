@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
@@ -44,14 +45,14 @@ test('equipment counts are exact before expansion, preserve input and scroll, an
     }, { session, company, location });
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     await page.goto(baseURL);
-    await expect(page.locator('[data-section=assets]')).toBeVisible({ timeout: 45000 });
-    await page.locator('[data-section=assets]').click();
+    await expect(page.locator('.section-nav')).toBeVisible({ timeout: 45000 });
+    await navigateSection(page, 'assets');
     return page;
   }
   const panel = page => page.locator('[data-asset-relationship-section="completed-history"]');
   const badge = page => panel(page).locator('summary [data-work-count-kind=completed]');
   async function select(page, id) {
-    await page.locator('[data-section=assets]').click();
+    await navigateSection(page, 'assets');
     await page.locator(`[data-asset-id="${id}"]`).first().click();
     await expect(page.locator('#edit-asset-form')).toBeVisible();
   }

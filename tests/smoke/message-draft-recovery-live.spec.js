@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require("@playwright/test");
 const { randomUUID } = require("node:crypto");
 
@@ -112,7 +113,7 @@ test("signed-in message recovery after background auth, reload, failure, send, a
     await expect(reply).toHaveValue("", { timeout: 45000 });
     await page.getByRole("button", { name: "Back to conversations" }).click();
     await page.getByRole("button", { name: "Back to My Work", exact: true }).click();
-    await page.locator('[data-section="messages"]').click();
+    await navigateSection(page, 'messages');
     await expect(page.locator('.message-home')).toBeVisible({ timeout: 45000 });
     await page.getByRole("button", { name: "New message", exact: true }).first().click();
     await expect(form.locator('[name="body"]')).toHaveValue("");
@@ -137,7 +138,7 @@ test("signed-in message recovery after background auth, reload, failure, send, a
     await page.getByLabel("Email", { exact: true }).fill(process.env.LFES_TECHNICIAN_EMAIL);
     await page.getByLabel("Password", { exact: true }).fill(process.env.LFES_TECHNICIAN_PASSWORD);
     await page.getByRole("button", { name: "Log In", exact: true }).click();
-    await page.locator('[data-section="messages"]').click({ timeout: 45000 });
+    await navigateSection(page, 'messages');
     await expect(page.locator('.message-center')).toBeVisible({ timeout: 45000 });
     await page.getByRole("button", { name: "New message", exact: true }).first().click();
     await expect(form.locator('[name="body"]')).toHaveValue("");

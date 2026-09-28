@@ -21,7 +21,9 @@ const budgets = {
   // QR history reuses the dialog shell; its four rules add 51 gzip bytes.
   // Shared section identities replace superseded button colors. Allow 256 more gzip
   // bytes for the palette/context selectors; decoded and combined startup caps stay fixed.
-  appStyles: { decoded: 188 * 1024, gzip: 33 * 1024 + 384 },
+  // Grouped navigation adds 1,849 decoded / 318 gzip bytes; no extra request.
+  // The combined startup limits remain unchanged.
+  appStyles: { decoded: 190 * 1024, gzip: 33 * 1024 + 896 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
   managerFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },

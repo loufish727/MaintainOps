@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 
 test('isolated QA: section colors follow real navigation, details and phone layouts', async ({ page, request }, testInfo) => {
@@ -31,7 +32,7 @@ test('isolated QA: section colors follow real navigation, details and phone layo
   const sections = await page.locator('.section-nav [data-section]').evaluateAll(nodes => nodes.map(node => node.dataset.section));
   expect(sections).toHaveLength(16);
   for (const section of sections) {
-    await page.locator(`.section-nav [data-section="${section}"]`).click();
+    await navigateSection(page, `${section}`);
     await expect(page.locator('body')).toHaveAttribute('data-ui-section', section);
     await expect(page.locator(`.section-nav [data-section="${section}"]`)).toHaveAttribute('aria-current', 'page');
     if (section === 'performance') {
@@ -61,7 +62,7 @@ test('isolated QA: section colors follow real navigation, details and phone layo
       await expect(page.locator('body')).toHaveAttribute('data-ui-section', 'mywork');
     }
   }
-  await page.locator('.section-nav [data-section="financial"]').click();
+  await navigateSection(page, 'financial');
   await page.locator('[data-open-financial-asset]').first().click();
   await expect(page.locator('.financial-asset-form')).toBeVisible();
   const financialColors = await page.locator('.financial-action-button').evaluate(node => ({
@@ -69,7 +70,7 @@ test('isolated QA: section colors follow real navigation, details and phone layo
   }));
   expect(financialColors.button).toBe(financialColors.nav);
   await page.screenshot({ path: testInfo.outputPath('financial-detail.png'), fullPage: true });
-  await page.locator('.section-nav [data-section="assets"]').click();
+  await navigateSection(page, 'assets');
   await page.locator('.asset-card[data-asset-id]').first().click();
   await expect(page.locator('#back-to-equipment')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('equipment-detail.png'), fullPage: true });

@@ -2,6 +2,7 @@ const { expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const { navigateSection } = require('./workspace-navigation');
 
 const host = 'https://fsxqrngpaseqdxijggcm.supabase.co';
 const directory = path.resolve('lfes-evidence/appwide');
@@ -107,7 +108,7 @@ async function createQa(browser, request, testInfo) {
     page.on('pageerror', error => errors.push(error.message));
     page.on('dialog', dialog => dialog.accept());
     await page.goto(baseURL);
-    await expect(page.locator('[data-section="mywork"]')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('.section-nav')).toBeVisible({ timeout: 45000 });
     await page.qaSettle();
     if (section !== 'mywork') await nav(page, section);
     return page;
@@ -175,7 +176,7 @@ async function nav(page, section) {
     await page.frameLocator('[data-platform-spatial-frame]').locator('[data-performance-exit]').click({ timeout: 45000 });
     await expect(spatial).toHaveCount(0);
   }
-  await page.locator(`[data-section="${section}"]`).click();
+  await navigateSection(page, section);
   await expect(page.locator('#workspace-main')).toBeVisible();
   await page.qaSettle();
 }
