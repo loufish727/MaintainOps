@@ -11107,10 +11107,10 @@ body.spatial-performance-active {
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 4px; right: 4px; }
 }
 @media (max-width: 360px) {
-  .grouped-nav summary, .grouped-nav > button { font-size: 0.82rem; gap: 5px; padding: 9px 7px; }
-  .grouped-nav .nav-emblem { width: 30px; height: 30px; flex-basis: 30px; }
+  .grouped-nav summary, .grouped-nav > button { font-size: 0.82rem; gap: 4px; padding: 9px 6px; }
+  .grouped-nav .nav-emblem { width: 28px; height: 28px; flex-basis: 28px; }
   .grouped-nav .nav-emblem .nav-icon { width: 21px; height: 21px; min-width: 21px; min-height: 21px; max-width: 21px; max-height: 21px; }
-  .grouped-nav summary::after, .grouped-nav > button::after { left: 42px; right: 24px; }
+  .grouped-nav summary::after, .grouped-nav > button::after { left: 40px; right: 24px; }
   .grouped-nav .nav-disclosure { width: 16px; height: 16px; flex-basis: 16px; }
   .grouped-nav .nav-disclosure::before, .grouped-nav .nav-disclosure::after { left: 3px; right: 3px; }
   .grouped-nav .nav-children { grid-template-columns: minmax(0, 1fr); }

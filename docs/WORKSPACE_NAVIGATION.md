@@ -33,7 +33,9 @@ Manager retain their existing role contracts. Nothing changes in database access
 - Group headings and child destinations have a minimum 48px touch target. At phone
   widths, expanded groups occupy a full row and their children use two columns
   (one below 360px). Tablet navigation uses three columns instead of squeezing
-  six headings into a horizontal strip. Children keep their section colors.
+  six headings into a horizontal strip. Below 360px, smaller icon housings and
+  tighter gaps reserve label space for different system-font metrics without
+  reducing the full button's touch target. Children keep their section colors.
 - Group headings use rounded, satin-metal faces, circular illuminated icon housings
   and round plus/minus controls. Child destinations remain connected rows. The
   entire visible face responds to taps and the focus outline follows its contour. Plus/minus

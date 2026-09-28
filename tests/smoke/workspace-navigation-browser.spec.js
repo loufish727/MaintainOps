@@ -70,6 +70,18 @@ for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`groupe
   await expect(page.locator('summary[data-nav-messages] .nav-badge')).toBeVisible();
 });
 
+test('narrow menu labels fit with alternate system font metrics', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await mount(page);
+  for (const family of ['Arial, sans-serif', 'Verdana, sans-serif']) {
+    await page.evaluate(font => { document.documentElement.style.fontFamily = font; }, family);
+    for (const label of await page.locator('.nav-group-label, .grouped-nav > button .nav-label').all()) {
+      expect((await label.boundingBox()).height, family).toBeLessThan(24);
+      expect(await label.evaluate(node => node.scrollWidth - node.clientWidth), family).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 test('keyboard disclosure preserves drafts, current page, focus and rerender state without network activity', async ({ page }) => {
   await mount(page);
   await page.locator('#draft').fill('Do not lose this unfinished work');
