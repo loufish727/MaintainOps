@@ -1,5 +1,5 @@
 /* Messages owns its palette and density; the rest of the workspace stays unchanged. */
-:is(.message-center,.message-tool-dialog) { --message-accent: #99dfce; --message-muted: #b0bbc3; --message-ink: #e1e5e9; --message-surface: #181c20; --message-raised: #292f35; --message-line: #46515a; --message-waveform: #81978f; --message-waveform-progress: #99dfce; color: var(--message-ink); color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+:is(.message-center,.message-tool-dialog) { --message-accent: var(--section-messages, #99dfce); --message-muted: #b0bbc3; --message-ink: #e1e5e9; --message-surface: var(--dialog-surface, #181c20); --message-raised: #292f35; --message-line: #46515a; --message-waveform: #81978f; --message-waveform-progress: var(--message-accent); color: var(--message-ink); color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
 #message-workspace { padding: 0; border: 1px solid #46515a; border-radius: 8px; overflow: hidden; background: #181c20; box-shadow: 0 8px 24px #00000030; }
 .message-center { display: flex; flex-direction: column; min-height: 0; height: var(--message-viewport-height, 86dvh); background: var(--message-surface); }
 body.messages-active .command-stack { display: none; }
@@ -103,7 +103,7 @@ body.messages-active .command-stack { display: none; }
 :is(.message-center,.message-tool-dialog) option { background: #151a1e; color: var(--message-ink); }
 .message-center textarea { resize: vertical; overflow-y: auto !important; min-height: 48px; max-height: 160px !important; padding: 11px 12px; line-height: 1.5; }
 .message-center .message-compose-line textarea { flex: 1; min-width: 0; height: 48px; }
-:is(.message-center,.message-tool-dialog) .message-send-button,.message-center .message-compose-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; color: #142b23; background: #a3dece; border: 1px solid #a3dece; border-radius: 6px; }
+:is(.message-center,.message-tool-dialog) .message-send-button,.message-center .message-compose-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; color: #142b23; background: var(--message-accent); border: 1px solid var(--message-accent); border-radius: 6px; }
 .message-center .message-send-button:hover,.message-center .message-compose-button:hover { background: #bbeadb; }
 .message-composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 7px; color: var(--message-muted); font-size: 12px; }
 .message-quick-menu summary { min-height: 32px; cursor: pointer; padding: 7px 0; }

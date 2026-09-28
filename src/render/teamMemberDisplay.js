@@ -122,7 +122,7 @@
       const currentUser = getSession().user;
       const profile = getProfilesByUserId()[currentUser.id] || {};
       return `
-        <form class="team-profile-form relationship-detail comment" id="profile-form">
+        <form class="team-profile-form relationship-detail team" id="profile-form">
           <div>
             <h3>My Profile</h3>
             <p class="muted">${escapeHtml(currentUser.email || "Signed in user")}</p>
@@ -138,7 +138,7 @@
 
     function renderPasswordChangeForm() {
       return `
-        <form class="team-profile-form relationship-detail comment" id="password-change-form">
+        <form class="team-profile-form relationship-detail team" id="password-change-form">
           <div>
             <h3>Account Security</h3>
             <p class="muted">Change the password used to sign in to MaintainOps.</p>
@@ -163,7 +163,7 @@
       const locations = getLocations();
       const canEditRecipients = canAdministerRequestNotificationRecipients();
       return `
-        <section class="team-notification-panel relationship-detail comment">
+        <section class="team-notification-panel relationship-detail team">
           <div>
             <h3>Request Email Recipients</h3>
             <p class="muted">${canEditRecipients ? "Choose who should receive new request emails when the backend email sender is enabled. Shared inboxes are allowed." : "Only admins can change request email routing."}</p>
@@ -208,7 +208,7 @@
       const canChooseInviteLocation = canGrantRoles();
       const fixedLocationId = managerInviteLocationId(activeLocationId);
       return `
-        <form class="team-invite-form relationship-detail comment" id="team-invite-form">
+        <form class="team-invite-form relationship-detail team" id="team-invite-form">
           <div>
             <h3>Invite Teammate</h3>
             <p class="muted">Invites are saved here. Copy the invite message and send it to them; when they sign up with the same email, the app adds them to this company automatically.</p>

@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require("@playwright/test");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -191,7 +192,7 @@ test("messaging lifecycle on the isolated testing platform", async ({ browser, r
   await page.unroute("**/rest/v1/message_thread_members*");
   await page.getByRole("button", { name: "Open Work Order", exact: true }).click();
   await expect(page.locator("#quick-update-work-order-form")).toBeVisible();
-  await page.locator('[data-section="messages"]').click();
+  await navigateSection(page, 'messages');
   await expect(page.locator(".message-center")).toBeVisible();
   await page.getByRole("button", { name: "New message", exact: true }).first().click();
   await page.locator("#message-thread-type").selectOption("location");

@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { expect, test } = require("@playwright/test");
 test.use({ actionTimeout: 15000 });
 
@@ -199,7 +200,7 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
       await expect(technicianCard).toBeVisible();
       await expect(technicianCard.getByText("Production Ready", { exact: true })).toBeVisible();
 
-      await technicianPage.locator('[data-section="messages"]').click();
+      await navigateSection(technicianPage, 'messages');
       await expect(technicianPage.locator(".message-center")).toBeVisible();
       await technicianPage.locator('.message-view-tabs [data-message-view="activity"]').click();
       const notificationButton = technicianPage.locator(`[data-open-work-notification="${notifications[0].id}"]`);
@@ -227,7 +228,7 @@ test.describe("Production Ready signed-in notification lifecycle", () => {
         return readNotifications[0]?.read_at || "";
       }).not.toBe("");
 
-      await technicianPage.locator('[data-section="messages"]').click();
+      await navigateSection(technicianPage, 'messages');
       await technicianPage.locator('.message-view-tabs [data-message-view="activity"]').click();
       await expect(notificationButton).toBeVisible();
       await expect(notificationButton).toHaveClass(/\bread\b/);

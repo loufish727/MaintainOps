@@ -19,8 +19,15 @@ const budgets = {
   // Small retained-history notice is shared with work history; archive layout stays lazy.
   // Accessible QR warning adds 1,227 decoded / 279 gzip bytes.
   // QR history reuses the dialog shell; its four rules add 51 gzip bytes.
-  // Allow 128 bytes of stylesheet headroom; combined startup limits stay fixed.
-  appStyles: { decoded: 188 * 1024, gzip: 33 * 1024 + 128 },
+  // Shared section identities replace superseded button colors. Allow 256 more gzip
+  // bytes for the palette/context selectors; decoded and combined startup caps stay fixed.
+  // Grouped navigation adds 1,849 decoded / 318 gzip bytes; no extra request.
+  // The combined startup limits remain unchanged.
+  // Menu polish and tablet layout add 3,135 decoded / 545 gzip bytes over the
+  // grouped-menu baseline. Combined startup caps and JS budgets stay unchanged.
+  // Machined menu faces add another 1,712 decoded / 489 gzip CSS bytes. The
+  // separately bounded 4,904-byte texture is fetched only with visible navigation.
+  appStyles: { decoded: 195 * 1024, gzip: 35 * 1024 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
   managerFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },

@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
@@ -186,7 +187,7 @@ async function fixture({ browser, request }, width) {
       { timeout: 30000, message: 'Settle background reads before deliberate reload' }).toBe(true));
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base.href);
-    await expect(page.locator('[data-section="procedures"]').first()).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('.section-nav')).toBeVisible({ timeout: 45000 });
     return page;
   }
 
@@ -227,7 +228,7 @@ async function fixture({ browser, request }, width) {
 }
 
 async function section(page, name) {
-  await page.locator(`[data-section="${name}"]:visible`).first().click();
+  await navigateSection(page, `${name}`);
 }
 async function search(page, value) {
   const input = page.locator('input.workspace-search-input:visible').first();

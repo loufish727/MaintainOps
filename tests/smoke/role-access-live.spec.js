@@ -1,3 +1,4 @@
+const { navigateSection, revealSection } = require('../helpers/workspace-navigation');
 const { expect, test } = require("@playwright/test");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -168,10 +169,10 @@ test.describe("MaintainOps authenticated role proof", () => {
       const { pageErrors } = await signIn(page, role, browserName);
 
       for (const section of ["mywork", "work", "planning", "requests", "assets", "team", "performance"]) {
-        await expect(page.locator(`[data-section="${section}"]`)).toBeVisible();
+        await revealSection(page, section);
       }
 
-      await page.locator('[data-section="messages"]').click();
+      await navigateSection(page, 'messages');
       await expect(page.locator(".message-center")).toBeVisible();
       await expect(page.locator('.message-home')).toBeVisible();
       await expect(page.locator('.message-list')).toHaveCount(0);
@@ -189,7 +190,7 @@ test.describe("MaintainOps authenticated role proof", () => {
         await page.getByRole("button", { name: "Cancel new message" }).click();
       }
 
-      await page.locator('[data-section="planning"]').click();
+      await navigateSection(page, 'planning');
       await expect(page.getByRole("heading", { name: "Planning", exact: true, level: 2 })).toBeVisible();
       await expectSingleActiveWorkspacePanel(page);
       await expect(page.getByText("No Due Date", { exact: true })).toBeVisible();
@@ -203,8 +204,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       if (role.financial === "none") {
         await expect(financialNav).toHaveCount(0);
       } else {
-        await expect(financialNav).toBeVisible();
-        await financialNav.click();
+        await navigateSection(page, 'financial');
         await expect(page.getByRole("heading", { name: "Financial", exact: true, level: 2 })).toBeVisible();
         await expect(page.locator('[data-financial-filter="missing"]')).toBeVisible();
         const financialCards = page.locator("[data-open-financial-asset]");
@@ -222,7 +222,7 @@ test.describe("MaintainOps authenticated role proof", () => {
         expect(financialLoads.some((name) => name.startsWith("financialFeature."))).toBe(true);
       }
 
-      await page.locator('[data-section="team"]').click();
+      await navigateSection(page, 'team');
       await expect(page.getByRole("heading", { name: "Team", exact: true, level: 2 })).toBeVisible();
       await expectSingleActiveWorkspacePanel(page);
       const memberCards = page.locator(".member-card");
@@ -254,8 +254,7 @@ test.describe("MaintainOps authenticated role proof", () => {
 
       const managerNav = page.locator('[data-section="manager"]');
       if (role.managerDashboard) {
-        await expect(managerNav).toBeVisible();
-        await managerNav.click();
+        await navigateSection(page, 'manager');
         await expect(page.locator(".manager-dashboard")).toBeVisible({ timeout: 30000 });
         await expectSingleActiveWorkspacePanel(page);
         const managerLoads = (await workspaceRenderEvidence(page)).featureBundles;
@@ -264,13 +263,13 @@ test.describe("MaintainOps authenticated role proof", () => {
       else await expect(managerNav).toHaveCount(0);
 
       if (role.name === "admin") {
-        await page.locator('[data-section="setup"]').click();
+        await navigateSection(page, 'setup');
         await expect(page.locator(".setup-list")).toBeVisible({ timeout: 30000 });
         await expectSingleActiveWorkspacePanel(page);
         const setupLoads = (await workspaceRenderEvidence(page)).featureBundles;
         expect(setupLoads.some((name) => name.startsWith("setupFeature."))).toBe(true);
 
-        await page.locator('[data-section="performance"]').click();
+        await navigateSection(page, 'performance');
         const performanceFrame = page.frameLocator('iframe[data-platform-spatial-frame]');
         await expect(performanceFrame.locator(".quality-control")).toBeVisible({ timeout: 120000 });
         const room = page.frames().find((frame) => frame.url().includes("performance-spatial.html"));
@@ -291,7 +290,7 @@ test.describe("MaintainOps authenticated role proof", () => {
       }
 
       if (role.operational === "read") {
-        await page.locator('[data-section="assets"]').click();
+        await navigateSection(page, 'assets');
         const assetCards = page.locator("[data-asset-id]");
         await expect(assetCards.first()).toBeVisible();
         await assetCards.first().click();

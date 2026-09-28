@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
@@ -43,8 +44,8 @@ test('equipment tag persists independently through create, edit, clear, search, 
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(baseURL);
-    await expect(page.locator('[data-section=assets]')).toBeVisible({ timeout: 45000 });
-    await page.locator('[data-section=assets]').click();
+    await expect(page.locator('.section-nav')).toBeVisible({ timeout: 45000 });
+    await navigateSection(page, 'assets');
     return page;
   }
   async function noOverflow(page) {
@@ -125,7 +126,7 @@ test('equipment tag persists independently through create, edit, clear, search, 
     const finance = (await api('admin', 'GET', `asset_financials?archived_asset_id=eq.${assetId}&company_id=eq.${company}&select=*`))[0];
     expect(finance).toMatchObject({ asset_id: null, archived_asset_tag: revised, archived_asset_code: 'SERIAL-0001', asset_tag: 'FIXED-99' });
     await accounting.reload();
-    await accounting.locator('[data-section=financial]').click();
+    await navigateSection(accounting, 'financial');
     await expect(accounting.locator('[data-open-financial-asset]').first()).toBeVisible();
     const retained = accounting.locator(`[data-open-financial-asset="financial:${finance.id}"]`);
     for (let i = 0; i < 20 && !await retained.count(); i++) {

@@ -147,6 +147,7 @@ export function createAttachmentWorkflow(deps, media = {}) {
     if (!targets[context.kind] || !context.companyId || !context.recordId || !context.userId) throw new Error('Choose a record before attaching files.');
     if (!files.length) { deps.showNotice('Choose photos or files first.', 'warning'); return; }
     const dialog = element('dialog', undefined, doc.body, 'attachment-dialog');
+    dialog.setAttribute('data-ui-section', { work: 'work', asset: 'assets', part: 'parts' }[context.kind]);
     dialog.setAttribute('aria-labelledby', 'attachment-review-title');
     const heading = element('h2', 'Review attachments', dialog); heading.id = 'attachment-review-title';
     const status = element('p', 'Reading files...', dialog); status.setAttribute('role', 'status');

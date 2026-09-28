@@ -111,6 +111,7 @@ import "../render/displayHelpers.js";
 import "../render/relationshipDisplay.js";
 import "../render/dashboardDisplay.js";
 import "../render/iconDisplay.js";
+import "../render/workspaceNavigationDisplay.js";
 import "../render/equipmentLabels.js";
 import "../render/emptyStateText.js";
 import "../render/requestDisplay.js";

@@ -1,3 +1,4 @@
+const { navigateSection } = require('../helpers/workspace-navigation');
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
 
@@ -87,7 +88,7 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     await page.locator('[data-travel-page=prev]').click(); await expect(page.locator('.travel-unit')).toHaveCount(12);
     // Main Equipment navigation is a home action, not a return to the traveling view.
     async function expectEquipmentHome() {
-      await page.locator('[data-section=assets]:visible').click();
+      await navigateSection(page, 'assets');
       await expect(page.locator('[data-travel-board]')).toHaveCount(0);
       await expect(page.locator('.asset-master-summary')).toBeVisible();
       await expect(page.locator('[data-asset-type-filter=traveling_machine]')).toHaveAttribute('aria-pressed','false');
@@ -102,7 +103,7 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     await expect(page.locator('#edit-asset-form')).toBeVisible();
     await expectEquipmentHome();
     await page.locator('[data-traveling-units]:visible').click();
-    await page.locator('[data-section=mywork]:visible').click();
+    await navigateSection(page, 'mywork');
     await expectEquipmentHome();
     await page.locator('[data-traveling-units]:visible').click();
     await expect(unit).toBeVisible();
@@ -126,7 +127,7 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     const actor=(await api('GET',`profiles?company_id=eq.${company}&user_id=eq.${tech.user.id}&select=full_name`))[0].full_name;
     await expect(unit).toContainText(actor);
     expect(await api('GET',`work_orders?id=eq.${workId}&select=*`)).toEqual(originalWork);
-    await page.locator('[data-section=pm]').click();
+    await navigateSection(page, 'pm');
     await expect(page.locator('.pm-card').filter({hasText:name})).toHaveCount(0);
     await page.locator('[data-traveling-units]:visible').click();
     await expect(unit).toContainText('Offline / Down');
@@ -195,13 +196,13 @@ for (const width of [1440,390,430]) test(`traveling equipment moves safely and r
     await accountPage.locator(`.asset-card[data-asset-id="${assetIds[0]}"]`).click();
     await expect(accountPage.locator('#move-traveling-asset-form')).toHaveCount(0);
     await expect(accountPage.locator('#edit-asset-form')).toHaveCount(0);
-    await accountPage.locator('[data-section=financial]').click();
+    await navigateSection(accountPage, 'financial');
     // Financial reads the same asset, never a second copy.
     expect((await api('GET',`asset_financials?asset_id=eq.${assetIds[0]}&select=acquisition_cost`,undefined,accounting))[0].acquisition_cost).toBe(1234);
     const adminPage=await open(admin);
     console.log('Travel proof: admin loaded');
     await adminPage.locator('#location-select:visible, [data-location-select]:visible').first().selectOption(to.id);
-    await adminPage.locator('[data-section=pm]').click();
+    await navigateSection(adminPage, 'pm');
     await expect(adminPage.locator('.pm-card').filter({hasText:name})).toBeVisible({timeout:30000});
     const generation=await api('POST','rpc/generate_preventive_work_order',{p_company_id:company,p_schedule_id:scheduleId,p_expected_due_at:'2099-01-01'});
     expect((await api('GET',`work_orders?id=eq.${generation.work_order_id}&select=asset_id,location_id`))[0]).toEqual({asset_id:assetIds[0],location_id:to.id});

@@ -37,6 +37,7 @@ const lazyResources = [
 ];
 
 const additionalResources = [
+  "assets/navigation/graphite-v1.webp",
   "auth/callback/index.html",
   "auth/callback/callback.js",
   "performance-spatial.html",

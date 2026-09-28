@@ -21,6 +21,7 @@ CSS and UI changes also need a small visual safety check:
 - Verify both desktop and mobile layouts for changed cards, tables, panels, and forms.
 - Treat hidden content, accidental overflow, clipped values, unreadable result fields, or theme-breaking background drift as a failed smoke.
 - Prefer a targeted browser or computed-style check when a change depends on color, layout, or responsive behavior.
+- Use the shared [section color contract](SECTION_COLORS.md); destination accents must not override status or destructive-action colors.
 
 Event and navigation changes need path-owned verification:
 
