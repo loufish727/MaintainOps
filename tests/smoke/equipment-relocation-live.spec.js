@@ -28,7 +28,7 @@ test('isolated QA relocation: signed-in UI, retained links, permissions and conc
       localStorage.setItem(`maintainops.activeLocationId:v2:${session.user.id}:${company}`,location);localStorage.setItem('maintainops.activeSection',section);
     },{session,company,location:from.id,section});
     const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(baseURL);await expect(page.locator('[data-section=assets]')).toBeVisible({timeout:45000});return page;
+    await page.goto(baseURL);await expect(page.locator('body')).toHaveAttribute('data-ui-section',section,{timeout:45000});return page;
   }
   try{
     for(const [i,id] of ids.entries())await api('POST','assets',{id,company_id:company,location_id:from.id,name:`${name} ${i}`,asset_type:i<2?'machine':'secondary_machine',

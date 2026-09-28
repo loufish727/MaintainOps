@@ -43,7 +43,7 @@ test('isolated QA archive/restore: real UI, storage retention, roles and competi
       localStorage.setItem(`maintainops.activeLocationId:v2:${session.user.id}:${company}`,location);localStorage.setItem('maintainops.activeSection',section);
     },{session,company,location:site.id,section});
     const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(baseURL);await expect(page.locator('[data-section=assets]')).toBeVisible({timeout:45000});return page;
+    await page.goto(baseURL);await expect(page.locator('body')).toHaveAttribute('data-ui-section',section,{timeout:45000});return page;
   }
   try {
     for(const [i,id] of ids.entries()) await api('POST','assets',{id,company_id:company,location_id:site.id,name:`${name} ${i}`,asset_type:i===4?'traveling_machine':i===1||i===2?'component':'machine',
