@@ -158,7 +158,7 @@
           <label>Finance notes<textarea name="finance_notes" rows="2">${escapeHtml(finance.finance_notes || "")}</textarea></label>
           <label class="check-row"><input name="needs_review" type="checkbox" ${finance.needs_review ? "checked" : ""}> Needs review</label>
           <p class="error-text" data-financial-error="${escapeHtml(asset.id)}"></p>
-          <button class="secondary-button asset-action-button" type="submit" ${getAssetFinancialsReady?.() === false ? "disabled" : ""}>Save Financial Info</button>
+          <button class="secondary-button financial-action-button" type="submit" ${getAssetFinancialsReady?.() === false ? "disabled" : ""}>Save Financial Info</button>
         </form>
       `;
     }
@@ -193,7 +193,7 @@
         ["Reviewed by", reviewedByName(finance)],
       ];
       return `
-        <div class="financial-readonly-list relationship-detail asset">
+        <div class="financial-readonly-list relationship-detail financial">
           ${rows.map(([label, value]) => `
             <div class="meta-row financial-readonly-row">
               <span><strong>${escapeHtml(label)}</strong>${escapeHtml(financialDisplayValue(value))}</span>
@@ -246,7 +246,7 @@
       const typeOptions = [...new Set(allFinancialAssets.map((asset) => asset.asset_type || "machine"))]
         .sort((a, b) => (assetTypeOrder[a] || 999) - (assetTypeOrder[b] || 999));
       return `
-        <div class="asset-area-filter relationship-detail asset" aria-label="Financial asset filters">
+        <div class="asset-area-filter relationship-detail financial" aria-label="Financial asset filters">
           <label>Status
             <select data-financial-filter="missing">
               <option value="all" ${activeMissing === "all" ? "selected" : ""}>All financial records</option>
@@ -281,7 +281,7 @@
       const asset = financialAssetRows().find((row) => row.id === assetId || row.financialRecord?.asset_id === assetId);
       if (!asset) {
         return `
-          <div class="relationship-detail asset">
+          <div class="relationship-detail financial">
             <button class="secondary-button back-action-button" data-back-financial-list type="button">Back to Financial</button>
             <p class="muted">This equipment record is no longer available.</p>
           </div>
@@ -305,14 +305,14 @@
         </div>
         ${asset.archived_at ? `<div class="financial-deleted-banner">Equipment archived / ${escapeHtml(asset.archive_reason)}. Financial information is retained.</div>` : ""}
         ${archived ? `
-          <section class="relationship-detail asset financial-deleted-detail">
+          <section class="relationship-detail financial financial-deleted-detail">
             <div class="financial-deleted-banner">Operational equipment deleted${finance.operational_deleted_at ? ` ${escapeHtml(new Date(finance.operational_deleted_at).toLocaleDateString())}` : ""}${finance.operational_deleted_by ? ` by ${escapeHtml(deletedByName(finance))}` : ""}</div>
             <p class="muted">This financial history was retained after the shop equipment record was deleted.</p>
             ${canEditFinancial() ? `<button class="danger-action-button" data-delete-financial-record="${escapeHtml(finance.id)}" type="button">Delete From Financials</button>` : ""}
             <p class="error-text" data-financial-delete-error="${escapeHtml(finance.id || "")}"></p>
           </section>
         ` : ""}
-        <section class="relationship-detail asset">
+        <section class="relationship-detail financial">
           <div class="chip-row">
             <span class="chip">${escapeHtml(parent ? `Part of ${parent.name}` : "Top level equipment")}</span>
             ${asset.asset_code ? `<span class="chip">${escapeHtml(asset.asset_code)}</span>` : ""}
@@ -325,7 +325,7 @@
           </div>
           <p class="muted">${archived ? "Operational equipment fields are a retained snapshot." : "Operational equipment fields mirror the equipment record. Accounting changes on this screen save only financial fields."}</p>
         </section>
-        <section class="relationship-detail asset">
+        <section class="relationship-detail financial">
           <h3>Financial Details</h3>
           ${canEditFinancial() ? renderFinancialForm(asset) : renderFinancialReadOnly(asset)}
         </section>

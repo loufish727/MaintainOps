@@ -3623,6 +3623,7 @@ function renderWorkspace() {
   }
   document.body.classList.toggle("spatial-performance-active", activeSection === "performance");
   document.body.classList.toggle("messages-active", activeSection === "messages" && !workspaceUiState.getSearchQuery().trim());
+  document.body.dataset.uiSection = activeSection;
   updateMessageViewport();
   if (activeSection !== "performance") {
     platformSpatialFrameRendered = false;
@@ -3841,7 +3842,7 @@ function renderWorkspace() {
         <section class="layout-grid single-column">
           ${isWorkArea ? `
             ${activeSection !== "assets" && (activeAssetId || activeWorkOrderId || quickFixMode || createWorkOrderMode) ? `
-              <section class="panel full-width focus-panel">
+              <section class="panel full-width focus-panel" data-ui-section="${activeAssetId ? "assets" : "work"}">
                 <div class="panel-header">
                   <h2>${activeAssetId ? "Equipment Detail" : activeWorkOrderId ? "Work Order Detail" : quickFixMode ? "Quick Fix" : "Create Work Order"}</h2>
                   <button class="secondary-button back-action-button" id="back-to-my-work" type="button">Back to ${activeSection === "work" ? "Work Orders" : "My Work"}</button>
@@ -3849,7 +3850,7 @@ function renderWorkspace() {
                 <div id="detail-panel">${activeAssetId ? renderAssetDetail() : activeWorkOrderId ? renderWorkOrderDetail() : quickFixMode ? renderQuickFixForm() : renderCreateWorkOrder()}</div>
               </section>
             ` : `
-              <section class="panel full-width my-work-panel queue-panel">
+              <section class="panel full-width my-work-panel queue-panel" data-ui-section="${showingRequestsInWorkQueue ? "requests" : activeSection}">
                 <div class="panel-header">
                   <h2>${isViewingWorkOrderSearch ? "Matching Work Orders" : showingRequestsInWorkQueue ? "Requests" : workQueuePanelTitle()}</h2>
                   <span>${isViewingWorkOrderSearch ? `${visibleWorkOrderCount} found for "${escapeHtml(searchQuery.trim())}"` : showingRequestsInWorkQueue ? `${visibleRequestCount} shown` : workQueuePanelSubtitle(visibleWorkOrderCount)}</span>

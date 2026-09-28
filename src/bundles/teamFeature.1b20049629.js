@@ -1,18 +1,18 @@
-(()=>{var ue=Object.create;var j=Object.defineProperty;var pe=Object.getOwnPropertyDescriptor;var me=Object.getOwnPropertyNames;var be=Object.getPrototypeOf,fe=Object.prototype.hasOwnProperty;var ve=(l,i)=>()=>{try{return i||l((i={exports:{}}).exports,i),i.exports}catch(u){throw i=0,u}};var he=(l,i,u,v)=>{if(i&&typeof i=="object"||typeof i=="function")for(let m of me(i))!fe.call(l,m)&&m!==u&&j(l,m,{get:()=>i[m],enumerable:!(v=pe(i,m))||v.enumerable});return l};var $e=(l,i,u)=>(u=l!=null?ue(be(l)):{},he(i||!l||!l.__esModule?j(u,"default",{value:l,enumerable:!0}):u,l));var S=ve((we,k)=>{(function(){function l({getProfilesByUserId:i,getCurrentUser:u,getCompanyMembers:v,getTeamInvites:m,getTeamInvitesReady:b,getTeamInviteCancelError:d,getPendingCancelInviteId:A,getTeamInviteLinks:N,getTeamInviteLinksReady:O,getTeamInviteLinkError:I,getPendingRevokeInviteLinkId:T,getRequestNotificationRecipients:E,getRequestNotificationRecipientsReady:W,getRequestNotificationRecipientError:L,getSession:_,getLocations:f,getActiveCompanyMembership:U,matchesSearch:P,escapeHtml:n,roleDescription:F,roleLabel:$,normalizeRole:z,teamMemberWorkload:J,canManageTeam:K,canAdministerTeamRoles:R,teamRoleOptionsForActor:V,COMPANY_ROLES:Y,renderLocationOptions:x,inviteDefaultLocationLabel:G,teamInviteSignupUrl:Q,teamJoinUrl:X}){let M=K||(()=>!1),y=R||(()=>!1),q=V||(()=>Y),Z=R||(()=>!1);function g(e){return f().find(t=>t.id===e)?.name||"Default location"}function D(e){return U?.()?.default_location_id||e||f()[0]?.id||""}function B(e){let t=i()[e],o=u();return e===o?.id?t?.full_name||o?.email||"Me":t?.full_name||e}function C(e){return e.default_location_id?f().find(o=>o.id===e.default_location_id)?.name||"Location unavailable":"Not set"}function H(){let e=M();return v().filter(t=>P([t.user_id,e?t.role:"",i()[t.user_id]?.full_name,C(t)]))}function ee({id:e,label:t,content:o,meta:r="",open:c=!1}){return`
+(()=>{var ue=Object.create;var j=Object.defineProperty;var pe=Object.getOwnPropertyDescriptor;var me=Object.getOwnPropertyNames;var be=Object.getPrototypeOf,fe=Object.prototype.hasOwnProperty;var ve=(l,o)=>()=>{try{return o||l((o={exports:{}}).exports,o),o.exports}catch(u){throw o=0,u}};var he=(l,o,u,v)=>{if(o&&typeof o=="object"||typeof o=="function")for(let m of me(o))!fe.call(l,m)&&m!==u&&j(l,m,{get:()=>o[m],enumerable:!(v=pe(o,m))||v.enumerable});return l};var $e=(l,o,u)=>(u=l!=null?ue(be(l)):{},he(o||!l||!l.__esModule?j(u,"default",{value:l,enumerable:!0}):u,l));var S=ve((we,k)=>{(function(){function l({getProfilesByUserId:o,getCurrentUser:u,getCompanyMembers:v,getTeamInvites:m,getTeamInvitesReady:b,getTeamInviteCancelError:d,getPendingCancelInviteId:A,getTeamInviteLinks:N,getTeamInviteLinksReady:O,getTeamInviteLinkError:I,getPendingRevokeInviteLinkId:T,getRequestNotificationRecipients:E,getRequestNotificationRecipientsReady:W,getRequestNotificationRecipientError:L,getSession:_,getLocations:f,getActiveCompanyMembership:U,matchesSearch:P,escapeHtml:n,roleDescription:F,roleLabel:$,normalizeRole:z,teamMemberWorkload:J,canManageTeam:K,canAdministerTeamRoles:R,teamRoleOptionsForActor:V,COMPANY_ROLES:Y,renderLocationOptions:x,inviteDefaultLocationLabel:G,teamInviteSignupUrl:Q,teamJoinUrl:X}){let M=K||(()=>!1),y=R||(()=>!1),q=V||(()=>Y),Z=R||(()=>!1);function g(e){return f().find(t=>t.id===e)?.name||"Default location"}function D(e){return U?.()?.default_location_id||e||f()[0]?.id||""}function B(e){let t=o()[e],i=u();return e===i?.id?t?.full_name||i?.email||"Me":t?.full_name||e}function C(e){return e.default_location_id?f().find(i=>i.id===e.default_location_id)?.name||"Location unavailable":"Not set"}function H(){let e=M();return v().filter(t=>P([t.user_id,e?t.role:"",o()[t.user_id]?.full_name,C(t)]))}function ee({id:e,label:t,content:i,meta:r="",open:c=!1}){return`
         <details class="team-section-details" data-team-section="${n(e)}" ${c?"open":""}>
           <summary>
             <span>${n(t)}</span>
             ${r?`<small>${n(r)}</small>`:""}
           </summary>
-          <div class="team-section-body">${o}</div>
+          <div class="team-section-body">${i}</div>
         </details>
-      `}function te(e){let t=i()[e.user_id],o=_().user,r=e.user_id===o.id,c=M(),s=q(e.role),h=c&&y()&&!r&&s.length>1,p=J(e.user_id);return`
+      `}function te(e){let t=o()[e.user_id],i=_().user,r=e.user_id===i.id,c=M(),s=q(e.role),h=c&&y()&&!r&&s.length>1,p=J(e.user_id);return`
         <article class="member-card">
           <div>
-            <strong>${n(t?.full_name||(r?o.email:e.user_id))}</strong>
+            <strong>${n(t?.full_name||(r?i.email:e.user_id))}</strong>
             <p class="member-default-location">Default location: <strong>${n(C(e))}</strong></p>
             ${c?`<p class="member-role-description">${n(F(e.role))}</p>`:""}
-            <p>${n(r&&o.email||e.user_id)}</p>
+            <p>${n(r&&i.email||e.user_id)}</p>
             <div class="member-workload">
               <span class="chip open">${p.newWork} New</span>
               <span class="chip in_progress">${p.inProgress} In Progress</span>
@@ -33,8 +33,8 @@
             `:c?`<span class="chip member-role-badge">${n($(e.role))}</span>`:""}
           </div>
         </article>
-      `}function ne(){let e=_().user,t=i()[e.id]||{};return`
-        <form class="team-profile-form relationship-detail comment" id="profile-form">
+      `}function ne(){let e=_().user,t=o()[e.id]||{};return`
+        <form class="team-profile-form relationship-detail team" id="profile-form">
           <div>
             <h3>My Profile</h3>
             <p class="muted">${n(e.email||"Signed in user")}</p>
@@ -45,8 +45,8 @@
           <p class="error-text" id="profile-error"></p>
           <button class="secondary-button" type="submit">Save My Settings</button>
         </form>
-      `}function oe(){return`
-        <form class="team-profile-form relationship-detail comment" id="password-change-form">
+      `}function ie(){return`
+        <form class="team-profile-form relationship-detail team" id="password-change-form">
           <div>
             <h3>Account Security</h3>
             <p class="muted">Change the password used to sign in to MaintainOps.</p>
@@ -56,8 +56,8 @@
           <p class="error-text" id="password-change-error"></p>
           <button class="secondary-button" type="submit">Update Password</button>
         </form>
-      `}function ie(e){return e.location_id?f().find(o=>o.id===e.location_id)?.name||"Unknown location":"All locations"}function ae(e){let t=W(),o=E(),r=f(),c=Z();return`
-        <section class="team-notification-panel relationship-detail comment">
+      `}function oe(e){return e.location_id?f().find(i=>i.id===e.location_id)?.name||"Unknown location":"All locations"}function ae(e){let t=W(),i=E(),r=f(),c=Z();return`
+        <section class="team-notification-panel relationship-detail team">
           <div>
             <h3>Request Email Recipients</h3>
             <p class="muted">${c?"Choose who should receive new request emails when the backend email sender is enabled. Shared inboxes are allowed.":"Only admins can change request email routing."}</p>
@@ -77,12 +77,12 @@
           `:""}
           <p class="error-text" id="request-notification-recipient-error">${n(L()||(t?"":"Run supabase/step-next-request-notification-recipients.sql before routing request emails."))}</p>
           <div class="member-list compact-list">
-            ${o.map(s=>`
+            ${i.map(s=>`
               <article class="member-card invite-card">
                 <div>
                   <strong>${n(s.label||s.email)}</strong>
                   <p>${n(s.email)}</p>
-                  <p>${n(ie(s))}</p>
+                  <p>${n(oe(s))}</p>
                 </div>
                 <div class="button-row">
                   <span class="chip">${s.is_active===!1?"Paused":"Active"}</span>
@@ -92,8 +92,8 @@
             `).join("")||'<p class="muted">No request email recipients yet.</p>'}
           </div>
         </section>
-      `}function se(e){let t=b(),o=f(),r=q(),c=y(),s=D(e);return`
-        <form class="team-invite-form relationship-detail comment" id="team-invite-form">
+      `}function se(e){let t=b(),i=f(),r=q(),c=y(),s=D(e);return`
+        <form class="team-invite-form relationship-detail team" id="team-invite-form">
           <div>
             <h3>Invite Teammate</h3>
             <p class="muted">Invites are saved here. Copy the invite message and send it to them; when they sign up with the same email, the app adds them to this company automatically.</p>
@@ -106,8 +106,8 @@
           </label>
           ${c?`
             <label>Default location
-              <select name="default_location_id" ${t&&o.length?"":"disabled"}>
-                ${o.length?"":'<option value="">Run location setup first</option>'}
+              <select name="default_location_id" ${t&&i.length?"":"disabled"}>
+                ${i.length?"":'<option value="">Run location setup first</option>'}
                 ${x(e)}
               </select>
             </label>
@@ -121,7 +121,7 @@
           <p class="error-text" id="team-invite-error">${t?"":"Run supabase/step-next-invite-default-location.sql before inviting by email."}</p>
           <button class="secondary-button" type="submit" ${t?"":"disabled"}>Create Invite</button>
         </form>
-      `}function le(){let e=m().filter(o=>!o.accepted_at),t=Q();return`
+      `}function le(){let e=m().filter(i=>!i.accepted_at),t=Q();return`
         <section class="team-invites">
           <div class="panel-header compact">
             <h3>Pending Invites</h3>
@@ -129,23 +129,23 @@
           </div>
           <p class="error-text" id="team-invite-cancel-error">${n(d())}</p>
           <div class="member-list">
-            ${e.map(o=>`
-              ${(()=>{let r=`You have a MaintainOps invite for this company. Sign up or sign in with ${o.email} here: ${t}`;return`
+            ${e.map(i=>`
+              ${(()=>{let r=`You have a MaintainOps invite for this company. Sign up or sign in with ${i.email} here: ${t}`;return`
               <article class="member-card invite-card">
                 <div>
-                  <strong>${n(o.email)}</strong>
-                  <p>Sent ${new Date(o.created_at).toLocaleString()}</p>
-                  <p>${n(G(o))}</p>
+                  <strong>${n(i.email)}</strong>
+                  <p>Sent ${new Date(i.created_at).toLocaleString()}</p>
+                  <p>${n(G(i))}</p>
                   <p class="muted">Email is not sent automatically. Send this person the signup link.</p>
                 </div>
                 <div class="button-row">
-                  <span class="chip">${n(o.role)}</span>
+                  <span class="chip">${n(i.role)}</span>
                   <button class="secondary-button" data-copy-team-invite="${n(r)}" type="button">Copy Invite</button>
-                  ${A()===o.id?`
+                  ${A()===i.id?`
                     <button class="secondary-button" data-cancel-invite-cancel type="button">Keep</button>
-                    <button class="danger-action-button confirm-delete-button" data-confirm-cancel-invite="${n(o.id)}" type="button">Cancel Invite</button>
+                    <button class="danger-action-button confirm-delete-button" data-confirm-cancel-invite="${n(i.id)}" type="button">Cancel Invite</button>
                   `:`
-                    <button class="danger-action-button" data-cancel-invite="${n(o.id)}" type="button">Cancel Invite</button>
+                    <button class="danger-action-button" data-cancel-invite="${n(i.id)}" type="button">Cancel Invite</button>
                   `}
                 </div>
               </article>
@@ -153,11 +153,11 @@
             `).join("")||'<p class="muted">No pending invites.</p>'}
           </div>
         </section>
-      `}function re(e){let t=O(),o=N(),r=f(),c=y(),s=D(e),h=c?["technician","manager"]:["technician"],p=Date.now();return`
+      `}function re(e){let t=O(),i=N(),r=f(),c=y(),s=D(e),h=c?["technician","manager"]:["technician"],p=Date.now();return`
         <section class="team-invites">
           <div class="panel-header compact">
             <h3>Join Links</h3>
-            <span>${o.filter(a=>!a.used_at&&!a.revoked_at&&new Date(a.expires_at).getTime()>p).length} active</span>
+            <span>${i.filter(a=>!a.used_at&&!a.revoked_at&&new Date(a.expires_at).getTime()>p).length} active</span>
           </div>
           <p class="muted">${c?"Create single-use links for technicians or managers. Admin links are never created by link.":"Create one technician join link for your default location."}</p>
           <form class="inline-form team-form" id="team-invite-link-form">
@@ -183,7 +183,7 @@
           </form>
           <p class="error-text" id="team-invite-link-error">${n(I()||(t?"":"Run supabase/step-next-invite-links.sql before creating join links."))}</p>
           <div class="member-list">
-            ${o.map(a=>{let ce=new Date(a.expires_at).getTime()<=p,w=a.revoked_at?"Revoked":a.used_at?"Used":ce?"Expired":"Active",de=`You have a MaintainOps join link. Sign up or sign in here: ${X(a.token)}`;return`
+            ${i.map(a=>{let ce=new Date(a.expires_at).getTime()<=p,w=a.revoked_at?"Revoked":a.used_at?"Used":ce?"Expired":"Active",de=`You have a MaintainOps join link. Sign up or sign in here: ${X(a.token)}`;return`
                 <article class="member-card invite-card">
                   <div>
                     <strong>${n($(a.role))} join link</strong>
@@ -205,5 +205,5 @@
               `}).join("")||'<p class="muted">No join links yet.</p>'}
           </div>
         </section>
-      `}return{teamMemberName:B,filteredMembers:H,renderTeamSection:ee,renderMember:te,renderMyProfileForm:ne,renderPasswordChangeForm:oe,renderRequestNotificationRecipients:ae,renderTeamInviteForm:se,renderTeamInvites:le,renderTeamInviteLinks:re}}window.MaintainOpsTeamMemberDisplay={createTeamMemberDisplayHelpers:l},typeof k<"u"&&(k.exports={createTeamMemberDisplayHelpers:l})})()});var ke=$e(S());(function(){function l(i){function u(v){let b=i.getWorkOrders().filter(d=>i.matchesActiveLocation(d)&&i.isWorkOrderAssignedToUser(d,v));return{newWork:b.filter(d=>d.status==="open").length,inProgress:b.filter(d=>d.status==="in_progress").length,blocked:b.filter(d=>d.status==="blocked").length,completed:b.filter(d=>d.status==="completed").length,overdue:b.filter(d=>i.getDueState(d)?.className==="overdue").length}}return{teamMemberWorkload:u}}window.MaintainOpsTeamWorkloadDisplay={createTeamWorkloadDisplayHelpers:l}})();})();
-//# sourceMappingURL=teamFeature.678dcc6e24.js.map
+      `}return{teamMemberName:B,filteredMembers:H,renderTeamSection:ee,renderMember:te,renderMyProfileForm:ne,renderPasswordChangeForm:ie,renderRequestNotificationRecipients:ae,renderTeamInviteForm:se,renderTeamInvites:le,renderTeamInviteLinks:re}}window.MaintainOpsTeamMemberDisplay={createTeamMemberDisplayHelpers:l},typeof k<"u"&&(k.exports={createTeamMemberDisplayHelpers:l})})()});var ke=$e(S());(function(){function l(o){function u(v){let b=o.getWorkOrders().filter(d=>o.matchesActiveLocation(d)&&o.isWorkOrderAssignedToUser(d,v));return{newWork:b.filter(d=>d.status==="open").length,inProgress:b.filter(d=>d.status==="in_progress").length,blocked:b.filter(d=>d.status==="blocked").length,completed:b.filter(d=>d.status==="completed").length,overdue:b.filter(d=>o.getDueState(d)?.className==="overdue").length}}return{teamMemberWorkload:u}}window.MaintainOpsTeamWorkloadDisplay={createTeamWorkloadDisplayHelpers:l}})();})();
+//# sourceMappingURL=teamFeature.1b20049629.js.map

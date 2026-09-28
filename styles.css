@@ -325,47 +325,8 @@ code { background: var(--surface-2); padding: 2px 5px; border-radius: 5px; }
 }
 
 .section-nav button {
-  --nav-ink: var(--accent);
+  --nav-ink: var(--section-ink);
   --nav-bg: rgba(255, 255, 255, 0.035);
-}
-
-.section-nav .nav-mywork,
-.section-nav .nav-work {
-  --nav-ink: var(--accent);
-}
-
-.section-nav .nav-assets {
-  --nav-ink: var(--rel-asset-ink);
-}
-
-.section-nav .nav-requests {
-  --nav-ink: var(--request-gauge);
-}
-
-.section-nav .nav-pm,
-.section-nav .nav-procedures {
-  --nav-ink: var(--rel-procedure-ink);
-}
-
-.section-nav .nav-parts {
-  --nav-ink: var(--rel-parts-ink);
-}
-
-.section-nav .nav-conversions {
-  --nav-ink: var(--blue);
-}
-
-.section-nav .nav-messages {
-  --nav-ink: var(--rel-comment-ink);
-}
-
-.section-nav .nav-team {
-  --nav-ink: var(--green);
-}
-
-.section-nav .nav-setup,
-.section-nav .nav-settings {
-  --nav-ink: var(--muted);
 }
 
 .section-nav button {
@@ -1549,8 +1510,8 @@ h3 { margin-bottom: 8px; font-size: 1rem; font-weight: 560; }
 }
 
 .dashboard-card.tone-request {
-  border-left-color: var(--rel-comment-ink);
-  background: var(--rel-comment-bg);
+  border-left-color: var(--section-requests);
+  background: color-mix(in srgb, var(--section-requests) 12%, transparent);
 }
 
 .dashboard-card.tone-neutral {
@@ -1654,8 +1615,8 @@ h3 { margin-bottom: 8px; font-size: 1rem; font-weight: 560; }
 .quick-fix-form input[name="title"] {
   min-height: 44px;
   font-size: 0.95rem;
-  border-color: color-mix(in srgb, var(--rel-comment-ink) 42%, var(--line));
-  background: color-mix(in srgb, var(--rel-comment-bg) 58%, var(--control-bg));
+  border-color: color-mix(in srgb, var(--section-ink) 42%, var(--line));
+  background: color-mix(in srgb, var(--section-ink) 8%, var(--control-bg));
   color: var(--field-ink);
   caret-color: var(--field-ink);
 }
@@ -1882,7 +1843,7 @@ option {
 .part-detail-form label,
 .part-document-form label {
   gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--section-ink) 34%, var(--line));
   border-radius: 9px;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
@@ -2002,9 +1963,9 @@ textarea {
 }
 
 .asset-action-button {
-  border-color: var(--rel-asset-ink);
-  background: var(--rel-asset-bg);
-  color: var(--rel-asset-ink);
+  border-color: var(--section-ink);
+  background: color-mix(in srgb, var(--section-ink) 12%, #171b1f);
+  color: var(--section-ink);
 }
 
 .export-action-button,
@@ -2204,7 +2165,7 @@ textarea {
 .text-button {
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--section-ink);
   padding-inline: 0;
 }
 
@@ -2617,9 +2578,9 @@ textarea {
   max-height: min(760px, calc(100vh - 32px));
   padding: 0;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--production-ink) 48%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--section-ink) 48%, var(--line));
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--dialog-surface);
   color: var(--ink);
   box-shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
 }
@@ -2642,7 +2603,7 @@ textarea {
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
-  background: var(--production-bg);
+  background: color-mix(in srgb, var(--section-ink) 10%, transparent);
 }
 
 .production-action-dialog-header h3,
@@ -2651,7 +2612,7 @@ textarea {
 }
 
 .production-action-dialog-header small {
-  color: var(--production-ink);
+  color: var(--section-ink);
   font-weight: 700;
 }
 
@@ -3051,8 +3012,8 @@ textarea {
 }
 
 .relationship-chip.message {
-  background: var(--rel-comment-bg);
-  color: var(--rel-comment-ink);
+  background: color-mix(in srgb, var(--section-messages) 12%, transparent);
+  color: var(--section-messages);
 }
 
 .chip.comment {
@@ -3088,28 +3049,32 @@ textarea {
 }
 
 .relationship-detail.asset {
+  --section-ink: var(--section-equipment);
   background: var(--rel-asset-bg);
   border-color: var(--rel-asset-ink);
 }
 
 .relationship-detail.procedure {
+  --section-ink: var(--section-maintenance);
   background: var(--rel-procedure-bg);
   border-color: var(--rel-procedure-ink);
 }
 
 .relationship-detail.parts {
+  --section-ink: var(--section-parts);
   background: var(--rel-parts-bg);
   border-color: var(--rel-parts-ink);
 }
 
 .relationship-detail.comment {
+  --section-ink: var(--section-work);
   background: var(--rel-comment-bg);
   border-color: var(--rel-comment-ink);
 }
 
 .relationship-detail.photo {
-  background: var(--rel-photo-bg);
-  border-color: var(--rel-photo-ink);
+  background: color-mix(in srgb, var(--section-ink) 10%, transparent);
+  border-color: var(--section-ink);
 }
 
 .relationship-detail {
@@ -3232,9 +3197,9 @@ textarea {
 
 .relationship-detail .primary-button,
 .relationship-detail .secondary-button {
-  border-color: currentColor;
-  background: var(--control-bg);
-  color: inherit;
+  border-color: color-mix(in srgb, var(--section-ink) 48%, var(--line));
+  background: color-mix(in srgb, var(--section-ink) 12%, #171b1f);
+  color: var(--section-ink);
 }
 
 .relationship-detail .primary-button:hover,
@@ -3242,33 +3207,8 @@ textarea {
   filter: brightness(0.97);
 }
 
-.relationship-detail.procedure .primary-button,
-.relationship-detail.procedure .secondary-button {
-  background: var(--rel-procedure-ink);
-  color: #fff;
-}
-
-.relationship-detail.parts .primary-button,
-.relationship-detail.parts .secondary-button {
-  background: var(--rel-parts-ink);
-  color: #fff;
-}
-
 .relationship-detail.parts .add-part-button {
   border-radius: 999px;
-  color: #101614;
-}
-
-.relationship-detail.comment .primary-button,
-.relationship-detail.comment .secondary-button {
-  background: var(--rel-comment-ink);
-  color: #fff;
-}
-
-.relationship-detail.photo .primary-button,
-.relationship-detail.photo .secondary-button {
-  background: var(--rel-photo-ink);
-  color: #fff;
 }
 
 .relationship-detail.photo a {
@@ -3283,33 +3223,9 @@ textarea {
 .chip.completed,
 .chip.in_progress,
 .chip.blocked,
-.chip.asset-running,
-.chip.asset-watch,
-.chip.asset-degraded,
-.chip.asset-offline,
-.relationship-chip.asset,
-.relationship-chip.procedure,
-.relationship-chip.parts,
-.relationship-chip.comment,
-.relationship-chip.message,
-.relationship-chip.photo,
 .part-source-chip,
 .part-file-pill,
 .add-part-button {
-  color: var(--on-light-highlight);
-}
-
-.relationship-detail.procedure .primary-button,
-.relationship-detail.procedure .secondary-button,
-.relationship-detail.parts .primary-button,
-.relationship-detail.parts .secondary-button,
-.relationship-detail.comment .primary-button,
-.relationship-detail.comment .secondary-button,
-.relationship-detail.photo .primary-button,
-.relationship-detail.photo .secondary-button,
-.quick-fix-button,
-.request-action-button,
-.asset-action-button {
   color: var(--on-light-highlight);
 }
 
@@ -4119,10 +4035,10 @@ textarea {
   align-items: center;
   min-height: 26px;
   padding: 4px 8px;
-  border: 1px solid rgba(86, 210, 255, 0.45);
+  border: 1px solid color-mix(in srgb, var(--section-requests) 45%, transparent);
   border-radius: 999px;
-  background: rgba(86, 210, 255, 0.12);
-  color: #d6f6ff;
+  background: color-mix(in srgb, var(--section-requests) 12%, transparent);
+  color: var(--section-requests);
   font-size: 0.74rem;
   font-weight: 750;
   white-space: nowrap;
@@ -4212,9 +4128,9 @@ textarea {
   justify-content: space-between;
   gap: 12px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--section-ink) 34%, var(--line));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  background: color-mix(in srgb, var(--section-ink) 9%, var(--surface));
 }
 
 .queue-context-card div {
@@ -4678,7 +4594,7 @@ textarea {
   height: 28px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  color: var(--accent);
+  color: var(--section-ink);
   font-size: 1rem;
 }
 
@@ -5640,13 +5556,13 @@ textarea {
   --conversion-accent-dark: var(--blue);
   display: grid;
   min-height: 0;
-  border: 1px solid color-mix(in srgb, var(--conversion-accent) 36%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--section-ink) 36%, var(--line));
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--conversion-accent) 14%, transparent), transparent 62%),
-    #fff;
+    linear-gradient(135deg, color-mix(in srgb, var(--section-ink) 8%, transparent), transparent 62%),
+    var(--dialog-surface);
   box-shadow:
-    inset 4px 0 0 var(--conversion-accent),
+    inset 4px 0 0 var(--section-ink),
     0 1px 4px rgba(15, 23, 42, 0.08);
   padding: 0;
 }
@@ -5667,8 +5583,8 @@ textarea {
 }
 
 .conversion-card[data-conversion-group="temperature"] {
-  --conversion-accent: #c83f4f;
-  --conversion-accent-dark: #9f2634;
+  --conversion-accent: #806b42;
+  --conversion-accent-dark: #5d4c2d;
 }
 
 .conversion-card[data-conversion-group="volume"] {
@@ -5688,13 +5604,13 @@ textarea {
 
 .conversion-card[open] {
   grid-column: 1 / -1;
-  border-color: var(--conversion-accent);
+  border-color: var(--section-ink);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--conversion-accent) 18%, transparent), transparent 64%),
-    #fff;
+    linear-gradient(135deg, color-mix(in srgb, var(--section-ink) 12%, transparent), transparent 64%),
+    var(--dialog-surface);
   box-shadow:
-    inset 4px 0 0 var(--conversion-accent),
-    0 0 0 3px color-mix(in srgb, var(--conversion-accent) 18%, transparent),
+    inset 4px 0 0 var(--section-ink),
+    0 0 0 3px color-mix(in srgb, var(--section-ink) 18%, transparent),
     0 2px 8px rgba(15, 23, 42, 0.12);
 }
 
@@ -5715,7 +5631,7 @@ textarea {
 
 .conversion-card-heading h3 {
   margin: 0;
-  color: #172033;
+  color: var(--ink);
   font-size: 1.02rem;
   line-height: 1.15;
 }
@@ -5738,25 +5654,25 @@ textarea {
   justify-content: center;
   min-width: 58px;
   min-height: 26px;
-  border: 1px solid color-mix(in srgb, var(--conversion-accent) 34%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--section-ink) 34%, var(--line));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--conversion-accent) 10%, #fff);
-  color: var(--conversion-accent-dark);
+  background: color-mix(in srgb, var(--section-ink) 10%, var(--dialog-surface));
+  color: var(--section-ink);
   padding: 3px 8px;
   font-size: 0.78rem;
   font-weight: 760;
 }
 
 .conversion-card[open] .conversion-card-heading > span:not(.conversion-card-icon) {
-  background: var(--conversion-accent);
-  border-color: var(--conversion-accent);
-  color: #fff;
+  background: var(--section-ink);
+  border-color: var(--section-ink);
+  color: #080a0c;
 }
 
 .conversion-card-body {
   display: grid;
   gap: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--conversion-accent) 24%, var(--line));
+  border-top: 1px solid color-mix(in srgb, var(--section-ink) 24%, var(--line));
   padding: 12px;
 }
 
@@ -5802,10 +5718,8 @@ textarea {
 .conversion-controls input,
 .conversion-controls select {
   width: 100%;
-  border-color: color-mix(in srgb, var(--conversion-accent-dark) 52%, var(--field-line));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--conversion-accent) 8%, transparent), transparent),
-    var(--field-bg);
+  border-color: color-mix(in srgb, var(--section-ink) 52%, var(--field-line));
+  background: var(--field-bg);
   color: var(--field-ink);
   font-weight: 760;
 }
@@ -5814,15 +5728,13 @@ textarea {
   display: flex;
   align-items: center;
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--conversion-accent-dark) 48%, #cbd5e1);
+  border: 1px solid color-mix(in srgb, var(--section-ink) 48%, var(--line));
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--conversion-accent) 16%, #f8fafc), #f8fafc 72%),
-    #f8fafc;
+  background: var(--dialog-field);
   box-shadow:
-    inset 4px 0 0 var(--conversion-accent),
+    inset 4px 0 0 var(--section-ink),
     0 1px 2px rgba(15, 23, 42, 0.08);
-  color: #111827;
+  color: var(--ink);
   padding: 9px 10px;
   font-weight: 820;
   line-height: 1.25;
@@ -7285,9 +7197,10 @@ textarea {
 }
 
 .equipment-structure-guide {
-  border: 2px solid rgba(37, 99, 235, 0.34);
+  --section-ink: var(--section-equipment);
+  border: 2px solid color-mix(in srgb, var(--section-ink) 34%, var(--line));
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(219, 234, 254, 0.98), rgba(255, 251, 235, 0.96));
+  background: var(--dialog-surface);
   padding: 14px;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
 }
@@ -7299,15 +7212,15 @@ textarea {
 }
 
 .guide-header strong {
-  color: #0f172a;
+  color: var(--ink);
   font-size: 1.05rem;
 }
 
 .guide-kicker {
-  color: #1d4ed8;
+  color: var(--section-ink);
   font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -7318,14 +7231,14 @@ textarea {
 }
 
 .equipment-structure-grid article {
-  border: 1px solid rgba(37, 99, 235, 0.22);
+  border: 1px solid color-mix(in srgb, var(--section-ink) 22%, var(--line));
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--surface-2);
   padding: 10px;
 }
 
 .equipment-structure-grid span {
-  color: #1d4ed8;
+  color: var(--section-ink);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -7333,20 +7246,20 @@ textarea {
 
 .equipment-structure-grid strong {
   display: block;
-  color: #111827;
+  color: var(--ink);
   margin-top: 4px;
 }
 
 .equipment-structure-grid p,
 .guide-note {
-  color: #334155;
+  color: #bcc8cf;
   font-size: 0.85rem;
   line-height: 1.35;
   margin: 6px 0 0;
 }
 
 .guide-note {
-  border-top: 1px solid rgba(37, 99, 235, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--section-ink) 20%, var(--line));
   margin-top: 12px;
   padding-top: 10px;
 }
@@ -8424,6 +8337,21 @@ textarea {
 :root,
 :root[data-theme="dark"] {
   --bg: #050607;
+  /* Section identity is independent of work status, equipment condition and gauges. */
+  --section-work: #9bb9ff;
+  --section-equipment: #77d7ff;
+  --section-requests: #6edbc7;
+  --section-maintenance: #72d39b;
+  --section-parts: #f0bc63;
+  --section-financial: #c5b4f5;
+  --section-messages: #99dfce;
+  --section-team: #72d39b;
+  --section-tools: #9bb9ff;
+  --section-admin: #c1cbd2;
+  --section-performance: #6edcff;
+  --section-ink: var(--section-work);
+  --dialog-surface: #181c20;
+  --dialog-field: #242a30;
   --surface: rgba(18, 22, 25, 0.82);
   --surface-2: rgba(255, 255, 255, 0.045);
   --surface-3: rgba(255, 255, 255, 0.072);
@@ -8444,13 +8372,13 @@ textarea {
   --green: #72d39b;
   --blue: #78a8ff;
   --rel-asset-bg: rgba(119, 215, 255, 0.11);
-  --rel-asset-ink: #77d7ff;
+  --rel-asset-ink: var(--section-equipment);
   --rel-procedure-bg: rgba(114, 211, 155, 0.11);
-  --rel-procedure-ink: #72d39b;
+  --rel-procedure-ink: var(--section-maintenance);
   --rel-parts-bg: rgba(240, 188, 99, 0.13);
-  --rel-parts-ink: #f0bc63;
+  --rel-parts-ink: var(--section-parts);
   --rel-comment-bg: rgba(120, 168, 255, 0.12);
-  --rel-comment-ink: #9bb9ff;
+  --rel-comment-ink: var(--section-work);
   --rel-photo-bg: rgba(240, 181, 255, 0.16);
   --rel-photo-ink: #f0b5ff;
   --production-bg: rgba(119, 215, 255, 0.11);
@@ -8459,11 +8387,44 @@ textarea {
   --asset-running-ink: #8beaab;
   --asset-watch-bg: rgba(240, 188, 99, 0.13);
   --asset-watch-ink: #f0bc63;
-  --asset-degraded-bg: rgba(239, 118, 118, 0.13);
-  --asset-degraded-ink: #ef7676;
-  --asset-offline-bg: rgba(180, 190, 198, 0.12);
-  --asset-offline-ink: #b7c2c9;
+  --asset-degraded-bg: rgba(239, 166, 101, 0.13);
+  --asset-degraded-ink: #efa665;
+  --asset-offline-bg: rgba(239, 118, 118, 0.13);
+  --asset-offline-ink: #ef7676;
   --shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+}
+
+/* Navigation, nested records and body-level dialogs share the same section palette. */
+:where([data-ui-section="mywork"], [data-ui-section="work"], [data-ui-section="planning"], [data-ui-section="manager"],
+  .nav-mywork, .nav-work, .nav-planning, .nav-manager, .auth-shell, .quick-fix-form, .quick-fix-button, .work-action-button,
+  .work-card, .production-action-dialog) { --section-ink: var(--section-work); }
+:where([data-ui-section="assets"], .nav-assets, .asset-card, .asset-action-button, .travel-board, .travel-dialog,
+  .equipment-archive, [data-traveling-units], [data-section="assets"]) { --section-ink: var(--section-equipment); }
+:where([data-ui-section="requests"], .nav-requests, .request-card, .request-action-button, .public-request-shell) { --section-ink: var(--section-requests); }
+:where([data-ui-section="pm"], [data-ui-section="procedures"], .nav-pm, .nav-procedures, .pm-card, .procedure-card,
+  [data-section="pm"], [data-section="procedures"]) { --section-ink: var(--section-maintenance); }
+:where([data-ui-section="parts"], .nav-parts, .part-card, .part-detail-shell, [data-section="parts"]) { --section-ink: var(--section-parts); }
+:where([data-ui-section="financial"], .nav-financial, .financial-asset-card, .financial-action-button) { --section-ink: var(--section-financial); }
+:where([data-ui-section="messages"], .nav-messages, .message-center, .message-tool-dialog) { --section-ink: var(--section-messages); }
+:where([data-ui-section="team"], .nav-team, .member-card) { --section-ink: var(--section-team); }
+:where([data-ui-section="conversions"], .nav-conversions) { --section-ink: var(--section-tools); }
+:where([data-ui-section="setup"], [data-ui-section="settings"], .nav-setup, .nav-settings, .qr-history-dialog,
+  .report-issue-button, .app-issue-report-panel) { --section-ink: var(--section-admin); }
+:where([data-ui-section="performance"], .nav-performance) { --section-ink: var(--section-performance); }
+
+:where([data-ui-section], .relationship-detail, .auth-shell, .quick-fix-form, .travel-dialog) {
+  --field-focus: var(--section-ink);
+}
+
+.relationship-detail.team {
+  --section-ink: var(--section-team);
+  background: color-mix(in srgb, var(--section-ink) 10%, transparent);
+  border-color: var(--section-ink);
+}
+.relationship-detail.financial {
+  --section-ink: var(--section-financial);
+  background: color-mix(in srgb, var(--section-ink) 10%, transparent);
+  border-color: var(--section-ink);
 }
 
 body {
@@ -8709,13 +8670,13 @@ textarea:focus {
 }
 
 .primary-button {
-  background: linear-gradient(180deg, #f7fbff, #8a969f);
+  background: var(--section-ink);
   color: #080a0c;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 14px 30px rgba(0,0,0,0.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 4px 12px rgba(0,0,0,0.18);
 }
 
 .primary-button:hover {
-  background: linear-gradient(180deg, #ffffff, #a5b0b8);
+  background: color-mix(in srgb, var(--section-ink) 85%, white);
 }
 
 .secondary-button,
@@ -8724,25 +8685,25 @@ textarea:focus {
 }
 
 .quick-fix-button {
-  background: linear-gradient(180deg, #dff5ff, #5f8fff);
+  background: var(--section-ink);
   color: #05070a;
 }
 
 .work-action-button {
-  background: linear-gradient(180deg, #f7fbff, #8a969f);
+  background: var(--section-ink);
   color: #080a0c;
 }
 
 .request-action-button {
-  border-color: var(--rel-comment-ink);
-  background: var(--rel-comment-bg);
-  color: var(--rel-comment-ink);
+  border-color: var(--section-requests);
+  background: color-mix(in srgb, var(--section-requests) 12%, #171b1f);
+  color: var(--section-requests);
 }
 
 .asset-action-button {
-  border-color: var(--rel-asset-ink);
-  background: var(--rel-asset-bg);
-  color: var(--rel-asset-ink);
+  border-color: var(--section-ink);
+  background: color-mix(in srgb, var(--section-ink) 12%, #171b1f);
+  color: var(--section-ink);
 }
 
 .export-action-button,
@@ -8830,9 +8791,9 @@ textarea:focus {
 
 .segment:hover,
 .segment.active {
-  border-color: color-mix(in srgb, var(--accent) 58%, rgba(255,255,255,0.22));
-  background: linear-gradient(180deg, #f7fbff, #9fb4c4);
-  color: var(--on-light-highlight);
+  border-color: var(--section-ink);
+  background: color-mix(in srgb, var(--section-ink) 18%, #171b1f);
+  color: var(--section-ink);
 }
 
 .status-segment:hover,
@@ -10013,12 +9974,35 @@ label small {
   gap: 12px;
   margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  border-bottom: 1px solid color-mix(in srgb, var(--section-ink) 28%, transparent);
 }
 
 .panel-header h2 {
+  color: var(--section-ink);
   font-size: 1rem;
   font-weight: 650;
+}
+
+.travel-heading h2,
+.attachment-dialog h2,
+.equipment-archive h2 {
+  color: var(--section-ink);
+}
+
+.pm-card,
+.procedure-card,
+.request-card,
+.member-card,
+.part-card {
+  border-left: 4px solid var(--section-ink);
+}
+
+.financial-asset-card:not(.financial-asset-deleted) {
+  border-top-color: var(--section-financial);
+}
+
+.relationship-detail.financial-deleted-detail {
+  border-left-color: var(--red);
 }
 
 .panel-header span {
@@ -10106,26 +10090,23 @@ textarea:focus {
 }
 
 .secondary-button,
-.text-button,
+.topbar-actions .secondary-button,
 .segment,
-.status-segment,
 .page-action-button,
 .export-action-button,
 .back-action-button {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.025)),
-    rgba(255,255,255,0.025);
-  color: color-mix(in srgb, var(--ink) 88%, var(--muted));
+  border-color: color-mix(in srgb, var(--section-ink) 38%, var(--line));
+  background: color-mix(in srgb, var(--section-ink) 9%, #171b1f);
+  color: var(--section-ink);
 }
 
 .secondary-button:hover,
+.topbar-actions .secondary-button:hover,
 .text-button:hover,
 .page-action-button:hover,
 .back-action-button:hover {
-  border-color: var(--soft-border-strong);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.095), rgba(255,255,255,0.04)),
-    rgba(255,255,255,0.04);
+  border-color: var(--section-ink);
+  background: color-mix(in srgb, var(--section-ink) 18%, #171b1f);
   color: var(--ink);
 }
 
@@ -10710,8 +10691,8 @@ textarea:focus {
 }
 
 .form-grid .equipment-choice label.equipment-choice-mode.active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--section-ink);
+  background: color-mix(in srgb, var(--section-ink) 18%, var(--surface));
   color: var(--ink);
 }
 
@@ -10722,7 +10703,7 @@ textarea:focus {
   min-height: 16px;
   margin: 0;
   padding: 0;
-  accent-color: var(--accent);
+  accent-color: var(--section-ink);
 }
 
 .quick-fix-form .equipment-choice-mode input[type="radio"] {
@@ -10733,7 +10714,7 @@ textarea:focus {
 
 .quick-fix-form input:not([type="checkbox"]):not([type="file"]),
 .quick-fix-form textarea {
-  background: #0f1714 !important;
+  background: var(--dialog-surface) !important;
   color: #f5fbf8 !important;
   caret-color: #f5fbf8 !important;
   -webkit-text-fill-color: #f5fbf8;
@@ -10863,8 +10844,8 @@ body.spatial-performance-active {
 .date-picker-button,
 .relationship-detail .date-picker-button,
 .quick-fix-form .date-picker-button {
-  border-color: #77d7ff !important;
-  background: linear-gradient(180deg, #e5f8ff, #73cfff) !important;
+  border-color: var(--section-ink) !important;
+  background: var(--section-ink) !important;
   color: #061116 !important;
   font-weight: 780 !important;
 }
@@ -11080,10 +11061,10 @@ body.spatial-performance-active {
   max-height: calc(100dvh - 32px);
   overflow: auto;
   padding: 22px;
-  border: 1px solid #49605b;
+  border: 1px solid color-mix(in srgb, var(--section-ink) 48%, var(--line));
   border-radius: 8px;
-  color: #eef5f2;
-  background: #15211f;
+  color: var(--ink);
+  background: var(--dialog-surface);
 }
 .attachment-dialog::backdrop { background: rgb(0 0 0 / 65%); }
 .attachment-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
