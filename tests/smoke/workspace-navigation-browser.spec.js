@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
-const { revealSection } = require('../helpers/workspace-navigation');
+const { revealSection, navigateSection } = require('../helpers/workspace-navigation');
 const items = [['mywork', 'My Work'], ['work', 'Work Orders'], ['planning', 'Planning'], ['requests', 'Requests'],
   ['assets', 'Equipment'], ['pm', 'PM'], ['procedures', 'Procedure Checklist'], ['financial', 'Financial'], ['parts', 'Parts'],
   ['team', 'Team'], ['messages', 'Messages'], ['conversions', 'Conversions'], ['manager', 'Manager'], ['settings', 'Settings'], ['setup', 'Admin Setup'], ['performance', 'App Performance']];
@@ -95,4 +95,20 @@ test('mobile disclosure does not scroll, reset input, or invoke destination acti
     await expect(team).toHaveAttribute('aria-expanded', 'false');
     expect(await page.evaluate(() => scrollY)).toBe(0);
   } finally { await context.close(); }
+});
+
+test('rapid group changes cannot hide a destination between visibility and click', async ({ page }) => {
+  page.setDefaultTimeout(3000);
+  await mount(page);
+  await page.evaluate(() => {
+    document.querySelector('nav').addEventListener('click', event => {
+      if (event.target.closest('[data-section]')) document.querySelector('h1').textContent = event.target.closest('[data-section]').dataset.section;
+    });
+  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    for (const section of ['mywork', 'work', 'planning', 'requests', 'assets', 'team', 'performance']) await revealSection(page, section);
+    await navigateSection(page, 'messages');
+    await expect(page.locator('h1')).toHaveText('messages');
+    await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
+  }
 });

@@ -47,18 +47,23 @@
 
     function bind(doc = document) {
       const disclosures = [...doc.querySelectorAll("[data-nav-group]")];
+      const selectGroup = id => {
+        openGroup = id;
+        disclosures.forEach(group => {
+          group.open = group.dataset.navGroup === id;
+          group.querySelector("summary").setAttribute("aria-expanded", String(group.open));
+        });
+      };
       disclosures.forEach(group => {
+        // Native toggle events are queued. Switch atomically before another tap or
+        // a workspace redraw can observe two open groups and choose the wrong one.
+        group.querySelector("summary").addEventListener("click", event => {
+          event.preventDefault();
+          selectGroup(group.open ? null : group.dataset.navGroup);
+        });
         group.addEventListener("toggle", () => {
           if (!group.isConnected) return;
-          group.querySelector("summary").setAttribute("aria-expanded", String(group.open));
-          if (group.open) {
-            openGroup = group.dataset.navGroup;
-            disclosures.forEach(other => {
-              if (other !== group && other.open) other.open = false;
-            });
-          } else if (openGroup === group.dataset.navGroup) {
-            openGroup = null;
-          }
+          selectGroup(group.open ? group.dataset.navGroup : disclosures.find(item => item.open)?.dataset.navGroup || null);
         });
       });
     }

@@ -26,6 +26,8 @@ Manager retain their existing role contracts. Nothing changes in database access
   resets it to the current page's group. Nothing is stored as a cross-user preference.
 - Disclosure uses native keyboard-accessible details/summary controls. It never
   rerenders the workspace, fetches data, resets a form, or calls scroll helpers.
+  Opening and closing groups is synchronous; queued native toggle events cannot
+  leave a previous group open long enough to hide the user's next choice.
 - Team shows the same unread conversation/work-alert count as Messages while closed.
   Live badge updates reach both. No overlapping work counts are added together.
 - Group headings and child destinations have a minimum 48px touch target. At phone
@@ -38,8 +40,8 @@ Manager retain their existing role contracts. Nothing changes in database access
 `workspaceSectionNavigationEvents.js` still owns destination actions. The new module
 is in the existing runtime bundle, with no new dependency or network request.
 
-Compared with the section-color baseline, grouped navigation adds 3,903 decoded /
-1,024 gzip bytes across runtime, app shell and shared CSS. The total startup budget
+Compared with the section-color baseline, grouped navigation adds 4,034 decoded /
+1,049 gzip bytes across runtime, app shell and shared CSS. The total startup budget
 remains 780 KiB decoded / 175 KiB gzip. CSS alone adds 1,849 / 318 bytes; its component
 allowance is raised by 2 KiB decoded / 512 gzip bytes to accommodate this feature.
 
