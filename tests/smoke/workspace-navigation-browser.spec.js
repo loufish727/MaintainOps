@@ -54,12 +54,24 @@ for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`groupe
     await summary.click({ position: { x: box.width - 5, y: box.height / 2 } });
     await expect(summary).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
+    await page.mouse.move(width - 1, 0);
     const controls = group.locator('[data-section]');
     for (const control of await controls.all()) {
       await expect(control).toBeVisible();
       const metrics = await control.evaluate(node => ({ height: node.getBoundingClientRect().height, overflow: node.scrollWidth - node.clientWidth }));
       expect(metrics.height).toBeGreaterThanOrEqual(48);
       expect(metrics.overflow).toBeLessThanOrEqual(1);
+      if (width <= 920) {
+        await expect(control).toHaveCSS('border-radius', '8px');
+        await expect(control).toHaveCSS('border-top-width', '1px');
+        if (await control.getAttribute('aria-current') === 'page') {
+          await expect(control).toHaveCSS('border-top-color', 'rgb(155, 185, 255)');
+          await expect(control).not.toHaveCSS('box-shadow', 'none');
+        } else {
+          await expect(control).toHaveCSS('border-top-color', 'rgb(100, 114, 125)');
+          await expect(control).toHaveCSS('background-color', 'rgb(23, 33, 39)');
+        }
+      }
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: testInfo.outputPath(`${groupId}-${width}.png`), fullPage: true, animations: 'disabled' });
