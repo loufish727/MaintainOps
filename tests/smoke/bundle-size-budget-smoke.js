@@ -23,7 +23,9 @@ const budgets = {
   // bytes for the palette/context selectors; decoded and combined startup caps stay fixed.
   // Grouped navigation adds 1,849 decoded / 318 gzip bytes; no extra request.
   // The combined startup limits remain unchanged.
-  appStyles: { decoded: 190 * 1024, gzip: 33 * 1024 + 896 },
+  // Menu polish and tablet layout add 3,135 decoded / 545 gzip bytes over the
+  // grouped-menu baseline. Combined startup caps and JS budgets stay unchanged.
+  appStyles: { decoded: 193 * 1024, gzip: 34 * 1024 + 256 },
   platformSpatial: { decoded: 720 * 1024, gzip: 200 * 1024 },
   platformSpatialStyles: { decoded: 52 * 1024, gzip: 11 * 1024 },
   managerFeature: { decoded: 32 * 1024, gzip: 9 * 1024 },

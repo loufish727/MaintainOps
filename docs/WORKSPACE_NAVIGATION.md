@@ -32,7 +32,11 @@ Manager retain their existing role contracts. Nothing changes in database access
   Live badge updates reach both. No overlapping work counts are added together.
 - Group headings and child destinations have a minimum 48px touch target. At phone
   widths, expanded groups occupy a full row and their children use two columns
-  (one below 360px). Children keep their individual section colors.
+  (one below 360px). Tablet navigation uses three columns instead of squeezing
+  six headings into a horizontal strip. Children keep their section colors.
+- Group headings use inset colored icons and restrained surface highlights;
+  child destinations are connected rows, with a stronger selected-page treatment.
+  Plus/minus transitions respect reduced motion and never animate layout height.
 
 ## Ownership And Verification
 
@@ -40,13 +44,14 @@ Manager retain their existing role contracts. Nothing changes in database access
 `workspaceSectionNavigationEvents.js` still owns destination actions. The new module
 is in the existing runtime bundle, with no new dependency or network request.
 
-Compared with the section-color baseline, grouped navigation adds 4,034 decoded /
-1,049 gzip bytes across runtime, app shell and shared CSS. The total startup budget
-remains 780 KiB decoded / 175 KiB gzip. CSS alone adds 1,849 / 318 bytes; its component
-allowance is raised by 2 KiB decoded / 512 gzip bytes to accommodate this feature.
+Compared with the section-color baseline, grouped navigation and visual polish add
+7,169 decoded / 1,594 gzip bytes across runtime, app shell and shared CSS. The visual
+polish alone adds 3,135 / 545 bytes and changes no runtime JavaScript. The total
+startup budget remains 780 KiB decoded / 175 KiB gzip; actual startup is 757,502 /
+176,974 bytes. The CSS component allowance is 193 KiB decoded / 34 KiB + 256 gzip.
 
 Node and browser navigation tests cover permissions-filtered destinations, active
-state, escaping, five viewport widths, keyboard, touch, draft preservation, and
+state, escaping, nine viewport widths, keyboard, touch, draft preservation, and
 zero requests on disclosure. They run in the existing LFES checks. Live tests use
 `tests/helpers/workspace-navigation.js` to expand groups through real UI clicks,
 never forced clicks on hidden destinations. Signed-in regression evidence must

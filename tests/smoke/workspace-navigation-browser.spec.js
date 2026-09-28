@@ -21,7 +21,7 @@ async function mount(page) {
   }, items);
 }
 
-for (const width of [320, 390, 430, 768, 1440]) test(`grouped menu layout, colors and complete tap targets at ${width}px`, async ({ page }, testInfo) => {
+for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`grouped menu layout, colors and complete tap targets at ${width}px`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width, height: 960 });
   await mount(page);
   await expect(page.locator('nav > *')).toHaveCount(6);
@@ -30,6 +30,10 @@ for (const width of [320, 390, 430, 768, 1440]) test(`grouped menu layout, color
     const group = page.locator(`[data-nav-group="${groupId}"]`), summary = group.locator('summary');
     const box = await summary.boundingBox();
     expect(box.height).toBeGreaterThanOrEqual(48);
+    const label = await summary.locator('.nav-group-label').boundingBox();
+    const disclosure = await summary.locator('.nav-disclosure').boundingBox();
+    expect(label.x + label.width).toBeLessThanOrEqual(disclosure.x);
+    expect(label.height).toBeLessThan(24);
     await summary.click({ position: { x: box.width - 5, y: box.height / 2 } });
     await expect(summary).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
@@ -41,7 +45,7 @@ for (const width of [320, 390, 430, 768, 1440]) test(`grouped menu layout, color
       expect(metrics.overflow).toBeLessThanOrEqual(1);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
-    await page.screenshot({ path: testInfo.outputPath(`${groupId}-${width}.png`), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`${groupId}-${width}.png`), fullPage: true, animations: 'disabled' });
   }
   await revealSection(page, 'financial');
   await expect(page.locator('.nav-financial .nav-icon')).toHaveCSS('color', 'rgb(197, 180, 245)');
@@ -111,4 +115,20 @@ test('rapid group changes cannot hide a destination between visibility and click
     await expect(page.locator('h1')).toHaveText('messages');
     await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
   }
+});
+
+test('menu affordances stay distinct and respect reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await mount(page);
+  const summary = page.locator('[data-nav-group="team"] > summary');
+  expect(await summary.evaluate(node => getComputedStyle(node).transitionDuration)).toBe('0s');
+  const mark = summary.locator('.nav-disclosure');
+  expect(await mark.evaluate(node => getComputedStyle(node, '::after').transitionDuration)).toBe('0s');
+  expect(await mark.evaluate(node => getComputedStyle(node, '::after').transform)).toBe('matrix(0, 1, -1, 0, 0, 0)');
+  await summary.click();
+  expect(await mark.evaluate(node => getComputedStyle(node, '::after').transform)).toBe('matrix(1, 0, 0, 1, 0, 0)');
+  const child = page.locator('button.nav-team');
+  await expect(child).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(child).toHaveCSS('box-shadow', 'none');
+  await expect(page.locator('button.nav-mywork')).toHaveAttribute('aria-current', 'page');
 });
