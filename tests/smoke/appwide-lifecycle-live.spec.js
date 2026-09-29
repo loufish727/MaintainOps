@@ -58,6 +58,65 @@ test('technicians can complete New work directly through each completion control
   } finally { await qa.finish(); }
 });
 
+test('Quick Update completes New and In Progress work after its required checks', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Quick Update Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Quick Update Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guards', response_type: 'checkbox', required: true });
+    const fixtures = [];
+    for (const status of ['open', 'in_progress']) {
+      for (const kind of ['general', 'safety', 'procedure']) {
+        fixtures.push({ kind, work: await qa.seed('work_orders', {
+          location_id: qa.location, title: `QA Quick Update ${status} ${kind}`, status,
+          assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+          asset_id: kind === 'general' ? null : asset.id, safety_check_required: kind !== 'general',
+          procedure_template_id: kind === 'procedure' ? procedure.id : null,
+        }) });
+      }
+    }
+    const page = await qa.open('technician', 'work', 390);
+    for (const { kind, work } of fixtures) {
+      await nav(page, 'work');
+      await page.locator(`.work-card[data-id="${work.id}"] .work-card-body`).click();
+      await page.qaSettle();
+      const form = page.locator('#quick-update-work-order-form');
+      await expandFor(form);
+      await form.locator('[name=resolution_summary]').fill(`QA resolved ${kind} from ${work.status}`);
+      await form.locator('[name=status]').selectOption('completed');
+      const save = form.locator('button[type=submit]');
+      if (kind !== 'general') {
+        await save.click();
+        await expect(form.locator('#quick-update-error')).toContainText(kind === 'procedure' ? 'Complete required procedure checklist steps first' : 'Check safety devices');
+        await expect(save).toBeEnabled();
+        expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe(work.status);
+        await qa.shot(page, `quick-blocked-${work.status}-${kind}`);
+        if (kind === 'procedure') {
+          const field = page.locator(`[data-step-result="${step.id}"]`);
+          await expandFor(field);
+          await field.check();
+          await expect(field).toBeEnabled();
+          await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+        }
+        await form.locator('[name=safety_devices_checked]').check();
+      }
+      await save.click();
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status,
+        { message: `${work.status}/${kind}: Quick Update should complete`, timeout: 20000 }).toBe('completed');
+      await page.qaSettle();
+      await expect(page.locator('#status-select')).toHaveValue('completed');
+      await expect(page.locator('#quick-update-work-order-form [name=status]')).toHaveValue('completed');
+      const saved = (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0];
+      expect(saved.asset_id).toBe(work.asset_id);
+      expect(saved.procedure_template_id).toBe(work.procedure_template_id);
+      expect(saved.resolution_summary).toBe(`QA resolved ${kind} from ${work.status}`);
+      expect(saved.completed_at).toBeTruthy();
+      expect(saved.safety_devices_checked).toBe(kind !== 'general');
+      await qa.shot(page, `quick-completed-${work.status}-${kind}`);
+    }
+  } finally { await qa.finish(); }
+});
+
 test('equipment, parts, procedure, PM, work order, completion and history persist together', async ({ browser, request }, testInfo) => {
   const qa = await createQa(browser, request, testInfo);
   try {
