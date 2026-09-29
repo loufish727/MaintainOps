@@ -1,7 +1,7 @@
 (function () {
   const PREFIX = 'maintainops.workOrderDraft.v1:';
-  const FORMS = '#quick-update-work-order-form, #complete-work-order-form, #edit-work-order-form';
-  const NAMES = new Set(['title', 'description', 'resolution_summary', 'failure_cause', 'completion_notes', 'actual_minutes', 'follow_up_needed', 'due_at', 'priority', 'type', 'assigned_to', 'procedure_template_id', 'asset_id', 'new_asset_name', 'equipment_choice_mode', 'machine_down']);
+  const FORMS = '#quick-update-work-order-form, #complete-work-order-form, #edit-work-order-form, #comment-form';
+  const NAMES = new Set(['title', 'description', 'resolution_summary', 'failure_cause', 'completion_notes', 'actual_minutes', 'follow_up_needed', 'due_at', 'priority', 'type', 'assigned_to', 'procedure_template_id', 'asset_id', 'new_asset_name', 'equipment_choice_mode', 'machine_down', 'body']);
   const OUTCOME = ['resolution_summary', 'failure_cause', 'completion_notes', 'actual_minutes', 'follow_up_needed'];
 
   // Unsubmitted edits only, isolated per tab, account, facility and order. Never write business data here.
@@ -123,7 +123,7 @@
       const draft = read(token.scope);
       for (const [name, entry] of Object.entries(token.fields)) {
         if (!Object.hasOwn(payload, name) || draft.fields[name]?.revision !== entry.revision) continue;
-        const saved = name === 'actual_minutes' ? String(Number(entry.value) || 0) : String(entry.value ?? '');
+        const saved = name === 'actual_minutes' ? String(Number(entry.value) || 0) : name === 'body' ? entry.value.trim() : String(entry.value ?? '');
         if (saved === String(payload[name] ?? '')) delete draft.fields[name];
       }
       write(token.scope, draft);

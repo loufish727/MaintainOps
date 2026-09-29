@@ -6747,20 +6747,25 @@ async function createComment(event) {
   const errorTarget = document.querySelector("#comment-error");
   const body = new FormData(formElement).get("body")?.trim();
   if (!body) return;
+  const workOrderId = activeWorkOrderId;
+  const scope = messageDraftScope();
+  const draft = workOrderDrafts.snapshot(workOrderId);
 
   submitButton.disabled = true;
   submitButton.textContent = "Adding...";
   if (errorTarget) errorTarget.textContent = "";
 
   try {
-    const error = await addCommentToWorkOrder(activeWorkOrderId, body);
+    const error = await addCommentToWorkOrder(workOrderId, body);
+    if (!error) workOrderDrafts.acknowledge(draft, { body });
+    if (scope !== messageDraftScope() || activeWorkOrderId !== workOrderId) return;
 
     if (error) {
       if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
       return;
     }
 
-    await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
+    await recordWorkOrderEvent(workOrderId, "comment_added", "Comment added.");
     await loadComments();
     await loadWorkOrderEvents();
     showNotice("Comment added.");

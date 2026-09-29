@@ -184,6 +184,9 @@ test('unsaved outcome notes survive completion guards, failed saves and reload b
     await form.locator('[name=failure_cause]').fill('Worn hose');
     await form.locator('[name=actual_minutes]').fill('30');
     await form.locator('[name=follow_up_needed]').check();
+    const comment = page.locator('#comment-form [name=body]');
+    await expandFor(comment);
+    await comment.fill('Draft comment held until explicitly posted.');
     await page.locator('#status-select').selectOption('completed');
     await page.qaSettle();
     await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
@@ -213,6 +216,13 @@ test('unsaved outcome notes survive completion guards, failed saves and reload b
       resolution_summary: 'Replaced hose, tested machine and checked guards.', completion_notes: 'Recheck for leaks next shift.', failure_cause: 'Worn hose', actual_minutes: 30, follow_up_needed: true, safety_devices_checked: true,
     });
     await page.qaSettle();
+    await expect(comment).toHaveValue('Draft comment held until explicitly posted.');
+    expect(await rows(qa, 'work_order_comments', `&work_order_id=eq.${work.id}`)).toHaveLength(0);
+    await expandFor(comment);
+    await page.locator('#comment-form').getByRole('button', { name: 'Add Comment', exact: true }).click();
+    await expect.poll(async () => (await rows(qa, 'work_order_comments', `&work_order_id=eq.${work.id}`)).length).toBe(1);
+    await page.qaSettle();
+    await expect(comment).toHaveValue('');
     await expect(page.locator('[data-work-draft-notice]:visible')).toHaveCount(0);
     await qa.shot(page, 'outcome-persisted');
   } finally { await qa.finish(); }

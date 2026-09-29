@@ -17,6 +17,7 @@ async function mount(page) {
         <form id="quick-update-work-order-form"><input name="title" value="Issue"><textarea name="resolution_summary"></textarea><input name="new_asset_name"><select name="priority"><option>high</option><option>low</option></select></form>
         <form id="complete-work-order-form"><textarea name="resolution_summary"></textarea><textarea name="failure_cause"></textarea><textarea name="completion_notes"></textarea><input name="actual_minutes" type="number" value="0"><input type="checkbox" name="follow_up_needed"><input type="checkbox" name="safety_devices_checked"><p id="completion-error" role="alert"></p><button type="submit">Complete Work Order</button></form>
         <form id="edit-work-order-form"><input name="title" value="Issue"><textarea name="description"></textarea><textarea name="resolution_summary"></textarea><textarea name="completion_notes"></textarea><textarea name="failure_cause"></textarea><input name="actual_minutes" type="number" value="0"><input type="checkbox" name="follow_up_needed"></form>
+        <form id="comment-form"><textarea name="body"></textarea><button type="submit">Add Comment</button></form>
       </div>`;
       for (const field of document.querySelectorAll('[name]')) if (Object.hasOwn(server, field.name)) {
         if (field.type === 'checkbox') field.checked = server[field.name]; else field.value = server[field.name] ?? '';
@@ -174,4 +175,14 @@ test('a detached form and duplicate blur changes cannot resurrect acknowledged d
     old.value = 'Detached notes'; old.dispatchEvent(new Event('input', { bubbles: true }));
   });
   expect(await page.evaluate(() => Object.keys(drafts.snapshot(orderId).fields))).toEqual([]);
+});
+
+test('completion retains a separate unposted comment until that comment is explicitly saved', async ({ page }) => {
+  await mount(page);
+  await page.locator('#comment-form [name=body]').fill('  Do not post me on Complete.  ');
+  await page.evaluate(() => { blocked = false; return statusWorkflow.setWorkOrderStatus(orderId, 'completed'); });
+  await expect(page.locator('#comment-form [name=body]')).toHaveValue('  Do not post me on Complete.  ');
+  expect(await page.evaluate(() => Object.hasOwn(payloads[0], 'body'))).toBe(false);
+  await page.evaluate(() => { drafts.acknowledge(drafts.snapshot(orderId), { body: 'Do not post me on Complete.' }); paint(); });
+  await expect(page.locator('#comment-form [name=body]')).toHaveValue('');
 });
