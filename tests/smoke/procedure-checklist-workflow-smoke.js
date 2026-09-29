@@ -9,11 +9,13 @@ const notices = [];
 const summary = { textContent: '' };
 const chip = { textContent: '' };
 const recorded = { textContent: '' };
+const completionClasses = new Map();
+const completionSummary = { textContent: '', classList: { toggle: (name, value) => completionClasses.set(name, value) } };
 const completedAt = '2026-09-18T12:00:00.000Z';
 const field = {
   isConnected: true,
   closest: (selector) => selector === '.detail-stack'
-    ? { querySelector: (target) => target === '[data-checklist-summary]' ? summary : chip }
+    ? { querySelector: (target) => ({ '[data-checklist-summary]': summary, '.relationship-chip.procedure > span': chip, '[data-completion-checklist]': completionSummary })[target] }
     : { querySelector: () => recorded },
   checked: true,
   dataset: {
@@ -71,6 +73,9 @@ const workflow = createProcedureChecklistWorkflow({
   assert.equal(field.disabled, false);
   assert.equal(summary.textContent, '2 of 3 complete - required 1/1');
   assert.equal(chip.textContent, '2/3');
+  assert.equal(completionSummary.textContent, 'Required checklist: 1/1');
+  assert.equal(completionClasses.get('completion-note'), true);
+  assert.equal(completionClasses.get('warning-text'), false);
   assert.equal(recorded.textContent, `Recorded ${new Date(completedAt).toLocaleString()}`);
   assert.deepEqual(notices, [], 'Connected checklist readout must not fail silently');
 

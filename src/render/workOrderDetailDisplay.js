@@ -35,6 +35,7 @@
       canEditOperationalRecords = () => true,
       renderProductionActionDetail = () => "",
       hasOpenProductionAction = () => false,
+      segmentIcon = () => "",
     } = deps;
 
     function renderChecklistStep(workOrder, step) {
@@ -94,6 +95,36 @@
       `;
     }
 
+    function renderCompletionPanel(workOrder, requiredProgress, procedure) {
+      return `
+        <details class="work-detail-section completion-section" id="work-order-complete-target" data-work-order-id="${escapeHtml(workOrder.id)}" ${deps.getWorkOrderActionWarningId() === workOrder.id && deps.getWorkOrderActionWarning() ? "open" : ""}>
+          <summary><span class="completion-heading">${segmentIcon("completed")} Complete Work Order</span></summary>
+          <form class="completion-box" id="complete-work-order-form">
+            ${requiredProgress?.total ? `<div class="completion-requirement"><p data-completion-checklist class="${requiredProgress.done === requiredProgress.total ? "completion-note" : "warning-text"}">Required checklist: ${requiredProgress.done}/${requiredProgress.total}</p>${procedure ? '<button class="text-button" data-jump-work-section="work-order-procedure-target" type="button">Review checklist</button>' : ''}</div>` : ""}
+            ${hasOpenProductionAction(workOrder) ? `<div class="completion-requirement"><p class="warning-text">Complete or remove the open Production Action first.</p><button class="text-button" data-jump-work-section="work-order-production-target" type="button">Review Production Action</button></div>` : ""}
+            <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?">${escapeHtml(workOrder.resolution_summary || "")}</textarea></label>
+            ${requiresSafetyDeviceCheck(workOrder) ? `
+              <label class="check-row safety-check-row">
+                <input name="safety_devices_checked" type="checkbox" required ${hasCompletedSafetyDeviceCheck(workOrder) ? "checked" : ""}>
+                Safety devices identified: E-stops, sensors, guards, and interlocks
+              </label>
+            ` : ""}
+            <details class="completion-options">
+              <summary>Additional details</summary>
+              <div class="form-grid">
+                <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?">${escapeHtml(workOrder.failure_cause || "")}</textarea></label>
+                <label class="check-row"><input name="follow_up_needed" type="checkbox" ${workOrder.follow_up_needed ? "checked" : ""}> Follow-up needed</label>
+                <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
+                <label>Completion notes<textarea name="completion_notes" rows="3" placeholder="What was fixed? Any follow-up needed?">${escapeHtml(workOrder.completion_notes || "")}</textarea></label>
+              </div>
+            </details>
+            <p class="error-text" id="completion-error" role="alert"></p>
+            <button class="primary-button complete-work-action" type="submit" ${hasOpenProductionAction(workOrder) ? "disabled" : ""}>Complete Work Order</button>
+          </form>
+        </details>
+      `;
+    }
+
     function renderWorkOrderDetail() {
       const activeWorkOrderId = deps.getActiveWorkOrderId();
       const workOrders = deps.getWorkOrders();
@@ -124,7 +155,7 @@
     const canEditOperational = canEditOperationalRecords() && !workOrder.assets?.archived_at;
   
     return `
-      <div class="detail-stack">
+      <div class="detail-stack" data-work-order-editor="${escapeHtml(workOrder.id)}">
         ${workOrder.assets?.archived_at ? '<div class="archive-retained-banner">Archived equipment. Work history is retained and read-only until the equipment is restored.</div>' : ''}
         <div>
           <div class="chip-row">
@@ -141,6 +172,7 @@
           ${workOrder.completion_notes ? `<p>${escapeHtml(workOrder.completion_notes)}</p>` : ""}
         </div>
   
+        ${canEditOperational && workOrder.status !== "completed" ? renderCompletionPanel(workOrder, requiredProgress, procedure) : ""}
         ${renderWorkOrderCommandSummary(workOrder)}
         ${renderWorkOrderRecommendation(workOrder)}
         ${renderProductionActionDetail(workOrder)}
@@ -162,7 +194,7 @@
   
         ${canEditOperational ? `<div class="quick-actions detail-quick-actions">
           ${canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">${workOrder.assigned_to ? "Reassign to me" : "Assign to me"}</button>` : ""}
-          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status && !(status === "completed" && hasOpenProductionAction(workOrder))).map((status) => `
+          ${STATUS_OPTIONS.filter((status) => status !== workOrder.status && status !== "completed").map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusLabel(status)}</button>
           `).join("")}
         </div>` : ""}
@@ -274,13 +306,14 @@
             </label>
           ` : ""}
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
+          <label>Completion notes<textarea name="completion_notes" rows="3">${escapeHtml(workOrder.completion_notes || "")}</textarea></label>
           <p class="error-text" id="work-order-save-error"></p>
           <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
         </form>
         </details>` : ""}
   
         ${procedure ? `
-          <details class="work-detail-section relationship-detail procedure" open>
+          <details class="work-detail-section relationship-detail procedure" id="work-order-procedure-target" open>
             <summary>Procedure Checklist</summary>
             <div class="panel-header compact-header">
               <h3>${escapeHtml(procedure.name)}</h3>
@@ -294,30 +327,7 @@
                 </div>
               `).join("") || `<p class="muted">This procedure has no steps yet.</p>`}
             </div>
-          </details>
-        ` : ""}
-  
-        ${canEditOperational && workOrder.status !== "completed" ? `
-          <details class="work-detail-section completion-section" id="work-order-complete-target">
-            <summary>Complete Work</summary>
-          <form class="completion-box" id="complete-work-order-form">
-            <h3>Complete Work</h3>
-            ${requiredProgress?.total ? `<p class="${requiredProgress.done === requiredProgress.total ? "completion-note" : "warning-text"}">Required checklist: ${requiredProgress.done}/${requiredProgress.total}</p>` : ""}
-            ${hasOpenProductionAction(workOrder) ? `<p class="warning-text">Complete or remove the open Production Action first.</p>` : ""}
-            <label>Cause / finding<textarea name="failure_cause" rows="2" placeholder="What caused the issue, or what did you find?"></textarea></label>
-            <label>Resolution<textarea name="resolution_summary" rows="2" placeholder="What action fixed it?"></textarea></label>
-            <label class="check-row"><input name="follow_up_needed" type="checkbox"> Follow-up needed</label>
-            <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
-            <label>Completion notes<textarea name="completion_notes" rows="3" placeholder="What was fixed? Any follow-up needed?"></textarea></label>
-            ${requiresSafetyDeviceCheck(workOrder) ? `
-              <label class="check-row safety-check-row">
-                <input name="safety_devices_checked" type="checkbox" required ${hasCompletedSafetyDeviceCheck(workOrder) ? "checked" : ""}>
-                Safety devices identified: E-stops, sensors, guards, and interlocks
-              </label>
-            ` : ""}
-            <p class="error-text" id="completion-error"></p>
-            <button class="primary-button" type="submit" ${hasOpenProductionAction(workOrder) ? "disabled" : ""}>Complete Work Order</button>
-          </form>
+            ${canEditOperational && workOrder.status !== "completed" ? '<button class="secondary-button" data-jump-work-section="work-order-complete-target" type="button">Continue to completion</button>' : ''}
           </details>
         ` : ""}
   

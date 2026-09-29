@@ -301,9 +301,10 @@
           ${renderRelationshipChips(workOrder)}
           ${renderProductionActionCard(workOrder)}
           <div class="quick-actions work-card-actions">
+            ${!isCompleted && !workOrder.assets?.archived_at ? `<button class="complete-work-action" data-quick-status="completed" data-id="${workOrder.id}" type="button">Complete</button>` : ""}
             ${!isCompleted && canAssignWorkOrderToMe(workOrder) ? `<button class="assign-action" data-assign-me="${workOrder.id}" type="button">Assign to me</button>` : ""}
             ${!isCompleted && canManageTeam() ? renderCardAssignmentControl(workOrder) : ""}
-          ${STATUS_OPTIONS.filter((status) => !workOrder.assets?.archived_at && status !== workOrder.status && !(status === "completed" && hasOpenProductionAction(workOrder))).slice(0, 3).map((status) => `
+          ${STATUS_OPTIONS.filter((status) => !workOrder.assets?.archived_at && status !== workOrder.status && status !== "completed").slice(0, 3).map((status) => `
             <button data-quick-status="${status}" data-id="${workOrder.id}" type="button">${statusActionLabel(status)}</button>
           `).join("")}
         </div>

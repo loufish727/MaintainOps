@@ -7,6 +7,227 @@ async function rows(qa, table, extra = '') {
   return qa.api('admin', 'GET', `${table}?company_id=eq.${qa.company}&select=*${extra}`);
 }
 
+test('technicians can complete New work directly through each completion control', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Completion Safety', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const cases = ['card', 'status', 'quick-update', 'complete-work'];
+    const fixtures = [];
+    for (const control of cases) {
+      fixtures.push(await qa.seed('work_orders', {
+        location_id: qa.location, title: `QA New Completion ${control}`, status: 'open',
+        assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+        asset_id: control === 'card' ? null : asset.id, safety_check_required: control !== 'card',
+      }));
+    }
+    const page = await qa.open('technician', 'work');
+    for (const [index, control] of cases.entries()) {
+      const work = fixtures[index];
+      await nav(page, 'work');
+      const card = page.locator(`.work-card[data-id="${work.id}"]`);
+      await expect(card).toBeVisible();
+      if (control === 'card') {
+        await card.getByRole('button', { name: 'Complete', exact: true }).click();
+      } else {
+        await card.locator('.work-card-body').click();
+        await expect(page.locator('#status-select')).toHaveValue('open');
+        const quick = page.locator('#quick-update-work-order-form');
+        if (control === 'status') {
+          await expandFor(quick);
+          await quick.locator('[name=safety_devices_checked]').check();
+          await page.locator('#status-select').selectOption('completed');
+        } else {
+          const form = control === 'quick-update' ? quick : page.locator('#complete-work-order-form');
+          await expandFor(form);
+          await form.locator('[name=resolution_summary]').fill(`Completed directly from New via ${control}.`);
+          await form.locator('[name=safety_devices_checked]').check();
+          if (control === 'quick-update') await form.locator('[name=status]').selectOption('completed');
+          await form.locator('button[type=submit]').click();
+        }
+      }
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status,
+        { message: `${control}: New work should complete without an In Progress step`, timeout: 20000 }).toBe('completed');
+      const saved = (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0];
+      expect(saved.completed_at).toBeTruthy();
+      expect(saved.asset_id).toBe(work.asset_id);
+      if (control !== 'card') expect(saved.safety_devices_checked).toBe(true);
+      if (['quick-update', 'complete-work'].includes(control)) expect(saved.resolution_summary).toContain('Completed directly from New');
+      await page.qaSettle();
+      await qa.shot(page, `new-completed-${control}`);
+    }
+  } finally { await qa.finish(); }
+});
+
+test('Quick Update completes New and In Progress work after its required checks', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Quick Update Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Quick Update Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guards', response_type: 'checkbox', required: true });
+    const fixtures = [];
+    for (const status of ['open', 'in_progress']) {
+      for (const kind of ['general', 'safety', 'procedure']) {
+        fixtures.push({ kind, work: await qa.seed('work_orders', {
+          location_id: qa.location, title: `QA Quick Update ${status} ${kind}`, status,
+          assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+          asset_id: kind === 'general' ? null : asset.id, safety_check_required: kind !== 'general',
+          procedure_template_id: kind === 'procedure' ? procedure.id : null,
+        }) });
+      }
+    }
+    const page = await qa.open('technician', 'work', 390);
+    for (const { kind, work } of fixtures) {
+      await nav(page, 'work');
+      await page.locator(`.work-card[data-id="${work.id}"] .work-card-body`).click();
+      await page.qaSettle();
+      const form = page.locator('#quick-update-work-order-form');
+      await expandFor(form);
+      await form.locator('[name=resolution_summary]').fill(`QA resolved ${kind} from ${work.status}`);
+      await form.locator('[name=status]').selectOption('completed');
+      const save = form.locator('button[type=submit]');
+      if (kind !== 'general') {
+        await save.click();
+        await expect(form.locator('#quick-update-error')).toContainText(kind === 'procedure' ? 'Complete required procedure checklist steps first' : 'Check safety devices');
+        await expect(save).toBeEnabled();
+        expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe(work.status);
+        await qa.shot(page, `quick-blocked-${work.status}-${kind}`);
+        if (kind === 'procedure') {
+          const field = page.locator(`[data-step-result="${step.id}"]`);
+          await expandFor(field);
+          await field.check();
+          await expect(field).toBeEnabled();
+          await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+        }
+        await form.locator('[name=safety_devices_checked]').check();
+      }
+      await save.click();
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status,
+        { message: `${work.status}/${kind}: Quick Update should complete`, timeout: 20000 }).toBe('completed');
+      await page.qaSettle();
+      await expect(page.locator('#status-select')).toHaveValue('completed');
+      await expect(page.locator('#quick-update-work-order-form [name=status]')).toHaveValue('completed');
+      const saved = (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0];
+      expect(saved.asset_id).toBe(work.asset_id);
+      expect(saved.procedure_template_id).toBe(work.procedure_template_id);
+      expect(saved.resolution_summary).toBe(`QA resolved ${kind} from ${work.status}`);
+      expect(saved.completed_at).toBeTruthy();
+      expect(saved.safety_devices_checked).toBe(kind !== 'general');
+      await qa.shot(page, `quick-completed-${work.status}-${kind}`);
+    }
+  } finally { await qa.finish(); }
+});
+
+test('the card Complete shortcut leads to required checks and preserves saved outcomes', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Shortcut Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Shortcut Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guards', response_type: 'checkbox', required: true });
+    const fixtures = [];
+    for (const status of ['open', 'in_progress']) fixtures.push(await qa.seed('work_orders', {
+      location_id: qa.location, title: `QA Complete Shortcut ${status}`, status, asset_id: asset.id, safety_check_required: true,
+      procedure_template_id: procedure.id, assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+      resolution_summary: 'Saved repair notes', failure_cause: 'Worn hose', completion_notes: 'Existing notes', follow_up_needed: true, actual_minutes: 25,
+    }));
+    const page = await qa.open('technician', 'work', 390);
+    for (const work of fixtures) {
+      await nav(page, 'work');
+      await page.locator(`.work-card[data-id="${work.id}"]`).getByRole('button', { name: 'Complete', exact: true }).click();
+      const panel = page.locator('#work-order-complete-target');
+      await expect(panel).toHaveAttribute('open', '');
+      await expect(panel.locator(':scope > summary')).toBeFocused();
+      await expect(panel.locator(':scope > summary')).toBeInViewport();
+      expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe(work.status);
+      const form = panel.locator('form');
+      await expect(form).toContainText('Required checklist: 0/1');
+      await expect(form.locator('[name=resolution_summary]')).toHaveValue('Saved repair notes');
+      await expect(form.locator('[name=failure_cause]')).toBeHidden();
+      await qa.shot(page, `shortcut-${work.status}-blocked`);
+      await form.getByRole('button', { name: 'Review checklist' }).click();
+      const field = page.locator(`[data-step-result="${step.id}"]`);
+      await field.check();
+      await expect(field).toBeEnabled();
+      await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+      await page.getByRole('button', { name: 'Continue to completion' }).click();
+      await expect(form.locator('[data-completion-checklist]')).toHaveText('Required checklist: 1/1');
+      await form.locator('[name=safety_devices_checked]').check();
+      await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status).toBe('completed');
+      await page.qaSettle();
+      await expect(panel).toHaveCount(0);
+      expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]).toMatchObject({
+        asset_id: asset.id, procedure_template_id: procedure.id, safety_devices_checked: true,
+        resolution_summary: 'Saved repair notes', failure_cause: 'Worn hose', completion_notes: 'Existing notes', follow_up_needed: true, actual_minutes: 25,
+      });
+      expect((await rows(qa, 'work_order_events', `&work_order_id=eq.${work.id}`)).some(event => event.event_type === 'completed')).toBe(true);
+      await qa.shot(page, `shortcut-${work.status}-completed`);
+    }
+  } finally { await qa.finish(); }
+});
+
+test('unsaved outcome notes survive completion guards, failed saves and reload before being persisted', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Draft Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Draft Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guard', response_type: 'checkbox', required: true });
+    const work = await qa.seed('work_orders', { location_id: qa.location, title: 'QA Retained Completion Notes', status: 'in_progress', asset_id: asset.id,
+      safety_check_required: true, procedure_template_id: procedure.id, assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id });
+    const page = await qa.open('technician', 'work', 390);
+    const open = async () => { await page.getByRole('heading', { name: work.title, exact: true }).click(); await page.qaSettle(); };
+    await open();
+    const quick = page.locator('#quick-update-work-order-form [name=resolution_summary]');
+    await quick.fill('Replaced hose, tested machine and checked guards.');
+    const form = page.locator('#complete-work-order-form');
+    await expandFor(form.locator('[name=completion_notes]'));
+    await form.locator('[name=completion_notes]').fill('Recheck for leaks next shift.');
+    await form.locator('[name=failure_cause]').fill('Worn hose');
+    await form.locator('[name=actual_minutes]').fill('30');
+    await form.locator('[name=follow_up_needed]').check();
+    const comment = page.locator('#comment-form [name=body]');
+    await expandFor(comment);
+    await comment.fill('Draft comment held until explicitly posted.');
+    await page.locator('#status-select').selectOption('completed');
+    await page.qaSettle();
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await expect(form.locator('[name=completion_notes]')).toBeVisible();
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].resolution_summary).toBeNull();
+    await page.reload(); await page.qaSettle(); await open();
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await page.locator(`[data-step-result="${step.id}"]`).check();
+    await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+    await expandFor(form.locator('[name=safety_devices_checked]'));
+    await form.locator('[name=safety_devices_checked]').check();
+    let rejectSave = true;
+    await page.route('**/rest/v1/work_orders?**', route => route.request().method() === 'PATCH' && rejectSave
+      ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'QA simulated save failure' }) }) : route.continue());
+    await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+    await expect(page.locator('#completion-error')).toContainText('Could not complete');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe('in_progress');
+    await qa.shot(page, 'retained-after-save-failure');
+    rejectSave = false;
+    await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+    await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe('completed');
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]).toMatchObject({
+      resolution_summary: 'Replaced hose, tested machine and checked guards.', completion_notes: 'Recheck for leaks next shift.', failure_cause: 'Worn hose', actual_minutes: 30, follow_up_needed: true, safety_devices_checked: true,
+    });
+    await page.qaSettle();
+    await expect(comment).toHaveValue('Draft comment held until explicitly posted.');
+    expect(await rows(qa, 'work_order_comments', `&work_order_id=eq.${work.id}`)).toHaveLength(0);
+    await expandFor(comment);
+    await page.locator('#comment-form').getByRole('button', { name: 'Add Comment', exact: true }).click();
+    await expect.poll(async () => (await rows(qa, 'work_order_comments', `&work_order_id=eq.${work.id}`)).length).toBe(1);
+    await page.qaSettle();
+    await expect(comment).toHaveValue('');
+    await expect(page.locator('[data-work-draft-notice]:visible')).toHaveCount(0);
+    await qa.shot(page, 'outcome-persisted');
+  } finally { await qa.finish(); }
+});
+
 test('equipment, parts, procedure, PM, work order, completion and history persist together', async ({ browser, request }, testInfo) => {
   const qa = await createQa(browser, request, testInfo);
   try {
@@ -95,6 +316,7 @@ test('equipment, parts, procedure, PM, work order, completion and history persis
     const completion = page.locator('#complete-work-order-form');
     await expandFor(completion);
     await completion.locator('[name=resolution_summary]').fill('Replaced belt');
+    await expandFor(completion.locator('[name=actual_minutes]'));
     await completion.locator('[name=actual_minutes]').fill('25');
     await completion.locator('[name=safety_devices_checked]').check();
     await expect(completion.locator('[name=safety_devices_checked]')).toBeChecked();

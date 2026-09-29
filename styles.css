@@ -2472,7 +2472,8 @@ textarea {
   overflow: hidden;
 }
 
-.production-action-card-heading {
+/* Keep the compact card row independent of the shared wrapping chip layout. */
+.production-action-card-heading.chip-row {
   flex-wrap: nowrap;
   gap: 5px;
   overflow: hidden;
@@ -2484,6 +2485,16 @@ textarea {
   font-size: 0.7rem;
   line-height: 1;
   white-space: nowrap;
+}
+
+.production-action-card-heading .production-action-chip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.production-action-card-heading .chip + .chip {
+  flex-shrink: 0;
 }
 
 .production-action-card-preview {
@@ -3123,15 +3134,37 @@ textarea {
 }
 
 .completion-section {
-  border-color: color-mix(in srgb, var(--red) 36%, var(--line));
-  border-left: 4px solid var(--red);
+  border-color: color-mix(in srgb, var(--green) 60%, var(--line));
+  border-left: 4px solid var(--green);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--red) 7%, transparent), transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 12%, transparent), transparent 62%),
     var(--surface);
 }
 
-.completion-section > summary {
-  color: var(--red);
+.work-detail-section.completion-section > summary {
+  color: var(--green);
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.completion-options > summary {
+  min-height: 44px;
+  padding-block: 10px;
+  cursor: pointer;
+}
+
+.work-card-actions.quick-actions .complete-work-action,
+.completion-box .complete-work-action {
+  --accent: #f2fff7;
+  min-height: 48px;
+  border: 1px solid #79e3ad;
+  background: #16613e;
+  color: #f2fff7;
+  font-weight: 750;
+}
+
+.work-card-actions.quick-actions .complete-work-action {
+  grid-column: 1 / -1;
 }
 
 .relationship-detail .primary-button,
@@ -8006,10 +8039,6 @@ textarea {
 .completion-box {
   display: grid;
   gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-2);
-  padding: 14px;
 }
 
 .completion-note {

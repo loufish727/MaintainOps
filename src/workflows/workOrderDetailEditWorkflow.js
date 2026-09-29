@@ -39,6 +39,7 @@
           follow_up_needed: form.get("follow_up_needed") === "on",
           actual_minutes: Number(form.get("actual_minutes")) || 0,
         };
+        if (form.has("completion_notes")) payload.completion_notes = form.get("completion_notes") || null;
         if (formOwnsAsset) {
           payload.asset_id = assetId;
           payload.location_id = deps.locationIdForAsset(assetId);

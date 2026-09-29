@@ -91,6 +91,11 @@ function harness(overrides = {}) {
   });
   function field(stepId, value, workOrderId = "wo-1") {
     const summary = { textContent: "initial summary" };
+    const completionClasses = {};
+    const completionSummary = {
+      textContent: "initial completion summary",
+      classList: { toggle: (name, enabled) => { completionClasses[name] = enabled; } },
+    };
     const recorded = { textContent: "initial timestamp" };
     return {
       dataset: { stepResult: stepId, workOrderId },
@@ -100,9 +105,11 @@ function harness(overrides = {}) {
       disabled: false,
       isConnected: true,
       summary,
+      completionSummary,
+      completionClasses,
       recorded,
       closest: (selector) => selector === ".detail-stack"
-        ? { querySelector: () => summary }
+        ? { querySelector: (query) => query === '[data-completion-checklist]' ? completionSummary : summary }
         : { querySelector: () => recorded },
     };
   }
@@ -156,6 +163,8 @@ for (const [stepId, input, expected] of [
     assert.equal(h.state.events[0][1], "checklist_updated");
     assert.equal(field.disabled, false);
     assert.deepEqual(h.state.notices, []);
+    assert.equal(field.completionSummary.textContent, `Required checklist: ${expected ? 1 : 0}/4`);
+    assert.deepEqual(field.completionClasses, { 'completion-note': false, 'warning-text': true });
   });
 }
 

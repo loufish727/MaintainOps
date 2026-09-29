@@ -12,25 +12,31 @@
     doc.querySelectorAll("[data-quick-status]").forEach((button) => {
       button.addEventListener("click", async (event) => {
         event.stopPropagation();
+        const scope = options.getScope?.();
         const originalText = button.textContent;
         button.disabled = true;
         button.textContent = "Saving...";
         try {
+          if (button.dataset.quickStatus === "completed") {
+            await options.prepareCompletion?.(button.dataset.id);
+            if (options.getScope?.() !== scope) return;
+          }
           const saved = await options.setWorkOrderStatus(button.dataset.id, button.dataset.quickStatus);
-          if (!saved && button.isConnected) {
-            button.disabled = false;
-            button.textContent = originalText;
+          if (!saved && button.dataset.quickStatus === "completed") {
+            const panel = doc.querySelector("#work-order-complete-target");
+            if (panel?.dataset.workOrderId === button.dataset.id) {
+              panel.open = true;
+              panel.querySelector("summary")?.focus({ preventScroll: true });
+              panel.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
           }
         } catch (error) {
           options.showNotice(`Could not update status: ${error.message || error}`, "warning");
+        } finally {
           if (button.isConnected) {
             button.disabled = false;
             button.textContent = originalText;
           }
-        }
-        if (button.isConnected) {
-          button.disabled = false;
-          button.textContent = originalText;
         }
       });
     });

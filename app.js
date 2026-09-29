@@ -25,6 +25,7 @@ import { createAssetWorkHistoryState } from "./src/services/assetWorkHistoryStat
 
 const app = document.querySelector("#app");
 const equipmentDrafts = window.MaintainOpsEquipmentCreateDrafts.createMaintenanceCreateDrafts({ getScope: messageDraftScope });
+const workOrderDrafts = window.MaintainOpsWorkOrderDrafts.createWorkOrderDrafts({ getScope: messageDraftScope });
 let checklistDrafts;
 const runRenderSingleFlight = createKeyedSingleFlight();
 const loadCachedCompanyLogoUrls = createCompanyLogoUrlLoader();
@@ -1719,7 +1720,7 @@ async function init() {
   supabaseClient.auth.onAuthStateChange((eventName, nextSession) => {
     const previousSession = session;
     session = nextSession;
-    if (previousSession?.user.id !== nextSession?.user.id) { resetMessageDrafts(); equipmentDrafts.reset(); checklistDrafts?.reset(); }
+    if (previousSession?.user.id !== nextSession?.user.id) { resetMessageDrafts(); equipmentDrafts.reset(); workOrderDrafts.reset(); checklistDrafts?.reset(); }
     if (!shouldRenderForAuthEvent(eventName, previousSession, nextSession)) return;
     setTimeout(() => {
       render().catch((error) => {
@@ -1828,12 +1829,14 @@ async function renderOnce(expectedSessionId) {
 
 function renderWorkspaceLoading(message) {
   equipmentDrafts.capture();
+  workOrderDrafts.capture();
   messageDrafts?.save(document);
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoading(message);
 }
 
 function renderWorkspaceLoadError(message) {
+  workOrderDrafts.capture();
   document.body.classList.remove("public-qr-mode", "spatial-performance-active");
   app.innerHTML = workspaceLoadError(message);
   document.querySelector("#retry-workspace-load").addEventListener("click", () => render());
@@ -1862,6 +1865,7 @@ function renderAuth(mode, initialError = "") {
   equipmentArchive?.reset(); equipmentArchiveOpen = false;
   equipmentRelocation?.dispose();
   equipmentDrafts.reset();
+  workOrderDrafts.reset();
   checklistDrafts?.reset();
   resetMessageDrafts();
   messageLive.stop();
@@ -3605,6 +3609,7 @@ const { ensureGroupSignedUrls: ensureAssetDocumentSignedUrls } = createDeferredS
 
 function renderWorkspace() {
   equipmentDrafts.capture();
+  workOrderDrafts.capture();
   checklistDrafts?.capture();
   const workspaceMenuOpen = Boolean(document.querySelector(".sidebar-controls")?.open);
   const recoveredDraft = messageDrafts?.capture(document, messageDraftScope());
@@ -4224,6 +4229,7 @@ function renderWorkspace() {
   `;
 
   equipmentDrafts.restore();
+  workOrderDrafts.restore();
   checklistDrafts?.restore();
   bindWorkspaceEvents();
   maintenanceRelations?.bind();
@@ -4669,11 +4675,14 @@ async function updateWithOptionalProcedure(table, payload, id) {
 }
 
 async function updateWorkOrderSafely(payload, id) {
+  if (payload.status === "completed") payload = { ...workOrderDrafts.completionFields(id), ...payload };
+  const draft = workOrderDrafts.snapshot(id);
   const response = await updateWithOptionalProcedure("work_orders", payload, id);
   if (response.error && isColumnSchemaError(response.error, WORK_ORDER_SCHEMA_FIELDS)) {
     markSchemaReadiness(response.error);
     return withSetupError(response, databaseSetupRequiredMessage("saving work order details"));
   }
+  if (!response.error) workOrderDrafts.acknowledge(draft, payload);
   return response;
 }
 
@@ -5179,6 +5188,7 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   canEditOperationalRecords,
   renderProductionActionDetail,
   hasOpenProductionAction,
+  segmentIcon,
 });
 
 function recommendedWorkOrderStep(workOrder) {
@@ -5839,6 +5849,10 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceWorkOrderStatusEvents({
+    getScope: () => `${messageDraftScope()}|${activeSection}|${activeWorkOrderId || ""}`,
+    prepareCompletion: async (id) => {
+      if (workOrders.find((order) => order.id === id)?.procedure_template_id) await ensureFeatureBundleLoaded("maintenance");
+    },
     setWorkOrderStatus,
     showNotice,
   });
@@ -6733,20 +6747,25 @@ async function createComment(event) {
   const errorTarget = document.querySelector("#comment-error");
   const body = new FormData(formElement).get("body")?.trim();
   if (!body) return;
+  const workOrderId = activeWorkOrderId;
+  const scope = messageDraftScope();
+  const draft = workOrderDrafts.snapshot(workOrderId);
 
   submitButton.disabled = true;
   submitButton.textContent = "Adding...";
   if (errorTarget) errorTarget.textContent = "";
 
   try {
-    const error = await addCommentToWorkOrder(activeWorkOrderId, body);
+    const error = await addCommentToWorkOrder(workOrderId, body);
+    if (!error) workOrderDrafts.acknowledge(draft, { body });
+    if (scope !== messageDraftScope() || activeWorkOrderId !== workOrderId) return;
 
     if (error) {
       if (errorTarget) errorTarget.textContent = `Could not add comment: ${error.message || error}`;
       return;
     }
 
-    await recordWorkOrderEvent(activeWorkOrderId, "comment_added", "Comment added.");
+    await recordWorkOrderEvent(workOrderId, "comment_added", "Comment added.");
     await loadComments();
     await loadWorkOrderEvents();
     showNotice("Comment added.");
