@@ -4,6 +4,120 @@ const { test, expect } = require("@playwright/test");
 const stylesPath = path.resolve(__dirname, "../../styles.css");
 const eventsPath = path.resolve(__dirname, "../../src/utils/workspaceProductionActionEvents.js");
 
+async function mountWorkCards(page, cardWidth) {
+  await page.setContent(`<!doctype html><html data-theme="dark"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+    <body><main class="work-list" style="padding:16px;grid-template-columns:repeat(auto-fit,${cardWidth}px);align-items:start"></main></body></html>`);
+  await page.addStyleTag({ path: stylesPath });
+  for (const file of ["iconDisplay", "relationshipDisplay", "productionActionDisplay", "workQueueDisplay"]) {
+    await page.addScriptTag({ path: path.resolve(__dirname, `../../src/render/${file}.js`) });
+  }
+  await page.addScriptTag({ path: eventsPath });
+  await page.evaluate(() => {
+    const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    const procedures = [{ id: "inspection", name: "Basic Equipment Inspection" }];
+    const relationships = window.MaintainOpsRelationshipDisplay.createRelationshipDisplayHelpers({
+      escapeHtml, getProcedureTemplates: () => procedures, checklistProgress: () => ({ done: 1, total: 4 }),
+      getPartsUsedByWorkOrder: () => ({}), getCommentsByWorkOrder: () => ({ "wo-0": [{}] }),
+      getPhotosByWorkOrder: () => ({ "wo-0": [{}, {}, {}, {}, {}] }), getMessageThreads: () => [],
+    });
+    const production = window.MaintainOpsProductionActionDisplay.createProductionActionDisplayHelpers({
+      escapeHtml, getCompanyMembers: () => [{ user_id: "production", role: "production" }],
+      normalizeRole: (role) => role, teamMemberName: () => "Production Supervisor With A Long Name",
+      activeCompanyRole: () => "manager", getSession: () => ({ user: { id: "manager" } }),
+      hasProductionAction: (order) => Boolean(order.production_action), canEditOperationalRecords: () => true,
+    });
+    const queue = window.MaintainOpsWorkQueueDisplay.createWorkQueueDisplayHelpers({
+      escapeHtml, statusLabel: (status) => ({ open: "New", in_progress: "In Progress", blocked: "Blocked", completed: "Completed" })[status],
+      getDueState: () => null, getProcedureTemplates: () => procedures, getActiveWorkOrderId: () => "",
+      cleanWorkOrderDescription: (text) => text, relationshipIcon: relationships.relationshipIcon,
+      segmentIcon: window.MaintainOpsIconDisplay.segmentIcon, isVendorAssigned: () => false,
+      assignmentLabel: () => "Maintenance Technician", renderRelationshipChips: relationships.renderRelationshipChips,
+      renderProductionActionCard: production.renderProductionActionCard,
+      hasOpenProductionAction: (order) => order.production_action_status === "open",
+      canAssignWorkOrderToMe: () => false, canManageTeam: () => false,
+      STATUS_OPTIONS: ["open", "in_progress", "blocked", "completed"],
+    });
+    document.querySelector("main").innerHTML = ["none", "open", "completed"].map((status, index) => queue.renderWorkOrderCard({
+      id: `wo-${index}`, status: "in_progress", priority: "high", type: "corrective",
+      title: "Shear clutch needs to be replaced; it has been damaged severely", description: "Clutch for shear",
+      asset_id: "shear", assets: { name: "Production Roll Former" }, procedure_template_id: "inspection",
+      created_at: "2026-06-09T12:00:00Z", production_action_status: status,
+      production_action_assigned_to: status === "none" ? null : "production",
+      production_action: status === "none" ? "" : "Stage the material and clear the entire production area before maintenance begins. ".repeat(30),
+    })).join("");
+    window.productionCalls = [];
+    window.MaintainOpsWorkspaceProductionActionEvents.bindWorkspaceProductionActionEvents({
+      saveProductionAction: (event) => { event.preventDefault(); window.productionCalls.push("save"); },
+      setProductionActionStatus: (event) => window.productionCalls.push(event.currentTarget.dataset.productionActionStatus),
+      removeProductionAction: () => window.productionCalls.push("remove"),
+    });
+  });
+}
+
+for (const layout of [
+  { width: 1280, card: 224 }, { width: 1280, card: 240 }, { width: 1280, card: 280 }, { width: 1280, card: 340 },
+  { width: 320, card: 288 }, { width: 390, card: 358 },
+]) {
+  test(`Production Action contents stay contained at ${layout.width}px / ${layout.card}px cards`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: layout.width, height: 960 });
+    await mountWorkCards(page, layout.card);
+    await page.screenshot({ path: testInfo.outputPath("work-cards.png"), fullPage: true });
+    const bounds = await page.locator(".production-action-card-compact").evaluateAll((rows) => rows.map((row) => {
+      const box = (node) => {
+        const { top, bottom, left, right, height } = node.getBoundingClientRect();
+        return { top, bottom, left, right, height };
+      };
+      return {
+        row: box(row), copy: box(row.querySelector(".production-action-card-copy")),
+        chips: [...row.querySelectorAll(".production-action-card-heading .chip")].map(box),
+        preview: box(row.querySelector(".production-action-card-preview")),
+        button: box(row.querySelector(".production-action-card-open")),
+        previous: box(row.previousElementSibling), next: box(row.nextElementSibling),
+      };
+    }));
+    for (const b of bounds) {
+      expect(b.row.height).toBe(64);
+      expect(b.copy.top, "production text must stay below the row's top padding").toBeGreaterThanOrEqual(b.row.top + 6);
+      expect(b.preview.bottom).toBeLessThanOrEqual(b.row.bottom - 6);
+      expect(b.chips[0].top).toBe(b.chips[1].top);
+      expect(b.chips[0].right).toBeLessThanOrEqual(b.chips[1].left);
+      expect(b.chips[1].right).toBeLessThanOrEqual(b.button.left - 4);
+      expect(b.copy.right).toBeLessThanOrEqual(b.button.left - 4);
+      expect(b.copy.left).toBeGreaterThanOrEqual(b.row.left + 6);
+      expect(b.button.right, "action button must stay inside the card").toBeLessThanOrEqual(b.row.right - 6);
+      expect(b.button.top).toBeGreaterThanOrEqual(b.row.top + 6);
+      expect(b.button.bottom).toBeLessThanOrEqual(b.row.bottom - 6);
+      expect(b.previous.bottom).toBeLessThanOrEqual(b.row.top);
+      expect(b.next.top).toBeGreaterThanOrEqual(b.row.bottom);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    if (layout.width > 720) {
+      const heights = await page.locator(".work-card").evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
+      expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+    }
+
+    for (const [index, label] of ["Assign Production Action", "Manage Production Action", "Manage Production Action"].entries()) {
+      const card = page.locator(`.work-card[data-id="wo-${index}"]`);
+      const before = await card.boundingBox();
+      await card.getByRole("button", { name: label, exact: true }).click();
+      const dialog = card.getByRole("dialog", { name: "Production Action", exact: true });
+      await expect(dialog).toBeVisible();
+      if (!index) {
+        await dialog.getByLabel("Production action", { exact: true }).fill("Clear the area for maintenance.");
+        await dialog.getByRole("button", { name: "Assign Production Action", exact: true }).click();
+        expect(await page.evaluate(() => window.productionCalls.at(-1))).toBe("save");
+      } else {
+        await expect(dialog.locator(".production-action-text")).toContainText("Stage the material");
+        await dialog.getByRole("button", { name: index === 1 ? "Complete Production Action" : "Reopen Production Action", exact: true }).click();
+        expect(await page.evaluate(() => window.productionCalls.at(-1))).toBe(index === 1 ? "completed" : "open");
+      }
+      await dialog.getByRole("button", { name: "Close", exact: true }).click();
+      await expect(dialog).toBeHidden();
+      expect((await card.boundingBox()).height).toBe(before.height);
+    }
+  });
+}
+
 for (const viewport of [
   { name: "desktop", width: 1100, height: 760 },
   { name: "mobile", width: 390, height: 844 },

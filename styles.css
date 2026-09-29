@@ -2472,7 +2472,8 @@ textarea {
   overflow: hidden;
 }
 
-.production-action-card-heading {
+/* Keep the compact card row independent of the shared wrapping chip layout. */
+.production-action-card-heading.chip-row {
   flex-wrap: nowrap;
   gap: 5px;
   overflow: hidden;
@@ -2484,6 +2485,16 @@ textarea {
   font-size: 0.7rem;
   line-height: 1;
   white-space: nowrap;
+}
+
+.production-action-card-heading .production-action-chip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.production-action-card-heading .chip + .chip {
+  flex-shrink: 0;
 }
 
 .production-action-card-preview {
