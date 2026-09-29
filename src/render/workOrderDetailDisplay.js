@@ -155,7 +155,7 @@
     const canEditOperational = canEditOperationalRecords() && !workOrder.assets?.archived_at;
   
     return `
-      <div class="detail-stack">
+      <div class="detail-stack" data-work-order-editor="${escapeHtml(workOrder.id)}">
         ${workOrder.assets?.archived_at ? '<div class="archive-retained-banner">Archived equipment. Work history is retained and read-only until the equipment is restored.</div>' : ''}
         <div>
           <div class="chip-row">
@@ -306,6 +306,7 @@
             </label>
           ` : ""}
           <label>Actual minutes<input name="actual_minutes" type="number" min="0" step="5" value="${workOrder.actual_minutes || 0}"></label>
+          <label>Completion notes<textarea name="completion_notes" rows="3">${escapeHtml(workOrder.completion_notes || "")}</textarea></label>
           <p class="error-text" id="work-order-save-error"></p>
           <button class="secondary-button save-work-button" type="submit">Save Work Order</button>
         </form>

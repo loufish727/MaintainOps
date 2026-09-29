@@ -166,6 +166,7 @@ import "../render/myWorkQueueDisplay.js";
 import "../render/messageCenterErrorDisplay.js";
 import "../render/appIssueErrorDisplay.js";
 import "../render/workOrderDetailDisplay.js";
+import "../utils/workOrderDrafts.js";
 import "../render/equipmentStructureGuideDisplay.js";
 import "../render/createWorkOrderDisplay.js";
 import "../render/quickFixDisplay.js";

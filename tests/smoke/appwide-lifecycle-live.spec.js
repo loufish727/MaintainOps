@@ -165,6 +165,59 @@ test('the card Complete shortcut leads to required checks and preserves saved ou
   } finally { await qa.finish(); }
 });
 
+test('unsaved outcome notes survive completion guards, failed saves and reload before being persisted', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Draft Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Draft Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guard', response_type: 'checkbox', required: true });
+    const work = await qa.seed('work_orders', { location_id: qa.location, title: 'QA Retained Completion Notes', status: 'in_progress', asset_id: asset.id,
+      safety_check_required: true, procedure_template_id: procedure.id, assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id });
+    const page = await qa.open('technician', 'work', 390);
+    const open = async () => { await page.getByRole('heading', { name: work.title, exact: true }).click(); await page.qaSettle(); };
+    await open();
+    const quick = page.locator('#quick-update-work-order-form [name=resolution_summary]');
+    await quick.fill('Replaced hose, tested machine and checked guards.');
+    const form = page.locator('#complete-work-order-form');
+    await expandFor(form.locator('[name=completion_notes]'));
+    await form.locator('[name=completion_notes]').fill('Recheck for leaks next shift.');
+    await form.locator('[name=failure_cause]').fill('Worn hose');
+    await form.locator('[name=actual_minutes]').fill('30');
+    await form.locator('[name=follow_up_needed]').check();
+    await page.locator('#status-select').selectOption('completed');
+    await page.qaSettle();
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await expect(form.locator('[name=completion_notes]')).toBeVisible();
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].resolution_summary).toBeNull();
+    await page.reload(); await page.qaSettle(); await open();
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await page.locator(`[data-step-result="${step.id}"]`).check();
+    await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+    await expandFor(form.locator('[name=safety_devices_checked]'));
+    await form.locator('[name=safety_devices_checked]').check();
+    let rejectSave = true;
+    await page.route('**/rest/v1/work_orders?**', route => route.request().method() === 'PATCH' && rejectSave
+      ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'QA simulated save failure' }) }) : route.continue());
+    await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+    await expect(page.locator('#completion-error')).toContainText('Could not complete');
+    await expect(form.locator('[name=completion_notes]')).toHaveValue('Recheck for leaks next shift.');
+    await expect(quick).toHaveValue('Replaced hose, tested machine and checked guards.');
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe('in_progress');
+    await qa.shot(page, 'retained-after-save-failure');
+    rejectSave = false;
+    await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+    await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe('completed');
+    expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]).toMatchObject({
+      resolution_summary: 'Replaced hose, tested machine and checked guards.', completion_notes: 'Recheck for leaks next shift.', failure_cause: 'Worn hose', actual_minutes: 30, follow_up_needed: true, safety_devices_checked: true,
+    });
+    await page.qaSettle();
+    await expect(page.locator('[data-work-draft-notice]:visible')).toHaveCount(0);
+    await qa.shot(page, 'outcome-persisted');
+  } finally { await qa.finish(); }
+});
+
 test('equipment, parts, procedure, PM, work order, completion and history persist together', async ({ browser, request }, testInfo) => {
   const qa = await createQa(browser, request, testInfo);
   try {
