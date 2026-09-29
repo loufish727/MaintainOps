@@ -108,7 +108,7 @@ assert.match(html, /data-confirm-delete-work-order="wo-1"/);
 assert.match(html, /<details class="work-detail-section relationship-detail procedure" id="work-order-procedure-target" open>/);
 assert.equal((html.match(/id="complete-work-order-form"/g) || []).length, 1);
 assert.ok(html.indexOf('id="work-order-complete-target"') < html.indexOf('data-test-command-summary'));
-assert.match(html, /completion-heading"> Complete Work Order/);
+assert.match(html, /completion-heading"> Complete Work Order\?<\/span>/);
 assert.match(html, /data-jump-work-section="work-order-procedure-target"/);
 assert.match(html, /<details class="completion-options">/);
 assert.doesNotMatch(html, />All Completed<\/button>/);

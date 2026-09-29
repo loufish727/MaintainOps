@@ -50,6 +50,7 @@ for (const width of [320, 390, 1280]) {
       await mount(page, status);
       const panel = page.locator('#work-order-complete-target');
       const heading = panel.locator(':scope > summary');
+      await expect(heading).toHaveText('Complete Work Order?');
       await expect(heading).toBeInViewport();
       const bounds = await heading.boundingBox();
       expect(bounds.height).toBeGreaterThanOrEqual(48);
