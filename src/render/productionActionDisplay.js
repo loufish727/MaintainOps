@@ -139,7 +139,7 @@
       const canEdit = deps.canEditOperationalRecords() && workOrder.status !== "completed";
       if (!deps.hasProductionAction(workOrder) && !canEdit) return "";
       return `
-        <details class="work-detail-section production-action-detail" data-production-action-control open>
+        <details class="work-detail-section production-action-detail" id="work-order-production-target" data-production-action-control open>
           <summary>Production Action</summary>
           ${deps.hasProductionAction(workOrder) ? renderProductionActionSummary(workOrder) : `<p class="muted">No Production Action is assigned.</p>`}
           ${canEdit ? `

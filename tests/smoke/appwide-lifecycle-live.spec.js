@@ -117,6 +117,54 @@ test('Quick Update completes New and In Progress work after its required checks'
   } finally { await qa.finish(); }
 });
 
+test('the card Complete shortcut leads to required checks and preserves saved outcomes', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Shortcut Equipment', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const procedure = await qa.seed('procedure_templates', { name: 'QA Shortcut Inspection', created_by: qa.sessions.admin.user.id });
+    const step = await qa.seed('procedure_steps', { procedure_template_id: procedure.id, position: 1, prompt: 'Inspect guards', response_type: 'checkbox', required: true });
+    const fixtures = [];
+    for (const status of ['open', 'in_progress']) fixtures.push(await qa.seed('work_orders', {
+      location_id: qa.location, title: `QA Complete Shortcut ${status}`, status, asset_id: asset.id, safety_check_required: true,
+      procedure_template_id: procedure.id, assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+      resolution_summary: 'Saved repair notes', failure_cause: 'Worn hose', completion_notes: 'Existing notes', follow_up_needed: true, actual_minutes: 25,
+    }));
+    const page = await qa.open('technician', 'work', 390);
+    for (const work of fixtures) {
+      await nav(page, 'work');
+      await page.locator(`.work-card[data-id="${work.id}"]`).getByRole('button', { name: 'Complete', exact: true }).click();
+      const panel = page.locator('#work-order-complete-target');
+      await expect(panel).toHaveAttribute('open', '');
+      await expect(panel.locator(':scope > summary')).toBeFocused();
+      await expect(panel.locator(':scope > summary')).toBeInViewport();
+      expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0].status).toBe(work.status);
+      const form = panel.locator('form');
+      await expect(form).toContainText('Required checklist: 0/1');
+      await expect(form.locator('[name=resolution_summary]')).toHaveValue('Saved repair notes');
+      await expect(form.locator('[name=failure_cause]')).toBeHidden();
+      await qa.shot(page, `shortcut-${work.status}-blocked`);
+      await form.getByRole('button', { name: 'Review checklist' }).click();
+      const field = page.locator(`[data-step-result="${step.id}"]`);
+      await field.check();
+      await expect(field).toBeEnabled();
+      await expect(page.locator('[data-checklist-summary]')).toContainText('1 of 1');
+      await page.getByRole('button', { name: 'Continue to completion' }).click();
+      await expect(form.locator('[data-completion-checklist]')).toHaveText('Required checklist: 1/1');
+      await form.locator('[name=safety_devices_checked]').check();
+      await form.getByRole('button', { name: 'Complete Work Order', exact: true }).click();
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status).toBe('completed');
+      await page.qaSettle();
+      await expect(panel).toHaveCount(0);
+      expect((await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]).toMatchObject({
+        asset_id: asset.id, procedure_template_id: procedure.id, safety_devices_checked: true,
+        resolution_summary: 'Saved repair notes', failure_cause: 'Worn hose', completion_notes: 'Existing notes', follow_up_needed: true, actual_minutes: 25,
+      });
+      expect((await rows(qa, 'work_order_events', `&work_order_id=eq.${work.id}`)).some(event => event.event_type === 'completed')).toBe(true);
+      await qa.shot(page, `shortcut-${work.status}-completed`);
+    }
+  } finally { await qa.finish(); }
+});
+
 test('equipment, parts, procedure, PM, work order, completion and history persist together', async ({ browser, request }, testInfo) => {
   const qa = await createQa(browser, request, testInfo);
   try {
@@ -205,6 +253,7 @@ test('equipment, parts, procedure, PM, work order, completion and history persis
     const completion = page.locator('#complete-work-order-form');
     await expandFor(completion);
     await completion.locator('[name=resolution_summary]').fill('Replaced belt');
+    await expandFor(completion.locator('[name=actual_minutes]'));
     await completion.locator('[name=actual_minutes]').fill('25');
     await completion.locator('[name=safety_devices_checked]').check();
     await expect(completion.locator('[name=safety_devices_checked]')).toBeChecked();

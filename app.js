@@ -5179,6 +5179,7 @@ const { renderWorkOrderDetail } = createWorkOrderDetailDisplayHelpers({
   canEditOperationalRecords,
   renderProductionActionDetail,
   hasOpenProductionAction,
+  segmentIcon,
 });
 
 function recommendedWorkOrderStep(workOrder) {
@@ -5839,6 +5840,10 @@ function bindWorkspaceEvents() {
   });
 
   bindWorkspaceWorkOrderStatusEvents({
+    getScope: () => `${messageDraftScope()}|${activeSection}|${activeWorkOrderId || ""}`,
+    prepareCompletion: async (id) => {
+      if (workOrders.find((order) => order.id === id)?.procedure_template_id) await ensureFeatureBundleLoaded("maintenance");
+    },
     setWorkOrderStatus,
     showNotice,
   });

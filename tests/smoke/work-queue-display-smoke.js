@@ -102,7 +102,9 @@ const productionActionCard = helpers.renderWorkOrderCard({
   production_action: "Clear line",
   production_action_status: "open",
 });
-assert.doesNotMatch(productionActionCard, /data-quick-status="completed"/);
+assert.match(productionActionCard, /class="complete-work-action" data-quick-status="completed"/);
+assert.ok(card.indexOf('data-quick-status="completed"') < card.indexOf('data-assign-me='));
+assert.doesNotMatch(helpers.renderWorkOrderCard({ ...workOrder, assets: { archived_at: '2026-09-29' } }), /data-quick-status="completed"/);
 
 const grouped = helpers.renderWorkOrderCollection([
   workOrder,

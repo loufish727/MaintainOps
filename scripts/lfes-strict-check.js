@@ -245,6 +245,7 @@ async function main() {
     "tests/smoke/financial-archived-edit-browser.spec.js",
     "tests/smoke/planning-layout-browser.spec.js",
     "tests/smoke/production-action-contrast-browser.spec.js",
+    "tests/smoke/work-completion-shortcut-browser.spec.js",
     "tests/smoke/section-colors-browser.spec.js",
     "tests/smoke/workspace-navigation-browser.spec.js",
     "tests/smoke/production-ready-notification-browser.spec.js",

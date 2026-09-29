@@ -23,6 +23,12 @@
       const chip = detail?.querySelector('.relationship-chip.procedure > span');
       if (summary) summary.textContent = `${progress.done} of ${progress.total} complete - required ${required.done}/${required.total}`;
       if (chip) chip.textContent = `${progress.done}/${progress.total}`;
+      const completionSummary = detail?.querySelector('[data-completion-checklist]');
+      if (completionSummary) {
+        completionSummary.textContent = `Required checklist: ${required.done}/${required.total}`;
+        completionSummary.classList.toggle('completion-note', required.done === required.total);
+        completionSummary.classList.toggle('warning-text', required.done !== required.total);
+      }
       const recorded = field.closest('.checklist-step')?.querySelector('[data-checklist-recorded]');
       const result = deps.getStepResultsByWorkOrder()[workOrderId]?.[stepId];
       if (recorded) recorded.textContent = result?.completed_at ? `Recorded ${new Date(result.completed_at).toLocaleString()}` : '';

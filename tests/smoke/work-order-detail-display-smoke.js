@@ -105,7 +105,13 @@ assert.match(html, /id="comment-form"/);
 assert.match(html, /id="work-order-history-target"/);
 assert.match(html, /data-cancel-delete-work-order/);
 assert.match(html, /data-confirm-delete-work-order="wo-1"/);
-assert.match(html, /<details class="work-detail-section relationship-detail procedure" open>/);
+assert.match(html, /<details class="work-detail-section relationship-detail procedure" id="work-order-procedure-target" open>/);
+assert.equal((html.match(/id="complete-work-order-form"/g) || []).length, 1);
+assert.ok(html.indexOf('id="work-order-complete-target"') < html.indexOf('data-test-command-summary'));
+assert.match(html, /completion-heading"> Complete Work Order/);
+assert.match(html, /data-jump-work-section="work-order-procedure-target"/);
+assert.match(html, /<details class="completion-options">/);
+assert.doesNotMatch(html, />All Completed<\/button>/);
 assert.match(html, /Procedure Checklist/);
 assert.match(html, /data-step-result="step-1"/);
 assert.match(html, /Finish checklist first\./);
@@ -120,6 +126,18 @@ assert.match(openProductionActionHtml, /type="submit" disabled>Complete Work Ord
 assert.doesNotMatch(openProductionActionHtml, /data-quick-status="completed"/);
 delete workOrder.production_action;
 delete workOrder.production_action_status;
+
+const savedOutcomeHtml = createWorkOrderDetailDisplayHelpers({
+  ...workOrderDetailDeps,
+  getWorkOrders: () => [{ ...workOrder, resolution_summary: 'Saved <repair>', failure_cause: 'Loose guard', follow_up_needed: true, completion_notes: 'Saved note' }],
+}).renderWorkOrderDetail().match(/<form[^>]+id="complete-work-order-form"[\s\S]*?<\/form>/)[0];
+assert.match(savedOutcomeHtml, /Saved &lt;repair&gt;/);
+assert.match(savedOutcomeHtml, /Loose guard/);
+assert.match(savedOutcomeHtml, /name="follow_up_needed" type="checkbox" checked/);
+assert.match(savedOutcomeHtml, /Saved note/);
+for (const order of [{ ...workOrder, status: 'completed' }, { ...workOrder, assets: { archived_at: '2026-09-29' } }]) {
+  assert.doesNotMatch(createWorkOrderDetailDisplayHelpers({ ...workOrderDetailDeps, getWorkOrders: () => [order] }).renderWorkOrderDetail(), /id="work-order-complete-target"/);
+}
 
 const readOnlyHtml = createWorkOrderDetailDisplayHelpers({
   ...workOrderDetailDeps,
