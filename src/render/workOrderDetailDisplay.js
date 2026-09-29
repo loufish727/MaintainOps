@@ -98,7 +98,7 @@
     function renderCompletionPanel(workOrder, requiredProgress, procedure) {
       return `
         <details class="work-detail-section completion-section" id="work-order-complete-target" data-work-order-id="${escapeHtml(workOrder.id)}" ${deps.getWorkOrderActionWarningId() === workOrder.id && deps.getWorkOrderActionWarning() ? "open" : ""}>
-          <summary><span class="completion-heading">${segmentIcon("completed")} Complete Work Order</span></summary>
+          <summary><span class="completion-heading">${segmentIcon("completed")} Complete Work Order?</span></summary>
           <form class="completion-box" id="complete-work-order-form">
             ${requiredProgress?.total ? `<div class="completion-requirement"><p data-completion-checklist class="${requiredProgress.done === requiredProgress.total ? "completion-note" : "warning-text"}">Required checklist: ${requiredProgress.done}/${requiredProgress.total}</p>${procedure ? '<button class="text-button" data-jump-work-section="work-order-procedure-target" type="button">Review checklist</button>' : ''}</div>` : ""}
             ${hasOpenProductionAction(workOrder) ? `<div class="completion-requirement"><p class="warning-text">Complete or remove the open Production Action first.</p><button class="text-button" data-jump-work-section="work-order-production-target" type="button">Review Production Action</button></div>` : ""}
