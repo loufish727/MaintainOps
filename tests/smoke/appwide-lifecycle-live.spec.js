@@ -7,6 +7,57 @@ async function rows(qa, table, extra = '') {
   return qa.api('admin', 'GET', `${table}?company_id=eq.${qa.company}&select=*${extra}`);
 }
 
+test('technicians can complete New work directly through each completion control', async ({ browser, request }, testInfo) => {
+  const qa = await createQa(browser, request, testInfo);
+  try {
+    const asset = await qa.seed('assets', { location_id: qa.location, name: 'QA Completion Safety', safety_devices_required: true, created_by: qa.sessions.admin.user.id });
+    const cases = ['card', 'status', 'quick-update', 'complete-work'];
+    const fixtures = [];
+    for (const control of cases) {
+      fixtures.push(await qa.seed('work_orders', {
+        location_id: qa.location, title: `QA New Completion ${control}`, status: 'open',
+        assigned_to: qa.sessions.technician.user.id, created_by: qa.sessions.admin.user.id,
+        asset_id: control === 'card' ? null : asset.id, safety_check_required: control !== 'card',
+      }));
+    }
+    const page = await qa.open('technician', 'work');
+    for (const [index, control] of cases.entries()) {
+      const work = fixtures[index];
+      await nav(page, 'work');
+      const card = page.locator(`.work-card[data-id="${work.id}"]`);
+      await expect(card).toBeVisible();
+      if (control === 'card') {
+        await card.getByRole('button', { name: 'Complete', exact: true }).click();
+      } else {
+        await card.locator('.work-card-body').click();
+        await expect(page.locator('#status-select')).toHaveValue('open');
+        const quick = page.locator('#quick-update-work-order-form');
+        if (control === 'status') {
+          await expandFor(quick);
+          await quick.locator('[name=safety_devices_checked]').check();
+          await page.locator('#status-select').selectOption('completed');
+        } else {
+          const form = control === 'quick-update' ? quick : page.locator('#complete-work-order-form');
+          await expandFor(form);
+          await form.locator('[name=resolution_summary]').fill(`Completed directly from New via ${control}.`);
+          await form.locator('[name=safety_devices_checked]').check();
+          if (control === 'quick-update') await form.locator('[name=status]').selectOption('completed');
+          await form.locator('button[type=submit]').click();
+        }
+      }
+      await expect.poll(async () => (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0]?.status,
+        { message: `${control}: New work should complete without an In Progress step`, timeout: 20000 }).toBe('completed');
+      const saved = (await rows(qa, 'work_orders', `&id=eq.${work.id}`))[0];
+      expect(saved.completed_at).toBeTruthy();
+      expect(saved.asset_id).toBe(work.asset_id);
+      if (control !== 'card') expect(saved.safety_devices_checked).toBe(true);
+      if (['quick-update', 'complete-work'].includes(control)) expect(saved.resolution_summary).toContain('Completed directly from New');
+      await page.qaSettle();
+      await qa.shot(page, `new-completed-${control}`);
+    }
+  } finally { await qa.finish(); }
+});
+
 test('equipment, parts, procedure, PM, work order, completion and history persist together', async ({ browser, request }, testInfo) => {
   const qa = await createQa(browser, request, testInfo);
   try {
