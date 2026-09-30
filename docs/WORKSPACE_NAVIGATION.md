@@ -21,9 +21,11 @@ Manager retain their existing role contracts. Nothing changes in database access
 
 - One group can be open at a time; all groups can be collapsed.
 - The active destination has `aria-current="page"`; its parent stays highlighted.
-- Navigating to a different section opens its group, including from shortcuts.
+- Initial load and navigation to a different section leave all groups collapsed,
+  including navigation from shortcuts. My Work remains the default destination;
+  Work stays highlighted without exposing its children until the user expands it.
 - Ordinary rerenders preserve the chosen disclosure state. A user/company change
-  resets it to the current page's group. Nothing is stored as a cross-user preference.
+  collapses all groups. Nothing is stored as a cross-user preference.
 - Disclosure uses native keyboard-accessible details/summary controls. It never
   rerenders the workspace, fetches data, resets a form, or calls scroll helpers.
   Opening and closing groups is synchronous; queued native toggle events cannot

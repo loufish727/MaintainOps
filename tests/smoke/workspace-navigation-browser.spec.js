@@ -32,7 +32,10 @@ for (const width of [320, 390, 430, 760, 761, 768, 920, 921, 1440]) test(`groupe
   await page.setViewportSize({ width, height: 960 });
   await mount(page);
   await expect(page.locator('nav > *')).toHaveCount(6);
-  await expect(page.locator('[data-nav-group][open]')).toHaveCount(1);
+  await expect(page.locator('[data-nav-group][open]')).toHaveCount(0);
+  await expect(page.locator('summary.nav-work')).toHaveClass(/contains-current/);
+  await expect(page.locator('button.nav-mywork')).toBeHidden();
+  await page.screenshot({ path: testInfo.outputPath(`collapsed-${width}.png`), fullPage: true, animations: 'disabled' });
   for (const root of await page.locator('nav > button, nav > details > summary').all()) {
     await expect(root).toHaveCSS('border-radius', '18px');
     expect(await root.evaluate(node => getComputedStyle(node, '::before').clipPath)).toBe('none');
@@ -116,11 +119,46 @@ test('keyboard disclosure preserves drafts, current page, focus and rerender sta
   await expect(page.locator('#draft')).toHaveValue('Do not lose this unfinished work');
   await expect(page.locator('[aria-current="page"]')).toHaveAttribute('data-section', 'mywork');
   await page.evaluate(() => { window.navOptions.activeSection = 'procedures'; window.drawNav(); });
-  await expect(page.locator('[data-nav-group="assets"] > summary')).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('.nav-procedures')).toBeVisible();
+  await expect(page.locator('[data-nav-group="assets"] > summary')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('summary.nav-assets')).toHaveClass(/contains-current/);
+  await expect(page.locator('.nav-procedures')).toBeHidden();
   await page.evaluate(() => { window.navOptions.scope = 'another-user'; window.navOptions.activeSection = 'messages'; window.drawNav(); });
-  await expect(page.locator('[data-nav-group="team"] > summary')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('[data-nav-group="team"] > summary')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('summary.nav-team')).toHaveClass(/contains-current/);
   expect(calls).toEqual([]);
+});
+
+for (const width of [390, 1440]) test(`selected destinations stay highlighted with collapsed menus at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 960 });
+  await mount(page);
+  await page.locator('#draft').fill('Keep my unfinished note');
+  await page.evaluate(() => {
+    document.querySelector('nav').addEventListener('click', event => {
+      const button = event.target.closest('[data-section]');
+      if (!button) return;
+      window.navOptions.activeSection = button.dataset.section;
+      document.querySelector('h1').textContent = button.textContent;
+      window.drawNav();
+    });
+  });
+  for (const [section, group] of [['work', 'work'], ['planning', 'work'], ['pm', 'assets'], ['messages', 'team'], ['performance', 'settings'], ['mywork', 'work']]) {
+    await navigateSection(page, section);
+    await expect(page.locator('[data-nav-group][open]')).toHaveCount(0);
+    await expect(page.locator(`summary.nav-${group}`)).toHaveClass(/contains-current/);
+    await expect(page.locator('summary.contains-current')).toHaveCount(1);
+    await expect(page.locator(`[data-section="${section}"]`)).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator(`[data-section="${section}"]`)).toBeHidden();
+    await expect(page.locator('summary.nav-team .nav-badge')).toBeVisible();
+  }
+  // An unrelated redraw preserves a group the user deliberately opened.
+  await page.locator('summary.nav-work').click();
+  await page.evaluate(() => window.drawNav());
+  await expect(page.locator('summary.nav-work')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('button.nav-mywork')).toBeVisible();
+  await page.evaluate(() => { window.navOptions.scope = 'another-company'; window.drawNav(); });
+  await expect(page.locator('[data-nav-group][open]')).toHaveCount(0);
+  await expect(page.locator('summary.nav-work')).toHaveClass(/contains-current/);
+  await expect(page.locator('#draft')).toHaveValue('Keep my unfinished note');
 });
 
 test('mobile disclosure does not scroll, reset input, or invoke destination actions', async ({ browser }) => {

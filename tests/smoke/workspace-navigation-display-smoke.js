@@ -21,13 +21,20 @@ for (const role of ['technician', 'production', 'accounting', 'manager', 'admin'
   assert.match(html, /data-nav-group="settings"/);
   assert.match(html, /data-nav-messages/);
   assert.equal((html.match(/2 unread/g) || []).length, 2);
+  assert.doesNotMatch(html, /data-nav-group="\w+" open/);
+  assert.match(html, /class="nav-work contains-current"/);
 }
 const menu = create();
 const initial = options(common);
-assert.match(menu.render(initial), /data-nav-group="work" open/);
-assert.match(menu.render({ ...initial, activeSection: 'assets' }), /data-nav-group="assets" open/);
-assert.doesNotMatch(menu.render({ ...initial, activeSection: 'requests' }), /data-nav-group="\w+" open/);
-assert.match(menu.render({ ...initial, scope: 'another-user:company' }), /data-nav-group="work" open/);
+for (const [section, group] of [['mywork', 'work'], ['work', 'work'], ['planning', 'work'], ['assets', 'assets'], ['pm', 'assets'], ['messages', 'team'], ['performance', 'settings']]) {
+  const html = menu.render({ ...initial, activeSection: section });
+  assert.doesNotMatch(html, /data-nav-group="\w+" open/);
+  assert.match(html, new RegExp(`class="nav-${group} contains-current"`));
+}
+const direct = menu.render({ ...initial, activeSection: 'requests' });
+assert.doesNotMatch(direct, /data-nav-group="\w+" open|contains-current/);
+assert.match(direct, /class="nav-requests active"/);
+assert.doesNotMatch(menu.render({ ...initial, scope: 'another-user:company' }), /data-nav-group="\w+" open/);
 assert.doesNotMatch(create().render(options([])), /details|button/);
 const future = create().render({ ...options(['future']), items: [['future', '<img src=x onerror=alert(1)>']] });
 assert.match(future, /data-section="future"/);
