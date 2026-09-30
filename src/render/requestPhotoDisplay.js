@@ -2,7 +2,6 @@
   function createRequestPhotoDisplayHelpers({
     escapeHtml,
     requestPhotoMetaText,
-    getRequestPhotosReady,
   }) {
     function renderMaintenanceRequestPhoto(request) {
       if (!request.photo_storage_path) return "";
@@ -11,12 +10,13 @@
       return `
         <div class="request-photo-preview">
           ${request.photoSignedUrl && request.photo_content_type?.startsWith("image/")
-            ? `<img class="photo-thumb" src="${escapeHtml(request.photoSignedUrl)}" alt="${escapeHtml(fileName)}">`
+            ? `<img class="photo-thumb" data-request-photo-image="${escapeHtml(request.id)}" src="${escapeHtml(request.photoSignedUrl)}" alt="${escapeHtml(fileName)}">`
             : ""}
           <div>
             <strong>${escapeHtml(fileName)}</strong>
             <span>${escapeHtml(meta)}</span>
-            ${request.photoSignedUrl ? `<a href="${escapeHtml(request.photoSignedUrl)}" target="_blank" rel="noreferrer">Open photo</a>` : `<span>${getRequestPhotosReady() ? "Photo attached" : "Photo attached - run request photo SQL if links do not open"}</span>`}
+            <button class="text-button" type="button" data-open-request-photo="${escapeHtml(request.id)}">Open photo</button>
+            <span data-request-photo-status role="status" hidden></span>
           </div>
         </div>
       `;

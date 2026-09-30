@@ -105,6 +105,7 @@ import "../services/appIssueReportsService.js";
 import "../services/userPreferencesService.js";
 import "../services/requestEmailNotificationService.js";
 import "../services/signedUrlService.js";
+import "../utils/requestPhotoEvents.js";
 import "../services/workspaceQueueLoadersService.js";
 import "../services/authSessionFlow.js";
 import "../render/displayHelpers.js";

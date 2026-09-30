@@ -3569,6 +3569,11 @@ async function addSignedPhotoUrlsForRows(photos = []) {
   await addSignedUrlsToRows(supabaseClient, "work-order-photos", photos);
 }
 
+const requestPhotoEvents = window.MaintainOpsRequestPhotoEvents.createRequestPhotoEvents({
+  client: () => supabaseClient, getScope: messageDraftScope,
+  getRequest: (id) => maintenanceRequests.find(row => row.id === id), withOperationTimeout,
+});
+
 async function addSignedRequestPhotoUrls() {
   requestPhotosReady = true;
   const requestsWithPhotos = maintenanceRequests.filter((request) => request.photo_storage_path);
@@ -5371,6 +5376,7 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
 
 let completionEvents;
 function bindWorkspaceEvents() {
+  requestPhotoEvents.bind();
   document.querySelector("#company-select").addEventListener("change", async (event) => {
     equipmentArchive?.reset(); equipmentArchiveOpen = false;
     activeCompanyId = event.target.value;
