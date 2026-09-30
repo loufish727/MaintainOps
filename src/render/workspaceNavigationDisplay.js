@@ -16,9 +16,8 @@
     let previousScope;
     function render({ items, activeSection, scope, escapeHtml, navIcon, renderBadge }) {
       const visible = new Map(items);
-      const activeGroup = groups.find(group => group.sections?.includes(activeSection));
       if (previousScope !== scope || previousSection !== activeSection) {
-        openGroup = activeGroup?.id || null;
+        openGroup = null;
       }
       previousScope = scope;
       previousSection = activeSection;
