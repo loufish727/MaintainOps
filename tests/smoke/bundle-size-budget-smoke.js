@@ -52,7 +52,8 @@ const initialBudget = {
   decoded: 780 * 1024,
   // Scoped work-order edit recovery adds 2,160 gzip bytes (runtime + shell), no request.
   // Existing headroom covers the rest; allow one additional KiB for this data-loss fix.
-  gzip: 176 * 1024,
+  // On-demand request-photo link renewal/retry adds 834 gzip bytes, no startup request.
+  gzip: 177 * 1024,
 };
 
 function measure(key) {
