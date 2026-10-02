@@ -79,6 +79,8 @@ assert.match(confirmingCard, /data-confirm-delete-request="req-1"/);
 const converted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1", reviewed_by: "user-2" });
 assert.match(converted, /request-card converted-request/);
 assert.match(converted, /Converted to work order by QA Converter/);
+assert.match(converted, /data-request-work-order="wo-1"/);
+assert.doesNotMatch(card, /data-request-work-order/);
 
 const legacyConverted = helpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1" });
 assert.match(legacyConverted, /Converted to work order; converter not recorded/);
@@ -95,6 +97,7 @@ assert.doesNotMatch(readOnlyCard, /Converted to work order/);
 
 const readOnlyConverted = readOnlyHelpers.renderMaintenanceRequest({ ...request, status: "converted", converted_work_order_id: "wo-1", reviewed_by: "user-2" });
 assert.match(readOnlyConverted, /Converted to work order by QA Converter/);
+assert.match(readOnlyConverted, /data-request-work-order="wo-1"/);
 
 const form = helpers.renderRequestFormContent();
 assert.match(form, /id="request-form"/);

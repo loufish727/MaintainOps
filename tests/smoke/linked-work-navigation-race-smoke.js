@@ -40,7 +40,7 @@ function element(id) {
 
 function harness(source = "equipment") {
   const plans = new Map();
-  const calls = { fetches: [], loads: [], finished: [], setters: [], storage: [], notices: [], renders: [], scrolls: 0, outcomes: [] };
+  const calls = { fetches: [], loads: [], finished: [], setters: [], storage: [], notices: [], renders: [], scrolls: 0, outcomes: [], linkClears: 0 };
   let nodes = [];
   let context;
   const route = () => ({
@@ -62,6 +62,7 @@ function harness(source = "equipment") {
   };
   context = vm.createContext({
     window: {}, localStorage: storage, workspaceUiState,
+    requestEmailLink: { clear: () => { calls.linkClears += 1; } },
     session: { user: { id: "user-1" } }, activeCompanyId: "company-1", activeLocationId: "location-1",
     activeSection: source === "equipment" ? "assets" : source === "part" ? "parts" : "work",
     activeAssetId: source === "equipment" ? "asset-source" : null,
@@ -152,6 +153,7 @@ function assertOpened(h, id) {
   assert.equal(h.context.activePartId, null);
   assert.deepEqual(h.calls.storage, [["maintainops.activeSection", "work"]]);
   assert.equal(h.calls.renders.filter(row => row.reason === "navigation").length, 1);
+  assert.ok(h.calls.linkClears > 0, "Opening work leaves the email-request destination");
 }
 
 test("actual route setters only advance revision for changed values", () => {

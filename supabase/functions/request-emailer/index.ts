@@ -79,7 +79,7 @@ function emailBody(row: Record<string, unknown>, appUrl: string) {
     "Details:",
     details,
     "",
-    link ? `Open MaintainOps: ${link}` : "Open MaintainOps to review the request.",
+    link ? `Open request: ${link}` : "Open MaintainOps to review the request.",
   ].filter(Boolean);
 
   const escapedDetails = escapeHtml(details).replaceAll("\n", "<br>");
@@ -95,7 +95,7 @@ function emailBody(row: Record<string, unknown>, appUrl: string) {
       ${contact ? `<p><strong>Contact:</strong> ${escapeHtml(contact)}</p>` : ""}
       <p><strong>Details:</strong></p>
       <p>${escapedDetails}</p>
-      ${link ? `<p><a href="${link}">Open MaintainOps</a></p>` : "<p>Open MaintainOps to review the request.</p>"}
+      ${link ? `<p><a href="${link}">Open request</a></p>` : "<p>Open MaintainOps to review the request.</p>"}
     `,
   };
 }

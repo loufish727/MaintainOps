@@ -1,4 +1,5 @@
 import { createCompanyLocationStateHelpers } from "./src/appShell/companyLocationState.js";
+import { createRequestEmailLink, fetchLinkedRequest } from "./src/appShell/requestEmailLink.mjs";
 import {
   authParamsFromHref,
   initializeStartupRoute,
@@ -24,6 +25,7 @@ import { trackMessageViewport } from "./src/utils/messageViewport.mjs";
 import { createAssetWorkHistoryState } from "./src/services/assetWorkHistoryState.mjs";
 
 const app = document.querySelector("#app");
+const requestEmailLink = createRequestEmailLink(window);
 const equipmentDrafts = window.MaintainOpsEquipmentCreateDrafts.createMaintenanceCreateDrafts({ getScope: messageDraftScope });
 const workOrderDrafts = window.MaintainOpsWorkOrderDrafts.createWorkOrderDrafts({ getScope: messageDraftScope });
 let checklistDrafts;
@@ -696,6 +698,7 @@ const {
 });
 let activeSection = workspaceUiState.getActiveSection();
 function setActiveSectionState(value) {
+  if (value !== "requests") requestEmailLink.clear();
   if (value !== activeSection) detailNavigationRevision += 1;
   activeSection = value;
   workspaceUiState.setActiveSection(value);
@@ -1798,6 +1801,29 @@ async function renderOnce(expectedSessionId) {
   appTelemetry?.configure({ client: supabaseClient, companyId: activeCompanyId });
 
   try {
+    try {
+      const requestTarget = await withOperationTimeout(requestEmailLink.prepare({
+        client: supabaseClient,
+        userId: expectedSessionId,
+        companies,
+        readStoredLocation: readStoredActiveLocationId,
+        isCurrent: () => renderSessionIsCurrent(expectedSessionId),
+      }), "Opening the request timed out. Please try the email link again.", 12000);
+      if (!renderSessionIsCurrent(expectedSessionId)) return;
+      if (requestTarget) {
+        activeCompanyId = requestTarget.companyId;
+        localStorage.setItem("maintainops.activeCompanyId", activeCompanyId);
+        setActiveSectionState("requests");
+        workspaceUiState.setSearchQuery("");
+        resetRequestsPage();
+        appTelemetry?.configure({ client: supabaseClient, companyId: activeCompanyId });
+      }
+    } catch (error) {
+      if (!renderSessionIsCurrent(expectedSessionId)) return;
+      requestEmailLink.clear();
+      appNotice = error.message;
+      appNoticeTone = "warning";
+    }
     renderWorkspaceLoading("Preparing your company profile...");
     const profileReady = await withOperationTimeout(
       ensureProfileForActiveCompany(),
@@ -1819,6 +1845,9 @@ async function renderOnce(expectedSessionId) {
     }
     if (!renderSessionIsCurrent(expectedSessionId)) return;
     renderWorkspace();
+    if (requestEmailLink.takeLanding(expectedSessionId, activeCompanyId, activeLocationId)) {
+      document.querySelector("[data-linked-request]")?.closest("section")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
     appTelemetry?.markWorkspaceReady(activeCompanyId);
   } catch (error) {
     if (!renderSessionIsCurrent(expectedSessionId)) return;
@@ -2460,10 +2489,15 @@ const {
 
 async function loadServerRequestSlice() {
   const activeFilter = workspaceUiState.getRequestViewFilter() || "active";
+  const scope = messageDraftScope();
+  const target = requestEmailLink.forWorkspace(session?.user?.id, activeCompanyId, activeLocationId);
   const [pageResponse, counts] = await Promise.all([
-    fetchRequestPage(activeFilter),
+    target ? fetchLinkedRequest(supabaseClient, target,
+      [REQUEST_RELATION_SELECT, REQUEST_ASSET_FALLBACK_SELECT, REQUEST_FALLBACK_SELECT], isColumnSchemaError) : fetchRequestPage(activeFilter),
     loadRequestDashboardCounts(),
   ]);
+  if (scope !== messageDraftScope()
+    || target !== requestEmailLink.forWorkspace(session?.user?.id, activeCompanyId, activeLocationId)) return { stale: true };
 
   maintenanceRequests = pageResponse.data || [];
   requestServerTotal = pageResponse.count ?? maintenanceRequests.length;
@@ -2758,6 +2792,16 @@ async function loadCompanyData() {
   locationsReady = !locationResponse.error;
   locations = locationResponse.error ? [] : (locationResponse.data || []);
   activeLocationId = storedLocationForLoadedCompany();
+  const requestTarget = requestEmailLink.forCompany(loadingUserId, loadingCompanyId);
+  if (requestTarget?.locationId) {
+    if (locations.some(location => location.id === requestTarget.locationId)) {
+      activeLocationId = requestTarget.locationId;
+    } else {
+      requestEmailLink.clear();
+      appNotice = "This request's facility is unavailable to your account.";
+      appNoticeTone = "warning";
+    }
+  }
   persistActiveLocationId(activeLocationId);
   assets = assetResponse.data || [];
   preventiveSchedules = scheduleResponse.error ? [] : (scheduleResponse.data || []);
@@ -2901,6 +2945,7 @@ async function reloadPlanningWorkOrderQueue(options = {}) {
 async function reloadRequestQueue(options = {}) {
   try {
     const response = await loadServerRequestSlice();
+    if (response.stale) return;
     requestsReady = !response.error;
     if (response.error) {
       showNotice(`Could not load requests: ${response.error.message}`, "warning");
@@ -3941,9 +3986,14 @@ function renderWorkspace() {
           <section class="panel full-width">
             <div class="panel-header">
               <h2>Requests</h2>
-              <span>${requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequestCount) : "setup needed"}</span>
+              <span>${requestEmailLink.forWorkspace(session?.user?.id, activeCompanyId, activeLocationId) ? "Linked request" : requestsReady ? requestPanelSubtitle(activeRequestViewFilter, visibleRequestCount) : "setup needed"}</span>
             </div>
-            ${requestsReady ? `
+            ${requestEmailLink.forWorkspace(session?.user?.id, activeCompanyId, activeLocationId) ? `
+              <button class="secondary-button" data-back-to-requests type="button">Back to Requests</button>
+              <div class="request-list" data-linked-request>
+                ${requestsReady ? maintenanceRequests.map(renderMaintenanceRequest).join("") || `<p role="status">This request is unavailable or your account no longer has access to it.</p>` : `<p role="status">Could not load this request. <button class="secondary-button" data-retry-linked-request type="button">Retry</button></p>`}
+              </div>
+            ` : requestsReady ? `
               <div class="queue-context-card request-intake-context">
                 <div>
                   <strong>Request Intake Queue</strong>
@@ -5377,7 +5427,15 @@ async function openStorageLinkedRecord(section, id, label = "", options = {}) {
 let completionEvents;
 function bindWorkspaceEvents() {
   requestPhotoEvents.bind();
+  document.querySelectorAll("[data-request-work-order]").forEach(button => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try { await openStorageLinkedRecord("work", button.dataset.requestWorkOrder); }
+      finally { button.disabled = false; }
+    });
+  });
   document.querySelector("#company-select").addEventListener("change", async (event) => {
+    requestEmailLink.clear();
     equipmentArchive?.reset(); equipmentArchiveOpen = false;
     activeCompanyId = event.target.value;
     activeLocationId = "";
@@ -5394,6 +5452,7 @@ function bindWorkspaceEvents() {
   });
 
   const switchLocation = async (nextLocationId) => {
+      requestEmailLink.clear();
       activeLocationId = nextLocationId;
       setActiveWorkOrderIdState(null);
       setActiveAssetIdState(null);
@@ -5437,6 +5496,7 @@ function bindWorkspaceEvents() {
   document.querySelector("#new-company").addEventListener("click", renderCompanyCreate);
   window.MaintainOpsWorkspaceNavigation.bind();
   bindWorkspaceSectionNavigationEvents({
+    openRequestHome: () => requestEmailLink.clear(),
     openMessageHome: () => { messageView = "home"; setActiveMessageThreadIdState(""); setMessageComposerOpenState(false); },
     openEquipmentHome: () => {
       travelingBoardOpen = false;
@@ -5478,6 +5538,12 @@ function bindWorkspaceEvents() {
     setWorkOrderSearchMode,
     visibleNavItems,
   });
+  document.querySelector("[data-back-to-requests]")?.addEventListener("click", async () => {
+    requestEmailLink.clear();
+    resetRequestsPage();
+    await reloadRequestQueue();
+  });
+  document.querySelector("[data-retry-linked-request]")?.addEventListener("click", () => reloadRequestQueue());
   if (activeSection === "planning") {
     document.querySelector("[data-retry-planning]")?.addEventListener("click", () => {
       invalidatePlanningWorkOrders();

@@ -26,6 +26,7 @@
         state.setActiveSection(nextSection);
         if (nextSection === "messages") options.openMessageHome?.();
         if (nextSection === "assets") options.openEquipmentHome?.();
+        if (nextSection === "requests") options.openRequestHome?.();
         state.setActiveWorkOrderId(null);
         state.setActiveAssetId(null);
         state.setActivePartId(null);

@@ -83,6 +83,7 @@
           ` : converted ? `
             <div class="request-actions request-converted-note">
               <span>${escapeHtml(conversionLabel)}</span>
+              ${request.converted_work_order_id ? `<button class="secondary-button work-action-button" data-request-work-order="${escapeHtml(request.converted_work_order_id)}" type="button">Open Work Order</button>` : ""}
               ${deleteControls}
             </div>
           ` : ""}
