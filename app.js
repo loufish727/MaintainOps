@@ -1845,6 +1845,9 @@ async function renderOnce(expectedSessionId) {
     }
     if (!renderSessionIsCurrent(expectedSessionId)) return;
     renderWorkspace();
+    if (requestEmailLink.takeLanding(expectedSessionId, activeCompanyId, activeLocationId)) {
+      document.querySelector("[data-linked-request]")?.closest("section")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
     appTelemetry?.markWorkspaceReady(activeCompanyId);
   } catch (error) {
     if (!renderSessionIsCurrent(expectedSessionId)) return;

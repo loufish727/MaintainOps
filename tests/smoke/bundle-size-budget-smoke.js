@@ -16,7 +16,9 @@ const budgets = {
   // Scoped draft/lazy-feature orchestration; the combined startup cap stays unchanged.
   // Archive navigation/state bridge adds <2 KB compressed; total startup cap is unchanged.
   // Work-order draft capture/acknowledgment adds 351 decoded / 134 gzip bytes to the shell.
-  appShell: { decoded: 173 * 1024, gzip: 49 * 1024 },
+  // Signed-in request email routing adds about 4 KB decoded / 1.2 KB gzip;
+  // ordinary startup makes no additional data request. Runtime/CSS caps unchanged.
+  appShell: { decoded: 177 * 1024, gzip: 51 * 1024 },
   // Small retained-history notice is shared with work history; archive layout stays lazy.
   // Accessible QR warning adds 1,227 decoded / 279 gzip bytes.
   // QR history reuses the dialog shell; its four rules add 51 gzip bytes.
@@ -53,7 +55,8 @@ const initialBudget = {
   // Scoped work-order edit recovery adds 2,160 gzip bytes (runtime + shell), no request.
   // Existing headroom covers the rest; allow one additional KiB for this data-loss fix.
   // On-demand request-photo link renewal/retry adds 834 gzip bytes, no startup request.
-  gzip: 177 * 1024,
+  // Direct request email routing and one-time landing add about 1.3 KB gzip.
+  gzip: 179 * 1024,
 };
 
 function measure(key) {

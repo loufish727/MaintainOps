@@ -3,6 +3,7 @@ const UNAVAILABLE = "This request is unavailable or your account does not have a
 
 export function createRequestEmailLink(windowRef) {
   let target = null;
+  let landedTarget = null;
   let revision = 0;
 
   function clear() {
@@ -52,7 +53,14 @@ export function createRequestEmailLink(windowRef) {
     return match && (!match.locationId || match.locationId === locationId) ? match : null;
   }
 
-  return { prepare, clear, forCompany, forWorkspace };
+  function takeLanding(userId, companyId, locationId) {
+    const match = forWorkspace(userId, companyId, locationId);
+    if (!match || match === landedTarget) return false;
+    landedTarget = match;
+    return true;
+  }
+
+  return { prepare, clear, forCompany, forWorkspace, takeLanding };
 }
 
 export async function fetchLinkedRequest(client, target, selects, isColumnSchemaError) {

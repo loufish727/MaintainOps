@@ -51,6 +51,10 @@ test('email destination survives login, paging, conversion and facility scope', 
     await expect(tech.locator('.request-card')).toHaveCount(0);
     await tech.goto(link(active.id));
     await expect(focused(tech)).toContainText('QA Active Email Request', { timeout: 45000 });
+    await expect(focused(tech).getByRole('heading', { name: 'QA Active Email Request' })).toBeInViewport();
+    await tech.evaluate(() => scrollTo(0, 0));
+    await tech.qaSettle();
+    expect(await tech.evaluate(() => scrollY)).toBe(0);
     await expect(focused(tech).locator('[data-convert-request]')).toBeVisible();
     expect(await tech.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await qa.shot(tech, 'email-request-mobile');

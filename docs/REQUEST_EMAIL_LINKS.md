@@ -16,7 +16,8 @@ separate release steps; no database migration or recipient changes are needed.
   requested card is shown, regardless of its age, status or queue page.
 - Converted requests offer Open Work Order, using the existing detail loader.
   Back to Requests returns to the paged list. Navigation away clears the link;
-  background rendering does not reopen it or force scrolling.
+  landing scrolls to the request once. Background rendering does not reopen it
+  or force scrolling afterward.
 - Missing or inaccessible records display an unavailable message. Malformed
   links and network failures are handled without exposing record content.
 - Ordinary startup and public-intake QR links add no request-lookup calls.
